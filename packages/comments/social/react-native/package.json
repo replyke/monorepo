@@ -1,0 +1,15 @@
+{
+  "name": "@replyke/comments-social-react-native",
+  "version": "0.1.0",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

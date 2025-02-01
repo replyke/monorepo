@@ -1,0 +1,10 @@
+{
+  "name": "replyke-ui",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {},
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.3"
+  }
+}

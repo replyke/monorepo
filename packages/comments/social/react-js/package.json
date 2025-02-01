@@ -1,0 +1,21 @@
+{
+  "name": "@replyke/comments-social-react-js",
+  "version": "0.1.2",
+  "license": "MIT",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts", 
+  "scripts": {
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "rimraf dist && pnpm run build:esm && pnpm run build:cjs",
+    "prepare": "pnpm run build"
+
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ]
+}
