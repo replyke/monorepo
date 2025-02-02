@@ -8,6 +8,7 @@ import {
 import { CommentsFeed, NewCommentForm, SortByButton } from "..";
 import { CommentMenuModal } from "../components/modals/CommentMenuModal";
 import { CommentMenuModalOwner } from "../components/modals/CommentMenuModalOwner";
+import { ModalManagerProvider } from "../context/ModalManagerContext";
 
 function useSocialComments({
   entityId,
@@ -34,11 +35,13 @@ function useSocialComments({
         highlightedCommentId={highlightedCommentId}
       >
         <SocialStyleConfigProvider styleConfig={styleConfig}>
-          <>
-            {children}
-            <CommentMenuModal />
-            <CommentMenuModalOwner />
-          </>
+          <ModalManagerProvider>
+            <>
+              {children}
+              <CommentMenuModal />
+              <CommentMenuModalOwner />
+            </>
+          </ModalManagerProvider>
         </SocialStyleConfigProvider>
       </CommentSectionProvider>
     ),
