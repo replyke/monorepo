@@ -5,7 +5,7 @@ import {
   SocialStyleConfig,
   SocialStyleConfigProvider,
 } from "@replyke/comments-social-core";
-import { CommentsFeed, NewCommentForm, SortByButton } from "..";
+import { CommentsFeed, NewCommentForm, SortByButton } from "../components";
 import { CommentMenuModal } from "../components/modals/CommentMenuModal";
 import { CommentMenuModalOwner } from "../components/modals/CommentMenuModalOwner";
 import { ModalManagerProvider } from "../context/ModalManagerContext";
