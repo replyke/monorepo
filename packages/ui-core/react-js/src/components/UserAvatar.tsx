@@ -1,4 +1,4 @@
-import { resetImg } from "../reset-styles";
+import { resetImg } from "../constants/reset-styles";
 
 interface UserProps {
   id?: string;

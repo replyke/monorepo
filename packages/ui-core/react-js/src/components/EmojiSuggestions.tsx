@@ -1,62 +1,26 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-// const commonEmojis10 = [
-//   "😂",
-//   "❤️",
-//   "🤣",
-//   "😍",
-//   "🙏",
-//   "🥰",
-//   "😊",
-//   "😭",
-//   "👍",
-//   "😅",
-// ];
-const commonEmojis15 = [
-  "😂",
-  "❤️",
-  "🤣",
-  "😍",
-  "🙏",
-  "🥰",
-  "😊",
-  "😭",
-  "👍",
-  "😅",
-  "😢",
-  "👏",
-  "💕",
-  "🥺",
-  "😘",
-];
-// const commonEmojis20 = [
-//   "😂",
-//   "❤️",
-//   "🤣",
-//   "😍",
-//   "🙏",
-//   "🥰",
-//   "😊",
-//   "😭",
-//   "👍",
-//   "😅",
-//   "😢",
-//   "👏",
-//   "💕",
-//   "🥺",
-//   "😘",
-//   "🤔",
-//   "🤗",
-//   "🙌",
-//   "😎",
-//   "✨",
-// ];
+const emojiGroup1 = ["😂", "❤️", "🤣", "😍", "🙏"];
+const emojiGroup2 = ["🥰", "😊", "😭", "👍", "😅"];
+const emojiGroup3 = ["😢", "👏", "💕", "🥺", "😘"];
+const emojiGroup4 = ["🤔", "🤗", "🙌", "😎", "✨"];
+
+
 function EmojiSuggestions({
   onEmojiClick,
 }: {
   onEmojiClick: (emoji: string) => void;
 }) {
   const [clickedEmoji, setClickedEmoji] = useState<string | null>(null);
+  const [emojiSubset, setEmojiSubset] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Pick 8 random emojis from the array
+    const combinedEmojis = [...emojiGroup1, ...emojiGroup2, ...emojiGroup3];
+
+    const shuffled = combinedEmojis.sort(() => 0.5 - Math.random());
+    setEmojiSubset(shuffled.slice(0, 8));
+  }, []);
 
   const handleEmojiClick = (emoji: string) => {
     setClickedEmoji(emoji);
@@ -77,7 +41,7 @@ function EmojiSuggestions({
         msOverflowStyle: "none",
       }}
     >
-      {commonEmojis15.map((emoji) => (
+      {emojiSubset.map((emoji) => (
         <div
           key={emoji}
           onClick={() => handleEmojiClick(emoji)}

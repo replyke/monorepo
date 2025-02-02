@@ -1,0 +1,62 @@
+{
+  "name": "@replyke/ui-core-react-native",
+  "version": "0.1.4",
+  "author": "Replyke, maintained by Yanay Tsabary",
+  "description": "Replyke React components: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
+  "keywords": [
+    "react",
+    "social features",
+    "comment section",
+    "comments",
+    "nested comments",
+    "likes",
+    "votes",
+    "feeds",
+    "user lists",
+    "notifications",
+    "interactive apps",
+    "reactions",
+    "content moderation",
+    "reporting",
+    "mentions",
+    "user interactions",
+    "frontend tools",
+    "social media",
+    "replyke",
+    "react-component"
+  ],
+  "license": "MIT",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "scripts": {
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "rimraf dist && pnpm run build:esm && pnpm run build:cjs",
+    "prepublish": "pnpm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@giphy/js-fetch-api": "^5.6.0",
+    "@giphy/react-components": "^9.8.0"
+  },
+  "devDependencies": {
+    "@replyke/core": "^4.0.3",
+    "expo-image": "^2.0.4",
+    "moment": "^2.30.1",
+    "react-native-gesture-handler": "^2.22.1",
+    "react-native-svg": "^15.11.1"
+  },
+  "peerDependencies": {
+    "@replyke/core": "^4",
+    "expo-image": "^2",
+    "moment": "^2",
+    "react-native-gesture-handler": "^2",
+    "react-native-svg": "^15"
+  }
+}
