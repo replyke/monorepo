@@ -1,6 +1,6 @@
 {
-  "name": "@replyke/comments-social-react-js",
-  "version": "0.1.2",
+  "name": "@replyke/ui-core",
+  "version": "0.1.3",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke React components: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
   "keywords": [
@@ -40,36 +40,5 @@
   },
   "files": [
     "dist"
-  ],
-  "dependencies": {
-    "@replyke/comments-social-core": "workspace:*",
-    "@replyke/ui-core-react-js": "workspace:*"
-  },
-  "devDependencies": {
-    "@replyke/core": "^4.0.3",
-    "@types/node": "^20.14.5",
-    "@types/react": "^18.0.37",
-    "@types/react-dom": "^18.0.11",
-    "@typescript-eslint/eslint-plugin": "^5.59.0",
-    "@typescript-eslint/parser": "^5.59.0",
-    "@vitejs/plugin-react-swc": "^3.0.0",
-    "axios": "^1.4.0",
-    "eslint": "^8.38.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.3.4",
-    "moment": "^2.30.1",
-    "path": "^0.12.7",
-    "prop-types": "^15.8.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "typescript": "^5.0.2",
-    "vite": "^4.3.9",
-    "vite-plugin-dts": "^2.3.0"
-  },
-  "peerDependencies": {
-    "axios": "^1",
-    "moment": "^2.30.1",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
-  }
+  ]
 }

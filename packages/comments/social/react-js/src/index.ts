@@ -1,5 +1,5 @@
-const runTest = () => {
-  console.log("Running test for replyke-ui-react-js");
-};
+export { CommentsFeed } from "./components/CommentsFeed";
+export { NewCommentForm } from "./components/NewCommentForm";
+export { SortByButton } from "./components/SortByButton";
 
-export { runTest };
+export { default as useSocialComments } from "./hooks/useSocialComments";
