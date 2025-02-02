@@ -14,6 +14,7 @@ import { useProject } from "@replyke/core";
 import { Image } from "expo-image";
 import { ScrollView } from "react-native-gesture-handler";
 import { MagnifyingGlassIcon } from "../icons";
+import { getImageComponent } from "../helpers/getImageComponent";
 
 type GifData = {
   id: string;
@@ -55,6 +56,8 @@ interface GiphyContainerProps {
 const MAX_ITEMS = 60; // Define the maximum number of items to load
 const FETCH_LIMIT = 30;
 
+
+
 export default function GiphyContainer({
   onClickBack,
   onSelectGif,
@@ -62,6 +65,9 @@ export default function GiphyContainer({
 }: GiphyContainerProps) {
   const { project } = useProject();
   const giphyApiKey = project?.integrations.giphy?.apiKey;
+
+  // Dynamically get the correct Image component and whether it is expo-image.
+  const { ImageComponent, isExpo } = getImageComponent();
 
   const [gifs, setGifs] = useState<GifData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -231,6 +237,28 @@ export default function GiphyContainer({
                 parseInt(item.images.fixed_width.height) /
                 parseInt(item.images.fixed_width.width);
 
+              const imageStyle = {
+                width: columnWidth,
+                height: columnWidth * aspectRatio,
+                borderRadius: 4,
+              };
+
+              // Build the props based on which Image component is being used.
+              // For expo-image, we assume it accepts a string for its "source"
+              // and additional props like "contentFit" and "transition".
+              // For React Native's Image, we wrap the URL in an object with "uri".
+              const imageProps = isExpo
+                ? {
+                    source: item.images.fixed_width.webp, // expo-image accepts a string
+                    style: imageStyle,
+                    contentFit: "cover",
+                    transition: 500,
+                  }
+                : {
+                    source: { uri: item.images.fixed_width.webp }, // React Native expects an object with a "uri" property
+                    style: imageStyle,
+                  };
+
               return (
                 <TouchableOpacity
                   key={item.id}
@@ -247,16 +275,7 @@ export default function GiphyContainer({
                     });
                   }}
                 >
-                  <Image
-                    source={item.images.fixed_width.webp}
-                    style={{
-                      width: columnWidth, // Set fixed width
-                      height: columnWidth * aspectRatio, // Calculate height using aspect ratio
-                      borderRadius: 4,
-                    }}
-                    contentFit="cover"
-                    transition={500}
-                  />
+                  <ImageComponent {...imageProps} />
                 </TouchableOpacity>
               );
             })}

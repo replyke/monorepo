@@ -21,11 +21,11 @@ import {
   UserAvatar,
   FromNow,
   parseContentWithMentions,
+  getImageComponent,
 } from "@replyke/ui-core-react-native";
 import { Replies } from "./Replies";
 import HeartButton from "./HeartButton";
 import useSheetManager from "../../../hooks/useSheetManager";
-import { Image } from "expo-image";
 
 const Comment = ({
   comment: commentFromSection,
@@ -34,6 +34,9 @@ const Comment = ({
   comment: CommentType;
   extraLeftPadding?: number;
 }) => {
+  // Dynamically get the correct Image component and whether it is expo-image.
+  const { ImageComponent, isExpo } = getImageComponent();
+
   const { user } = useUser();
   const { handleShallowReply, handleDeepReply, callbacks, highlightedComment } =
     useCommentSection();
@@ -103,6 +106,30 @@ const Comment = ({
   };
 
   const userUpvotedComment = !!(user && comment.upvotes.includes(user.id));
+
+  const imageStyle = {
+    width:
+      (comment.gif?.aspectRatio || 1) < 1
+        ? 200
+        : 200 * (comment.gif?.aspectRatio || 1),
+    height:
+      (comment.gif?.aspectRatio || 1) > 1
+        ? 200
+        : 200 * (comment.gif?.aspectRatio || 1),
+    borderRadius: 4,
+    overflow: "hidden",
+  };
+
+  const imageProps = isExpo
+    ? {
+        source: comment.gif?.gifUrl, // expo-image accepts a string
+        contentFit: "cover",
+        transition: 1000,
+        placeholder: comment.gif?.gifPreviewUrl,
+      }
+    : {
+        source: { uri: comment.gif?.gifUrl }, // React Native's Image requires { uri: ... }
+      };
 
   return (
     <View
@@ -193,24 +220,7 @@ const Comment = ({
               </Text>
             )}
             {comment.gif?.gifUrl && (
-              <Image
-                source={comment.gif.gifUrl} // expo-image uses a string for the source
-                style={{
-                  width:
-                    comment.gif.aspectRatio < 1
-                      ? 200
-                      : 200 * comment.gif.aspectRatio,
-                  height:
-                    comment.gif.aspectRatio > 1
-                      ? 200
-                      : 200 * comment.gif.aspectRatio,
-                  borderRadius: 4,
-                  overflow: "hidden",
-                }}
-                contentFit="cover" // Adjusts how the image content fits within the view
-                transition={1000} // Optional: Adds a fade-in effect during image load
-                placeholder={comment.gif.gifPreviewUrl}
-              />
+              <ImageComponent style={imageStyle} {...imageProps} />
             )}
 
             <View style={[styles.actionsContainer, { gap: actionsItemGap }]}>
