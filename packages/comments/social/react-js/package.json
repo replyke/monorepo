@@ -1,6 +1,6 @@
 {
   "name": "@replyke/comments-social-react-js",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke React components: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
   "keywords": [
