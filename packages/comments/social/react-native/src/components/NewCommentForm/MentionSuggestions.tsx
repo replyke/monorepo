@@ -1,8 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, FlatList } from "react-native";
-import { UserLean } from "replyke-core";
-import { UserAvatar } from "../../../..";
-import { UserMentionSkeleton } from "../../../shared/Skeleton";
+import { UserLean } from "@replyke/core";
+import { UserAvatar, UserMentionSkeleton } from "@replyke/ui-core-react-native";
 
 interface MentionSuggestionsProps {
   isMentionActive: boolean;
@@ -43,7 +42,6 @@ const MentionSuggestions: React.FC<MentionSuggestionsProps> = ({
           renderItem={() => <UserMentionSkeleton />}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           keyboardShouldPersistTaps="always"
-
         />
       ) : (
         <FlatList

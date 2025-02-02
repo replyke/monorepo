@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import { useCommentSection, getUserName } from "replyke-core";
+import { useCommentSection, getUserName } from "@replyke/core";
 
 const ReplyBanner = () => {
   const {

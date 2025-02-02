@@ -1,6 +1,6 @@
 import { TouchableOpacity, View, Text } from "react-native";
-import { useSocialStyleConfig } from "replyke-core";
-import { resetButton } from "../../../../../../constants/reset-styles";
+import { useSocialStyleConfig } from "@replyke/comments-social-core";
+import { resetButton } from "@replyke/ui-core-react-native";
 
 const ShowHideButton = ({
   totalRepliesCount,

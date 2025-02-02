@@ -23,19 +23,20 @@ import {
   useCommentSection,
   useMentions,
   useProject,
-  useSocialStyleConfig,
-} from "replyke-core";
+} from "@replyke/core";
 import {
   resetButton,
   resetTextInput,
   resetView,
-} from "../../../../constants/reset-styles";
+  UserAvatar,
+  useTextInputCursorIndicator,
+  EmojiSuggestions,
+  GiphyContainer,
+} from "@replyke/ui-core-react-native";
+import { useSocialStyleConfig } from "@replyke/comments-social-core";
+
 import ReplyBanner from "./ReplyBanner";
-import UserAvatar from "../../../shared/UserAvatar";
-import useTextInputCursorIndicator from "../../../../hooks/useTextInputCursorIndicator";
 import MentionSuggestions from "./MentionSuggestions";
-import EmojiSuggestions from "../../../shared/EmojiSuggestions";
-import GiphyContainer from "../../../shared/GiphyContainer";
 
 const NewCommentForm = forwardRef<
   { focus: () => void },

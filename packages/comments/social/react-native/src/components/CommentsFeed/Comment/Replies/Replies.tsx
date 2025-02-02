@@ -1,13 +1,10 @@
 import { useMemo, useState } from "react";
 import { FlatList, View } from "react-native";
-import {
-  useReplies,
-  useCommentSection,
-  useSocialStyleConfig,
-} from "replyke-core";
+import { useReplies, useCommentSection } from "@replyke/core";
+import { useSocialStyleConfig } from "@replyke/comments-social-core";
+import { CommentSkeleton } from "@replyke/ui-core-react-native";
 import Comment from "../Comment";
 import ShowHideButton from "./ShowHideButton";
-import { CommentSkeleton } from "../../../../../shared/Skeleton";
 
 function Replies({ commentId }: { commentId: string }) {
   const { sortBy, entityCommentsTree, highlightedComment } =

@@ -1,13 +1,13 @@
 import { View, Text, Pressable, Alert } from "react-native";
 import { useCallback, useMemo } from "react";
 import { useUser, useCommentSection } from "@replyke/core";
+import { FlagIcon, TrashIcon } from "@replyke/ui-core-react-native";
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import useSheetManager from "../../../../../../ui-core/react-native/src/hooks/useSheetManager";
-import { FlagIcon, TrashIcon } from "../../../../../../ui-core/react-native/src/icons";
+import useSheetManager from "../../hooks/useSheetManager";
 
 const CommentOptionsSheet = () => {
   const { deleteComment } = useCommentSection();

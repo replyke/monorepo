@@ -11,5 +11,21 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "@replyke/comments-social-core": "workspace:*",
+    "@replyke/ui-core-react-native": "workspace:*"
+  },
+  "devDependencies": {
+    "@gorhom/bottom-sheet": "^5.0.6",
+    "@replyke/core": "^4.0.3",
+    "react-native-gesture-handler": "^2.22.1"
+  },
+  "peerDependencies": {
+    "@gorhom/bottom-sheet": "^5",
+    "@replyke/core": "^4",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-native-gesture-handler": "^2"
   }
 }

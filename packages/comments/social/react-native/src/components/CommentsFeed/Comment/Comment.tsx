@@ -15,14 +15,16 @@ import {
   useUser,
   getUserName,
   handleError,
-  useSocialStyleConfig,
-} from "replyke-core";
-import UserAvatar from "../../../../shared/UserAvatar";
+} from "@replyke/core";
+import { useSocialStyleConfig } from "@replyke/comments-social-core";
+import {
+  UserAvatar,
+  FromNow,
+  parseContentWithMentions,
+} from "@replyke/ui-core-react-native";
 import { Replies } from "./Replies";
-import FromNow from "../../../../shared/FromNow";
 import HeartButton from "./HeartButton";
-import useSheetManager from "../../../../../hooks/useSheetManager";
-import { parseContentWithMentions } from "../../../../../helpers/parseContentWithMentions";
+import useSheetManager from "../../../hooks/useSheetManager";
 import { Image } from "expo-image";
 
 const Comment = ({
@@ -185,7 +187,8 @@ const Comment = ({
                   comment.content,
                   comment.mentions,
                   user?.id,
-                  callbacks
+                  callbacks?.currentUserClickCallback,
+                  callbacks?.otherUserClickCallback
                 )}
               </Text>
             )}

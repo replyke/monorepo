@@ -1,15 +1,18 @@
 import { ReactNode } from "react";
 import {
-  SocialStyleCallbacks,
   CommentsSortByOptions,
   CommentSectionProvider,
+  Entity,
+} from "@replyke/core";
+import {
+  SocialStyleCallbacks,
   SocialStyleConfig,
   SocialStyleConfigProvider,
-  Entity,
-} from "replyke-core";
+} from "@replyke/comments-social-core";
 import { CommentsFeed, NewCommentForm, SortByButton } from "..";
-import CommentOptionsSheet from "../../../../../../comments/social/react-native/src/components/sheets/CommentOptionsSheet";
-import ReportCommentSheet from "../../../../../../comments/social/react-native/src/components/sheets/ReportCommentSheet";
+import CommentOptionsSheet from "../components/sheets/CommentOptionsSheet";
+import ReportCommentSheet from "../components/sheets/ReportCommentSheet";
+import { SheetManagerProvider } from "../context/SheetManagerContext";
 
 function useSocialComments({
   entity,
@@ -48,11 +51,13 @@ function useSocialComments({
         highlightedCommentId={highlightedCommentId}
       >
         <SocialStyleConfigProvider styleConfig={styleConfig}>
-          <>
-            {children}
-            <CommentOptionsSheet />
-            <ReportCommentSheet />
-          </>
+          <SheetManagerProvider>
+            <>
+              {children}
+              <CommentOptionsSheet />
+              <ReportCommentSheet />
+            </>
+          </SheetManagerProvider>
         </SocialStyleConfigProvider>
       </CommentSectionProvider>
     ),

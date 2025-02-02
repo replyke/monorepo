@@ -1,6 +1,6 @@
 import { FlatList, View } from "react-native";
-import { useSocialStyleConfig } from "replyke-core";
-import { CommentSkeleton } from "../../../shared/Skeleton";
+import { useSocialStyleConfig } from "@replyke/comments-social-core";
+import { CommentSkeleton } from "@replyke/ui-core-react-native";
 
 const FetchingCommentsSkeletons = () => {
   const { styleConfig } = useSocialStyleConfig();

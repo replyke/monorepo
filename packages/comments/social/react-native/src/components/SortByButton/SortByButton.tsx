@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
-import { CommentsSortByOptions, useCommentSection } from "replyke-core";
 import { TouchableOpacity } from "react-native";
-import { resetButton } from "../../../../constants/reset-styles";
+import { CommentsSortByOptions, useCommentSection } from "@replyke/core";
+import { resetButton } from "@replyke/ui-core-react-native";
 
 function SortByButton({
   priority,
