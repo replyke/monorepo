@@ -13,6 +13,9 @@ While this repository provides UI-related tools, it requires one of the core Rep
 - [@replyke/react-native](https://www.npmjs.com/package/@replyke/react-native) (for React Native apps)
 - [@replyke/expo](https://www.npmjs.com/package/@replyke/expo) (for Expo-managed React Native apps)
 
+
+![Demo](./assets/comment_section.gif)
+
 ## Replyke UI Components
 
 The primary focus of this monorepo is the **social comment section**, which provides modern discussion capabilities similar to popular social networks. Replyke’s comment section is fully featured and includes:
