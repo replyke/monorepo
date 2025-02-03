@@ -1,8 +1,8 @@
 # Replyke UI Monorepo
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-[![runs with expo](https://img.shields.io/badge/Runs%20with%20Expo-4630EB.svg?style=flat-square&logo=EXPO&labelColor=f3f3f3&logoColor=000)](https://expo.io/)
 ![npm](https://img.shields.io/badge/types-included-blue?style=flat-square)
+[![runs with expo](https://img.shields.io/badge/Runs%20with%20Expo-4630EB.svg?style=flat-square&logo=EXPO&labelColor=f3f3f3&logoColor=000)](https://expo.io/)
 ## Overview
 
 Replyke UI is a monorepo containing UI-related functionality for the Replyke ecosystem. It includes reusable UI utilities, shared components, and the **social comment section** for both React and React Native applications.
