@@ -1,6 +1,25 @@
 {
   "name": "@replyke/comments-social-react-native",
   "version": "4.0.0",
+  "author": "Replyke, maintained by Yanay Tsabary",
+  "description": "Replyke: Add a modern comment section to your React Native apps: replies, likes, mentions, highlighted comments, GIFs, built-in authorization, reports & moderation.",
+  "keywords": [
+    "replyke",
+    "social",
+    "comments",
+    "reactions",
+    "moderation",
+    "reporting",
+    "upvotes",
+    "downvotes",
+    "react-native",
+    "expo",
+    "typescript"
+  ],
+  "bugs": {
+    "url": "https://discord.gg/A94q4kC6"
+  },
+  "homepage": "https://docs.replyke.com",
   "license": "MIT",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",

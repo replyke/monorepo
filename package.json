@@ -1,7 +1,27 @@
 {
   "name": "replyke-ui",
-  "private": true,
   "version": "1.0.0",
+  "author": "Replyke, maintained by Yanay Tsabary",
+  "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
+  "keywords": [
+    "replyke",
+    "social",
+    "comments",
+    "reactions",
+    "moderation",
+    "reporting",
+    "upvotes",
+    "downvotes",
+    "react",
+    "react-native",
+    "expo",
+    "typescript"
+  ],
+  "bugs": {
+    "url": "https://discord.gg/A94q4kC6"
+  },
+  "homepage": "https://docs.replyke.com",
+  "private": false,
   "scripts": {},
   "devDependencies": {
     "@types/react": "^18.0.37",
