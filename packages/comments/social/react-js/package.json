@@ -21,7 +21,7 @@
   "homepage": "https://docs.replyke.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/replyke/replyke-ui.git"
+    "url": "https://github.com/replyke/ui-kit.git"
   },
   "license": "MIT",
   "main": "dist/cjs/index.js",
