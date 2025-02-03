@@ -8,6 +8,8 @@
 
 The **Replyke Social Comment Section** for React is a modern, fully featured comment system designed to integrate seamlessly into web applications. It provides a feature-rich, interactive commenting experience similar to those found in leading social networks, allowing for user engagement, moderation, and customization.
 
+![Demo](../../../../assets/comment_section.gif)
+
 ## Features
 
 - **Mentions (@username)** – Users can mention others in comments. Mentions notify users (if enabled) and provide clickable links to their profiles.
