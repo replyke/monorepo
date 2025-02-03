@@ -1,5 +1,5 @@
 {
-  "name": "replyke-ui",
+  "name": "@replyke/ui-kit",
   "version": "1.0.0",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
