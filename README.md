@@ -3,6 +3,22 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![npm](https://img.shields.io/badge/types-included-blue?style=flat-square)
 [![runs with expo](https://img.shields.io/badge/Runs%20with%20Expo-4630EB.svg?style=flat-square&logo=EXPO&labelColor=f3f3f3&logoColor=000)](https://expo.io/)
+
+## Stay Updated
+
+<a href="https://discord.gg/PBsXrRh4" target="_blank">
+<img src="./assets/discord.svg" alt="Alt text" width="100" height="30">
+</a>
+
+And follow for updates on
+<a  href="https://x.com/replykejs" target="_blank">
+X/Twitter
+</a>
+and
+<a  href="https://replyke.bsky.social" target="_blank">
+BlueSky
+</a>
+
 ## Overview
 
 Replyke UI is a monorepo containing UI-related functionality for the Replyke ecosystem. It includes reusable UI utilities, shared components, and the **social comment section** for both React and React Native applications.
@@ -12,7 +28,6 @@ While this repository provides UI-related tools, it requires one of the core Rep
 - [@replyke/react-js](https://www.npmjs.com/package/@replyke/react-js) (for React web apps)
 - [@replyke/react-native](https://www.npmjs.com/package/@replyke/react-native) (for React Native apps)
 - [@replyke/expo](https://www.npmjs.com/package/@replyke/expo) (for Expo-managed React Native apps)
-
 
 ![Demo](./assets/comment_section.gif)
 
@@ -33,11 +48,13 @@ The primary focus of this monorepo is the **social comment section**, which prov
 This monorepo consists of multiple packages, categorized into **UI core utilities** and **comment section implementations**:
 
 ### **UI Core**
+
 - `packages/ui-core/base` – Shared UI utilities such as generic styles and types.
 - `packages/ui-core/react-js` – Reusable functionality and components for React web applications.
 - `packages/ui-core/react-native` – Reusable functionality and components for React Native applications.
 
 ### **Social Comment Section**
+
 - `packages/comments/social/core` – Core types, hooks, and utilities shared between React and React Native versions (no UI).
 - `packages/comments/social/react-js` – Full implementation of the social comment section for React web apps. ([npm package](https://www.npmjs.com/package/@replyke/comments-social-react-js))
 - `packages/comments/social/react-native` – Full implementation of the social comment section for React Native (CLI & Expo). ([npm package](https://www.npmjs.com/package/@replyke/comments-social-react-native))
@@ -53,4 +70,3 @@ Contributions are welcome! If you'd like to improve the comment section or add n
 ---
 
 For questions or support, visit the [Replyke documentation](https://docs.replyke.com), open an issue or reach out via the [Discord server](https://discord.gg/A94q4kC6).
-
