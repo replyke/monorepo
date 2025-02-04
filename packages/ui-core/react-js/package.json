@@ -1,6 +1,6 @@
 {
   "name": "@replyke/ui-core-react-js",
-  "version": "4.0.0",
+  "version": "4.0.4",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
   "keywords": [
