@@ -5,12 +5,11 @@
 [![runs with expo](https://img.shields.io/badge/Runs%20with%20Expo-4630EB.svg?style=flat-square&logo=EXPO&labelColor=f3f3f3&logoColor=000)](https://expo.io/)
 
 ## Stay Updated
-
-<a href="https://discord.gg/PBsXrRh4" target="_blank">
-<img src="./assets/discord.svg" alt="Alt text" width="100" height="30">
+Join the 
+<a  href="https://discord.gg/PBsXrRh4" target="_blank">
+Discord server
 </a>
-
-And follow for updates on
+and follow on
 <a  href="https://x.com/replykejs" target="_blank">
 X/Twitter
 </a>
@@ -18,6 +17,7 @@ and
 <a  href="https://replyke.bsky.social" target="_blank">
 BlueSky
 </a>
+to be notified about important changes? 
 
 ## Overview
 
