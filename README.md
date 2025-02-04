@@ -17,7 +17,7 @@ and
 <a  href="https://replyke.bsky.social" target="_blank">
 BlueSky
 </a>
-to be notified about important changes? 
+to be notified about important changes 
 
 ## Overview
 
