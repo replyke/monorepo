@@ -46,5 +46,5 @@ Contributions are welcome! If you have suggestions for improvements or want to a
 
 ---
 
-For questions or support, visit the [Replyke documentation](https://docs.replyke.com), open an issue or reach out via the [Discord server](https://discord.gg/A94q4kC6).
+For questions or support, visit the [Replyke documentation](https://docs.replyke.com), open an issue or reach out via the [Discord server](https://discord.gg/REKxnCJzPz).
 

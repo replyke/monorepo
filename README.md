@@ -6,7 +6,7 @@
 
 ## Stay Updated
 Join the 
-<a  href="https://discord.gg/PBsXrRh4" target="_blank">
+<a  href="https://discord.gg/REKxnCJzPz" target="_blank">
 Discord server
 </a>
 and follow on
