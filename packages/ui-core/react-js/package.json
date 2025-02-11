@@ -1,6 +1,6 @@
 {
   "name": "@replyke/ui-core-react-js",
-  "version": "4.0.5",
+  "version": "4.0.6",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
   "keywords": [
@@ -47,7 +47,7 @@
   ],
   "dependencies": {
     "@giphy/js-fetch-api": "^5.6.0",
-    "@giphy/react-components": "^9.8.0"
+    "@giphy/react-components": "^10.0.0"
   },
   "devDependencies": {
     "@replyke/core": "^4.0.3",

@@ -1,6 +1,6 @@
 {
   "name": "@replyke/comments-social-react-js",
-  "version": "4.0.6",
+  "version": "4.0.7",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Add a modern comment section to your React apps: replies, likes, mentions, highlighted comments, GIFs, built-in authorization, reports & moderation.",
   "keywords": [
@@ -59,8 +59,8 @@
   },
   "peerDependencies": {
     "@replyke/core": "^4",
-    "@replyke/ui-core-react-js":  "^4",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "@replyke/ui-core-react-js": "^4",
+    "react": ">=18.0.0 <20.0.0",
+    "react-dom": ">=18.0.0 <20.0.0"
   }
 }
