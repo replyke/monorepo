@@ -1,7 +1,7 @@
 import { FontWeight } from "@replyke/ui-core";
 
 export interface CommentStyleProps {
-  horizonalItemsGap: number;        // Horizontal gap between items.
+  horizontalItemsGap: number;        // Horizontal gap between items.
   verticalItemsGap: number;         // Vertical gap between items.
   authorAvatarSize: number;         // Size of the author’s avatar.
   authorFontSize: number;           // Font size for the author’s name.

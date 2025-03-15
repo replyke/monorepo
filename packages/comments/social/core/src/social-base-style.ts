@@ -6,7 +6,7 @@ export const socialBaseStyle: SocialStyleConfig = {
     commentsGap: 8,
   },
   commentProps: {
-    horizonalItemsGap: 12,
+    horizontalItemsGap: 12,
     verticalItemsGap: 8,
     authorAvatarSize: 32,
     authorFontSize: 13,
