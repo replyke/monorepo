@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 function useTextareaCursorIndicator({
   textAreaRef,
 }: {
-  textAreaRef: React.RefObject<HTMLTextAreaElement>;
+  textAreaRef: React.RefObject<HTMLTextAreaElement | null>;
 }) {
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [isSelectionActive, setIsSelectionActive] = useState<boolean>(false);
