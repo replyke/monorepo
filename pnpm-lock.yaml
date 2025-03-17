@@ -45,13 +45,13 @@ importers:
       '@replyke/comments-social-core':
         specifier: workspace:*
         version: link:../core
-    devDependencies:
-      '@replyke/core':
-        specifier: ^4.0.3
-        version: 4.0.3
       '@replyke/ui-core-react-js':
         specifier: workspace:*
         version: link:../../../ui-core/react-js
+    devDependencies:
+      '@replyke/core':
+        specifier: ^4.0.11
+        version: 4.0.11
       '@types/node':
         specifier: ^20.14.5
         version: 20.17.17
@@ -91,6 +91,9 @@ importers:
       '@replyke/comments-social-core':
         specifier: workspace:*
         version: link:../core
+      '@replyke/ui-core-react-native':
+        specifier: ^4
+        version: 4.0.5(@replyke/core@4.0.3)(expo-image@2.0.4(expo@52.0.30(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react-native-gesture-handler@2.22.1(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native-svg@15.11.1(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react@18.3.1)(styled-components@6.1.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
       react:
         specifier: ^18.0.0
         version: 18.3.1
@@ -104,9 +107,6 @@ importers:
       '@replyke/core':
         specifier: ^4.0.3
         version: 4.0.3
-      '@replyke/ui-core-react-native':
-        specifier: workspace:*
-        version: link:../../../ui-core/react-native
       react-native-gesture-handler:
         specifier: ^2.22.1
         version: 2.22.1(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1)
@@ -123,8 +123,8 @@ importers:
         version: 10.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.1.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
     devDependencies:
       '@replyke/core':
-        specifier: ^4.0.3
-        version: 4.0.3
+        specifier: ^4.0.11
+        version: 4.0.11
       moment:
         specifier: ^2.30.1
         version: 2.30.1
@@ -1217,8 +1217,20 @@ packages:
       '@types/react':
         optional: true
 
+  '@replyke/core@4.0.11':
+    resolution: {integrity: sha512-Pipjh5F5Z7lSg0csxxS2j8MovctbX/JCRN6UJjxhkWJMwy4PbgVkIgIHP/vyqnmzUxaskeEfMudBzMtsCSZ0Rw==}
+
   '@replyke/core@4.0.3':
     resolution: {integrity: sha512-voksJcl9aT6dj+Nx9ZuAgxK6YY27CbAGc8Lfmbr0RDptdMIkJcu5KkZXj7fXdhuxhQdca1bPFvHSXye67Qj+TQ==}
+
+  '@replyke/ui-core-react-native@4.0.5':
+    resolution: {integrity: sha512-HS8SgJULuRM4pBrQKmHVVG0TzGTCAgMBQxLTv+12lc4Jko0e1itru0YIMv6P4fNwzcGDKTWDAhhgim5TN9VQdg==}
+    peerDependencies:
+      '@replyke/core': ^4
+      expo-image: ^2
+      moment: ^2
+      react-native-gesture-handler: ^2
+      react-native-svg: ^15
 
   '@segment/loosely-validate-event@2.0.0':
     resolution: {integrity: sha512-ZMCSfztDBqwotkl848ODgVcAmN4OItEWDCkshcKz0/W6gGSQayuuCtWV/MlodFivAZD793d6UgANd6wCXUfrIw==}
@@ -5692,6 +5704,15 @@ snapshots:
     optionalDependencies:
       '@types/react': 18.3.18
 
+  '@replyke/core@4.0.11':
+    dependencies:
+      axios: 1.7.9
+      js-cookie: 3.0.5
+      lodash: 4.17.21
+      node-forge: 1.3.1
+    transitivePeerDependencies:
+      - debug
+
   '@replyke/core@4.0.3':
     dependencies:
       axios: 1.7.9
@@ -5701,6 +5722,20 @@ snapshots:
       node-forge: 1.3.1
     transitivePeerDependencies:
       - debug
+
+  '@replyke/ui-core-react-native@4.0.5(@replyke/core@4.0.3)(expo-image@2.0.4(expo@52.0.30(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react-native-gesture-handler@2.22.1(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native-svg@15.11.1(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react@18.3.1)(styled-components@6.1.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
+    dependencies:
+      '@giphy/js-fetch-api': 5.6.0
+      '@giphy/react-components': 9.8.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.1.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+      '@replyke/core': 4.0.3
+      expo-image: 2.0.4(expo@52.0.30(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1)
+      moment: 2.30.1
+      react-native-gesture-handler: 2.22.1(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1)
+      react-native-svg: 15.11.1(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1)
+    transitivePeerDependencies:
+      - react
+      - react-dom
+      - styled-components
 
   '@segment/loosely-validate-event@2.0.0':
     dependencies:

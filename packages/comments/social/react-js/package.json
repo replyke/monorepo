@@ -40,11 +40,11 @@
     "dist"
   ],
   "dependencies": {
-    "@replyke/ui-core-react-js": "workspace:*",
-    "@replyke/comments-social-core": "workspace:*"
+    "@replyke/comments-social-core": "workspace:*",
+    "@replyke/ui-core-react-js": "workspace:*"
   },
   "devDependencies": {
-    "@replyke/core": "^4.0.3",
+    "@replyke/core": "^4.0.11",
     "@types/node": "^20.14.5",
     "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",
@@ -58,7 +58,7 @@
     "typescript": "^5.0.2"
   },
   "peerDependencies": {
-    "@replyke/core": "^4",
+    "@replyke/core": ">=4",
     "react": ">=18.0.0 <20.0.0",
     "react-dom": ">=18.0.0 <20.0.0"
   }

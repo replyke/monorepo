@@ -58,7 +58,7 @@
     "react-native-svg": "^15.11.1"
   },
   "peerDependencies": {
-    "@replyke/core": "^4",
+    "@replyke/core": ">=4",
     "expo-image": "^2",
     "moment": "^2",
     "react-native-gesture-handler": "^2",
