@@ -13,7 +13,7 @@ import {
   useMentions,
   useUser,
   useProject,
-} from "@replyke/core";
+} from "@replyke/react-js";
 import { useSocialStyleConfig } from "@replyke/comments-social-core";
 import {
   resetButton,

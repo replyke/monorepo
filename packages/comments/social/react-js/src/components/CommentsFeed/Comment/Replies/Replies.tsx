@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useReplies, useCommentSection } from "@replyke/core";
+import { useReplies, useCommentSection } from "@replyke/react-js";
 import { CommentSkeleton } from "@replyke/ui-core-react-js";
 import { useSocialStyleConfig } from "@replyke/comments-social-core";
 

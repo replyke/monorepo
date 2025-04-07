@@ -1,6 +1,6 @@
 "use client";
 
-import { useCommentSection } from "@replyke/core";
+import { useCommentSection } from "@replyke/react-js";
 import { Modal, resetButton, resetDiv, resetUl} from "@replyke/ui-core-react-js";
 import useModalManager from "../../../hooks/useModalManager";
 

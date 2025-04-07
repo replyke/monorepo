@@ -6,7 +6,7 @@ import {
   useCommentSection,
   useSubmitReport,
   useUser,
-} from "@replyke/core";
+} from "@replyke/react-js";
 import { FlagIcon } from "@replyke/ui-core-react-js";
 import useModalManager from "../../../hooks/useModalManager";
 

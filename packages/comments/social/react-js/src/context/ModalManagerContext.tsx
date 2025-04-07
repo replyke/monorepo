@@ -1,5 +1,5 @@
 import React, { createContext, useState } from "react";
-import { Comment as CommentType } from "@replyke/core";
+import { Comment as CommentType } from "@replyke/react-js";
 
 type ModalManagerContext = {
   isCommentOptionsModalOpen: boolean;

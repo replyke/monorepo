@@ -1,4 +1,4 @@
-import { useCommentSection, getUserName } from "@replyke/core";
+import { useCommentSection, getUserName } from "@replyke/react-js";
 import { resetButton } from "@replyke/ui-core-react-js";
 
 function ReplyBanner() {

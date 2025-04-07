@@ -8,7 +8,7 @@ import {
   useUser,
   useCommentSection,
   handleError,
-} from "@replyke/core";
+} from "@replyke/react-js";
 import { useSocialStyleConfig } from "@replyke/comments-social-core";
 
 import {

@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { CommentsSortByOptions, CommentSectionProvider } from "@replyke/core";
+import { CommentsSortByOptions, CommentSectionProvider } from "@replyke/react-js";
 import {
   SocialStyleCallbacks,
   SocialStyleConfig,

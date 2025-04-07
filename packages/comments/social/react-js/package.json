@@ -1,6 +1,6 @@
 {
   "name": "@replyke/comments-social-react-js",
-  "version": "4.0.12",
+  "version": "4.0.13",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Add a modern comment section to your React apps: replies, likes, mentions, highlighted comments, GIFs, built-in authorization, reports & moderation.",
   "keywords": [
@@ -16,7 +16,7 @@
     "typescript"
   ],
   "bugs": {
-    "url": "https://discord.gg/A94q4kC6"
+    "url": "https://discord.com/invite/REKxnCJzPz"
   },
   "homepage": "https://docs.replyke.com",
   "repository": {
@@ -44,7 +44,7 @@
     "@replyke/ui-core-react-js": "workspace:*"
   },
   "devDependencies": {
-    "@replyke/core": "^4.0.11",
+    "@replyke/react-js": "^4.0.27",
     "@types/node": "^20.14.5",
     "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",
@@ -58,7 +58,6 @@
     "typescript": "^5.0.2"
   },
   "peerDependencies": {
-    "@replyke/core": ">=4",
     "react": ">=18.0.0 <20.0.0",
     "react-dom": ">=18.0.0 <20.0.0"
   }

@@ -1,4 +1,4 @@
-import { Comment as CommentType, useCommentSection } from "@replyke/core";
+import { Comment as CommentType, useCommentSection } from "@replyke/react-js";
 import { useSocialStyleConfig } from "@replyke/comments-social-core";
 import { resetDiv } from "@replyke/ui-core-react-js";
 

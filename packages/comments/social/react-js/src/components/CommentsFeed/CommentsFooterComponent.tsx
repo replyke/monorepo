@@ -1,4 +1,4 @@
-import { useCommentSection } from "@replyke/core";
+import { useCommentSection } from "@replyke/react-js";
 
 const CommentsFooterComponent = () => {
   const { hasMore, loading } = useCommentSection();

@@ -1,4 +1,4 @@
-import { UserLean } from "@replyke/core";
+import { UserLean } from "@replyke/react-js";
 import { UserAvatar, UserMentionSkeleton } from "@replyke/ui-core-react-js";
 
 function MentionSuggestions({
