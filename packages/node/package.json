@@ -1,0 +1,20 @@
+{
+  "name": "@replyke/node",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "description": "Official NodeJS SDK for Replyke",
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format cjs,esm"
+  },
+  "author": "Replyke team",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.8.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3"
+  }
+}
