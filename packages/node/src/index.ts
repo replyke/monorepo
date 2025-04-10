@@ -3,7 +3,8 @@ import * as Entities from "./modules/entities";
 
 export class ReplykeClient {
   private http: ReplykeHttpClient;
-  public entities: typeof Entities;
+
+  public entities: ReturnType<typeof bindModule<typeof Entities>>;
 
   private constructor(http: ReplykeHttpClient) {
     this.http = http;
@@ -17,10 +18,16 @@ export class ReplykeClient {
   }
 }
 
-function bindModule<T extends Record<string, Function>>(
+function bindModule<
+  T extends Record<string, (client: ReplykeHttpClient, ...args: any[]) => any>
+>(
   module: T,
   client: ReplykeHttpClient
-): T {
+): {
+  [K in keyof T]: (
+    ...args: Parameters<T[K]> extends [any, ...infer R] ? R : never
+  ) => ReturnType<T[K]>;
+} {
   const bound: any = {};
   for (const key in module) {
     bound[key] = (...args: any[]) => module[key](client, ...args);
