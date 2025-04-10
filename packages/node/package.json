@@ -1,11 +1,13 @@
 {
   "name": "@replyke/node",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "description": "Official NodeJS SDK for Replyke",
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs,esm"
+    "build": "tsup src/index.ts --dts --format cjs,esm",
+    "build:types": "tsc --emitDeclarationOnly",
+    "prepare": "pnpm build && pnpm build:types"
   },
   "author": "Replyke team",
   "license": "ISC",

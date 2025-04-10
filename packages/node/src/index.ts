@@ -1,10 +1,18 @@
 import { ReplykeHttpClient, ClientConfig } from "./core/client";
 import * as Entities from "./modules/entities";
 
+type BoundModule<
+  T extends Record<string, (client: ReplykeHttpClient, ...args: any[]) => any>
+> = {
+  [K in keyof T]: (
+    ...args: Parameters<T[K]> extends [any, ...infer R] ? R : never
+  ) => ReturnType<T[K]>;
+};
+
 export class ReplykeClient {
   private http: ReplykeHttpClient;
 
-  public entities: ReturnType<typeof bindModule<typeof Entities>>;
+  public entities: BoundModule<typeof Entities>;
 
   private constructor(http: ReplykeHttpClient) {
     this.http = http;
@@ -18,16 +26,10 @@ export class ReplykeClient {
   }
 }
 
-function bindModule<
-  T extends Record<string, (client: ReplykeHttpClient, ...args: any[]) => any>
->(
+function bindModule<T extends Record<string, (client: ReplykeHttpClient, ...args: any[]) => any>>(
   module: T,
   client: ReplykeHttpClient
-): {
-  [K in keyof T]: (
-    ...args: Parameters<T[K]> extends [any, ...infer R] ? R : never
-  ) => ReturnType<T[K]>;
-} {
+): BoundModule<T> {
   const bound: any = {};
   for (const key in module) {
     bound[key] = (...args: any[]) => module[key](client, ...args);
