@@ -9,6 +9,9 @@
   },
   "author": "Replyke team",
   "license": "ISC",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "axios": "^1.8.4"
   },
