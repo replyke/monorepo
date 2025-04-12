@@ -1,3 +1,3 @@
-import { fetchSingleUser } from "./fetchSingleUser";
+import { fetchUserById } from "./fetchUserById";
 
-export { fetchSingleUser };
+export { fetchUserById };
