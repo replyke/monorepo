@@ -26,10 +26,9 @@ export class ReplykeClient {
   }
 }
 
-function bindModule<T extends Record<string, (client: ReplykeHttpClient, ...args: any[]) => any>>(
-  module: T,
-  client: ReplykeHttpClient
-): BoundModule<T> {
+function bindModule<
+  T extends Record<string, (client: ReplykeHttpClient, ...args: any[]) => any>
+>(module: T, client: ReplykeHttpClient): BoundModule<T> {
   const bound: any = {};
   for (const key in module) {
     bound[key] = (...args: any[]) => module[key](client, ...args);
@@ -39,7 +38,7 @@ function bindModule<T extends Record<string, (client: ReplykeHttpClient, ...args
 
 async function verifyClient(client: ReplykeHttpClient): Promise<void> {
   try {
-    await client.instance.get("/auth/verify"); // Adjust to your real endpoint
+    await client.instance.get("/service/verify"); // Adjust to your real endpoint
   } catch (err: any) {
     throw new Error("[Replyke] Invalid API key or project ID.");
   }

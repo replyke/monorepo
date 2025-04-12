@@ -12,7 +12,7 @@ export interface CreateEntityInput {
     longitude: number;
   };
   metadata?: Record<string, any>;
-  userId: string;
+  userId?: string;
 }
 
 
