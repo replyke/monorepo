@@ -1,6 +1,7 @@
 import { ReplykeHttpClient, ClientConfig } from "./core/client";
-import * as Entities from "./modules/entities";
 import * as Users from "./modules/users";
+import * as Entities from "./modules/entities";
+import * as Comments from "./modules/comments";
 
 type BoundModule<
   T extends Record<string, (client: ReplykeHttpClient, ...args: any[]) => any>
@@ -13,13 +14,15 @@ type BoundModule<
 export class ReplykeClient {
   private http: ReplykeHttpClient;
 
-  public entities: BoundModule<typeof Entities>;
   public users: BoundModule<typeof Users>;
+  public entities: BoundModule<typeof Entities>;
+  public comments: BoundModule<typeof Comments>;
 
   private constructor(http: ReplykeHttpClient) {
     this.http = http;
-    this.entities = bindModule(Entities, this.http);
     this.users = bindModule(Users, this.http);
+    this.entities = bindModule(Entities, this.http);
+    this.comments = bindModule(Comments, this.http);
   }
 
   static async init(config: ClientConfig): Promise<ReplykeClient> {
