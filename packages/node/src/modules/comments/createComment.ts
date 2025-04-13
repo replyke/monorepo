@@ -4,6 +4,7 @@ export interface CreateCommentProps {
   userId: string;
   entityId: string;
   content: string;
+  referenceId?: string;
   parentId?: string;
   referencedCommentId?: string;
   attachments?: Record<string, any>[];
