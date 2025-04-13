@@ -9,6 +9,7 @@ export async function deleteComment(
   data: DeleteCommentProps
 ): Promise<any> {
   const path = `/comments/${data.commentId}`;
+  console.log({ path });
   const response = await client.instance.delete<any>(path);
   return response.data;
 }
