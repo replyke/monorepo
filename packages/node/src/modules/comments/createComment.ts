@@ -6,6 +6,7 @@ export interface CreateCommentProps {
   content: string;
   parentId?: string;
   referencedCommentId?: string;
+  attachments?: Record<string, any>[];
   metadata?: Record<string, any>;
 }
 

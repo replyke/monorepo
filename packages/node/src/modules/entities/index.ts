@@ -1,3 +1,4 @@
 import { createEntity } from "./createEntity";
+import { fetchEntity } from "./fetchEntity";
 
-export { createEntity };
+export { createEntity, fetchEntity };
