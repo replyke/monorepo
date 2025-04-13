@@ -23,8 +23,6 @@ export async function updateEntity(
 ): Promise<any> {
   const { entityId, ...restOfProps } = data;
   const path = `/entities/${data.entityId}`;
-  const response = await client.instance.patch<any>(path, {
-    params: restOfProps,
-  });
+  const response = await client.instance.patch<any>(path, restOfProps);
   return response.data;
 }
