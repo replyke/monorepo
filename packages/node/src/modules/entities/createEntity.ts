@@ -1,6 +1,6 @@
 import { ReplykeHttpClient } from "../../core/client";
 
-export interface CreateEntityInput {
+export interface CreateEntityProps {
   referenceId?: string;
   resource?: string;
   title?: string;
@@ -19,7 +19,7 @@ export interface CreateEntityInput {
 // TODO: Replace "any" with Entity once we have types here too
 export async function createEntity(
   client: ReplykeHttpClient,
-  data: CreateEntityInput
+  data: CreateEntityProps
 ): Promise<any> {
   const path = `/entities`; // assuming client handles prefix like /{projectId}
   const response = await client.instance.post<any>(path, data);
