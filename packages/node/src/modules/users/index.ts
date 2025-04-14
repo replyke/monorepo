@@ -1,4 +1,4 @@
 import { fetchUserById } from "./fetchUserById";
-import { fetchUserByReferenceId } from "./fetchUserByReferenceId";
+import { fetchUserByForeignId } from "./fetchUserByForeignId";
 
-export { fetchUserById, fetchUserByReferenceId };
+export { fetchUserById, fetchUserByForeignId };

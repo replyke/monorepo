@@ -1,7 +1,7 @@
 import { ReplykeHttpClient } from "../../core/client";
 
-export interface FetchUserByReferenceIdProps {
-  referenceId: string;
+export interface FetchUserByForeignIdProps {
+  foreignId: string;
   name?: string;
   username?: string;
   avatar?: string;
@@ -12,14 +12,14 @@ export interface FetchUserByReferenceIdProps {
   secureMetadata?: Record<string, any>;
 }
 
-export async function fetchUserByReferenceId(
+export async function fetchUserByForeignId(
   client: ReplykeHttpClient,
-  data: FetchUserByReferenceIdProps
+  data: FetchUserByForeignIdProps
 ): Promise<any> {
   const path = `/users/by-reference-id`;
 
   const params: Record<string, any> = {
-    referenceId: data.referenceId,
+    foreignId: data.foreignId,
     name: data.name,
     username: data.username,
     avatar: data.avatar,

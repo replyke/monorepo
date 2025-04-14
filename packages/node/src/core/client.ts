@@ -12,7 +12,7 @@ export class ReplykeHttpClient {
 
   constructor({ apiKey, projectId, isInternal }: ClientConfig) {
     this.instance = axios.create({
-      baseURL: `https://api.replyke.com/api/v1/${projectId}`,
+      baseURL: `https://api.replyke.com/api/v5/${projectId}`,
       headers: {
         Authorization: `Bearer ${apiKey}`,
         ...(isInternal && { "X-Replyke-Internal": "true" }),

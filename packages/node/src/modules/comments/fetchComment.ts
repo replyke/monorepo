@@ -1,7 +1,7 @@
 import { ReplykeHttpClient } from "../../core/client";
 
 export interface FetchCommentProps {
-  commentId?: string;
+  commentId: string;
 }
 
 export async function fetchComment(
@@ -9,6 +9,6 @@ export async function fetchComment(
   data: FetchCommentProps
 ): Promise<any> {
   const path = `/comments/${data.commentId}`;
-  const response = await client.instance.get<any>(path, { params: data });
+  const response = await client.instance.get<any>(path);
   return response.data;
 }

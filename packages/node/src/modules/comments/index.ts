@@ -1,13 +1,13 @@
 import { createComment } from "./createComment";
 import { fetchComment } from "./fetchComment";
-import { fetchCommentByReferenceId } from "./fetchCommentByReferenceId";
+import { fetchCommentByForeignId } from "./fetchCommentByForeignId";
 import { updateComment } from "./updateComment";
 import { deleteComment } from "./deleteComment";
 
 export {
   createComment,
   fetchComment,
-  fetchCommentByReferenceId,
+  fetchCommentByForeignId,
   updateComment,
   deleteComment,
 };

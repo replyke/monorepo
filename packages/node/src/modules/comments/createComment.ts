@@ -1,10 +1,10 @@
 import { ReplykeHttpClient } from "../../core/client";
 
 export interface CreateCommentProps {
+  foreignId?: string;
   userId: string;
   entityId: string;
   content: string;
-  referenceId?: string;
   parentId?: string;
   referencedCommentId?: string;
   attachments?: Record<string, any>[];
