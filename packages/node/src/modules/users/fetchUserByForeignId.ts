@@ -16,7 +16,7 @@ export async function fetchUserByForeignId(
   client: ReplykeHttpClient,
   data: FetchUserByForeignIdProps
 ): Promise<any> {
-  const path = `/users/by-reference-id`;
+  const path = `/users/by-foreign-id`;
 
   const params: Record<string, any> = {
     foreignId: data.foreignId,
