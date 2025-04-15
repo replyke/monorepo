@@ -2,7 +2,7 @@ import { ReplykeHttpClient } from "../../core/client";
 
 export interface CreateEntityProps {
   foreignId?: string;
-  resource?: string;
+  resourceId?: string;
   title?: string;
   content?: string;
   media?: any[];

@@ -29,6 +29,8 @@ export interface LocationFilters {
 }
 
 export interface FetchManyEntitiesProps {
+  resourceId?: string;
+  
   // Sorting & Pagination
   sortBy?: "hot" | "top" | "controversial";
   page?: number;
@@ -37,8 +39,6 @@ export interface FetchManyEntitiesProps {
   // Time-based filtering
   timeFrame?: "hour" | "day" | "week" | "month" | "year";
 
-  // Resource & User filters
-  resource?: string;
   userId?: string;
   followedOnly?: "true";
 
