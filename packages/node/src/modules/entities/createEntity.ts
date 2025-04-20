@@ -5,7 +5,7 @@ export interface CreateEntityProps {
   resourceId?: string;
   title?: string;
   content?: string;
-  media?: any[];
+  attachments?: any[];
   keywords?: string[];
   location?: {
     latitude: number;

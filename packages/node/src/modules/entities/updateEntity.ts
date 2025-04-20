@@ -4,7 +4,7 @@ export interface UpdateEntityProps {
   entityId: string;
   title?: string;
   content?: string;
-  media?: Record<string, any>[];
+  attachments?: Record<string, any>[];
   keywords?: string[];
   location?: {
     type: "Point";
