@@ -10,8 +10,6 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-import { useProject } from "@replyke/core";
-import { Image } from "expo-image";
 import { ScrollView } from "react-native-gesture-handler";
 import { MagnifyingGlassIcon } from "../icons";
 import { getImageComponent } from "../helpers/getImageComponent";
@@ -41,6 +39,7 @@ type GiphyResponse = {
 };
 
 interface GiphyContainerProps {
+  giphyApiKey: string;
   onClickBack: () => void;
   onSelectGif: (selectedGif: {
     id: string;
@@ -56,16 +55,12 @@ interface GiphyContainerProps {
 const MAX_ITEMS = 60; // Define the maximum number of items to load
 const FETCH_LIMIT = 30;
 
-
-
 export default function GiphyContainer({
+  giphyApiKey,
   onClickBack,
   onSelectGif,
   visible,
 }: GiphyContainerProps) {
-  const { project } = useProject();
-  const giphyApiKey = project?.integrations.giphy?.apiKey;
-
   // Dynamically get the correct Image component and whether it is expo-image.
   const { ImageComponent, isExpo } = getImageComponent();
 

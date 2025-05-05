@@ -47,6 +47,7 @@ const NewCommentForm = forwardRef<
 
   const giphyApiKey = project?.integrations.find((int) => int.name === "giphy")
     ?.data.apiKey;
+
   const { pushMention, createComment, submittingComment, callbacks } =
     useCommentSection();
   const { styleConfig } = useSocialStyleConfig();
@@ -203,6 +204,7 @@ const NewCommentForm = forwardRef<
     <>
       {giphyApiKey ? (
         <GiphyContainer
+          giphyApiKey={giphyApiKey}
           onClickBack={() => setIsGiphyVisible(false)}
           onSelectGif={(selected) => handleCreateGif(selected)}
           visible={isGiphyVisible}
