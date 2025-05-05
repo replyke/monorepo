@@ -31,8 +31,8 @@ import MentionSuggestions from "./MentionSuggestions";
 function NewCommentForm({ withEmojis }: { withEmojis?: boolean }) {
   const { user } = useUser();
   const { project } = useProject();
-  const giphyActive = project?.integrations.giphy?.active;
-  const giphyApiKey = project?.integrations.giphy?.apiKey;
+  const giphyApiKey = project?.integrations.find((int) => int.name === "giphy")
+    ?.data.apiKey;
 
   const { pushMention, createComment, submittingComment, callbacks } =
     useCommentSection();
@@ -197,7 +197,7 @@ function NewCommentForm({ withEmojis }: { withEmojis?: boolean }) {
 
   return (
     <>
-      {giphyActive && giphyApiKey ? (
+      {giphyApiKey ? (
         <GiphyContainer
           giphyApiKey={giphyApiKey}
           onClickBack={() => setIsGiphyVisible(false)}
@@ -267,7 +267,7 @@ function NewCommentForm({ withEmojis }: { withEmojis?: boolean }) {
                 fontSize: textareaTextSize,
               }}
             />
-            {content.length === 0 && giphyActive && giphyApiKey ? (
+            {content.length === 0 && giphyApiKey ? (
               <button
                 type="button"
                 onClick={() => setIsGiphyVisible(true)}

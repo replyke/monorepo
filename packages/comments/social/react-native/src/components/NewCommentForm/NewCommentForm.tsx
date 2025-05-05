@@ -45,9 +45,8 @@ const NewCommentForm = forwardRef<
   const { user } = useUser();
   const { project } = useProject();
 
-  const giphyActive = project?.integrations.giphy?.active;
-  const giphyApiKey = project?.integrations.giphy?.apiKey;
-
+  const giphyApiKey = project?.integrations.find((int) => int.name === "giphy")
+    ?.data.apiKey;
   const { pushMention, createComment, submittingComment, callbacks } =
     useCommentSection();
   const { styleConfig } = useSocialStyleConfig();
@@ -202,7 +201,7 @@ const NewCommentForm = forwardRef<
 
   return (
     <>
-      {giphyActive && giphyApiKey ? (
+      {giphyApiKey ? (
         <GiphyContainer
           onClickBack={() => setIsGiphyVisible(false)}
           onSelectGif={(selected) => handleCreateGif(selected)}
@@ -285,7 +284,7 @@ const NewCommentForm = forwardRef<
               }}
             />
 
-            {content.length === 0 && giphyActive && giphyApiKey ? (
+            {content.length === 0 && giphyApiKey ? (
               <TouchableOpacity
                 onPress={() => setIsGiphyVisible(true)}
                 disabled={submittingComment}
