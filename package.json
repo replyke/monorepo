@@ -26,7 +26,10 @@
     "url": "https://github.com/replyke/replyke-ui.git"
   },
   "private": false,
-  "scripts": {},
+  "scripts": {
+    "publish": "pnpm --filter @replyke/ui-core --filter @replyke/ui-core-react-js --filter @replyke/ui-core-react-native --filter @replyke/comments-social-core --filter @replyke/comments-social-react-js --filter @replyke/comments-social-react-native publish",
+    "publish-beta": "pnpm --filter @replyke/ui-core --filter @replyke/ui-core-react-js --filter @replyke/ui-core-react-native --filter @replyke/comments-social-core --filter @replyke/comments-social-react-js --filter @replyke/comments-social-react-native publish --tag beta"
+  },
   "devDependencies": {
     "@types/react": "^18.0.37",
     "react": "^18.2.0",

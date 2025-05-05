@@ -1,6 +1,6 @@
 {
   "name": "@replyke/comments-social-react-native",
-  "version": "4.0.7",
+  "version": "5.0.0-beta.0",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Add a modern comment section to your React Native apps: replies, likes, mentions, highlighted comments, GIFs, built-in authorization, reports & moderation.",
   "keywords": [
@@ -38,17 +38,16 @@
     "access": "public"
   },
   "dependencies": {
-    "@replyke/ui-core-react-native": "^4",
-    "@replyke/comments-social-core": "workspace:*"
+    "@replyke/comments-social-core": "workspace:*",
+    "@replyke/ui-core-react-native": "workspace:*"
   },
   "devDependencies": {
     "@gorhom/bottom-sheet": "^5.0.6",
-    "@replyke/core": "^4.0.3",
+    "@replyke/core": "5.0.0-beta.12",
     "react-native-gesture-handler": "^2.22.1"
   },
   "peerDependencies": {
     "@gorhom/bottom-sheet": "^5",
-    "@replyke/core": ">=4",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-native-gesture-handler": "^2"

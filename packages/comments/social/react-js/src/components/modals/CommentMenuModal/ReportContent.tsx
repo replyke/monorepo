@@ -4,7 +4,7 @@ import {
   ReportReasonKey,
   reportReasons,
   useCommentSection,
-  useSubmitReport,
+  useCreateReport,
   useUser,
 } from "@replyke/react-js";
 import { FlagIcon } from "@replyke/ui-core-react-js";
@@ -14,7 +14,7 @@ function ReportContent({ resetView }: { resetView: () => void }) {
   const { user } = useUser();
   const { callbacks } = useCommentSection();
   const { optionsComment, closeCommentOptionsModal } = useModalManager();
-  const { submitCommentReport } = useSubmitReport();
+  const { createCommentReport } = useCreateReport();
 
   const [submitting, setSubmitting] = useState(false);
   const [reason, setReason] = useState<ReportReasonKey | null>(null);
@@ -33,12 +33,12 @@ function ReportContent({ resetView }: { resetView: () => void }) {
         return;
       }
       setSubmitting(true);
-      await submitCommentReport({ targetId: optionsComment.id, reason });
+      await createCommentReport({ targetId: optionsComment.id, reason });
       closeCommentOptionsModal?.();
       setReason(null);
       resetView();
     } catch (err) {
-      handleError(err, "Submtting report failed");
+      handleError(err, "Submitting report failed");
     } finally {
       setSubmitting(false);
     }

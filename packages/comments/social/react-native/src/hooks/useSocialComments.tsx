@@ -42,7 +42,7 @@ function useSocialComments({
       <CommentSectionProvider
         entity={entity}
         entityId={entityId}
-        referenceId={referenceId}
+        foreignId={referenceId}
         shortId={shortId}
         createIfNotFound={createIfNotFound}
         callbacks={callbacks}

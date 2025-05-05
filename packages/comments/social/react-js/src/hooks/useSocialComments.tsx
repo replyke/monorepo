@@ -1,5 +1,9 @@
 import { ReactNode } from "react";
-import { CommentsSortByOptions, CommentSectionProvider } from "@replyke/react-js";
+import {
+  CommentsSortByOptions,
+  CommentSectionProvider,
+  Entity,
+} from "@replyke/react-js";
 import {
   SocialStyleCallbacks,
   SocialStyleConfig,
@@ -11,24 +15,36 @@ import { CommentMenuModalOwner } from "../components/modals/CommentMenuModalOwne
 import { ModalManagerProvider } from "../context/ModalManagerContext";
 
 function useSocialComments({
+  entity,
   entityId,
+  referenceId,
+  shortId,
+  createIfNotFound,
+  styleConfig,
   callbacks,
   defaultSortBy,
   limit,
-  styleConfig,
   highlightedCommentId,
 }: {
-  entityId: string | null | undefined;
+  entity?: Entity;
+  entityId?: string | undefined | null;
+  referenceId?: string | undefined | null;
+  shortId?: string | undefined | null;
+  createIfNotFound?: boolean;
+  styleConfig: SocialStyleConfig;
   callbacks?: SocialStyleCallbacks;
   defaultSortBy?: CommentsSortByOptions;
   limit?: number;
-  styleConfig: SocialStyleConfig;
   highlightedCommentId?: string | null;
 }) {
   return {
     CommentSectionProvider: ({ children }: { children: ReactNode }) => (
       <CommentSectionProvider
+        entity={entity}
         entityId={entityId}
+        foreignId={referenceId}
+        shortId={shortId}
+        createIfNotFound={createIfNotFound}
         callbacks={callbacks}
         defaultSortBy={defaultSortBy}
         limit={limit}

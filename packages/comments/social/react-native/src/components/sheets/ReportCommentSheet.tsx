@@ -6,7 +6,7 @@ import {
   reportReasons,
   useUser,
   useCommentSection,
-  useSubmitReport,
+  useCreateReport,
 } from "@replyke/core";
 import { FlagIcon, CustomButton } from "@replyke/ui-core-react-native";
 
@@ -26,7 +26,7 @@ const ReportCommentSheet = () => {
     setReportedComment,
     closeReportCommentSheet,
   } = useSheetManager();
-  const { submitCommentReport } = useSubmitReport();
+  const { createCommentReport } = useCreateReport();
 
   const [submitting, setSubmitting] = useState(false);
   const [reason, setReason] = useState<ReportReasonKey | null>(null);
@@ -57,7 +57,7 @@ const ReportCommentSheet = () => {
         return;
       }
       setSubmitting(true);
-      await submitCommentReport({ targetId: reportedComment.id, reason });
+      await createCommentReport({ targetId: reportedComment.id, reason });
       closeReportCommentSheet?.();
       setReportedComment?.(null);
       setReason(null);
