@@ -45,7 +45,7 @@ const Comment = React.memo(
     const { styleConfig } = useSocialStyleConfig();
 
     const {
-      horizonalItemsGap,
+      horizontalItemsGap,
       verticalItemsGap,
       authorAvatarSize,
       authorFontSize,
@@ -134,7 +134,7 @@ const Comment = React.memo(
         >
           <div
             style={{
-              gap: horizonalItemsGap,
+              gap: horizontalItemsGap,
               display: "flex",
               flexDirection: "row",
               alignItems: "flex-start",

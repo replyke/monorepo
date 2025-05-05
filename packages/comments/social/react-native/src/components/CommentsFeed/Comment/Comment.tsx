@@ -43,7 +43,7 @@ const Comment = ({
   const { styleConfig } = useSocialStyleConfig();
   const { openCommentOptionsSheet } = useSheetManager();
   const {
-    horizonalItemsGap,
+    horizontalItemsGap,
     verticalItemsGap,
     authorAvatarSize,
     authorFontSize,
@@ -153,7 +153,7 @@ const Comment = ({
           paddingLeft: 16 + extraLeftPadding,
         }}
       >
-        <View style={[styles.commentHeader, { gap: horizonalItemsGap }]}>
+        <View style={[styles.commentHeader, { gap: horizontalItemsGap }]}>
           <Pressable
             onPress={() => {
               if (comment.user.id === user?.id) {
