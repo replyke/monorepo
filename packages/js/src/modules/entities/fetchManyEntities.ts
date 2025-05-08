@@ -18,8 +18,8 @@ export interface TextFilters {
   doesNotInclude?: string | string[];
 }
 
-export interface MediaFilters {
-  hasMedia?: "true" | "false";
+export interface AttachmentsFilters {
+  hasAttachments?: "true" | "false";
 }
 
 export interface LocationFilters {
@@ -29,8 +29,8 @@ export interface LocationFilters {
 }
 
 export interface FetchManyEntitiesProps {
-  resourceId?: string;
-  
+  sourceId?: string;
+
   // Sorting & Pagination
   sortBy?: "hot" | "top" | "controversial";
   page?: number;
@@ -59,7 +59,7 @@ export interface FetchManyEntitiesProps {
   };
 
   // Media filtering
-  mediaFilters?: MediaFilters;
+  attachmentsFilters?: AttachmentsFilters;
 
   // Location filtering
   locationFilters?: LocationFilters;

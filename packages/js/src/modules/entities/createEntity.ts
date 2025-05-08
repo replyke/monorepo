@@ -2,10 +2,10 @@ import { ReplykeHttpClient } from "../../core/client";
 
 export interface CreateEntityProps {
   foreignId?: string;
-  resourceId?: string;
+  sourceId?: string;
   title?: string;
   content?: string;
-  attachments?: any[];
+  attachments?: Record<string, any>[];
   keywords?: string[];
   location?: {
     latitude: number;
@@ -14,7 +14,6 @@ export interface CreateEntityProps {
   metadata?: Record<string, any>;
   userId?: string;
 }
-
 
 // TODO: Replace "any" with Entity once we have types here too
 export async function createEntity(
