@@ -31,8 +31,8 @@ importers:
         version: link:../../../ui-core/base
     devDependencies:
       '@replyke/core':
-        specifier: 5.0.0-beta.13
-        version: 5.0.0-beta.13
+        specifier: 5.0.0-beta.16
+        version: 5.0.0-beta.16
       '@types/react':
         specifier: ^18.0.37
         version: 18.3.18
@@ -50,8 +50,8 @@ importers:
         version: link:../../../ui-core/react-js
     devDependencies:
       '@replyke/react-js':
-        specifier: 5.0.0-beta.13
-        version: 5.0.0-beta.13
+        specifier: 5.0.0-beta.16
+        version: 5.0.0-beta.16
       '@types/node':
         specifier: ^20.14.5
         version: 20.17.17
@@ -105,8 +105,8 @@ importers:
         specifier: ^5.0.6
         version: 5.0.6(@types/react@18.3.18)(react-native-gesture-handler@2.22.1(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native-reanimated@3.16.7(@babel/core@7.26.7)(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1)
       '@replyke/core':
-        specifier: 5.0.0-beta.13
-        version: 5.0.0-beta.13
+        specifier: 5.0.0-beta.16
+        version: 5.0.0-beta.16
       react-native-gesture-handler:
         specifier: ^2.22.1
         version: 2.22.1(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1)
@@ -123,8 +123,8 @@ importers:
         version: 10.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.1.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
     devDependencies:
       '@replyke/core':
-        specifier: 5.0.0-beta.13
-        version: 5.0.0-beta.13
+        specifier: 5.0.0-beta.16
+        version: 5.0.0-beta.16
       moment:
         specifier: ^2.30.1
         version: 2.30.1
@@ -139,8 +139,8 @@ importers:
         version: 9.8.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(styled-components@6.1.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
     devDependencies:
       '@replyke/core':
-        specifier: 5.0.0-beta.13
-        version: 5.0.0-beta.13
+        specifier: 5.0.0-beta.16
+        version: 5.0.0-beta.16
       expo-image:
         specifier: ^2.0.4
         version: 2.0.4(expo@52.0.30(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1)
@@ -1217,11 +1217,11 @@ packages:
       '@types/react':
         optional: true
 
-  '@replyke/core@5.0.0-beta.13':
-    resolution: {integrity: sha512-ArhE/JycB6wp5FI1NW07PmqUGOGtpX5bCgRPoKPLoguaysX8YTVVYHKQGgeHnFyk051D+iZbG1SizV45AvMhkg==}
+  '@replyke/core@5.0.0-beta.16':
+    resolution: {integrity: sha512-ttF4TPBPccIsRXCIfAejSdNTe2thIUAiuZewz+dNImqpGWQaP4xC+2mHpZ8YrU+R8NMK5Em2kxPEI1ktKep93w==}
 
-  '@replyke/react-js@5.0.0-beta.13':
-    resolution: {integrity: sha512-WRtcRO4o4HRZ++/Et+KVleHj1V7l1iqQXnCb0F9w0xraKU73HWdPBj7+Kx3xGXZcreZtxHTW/v/fplnXJgdv6g==}
+  '@replyke/react-js@5.0.0-beta.16':
+    resolution: {integrity: sha512-WYpzbA9VqskUUlW/GeW/7HpIrw1taM4520Mow86QsJyHJ4695+lnYJ/GVWMWG0Sdffpp0lseCf5u/akuq2WIdQ==}
 
   '@segment/loosely-validate-event@2.0.0':
     resolution: {integrity: sha512-ZMCSfztDBqwotkl848ODgVcAmN4OItEWDCkshcKz0/W6gGSQayuuCtWV/MlodFivAZD793d6UgANd6wCXUfrIw==}
@@ -5692,7 +5692,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 18.3.18
 
-  '@replyke/core@5.0.0-beta.13':
+  '@replyke/core@5.0.0-beta.16':
     dependencies:
       axios: 1.7.9
       js-cookie: 3.0.5
@@ -5700,9 +5700,9 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@replyke/react-js@5.0.0-beta.13':
+  '@replyke/react-js@5.0.0-beta.16':
     dependencies:
-      '@replyke/core': 5.0.0-beta.13
+      '@replyke/core': 5.0.0-beta.16
     transitivePeerDependencies:
       - debug
 

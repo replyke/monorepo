@@ -1,4 +1,4 @@
-import { UserLean } from "@replyke/react-js";
+import { User } from "@replyke/react-js";
 import { UserAvatar, UserMentionSkeleton } from "@replyke/ui-core-react-js";
 
 function MentionSuggestions({
@@ -9,8 +9,8 @@ function MentionSuggestions({
 }: {
   isMentionActive: boolean;
   isLoadingMentions: boolean;
-  mentionSuggestions: UserLean[];
-  handleMentionClick: (user: UserLean) => void;
+  mentionSuggestions: User[];
+  handleMentionClick: (user: User) => void;
 }) {
   if (!isMentionActive) return null;
   return (

@@ -1,6 +1,6 @@
 {
   "name": "@replyke/comments-social-react-js",
-  "version": "5.0.0-beta.1",
+  "version": "5.0.0-beta.2",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Add a modern comment section to your React apps: replies, likes, mentions, highlighted comments, GIFs, built-in authorization, reports & moderation.",
   "keywords": [
@@ -23,7 +23,7 @@
     "type": "git",
     "url": "https://github.com/replyke/ui-kit.git"
   },
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
@@ -44,7 +44,7 @@
     "@replyke/ui-core-react-js": "workspace:*"
   },
   "devDependencies": {
-    "@replyke/react-js": "5.0.0-beta.13",
+    "@replyke/react-js": "5.0.0-beta.16",
     "@types/node": "^20.14.5",
     "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",

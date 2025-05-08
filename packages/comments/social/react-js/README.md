@@ -38,7 +38,7 @@ Full documentation, including usage examples and API references, is available at
 
 ## License
 
-This package is open-source under the **MIT License**.
+This package is open-source under the **AGPL-3.0**.
 
 ## Contributions
 

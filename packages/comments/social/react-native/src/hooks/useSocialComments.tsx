@@ -17,7 +17,7 @@ import { SheetManagerProvider } from "../context/SheetManagerContext";
 function useSocialComments({
   entity,
   entityId,
-  referenceId,
+  foreignId,
   shortId,
   createIfNotFound,
   styleConfig,
@@ -28,10 +28,10 @@ function useSocialComments({
 }: {
   entity?: Entity;
   entityId?: string | undefined | null;
-  referenceId?: string | undefined | null;
+  foreignId?: string | undefined | null;
   shortId?: string | undefined | null;
-  createIfNotFound?: boolean;
   styleConfig: SocialStyleConfig;
+  createIfNotFound?: boolean;
   callbacks?: SocialStyleCallbacks;
   defaultSortBy?: CommentsSortByOptions;
   limit?: number;
@@ -42,7 +42,7 @@ function useSocialComments({
       <CommentSectionProvider
         entity={entity}
         entityId={entityId}
-        foreignId={referenceId}
+        foreignId={foreignId}
         shortId={shortId}
         createIfNotFound={createIfNotFound}
         callbacks={callbacks}

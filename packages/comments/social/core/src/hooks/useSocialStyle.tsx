@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Style, handleError } from "@replyke/core";
 
 import { socialBaseStyle } from "../social-base-style";
 import { SocialStyleConfig } from "../interfaces/style-props/SocialStyleConfig";
@@ -10,7 +9,6 @@ import { NewCommentFormStyleProps } from "../interfaces/style-props/NewCommentFo
 import { mergeSocialStyleData } from "../helpers/mergeSocialStyleData";
 
 export interface UseSocialStyleProps {
-  styleId: string;
   commentFeedProps: Partial<CommentFeedStyleProps>;
   commentProps: Partial<CommentStyleProps>;
   newCommentFormProps: Partial<NewCommentFormStyleProps>;

@@ -17,7 +17,7 @@ import { ModalManagerProvider } from "../context/ModalManagerContext";
 function useSocialComments({
   entity,
   entityId,
-  referenceId,
+  foreignId,
   shortId,
   createIfNotFound,
   styleConfig,
@@ -28,7 +28,7 @@ function useSocialComments({
 }: {
   entity?: Entity;
   entityId?: string | undefined | null;
-  referenceId?: string | undefined | null;
+  foreignId?: string | undefined | null;
   shortId?: string | undefined | null;
   createIfNotFound?: boolean;
   styleConfig: SocialStyleConfig;
@@ -42,7 +42,7 @@ function useSocialComments({
       <CommentSectionProvider
         entity={entity}
         entityId={entityId}
-        foreignId={referenceId}
+        foreignId={foreignId}
         shortId={shortId}
         createIfNotFound={createIfNotFound}
         callbacks={callbacks}

@@ -61,7 +61,7 @@ This monorepo consists of multiple packages, categorized into **UI core utilitie
 
 ## License
 
-This repository is open-source under the **MIT License**.
+This repository is open-source under the **AGPL-3.0**.
 
 ## Contributions
 

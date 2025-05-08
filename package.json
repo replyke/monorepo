@@ -1,6 +1,7 @@
 {
   "name": "@replyke/ui-kit",
   "version": "1.0.0",
+  "license": "AGPL-3.0-only",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
   "keywords": [

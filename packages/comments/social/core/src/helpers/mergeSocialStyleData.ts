@@ -1,4 +1,3 @@
-import { Style } from "@replyke/core";
 import { safeMergeStyleProps } from "@replyke/ui-core";
 import { socialBaseStyle } from "../social-base-style";
 import { CommentStyleProps } from "../interfaces/style-props/CommentStyleProps";

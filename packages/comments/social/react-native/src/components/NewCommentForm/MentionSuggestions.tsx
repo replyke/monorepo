@@ -1,13 +1,13 @@
 import React from "react";
 import { View, Text, TouchableOpacity, FlatList } from "react-native";
-import { UserLean } from "@replyke/core";
+import { User } from "@replyke/core";
 import { UserAvatar, UserMentionSkeleton } from "@replyke/ui-core-react-native";
 
 interface MentionSuggestionsProps {
   isMentionActive: boolean;
   isLoadingMentions: boolean;
-  mentionSuggestions: UserLean[];
-  handleMentionClick: (user: UserLean) => void;
+  mentionSuggestions: User[];
+  handleMentionClick: (user: User) => void;
 }
 
 const MentionSuggestions: React.FC<MentionSuggestionsProps> = ({
