@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { FlatList } from "react-native-gesture-handler";
+import { FlatList } from "react-native";
 import { Comment as CommentType, useCommentSection } from "@replyke/core";
 import { useSocialStyleConfig } from "@replyke/comments-social-core";
 import { Comment } from "./Comment";
