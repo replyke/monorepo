@@ -1,6 +1,6 @@
 {
-  "name": "@replyke/ui-kit",
-  "version": "1.0.0",
+  "name": "@replyke/monorepo",
+  "version": "5.0.0",
   "license": "AGPL-3.0-only",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
@@ -24,17 +24,18 @@
   "homepage": "https://docs.replyke.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/replyke/replyke-ui.git"
+    "url": "https://github.com/replyke/monorepo.git"
   },
   "private": false,
   "scripts": {
-    "publish": "pnpm --filter @replyke/ui-core --filter @replyke/ui-core-react-js --filter @replyke/ui-core-react-native --filter @replyke/comments-social-core --filter @replyke/comments-social-react-js --filter @replyke/comments-social-react-native publish",
-    "publish-beta": "pnpm --filter @replyke/ui-core --filter @replyke/ui-core-react-js --filter @replyke/ui-core-react-native --filter @replyke/comments-social-core --filter @replyke/comments-social-react-js --filter @replyke/comments-social-react-native publish --tag beta"
+    "publish": "pnpm --filter @replyke/core --filter @replyke/expo --filter @replyke/react-js --filter @replyke/react-native --filter @replyke/ui-core --filter @replyke/ui-core-react-js --filter @replyke/ui-core-react-native --filter @replyke/comments-social-core --filter @replyke/comments-social-react-js --filter @replyke/comments-social-react-native publish",
+    "publish-beta": "pnpm --filter @replyke/core --filter @replyke/expo --filter @replyke/react-js --filter @replyke/react-native --filter @replyke/ui-core --filter @replyke/ui-core-react-js --filter @replyke/ui-core-react-native --filter @replyke/comments-social-core --filter @replyke/comments-social-react-js --filter @replyke/comments-social-react-native publish --tag beta"
   },
   "devDependencies": {
-    "@types/react": "^18.0.37",
-    "react": "^18.2.0",
-    "react-native": "^0.77.0",
+    "@types/node": "^20.14.5",
+    "@types/react": "^19.1.3",
+    "react": "^19.1.0",
+    "react-native": "^0.79.2",
     "rimraf": "^6.0.1",
     "typescript": "^5.7.3"
   }

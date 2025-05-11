@@ -1,0 +1,67 @@
+{
+  "name": "@replyke/ui-core-react-native",
+  "version": "5.0.0-beta.21",
+  "author": "Replyke, maintained by Yanay Tsabary",
+  "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
+  "keywords": [
+    "replyke",
+    "authentication",
+    "social",
+    "comments",
+    "reactions",
+    "moderation",
+    "notifications",
+    "user-management",
+    "feed",
+    "lists",
+    "follows",
+    "reporting",
+    "upvotes",
+    "downvotes",
+    "react-native",
+    "expo",
+    "typescript"
+  ],
+  "bugs": {
+    "url": "https://discord.gg/REKxnCJzPz"
+  },
+  "homepage": "https://docs.replyke.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/replyke/replyke-ui.git"
+  },
+  "license": "AGPL-3.0-only",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "scripts": {
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "rimraf dist && pnpm run build:esm && pnpm run build:cjs",
+    "prepublish": "pnpm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@giphy/js-fetch-api": "^5.6.0",
+    "@giphy/react-components": "^9.8.0"
+  },
+  "devDependencies": {
+    "@replyke/core": "workspace:*",
+    "expo-image": "^2.0.4",
+    "moment": "^2.30.1",
+    "react-native-gesture-handler": "^2.22.1",
+    "react-native-svg": "^15.11.1"
+  },
+  "peerDependencies": {
+    "@replyke/core": ">=5",
+    "expo-image": "^2",
+    "moment": "^2",
+    "react-native-gesture-handler": "^2",
+    "react-native-svg": "^15"
+  }
+}

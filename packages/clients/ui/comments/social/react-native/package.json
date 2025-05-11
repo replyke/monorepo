@@ -1,0 +1,55 @@
+{
+  "name": "@replyke/comments-social-react-native",
+  "version": "5.0.0-beta.21",
+  "author": "Replyke, maintained by Yanay Tsabary",
+  "description": "Replyke: Add a modern comment section to your React Native apps: replies, likes, mentions, highlighted comments, GIFs, built-in authorization, reports & moderation.",
+  "keywords": [
+    "replyke",
+    "social",
+    "comments",
+    "reactions",
+    "moderation",
+    "reporting",
+    "upvotes",
+    "downvotes",
+    "react-native",
+    "expo",
+    "typescript"
+  ],
+  "bugs": {
+    "url": "https://discord.com/invite/REKxnCJzPz"
+  },
+  "homepage": "https://docs.replyke.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/replyke/ui-kit.git"
+  },
+  "license": "AGPL-3.0-only",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "scripts": {
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "rimraf dist && pnpm run build:esm && pnpm run build:cjs",
+    "prepublish": "pnpm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@replyke/comments-social-core": "workspace:*",
+    "@replyke/ui-core-react-native": "workspace:*"
+  },
+  "devDependencies": {
+    "@gorhom/bottom-sheet": "^5.0.6",
+    "@replyke/core": "workspace:*",
+    "react-native-gesture-handler": "^2.22.1"
+  },
+  "peerDependencies": {
+    "@gorhom/bottom-sheet": "^5",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-native-gesture-handler": "^2"
+  }
+}
