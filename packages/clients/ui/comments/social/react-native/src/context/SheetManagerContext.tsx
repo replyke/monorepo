@@ -4,8 +4,8 @@ import BottomSheet from "@gorhom/bottom-sheet";
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 
 type SheetManagerContext = {
-  commentOptionsSheetRef: React.RefObject<BottomSheetMethods>;
-  reportCommentSheetRef: React.RefObject<BottomSheetMethods>;
+  commentOptionsSheetRef: React.RefObject<BottomSheetMethods | null>;
+  reportCommentSheetRef: React.RefObject<BottomSheetMethods | null>;
 
   openCommentOptionsSheet: (newComment?: CommentType) => void;
   closeCommentOptionsSheet: () => void;
