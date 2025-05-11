@@ -1,3 +1,4 @@
+import React from "react";
 import { Text } from "react-native";
 import { Mention } from "@replyke/core";
 
@@ -7,7 +8,7 @@ export const parseContentWithMentions = (
   currentUserId: string | undefined,
   currentUserClickCallback: (() => void) | undefined,
   otherUserClickCallback: ((userId: string) => void) | undefined
-): (string | JSX.Element)[] => {
+): (string | React.JSX.Element)[] => {
   if (!mentions.length) return [content];
 
   // Create a regex pattern to match all mentions in the array, escaping special characters
@@ -28,7 +29,7 @@ export const parseContentWithMentions = (
   const matches = Array.from(content.matchAll(mentionPattern));
 
   // Construct the parsed output
-  const parsedContent: (string | JSX.Element)[] = [];
+  const parsedContent: (string | React.JSX.Element)[] = [];
   let lastIndex = 0;
 
   parts.forEach((part, index) => {
