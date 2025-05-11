@@ -1,0 +1,54 @@
+{
+  "name": "@replyke/server",
+  "version": "5.0.0-beta.26",
+  "license": "AGPL-3.0-only",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src --ext .ts",
+    "prepare": "rimraf dist && pnpm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "ms": "^2.1.3",
+    "multer": "1.4.5-lts.2",
+    "short-uuid": "^5.2.0",
+    "transliteration": "^2.3.5"
+  },
+  "peerDependencies": {
+    "axios": "^1.9.0",
+    "express": "^4",
+    "express-rate-limit": "^7.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "*",
+    "pg": "*",
+    "redis": "^4.7.0",
+    "sequelize": "^6"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/ms": "^2.1.0",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.15.3",
+    "axios": "^1.9.0",
+    "express-rate-limit": "^7.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "redis": "^4.7.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3"
+  }
+}

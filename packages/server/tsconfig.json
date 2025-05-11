@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2020", // or "ESNext"
+    "module": "NodeNext", // enables modern ESM-compatible module behavior
+    "moduleResolution": "NodeNext", // required with module: "NodeNext"
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true, // helps skip problematic type packages
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "allowJs": true,
+
+    "rootDir": "src",
+    "outDir": "dist",
+    "typeRoots": ["./node_modules/@types"],
+
+    "declaration": true,
+    "declarationDir": "./dist/types"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
