@@ -52,6 +52,7 @@
   },
   "devDependencies": {
     "@replyke/core": "workspace:*",
+    "@replyke/ui-core": "workspace:*",
     "expo-image": "^2.0.4",
     "moment": "^2.30.1",
     "react-native-gesture-handler": "^2.22.1",
@@ -59,6 +60,7 @@
   },
   "peerDependencies": {
     "@replyke/core": ">=5",
+    "@replyke/ui-core": ">=5",
     "expo-image": "^2",
     "moment": "^2",
     "react-native-gesture-handler": "^2",

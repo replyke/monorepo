@@ -1,6 +1,6 @@
 import moment from "moment";
 import { Text } from "react-native";
-import { FontWeight } from "@replyke/core";
+import { FontWeight } from "@replyke/ui-core";
 
 function formatTime(time: Date | string, justNowText: string): string {
   const now = new Date();
