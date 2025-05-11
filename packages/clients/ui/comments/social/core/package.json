@@ -45,12 +45,9 @@
     "@replyke/ui-core": "workspace:*"
   },
   "devDependencies": {
-    "@replyke/core": "workspace:*",
-    "@types/react": "^18.0.37",
-    "react": "^18.2.0"
+    "@replyke/core": "workspace:*"
   },
   "peerDependencies": {
-    "@replyke/core": ">=5",
-    "react": ">=18.0.0 <20.0.0"
+    "@replyke/core": ">=5"
   }
 }

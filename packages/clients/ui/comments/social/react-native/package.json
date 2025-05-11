@@ -48,7 +48,6 @@
   },
   "peerDependencies": {
     "@gorhom/bottom-sheet": "^5",
-    "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-native-gesture-handler": "^2"
   }
