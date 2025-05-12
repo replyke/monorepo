@@ -12,8 +12,8 @@
 </p>
 
 [![npm](https://img.shields.io/npm/v/@replyke/core.svg?label=npm%20%40replyke%2Fcore)](https://www.npmjs.com/package/@replyke/core)
-[![License](https://img.shields.io/github/license/replyke/monorepo)](LICENSE) ![npm](https://img.shields.io/badge/types-included-blue?style=flat-square)
-[![runs with expo](https://img.shields.io/badge/Runs%20with%20Expo-4630EB.svg?style=flat-square&logo=EXPO&labelColor=f3f3f3&logoColor=000)](https://expo.io/)
+[![License](https://img.shields.io/github/license/replyke/monorepo)](LICENSE) ![npm](https://img.shields.io/badge/types-included-blue)
+[![runs with expo](https://img.shields.io/badge/Runs%20with%20Expo-4630EB.svg?&logo=EXPO&labelColor=f3f3f3&logoColor=000)](https://expo.io/)
 ![Discord](https://img.shields.io/discord/1325775309148000288?label=Discord&logo=discord&logoColor=white)
 ![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/replykejs)
 ![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/yantsab)
