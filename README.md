@@ -15,8 +15,8 @@
 [![License](https://img.shields.io/github/license/replyke/monorepo)](LICENSE) ![npm](https://img.shields.io/badge/types-included-blue?style=flat-square)
 [![runs with expo](https://img.shields.io/badge/Runs%20with%20Expo-4630EB.svg?style=flat-square&logo=EXPO&labelColor=f3f3f3&logoColor=000)](https://expo.io/)
 ![Discord](https://img.shields.io/discord/1325775309148000288?label=Discord&logo=discord&logoColor=white)
-![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/:replykejs)
-![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/:yansab)
+![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/replykejs)
+![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/yantsab)
 
 Replyke gives developers a complete foundation for building social experiences - comments, votes, notifications, feeds, and more - without reinventing the wheel. Instead of wiring together a mix of libraries or building from scratch, Replyke offers drop-in APIs, SDKs, and components that are production-ready out of the box.
 
