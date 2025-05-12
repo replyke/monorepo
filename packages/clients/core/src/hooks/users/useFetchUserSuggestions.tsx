@@ -13,7 +13,7 @@ function useFetchUserSuggestions() {
         throw new Error("No projectId available.");
       }
 
-      const response = await axios.get(`/${projectId}/users/mentions`, {
+      const response = await axios.get(`/${projectId}/users/suggestions`, {
         params: {
           query,
         },

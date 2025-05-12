@@ -1,72 +1,107 @@
-# Replyke UI Monorepo
+# Replyke
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![npm](https://img.shields.io/badge/types-included-blue?style=flat-square)
+<!-- <a target="_blank" href="https://discord.gg/REKxnCJzPz"><img src="https://dcbadge.limes.pink/api/server/REKxnCJzPz?compact=true" alt="" /></a> -->
+
+<p align="center">
+    <a href="https://replyke.com" target="_blank"><img src="assets/banner.webp" alt="Replyke banner with logo and text saying "Empowering developers to build engaging communities inside their apps"></a>
+    <br />
+    <br />
+    <b>Replyke is an open source toolkit for adding production‑grade social features to any web or mobile app.</b>
+    <br />
+    <br />
+</p>
+
+[![License](https://img.shields.io/github/license/replyke/monorepo)](LICENSE)![npm](https://img.shields.io/badge/types-included-blue?style=flat-square)
 [![runs with expo](https://img.shields.io/badge/Runs%20with%20Expo-4630EB.svg?style=flat-square&logo=EXPO&labelColor=f3f3f3&logoColor=000)](https://expo.io/)
-
-## Stay Updated
-Join the 
-<a  href="https://discord.gg/REKxnCJzPz" target="_blank">
-Discord server
-</a>
-and follow on
-<a  href="https://x.com/replykejs" target="_blank">
-X/Twitter
-</a>
-and
-<a  href="https://replyke.bsky.social" target="_blank">
-BlueSky
-</a>
-to be notified about important changes 
-
-## Overview
-
-Replyke UI is a monorepo containing UI-related functionality for the Replyke ecosystem. It includes reusable UI utilities, shared components, and the **social comment section** for both React and React Native applications.
-
-While this repository provides UI-related tools, it requires one of the core Replyke libraries to function:
-
-- [@replyke/react-js](https://www.npmjs.com/package/@replyke/react-js) (for React web apps)
-- [@replyke/react-native](https://www.npmjs.com/package/@replyke/react-native) (for React Native apps)
-- [@replyke/expo](https://www.npmjs.com/package/@replyke/expo) (for Expo-managed React Native apps)
-
-![Demo](./assets/comment_section.gif)
-
-## Replyke UI Components
-
-The primary focus of this monorepo is the **social comment section**, which provides modern discussion capabilities similar to popular social networks. Replyke’s comment section is fully featured and includes:
-
-- **Mentions (@username)** – Notify mentioned users and provide profile links.
-- **Replies & Likes** – Nested replies, likes, and user notifications.
-- **Highlighted Comments** – Highlight a specific comment or reply (useful for deep links from notifications).
-- **GIF Support** – Enable GIFs by adding an API key via the Replyke dashboard.
-- **Built-in Authorization** – Prevent unauthorized actions such as duplicate likes or deleting others' comments.
-- **Reporting & Moderation** – Comes with a reporting system and a back-office for project managers to manage reports, remove comments, and ban users.
-- **Custom Styling** – Developers can customize styling via props.
-
-## Monorepo Structure
-
-This monorepo consists of multiple packages, categorized into **UI core utilities** and **comment section implementations**:
-
-### **UI Core**
-
-- `packages/ui-core/base` – Shared UI utilities such as generic styles and types.
-- `packages/ui-core/react-js` – Reusable functionality and components for React web applications.
-- `packages/ui-core/react-native` – Reusable functionality and components for React Native applications.
-
-### **Social Comment Section**
-
-- `packages/comments/social/core` – Core types, hooks, and utilities shared between React and React Native versions (no UI).
-- `packages/comments/social/react-js` – Full implementation of the social comment section for React web apps. ([npm package](https://www.npmjs.com/package/@replyke/comments-social-react-js))
-- `packages/comments/social/react-native` – Full implementation of the social comment section for React Native (CLI & Expo). ([npm package](https://www.npmjs.com/package/@replyke/comments-social-react-native))
-
-## License
-
-This repository is open-source under the **AGPL-3.0**.
-
-## Contributions
-
-Contributions are welcome! If you'd like to improve the comment section or add new UI components, feel free to submit a pull request. Join the Replyke community and help build better social UI components!
+[![npm](https://img.shields.io/npm/v/@replyke/core.svg?label=npm%20%40replyke%2Fcore)](https://www.npmjs.com/package/@replyke/core)
+![Discord](https://img.shields.io/discord/:1325775309148000288)
 
 ---
 
-For questions or support, visit the [Replyke documentation](https://docs.replyke.com), open an issue or reach out via the [Discord server](https://discord.com/invite/REKxnCJzPz).
+## Table of Contents
+
+<!-- - [Project Snapshots](#project-snapshots) -->
+- [Key Features](#key-features)
+- [Why Replyke](#why-replyke)
+- [Comparison With Alternatives](#comparison-with-alternatives)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Community and Support](#community-and-support)
+- [License](#license)
+
+---
+
+## Key Features
+
+- **Comment system** - threaded replies, markdown, mentions, votes, moderation hooks
+- **Feeds** - filter by tags, following or geography with hot, top or new sorting
+- **In‑app notifications** - configurable events for votes, mentions, follows and more
+- **Curated lists** - user folders and nested collections of entities
+- **Follow graph** - one‑way follow relationships ready for social graphs
+- **Admin tools** - reporting, suspensions, reputation and audit logs built in
+
+All features come with backend APIs, typed SDKs and ready to use React and React Native components.
+
+---
+
+## Why Replyke
+
+- **Save months of work** - plug in battle‑tested social primitives instead of reinventing them
+- **Headless first** - bring your own auth and UI or use the included components
+- **Full TypeScript stack** - the same types flow from database to client hooks
+- **Self host (DIY) or cloud** - open‑source core plus an optional managed service for zero ops
+
+<!-- ---
+
+## Project Snapshots
+
+> Replace the following placeholders with real screenshots or gifs.
+
+| Dashboard                                           | Comment Section                                                 |
+| --------------------------------------------------- | --------------------------------------------------------------- |
+| ![Dashboard](docs/images/dashboard-placeholder.png) | ![Comment Section](docs/images/comment-section-placeholder.png) | -->
+
+---
+
+## Comparison With Alternatives
+
+|                        | **Replyke** | Disqus        | Supabase + DIY | Custom Build |
+| ---------------------- | ----------- | ------------- | -------------- | ------------ |
+| Open source            | ✔           | ✖             | ✔              | —            |
+| Full social toolkit    | ✔           | Comments only | ✖              | —            |
+| Self host              | ✔ (DIY)     | Limited       | ✔              | ✔            |
+| React hooks & ready UI | ✔           | ✖             | ✖              | —            |
+
+---
+
+## Documentation
+
+Full API reference, guides and recipes live at **[https://docs.replyke.com](https://docs.replyke.com)**.
+
+
+## Contributing
+
+Bug reports are welcome. contributing guide coming soon - [Join Discord server for updates.](https://discord.gg/REKxnCJzPz)
+
+<!-- ---
+1. Read the [contributing guide](CONTRIBUTING.md)
+2. Pick an issue or open a discussion
+3. Run `pnpm test` before pushing
+
+Good first issues are tagged with **good first issue**. -->
+
+---
+
+## Community and Support
+
+- **Discord** - [https://discord.gg/REKxnCJzPz](https://discord.gg/REKxnCJzPz)
+- **Blog** - [https://blog.replyke.com](https://blog.replyke.com)
+- **X/Twitter** - [https://x.com/replykejs](https://x.com/replykejs)
+
+- **Email** - [support@replyke.com](mailto:support@replyke.com)
+
+---
+
+## License
+
+Replyke is released under the **AGPL‑3.0‑only** license. See [LICENSE](LICENSE) for details.
