@@ -11,21 +11,21 @@
     <br />
 </p>
 
-
+[![npm](https://img.shields.io/npm/v/@replyke/core.svg?label=npm%20%40replyke%2Fcore)](https://www.npmjs.com/package/@replyke/core)
 [![License](https://img.shields.io/github/license/replyke/monorepo)](LICENSE) ![npm](https://img.shields.io/badge/types-included-blue?style=flat-square)
 [![runs with expo](https://img.shields.io/badge/Runs%20with%20Expo-4630EB.svg?style=flat-square&logo=EXPO&labelColor=f3f3f3&logoColor=000)](https://expo.io/)
-[![npm](https://img.shields.io/npm/v/@replyke/core.svg?label=npm%20%40replyke%2Fcore)](https://www.npmjs.com/package/@replyke/core)
-![Discord](https://img.shields.io/discord/:1325775309148000288)
-
+![Discord](https://img.shields.io/discord/1325775309148000288?label=Discord&logo=discord&logoColor=white)
+![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/:replykejs)
+![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/:yansab)
 
 Replyke gives developers a complete foundation for building social experiences - comments, votes, notifications, feeds, and more - without reinventing the wheel. Instead of wiring together a mix of libraries or building from scratch, Replyke offers drop-in APIs, SDKs, and components that are production-ready out of the box.
 
 Built with a headless, TypeScript-first architecture, Replyke fits seamlessly into your stack. Whether you’re building a full social network or just need user comments on a blog post - Replyke has you covered.
 
-
 ## Table of Contents
 
 <!-- - [Project Snapshots](#project-snapshots) -->
+
 - [Key Features](#key-features)
 - [Why Replyke](#why-replyke)
 - [Comparison With Alternatives](#comparison-with-alternatives)
@@ -82,7 +82,6 @@ All features come with backend APIs, typed SDKs and ready to use React and React
 ## Documentation
 
 Full API reference, guides and recipes live at **[https://docs.replyke.com](https://docs.replyke.com)**.
-
 
 ## Contributing
 
