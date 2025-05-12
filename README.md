@@ -36,7 +36,7 @@ Built with a headless, TypeScript-first architecture, Replyke fits seamlessly in
 - [Community and Support](#community-and-support)
 - [License](#license)
 
----
+
 
 ## Key Features
 
@@ -49,7 +49,7 @@ Built with a headless, TypeScript-first architecture, Replyke fits seamlessly in
 
 All features come with backend APIs, typed SDKs and ready to use React and React Native components.
 
----
+
 
 ## Why Replyke
 
@@ -68,7 +68,7 @@ All features come with backend APIs, typed SDKs and ready to use React and React
 | --------------------------------------------------- | --------------------------------------------------------------- |
 | ![Dashboard](docs/images/dashboard-placeholder.png) | ![Comment Section](docs/images/comment-section-placeholder.png) | -->
 
----
+
 
 ## Comparison With Alternatives
 
@@ -79,7 +79,7 @@ All features come with backend APIs, typed SDKs and ready to use React and React
 | Self host              | ✔ (DIY)     | Limited       | ✔              | ✔            |
 | React hooks & ready UI | ✔           | ✖             | ✖              | —            |
 
----
+
 
 ## Documentation
 
@@ -96,17 +96,24 @@ Bug reports are welcome. contributing guide coming soon - [Join Discord server f
 
 Good first issues are tagged with **good first issue**. -->
 
----
 
 ## Community and Support
 
 - **Discord** - [https://discord.gg/REKxnCJzPz](https://discord.gg/REKxnCJzPz)
 - **Blog** - [https://blog.replyke.com](https://blog.replyke.com)
-- **X/Twitter** - [https://x.com/replykejs](https://x.com/replykejs)
+
+- **X/Twitter**
+  - Replyke - [https://x.com/yantsab](https://x.com/yantsab)
+  - Yanay (Developer) - [https://x.com/yantsab](https://x.com/yantsab)
+- **LinkedIn**
+
+  - Replyke - [https://www.linkedin.com/company/replyke](https://www.linkedin.com/company/replyke)
+  - Yanay (Developer) - [https://www.linkedin.com/in/yanay-zabary/](https://www.linkedin.com/in/yanay-zabary/)
 
 - **Email** - [support@replyke.com](mailto:support@replyke.com)
 
----
+
+
 
 ## License
 
