@@ -6,7 +6,7 @@
     <a href="https://replyke.com" target="_blank"><img src="assets/banner.webp" alt="Replyke banner with logo and text saying "Empowering developers to build engaging communities inside their apps"></a>
     <br />
     <br />
-    <b>Replyke is an open source toolkit for adding production‑grade social features to any web or mobile app.</b>
+    <h3 align="center">Replyke is an open source toolkit for adding production‑grade social features to any web or mobile app.</h3>
     <br />
     <br />
 </p>

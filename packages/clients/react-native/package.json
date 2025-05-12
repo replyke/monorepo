@@ -1,6 +1,6 @@
 {
   "name": "@replyke/react-native",
-  "version": "5.0.0-beta.26",
+  "version": "5.0.0-beta.27",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
   "keywords": [
