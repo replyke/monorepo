@@ -36,8 +36,6 @@ Built with a headless, TypeScript-first architecture, Replyke fits seamlessly in
 - [Community and Support](#community-and-support)
 - [License](#license)
 
-
-
 ## Key Features
 
 - **Comment system** - threaded replies, markdown, mentions, votes, moderation hooks
@@ -49,14 +47,14 @@ Built with a headless, TypeScript-first architecture, Replyke fits seamlessly in
 
 All features come with backend APIs, typed SDKs and ready to use React and React Native components.
 
-
-
 ## Why Replyke
 
 - **Save months of work** - plug in battle‑tested social primitives instead of reinventing them
 - **Headless first** - bring your own auth and UI or use the included components
 - **Full TypeScript stack** - the same types flow from database to client hooks
 - **Self host (DIY) or cloud** - open‑source core plus an optional managed service for zero ops
+
+![In Action](/assets/action-full.gif)
 
 <!-- ---
 
@@ -68,8 +66,6 @@ All features come with backend APIs, typed SDKs and ready to use React and React
 | --------------------------------------------------- | --------------------------------------------------------------- |
 | ![Dashboard](docs/images/dashboard-placeholder.png) | ![Comment Section](docs/images/comment-section-placeholder.png) | -->
 
-
-
 ## Comparison With Alternatives
 
 |                        | **Replyke** | Disqus        | Supabase + DIY | Custom Build |
@@ -78,8 +74,6 @@ All features come with backend APIs, typed SDKs and ready to use React and React
 | Full social toolkit    | ✔           | Comments only | ✖              | —            |
 | Self host              | ✔ (DIY)     | Limited       | ✔              | ✔            |
 | React hooks & ready UI | ✔           | ✖             | ✖              | —            |
-
-
 
 ## Documentation
 
@@ -96,7 +90,6 @@ Bug reports are welcome. contributing guide coming soon - [Join Discord server f
 
 Good first issues are tagged with **good first issue**. -->
 
-
 ## Community and Support
 
 - **Discord** - [https://discord.gg/REKxnCJzPz](https://discord.gg/REKxnCJzPz)
@@ -111,9 +104,6 @@ Good first issues are tagged with **good first issue**. -->
   - Yanay (Developer) - [https://www.linkedin.com/in/yanay-zabary/](https://www.linkedin.com/in/yanay-zabary/)
 
 - **Email** - [support@replyke.com](mailto:support@replyke.com)
-
-
-
 
 ## License
 
