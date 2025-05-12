@@ -54,7 +54,7 @@ All features come with backend APIs, typed SDKs and ready to use React and React
 - **Full TypeScript stack** - the same types flow from database to client hooks
 - **Self host (DIY) or cloud** - open‑source core plus an optional managed service for zero ops
 
-![In Action](/assets/action-full.gif)
+![In Action](/assets/action-optimized.gif)
 
 <!-- ---
 
