@@ -1,4 +1,4 @@
-# Replyke
+# Replyke: Open-Source Framework for Building Social Products
 
 <!-- <a target="_blank" href="https://discord.gg/REKxnCJzPz"><img src="https://dcbadge.limes.pink/api/server/REKxnCJzPz?compact=true" alt="" /></a> -->
 
@@ -21,6 +21,8 @@
 Replyke gives developers a complete foundation for building social experiences - comments, votes, notifications, feeds, and more - without reinventing the wheel. Instead of wiring together a mix of libraries or building from scratch, Replyke offers drop-in APIs, SDKs, and components that are production-ready out of the box.
 
 Built with a headless, TypeScript-first architecture, Replyke fits seamlessly into your stack. Whether you’re building a full social network or just need user comments on a blog post - Replyke has you covered.
+
+![Dashboard](/assets/dashboard.webp)
 
 ## Table of Contents
 
