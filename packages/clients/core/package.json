@@ -1,6 +1,6 @@
 {
   "name": "@replyke/core",
-  "version": "5.0.0-beta.31",
+  "version": "5.0.0-beta.32",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
   "keywords": [
@@ -52,7 +52,6 @@
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.9",
-    "@types/node": "^20.14.5",
     "@typescript-eslint/eslint-plugin": "^5.59.0",
     "@typescript-eslint/parser": "^5.59.0",
     "@vitejs/plugin-react-swc": "^3.0.0",
@@ -60,9 +59,10 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.3.4",
     "prop-types": "^15.8.1",
-    "rimraf": "^6.0.1",
-    "typescript": "^5.0.2",
     "vite": "^4.3.9",
     "vite-plugin-dts": "^2.3.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
   }
 }
