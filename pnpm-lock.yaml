@@ -126,6 +126,9 @@ importers:
       '@replyke/ui-core-react-js':
         specifier: workspace:*
         version: link:../../../react-js
+      react-dom:
+        specifier: '>=18.0.0 <20.0.0'
+        version: 18.3.1(react@19.1.0)
     devDependencies:
       '@replyke/react-js':
         specifier: workspace:*
@@ -133,9 +136,6 @@ importers:
       '@types/node':
         specifier: ^20.14.5
         version: 20.17.17
-      '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.3.5(@types/react@19.1.3)
       '@typescript-eslint/eslint-plugin':
         specifier: ^5.59.0
         version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.7.3))(eslint@8.57.1)(typescript@5.7.3)
@@ -151,9 +151,6 @@ importers:
       eslint-plugin-react-refresh:
         specifier: ^0.3.4
         version: 0.3.5(eslint@8.57.1)
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.3.1(react@19.1.0)
       typescript:
         specifier: ^5.0.2
         version: 5.7.3
@@ -166,9 +163,6 @@ importers:
       '@replyke/ui-core-react-native':
         specifier: workspace:*
         version: link:../../../react-native
-      react-dom:
-        specifier: ^18.0.0
-        version: 18.3.1(react@19.1.0)
     devDependencies:
       '@gorhom/bottom-sheet':
         specifier: ^5.0.6
@@ -188,8 +182,8 @@ importers:
         specifier: ^5.6.0
         version: 5.6.0
       '@giphy/react-components':
-        specifier: ^10.0.0
-        version: 10.0.0(react-dom@18.3.1(react@19.1.0))(react@19.1.0)(styled-components@6.1.14(react-dom@18.3.1(react@19.1.0))(react@19.1.0))
+        specifier: ^10.0.1
+        version: 10.0.1(react-dom@18.3.1(react@19.1.0))(react@19.1.0)(styled-components@6.1.14(react-dom@18.3.1(react@19.1.0))(react@19.1.0))
     devDependencies:
       '@replyke/core':
         specifier: workspace:*
@@ -203,9 +197,6 @@ importers:
       '@giphy/js-fetch-api':
         specifier: ^5.6.0
         version: 5.6.0
-      '@giphy/react-components':
-        specifier: ^9.8.0
-        version: 9.8.0(react-dom@18.3.1(react@19.1.0))(react@19.1.0)(styled-components@6.1.14(react-dom@18.3.1(react@19.1.0))(react@19.1.0))
     devDependencies:
       '@replyke/core':
         specifier: workspace:*
@@ -1266,16 +1257,10 @@ packages:
   '@giphy/js-util@5.2.0':
     resolution: {integrity: sha512-Qt7pGh2cqiNmXLeWAgb459wK8+BuMLtIxTfg4ZksnPHPsLthiHT9hhzs2QhqUh7Pp/HOq+Cbv2etGDfnq+xiKA==}
 
-  '@giphy/react-components@10.0.0':
-    resolution: {integrity: sha512-vZYoUEg7t+WiWoWc8A5E54UlY0cjraN61jIe/mD+w5PMn0vexvJlASUVyguClF+CJsP+Bii96mIqugwe9QcFTQ==}
+  '@giphy/react-components@10.0.1':
+    resolution: {integrity: sha512-JFAkB45zTLhen2mmO+mApJtjEr4OVPLXYByDSN1FJQNgKc6xJ86Hk5+YOHNXuXa1NLXtGBlvXUAcz3oxKyfgHw==}
     peerDependencies:
       react: 18 - 19
-      styled-components: '>= 5'
-
-  '@giphy/react-components@9.8.0':
-    resolution: {integrity: sha512-rtx3HBa+cHKen+lMuvSH/rPX+fYvFuZWXP9i9i6nVBkPakd5niZC4ZD9NjM09LJpmUw69eUdqDVhoUgqfLEB2A==}
-    peerDependencies:
-      react: 16.10.2 - 18
       styled-components: '>= 5'
 
   '@gorhom/bottom-sheet@5.0.6':
@@ -1729,11 +1714,6 @@ packages:
 
   '@types/range-parser@1.2.7':
     resolution: {integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==}
-
-  '@types/react-dom@18.3.5':
-    resolution: {integrity: sha512-P4t6saawp+b/dFrUr2cvkVsfvPguwsxtH6dNIYRllMsefqFzkZk5UIjzyDOv5g1dXIPdG4Sp1yCR4Z6RCUsG/Q==}
-    peerDependencies:
-      '@types/react': ^18.0.0
 
   '@types/react@19.1.3':
     resolution: {integrity: sha512-dLWQ+Z0CkIvK1J8+wrDPwGxEYFA4RAyHoZPxHVGspYmFVnwGSNT24cGIhFJrtfRnWVuW8X7NO52gCXmhkVUWGQ==}
@@ -4168,12 +4148,6 @@ packages:
       react: '*'
       tslib: '*'
 
-  react-use@17.4.0:
-    resolution: {integrity: sha512-TgbNTCA33Wl7xzIJegn1HndB4qTS9u03QUwyNycUnXaweZkE4Kq2SB+Yoxx8qbshkZGYBDvUXbXWRUmQDcZZ/Q==}
-    peerDependencies:
-      react: ^16.8.0  || ^17.0.0 || ^18.0.0
-      react-dom: ^16.8.0  || ^17.0.0 || ^18.0.0
-
   react-use@17.6.0:
     resolution: {integrity: sha512-OmedEScUMKFfzn1Ir8dBxiLLSOzhKe/dPZwVxcujweSj45aNM7BEGPb9BEVIgVEqEXx6f3/TsXzwIktNgUR02g==}
     peerDependencies:
@@ -6389,7 +6363,7 @@ snapshots:
       '@giphy/js-types': 5.1.0
       uuid: 9.0.1
 
-  '@giphy/react-components@10.0.0(react-dom@18.3.1(react@19.1.0))(react@19.1.0)(styled-components@6.1.14(react-dom@18.3.1(react@19.1.0))(react@19.1.0))':
+  '@giphy/react-components@10.0.1(react-dom@18.3.1(react@19.1.0))(react@19.1.0)(styled-components@6.1.14(react-dom@18.3.1(react@19.1.0))(react@19.1.0))':
     dependencies:
       '@giphy/colors': 1.0.1
       '@giphy/js-analytics': 5.0.0
@@ -6399,21 +6373,6 @@ snapshots:
       intersection-observer: 0.12.2
       react: 19.1.0
       react-use: 17.6.0(react-dom@18.3.1(react@19.1.0))(react@19.1.0)
-      styled-components: 6.1.14(react-dom@18.3.1(react@19.1.0))(react@19.1.0)
-      throttle-debounce: 3.0.1
-    transitivePeerDependencies:
-      - react-dom
-
-  '@giphy/react-components@9.8.0(react-dom@18.3.1(react@19.1.0))(react@19.1.0)(styled-components@6.1.14(react-dom@18.3.1(react@19.1.0))(react@19.1.0))':
-    dependencies:
-      '@giphy/colors': 1.0.1
-      '@giphy/js-analytics': 5.0.0
-      '@giphy/js-fetch-api': 5.6.0
-      '@giphy/js-types': 5.1.0
-      '@giphy/js-util': 5.2.0
-      intersection-observer: 0.12.2
-      react: 19.1.0
-      react-use: 17.4.0(react-dom@18.3.1(react@19.1.0))(react@19.1.0)
       styled-components: 6.1.14(react-dom@18.3.1(react@19.1.0))(react@19.1.0)
       throttle-debounce: 3.0.1
     transitivePeerDependencies:
@@ -6999,7 +6958,7 @@ snapshots:
 
   '@types/node-forge@1.3.11':
     dependencies:
-      '@types/node': 20.17.17
+      '@types/node': 22.15.17
 
   '@types/node@20.17.17':
     dependencies:
@@ -7012,10 +6971,6 @@ snapshots:
   '@types/qs@6.9.18': {}
 
   '@types/range-parser@1.2.7': {}
-
-  '@types/react-dom@18.3.5(@types/react@19.1.3)':
-    dependencies:
-      '@types/react': 19.1.3
 
   '@types/react@19.1.3':
     dependencies:
@@ -9740,25 +9695,6 @@ snapshots:
   react-universal-interface@0.6.2(react@19.1.0)(tslib@2.8.1):
     dependencies:
       react: 19.1.0
-      tslib: 2.8.1
-
-  react-use@17.4.0(react-dom@18.3.1(react@19.1.0))(react@19.1.0):
-    dependencies:
-      '@types/js-cookie': 2.2.7
-      '@xobotyi/scrollbar-width': 1.9.5
-      copy-to-clipboard: 3.3.3
-      fast-deep-equal: 3.1.3
-      fast-shallow-equal: 1.0.0
-      js-cookie: 2.2.1
-      nano-css: 5.6.2(react-dom@18.3.1(react@19.1.0))(react@19.1.0)
-      react: 19.1.0
-      react-dom: 18.3.1(react@19.1.0)
-      react-universal-interface: 0.6.2(react@19.1.0)(tslib@2.8.1)
-      resize-observer-polyfill: 1.5.1
-      screenfull: 5.2.0
-      set-harmonic-interval: 1.0.1
-      throttle-debounce: 3.0.1
-      ts-easing: 0.2.0
       tslib: 2.8.1
 
   react-use@17.6.0(react-dom@18.3.1(react@19.1.0))(react@19.1.0):

@@ -29,7 +29,8 @@
   "private": false,
   "scripts": {
     "publish": "pnpm --filter @replyke/server --filter @replyke/core --filter @replyke/expo --filter @replyke/react-js --filter @replyke/react-native --filter @replyke/ui-core --filter @replyke/ui-core-react-js --filter @replyke/ui-core-react-native --filter @replyke/comments-social-core --filter @replyke/comments-social-react-js --filter @replyke/comments-social-react-native publish",
-    "publish-beta": "pnpm --filter @replyke/server --filter @replyke/core --filter @replyke/expo --filter @replyke/react-js --filter @replyke/react-native --filter @replyke/ui-core --filter @replyke/ui-core-react-js --filter @replyke/ui-core-react-native --filter @replyke/comments-social-core --filter @replyke/comments-social-react-js --filter @replyke/comments-social-react-native publish --tag beta"
+    "publish-beta": "pnpm --filter @replyke/server --filter @replyke/core --filter @replyke/expo --filter @replyke/react-js --filter @replyke/react-native --filter @replyke/ui-core --filter @replyke/ui-core-react-js --filter @replyke/ui-core-react-native --filter @replyke/comments-social-core --filter @replyke/comments-social-react-js --filter @replyke/comments-social-react-native publish --tag beta",
+    "build-all": "pnpm --filter @replyke/server run build && pnpm --filter @replyke/core run build && pnpm --filter @replyke/react-js run build && pnpm --filter @replyke/react-native run build && pnpm --filter @replyke/expo run build && pnpm --filter @replyke/ui-core run build && pnpm --filter @replyke/ui-core-react-js run build && pnpm --filter @replyke/ui-core-react-native run build && pnpm --filter @replyke/comments-social-core run build && pnpm --filter @replyke/comments-social-react-js run build && pnpm --filter @replyke/comments-social-react-native run build"
   },
   "devDependencies": {
     "@types/node": "^20.14.5",

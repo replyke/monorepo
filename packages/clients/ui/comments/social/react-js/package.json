@@ -1,6 +1,6 @@
 {
   "name": "@replyke/comments-social-react-js",
-  "version": "5.0.0-beta.30",
+  "version": "5.0.0-beta.31",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Add a modern comment section to your React apps: replies, likes, mentions, highlighted comments, GIFs, built-in authorization, reports & moderation.",
   "keywords": [
@@ -46,13 +46,11 @@
   "devDependencies": {
     "@replyke/react-js": "workspace:*",
     "@types/node": "^20.14.5",
-    "@types/react-dom": "^18.0.11",
     "@typescript-eslint/eslint-plugin": "^5.59.0",
     "@typescript-eslint/parser": "^5.59.0",
     "eslint": "^8.38.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.3.4",
-    "react-dom": "^18.2.0",
     "typescript": "^5.0.2"
   },
   "peerDependencies": {
