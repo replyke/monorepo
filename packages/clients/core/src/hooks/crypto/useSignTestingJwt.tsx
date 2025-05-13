@@ -2,6 +2,8 @@ import useAxiosPrivate from "../../config/useAxiosPrivate";
 import { handleError } from "../../utils/handleError";
 
 function useSignTestingJwt() {
+  const axios = useAxiosPrivate();
+  
   const signTestingJwt = async ({
     projectId,
     privateKey,
@@ -11,7 +13,6 @@ function useSignTestingJwt() {
     privateKey: string;
     payload: Record<string, any>;
   }) => {
-    const axios = useAxiosPrivate();
     try {
       // Warn developers about the security risks
       console.warn(`
