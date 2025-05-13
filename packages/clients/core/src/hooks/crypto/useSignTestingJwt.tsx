@@ -1,9 +1,7 @@
-import useAxiosPrivate from "../../config/useAxiosPrivate";
+import axios from "axios";
 import { handleError } from "../../utils/handleError";
 
 function useSignTestingJwt() {
-  const axios = useAxiosPrivate();
-  
   const signTestingJwt = async ({
     projectId,
     privateKey,
@@ -27,11 +25,14 @@ function useSignTestingJwt() {
     Failure to follow these practices can lead to security vulnerabilities.
   `);
 
-      const response = await axios.post("/crypto/sign-testing-jwt", {
-        projectId,
-        privateKey,
-        payload,
-      });
+      const response = await axios.post(
+        "https://api.replyke.com/internal/crypto/sign-testing-jwt",
+        {
+          projectId,
+          privateKey,
+          payload,
+        }
+      );
 
       return response.data as string;
     } catch (err: unknown) {

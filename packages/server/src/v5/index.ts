@@ -3,7 +3,6 @@ import {
   appNotificationsRouter,
   authRouter,
   commentsRouter,
-  cryptoRouter,
   entitiesRouter,
   listsRouter,
   reportsRouter,
@@ -17,7 +16,6 @@ const apiRouter: Router = Router();
 apiRouter.use("/app-notifications", appNotificationsRouter);
 apiRouter.use("/auth", authRouter);
 apiRouter.use("/comments", commentsRouter);
-apiRouter.use("/crypto", cryptoRouter);
 apiRouter.use("/entities", entitiesRouter);
 apiRouter.use("/lists", listsRouter);
 apiRouter.use("/reports", reportsRouter);

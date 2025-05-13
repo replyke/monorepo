@@ -1,7 +1,6 @@
 import appNotificationsRouter from "./app-notifications";
 import authRouter from "./auth";
 import commentsRouter from "./comments";
-import cryptoRouter from "./crypto";
 import entitiesRouter from "./entities";
 import listsRouter from "./lists";
 import reportsRouter from "./reports";
@@ -12,7 +11,6 @@ export {
   appNotificationsRouter,
   authRouter,
   commentsRouter,
-  cryptoRouter,
   entitiesRouter,
   listsRouter,
   reportsRouter,

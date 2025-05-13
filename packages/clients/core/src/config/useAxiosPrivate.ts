@@ -11,7 +11,7 @@ const useAxiosPrivate = () => {
     const requestIntercept = axiosPrivate.interceptors.request.use(
       (config) => {
         // If we have no value for access token return the config as is
-        // This is a new addition so maybe let's avoid it for not until eveything works fine.
+        // This is a new addition so maybe let's avoid it for not until everything works fine.
         // if (!accessToken) return config;
 
         // If we already have Auth headers set then just return the config
