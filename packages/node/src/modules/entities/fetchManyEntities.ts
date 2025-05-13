@@ -29,8 +29,8 @@ export interface LocationFilters {
 }
 
 export interface FetchManyEntitiesProps {
-  resourceId?: string;
-  
+  sourceId?: string;
+
   // Sorting & Pagination
   sortBy?: "hot" | "top" | "controversial";
   page?: number;
@@ -70,6 +70,8 @@ export async function fetchManyEntities(
   data: FetchManyEntitiesProps
 ): Promise<any> {
   const path = `/entities`;
-  const response = await client.projectInstance.get<any>(path, { params: data });
+  const response = await client.projectInstance.get<any>(path, {
+    params: data,
+  });
   return response.data;
 }
