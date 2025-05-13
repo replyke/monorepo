@@ -26,8 +26,6 @@ Built with a headless, TypeScript-first architecture, Replyke fits seamlessly in
 
 ## Table of Contents
 
-<!-- - [Project Snapshots](#project-snapshots) -->
-
 - [Key Features](#key-features)
 - [Why Replyke](#why-replyke)
 - [Comparison With Alternatives](#comparison-with-alternatives)
@@ -56,15 +54,98 @@ All features come with backend APIs, typed SDKs and ready to use React and React
 
 ![In Action](/assets/action-optimized.gif)
 
-<!-- ---
+## Quick Start
 
-## Project Snapshots
+This is a minimal example for integrating **comments** using Replyke. It’s meant as a basic demonstration with dummy content. Replyke offers much more - but this is the simplest way to get started.
 
-> Replace the following placeholders with real screenshots or gifs.
+To use this example:
 
-| Dashboard                                           | Comment Section                                                 |
-| --------------------------------------------------- | --------------------------------------------------------------- |
-| ![Dashboard](docs/images/dashboard-placeholder.png) | ![Comment Section](docs/images/comment-section-placeholder.png) | -->
+1. **Create a new project** in the [Replyke dashboard](https://dashboard.replyke.com) and copy your project ID.
+2. Go to **Settings → Secrets**, and **generate a new JWT key**. This is required for signing JWT tokens of your users data, when integrating Replyke with an external user system as we will mock in this example.
+3. Install the required packages:
+
+```bash
+pnpm add @replyke/comments-social-react-js @replyke/react-js
+```
+
+> ⚠️ This example uses a helper function that signs a JWT with the user’s info using a your project's secret key. It is **meant only for development and testing**. Never expose private keys in production, and if using the function - rotate your keys before moving to production.
+
+### Example `App.tsx`
+
+Here’s how your app might look in a Vite + Tailwind project:
+
+```tsx
+import { SocialCommentSection } from "@replyke/comments-social-react-js";
+import {
+  EntityProvider,
+  ReplykeProvider,
+  useSignTestingJwt,
+} from "@replyke/react-js";
+import { useEffect, useState } from "react";
+
+const PROJECT_ID = import.meta.env.VITE_PUBLIC_REPLYKE_PROJECT_ID;
+const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_REPLYKE_SECRET_KEY;
+
+const DUMMY_USER = { id: "user1", username: "lionel_messi10" };
+const DUMMY_POST = {
+  id: "post_1234",
+  title: "Replyke Demo",
+  content: "Adding comment sections has never been so easy!",
+};
+
+function SingleItem({
+  post,
+}: {
+  post: {
+    id: string;
+    title: string;
+    content: string;
+  };
+}) {
+  return (
+    <div className="h-screen p-24">
+      <div className="w-full max-w-4xl h-full rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="font-semibold text-lg">{post.title}</h3>
+          <p>{post.content}</p>
+        </div>
+        <div className="relative flex-1 flex flex-col pt-4">
+          <SocialCommentSection />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const signTestingJwt = useSignTestingJwt();
+
+  const [signedToken, setSignedToken] = useState<string>();
+
+  useEffect(() => {
+    const handleSignJwt = async () => {
+      const token = await signTestingJwt({
+        projectId: PROJECT_ID,
+        privateKey: PRIVATE_KEY,
+        payload: DUMMY_USER,
+      });
+      setSignedToken(token);
+    };
+
+    handleSignJwt();
+  }, []);
+
+  return (
+    <ReplykeProvider projectId={PROJECT_ID} signedToken={signedToken}>
+      <EntityProvider foreignId={DUMMY_POST.id} createIfNotFound>
+        <SingleItem post={DUMMY_POST} />
+      </EntityProvider>
+    </ReplykeProvider>
+  );
+}
+
+export default App;
+```
 
 ## Comparison With Alternatives
 
