@@ -22,7 +22,7 @@ function useProjectData({
     const handleFetchProject = async () => {
       try {
         const response = await axios.get(
-          `https://v5-api.replyke.com/internal/projects/${projectId}/lean`
+          `https://api.replyke.com/internal/projects/${projectId}/lean`
         );
 
         const fetchedProject = response.data as Project;

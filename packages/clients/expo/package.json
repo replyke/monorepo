@@ -1,6 +1,6 @@
 {
   "name": "@replyke/expo",
-  "version": "5.0.0-beta.29",
+  "version": "5.0.0-beta.30",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
   "keywords": [
