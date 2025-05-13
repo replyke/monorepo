@@ -9,6 +9,6 @@ export async function fetchEntityByShortId(
   data: FetchEntityByShortIdProps
 ): Promise<any> {
   const path = `/entities/by-short-id`;
-  const response = await client.instance.get<any>(path, { params: data });
+  const response = await client.projectInstance.get<any>(path, { params: data });
   return response.data;
 }

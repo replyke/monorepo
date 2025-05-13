@@ -9,6 +9,6 @@ export async function fetchHostedApp(
   data: FetchHostedAppProps
 ): Promise<any> {
   const path = `/hosted-apps/${data.appId}`;
-  const response = await client.instance.get<any>(path);
+  const response = await client.internalInstance.get<any>(path);
   return response.data;
 }

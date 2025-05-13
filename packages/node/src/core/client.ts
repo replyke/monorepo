@@ -7,12 +7,21 @@ export interface ClientConfig {
 }
 
 export class ReplykeHttpClient {
-  instance: AxiosInstance;
+  projectInstance: AxiosInstance;
+  internalInstance: AxiosInstance;
   baseInstance: AxiosInstance;
 
   constructor({ apiKey, projectId, isInternal }: ClientConfig) {
-    this.instance = axios.create({
+    this.projectInstance = axios.create({
       baseURL: `https://api.replyke.com/api/v5/${projectId}`,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        ...(isInternal && { "X-Replyke-Internal": "true" }),
+      },
+    });
+
+    this.internalInstance = axios.create({
+      baseURL: "https://api.replyke.com/internal",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         ...(isInternal && { "X-Replyke-Internal": "true" }),
@@ -21,10 +30,6 @@ export class ReplykeHttpClient {
 
     this.baseInstance = axios.create({
       baseURL: "https://api.replyke.com",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        ...(isInternal && { "X-Replyke-Internal": "true" }),
-      },
     });
   }
 }

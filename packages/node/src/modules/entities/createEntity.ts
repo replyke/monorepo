@@ -22,6 +22,6 @@ export async function createEntity(
   data: CreateEntityProps
 ): Promise<any> {
   const path = `/entities`; // assuming client handles prefix like /{projectId}
-  const response = await client.instance.post<any>(path, data);
+  const response = await client.projectInstance.post<any>(path, data);
   return response.data;
 }

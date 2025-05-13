@@ -10,6 +10,6 @@ export async function fetchUserById(
   data: FetchUserByIdProps
 ): Promise<any> {
   const path = `/users/${data.userId}`; // assuming client handles prefix like /{projectId}
-  const response = await client.instance.get<any>(path);
+  const response = await client.projectInstance.get<any>(path);
   return response.data;
 }

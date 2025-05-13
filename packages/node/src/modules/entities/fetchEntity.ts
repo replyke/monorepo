@@ -9,6 +9,6 @@ export async function fetchEntity(
   data: FetchEntityProps
 ): Promise<any> {
   const path = `/entities/${data.entityId}`;
-  const response = await client.instance.get<any>(path);
+  const response = await client.projectInstance.get<any>(path);
   return response.data;
 }

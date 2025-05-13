@@ -47,7 +47,7 @@ function bindModule<
 
 async function verifyClient(client: ReplykeHttpClient): Promise<void> {
   try {
-    await client.baseInstance.get("/service/verify"); // Adjust to your real endpoint
+    await client.internalInstance.get("/service/verify"); // Adjust to your real endpoint
   } catch (err: any) {
     throw new Error("[Replyke] Invalid API key or project ID.");
   }

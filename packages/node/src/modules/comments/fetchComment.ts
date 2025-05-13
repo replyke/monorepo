@@ -9,6 +9,6 @@ export async function fetchComment(
   data: FetchCommentProps
 ): Promise<any> {
   const path = `/comments/${data.commentId}`;
-  const response = await client.instance.get<any>(path);
+  const response = await client.projectInstance.get<any>(path);
   return response.data;
 }

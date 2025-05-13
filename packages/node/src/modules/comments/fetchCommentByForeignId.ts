@@ -9,6 +9,6 @@ export async function fetchCommentByForeignId(
   data: FetchCommentByForeignIdProps
 ): Promise<any> {
   const path = `/comments/by-foreign-id`;
-  const response = await client.instance.get<any>(path, { params: data });
+  const response = await client.projectInstance.get<any>(path, { params: data });
   return response.data;
 }
