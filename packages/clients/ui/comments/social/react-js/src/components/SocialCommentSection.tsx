@@ -10,7 +10,7 @@ import React from "react";
 function SocialCommentSection({
   callbacks,
   styleConfig: styleConfigProp,
-  isVisible,
+  isVisible = true,
   sortOptions = ["top", "new", "old"],
   header,
 }: {

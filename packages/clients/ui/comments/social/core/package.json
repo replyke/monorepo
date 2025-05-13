@@ -1,6 +1,6 @@
 {
   "name": "@replyke/comments-social-core",
-  "version": "5.0.0-beta.28",
+  "version": "5.0.0-beta.29",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Add a modern comment section to your React & React Native apps: replies, likes, mentions, highlighted comments, GIFs, built-in authorization, reports & moderation.",
   "keywords": [
