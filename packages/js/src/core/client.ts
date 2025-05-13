@@ -9,7 +9,7 @@ export class ReplykeHttpClient {
 
   constructor({ projectId }: ClientConfig) {
     this.instance = axios.create({
-      baseURL: `https://v5-api.replyke.com/api/v5/${projectId}`,
+      baseURL: `https://api.replyke.com/api/v5/${projectId}`,
     });
   }
 }
