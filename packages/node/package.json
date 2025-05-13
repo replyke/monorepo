@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsup src/index.ts --dts --format cjs,esm",
     "build:types": "tsc --emitDeclarationOnly",
-    "prepare": "pnpm build && pnpm build:types"
+    "prepare": "pnpm build && pnpm build:types",
+    "publish-beta": "pnpm publish --tag beta"
   },
   "author": "Replyke team",
   "license": "ISC",
