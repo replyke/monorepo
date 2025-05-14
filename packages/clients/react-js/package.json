@@ -1,6 +1,6 @@
 {
   "name": "@replyke/react-js",
-  "version": "5.0.0-beta.35",
+  "version": "5.0.0",
   "private": false,
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
