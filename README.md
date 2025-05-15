@@ -36,12 +36,13 @@ Built with a headless, TypeScript-first architecture, Replyke fits seamlessly in
 
 ## Key Features
 
-- **Comment system** - threaded replies, markdown, mentions, votes, moderation hooks
-- **Feeds** - filter by tags, following or geography with hot, top or new sorting
-- **In‑app notifications** - configurable events for votes, mentions, follows and more
-- **Curated lists** - user folders and nested collections of entities
-- **Follow graph** - one‑way follow relationships ready for social graphs
-- **Admin tools** - reporting, suspensions, reputation and audit logs built in
+- **Comment system** - threaded replies, mentions, votes, customizable UI-elements, built-in moderation
+- **Feeds** - filter entities by tags, content, custom metadata, follow relationships, timeframe or geography and sort by hot, top or controversial.
+- **In‑app notifications** - auto-generated in-app notification for pre-defined events such as votes, mentions, follows and more. Configurable webhooks for further action, such as sending push-notifications.
+- **Curated lists** - user generated collections and nested sub-collections of entities.
+- **Follow graph** - one‑way follow relationships ready for social graphs.
+- **Authentication** - easy user authentication with Replyke, or integration with an external user system.
+- **Admin tools** - reporting, content moderation and user management.
 
 All features come with backend APIs, typed SDKs and ready to use React and React Native components.
 
@@ -53,6 +54,45 @@ All features come with backend APIs, typed SDKs and ready to use React and React
 - **Self host (DIY) or cloud** - open‑source core plus an optional managed service for zero ops
 
 ![In Action](/assets/action-optimized.gif)
+---
+## Building Replyke: A Layered, API-Centric Approach
+
+Replyke wasn’t built in a traditional API-first way, but it is definitely API-centric. From the beginning, it was designed so that everything is powered by a clean, consistent API. This approach has shaped the way developers use Replyke today, and it’s what makes the system flexible and extensible.
+
+You can think of Replyke as having three core layers:
+
+### 1. The API (Foundation)
+
+The base layer of Replyke is its API. Everything the system can do, you can do through the API-whether it’s posting a comment, reporting content, creating a new entity, or updating a user profile. As long as you’re authenticated for routes that require authentication, all functionality is accessible. The API is fully documented in Replyke’s docs and can be used directly if you prefer working closer to the metal.
+
+### 2. Libraries & SDKs (Developer Tools)
+
+On top of the API, Replyke provides official libraries to simplify development. Currently, there are React and React Native libraries (supporting both CLI and Expo), with Node.js and vanilla JS SDKs coming soon for both server and client environments.
+
+These libraries handle communication with the API and offer helpful abstractions for things like authentication, request state, pagination, and cache. For example, hooks like `useEntityList` make it easy to fetch entities with filters, sorting, and pagination-without writing any boilerplate yourself.
+
+### 3. Components (Plug & Play UI)
+
+At the highest level, Replyke also offers prebuilt components that are fully wired up and ready to drop into your app. Components like `SocialCommentSection` use the underlying libraries and hooks to provide a complete UI and logic layer for features like commenting, voting, replying, and more. These are ideal for developers who want to move fast and not reinvent the wheel.
+
+Combined, these three layers give developers everything they need to integrate Replyke fully: from low-level API access to high-level components ready to ship.
+
+---
+
+## Moderation with the Dashboard
+
+One more critical part of the system is the Replyke Dashboard. While the three core layers handle the client experience, the dashboard is for product owners and moderators.
+
+Through it, you can:
+
+- Monitor all content created across your app
+- Handle reports from users
+- Remove inappropriate content
+- Suspend or ban users
+
+This separation ensures developers get the flexibility they want, while still giving teams the control and oversight they need to keep communities healthy and productive.
+
+---
 
 ## Quick Start
 
@@ -151,10 +191,10 @@ export default App;
 
 |                        | **Replyke** | Disqus        | Supabase + DIY | Custom Build |
 | ---------------------- | ----------- | ------------- | -------------- | ------------ |
-| Open source            | ✔           | ✖             | ✔              | —            |
-| Full social toolkit    | ✔           | Comments only | ✖              | —            |
+| Open source            | ✔           | ✖             | ✔              | -            |
+| Full social toolkit    | ✔           | Comments only | ✖              | -            |
 | Self host              | ✔ (DIY)     | Limited       | ✔              | ✔            |
-| React hooks & ready UI | ✔           | ✖             | ✖              | —            |
+| React hooks & ready UI | ✔           | ✖             | ✖              | -            |
 
 ## Documentation
 
