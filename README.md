@@ -94,7 +94,6 @@ Through it, you can:
 
 This separation ensures developers get the flexibility they want, while still giving teams the control and oversight they need to keep communities healthy and productive.
 
----
 
 ## Quick Start
 
