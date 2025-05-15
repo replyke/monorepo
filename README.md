@@ -28,6 +28,9 @@ Built with a headless, TypeScript-first architecture, Replyke fits seamlessly in
 
 - [Key Features](#key-features)
 - [Why Replyke](#why-replyke)
+- [Approach and Structure](#building-replyke-a-layered-api-centric-approach)
+- [Moderation](#moderation-with-the-dashboard)
+- [Quick Start](#quick-start)
 - [Comparison With Alternatives](#comparison-with-alternatives)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
@@ -53,8 +56,8 @@ All features come with backend APIs, typed SDKs and ready to use React and React
 - **Full TypeScript stack** - the same types flow from database to client hooks
 - **Self host (DIY) or cloud** - open‑source core plus an optional managed service for zero ops
 
-![In Action](/assets/action-optimized.gif)
----
+## ![In Action](/assets/action-optimized.gif)
+
 ## Building Replyke: A Layered, API-Centric Approach
 
 Replyke wasn’t built in a traditional API-first way, but it is definitely API-centric. From the beginning, it was designed so that everything is powered by a clean, consistent API. This approach has shaped the way developers use Replyke today, and it’s what makes the system flexible and extensible.
@@ -77,7 +80,6 @@ At the highest level, Replyke also offers prebuilt components that are fully wir
 
 Combined, these three layers give developers everything they need to integrate Replyke fully: from low-level API access to high-level components ready to ship.
 
----
 
 ## Moderation with the Dashboard
 
