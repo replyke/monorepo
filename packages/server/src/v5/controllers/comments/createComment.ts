@@ -7,10 +7,6 @@ import createNotification from "../../../helpers/createNotification";
 import IUser from "../../../interfaces/IUser";
 import updateUserReputation from "../../../helpers/updateUserReputation";
 import reputationScores from "../../../constants/reputation-scores";
-import {
-  getRedisProjectStatsKey,
-  REDIS_TRACKING_KEY,
-} from "../../../helpers/redisKeyGetters";
 import { getCoreConfig } from "../../../config";
 
 export default async (req: ExReq, res: ExRes) => {
@@ -110,12 +106,8 @@ export default async (req: ExReq, res: ExRes) => {
       ...commentParams,
     })) as IComment;
 
-    const { redisClient } = getCoreConfig();
-    // Define the Redis key for this project’s stats
-    const redisKey = getRedisProjectStatsKey(projectId);
-
-    // Increment the API calls counter for this project
-    await redisClient.hIncrBy(redisKey, REDIS_TRACKING_KEY.COMMENTS, 1);
+    const { handlers } = getCoreConfig();
+    await handlers.createComment({ projectId });
 
     // Return the newly created comment or reply
     res.status(201).json(populatedComment.toJSON());

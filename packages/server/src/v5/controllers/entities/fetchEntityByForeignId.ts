@@ -5,10 +5,6 @@ import { Entity } from "../../../models";
 import IEntity, { IEntityAttributes } from "../../../interfaces/IEntity";
 import { entityParams } from "../../../constants/sequelize-query-params";
 import validateEntityCreated from "../../../helpers/webhooks/validateEntityCreated";
-import {
-  getRedisProjectStatsKey,
-  REDIS_TRACKING_KEY,
-} from "../../../helpers/redisKeyGetters";
 import { getCoreConfig } from "../../../config";
 
 export default async (req: ExReq, res: ExRes) => {
@@ -32,7 +28,6 @@ export default async (req: ExReq, res: ExRes) => {
 
     // If no entity is found, create a new blank one.
     if (!entity && createIfNotFound === "true") {
-
       // Call the webhook to validate the entity creation
       await validateEntityCreated(req, res, {
         projectId,
@@ -50,13 +45,8 @@ export default async (req: ExReq, res: ExRes) => {
         ...entityParams,
       })) as IEntity | null;
 
-      const { redisClient } = getCoreConfig();
-
-      // Define the Redis key for this project’s stats
-      const redisKey = getRedisProjectStatsKey(projectId);
-
-      // Increment the API calls counter for this project
-      await redisClient.hIncrBy(redisKey, REDIS_TRACKING_KEY.ENTITIES, 1);
+      const { handlers } = getCoreConfig();
+      await handlers.createEntity({ projectId });
     }
 
     if (!entity) {

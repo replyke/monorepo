@@ -1,24 +1,21 @@
-// export interface FileStorageProvider {
-//   uploadFile: (buffer: Buffer, path: string) => Promise<string>;
-// }
-
-import { RedisClientType } from "redis";
 import { Sequelize } from "sequelize";
-
-// export interface EmailProvider {
-//   sendEmail: (params: {
-//     to: string;
-//     subject: string;
-//     text: string;
-//     html?: string;
-//   }) => Promise<void>;
-// }
 
 export interface CoreConfig {
   accessTokenSecret: string;
   refreshTokenSecret: string;
-  redisClient: RedisClientType;
   sequelize: Sequelize;
+  handlers: {
+    createEntity: (props: { projectId: string }) => Promise<void>;
+    createComment: (props: { projectId: string }) => Promise<void>;
+    uploadFile: (props: {
+      projectId: string;
+      fileSize: number;
+    }) => Promise<void>;
+    requestNewAccessToken: (props: {
+      projectId: string;
+      userId: string;
+    }) => Promise<void>;
+  };
   createFile(
     projectId: string,
     pathParts: string[],

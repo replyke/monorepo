@@ -5,7 +5,6 @@ import IUser from "../../../interfaces/IUser";
 import { User } from "../../../models";
 import { Token } from "../../../models";
 import IToken from "../../../interfaces/IToken";
-import { getRedisProjectMauKey } from "../../../helpers/redisKeyGetters";
 import reduceAuthenticatedUserDetails from "../../../helpers/reduceAuthenticatedUserDetails";
 import { getCoreConfig } from "../../../config";
 import { Model, ModelStatic } from "sequelize";
@@ -111,12 +110,8 @@ export default async (req: ExReq, res: ExRes) => {
     userWithSuspensions.lastActive = new Date();
     userWithSuspensions.save();
 
-    const { redisClient } = getCoreConfig();
-    // Define the Redis key for this project’s stats
-    const redisKey = getRedisProjectMauKey(projectId!);
-
-    // Increment the API calls counter for this project
-    await redisClient.sAdd(redisKey, userId);
+    const { handlers } = getCoreConfig();
+    await handlers.requestNewAccessToken({ projectId, userId });
   } catch (err: any) {
     console.error("Error verifying refresh token:", err);
     res.status(403).json({

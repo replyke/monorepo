@@ -11,14 +11,10 @@ import updateUserReputation from "../../../helpers/updateUserReputation";
 import reputationScores from "../../../constants/reputation-scores";
 import validateEntityCreated from "../../../helpers/webhooks/validateEntityCreated";
 import ILocation from "../../../interfaces/ILocation";
-import {
-  getRedisProjectStatsKey,
-  REDIS_TRACKING_KEY,
-} from "../../../helpers/redisKeyGetters";
 import { getCoreConfig } from "../../../config";
 
 export default async (req: ExReq, res: ExRes) => {
-  const { sequelize, redisClient } = getCoreConfig();
+  const { sequelize, handlers } = getCoreConfig();
 
   try {
     const {
@@ -105,11 +101,7 @@ export default async (req: ExReq, res: ExRes) => {
       return { entity };
     });
 
-    // Define the Redis key for this project’s stats
-    const redisKey = getRedisProjectStatsKey(projectId);
-
-    // Increment the API calls counter for this project
-    await redisClient.hIncrBy(redisKey, REDIS_TRACKING_KEY.ENTITIES, 1);
+    await handlers.createEntity({ projectId });
 
     // Fetch the entity again but populated now
     const populatedEntity = (await Entity.findOne({

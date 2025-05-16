@@ -1,9 +1,5 @@
 import { Request as ExReq, Response as ExRes } from "express";
 import { slugify } from "transliteration";
-import {
-  getRedisProjectStatsKey,
-  REDIS_TRACKING_KEY,
-} from "../../../helpers/redisKeyGetters";
 import { getCoreConfig } from "../../../config";
 
 // Utility function to sanitize file names with transliteration
@@ -19,7 +15,7 @@ export default async (req: ExReq, res: ExRes) => {
     const pathParts = JSON.parse(req.body.pathParts);
     const projectId = req.project.id!;
     const file = req.file;
-    const { redisClient, createFile } = getCoreConfig();
+    const { handlers, createFile } = getCoreConfig();
 
     // Validate that pathParts is an array of strings
     if (
@@ -74,11 +70,7 @@ export default async (req: ExReq, res: ExRes) => {
 
     const fileId: string = id;
 
-    // Define the Redis key for this project’s stats
-    const redisKey = getRedisProjectStatsKey(projectId);
-
-    // Increment the API calls counter for this project
-    await redisClient.hIncrBy(redisKey, REDIS_TRACKING_KEY.STORAGE, file.size);
+    handlers.uploadFile({ projectId, fileSize: file.size });
 
     // Return a success response
     res.status(201).json({

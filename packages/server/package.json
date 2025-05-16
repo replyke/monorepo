@@ -36,7 +36,6 @@
     "jsonwebtoken": "^9.0.2",
     "mysql2": "*",
     "pg": "*",
-    "redis": "^4.7.0",
     "sequelize": "^6"
   },
   "devDependencies": {
@@ -48,7 +47,6 @@
     "axios": "^1.9.0",
     "express-rate-limit": "^7.5.0",
     "jsonwebtoken": "^9.0.2",
-    "redis": "^4.7.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3"
   }
