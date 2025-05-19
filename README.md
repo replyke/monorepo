@@ -15,8 +15,12 @@
 [![License](https://img.shields.io/github/license/replyke/monorepo)](LICENSE) ![npm](https://img.shields.io/badge/types-included-blue)
 [![runs with expo](https://img.shields.io/badge/Runs%20with%20Expo-4630EB.svg?&logo=EXPO&labelColor=f3f3f3&logoColor=000)](https://expo.io/)
 ![Discord](https://img.shields.io/discord/1325775309148000288?label=Discord&logo=discord&logoColor=white)
-![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/replykejs)
-![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/yantsab)
+<a href="https://x.com/intent/follow?screen_name=replykejs">
+<img src="https://img.shields.io/twitter/follow/replykejs?style=social"/>
+</a>
+<a href="https://x.com/intent/follow?screen_name=yantsab">
+<img src="https://img.shields.io/twitter/follow/yantsab?style=social"/>
+</a>
 
 Replyke gives developers a complete foundation for building social experiences - comments, votes, notifications, feeds, and more - without reinventing the wheel. Instead of wiring together a mix of libraries or building from scratch, Replyke offers drop-in APIs, SDKs, and components that are production-ready out of the box.
 
@@ -80,7 +84,6 @@ At the highest level, Replyke also offers prebuilt components that are fully wir
 
 Combined, these three layers give developers everything they need to integrate Replyke fully: from low-level API access to high-level components ready to ship.
 
-
 ## Moderation with the Dashboard
 
 One more critical part of the system is the Replyke Dashboard. While the three core layers handle the client experience, the dashboard is for product owners and moderators.
@@ -93,7 +96,6 @@ Through it, you can:
 - Suspend or ban users
 
 This separation ensures developers get the flexibility they want, while still giving teams the control and oversight they need to keep communities healthy and productive.
-
 
 ## Quick Start
 
