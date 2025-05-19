@@ -1,4 +1,5 @@
 import React from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import {
   SocialStyleCallbacks,
   SocialStyleConfig,
@@ -6,7 +7,6 @@ import {
 } from "@replyke/comments-social-core";
 import { useEntity } from "@replyke/core";
 import useSocialComments from "../hooks/useSocialComments";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 function SocialCommentSection({
   callbacks,
@@ -14,12 +14,14 @@ function SocialCommentSection({
   isVisible = true,
   sortOptions = ["top", "new", "old"],
   header,
+  withEmojis,
 }: {
   callbacks?: SocialStyleCallbacks;
   styleConfig?: SocialStyleConfig;
   isVisible?: boolean;
   sortOptions?: Array<"top" | "new" | "old"> | null;
   header?: React.ReactNode;
+  withEmojis?: boolean;
 }) {
   const { entity } = useEntity();
 
@@ -117,7 +119,7 @@ function SocialCommentSection({
           borderTopColor: "#e5e7eb",
         }}
       >
-        {isVisible && <NewCommentForm />}
+        {isVisible && <NewCommentForm withEmojis={withEmojis} />}
       </View>
     </CommentSectionProvider>
   );

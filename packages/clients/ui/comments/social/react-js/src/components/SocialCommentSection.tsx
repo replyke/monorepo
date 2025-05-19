@@ -1,3 +1,4 @@
+import React from "react";
 import {
   SocialStyleCallbacks,
   SocialStyleConfig,
@@ -5,7 +6,6 @@ import {
 } from "@replyke/comments-social-core";
 import { useEntity } from "@replyke/react-js";
 import useSocialComments from "../hooks/useSocialComments";
-import React from "react";
 
 function SocialCommentSection({
   callbacks,
@@ -13,12 +13,14 @@ function SocialCommentSection({
   isVisible = true,
   sortOptions = ["top", "new", "old"],
   header,
+  withEmojis,
 }: {
   callbacks?: SocialStyleCallbacks;
   styleConfig?: SocialStyleConfig;
   isVisible?: boolean;
   sortOptions?: Array<"top" | "new" | "old"> | null;
   header?: React.ReactNode;
+  withEmojis?: boolean;
 }) {
   const { entity } = useEntity();
 
@@ -100,7 +102,7 @@ function SocialCommentSection({
       </div>
 
       <div style={{ borderTop: "1px solid #e5e7eb" }}>
-        {isVisible && <NewCommentForm />}
+        {isVisible && <NewCommentForm withEmojis={withEmojis} />}
       </div>
     </CommentSectionProvider>
   );
