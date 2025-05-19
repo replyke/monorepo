@@ -15,10 +15,10 @@
 [![License](https://img.shields.io/github/license/replyke/monorepo)](LICENSE) ![npm](https://img.shields.io/badge/types-included-blue)
 [![runs with expo](https://img.shields.io/badge/Runs%20with%20Expo-4630EB.svg?&logo=EXPO&labelColor=f3f3f3&logoColor=000)](https://expo.io/)
 ![Discord](https://img.shields.io/discord/1325775309148000288?label=Discord&logo=discord&logoColor=white)
-<a href="https://x.com/intent/follow?screen_name=replykejs">
+<a href="https://x.com/intent/follow?screen_name=replykejs" target="_blank">
 <img src="https://img.shields.io/twitter/follow/replykejs?style=social"/>
 </a>
-<a href="https://x.com/intent/follow?screen_name=yantsab">
+<a href="https://x.com/intent/follow?screen_name=yantsab" target="_blank">
 <img src="https://img.shields.io/twitter/follow/yantsab?style=social"/>
 </a>
 
