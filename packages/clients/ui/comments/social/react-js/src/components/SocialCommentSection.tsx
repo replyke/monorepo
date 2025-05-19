@@ -1,8 +1,8 @@
 import React from "react";
 import {
   SocialStyleCallbacks,
-  SocialStyleConfig,
   useSocialStyle,
+  UseSocialStyleProps,
 } from "@replyke/comments-social-core";
 import { useEntity } from "@replyke/react-js";
 import useSocialComments from "../hooks/useSocialComments";
@@ -16,7 +16,7 @@ function SocialCommentSection({
   withEmojis,
 }: {
   callbacks?: SocialStyleCallbacks;
-  styleConfig?: SocialStyleConfig;
+  styleConfig?: Partial<UseSocialStyleProps>;
   isVisible?: boolean;
   sortOptions?: Array<"top" | "new" | "old"> | null;
   header?: React.ReactNode;

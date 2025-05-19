@@ -40,7 +40,7 @@ export const socialBaseStyle: SocialStyleConfig = {
     itemsGap: 8,
     verticalPadding: 8,
     paddingLeft: 8,
-    paddingRight: 8,
+    paddingRight: 16,
     authorAvatarSize: 32,
     placeholderText: "Add a comment...",
     textareaTextSize: 14,
