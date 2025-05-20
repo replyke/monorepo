@@ -14,7 +14,10 @@ export type { SocialStyleCallbacks } from "./interfaces/Callbacks";
 export type { CommentFeedStyleProps } from "./interfaces/style-props/CommentFeedStyleProps";
 export type { CommentStyleProps } from "./interfaces/style-props/CommentStyleProps";
 export type { NewCommentFormStyleProps } from "./interfaces/style-props/NewCommentFormStyleProps";
-export type { SocialStyleConfig } from "./interfaces/style-props/SocialStyleConfig";
+export type {
+  SocialStyleConfig,
+  PartialSocialStyleConfig,
+} from "./interfaces/style-props/SocialStyleConfig";
 export type { UseSocialStyleProps } from "./hooks/useSocialStyle";
 
 // Social section - other

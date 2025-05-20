@@ -7,3 +7,9 @@ export type SocialStyleConfig = {
   commentProps: CommentStyleProps;
   newCommentFormProps: NewCommentFormStyleProps;
 };
+
+export type PartialSocialStyleConfig = {
+  commentFeedProps: Partial<CommentFeedStyleProps>;
+  commentProps: Partial<CommentStyleProps>;
+  newCommentFormProps: Partial<NewCommentFormStyleProps>;
+};

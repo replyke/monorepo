@@ -1,6 +1,6 @@
 {
   "name": "@replyke/monorepo",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "license": "AGPL-3.0-only",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",

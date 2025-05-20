@@ -3,12 +3,16 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import {
   SocialStyleCallbacks,
   useSocialStyle,
-  UseSocialStyleProps,
+  PartialSocialStyleConfig,
 } from "@replyke/comments-social-core";
-import { useEntity } from "@replyke/core";
+import { Entity } from "@replyke/core";
 import useSocialComments from "../hooks/useSocialComments";
 
 function SocialCommentSection({
+  entity,
+  entityId,
+  foreignId,
+  shortId,
   callbacks,
   styleConfig: styleConfigProp,
   isVisible = true,
@@ -16,20 +20,25 @@ function SocialCommentSection({
   header,
   withEmojis,
 }: {
+  entity?: Entity;
+  entityId?: string | undefined | null;
+  foreignId?: string | undefined | null;
+  shortId?: string | undefined | null;
   callbacks?: SocialStyleCallbacks;
-  styleConfig?: Partial<UseSocialStyleProps>;
+  styleConfig?: Partial<PartialSocialStyleConfig>;
   isVisible?: boolean;
   sortOptions?: Array<"top" | "new" | "old"> | null;
   header?: React.ReactNode;
   withEmojis?: boolean;
 }) {
-  const { entity } = useEntity();
-
   const styleConfig = useSocialStyle(styleConfigProp);
 
   const { CommentSectionProvider, SortByButton, CommentsFeed, NewCommentForm } =
     useSocialComments({
-      entityId: entity?.id,
+      entity,
+      entityId,
+      foreignId,
+      shortId,
       styleConfig,
       callbacks,
     });
