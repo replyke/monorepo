@@ -1,7 +1,8 @@
 {
   "name": "@replyke/comments-social-react-js",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "private": false,
+  "license": "Apache-2.0",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Add a modern comment section to your React apps: replies, likes, mentions, highlighted comments, GIFs, built-in authorization, reports & moderation.",
   "keywords": [
@@ -24,7 +25,6 @@
     "type": "git",
     "url": "https://github.com/replyke/ui-kit.git"
   },
-  "license": "AGPL-3.0-only",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",

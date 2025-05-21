@@ -229,6 +229,16 @@ Good first issues are tagged with **good first issue**. -->
 
 - **Email** - [support@replyke.com](mailto:support@replyke.com)
 
-## License
+## Licenses
 
-Replyke is released under the **AGPL‑3.0‑only** license. See [LICENSE](LICENSE) for details.
+Replyke is **open-source** but different layers have different goals:
+
+| Layer            | Packages                                                                                                                       | License           | Why                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------- | ------------------------------------------------------------------------------ |
+| Core backend     | `@replyke/server`                                                                                                              | **AGPL-3.0-only** | Guarantees that any improvements to the server stay open and benefit everyone. |
+| Client SDKs & UI | `@replyke/core`, `@replyke/react-js`, `@replyke/react-native`, `@replyke/expo`, `@replyke/ui-core`,`@replyke/ui-core-react-js`, `@replyke/ui-core-react-native`, `@replyke/comments-social-core`, `@replyke/comments-social-react-js`, `@replyke/comments-social-react-native` | **Apache-2.0**    | Lets you embed Replyke in proprietary apps with zero license friction.         |
+
+**Hosted users:** Import any Apache-2.0 client package and keep your app closed-source.  
+**Self-hosters:** If you fork `@replyke/server` and deploy it, you must publish those changes under AGPL-3.0-only.
+
+See [`LICENSES.md`](LICENSES.md) for the full table.
