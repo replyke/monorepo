@@ -38,4 +38,4 @@ Full documentation, including API references and integration guides, is availabl
 
 ## License
 
-Replyke Core is licensed under the Apache 2.0 License.
+Replyke React JS is licensed under the Apache 2.0 License.
