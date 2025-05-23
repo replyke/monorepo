@@ -1,6 +1,6 @@
 {
   "name": "@replyke/monorepo",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "license": "SEE LICENSE IN LICENSES.md",
   "author": "Replyke, maintained by Yanay Tsabary",
   "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",

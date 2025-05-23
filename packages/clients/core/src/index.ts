@@ -96,6 +96,7 @@ export {
   useUser,
   useUserData,
   useFetchUser,
+  useFetchUserByForeignId,
   useFetchUserFollowersCount,
   useFetchUserFollowingCount,
   useCheckUsernameAvailability,
