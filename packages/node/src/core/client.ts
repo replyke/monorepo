@@ -24,6 +24,7 @@ export class ReplykeHttpClient {
       baseURL: "https://api.replyke.com/internal",
       headers: {
         Authorization: `Bearer ${apiKey}`,
+        "X-Replyke-Project-ID": projectId,
         ...(isInternal && { "X-Replyke-Internal": "true" }),
       },
     });
