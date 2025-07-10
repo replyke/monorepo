@@ -1,9 +1,9 @@
 {
   "name": "@replyke/js",
-  "version": "5.0.0-beta.1",
+  "version": "5.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "description": "Official NodeJS SDK for Replyke",
+  "description": "Official JavaScript SDK for Replyke",
   "scripts": {
     "build": "tsup src/index.ts --dts --format cjs,esm",
     "build:types": "tsc --emitDeclarationOnly",
