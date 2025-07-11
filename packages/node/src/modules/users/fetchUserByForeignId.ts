@@ -20,7 +20,7 @@ export async function fetchUserByForeignId(
 
   const params: Record<string, any> = {
     foreignId: data.foreignId,
-    createIfNotFound: data.foreignId,
+    createIfNotFound: true,
     name: data.name,
     username: data.username,
     avatar: data.avatar,
