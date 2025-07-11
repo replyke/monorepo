@@ -7,7 +7,7 @@ export interface DeleteEntityProps {
 export async function deleteEntity(
   client: ReplykeHttpClient,
   data: DeleteEntityProps
-): Promise<any> {
+): Promise<void> {
   const path = `/entities/${data.entityId}`;
   const response = await client.projectInstance.delete<any>(path);
   return response.data;

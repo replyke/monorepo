@@ -14,7 +14,7 @@ export interface CreateCommentProps {
 export async function createComment(
   client: ReplykeHttpClient,
   data: CreateCommentProps
-): Promise<any> {
+): Promise<Comment> {
   const path = `/comments`; // assuming client handles prefix like /{projectId}
   const response = await client.projectInstance.post<any>(path, data);
   return response.data;

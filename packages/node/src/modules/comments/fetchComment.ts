@@ -7,7 +7,7 @@ export interface FetchCommentProps {
 export async function fetchComment(
   client: ReplykeHttpClient,
   data: FetchCommentProps
-): Promise<any> {
+): Promise<Comment> {
   const path = `/comments/${data.commentId}`;
   const response = await client.projectInstance.get<any>(path);
   return response.data;

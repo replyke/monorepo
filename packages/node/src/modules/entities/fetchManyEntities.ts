@@ -1,4 +1,5 @@
 import { ReplykeHttpClient } from "../../core/client";
+import { Entity } from "../../interfaces/Entity";
 
 export interface KeywordsFilters {
   includes?: string[];
@@ -68,7 +69,7 @@ export interface FetchManyEntitiesProps {
 export async function fetchManyEntities(
   client: ReplykeHttpClient,
   data: FetchManyEntitiesProps
-): Promise<any> {
+): Promise<Entity[]> {
   const path = `/entities`;
   const response = await client.projectInstance.get<any>(path, {
     params: data,

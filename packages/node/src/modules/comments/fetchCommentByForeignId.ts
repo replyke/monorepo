@@ -7,8 +7,10 @@ export interface FetchCommentByForeignIdProps {
 export async function fetchCommentByForeignId(
   client: ReplykeHttpClient,
   data: FetchCommentByForeignIdProps
-): Promise<any> {
+): Promise<Comment> {
   const path = `/comments/by-foreign-id`;
-  const response = await client.projectInstance.get<any>(path, { params: data });
+  const response = await client.projectInstance.get<any>(path, {
+    params: data,
+  });
   return response.data;
 }

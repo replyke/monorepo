@@ -7,7 +7,7 @@ export interface DeleteCommentProps {
 export async function deleteComment(
   client: ReplykeHttpClient,
   data: DeleteCommentProps
-): Promise<any> {
+): Promise<void> {
   const path = `/comments/${data.commentId}`;
 
   const response = await client.projectInstance.delete<any>(path);

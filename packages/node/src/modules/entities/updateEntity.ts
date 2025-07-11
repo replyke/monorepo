@@ -1,4 +1,5 @@
 import { ReplykeHttpClient } from "../../core/client";
+import { Entity } from "../../interfaces/Entity";
 
 export interface UpdateEntityProps {
   entityId: string;
@@ -20,7 +21,7 @@ export interface UpdateEntityProps {
 export async function updateEntity(
   client: ReplykeHttpClient,
   data: UpdateEntityProps
-): Promise<any> {
+): Promise<Entity> {
   const { entityId, ...restOfProps } = data;
   const path = `/entities/${data.entityId}`;
   const response = await client.projectInstance.patch<any>(path, restOfProps);

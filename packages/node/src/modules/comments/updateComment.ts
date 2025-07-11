@@ -8,7 +8,7 @@ export interface UpdateCommentProps {
 export async function updateComment(
   client: ReplykeHttpClient,
   data: UpdateCommentProps
-): Promise<any> {
+): Promise<Comment> {
   const { commentId, ...restOfProps } = data;
   const path = `/comments/${data.commentId}`;
   const response = await client.projectInstance.patch<any>(path, restOfProps);

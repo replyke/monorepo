@@ -1,14 +1,14 @@
 import { ReplykeHttpClient } from "../../core/client";
+import { User } from "../../interfaces/User";
 
 export interface FetchUserByIdProps {
   userId: string;
 }
 
-// TODO: Replace "any" with Entity once we have types here too
 export async function fetchUserById(
   client: ReplykeHttpClient,
   data: FetchUserByIdProps
-): Promise<any> {
+): Promise<User> {
   const path = `/users/${data.userId}`; // assuming client handles prefix like /{projectId}
   const response = await client.projectInstance.get<any>(path);
   return response.data;
