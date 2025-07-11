@@ -11,6 +11,6 @@ export async function updateComment(
 ): Promise<Comment> {
   const { commentId, ...restOfProps } = data;
   const path = `/comments/${data.commentId}`;
-  const response = await client.projectInstance.patch<any>(path, restOfProps);
+  const response = await client.projectInstance.patch<Comment>(path, restOfProps);
   return response.data;
 }

@@ -31,7 +31,7 @@ export async function fetchUserByForeignId(
       : undefined,
   };
 
-  const response = await client.projectInstance.get<any>(path, {
+  const response = await client.projectInstance.get<User>(path, {
     params,
   });
 

@@ -1,8 +1,8 @@
 import axios, { AxiosInstance } from "axios";
 
 export interface ClientConfig {
-  apiKey: string;
   projectId: string;
+  apiKey: string;
   isInternal?: boolean;
 }
 
@@ -11,7 +11,7 @@ export class ReplykeHttpClient {
   internalInstance: AxiosInstance;
   baseInstance: AxiosInstance;
 
-  constructor({ apiKey, projectId, isInternal }: ClientConfig) {
+  constructor({ projectId, apiKey, isInternal }: ClientConfig) {
     this.projectInstance = axios.create({
       baseURL: `https://api.replyke.com/api/v5/${projectId}`,
       headers: {

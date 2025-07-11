@@ -11,7 +11,7 @@ export async function fetchEntityByForeignId(
   data: FetchEntityByForeignIdProps
 ): Promise<Entity> {
   const path = `/entities/by-foreign-id`;
-  const response = await client.projectInstance.get<any>(path, {
+  const response = await client.projectInstance.get<Entity>(path, {
     params: data,
   });
   return response.data;

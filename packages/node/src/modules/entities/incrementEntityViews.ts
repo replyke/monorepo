@@ -12,6 +12,6 @@ export async function incrementEntityViews(
 ): Promise<Entity> {
   const { entityId, ...restOfProps } = data;
   const path = `/entities/${data.entityId}/increment-views`;
-  const response = await client.projectInstance.patch<any>(path, restOfProps);
+  const response = await client.projectInstance.patch<Entity>(path, restOfProps);
   return response.data;
 }

@@ -16,6 +16,6 @@ export async function createComment(
   data: CreateCommentProps
 ): Promise<Comment> {
   const path = `/comments`; // assuming client handles prefix like /{projectId}
-  const response = await client.projectInstance.post<any>(path, data);
+  const response = await client.projectInstance.post<Comment>(path, data);
   return response.data;
 }

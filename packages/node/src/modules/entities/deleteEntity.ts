@@ -9,6 +9,6 @@ export async function deleteEntity(
   data: DeleteEntityProps
 ): Promise<void> {
   const path = `/entities/${data.entityId}`;
-  const response = await client.projectInstance.delete<any>(path);
+  const response = await client.projectInstance.delete<void>(path);
   return response.data;
 }

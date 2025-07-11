@@ -10,6 +10,6 @@ export async function deleteComment(
 ): Promise<void> {
   const path = `/comments/${data.commentId}`;
 
-  const response = await client.projectInstance.delete<any>(path);
+  const response = await client.projectInstance.delete<void>(path);
   return response.data;
 }

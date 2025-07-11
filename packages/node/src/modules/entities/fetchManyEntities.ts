@@ -71,7 +71,7 @@ export async function fetchManyEntities(
   data: FetchManyEntitiesProps
 ): Promise<Entity[]> {
   const path = `/entities`;
-  const response = await client.projectInstance.get<any>(path, {
+  const response = await client.projectInstance.get<Entity[]>(path, {
     params: data,
   });
   return response.data;
