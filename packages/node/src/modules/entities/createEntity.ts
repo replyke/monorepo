@@ -15,6 +15,7 @@ export interface CreateEntityProps {
   metadata?: Record<string, any>;
   userId?: string;
   createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export async function createEntity(
