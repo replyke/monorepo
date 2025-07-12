@@ -2,7 +2,8 @@ import { ReplykeHttpClient } from "../../core/client";
 
 export interface UpdateCommentProps {
   commentId: string;
-  update: string;
+  content: string;
+  createdAt?: Date;
 }
 
 export async function updateComment(
@@ -11,6 +12,9 @@ export async function updateComment(
 ): Promise<Comment> {
   const { commentId, ...restOfProps } = data;
   const path = `/comments/${data.commentId}`;
-  const response = await client.projectInstance.patch<Comment>(path, restOfProps);
+  const response = await client.projectInstance.patch<Comment>(
+    path,
+    restOfProps
+  );
   return response.data;
 }

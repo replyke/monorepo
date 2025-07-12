@@ -9,6 +9,7 @@ export interface CreateCommentProps {
   referencedCommentId?: string;
   attachments?: Record<string, any>[];
   metadata?: Record<string, any>;
+  createdAt?: Date;
 }
 
 export async function createComment(
