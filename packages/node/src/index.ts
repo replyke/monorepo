@@ -3,6 +3,7 @@ import * as Users from "./modules/users";
 import * as Entities from "./modules/entities";
 import * as Comments from "./modules/comments";
 import * as HostedApps from "./modules/hosted-apps";
+import * as Lists from "./modules/lists";
 
 type BoundModule<
   T extends Record<string, (client: ReplykeHttpClient, ...args: any[]) => any>
@@ -19,6 +20,7 @@ export class ReplykeClient {
   public entities: BoundModule<typeof Entities>;
   public comments: BoundModule<typeof Comments>;
   public hostedApps: BoundModule<typeof HostedApps>;
+  public lists: BoundModule<typeof Lists>;
 
   private constructor(http: ReplykeHttpClient) {
     this.http = http;
@@ -26,6 +28,7 @@ export class ReplykeClient {
     this.entities = bindModule(Entities, this.http);
     this.comments = bindModule(Comments, this.http);
     this.hostedApps = bindModule(HostedApps, this.http);
+    this.lists = bindModule(Lists, this.http);
   }
 
   static async init(config: ClientConfig): Promise<ReplykeClient> {

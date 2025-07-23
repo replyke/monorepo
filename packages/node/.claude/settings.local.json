@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.replyke.com)",
+      "WebFetch(domain:docs.replyke.com)",
+      "WebFetch(domain:docs.replyke.com)"
+    ],
+    "deny": []
+  }
+}
