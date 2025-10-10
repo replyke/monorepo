@@ -1,0 +1,165 @@
+# Comment Section: Using the ThreadedCommentSection Component
+
+The `ThreadedCommentSection` component offers the simplest way to integrate a fully functional, threaded-style comment section into your application. It encapsulates the core Replyke comment components with unlimited nesting levels and a Reddit-style interface, allowing extensive customization via props.
+
+This component is ideal for developers who want to implement a complete threaded comment section with minimal code while retaining flexibility for forums, discussions, and detailed conversations.
+
+---
+
+## Integration Example
+
+Assuming your app already wraps its content in a `ReplykeProvider`, you can use the component like so:
+
+```tsx
+const DISCUSSION_TOPIC = {
+  id: "topic_5678",
+  title: "React Best Practices Discussion",
+  content: "What are your favorite React patterns for 2024?",
+};
+
+<ThreadedCommentSection foreignId={DISCUSSION_TOPIC.id} />
+```
+
+Here is a complete example:
+
+```tsx
+import { useEffect, useState } from "react";
+import { ReplykeProvider, useSignTestingJwt } from "@replyke/react-js";
+import { ThreadedCommentSection } from "@replyke/comments-threaded-react-js";
+
+const PROJECT_ID = import.meta.env.VITE_PUBLIC_REPLYKE_PROJECT_ID;
+const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_REPLYKE_SECRET_KEY;
+
+const DUMMY_USER = { id: "user1", username: "tech_developer" };
+const DISCUSSION_TOPIC = {
+  id: "topic_5678",
+  title: "React Best Practices Discussion",
+  content: "What are your favorite React patterns for 2024?",
+};
+
+function App() {
+  const signTestingJwt = useSignTestingJwt();
+  const [signedToken, setSignedToken] = useState<string>();
+
+  useEffect(() => {
+    const handleSignJwt = async () => {
+      const token = await signTestingJwt({
+        projectId: PROJECT_ID,
+        privateKey: PRIVATE_KEY,
+        payload: DUMMY_USER,
+      });
+      setSignedToken(token);
+    };
+
+    handleSignJwt();
+  }, []);
+
+  return (
+    <ReplykeProvider projectId={PROJECT_ID} signedToken={signedToken}>
+      <ThreadedCommentSection foreignId={DISCUSSION_TOPIC.id} />
+    </ReplykeProvider>
+  );
+}
+```
+
+---
+
+## Component Props
+
+### `entity`, `entityId`, `foreignId`, `shortId`
+
+_Required_
+
+Used to identify the entity (e.g., a discussion topic or article) for which comments are rendered. None are mandatory individually, but at least one must be provided:
+
+- `entity`: A complete `Entity` object.
+- `entityId`: The internal Replyke ID for the entity.
+- `foreignId`: An external ID if integrating with your own dataset.
+- `shortId`: A short, human-readable identifier.
+
+---
+
+### `callbacks`
+
+_Optional_
+
+Object of interaction handlers conforming to `ThreadedStyleCallbacks`. These may include login prompts, navigation to user profiles, mention behavior, voting interactions, and more.
+
+See full reference in the [Callbacks](./callbacks) section.
+
+---
+
+### `styleConfig`
+
+_Optional_
+
+A `PartialThreadedStyleConfig` object used to control layout and visual styling. You can override only the parts you wish to change, offering flexibility while relying on defaults where needed.
+
+See [Styling](./styling) for more details.
+
+---
+
+### `isVisible`
+
+_Default: `true`_
+
+Indicates whether the comment section is currently visible. This is useful when rendering the section inside a drawer or another conditional layout, ensuring that certain listeners and behaviors are only active when visible.
+
+---
+
+### `highlightedCommentId`
+
+_Optional_
+
+ID of a specific comment to highlight when the section loads. This is particularly useful when directing users to a specific comment from notifications or direct links.
+
+---
+
+### `children`
+
+_Optional_
+
+React node(s) that will be rendered within the comment feed area. This allows for custom content or messaging within the threaded comment section.
+
+---
+
+## Notes
+
+- This component is internally powered by `useThreadedComments` and renders:
+
+  - `CommentSectionProvider`
+  - `CommentsFeed` (with unlimited nesting support)
+  - `NewCommentForm` (if `isVisible`)
+
+- The threaded style features:
+  - **Unlimited nesting**: Comments can be nested to any depth
+  - **Visual threading**: Clear indentation and connection lines show comment hierarchy
+  - **Upvote/downvote system**: Reddit-style voting for each comment
+  - **Collapsible threads**: Users can collapse/expand comment chains
+
+- If you need greater control over layout and behavior, you may use the [Comment Section Hook](./provider-and-hook) directly.
+
+---
+
+## When to Use
+
+Use `ThreadedCommentSection` if you want to:
+
+- Enable deep, nested discussions with unlimited reply levels
+- Implement forum-style or Reddit-style commenting
+- Allow complex conversations with clear visual hierarchy
+- Provide upvote/downvote functionality for community moderation
+- Support collapsible comment threads for better navigation
+
+For more flexibility in customizing the layout of the comment section beyond the options provided, consider using the hook and provider. For advanced use cases, such as building custom comment sections, consider the lower-level hooks & API.
+
+---
+
+## Key Differences from Social Comments
+
+- **Unlimited nesting** instead of 2-level maximum
+- **Upvote/downvote system** instead of hearts/likes
+- **Visual threading** with indentation and connection lines
+- **Collapsible threads** for better navigation
+- **No built-in sort controls** (sorting handled differently in threaded discussions)
+- **Focus on structured discussions** rather than quick social interactions

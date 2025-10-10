@@ -1,0 +1,15 @@
+export default {
+  useCreateEntity: "useCreateEntity",
+  useFetchEntity: "useFetchEntity",
+  useFetchEntityByForeignId: "useFetchEntityByForeignId",
+  useFetchEntityByShortId: "useFetchEntityByShortId",
+  useUpdateEntity: "useUpdateEntity",
+  useEntityVotes: "useEntityVotes",
+  useUpvoteEntity: "useUpvoteEntity",
+  useRemoveEntityUpvote: "useRemoveEntityUpvote",
+  useDownvoteEntity: "useDownvoteEntity",
+  useRemoveEntityDownvote: "useRemoveEntityDownvote",
+  useIncrementEntityViews: "useIncrementEntityViews",
+  useDeleteEntity: "useDeleteEntity",
+  useEntityData: "useEntityData",
+};

@@ -1,0 +1,103 @@
+# Remove Upvote from Comment
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/comments/:commentId/remove-upvote`
+
+**Method:** `PATCH`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Removes a previously added upvote from a comment by the authenticated user.
+
+- Subtracts the user's ID from the `upvotes` array.
+- Decreases the reputation of the comment's author.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter   | Type     | Required | Description                         |
+| ----------- | -------- | -------- | ----------------------------------- |
+| `commentId` | `string` | Yes      | The ID of the comment to un-upvote. |
+
+### Headers
+
+| Header          | Type     | Required | Description                           |
+| --------------- | -------- | -------- | ------------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authenticated users. |
+
+---
+
+## Response
+
+### Success Response (`200 OK`)
+
+Returns the updated comment:
+
+```json
+{
+  "id": "comment-123",
+  "entityId": "entity-456",
+  "upvotes": [],
+  "downvotes": [],
+  "content": "Insightful post!",
+  ...
+}
+```
+
+---
+
+### Error Responses
+
+#### Missing Comment ID (`400 Bad Request`)
+
+```json
+{
+  "error": "Missing required data",
+  "code": "comment/missing-data"
+}
+```
+
+#### Not Found (`404 Not Found`)
+
+```json
+{
+  "error": "Comment not found",
+  "code": "comment/not-found"
+}
+```
+
+#### Not Upvoted (`409 Conflict`)
+
+```json
+{
+  "error": "User hasn't upvoted this comment",
+  "code": "comment/not-upvoted"
+}
+```
+
+#### Server Error (`500 Internal Server Error`)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "comment/server-error",
+  "details": "[error message]"
+}
+```
+
+---
+
+## Notes
+
+- The authenticated user must have already upvoted the comment.
+- Removes the user's ID from `upvotes`.
+- Deducts reputation from the comment's author.
+- A `409 Conflict` is returned if the user hasn't upvoted the comment.

@@ -1,0 +1,45 @@
+# `useRemoveEntityDownvote`
+
+## Overview
+
+The `useRemoveEntityDownvote` hook provides a way to remove a previously cast downvote from an entity.
+
+## Usage Example
+
+```tsx
+import { useRemoveEntityDownvote } from "@replyke/react-js";
+import { Button } from "@/components/ui/button";
+
+function EntityComponent({ entityId }: { entityId: string }) {
+  const removeDownvote = useRemoveEntityDownvote();
+
+  const handleRemoveDownvote = async () => {
+    try {
+      const response = await removeDownvote({ entityId });
+      console.log("Downvote removed:", response);
+    } catch (err) {
+      console.error("Failed to remove downvote:", err);
+    }
+  };
+
+  return <Button onClick={handleRemoveDownvote}>Remove Downvote</Button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The `removeEntityDownvote` function returned by the hook accepts a single object with the following field:
+
+| Parameter  | Type     | Description                                    |
+| ---------- | -------- | ---------------------------------------------- |
+| `entityId` | `string` | The ID of the entity whose downvote to remove. |
+
+### Returns
+
+The function returns a `Promise<Entity>` representing the API response:
+
+| Return Value | Type     | Description                                                    |
+| ------------ | -------- | -------------------------------------------------------------- |
+| `response`   | `Entity` | The updated entity after the downvote is successfully removed. |

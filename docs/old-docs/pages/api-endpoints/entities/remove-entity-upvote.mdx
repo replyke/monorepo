@@ -1,0 +1,91 @@
+# Remove Upvote from Entity
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/entities/:entityId/remove-upvote`
+
+**Method:** `PATCH`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Removes an upvote from the authenticated user on the specified entity.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter  | Type     | Required | Description                 |
+| ---------- | -------- | -------- | --------------------------- |
+| `entityId` | `string` | Yes      | ID of the entity to modify. |
+
+### Headers
+
+| Header          | Type     | Required | Description                             |
+| --------------- | -------- | -------- | --------------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token of the authenticated user. |
+
+### Example Request
+
+```http
+PATCH /entities/abc123/remove-upvote
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+Returns the updated entity with the user’s upvote removed.
+
+```json
+{
+  "id": "abc123",
+  "userId": "user_456",
+  "upvotes": [],
+  ...
+}
+```
+
+### Error Responses
+
+#### Not Upvoted (409 Conflict)
+
+```json
+{
+  "error": "Can't remove upvote, as user didn't upvote entity or entity not found.",
+  "code": "entity/not-upvoted"
+}
+```
+
+#### Not Found (404 Not Found)
+
+```json
+{
+  "error": "Entity not found.",
+  "code": "entity/not-found"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "entity/server-error"
+}
+```
+
+---
+
+## Notes
+
+- Removing an upvote decreases the entity author’s reputation.
+- The request will fail if the entity was never upvoted by the user.

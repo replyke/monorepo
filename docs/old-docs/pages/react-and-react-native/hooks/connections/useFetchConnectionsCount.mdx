@@ -1,0 +1,402 @@
+# `useFetchConnectionsCount`
+
+## Overview
+
+The `useFetchConnectionsCount` hook fetches the total number of established connections for the current logged-in user. This is useful for displaying connection counts in user profiles, dashboard statistics, or navigation badges.
+
+## Usage Example
+
+```tsx
+import { useFetchConnectionsCount } from "@replyke/react-js";
+
+function MyConnectionsCounter() {
+  const fetchConnectionsCount = useFetchConnectionsCount();
+
+  const getMyConnectionsCount = async () => {
+    try {
+      const result = await fetchConnectionsCount();
+      console.log(`You have ${result.count} connections`);
+    } catch (error) {
+      console.error("Failed to fetch connections count:", error.message);
+    }
+  };
+
+  return <button onClick={getMyConnectionsCount}>Check My Connections</button>;
+}
+```
+
+## Advanced Usage with State Management
+
+```tsx
+import { useFetchConnectionsCount } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function ConnectionsCountDisplay() {
+  const fetchConnectionsCount = useFetchConnectionsCount();
+  const [count, setCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await fetchConnectionsCount();
+        setCount(result.count);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load count');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCount();
+  }, [fetchConnectionsCount]);
+
+  if (loading) return <div>Loading connections count...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div className="connections-count">
+      <h3>{count ?? 0}</h3>
+      <p>Connections</p>
+    </div>
+  );
+}
+```
+
+## Usage in Profile Dashboard
+
+```tsx
+import { useFetchConnectionsCount } from "@replyke/react-js";
+import { useEffect, useState } from "react";
+
+interface NetworkStats {
+  connections: number;
+  // Other stats...
+}
+
+function NetworkStatsWidget() {
+  const fetchConnectionsCount = useFetchConnectionsCount();
+  const [stats, setStats] = useState<NetworkStats>({ connections: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadNetworkStats = async () => {
+      try {
+        const connectionsResult = await fetchConnectionsCount();
+        setStats(prev => ({ ...prev, connections: connectionsResult.count }));
+      } catch (error) {
+        console.error("Failed to load network stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadNetworkStats();
+  }, [fetchConnectionsCount]);
+
+  if (loading) return <div>Loading network stats...</div>;
+
+  return (
+    <div className="network-stats-widget">
+      <div className="stat-card">
+        <div className="stat-number">{stats.connections.toLocaleString()}</div>
+        <div className="stat-label">Professional Connections</div>
+        <div className="stat-description">People in your network</div>
+      </div>
+    </div>
+  );
+}
+```
+
+## Usage with Real-time Updates
+
+```tsx
+import { useFetchConnectionsCount } from "@replyke/react-js";
+import { useState, useEffect, useCallback } from "react";
+
+function LiveConnectionsCounter() {
+  const fetchConnectionsCount = useFetchConnectionsCount();
+  const [count, setCount] = useState<number>(0);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const refreshCount = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const result = await fetchConnectionsCount();
+      setCount(result.count);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error("Failed to refresh connections count:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [fetchConnectionsCount]);
+
+  // Initial load
+  useEffect(() => {
+    refreshCount();
+  }, [refreshCount]);
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(refreshCount, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [refreshCount]);
+
+  return (
+    <div className="live-connections-counter">
+      <div className="count-display">
+        <span className="count">{count.toLocaleString()}</span>
+        <span className="label">Connections</span>
+      </div>
+
+      <div className="metadata">
+        {lastUpdated && (
+          <small className="last-updated">
+            Updated: {lastUpdated.toLocaleTimeString()}
+          </small>
+        )}
+
+        <button
+          onClick={refreshCount}
+          disabled={isRefreshing}
+          className="refresh-btn"
+        >
+          {isRefreshing ? "⟳" : "↻"} {isRefreshing ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+## Usage in Navigation Badge
+
+```tsx
+import { useFetchConnectionsCount } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function NavigationWithConnectionsBadge() {
+  const fetchConnectionsCount = useFetchConnectionsCount();
+  const [connectionsCount, setConnectionsCount] = useState<number>(0);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const result = await fetchConnectionsCount();
+        setConnectionsCount(result.count);
+      } catch (error) {
+        console.error("Failed to load connections count for badge:", error);
+      }
+    };
+
+    loadCount();
+  }, [fetchConnectionsCount]);
+
+  const formatBadgeCount = (count: number): string => {
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K`;
+    }
+    return count.toString();
+  };
+
+  return (
+    <nav className="main-navigation">
+      <ul>
+        <li>
+          <a href="/dashboard">Dashboard</a>
+        </li>
+        <li className="nav-item-with-badge">
+          <a href="/connections">
+            Connections
+            {connectionsCount > 0 && (
+              <span className="nav-badge">
+                {formatBadgeCount(connectionsCount)}
+              </span>
+            )}
+          </a>
+        </li>
+        <li>
+          <a href="/messages">Messages</a>
+        </li>
+      </ul>
+    </nav>
+  );
+}
+```
+
+## Usage with Achievement System
+
+```tsx
+import { useFetchConnectionsCount } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+interface ConnectionMilestone {
+  count: number;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+const CONNECTION_MILESTONES: ConnectionMilestone[] = [
+  { count: 1, title: "First Connection", description: "Made your first professional connection", icon: "🤝" },
+  { count: 10, title: "Networker", description: "Connected with 10 professionals", icon: "🌐" },
+  { count: 50, title: "Well Connected", description: "Built a network of 50 connections", icon: "⭐" },
+  { count: 100, title: "Super Connector", description: "Reached 100 professional connections", icon: "🚀" },
+  { count: 500, title: "Network Master", description: "Amazing! 500 connections strong", icon: "👑" },
+];
+
+function ConnectionsAchievements() {
+  const fetchConnectionsCount = useFetchConnectionsCount();
+  const [currentCount, setCurrentCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const result = await fetchConnectionsCount();
+        setCurrentCount(result.count);
+      } catch (error) {
+        console.error("Failed to load connections count:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCount();
+  }, [fetchConnectionsCount]);
+
+  const getAchievedMilestones = () => {
+    return CONNECTION_MILESTONES.filter(milestone => currentCount >= milestone.count);
+  };
+
+  const getNextMilestone = () => {
+    return CONNECTION_MILESTONES.find(milestone => currentCount < milestone.count);
+  };
+
+  if (loading) return <div>Loading achievements...</div>;
+
+  const achievedMilestones = getAchievedMilestones();
+  const nextMilestone = getNextMilestone();
+
+  return (
+    <div className="connections-achievements">
+      <div className="current-stats">
+        <h3>Your Network</h3>
+        <div className="count-display">
+          <span className="count">{currentCount.toLocaleString()}</span>
+          <span className="label">Connections</span>
+        </div>
+      </div>
+
+      <div className="achievements">
+        <h4>Achievements Unlocked</h4>
+        {achievedMilestones.length > 0 ? (
+          <div className="milestone-list">
+            {achievedMilestones.map(milestone => (
+              <div key={milestone.count} className="milestone achieved">
+                <span className="icon">{milestone.icon}</span>
+                <div className="milestone-info">
+                  <h5>{milestone.title}</h5>
+                  <p>{milestone.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>Start connecting to unlock achievements!</p>
+        )}
+      </div>
+
+      {nextMilestone && (
+        <div className="next-milestone">
+          <h4>Next Goal</h4>
+          <div className="milestone pending">
+            <span className="icon">{nextMilestone.icon}</span>
+            <div className="milestone-info">
+              <h5>{nextMilestone.title}</h5>
+              <p>{nextMilestone.description}</p>
+              <div className="progress">
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${Math.min((currentCount / nextMilestone.count) * 100, 100)}%`
+                    }}
+                  />
+                </div>
+                <span className="progress-text">
+                  {currentCount} / {nextMilestone.count}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that takes no parameters.
+
+### Returns
+
+The function returns a Promise that resolves to a `ConnectionCountResponse` object containing:
+
+| Field   | Type     | Description                                       |
+|---------|----------|---------------------------------------------------|
+| `count` | `number` | The total number of established connections       |
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user is logged in
+- Network connection issues
+
+### Use Cases
+
+This hook is commonly used in:
+
+**Profile & Dashboard Features:**
+- User profile connection counters
+- Dashboard statistics widgets
+- Professional networking metrics
+
+**Navigation & UI:**
+- Navigation badge counts
+- Menu item indicators
+- Status bar information
+
+**Gamification:**
+- Achievement systems based on connection counts
+- Progress tracking for networking goals
+- Milestone celebrations
+
+**Analytics & Reporting:**
+- User engagement metrics
+- Network growth tracking
+- Social proof displays
+
+### Performance Considerations
+
+- **Caching**: Consider caching the result to avoid frequent API calls
+- **Auto-refresh**: Implement periodic updates for dynamic displays
+- **Optimistic Updates**: Update count immediately after connection actions
+- **Error Handling**: Provide graceful fallbacks for loading states
+
+### Related Hooks
+
+- `useFetchConnections` - Get detailed connection information with pagination
+- `useFetchConnectionsCountByUserId` - Get connection count for any user
+- `useConnectionManager` - Comprehensive connection state management
+- `useFetchConnectionStatus` - Check connection status with specific users

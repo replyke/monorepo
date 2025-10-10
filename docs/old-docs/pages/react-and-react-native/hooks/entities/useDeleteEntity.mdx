@@ -1,0 +1,44 @@
+# `useDeleteEntity`
+
+## Overview
+
+The `useDeleteEntity` hook is used to delete an existing entity within the project. It ensures the specified entity is removed by making an authenticated request to the server.
+
+## Usage Example
+
+```tsx
+import { useDeleteEntity } from "@replyke/react-js";
+
+function DeleteEntityButton({ entityId }: { entityId: string }) {
+  const deleteEntity = useDeleteEntity();
+
+  const handleDelete = async () => {
+    try {
+      await deleteEntity({
+        entityId,
+      });
+
+      console.log("Entity deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete entity:", error.message);
+    }
+  };
+
+  return <button onClick={handleDelete}>Delete Entity</button>;
+}
+```
+
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+| Parameter   | Type     | Required | Description                                  |
+|-------------|----------|----------|----------------------------------------------|
+| `entityId`  | `string` | Yes      | The ID of the entity to be deleted.          |
+
+### Returns
+
+The function does not return a value but ensures the entity is removed on the server upon successful execution.

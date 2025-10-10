@@ -1,0 +1,102 @@
+# Create Sub-List
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/lists/:listId/sub-lists`
+
+**Method:** `POST`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Creates a new sub-list (nested list) under the specified parent list.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description                         |
+| --------- | -------- | -------- | ----------------------------------- |
+| `listId`  | `string` | Yes      | ID of the parent list to nest under |
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Body Parameters
+
+| Field      | Type     | Required | Description              |
+| ---------- | -------- | -------- | ------------------------ |
+| `listName` | `string` | Yes      | Name of the new sub-list |
+
+#### Example Request
+
+```json
+{
+  "listName": "Ideas"
+}
+```
+
+---
+
+## Response
+
+### Success Response (201 Created)
+
+```json
+{
+  "id": "list_456",
+  "projectId": "proj_123",
+  "userId": "user_abc",
+  "name": "Ideas",
+  "parentId": "list_123",
+  "entityIds": [],
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### Error Responses
+
+#### Missing Parameters (400 Bad Request)
+
+```json
+{
+  "error": "Missing required parameters in request body",
+  "code": "list/missing-parameters"
+}
+```
+
+#### Invalid Parent List (400 Bad Request)
+
+```json
+{
+  "error": "Invalid parent list ID for sub-list",
+  "code": "list/invalid-parent"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Server error",
+  "code": "list/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+* The authenticated user's ID is automatically associated with the new list.
+* Only existing parent lists can be used for sub-list creation.
+* The response includes the populated list details.

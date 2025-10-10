@@ -1,0 +1,103 @@
+# Downvote Comment
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/comments/:commentId/downvote`
+
+**Method:** `PATCH`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Downvotes a comment on behalf of the authenticated user.
+
+* Adds the user's ID to the comment's `downvotes` array.
+* Removes the user from `upvotes` if they had previously upvoted.
+* Reduces the reputation of the comment's author.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter   | Type     | Required | Description                        |
+| ----------- | -------- | -------- | ---------------------------------- |
+| `commentId` | `string` | Yes      | The ID of the comment to downvote. |
+
+### Headers
+
+| Header          | Type     | Required | Description                           |
+| --------------- | -------- | -------- | ------------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authenticated users. |
+
+---
+
+## Response
+
+### Success Response (`200 OK`)
+
+Returns the updated comment:
+
+```json
+{
+  "id": "comment-123",
+  "entityId": "entity-456",
+  "upvotes": [],
+  "downvotes": ["user-789"],
+  "content": "Disagree with this point.",
+  ...
+}
+```
+
+---
+
+### Error Responses
+
+#### Missing Comment ID (`400 Bad Request`)
+
+```json
+{
+  "error": "Missing required data",
+  "code": "comment/missing-data"
+}
+```
+
+#### Not Found (`404 Not Found`)
+
+```json
+{
+  "error": "Comment not found",
+  "code": "comment/not-found"
+}
+```
+
+#### Already Downvoted (`409 Conflict`)
+
+```json
+{
+  "error": "User has already downvoted this comment",
+  "code": "comment/already-downvoted"
+}
+```
+
+#### Server Error (`500 Internal Server Error`)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "comment/server-error",
+  "details": "[error message]"
+}
+```
+
+---
+
+## Notes
+
+* The user's ID is removed from `upvotes` if it was previously added.
+* A downvote reduces the comment author's reputation.
+* A `409 Conflict` is returned if the user has already downvoted the comment.

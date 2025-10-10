@@ -1,0 +1,93 @@
+# Delete Comment
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/comments/:commentId`
+
+**Method:** `DELETE`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Deletes a comment from the project.
+
+- Only the original author or a master client can delete the comment.
+- Decreases the author's reputation.
+- Recursively updates all replies to mark their parent as deleted (`parentDeletedAt`).
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter   | Type     | Required | Description                      |
+| ----------- | -------- | -------- | -------------------------------- |
+| `commentId` | `string` | Yes      | The ID of the comment to delete. |
+
+### Headers
+
+| Header          | Type     | Required | Description                           |
+| --------------- | -------- | -------- | ------------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authenticated users. |
+
+---
+
+## Response
+
+### Success Response (`204 No Content`)
+
+Comment was successfully deleted. No content is returned.
+
+---
+
+### Error Responses
+
+#### Missing Comment ID (`400 Bad Request`)
+
+```json
+{
+  "error": "Missing comment ID",
+  "code": "comment/missing-comment-id"
+}
+```
+
+#### Not Found (`404 Not Found`)
+
+```json
+{
+  "error": "Comment not found",
+  "code": "comment/not-found"
+}
+```
+
+#### Not Authorized (`403 Forbidden`)
+
+```json
+{
+  "error": "You do not have permission to delete this comment.",
+  "code": "comment/not-authorized"
+}
+```
+
+#### Server Error (`500 Internal Server Error`)
+
+```json
+{
+  "error": "Server error",
+  "code": "comment/server-error",
+  "details": "[error message]"
+}
+```
+
+---
+
+## Notes
+
+- Only the comment's author or a master client may delete the comment.
+- Upon deletion, the comment author's reputation is reduced.
+- All child replies have their `parentDeletedAt` timestamp updated recursively.
+- Replies are not deleted — they are marked as having a deleted parent.

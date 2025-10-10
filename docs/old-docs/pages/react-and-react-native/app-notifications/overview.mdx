@@ -1,0 +1,71 @@
+import { Table, Td, Th, Tr } from 'nextra/components'
+ 
+## Overview
+
+When building social platforms, interactions between users play a vital role in creating an engaging experience. For instance:
+
+- A user might like another user's post.
+- A user might comment on or reply to another user's comment.
+- A user might follow someone new.
+
+To keep users informed and engaged, notifying them about these interactions is crucial. This is where **app notifications** come into play.
+
+**App notifications** are visible within the app itself, typically in a designated notification page or box. These notifications provide users with updates about events related to their activity or content, ensuring they stay connected to the platform's social interactions. Replyke handles app notifications automatically, requiring no additional setup from developers for them to be generated. Moreover, the notification messages shown to users can be easily customized, which will be covered in later chapters.
+
+---
+
+### Difference Between App Notifications and Push Notifications
+
+While app notifications are displayed within the app, **push notifications** go a step further by alerting users on their devices, even if the app is not currently open. Understanding the distinction between the two is important:
+
+&nbsp;
+
+<Table>
+  <thead>
+    <Tr>
+      <Th>Feature</Th>
+      <Th>App Notifications</Th>
+      <Th>Push Notifications</Th>
+    </Tr>
+  </thead>
+  <tbody>
+    <Tr>
+      <Td>Location</Td>
+      <Td>Visible within the app in a notification box/page.</Td>
+      <Td>Delivered to the user’s device (outside the app).</Td>
+    </Tr>
+    <Tr>
+      <Td>Purpose</Td>
+      <Td>Keeps users updated on events while using the app.</Td>
+      <Td>Alerts users about events even when inactive.</Td>
+    </Tr>
+    <Tr>
+      <Td>Implementation</Td>
+      <Td>Handled entirely by Replyke.</Td>
+      <Td>Requires external services or custom setup.</Td>
+    </Tr>
+  </tbody>
+</Table>
+
+
+Although app notifications and push notifications often work together, they are not the same. Typically, when an event occurs:
+
+1.  Replyke generates an **app notification**.
+2.  A **push notification** may be sent simultaneously to alert the user.
+
+Replyke provides comprehensive support for app notifications but leaves push notifications for developers to implement using external tools or services.
+
+---
+
+### Integrating Push Notifications
+
+To connect app notifications with push notifications, Replyke offers a **webhook** mechanism. Developers can supply Replyke with a webhook URL that is triggered whenever a notification is created. This webhook provides detailed event data, allowing developers to:
+
+- Use the data to generate push notifications via third-party services or custom solutions.
+- Customize how the event data is processed for user alerts.
+
+The next chapters will cover:
+
+- Setting up basic notification's page to enhance user engagement.
+- Customizing app notification messages.
+- Setting up webhooks for push notifications.

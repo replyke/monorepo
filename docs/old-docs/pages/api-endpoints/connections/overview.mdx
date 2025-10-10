@@ -1,0 +1,66 @@
+# Connection Operations
+
+This section contains **connection-centric operations** for managing the logged in user's connection relationships. These endpoints focus on the logged in user's connection data, requests, and established connections.
+
+## Purpose
+
+Connection-centric endpoints allow developers to:
+- Get lists of the logged in user's established connections
+- Get the logged in user's connection counts
+- Manage the logged in user's pending connection requests (sent and received)
+- Accept or decline connection requests for the logged in user
+- Remove specific connections by connection ID
+
+## Key Characteristics
+
+- **Logged in user focused**: Operations on the authenticated user's connection data
+- **Authentication required**: All endpoints require user authentication
+- **No userId parameter**: Uses authentication to identify the user
+- **Request management**: Separate endpoints for sent vs received requests
+- **Bidirectional relationships**: Connections require mutual agreement
+
+## Available Operations
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/connections` | GET | List logged in user's established connections |
+| `/connections/count` | GET | Get logged in user's connections count |
+| `/connections/pending/sent` | GET | List requests logged in user sent (pending) |
+| `/connections/pending/received` | GET | List requests logged in user received (pending) |
+| `/connections/:connectionId/accept` | PUT | Accept a received request |
+| `/connections/:connectionId/decline` | PUT | Decline a received request |
+| `/connections/:connectionId` | DELETE | Remove connection/withdraw request |
+
+## Examples
+
+**Connection-centric operations** (use authentication, no userId parameter):
+- "Get all logged in user's established connections" - uses auth token
+- "Get pending requests sent by logged in user" - uses auth token
+
+**User-centric operations** (target specific users):
+- "Get all connections of user-123" - requires userId parameter
+- "Send connection request to user-123" - requires userId parameter
+
+## Connection Statuses
+
+Connections have three possible statuses:
+- **`pending`**: Request sent, awaiting response
+- **`accepted`**: Connection established (bidirectional)
+- **`declined`**: Request rejected
+
+## Difference from User-Centric Operations
+
+**Connection-centric** (`/connections/...`):
+- Operates on the **logged in user's** connection data
+- Uses authentication to identify the user
+- No userId parameter needed
+
+**User-centric** (`/users/:userId/connections/...`):
+- Operates on a **specific user** by their ID
+- Requires userId parameter in the URL
+- Can target any user (including public data)
+
+## Related Endpoints
+
+For operations targeting specific users, see:
+- [User Connection Operations](/api-endpoints/users/connections/overview) - Interact with specific users

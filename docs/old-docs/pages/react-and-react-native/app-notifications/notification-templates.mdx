@@ -1,0 +1,118 @@
+import { Table, Td, Th, Tr } from 'nextra/components'
+
+**Notification Templates**
+
+### Customizing Notification Templates
+
+Replyke supports a wide range of notification types, and developers can fully customize the titles and content of these notifications to provide a tailored user experience. Notification templates allow for dynamic messages using placeholders, which are replaced with relevant event data.
+
+---
+
+### Notification Types and Data
+
+Replyke generates the following notification types, each with its own set of available data:
+
+| Notification Type | Available Data                                                                                                   |
+|------------------------|---------------------------------------------------------------------------------------------------------------------|
+| `entityComment`        | `entityId`, `entityShortId`, `entityTitle`, `entityContent`, `commentId`, `commentContent`, `initiatorId`, `initiatorName`, `initiatorUsername`, `initiatorAvatar`            |
+| `commentReply`         | `entityId`, `entityShortId`, `entityTitle`, `entityContent`, `commentId`, `commentContent`, `replyId`, `replyContent`, `initiatorId`, `initiatorName`, `initiatorUsername`, `initiatorAvatar` |
+| `entityMention`        | `entityId`, `entityShortId`, `entityTitle`, `entityContent`, `initiatorId`, `initiatorName`, `initiatorUsername`, `initiatorAvatar`                              |
+| `commentMention`       | `entityId`, `entityShortId`, `entityTitle`, `entityContent`, `commentId`, `commentContent`, `initiatorId`, `initiatorName`, `initiatorUsername`, `initiatorAvatar`            |
+| `entityUpvote`         | `entityId`, `entityShortId`, `entityTitle`, `entityContent`, `initiatorId`, `initiatorName`, `initiatorUsername`, `initiatorAvatar`                              |
+| `commentUpvote`        | `entityId`, `entityShortId`, `entityTitle`, `entityContent`, `commentId`, `commentContent`, `initiatorId`, `initiatorName`, `initiatorUsername`, `initiatorAvatar`            |
+| `newFollow`            | `initiatorId`, `initiatorName`, `initiatorUsername`, `initiatorAvatar`                                                             |
+
+---
+
+### How Templates Work
+
+Developers can provide templates for notification `title`, `content`, both, or none. If no template is provided for a particular type, Replyke defaults to the standard messages.
+
+Templates are simple strings where placeholders (indicated by `$`) are replaced with the corresponding event data.
+
+#### Example 1: Template for `entityComment`
+
+Event data:
+```json
+{
+  "entityTitle": "This was a great day",
+  "entityContent": "so much fun",
+  "commentContent": "you guys look great",
+  "initiatorName": "jeff",
+  "initiatorUsername": "jef124",
+  "initiatorAvatar": "https://example.com/jeff.jpg"
+}
+```
+
+Template:
+```json
+{
+  "title": "$initiatorName left a comment on your post \"$entityTitle\"",
+  "content": "$commentContent"
+}
+```
+
+Rendered Notification:
+- **Title**: `jeff left a comment on your post "This was a great day"`
+- **Content**: `you guys look great`
+
+#### Example 2: Template for `newFollow`
+
+Event data:
+```json
+{
+  "initiatorName": "Alice",
+  "initiatorUsername": "alice2023",
+  "initiatorAvatar": "https://example.com/alice.jpg"
+}
+```
+
+Template:
+```json
+{
+  "title": "$initiatorName started following you!",
+  "content": "Check out their profile: @$initiatorUsername"
+}
+```
+
+Rendered Notification:
+- **Title**: `Alice started following you!`
+- **Content**: `Check out their profile: @alice2023`
+
+#### Example 3: Template for `commentReply`
+
+Event data:
+```json
+{
+  "entityTitle": "Great Recipe Ideas",
+  "entityContent": "Explore these amazing dishes",
+  "commentContent": "This was so helpful!",
+  "replyContent": "Glad you liked it!",
+  "initiatorName": "John",
+  "initiatorUsername": "john123",
+  "initiatorAvatar": "https://example.com/john.jpg"
+}
+```
+
+Template:
+```json
+{
+  "title": "$initiatorName replied to your comment on \"$entityTitle\"",
+  "content": "$replyContent"
+}
+```
+
+Rendered Notification:
+- **Title**: `John replied to your comment on "Great Recipe Ideas"`
+- **Content**: `Glad you liked it!`
+
+---
+
+### Flexible Customization
+
+- Templates provide flexibility by allowing developers to tailor notifications to their app's tone and style.
+- We can customize only specific notification types which need customization, while others can retain the default format.
+- Developers can focus on user engagement by crafting relevant and meaningful notifications that reflect user activity.
+
+With these tools, creating engaging and personalized notifications becomes straightforward, ensuring an enhanced user experience.
+

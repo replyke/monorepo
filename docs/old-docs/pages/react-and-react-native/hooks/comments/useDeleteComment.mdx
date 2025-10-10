@@ -1,0 +1,40 @@
+# `useDeleteComment`
+
+## Overview
+
+The `useDeleteComment` hook allows users to delete a specific comment by its ID. This is useful for implementing comment moderation or user-controlled deletion features in your application.
+
+## Usage Example
+
+```tsx
+import { useDeleteComment } from "@replyke/react-js";
+
+function DeleteCommentButton({ commentId }: { commentId: string }) {
+  const deleteComment = useDeleteComment();
+
+  const handleDeleteComment = async () => {
+    try {
+      await deleteComment({ commentId });
+      console.log("Comment deleted successfully.");
+    } catch (error) {
+      console.error("Failed to delete comment:", error.message);
+    }
+  };
+
+  return <button onClick={handleDeleteComment}>Delete Comment</button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following field:
+
+| Parameter   | Type     | Required | Description                            |
+|-------------|----------|----------|----------------------------------------|
+| `commentId` | `string` | Yes      | The ID of the comment to be deleted.   |
+
+### Returns
+
+The function does not return a value but ensures the specified comment is deleted upon successful execution.

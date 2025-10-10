@@ -1,0 +1,103 @@
+# Get Comment
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/comments/:commentId`
+
+**Method:** `GET`
+
+**Authentication Required:** No
+
+---
+
+## Description
+
+Fetches a single comment by its ID. Optionally returns the parent comment if it exists and `withParent=true` is passed.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter   | Type     | Required | Description                     |
+| ----------- | -------- | -------- | ------------------------------- |
+| `commentId` | `string` | Yes      | The ID of the comment to fetch. |
+
+### Query Parameters
+
+| Parameter    | Type     | Required | Description                             |
+| ------------ | -------- | -------- | --------------------------------------- |
+| `withParent` | `string` | No       | If `true`, includes the parent comment. |
+
+---
+
+## Response
+
+### Success Response (`200 OK`)
+
+Returns the requested comment and optionally its parent:
+
+```json
+{
+  "comment": {
+    "id": "comment-123",
+    "entityId": "entity-456",
+    "content": "Nice article!",
+    ...
+  },
+  "parentComment": {
+    "id": "comment-001",
+    "content": "Original post",
+    ...
+  }
+}
+```
+
+If there is no parent or `withParent` is not provided:
+
+```json
+{
+  "comment": { ... },
+  "parentComment": null
+}
+```
+
+---
+
+### Error Responses
+
+#### Missing or Invalid ID (`400 Bad Request`)
+
+```json
+{
+  "error": "Missing a valid comment ID in request query",
+  "code": "comment/invalid-request"
+}
+```
+
+#### Not Found (`404 Not Found`)
+
+```json
+{
+  "error": "Comment not found",
+  "code": "comment/not-found"
+}
+```
+
+#### Server Error (`500 Internal Server Error`)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "comment/server-error",
+  "details": "[error message]"
+}
+```
+
+---
+
+## Notes
+
+- Set `withParent=true` to retrieve the parent comment if it exists.
+- Returns `parentComment: null` if the comment has no parent or `withParent` is not set.

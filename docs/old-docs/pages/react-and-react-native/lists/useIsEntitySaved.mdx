@@ -1,0 +1,190 @@
+# useIsEntitySaved Hook Documentation
+
+The **useIsEntitySaved** hook provides a simple way to check if an entity is saved in any of the user's lists. This is particularly useful for controlling UI elements like bookmark icons, where you want to show an active state if the user has saved the entity anywhere in their lists collection.
+
+## Key Features
+
+- **Global Check**: Determines if an entity exists in ANY of the user's lists
+- **Perfect for UI State**: Ideal for controlling bookmark icons and saved states
+- **Simple API**: Single function call to check entity status
+- **Automatic Context**: Uses project and user context automatically
+
+## Hook Interface
+
+```typescript
+interface UseIsEntitySavedValues {
+  checkIfEntityIsSaved: (entityId: string) => Promise<boolean>;
+  entityIsSaved: boolean | null;
+}
+```
+
+## Hook Values and Functions
+
+### Properties
+
+1. **entityIsSaved**: The current saved state of the last checked entity. Returns:
+   - `null` - No entity has been checked yet
+   - `true` - The entity is saved in at least one of the user's lists
+   - `false` - The entity is not saved in any of the user's lists
+
+### Functions
+
+1. **checkIfEntityIsSaved**: Async function that checks if the specified entity is saved anywhere in the user's lists
+   - **Parameters**: `entityId: string` - The ID of the entity to check
+   - **Returns**: `Promise<boolean>` - Resolves to `true` if saved, `false` if not
+   - **Side Effect**: Updates the `entityIsSaved` state with the result
+
+## Example Usage
+
+### Basic Bookmark Icon
+
+```tsx
+import { useIsEntitySaved } from '@replyke/react-js';
+import { useEffect } from 'react';
+
+function BookmarkIcon({ entityId }: { entityId: string }) {
+  const { checkIfEntityIsSaved, entityIsSaved } = useIsEntitySaved();
+
+  // Check if entity is saved when component mounts
+  useEffect(() => {
+    checkIfEntityIsSaved(entityId);
+  }, [entityId, checkIfEntityIsSaved]);
+
+  return (
+    <button>
+      {entityIsSaved ? '⭐ Saved' : '☆ Save'}
+    </button>
+  );
+}
+```
+
+### Advanced Example with Loading State
+
+```tsx
+import { useIsEntitySaved } from '@replyke/react-js';
+import { useEffect, useState } from 'react';
+
+function BookmarkButton({ entityId }: { entityId: string }) {
+  const { checkIfEntityIsSaved, entityIsSaved } = useIsEntitySaved();
+  const [isChecking, setIsChecking] = useState(false);
+
+  useEffect(() => {
+    const checkSavedStatus = async () => {
+      setIsChecking(true);
+      try {
+        await checkIfEntityIsSaved(entityId);
+      } catch (error) {
+        console.error('Failed to check entity saved status:', error);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkSavedStatus();
+  }, [entityId, checkIfEntityIsSaved]);
+
+  if (isChecking) {
+    return <button disabled>Checking...</button>;
+  }
+
+  return (
+    <button
+      className={entityIsSaved ? 'bookmark-active' : 'bookmark-inactive'}
+    >
+      {entityIsSaved ? '⭐ Saved' : '☆ Save'}
+    </button>
+  );
+}
+```
+
+### Feed Component with Multiple Items
+
+```tsx
+import { useIsEntitySaved } from '@replyke/react-js';
+
+function PostCard({ post }: { post: Post }) {
+  const { checkIfEntityIsSaved, entityIsSaved } = useIsEntitySaved();
+
+  const handleCheckSaved = async () => {
+    try {
+      const isSaved = await checkIfEntityIsSaved(post.id);
+      console.log(`Post ${post.id} is ${isSaved ? 'saved' : 'not saved'}`);
+    } catch (error) {
+      console.error('Error checking saved status:', error);
+    }
+  };
+
+  return (
+    <div className="post-card">
+      <h3>{post.title}</h3>
+      <p>{post.content}</p>
+
+      <button onClick={handleCheckSaved}>
+        Check if Saved
+      </button>
+
+      {entityIsSaved !== null && (
+        <span className="saved-indicator">
+          {entityIsSaved ? '✅ Saved somewhere' : '❌ Not saved'}
+        </span>
+      )}
+    </div>
+  );
+}
+```
+
+## Error Handling
+
+The hook includes built-in error handling for common scenarios:
+
+- **No authenticated user**: Throws error if user is not logged in
+- **Missing entity ID**: Throws error if no entityId is provided
+- **No project context**: Throws error if projectId is not available
+
+```tsx
+function SafeBookmarkButton({ entityId }: { entityId: string }) {
+  const { checkIfEntityIsSaved, entityIsSaved } = useIsEntitySaved();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCheck = async () => {
+    try {
+      setError(null);
+      await checkIfEntityIsSaved(entityId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    }
+  };
+
+  useEffect(() => {
+    handleCheck();
+  }, [entityId]);
+
+  if (error) {
+    return <span className="error">Error: {error}</span>;
+  }
+
+  return (
+    <button>
+      {entityIsSaved ? '⭐ Saved' : '☆ Save'}
+    </button>
+  );
+}
+```
+
+## Common Use Cases
+
+1. **Bookmark Icons**: Show active/inactive states for saved content
+2. **Feed UI**: Display saved indicators on posts, articles, or products
+3. **Content Cards**: Show save status across content listings
+4. **User Dashboards**: Check save status for recommended content
+5. **Search Results**: Indicate which results are already saved
+
+## Best Practices
+
+- **Check on Mount**: Always check the saved status when the component mounts
+- **Handle Loading**: Show appropriate loading states while checking
+- **Error Boundaries**: Implement proper error handling for failed checks
+- **Memoization**: Consider memoizing results for frequently checked entities
+- **Performance**: Avoid checking the same entity multiple times unnecessarily
+
+The **useIsEntitySaved** hook provides an efficient way to check global save status across all user lists, making it perfect for implementing bookmark functionality and saved state indicators throughout your application.

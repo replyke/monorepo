@@ -1,0 +1,125 @@
+# Sign In
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/auth/sign-in`
+
+**Method:** `POST`
+
+**Authentication Required:** No
+
+---
+
+## Description
+
+Authenticate a user using email and password. Returns an access token, a refresh token, and user data.
+
+---
+
+## Request
+
+### Body Parameters
+
+| Field      | Type     | Required | Description              |
+| ---------- | -------- | -------- | ------------------------ |
+| `email`    | `string` | Yes      | User's registered email. |
+| `password` | `string` | Yes      | User's password.         |
+
+#### Example Request
+
+```json
+{
+  "email": "jane@example.com",
+  "password": "securePassword123"
+}
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "success": true,
+  "accessToken": "<ACCESS_TOKEN>",
+  "refreshToken": "<REFRESH_TOKEN>",
+  "user": {
+    "id": "user_123",
+    "email": "jane@example.com",
+    "username": "janedoe",
+    "name": "Jane Doe",
+    "avatar": "https://example.com/avatar.jpg",
+    "bio": "Tech enthusiast",
+    "location": {
+      "type": "Point",
+      "coordinates": [-73.935242, 40.73061]
+    },
+    "birthdate": "1995-01-01T00:00:00.000Z",
+    "metadata": { "office": "boston" },
+    "suspensions": [],
+    "reputation": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Error Responses
+
+#### Missing Fields (400 Bad Request)
+
+```json
+{
+  "error": "Email, and password are required.",
+  "code": "auth/missing-fields"
+}
+```
+
+#### User Not Found (403 Forbidden)
+
+```json
+{
+  "error": "User not found.",
+  "code": "auth/no-user-found"
+}
+```
+
+#### Missing Credentials (403 Forbidden)
+
+```json
+{
+  "error": "Invalid credentials.",
+  "code": "auth/invalid-credentials"
+}
+```
+
+#### Incorrect Password (401 Unauthorized)
+
+```json
+{
+  "error": "Incorrect password.",
+  "code": "auth/wrong-password"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "auth/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- On success, an HttpOnly cookie named `replyke-refresh-jwt` is set.
+- The `accessToken` is returned in the response body and expires in 30 minutes.
+- Refresh token is valid for 30 days.
+- Active suspensions are included in the response user object.
+- Only valid users with matching credentials can sign in.

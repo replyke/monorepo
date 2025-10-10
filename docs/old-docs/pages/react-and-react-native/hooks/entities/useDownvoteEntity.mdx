@@ -1,0 +1,45 @@
+# `useDownvoteEntity`
+
+## Overview
+
+The `useDownvoteEntity` hook provides a way to downvote an entity.
+
+## Usage Example
+
+```tsx
+import { useDownvoteEntity } from "@replyke/react-js";
+import { Button } from "@/components/ui/button";
+
+function EntityComponent({ entityId }: { entityId: string }) {
+  const downvoteEntity = useDownvoteEntity();
+
+  const handleDownvote = async () => {
+    try {
+      const response = await downvoteEntity({ entityId });
+      console.log("Entity downvoted:", response);
+    } catch (err) {
+      console.error("Failed to downvote:", err);
+    }
+  };
+
+  return <Button onClick={handleDownvote}>Downvote</Button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The `downvoteEntity` function returned by the hook accepts a single object with the following field:
+
+| Parameter  | Type     | Description                           |
+| ---------- | -------- | ------------------------------------- |
+| `entityId` | `string` | The ID of the entity to be downvoted. |
+
+### Returns
+
+The function returns a `Promise<Entity>` representing the API response:
+
+| Return Value | Type     | Description                                            |
+| ------------ | -------- | ------------------------------------------------------ |
+| `response`   | `Entity` | The updated entity after it is successfully downvoted. |

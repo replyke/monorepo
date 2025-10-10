@@ -1,0 +1,193 @@
+### Threaded Comment Section: Implementation Guide
+
+The Replyke threaded comment section is designed to deliver a rich, discussion-focused user experience with unlimited nesting levels. By using the components and hooks provided, you can quickly integrate a fully functional Reddit-style comment system into your application.
+
+---
+
+#### **Key Components**
+
+To implement the threaded comment section, three components are provided, all of which are required:
+
+1.  **CommentSectionProvider** _(Required)_
+
+    - Wraps the entire comment section and provides the necessary context to its child components.
+    - This is the root of your comment section, ensuring all other elements can communicate seamlessly.
+
+2.  **CommentsFeed** _(Required)_
+
+    - Displays the list of comments for the associated entity with threaded structure.
+    - Supports unlimited nesting levels with visual indentation and connection lines.
+    - Includes upvote/downvote functionality and collapsible comment threads.
+
+3.  **NewCommentForm** _(Required)_
+
+    - Provides the interface for users to submit new comments or replies.
+    - Handles both top-level comments and nested replies.
+
+---
+
+#### **Getting Started with `useThreadedComments`**
+
+The `useThreadedComments` hook provides these components and ensures they work together seamlessly. This hook requires two properties and allows several optional ones:
+
+**Required Properties**
+
+1.  In order for the comment section to function properly, it needs to be aware of the entity it relates to. Therefore, the hook expects at least one of the following properties. None are mandatory individually, but at least one must be provided:
+
+  - `entityId`: The ID of the entity in Replyke's system.
+
+  - `foreignId`: The foreign/external ID of the entity. Only relevant when Replyke is integrated on top of an external dataset, or a static value (e.g., "discussion-thread").
+
+  - `shortId`: The unique short ID of the entity.
+
+  - `entity`: A complete `Entity` object. This is useful when rendering entities in a feed where the data is already available, preventing redundant re-fetches by passing the existing entity into the provider.
+
+2.  **styleConfig**: A configuration object created using the `useThreadedStyle` hook. It allows for extensive style customization of the threaded comment section.
+
+**Optional Properties**
+
+1.  **callbacks**: An object containing functions to handle specific interactions, such as what happens when a user needs to log in, clicks on an author or mention, or votes on comments.
+2.  **defaultSortBy**: Sets the initial sort order of comments. Options are "top" (default), "new," or "old."
+3.  **limit**: Controls how many comments are fetched as the user scrolls. Defaults to 15. Adjusting this is possible but should balance efficiency and API costs—15 is typically ideal for most use cases.
+4.  **highlightedCommentId**: Highlights a specific comment. This is particularly useful when directing users to a comment via notifications or direct links. For instance:
+    - If a user is notified that someone upvoted their comment, set `highlightedCommentId` to the ID of the upvoted comment.
+    - If a user is notified about a reply to their comment, set `highlightedCommentId` to the ID of the **reply**, not the original comment.
+5. **createIfNotFound**: An optional flag which instructs Replyke to create an entity if one isn't found.
+
+---
+
+#### **Basic Implementation**
+
+Below is an example of how to set up the threaded comment section in a React app:
+
+```tsx
+import React, { useEffect, useMemo, useRef } from "react";
+import {
+  useThreadedComments,
+  useThreadedStyle,
+  UseThreadedStyleProps,
+} from "@replyke/comments-threaded-react-js";
+
+const ThreadedCommentsSection = ({
+  entityId,
+  navigateToAccount,
+}: {
+  entityId: string;
+  navigateToAccount: (accountId: string) => void;
+}) => {
+  // Custom styles (optional)
+  const customStyles = useMemo<Partial<UseThreadedStyleProps>>(
+    () => ({
+      newCommentFormProps: {
+        verticalPadding: 16,
+        horizontalPadding: 24,
+      },
+      commentFeedProps: {
+        backgroundColor: "#fafafa",
+      },
+    }),
+    []
+  );
+
+  const styleConfig = useThreadedStyle(customStyles);
+
+  // Initialize comments with useThreadedComments
+  const { CommentSectionProvider, CommentsFeed, NewCommentForm } =
+    useThreadedComments({
+      entityId,
+      styleConfig,
+      highlightedCommentId: "some-comment-uuid", // Should be an actual UUID if used
+      callbacks: {
+        currentUserClickCallback: () => {
+          navigateToProfile();
+        },
+        otherUserClickCallback: (userId: string) => {
+          navigateToAccount(userId);
+        },
+        loginRequiredCallback: () => {
+          alert("Please sign in or create an account to continue.");
+        },
+        onUpvoteCallback: (commentId: string) => {
+          console.log("Upvoted comment:", commentId);
+        },
+        onDownvoteCallback: (commentId: string) => {
+          console.log("Downvoted comment:", commentId);
+        },
+      },
+    });
+
+  const commentFormRef = useRef<{ focus: () => void } | null>(null);
+
+  // Focus the form when entityId changes
+  useEffect(() => {
+    if (!entityId) return;
+    const timeout = setTimeout(() => {
+      commentFormRef.current?.focus();
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, [entityId]);
+
+  return (
+    <CommentSectionProvider>
+      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+        {/* Header area for discussion title or controls */}
+        <div style={{
+          padding: "16px 24px",
+          borderBottom: "1px solid #e5e7eb",
+          backgroundColor: "#ffffff"
+        }}>
+          <h3>Discussion</h3>
+        </div>
+
+        {/* Comment feed with threading */}
+        <div style={{
+          flex: 1,
+          overflowY: "auto",
+          backgroundColor: "#fafafa"
+        }}>
+          <CommentsFeed />
+        </div>
+
+        {/* New comment form */}
+        <div style={{
+          borderTop: "1px solid #e5e7eb",
+          backgroundColor: "#ffffff"
+        }}>
+          <NewCommentForm ref={commentFormRef} />
+        </div>
+      </div>
+    </CommentSectionProvider>
+  );
+};
+
+export default ThreadedCommentsSection;
+```
+
+---
+
+#### **Explanation of the Example**
+
+1.  **`useThreadedStyle`**: Customizes the style of the threaded comment section, here adjusting paddings and background colors.
+2.  **`useThreadedComments`**: Provides the components required for the threaded comment section.
+3.  **`highlightedCommentId`**: Highlights a specific comment, making it easier for users to locate important interactions.
+    - If a notification relates to an upvoted comment, pass the upvoted comment's ID.
+    - If it relates to a reply, pass the reply's ID instead to direct users to the reply in context.
+4.  **Voting Callbacks**: Handle upvote and downvote interactions specific to threaded discussions.
+5.  **Layout Structure**: Demonstrates a typical forum-style layout with header, scrollable content, and fixed input area.
+
+This example showcases the ease of integrating Replyke's threaded comment system while providing maximum flexibility for customization.
+
+---
+
+#### **Key Features of Threaded Comments**
+
+- **Unlimited Nesting**: Comments can be nested to any depth, perfect for complex discussions
+- **Visual Threading**: Clear indentation and connection lines show comment hierarchy
+- **Collapsible Threads**: Users can collapse/expand entire comment chains
+- **Upvote/Downvote System**: Reddit-style voting for community-driven content moderation
+- **Optimized Performance**: Efficient rendering even with deeply nested structures
+- **Responsive Design**: Works seamlessly across different screen sizes
+
+---
+
+In the next sections, we'll dive into advanced configurations, callbacks, and styling options for creating a more tailored threaded comment experience.

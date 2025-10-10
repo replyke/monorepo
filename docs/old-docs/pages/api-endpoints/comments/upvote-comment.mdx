@@ -1,0 +1,105 @@
+# Upvote Comment
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/comments/:commentId/upvote`
+
+**Method:** `PATCH`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Upvotes a comment on behalf of the authenticated user.
+
+* Adds the user's ID to the comment's `upvotes` array.
+* Removes the user from `downvotes` if previously downvoted.
+* Increases the reputation of the comment author.
+* Sends a notification to the comment's author.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter   | Type     | Required | Description                      |
+| ----------- | -------- | -------- | -------------------------------- |
+| `commentId` | `string` | Yes      | The ID of the comment to upvote. |
+
+### Headers
+
+| Header          | Type     | Required | Description                           |
+| --------------- | -------- | -------- | ------------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authenticated users. |
+
+---
+
+## Response
+
+### Success Response (`200 OK`)
+
+Returns the updated comment:
+
+```json
+{
+  "id": "comment-123",
+  "entityId": "entity-456",
+  "upvotes": ["user-789"],
+  "downvotes": [],
+  "content": "Great insight!",
+  ...
+}
+```
+
+---
+
+### Error Responses
+
+#### Missing Comment ID (`400 Bad Request`)
+
+```json
+{
+  "error": "Missing required data",
+  "code": "comment/missing-data"
+}
+```
+
+#### Not Found (`404 Not Found`)
+
+```json
+{
+  "error": "Comment not found",
+  "code": "comment/not-found"
+}
+```
+
+#### Already Upvoted (`409 Conflict`)
+
+```json
+{
+  "error": "User has already upvoted this comment",
+  "code": "comment/already-upvoted"
+}
+```
+
+#### Server Error (`500 Internal Server Error`)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "comment/server-error",
+  "details": "[error message]"
+}
+```
+
+---
+
+## Notes
+
+* If the user already upvoted the comment, a `409 Conflict` error is returned.
+* Reputation is awarded to the comment's author.
+* A notification is triggered to inform the comment's author of the upvote.
+* The user's ID is removed from `downvotes` if previously present.

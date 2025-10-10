@@ -1,0 +1,89 @@
+# Check Username Availability
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/users/check-username`
+
+**Method:** `GET`
+
+**Authentication Required:** No
+
+---
+
+## Description
+
+Check if a given username is available for use.
+
+---
+
+## Request
+
+### Query Parameters
+
+| Parameter  | Type     | Required | Description                             |
+| ---------- | -------- | -------- | --------------------------------------- |
+| `username` | `string` | Yes      | The username to check for availability. |
+
+### Headers
+
+_None_
+
+### Body Parameters
+
+_None_
+
+#### Example Request
+
+```sh
+GET /proj1234/users/check-username?username=johndoe
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+#### Username Available
+
+```json
+{
+  "available": true
+}
+```
+
+#### Username Taken
+
+```json
+{
+  "available": false
+}
+```
+
+### Error Responses
+
+#### Missing or Invalid Username (400 Bad Request)
+
+```json
+{
+  "error": "Username is required and must be a string.",
+  "code": "username/invalid-input"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "An error occurred while checking username availability.",
+  "code": "username/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- This endpoint does **not** require authentication.
+- Only exact matches are considered (case-sensitive).

@@ -1,0 +1,112 @@
+
+### Attachments Filters
+
+The **Attachments Filters** in Replyke allows developers to filter entities based on the presence or absence of attachments content. This functionality provides a straightforward way to include or exclude entities that contain attachments, ensuring the entity list aligns with your application’s needs.
+
+#### Overview of Attachments Filters
+
+The `attachmentsFilters` property can be passed to the `fetchEntities` function as part of the filters object with the following structure:
+
+```typescript
+export interface AttachmentsFilters {
+  hasAttachments?: boolean;
+}
+```
+
+-   **`hasAttachments`**: A boolean flag to include or exclude entities based on whether they contain attachments (`true`) or not (`false`).
+
+#### Applying Attachments Filters
+
+Developers can apply attachments filters by calling the `fetchEntities` function with the desired filter configuration.
+
+```tsx
+const entityList = useEntityList({ listId: "filtered-feed" });
+
+// Apply attachments filters
+entityList.fetchEntities({
+  sortBy: "hot",
+  attachmentsFilters: { hasAttachments: true }
+});
+
+// Reset attachment filters
+entityList.fetchEntities({
+  sortBy: "hot",
+  attachmentsFilters: null
+});
+```
+
+#### How Attachments Filters Work
+
+Attachments Filters are applied on the backend when querying entities. The `hasAttachments` flag works as follows:
+
+1.  **`true`**: Includes only entities that have attachments (e.g., non-empty attachment arrays).
+2.  **`false`**: Includes only entities that do not have attachments (e.g., empty attachments arrays).
+3.  **`null`**: Clears the attachments filter, meaning no filtering is applied based on attachments presence.
+
+#### Example Use Cases
+
+##### 1. Passing Static Filters to the EntityListProvider
+
+To set static filters for attachments presence at the initialization of the entity list, pass them directly to the `EntityListProvider`:
+
+```tsx
+<EntityListProvider attachmentsFilters={{ hasAttachments: true }}>
+  <MyFeedComponent />
+</EntityListProvider>
+```
+
+This setup ensures that only entities with attachments are included in the entity list.
+
+##### 2. Dynamically Updating Filters Based on User Interaction
+
+You can also dynamically adjust the attachments filters based on user actions, such as clicking a toggle button:
+
+```tsx
+const entityList = useEntityList({ listId: "filtered-feed" });
+
+const toggleAttachmentsFilter = (hasAttachments: boolean) => {
+  entityList.fetchEntities({
+    sortBy: "hot",
+    attachmentsFilters: { hasAttachments }
+  });
+};
+
+const clearFilters = () => {
+  entityList.fetchEntities({
+    sortBy: "hot",
+    attachmentsFilters: null
+  });
+};
+
+return (
+  <div>
+    <h1>Filtered by Attachments</h1>
+    <div>
+      <button onClick={() => toggleAttachmentsFilter(true)}>Show Only With Attachments</button>
+      <button onClick={() => toggleAttachmentsFilter(false)}>Show Only Without Attachments</button>
+      <button onClick={clearFilters}>Clear Attachments Filter</button>
+    </div>
+    <ul>
+      {entityList.entities.map((entity) => (
+        <li key={entity.id}>
+          <h2>{entity.title}</h2>
+          {entity.attachments.length > 0 ? <p>Attachments included</p> : <p>No attachments</p>}
+        </li>
+      ))}
+    </ul>
+    <button onClick={entityList.loadMore}>Load More</button>
+  </div>
+);
+```
+
+In this example, clicking the buttons dynamically updates the attachments filters to include or exclude entities based on attachments presence.
+
+### Important Notes
+
+-   Attachments Filters operate on the presence of attachments content in entities, typically represented by non-empty or empty attachments arrays.
+-   Filters are applied immediately, and the entity list resets to reflect the updated conditions.
+-   Passing `null` to `attachmentsFilters` in `fetchEntities` clears all attachments-based filtering.
+
+### Conclusion
+
+Attachments Filters provide a simple yet powerful mechanism to fine-tune entity list's results based on the presence of attachments. Whether you want to include only entities with attachments, exclude them, or dynamically adjust filters based on user input, Attachments Filters help you achieve this with ease. Use them to create more tailored and engaging experiences in your application.

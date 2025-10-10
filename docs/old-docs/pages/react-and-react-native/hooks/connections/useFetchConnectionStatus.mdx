@@ -1,0 +1,341 @@
+# `useFetchConnectionStatus`
+
+## Overview
+
+The `useFetchConnectionStatus` hook allows you to check the connection status between the current logged-in user and another user. It returns detailed information about the connection state, including pending requests, established connections, and declined requests.
+
+## Usage Example
+
+```tsx
+import { useFetchConnectionStatus } from "@replyke/react-js";
+
+function ConnectionStatusChecker({ targetUserId }: { targetUserId: string }) {
+  const fetchConnectionStatus = useFetchConnectionStatus();
+
+  const checkStatus = async () => {
+    try {
+      const status = await fetchConnectionStatus({ userId: targetUserId });
+      
+      switch (status.status) {
+        case 'none':
+          console.log("No connection exists");
+          break;
+        case 'connected':
+          console.log(`Connected since ${status.connectedAt}`);
+          break;
+        case 'pending':
+          console.log(`${status.type} request pending since ${status.createdAt}`);
+          break;
+        case 'declined':
+          console.log(`Connection was declined`);
+          break;
+      }
+    } catch (error) {
+      console.error("Failed to fetch connection status:", error.message);
+    }
+  };
+
+  return <button onClick={checkStatus}>Check Connection Status</button>;
+}
+```
+
+## Advanced Usage with Dynamic UI
+
+```tsx
+import { useFetchConnectionStatus } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function ConnectionStatusIndicator({
+  userId,
+  username
+}: {
+  userId: string;
+  username: string;
+}) {
+  const fetchConnectionStatus = useFetchConnectionStatus();
+  const [status, setStatus] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const loadStatus = async () => {
+      setLoading(true);
+      try {
+        const result = await fetchConnectionStatus({ userId });
+        setStatus(result);
+      } catch (error) {
+        console.error("Failed to load connection status:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStatus();
+  }, [userId, fetchConnectionStatus]);
+
+  const getStatusDisplay = () => {
+    if (loading) return { text: "Loading...", className: "loading" };
+    if (!status) return { text: "Unknown", className: "unknown" };
+
+    switch (status.status) {
+      case 'none':
+        return { text: "Not Connected", className: "none" };
+      case 'connected':
+        return {
+          text: `Connected ${new Date(status.connectedAt).toLocaleDateString()}`,
+          className: "connected"
+        };
+      case 'pending':
+        if (status.type === 'sent') {
+          return { text: "Request Sent", className: "pending-sent" };
+        } else {
+          return { text: "Pending Request", className: "pending-received" };
+        }
+      case 'declined':
+        if (status.type === 'sent') {
+          return { text: "Request Declined", className: "declined-sent" };
+        } else {
+          return { text: "Request Declined", className: "declined-received" };
+        }
+      default:
+        return { text: "Unknown", className: "unknown" };
+    }
+  };
+
+  const display = getStatusDisplay();
+
+  return (
+    <div className={`connection-status ${display.className}`}>
+      <span className="username">{username}</span>
+      <span className="status">{display.text}</span>
+    </div>
+  );
+}
+```
+
+## Usage for Connection Action Buttons
+
+```tsx
+import { useFetchConnectionStatus } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function ConnectionActions({
+  userId,
+  username,
+  onActionComplete
+}: {
+  userId: string;
+  username: string;
+  onActionComplete?: () => void;
+}) {
+  const fetchConnectionStatus = useFetchConnectionStatus();
+  const [connectionStatus, setConnectionStatus] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refreshStatus = async () => {
+    try {
+      const result = await fetchConnectionStatus({ userId });
+      setConnectionStatus(result);
+    } catch (error) {
+      console.error("Failed to refresh connection status:", error);
+    }
+  };
+
+  useEffect(() => {
+    const loadStatus = async () => {
+      setLoading(true);
+      await refreshStatus();
+      setLoading(false);
+    };
+
+    loadStatus();
+  }, [userId]);
+
+  const renderActionButton = () => {
+    if (loading) {
+      return <button disabled>Loading...</button>;
+    }
+
+    if (!connectionStatus) {
+      return <button disabled>Unable to load status</button>;
+    }
+
+    switch (connectionStatus.status) {
+      case 'none':
+        return (
+          <button 
+            onClick={() => {
+              // Call useRequestConnection hook here
+              console.log("Send connection request");
+              onActionComplete?.();
+            }}
+            className="connect-btn"
+          >
+            Connect
+          </button>
+        );
+
+      case 'connected':
+        return (
+          <button 
+            onClick={() => {
+              // Call useRemoveConnection hook here
+              console.log("Remove connection");
+              onActionComplete?.();
+            }}
+            className="disconnect-btn"
+          >
+            Disconnect
+          </button>
+        );
+
+      case 'pending':
+        if (connectionStatus.type === 'sent') {
+          return (
+            <button 
+              onClick={() => {
+                // Call useRemoveConnection to withdraw request
+                console.log("Withdraw request");
+                onActionComplete?.();
+              }}
+              className="withdraw-btn"
+            >
+              Withdraw Request
+            </button>
+          );
+        } else {
+          return (
+            <div className="pending-actions">
+              <button 
+                onClick={() => {
+                  // Call useAcceptConnection hook
+                  console.log("Accept request");
+                  onActionComplete?.();
+                }}
+                className="accept-btn"
+              >
+                Accept
+              </button>
+              <button 
+                onClick={() => {
+                  // Call useDeclineConnection hook
+                  console.log("Decline request");
+                  onActionComplete?.();
+                }}
+                className="decline-btn"
+              >
+                Decline
+              </button>
+            </div>
+          );
+        }
+
+      case 'declined':
+        if (connectionStatus.type === 'received') {
+          // You declined their request - show option to send new request
+          return (
+            <button 
+              onClick={() => {
+                // Call useRequestConnection hook
+                console.log("Send connection request");
+                onActionComplete?.();
+              }}
+              className="connect-btn"
+            >
+              Send Request
+            </button>
+          );
+        } else {
+          // They declined your request
+          return (
+            <button disabled className="declined-btn">
+              Request Declined
+            </button>
+          );
+        }
+
+      default:
+        return <button disabled>Unknown Status</button>;
+    }
+  };
+
+  return (
+    <div className="connection-actions">
+      <div className="user-info">
+        <h4>{username}</h4>
+      </div>
+      <div className="actions">
+        {renderActionButton()}
+      </div>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following field:
+
+| Parameter | Type     | Required | Description                                         |
+|-----------|----------|----------|-----------------------------------------------------|
+| `userId`  | `string` | Yes      | The ID of the user to check connection status with |
+
+### Returns
+
+The function returns a Promise that resolves to a `ConnectionStatusResponse` object containing:
+
+| Field           | Type                                    | Description                                         |
+|-----------------|----------------------------------------|-----------------------------------------------------|
+| `status`        | `'none' \| 'connected' \| 'pending' \| 'declined'` | The connection status between users        |
+| `connectionId`  | `string?`                              | ID of the connection (if exists)                   |
+| `type`          | `'sent' \| 'received'?`                | Direction of request (for pending/declined status) |
+| `connectedAt`   | `string?`                              | ISO date when connection was established           |
+| `requestedAt`   | `string?`                              | ISO date when connection was requested             |
+| `createdAt`     | `string?`                              | ISO date when the current state was created       |
+| `respondedAt`   | `string?`                              | ISO date when request was responded to            |
+
+### Connection Status Types
+
+#### `none`
+- No connection exists between the users
+- Users can send connection requests
+
+#### `connected`
+- Users are mutually connected
+- Includes `connectedAt` and `requestedAt` timestamps
+
+#### `pending`
+- A connection request is awaiting response
+- `type` indicates if you sent (`sent`) or received (`received`) the request
+- Includes `createdAt` timestamp
+
+#### `declined`
+- A connection request was declined
+- `type` indicates if your request was declined (`sent`) or you declined theirs (`received`)
+- Includes `respondedAt` timestamp
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user is logged in
+- No user ID is provided
+- Attempting to check connection status with yourself
+
+### Use Cases
+
+This hook is essential for:
+- User profile pages to show appropriate connection actions
+- Building dynamic connection buttons
+- Connection management interfaces
+- Social networking features
+- Professional networking platforms
+
+### Related Hooks
+
+- `useRequestConnection` - Send connection requests
+- `useAcceptConnection` - Accept connection requests
+- `useDeclineConnection` - Decline connection requests
+- `useRemoveConnection` - Remove connections or withdraw requests
+- `useConnectionManager` - Comprehensive connection state management

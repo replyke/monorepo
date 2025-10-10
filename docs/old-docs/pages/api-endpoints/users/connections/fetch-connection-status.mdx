@@ -1,0 +1,150 @@
+# Get Connection Status
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/users/:userId/connection`
+
+**Method:** `GET`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Check the connection status between the current user and the specified user.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description                                       |
+| --------- | -------- | -------- | ------------------------------------------------- |
+| `userId`  | `string` | Yes      | ID of the user to check connection status with |
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Body Parameters
+
+_None_
+
+#### Example Request
+
+```http
+GET /users/user-uuid-123/connection
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## Response
+
+### Success Responses
+
+#### No Connection (200 OK)
+
+```json
+{
+  "status": "none"
+}
+```
+
+#### Pending Request Sent (200 OK)
+
+```json
+{
+  "status": "pending",
+  "type": "sent",
+  "connectionId": "connection-uuid",
+  "createdAt": "2024-01-01T12:00:00.000Z"
+}
+```
+
+#### Pending Request Received (200 OK)
+
+```json
+{
+  "status": "pending",
+  "type": "received",
+  "connectionId": "connection-uuid",
+  "createdAt": "2024-01-01T12:00:00.000Z"
+}
+```
+
+#### Connected Users (200 OK)
+
+```json
+{
+  "status": "connected",
+  "connectionId": "connection-uuid",
+  "connectedAt": "2024-01-01T12:05:00.000Z",
+  "requestedAt": "2024-01-01T12:00:00.000Z"
+}
+```
+
+#### Declined Request - Sent (200 OK)
+
+```json
+{
+  "status": "declined",
+  "type": "sent",
+  "connectionId": "connection-uuid",
+  "respondedAt": "2024-01-01T12:05:00.000Z"
+}
+```
+
+#### Declined Request - Received (200 OK)
+
+```json
+{
+  "status": "declined",
+  "type": "received",
+  "connectionId": "connection-uuid",
+  "respondedAt": "2024-01-01T12:05:00.000Z"
+}
+```
+
+### Error Responses
+
+#### Invalid User ID (400 Bad Request)
+
+```json
+{
+  "error": "Invalid userId",
+  "code": "connection/invalid-user-id"
+}
+```
+
+#### Self-Check Attempt (400 Bad Request)
+
+```json
+{
+  "error": "Cannot check connection status with yourself",
+  "code": "connection/self-check"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error",
+  "code": "connection/server-error"
+}
+```
+
+---
+
+## Notes
+
+- Returns comprehensive connection status information
+- Shows direction of connection requests (sent/received)
+- Includes relevant timestamps for each status
+- Cannot check connection status with yourself
+- Rate limiting: 100 requests per 5 minutes

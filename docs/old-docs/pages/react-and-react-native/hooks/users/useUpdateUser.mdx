@@ -1,0 +1,68 @@
+# `useUpdateUser`
+
+## Overview
+
+The `useUpdateUser` hook is used to update a user's profile information. This includes updating fields such as name, username, avatar, bio, and more. It also supports metadata updates for flexible user data management.
+
+
+## Usage Example
+
+```tsx
+import { useUpdateUser } from "@replyke/react-js";
+
+function UpdateUserForm({ userId }: { userId: string }) {
+  const updateUser = useUpdateUser();
+
+  const handleUpdateUser = async () => {
+    try {
+      const updatedUser = await updateUser({
+        userId,
+        update: {
+          name: "John Doe",
+          username: "johndoe123",
+          bio: "Loving life and coding!",
+        },
+      });
+
+      console.log("User updated successfully:", updatedUser);
+    } catch (error) {
+      console.error("Failed to update user:", error.message);
+    }
+  };
+
+  return <button onClick={handleUpdateUser}>Update User</button>;
+}
+```
+
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+| Parameter   | Type              | Required | Description                                 |
+|-------------|-------------------|----------|---------------------------------------------|
+| `userId`    | `string`          | Yes      | The ID of the user to update.               |
+| `update`    | `UpdateUserParams` | Yes      | The fields and values to update for the user. |
+
+#### `UpdateUserParams`
+
+| Field           | Type                              | Required | Description                                                  |
+|-----------------|-----------------------------------|----------|--------------------------------------------------------------|
+| `name`          | `string \| null`                  | No       | The new name for the user.                                   |
+| `username`      | `string \| null`                  | No       | The new username for the user.                               |
+| `avatar`        | `string \| null`                  | No       | The URL of the user's avatar.                                |
+| `bio`           | `string`                          | No       | A short biography for the user.                              |
+| `birthdate`     | `Date \| null`                    | No       | The user's birthdate.                                        |
+| `location`      | `{ latitude: number; longitude: number } \| null` | No | The user's geographic location.                              |
+| `metadata`      | `Record<string, any>`             | No       | Additional metadata associated with the user.                |
+| `secureMetadata`| `Record<string, any>`             | No       | Sensitive metadata for the user, not attached to Entity and Comment data.     |
+
+### Returns
+
+The function resolves with an object containing the updated user details:
+
+| Return Value | Type       | Description                               |
+|--------------|------------|-------------------------------------------|
+| `AuthUser`   | `AuthUser` | The updated user object.                 |

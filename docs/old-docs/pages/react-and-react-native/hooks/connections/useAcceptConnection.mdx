@@ -1,0 +1,300 @@
+# `useAcceptConnection`
+
+## Overview
+
+The `useAcceptConnection` hook allows the current logged-in user to accept an incoming connection request. This completes the connection process and establishes a mutual connection between two users.
+
+## Usage Example
+
+```tsx
+import { useAcceptConnection } from "@replyke/react-js";
+
+function AcceptButton({ connectionId }: { connectionId: string }) {
+  const acceptConnection = useAcceptConnection();
+
+  const handleAccept = async () => {
+    try {
+      const result = await acceptConnection({ connectionId });
+      console.log(`Connection accepted! Connection ID: ${result.id}`);
+      console.log(`Connected at: ${result.connectedAt}`);
+    } catch (error) {
+      console.error("Failed to accept connection:", error.message);
+    }
+  };
+
+  return <button onClick={handleAccept}>Accept Connection</button>;
+}
+```
+
+## Advanced Usage with Loading State
+
+```tsx
+import { useAcceptConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+function ConnectionRequestItem({
+  connectionId,
+  requesterName,
+  message,
+  onAccept
+}: {
+  connectionId: string;
+  requesterName: string;
+  message?: string;
+  onAccept?: (connectionId: string) => void;
+}) {
+  const acceptConnection = useAcceptConnection();
+  const [isAccepting, setIsAccepting] = useState(false);
+
+  const handleAccept = async () => {
+    setIsAccepting(true);
+    try {
+      const result = await acceptConnection({ connectionId });
+      console.log(`Accepted connection from ${requesterName}`, result);
+      onAccept?.(connectionId);
+      alert(`You are now connected with ${requesterName}!`);
+    } catch (error) {
+      console.error(`Failed to accept connection from ${requesterName}:`, error);
+      alert("Failed to accept connection. Please try again.");
+    } finally {
+      setIsAccepting(false);
+    }
+  };
+
+  return (
+    <div className="connection-request-item">
+      <div className="request-info">
+        <h4>Connection request from {requesterName}</h4>
+        {message && <p className="request-message">"{message}"</p>}
+      </div>
+
+      <div className="request-actions">
+        <button
+          onClick={handleAccept}
+          disabled={isAccepting}
+          className="accept-btn primary"
+        >
+          {isAccepting ? "Accepting..." : "Accept"}
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+## Usage in Notification System
+
+```tsx
+import { useAcceptConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+interface ConnectionNotification {
+  id: string;
+  connectionId: string;
+  requester: {
+    username: string;
+    displayName?: string;
+  };
+  message?: string;
+  createdAt: string;
+}
+
+function ConnectionNotificationCard({
+  notification,
+  onStatusChange
+}: {
+  notification: ConnectionNotification;
+  onStatusChange: (notificationId: string, status: 'accepted' | 'declined') => void;
+}) {
+  const acceptConnection = useAcceptConnection();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [status, setStatus] = useState<'pending' | 'accepted' | 'declined'>('pending');
+
+  const handleAccept = async () => {
+    setIsProcessing(true);
+    try {
+      const result = await acceptConnection({
+        connectionId: notification.connectionId
+      });
+
+      setStatus('accepted');
+      onStatusChange(notification.id, 'accepted');
+
+      // Show success message
+      console.log(`Connected with ${notification.requester.displayName || notification.requester.username}!`);
+    } catch (error) {
+      console.error("Failed to accept connection:", error);
+      alert("Failed to accept connection. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  if (status === 'accepted') {
+    return (
+      <div className="notification-card accepted">
+        <p>✓ You are now connected with {notification.requester.displayName || notification.requester.username}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="notification-card">
+      <div className="notification-header">
+        <strong>{notification.requester.displayName || notification.requester.username}</strong>
+        <span> wants to connect</span>
+        <small className="timestamp">
+          {new Date(notification.createdAt).toLocaleDateString()}
+        </small>
+      </div>
+
+      {notification.message && (
+        <div className="notification-message">
+          <p>"{notification.message}"</p>
+        </div>
+      )}
+
+      <div className="notification-actions">
+        <button
+          onClick={handleAccept}
+          disabled={isProcessing}
+          className="accept-btn"
+        >
+          {isProcessing ? "Accepting..." : "Accept"}
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+## Bulk Accept Connections
+
+```tsx
+import { useAcceptConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+interface PendingConnection {
+  connectionId: string;
+  requesterName: string;
+}
+
+function BulkAcceptManager({
+  pendingConnections
+}: {
+  pendingConnections: PendingConnection[];
+}) {
+  const acceptConnection = useAcceptConnection();
+  const [processedConnections, setProcessedConnections] = useState<Set<string>>(new Set());
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentlyProcessing, setCurrentlyProcessing] = useState<string | null>(null);
+
+  const acceptAllConnections = async () => {
+    setIsProcessing(true);
+    const processed = new Set<string>();
+
+    for (const connection of pendingConnections) {
+      if (processed.has(connection.connectionId)) continue;
+
+      try {
+        setCurrentlyProcessing(connection.requesterName);
+        await acceptConnection({ connectionId: connection.connectionId });
+        processed.add(connection.connectionId);
+        setProcessedConnections(new Set(processed));
+
+        // Brief delay between requests
+        if (processed.size < pendingConnections.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (error) {
+        console.error(`Failed to accept connection from ${connection.requesterName}:`, error);
+      }
+    }
+
+    setIsProcessing(false);
+    setCurrentlyProcessing(null);
+  };
+
+  return (
+    <div className="bulk-accept-manager">
+      <h3>Accept All Connection Requests</h3>
+      <p>Accept {pendingConnections.length} pending connection requests</p>
+
+      {isProcessing && (
+        <div className="processing-status">
+          <p>Currently accepting connection from: <strong>{currentlyProcessing}</strong></p>
+          <div className="progress">
+            {processedConnections.size} of {pendingConnections.length} accepted
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={acceptAllConnections}
+        disabled={isProcessing}
+        className="bulk-accept-btn"
+      >
+        {isProcessing
+          ? `Accepting... (${processedConnections.size}/${pendingConnections.length})`
+          : "Accept All Requests"
+        }
+      </button>
+
+      <div className="connection-list">
+        {pendingConnections.map(connection => (
+          <div key={connection.connectionId} className="connection-item">
+            <span>{connection.requesterName}</span>
+            {processedConnections.has(connection.connectionId) && (
+              <span className="status accepted">✓ Accepted</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following field:
+
+| Parameter      | Type     | Required | Description                                  |
+|----------------|----------|----------|----------------------------------------------|
+| `connectionId` | `string` | Yes      | The ID of the connection request to accept   |
+
+### Returns
+
+The function returns a Promise that resolves to a `ConnectionActionResponse` object containing:
+
+| Field         | Type     | Description                                      |
+|---------------|----------|--------------------------------------------------|
+| `id`          | `string` | The ID of the connection                         |
+| `connectedAt` | `string` | ISO date string of when the connection was accepted |
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user is logged in
+- No connection ID is provided
+- Connection request doesn't exist or has already been processed
+- Network connection issues
+
+### Use Cases
+
+This hook is commonly used in:
+- Connection request notification systems
+- Inbox/messages interfaces for pending connections
+- User dashboard for managing connection requests
+- Mobile app notification handlers
+- Bulk connection management tools
+
+### Related Hooks
+
+- `useDeclineConnection` - Decline connection requests
+- `useRequestConnection` - Send new connection requests
+- `useFetchReceivedPendingConnections` - Get pending connection requests
+- `useConnectionManager` - Comprehensive connection state management

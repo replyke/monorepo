@@ -1,0 +1,106 @@
+## Comment Object Documentation
+
+The **Comment** object represents a user-generated comment within Replyke. It supports rich content including mentions, threaded replies, GIFs, attachments and more.
+
+### Properties
+
+| **Property**      | **Type**          | **Description**                                                                    |
+| ----------------- | ----------------- | ---------------------------------------------------------------------------------- |
+| `id`              | `string`          | Unique identifier for the comment (UUID).                                          |
+| `projectId`       | `string`          | Identifier for the associated project (UUID).                                      |
+| `foreignId`       | `string \| null`  | Optional identifier from an external system; format is not guaranteed to be UUID.  |
+| `entityId`        | `string`          | Identifier for the related entity (UUID).                                          |
+| `entity`          | `Entity?`         | Optional entity object (if included in query).                                     |
+| `userId`          | `string`          | Identifier of the comment's author (UUID).                                         |
+| `user`            | `UserLean`        | Lightweight user object (e.g., ID, username, avatar).                              |
+| `parentId`        | `string \| null`  | If this is a reply, this holds the parent comment ID (UUID).                       |
+| `content`         | `string \| null`  | Main text content of the comment. Can be null when only media is provided.         |
+| `gif`             | `GifData \| null` | Optional GIF media attachment.                                                     |
+| `mentions`        | `Mention[]`       | List of users mentioned in the comment.                                            |
+| `upvotes`         | `string[]`        | List of user IDs (UUIDs) who upvoted the comment.                                  |
+| `downvotes`       | `string[]`        | List of user IDs (UUIDs) who downvoted the comment.                                |
+| `repliesCount`    | `number`          | Number of direct replies to this comment.                                          |
+| `createdAt`       | `Date`            | Timestamp when the comment was created.                                            |
+| `updatedAt`       | `Date`            | Timestamp when the comment was last updated.                                       |
+| `deletedAt`       | `Date \| null`    | Timestamp when the comment was deleted, if applicable.                             |
+| `parentDeletedAt` | `Date \| null`    | If this is a reply, the timestamp of the parent comment's deletion, if applicable. |
+| `metadata`        | `Record<string, any>` | JSON object that could contain any other data about the comment which is relevant (max size: 10KB). |
+
+---
+
+### Supporting Types
+
+#### `GifData`
+
+| **Property**    | **Type**  | **Description**                                        |
+| --------------- | --------- | ------------------------------------------------------ |
+| `id`            | `string`  | Unique identifier for the GIF (UUID).                  |
+| `url`           | `string`  | General-purpose link to the GIF resource.              |
+| `gifUrl`        | `string`  | URL to the full-sized GIF.                             |
+| `gifPreviewUrl` | `string`  | URL to a lower-resolution preview version of the GIF.  |
+| `altText`       | `string?` | Optional alt text for screen readers or accessibility. |
+| `aspectRatio`   | `number`  | Width-to-height ratio (e.g., 1.78 for 16:9).           |
+
+#### `Mention`
+
+| **Property** | **Type** | **Description**                  |
+| ------------ | -------- | -------------------------------- |
+| `id`         | `string` | ID of the mentioned user (UUID). |
+| `username`   | `string` | Username of the mentioned user.  |
+
+---
+
+### Example
+
+#### Comment with Text and Mention
+
+```json
+{
+  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "projectId": "project-xyz",
+  "foreignId": null,
+  "entityId": "entity-123",
+  "userId": "user-789",
+  "parentId": null,
+  "content": "This is a great post!",
+  "gif": null,
+  "mentions": [{ "id": "user-555", "username": "johndoe" }],
+  "upvotes": ["user-100", "user-101"],
+  "downvotes": [],
+  "repliesCount": 3,
+  "createdAt": "2024-02-14T12:34:56Z",
+  "updatedAt": "2024-02-14T12:34:56Z",
+  "deletedAt": null,
+  "parentDeletedAt": null
+}
+```
+
+#### Comment with GIF Only
+
+```json
+{
+  "id": "456e7890-e89b-12d3-a456-426614174999",
+  "projectId": "project-abc",
+  "foreignId": "external-456",
+  "entityId": "entity-789",
+  "userId": "user-222",
+  "parentId": null,
+  "content": null,
+  "gif": {
+    "id": "gif-999",
+    "url": "https://example.com/gif",
+    "gifUrl": "https://example.com/full.gif",
+    "gifPreviewUrl": "https://example.com/preview.gif",
+    "altText": "Funny dancing cat",
+    "aspectRatio": 1.33
+  },
+  "mentions": [],
+  "upvotes": ["user-555"],
+  "downvotes": [],
+  "repliesCount": 0,
+  "createdAt": "2024-02-14T13:45:00Z",
+  "updatedAt": "2024-02-14T13:45:00Z",
+  "deletedAt": null,
+  "parentDeletedAt": null
+}
+```

@@ -1,0 +1,134 @@
+# Submit a Report
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/reports`
+
+**Method:** `POST`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Submit a report for a `Comment` or `Entity`. Reports are tracked per user to avoid duplicate submissions.
+
+---
+
+## Request
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Body Parameters
+
+| Field        | Type     | Required | Description                                       |
+| ------------ | -------- | -------- | ------------------------------------------------- |
+| `targetId`   | `string` | Yes      | ID of the target being reported.                  |
+| `targetType` | `string` | Yes      | Either `Comment` or `Entity`.                     |
+| `reason`     | `string` | Yes      | Reason for the report.                            |
+| `details`    | `string` | No       | Optional additional information about the report. |
+
+#### Example Request
+
+```json
+{
+  "targetId": "comment_456",
+  "targetType": "Comment",
+  "reason": "Spam",
+  "details": "This comment contains promotional links."
+}
+```
+
+---
+
+## Response
+
+### Success Responses
+
+#### New Report Created (201 Created)
+
+```json
+{
+  "message": "Report submitted successfully",
+  "code": "report/created"
+}
+```
+
+#### Report Already Exists (200 OK)
+
+```json
+{
+  "message": "Report already registered by this user",
+  "code": "report/already-reported"
+}
+```
+
+#### Report Updated (200 OK)
+
+```json
+{
+  "message": "Report updated successfully",
+  "code": "report/updated"
+}
+```
+
+### Error Responses
+
+#### Missing Required Fields (400 Bad Request)
+
+```json
+{
+  "error": "Missing required fields",
+  "code": "report/missing-data"
+}
+```
+
+#### Invalid Target Type (400 Bad Request)
+
+```json
+{
+  "error": "Invalid targetType",
+  "code": "report/invalid-type"
+}
+```
+
+#### Target Not Found (404 Not Found)
+
+```json
+{
+  "error": "Comment not found",
+  "code": "report/target-not-found"
+}
+```
+
+#### Foreign Key Violation (400 Bad Request)
+
+```json
+{
+  "error": "Invalid targetId or projectId",
+  "code": "report/invalid-foreign-key"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Server error",
+  "code": "report/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- Only `Comment` and `Entity` are valid `targetType` values.
+- Multiple users can report the same target, but each user is recorded only once.
+- Submitting a second report for the same target updates the reporter list.

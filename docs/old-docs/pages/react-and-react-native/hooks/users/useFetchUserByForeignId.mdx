@@ -1,0 +1,46 @@
+# `useFetchUserByForeignId`
+
+## Overview
+
+The `useFetchUserByForeignId` hook is used to retrieve detailed information about a specific user within the current project by their foreign ID (only relevant when integrating Replyke with an external user system). This can be useful for displaying user profiles or fetching data for interactions.
+
+
+## Usage Example
+
+```tsx
+import { useFetchUserByForeignId } from "@replyke/react-js";
+
+function UserProfile({ foreignId }: { foreignId: string }) {
+  const fetchUserByForeignId = useFetchUserByForeignId();
+
+  const handleFetchUser = async () => {
+    try {
+      const user = await fetchUserByForeignId({ foreignId });
+      console.log("Fetched user details:", user);
+    } catch (error) {
+      console.error("Failed to fetch user details:", error.message);
+    }
+  };
+
+  return <button onClick={handleFetchUser}>Fetch User</button>;
+}
+```
+
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following field:
+
+| Parameter   | Type     | Required | Description                  |
+|-------------|----------|----------|------------------------------|
+| `foreignId`    | `string` | Yes      | The ID of the user to fetch. |
+
+### Returns
+
+The function resolves with a user object containing user details:
+
+| Return Value | Type   | Description                               |
+|--------------|--------|-------------------------------------------|
+| `User`       | `User` | The details of the fetched user object. |

@@ -1,0 +1,176 @@
+# Connection Object
+
+The **Connection** object represents a bidirectional relationship between users in the Replyke social features framework. Unlike follows, connections require mutual agreement between two users and represent equal partnerships similar to Facebook friends or LinkedIn connections.
+
+## Properties
+
+| **Property**  | **Type**                                | **Description**                                          |
+| ------------- | --------------------------------------- | -------------------------------------------------------- |
+| `id`          | `string`                                | Unique identifier for the connection (UUID)             |
+| `projectId`   | `string`                                | Identifier of the associated project (UUID)             |
+| `requesterId` | `string`                                | ID of the user who initiated the connection request     |
+| `receiverId`  | `string`                                | ID of the user who received the connection request      |
+| `status`      | `'pending' \| 'accepted' \| 'declined'` | Current status of the connection                         |
+| `message`     | `string \| null`                        | Optional message with the connection request             |
+| `respondedAt` | `Date \| null`                          | Timestamp when the request was responded to (accept/decline) |
+| `createdAt`   | `Date`                                  | Timestamp when the request was sent                     |
+
+---
+
+## Status Definitions
+
+| **Status**  | **Description**              | **Initiator Actions**    | **Receiver Actions**     | **Notes**                        |
+| ----------- | ---------------------------- | ------------------------ | ------------------------ | -------------------------------- |
+| `pending`   | Request sent, awaiting response | Can withdraw            | Can accept/decline       | Active request state             |
+| `accepted`  | Connection established       | Equal partners           | Equal partners           | Bidirectional relationship       |
+| `declined`  | Request rejected             | Cannot re-request        | Can delete & create new  | Only receiver can re-initiate    |
+
+---
+
+## Characteristics
+
+### Bidirectional Relationship
+- **Mutual Agreement**: Requires approval from both parties
+- **Equal Partnership**: Once accepted, both users have equal status
+- **Request/Response Workflow**: Structured approval process
+- **Complete History**: Maintains full interaction history
+
+### Business Rules
+1. **Single Model Approach**: One model handles requests and established connections
+2. **Duplicate Prevention**: Only one active connection between any two users
+3. **Re-request Logic**: After decline, only receiver can initiate new requests
+4. **Status Transitions**: Clear progression from pending → accepted/declined
+
+---
+
+## User Model Associations
+
+The Connection model creates two associations with the User model:
+
+```typescript
+// User hasMany Connection as "sentConnections" (as requester)
+User.hasMany(Connection, {
+  foreignKey: "requesterId",
+  as: "sentConnections",
+  onDelete: "CASCADE"
+});
+
+// User hasMany Connection as "receivedConnections" (as receiver)
+User.hasMany(Connection, {
+  foreignKey: "receiverId",
+  as: "receivedConnections",
+  onDelete: "CASCADE"
+});
+```
+
+---
+
+## API Endpoints
+
+### User-Centric Operations
+- `POST /users/:userId/connection` - Send connection request to user
+- `GET /users/:userId/connection` - Get connection status with user
+- `DELETE /users/:userId/connection` - Decline/withdraw/disconnect with user
+- `GET /users/:userId/connections` - Get connections of specific user
+- `GET /users/:userId/connections-count` - Get connections count for specific user
+
+### Connection-Centric Operations
+- `GET /connections` - List established connections
+- `GET /connections/count` - Get connections count
+- `GET /connections/pending/sent` - List sent pending requests
+- `GET /connections/pending/received` - List received pending requests
+- `PUT /connections/:connectionId/accept` - Accept specific connection
+- `PUT /connections/:connectionId/decline` - Decline specific connection
+- `DELETE /connections/:connectionId` - Remove specific connection
+
+---
+
+## Status Transitions
+
+### Valid Transitions
+```
+pending → accepted (by receiver)
+pending → declined (by receiver)
+pending → [DELETED] (by requester - withdraw)
+accepted → [DELETED] (by either - disconnect)
+declined → [DELETED] (by receiver only - to allow re-request)
+```
+
+### Invalid Transitions
+- `declined → accepted` (must delete and create new request)
+- Cannot change status once responded (except delete for disconnect/re-request)
+
+---
+
+## Usage Examples
+
+### Sending Connection Request
+```json
+POST /users/user-123/connection
+Body: { "message": "Hi! I'd like to connect." }
+→ Creates Connection with status="pending", requesterId=current-user, receiverId=user-123
+```
+
+### Accepting Connection
+```json
+PUT /connections/connection-uuid/accept
+→ Updates status to "accepted", sets respondedAt timestamp
+```
+
+### Checking Connection Status
+```json
+GET /users/user-123/connection
+→ Returns detailed status: none/pending/connected/declined with metadata
+```
+
+---
+
+## Notification Strategy
+
+| **Event**            | **Notify Who** | **Type**     | **Notes**              |
+| -------------------- | -------------- | ------------ | ---------------------- |
+| Request Sent         | Receiver       | In-app only  | `connection-request`   |
+| Request Accepted     | Requester      | In-app only  | `connection-accepted`  |
+| Request Declined     | No one         | None         | No notification sent   |
+| Connection Removed   | No one         | None         | No notification sent   |
+
+---
+
+## Query Patterns
+
+### Get User's Connections (Bidirectional)
+```sql
+-- User is connected if they are requester OR receiver with accepted status
+SELECT * FROM Connections
+WHERE projectId = ?
+  AND status = 'accepted'
+  AND (requesterId = ? OR receiverId = ?)
+```
+
+### Get Pending Requests
+```sql
+-- Received requests
+SELECT * FROM Connections
+WHERE projectId = ? AND receiverId = ? AND status = 'pending'
+
+-- Sent requests
+SELECT * FROM Connections
+WHERE projectId = ? AND requesterId = ? AND status = 'pending'
+```
+
+---
+
+## Performance Considerations
+
+- **Indexes**: Optimized for queries by requesterId, receiverId, status, and projectId
+- **Pagination**: All list endpoints support pagination
+- **Rate Limiting**: Connection requests limited to 25 requests per 5 minutes
+- **Caching**: Consider caching connection counts and lists for active users
+
+---
+
+## Related Models
+
+- **User**: The users involved in the connection relationship
+- **Follow**: One-way relationship alternative that doesn't require approval
+- **AppNotification**: Notifications for connection requests and acceptances

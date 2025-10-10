@@ -1,0 +1,55 @@
+# `useEntityVotes`
+
+## Overview
+
+The `useEntityVotes` hook provides functionality to manage voting on an entity, including upvoting, downvoting, and removing votes. This hook is designed to handle optimistic updates to the entity’s state, ensuring a smooth user experience by immediately reflecting changes in the UI while making server requests in the background. It also supports callbacks for handling cases where a user is not logged in or does not have a username.
+
+## Usage Example
+
+```tsx
+import { useEntityVotes } from "@replyke/react-js";
+
+function EntityVoteButtons({ entity, setEntity }: { entity: Entity; setEntity: React.Dispatch<React.SetStateAction<Entity>> }) {
+  const {
+    upvoteEntity,
+    removeEntityUpvote,
+    downvoteEntity,
+    removeEntityDownvote,
+  } = useEntityVotes({
+    entity,
+    setEntity,
+  });
+
+  return (
+    <div>
+      <button onClick={upvoteEntity}>Upvote</button>
+      <button onClick={removeEntityUpvote}>Remove Upvote</button>
+      <button onClick={downvoteEntity}>Downvote</button>
+      <button onClick={removeEntityDownvote}>Remove Downvote</button>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook accepts an object with the following fields:
+
+| Parameter                | Type                                    | Required | Description                                                                |
+|--------------------------|-----------------------------------------|----------|----------------------------------------------------------------------------|
+| `entity`                 | `Entity \| undefined`                   | Yes      | The current entity object.                                                |
+| `setEntity`              | `React.Dispatch<React.SetStateAction<Entity \| undefined>>` | Yes | Function to update the entity state in your component.                    |
+
+### Returns
+
+The hook returns an object containing the following functions:
+
+| Function                 | Description                                                                |
+|--------------------------|----------------------------------------------------------------------------|
+| `upvoteEntity`           | Adds an upvote to the entity and updates the server.                       |
+| `removeEntityUpvote`     | Removes the user’s upvote from the entity and updates the server.           |
+| `downvoteEntity`         | Adds a downvote to the entity and updates the server.                      |
+| `removeEntityDownvote`   | Removes the user’s downvote from the entity and updates the server.         |
+

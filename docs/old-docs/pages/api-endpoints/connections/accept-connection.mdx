@@ -1,0 +1,106 @@
+# Accept Connection Request
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/connections/:connectionId/accept`
+
+**Method:** `PUT`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Accept a specific pending connection request. Only the receiver of the connection request can accept it.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter      | Type     | Required | Description                         |
+| -------------- | -------- | -------- | ----------------------------------- |
+| `connectionId` | `string` | Yes      | ID of the connection to accept |
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Body Parameters
+
+_None_
+
+#### Example Request
+
+```http
+PUT api.replyke.com/api/v6/your-project-id/connections/connection-uuid-123/accept
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "id": "connection-uuid",
+  "status": "accepted",
+  "respondedAt": "2024-01-01T12:05:00.000Z"
+}
+```
+
+### Error Responses
+
+#### Invalid Connection ID (400 Bad Request)
+
+```json
+{
+  "error": "Invalid connectionId",
+  "code": "connection/invalid-connection-id"
+}
+```
+
+#### Unauthorized (403 Forbidden)
+
+```json
+{
+  "error": "Only receiver can accept requests",
+  "code": "connection/unauthorized"
+}
+```
+
+#### Connection Not Found (404 Not Found)
+
+```json
+{
+  "error": "Pending connection not found",
+  "code": "connection/not-found"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error",
+  "code": "connection/server-error"
+}
+```
+
+---
+
+## Notes
+
+- Requires authentication
+- Only the receiver of the connection request can accept it
+- Updates connection status from "pending" to "accepted"
+- Sets the respondedAt timestamp
+- Creates a bidirectional relationship between the users
+- Triggers a notification to the original requester
+- Rate limiting: 50 requests per 5 minutes

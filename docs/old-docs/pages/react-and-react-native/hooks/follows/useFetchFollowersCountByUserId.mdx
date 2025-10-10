@@ -1,0 +1,102 @@
+# `useFetchFollowersCountByUserId`
+
+## Overview
+
+The `useFetchFollowersCountByUserId` hook fetches the total number of followers for a specific user. This is a public endpoint that allows you to retrieve follower counts for any user without authentication.
+
+## Usage Example
+
+```tsx
+import { useFetchFollowersCountByUserId } from "@replyke/react-js";
+
+function UserFollowersCounter({ targetUserId }: { targetUserId: string }) {
+  const fetchFollowersCountByUserId = useFetchFollowersCountByUserId();
+
+  const getUserFollowersCount = async () => {
+    try {
+      const result = await fetchFollowersCountByUserId({ userId: targetUserId });
+      console.log(`This user has ${result.count} followers`);
+    } catch (error) {
+      console.error("Failed to fetch user followers count:", error.message);
+    }
+  };
+
+  return <button onClick={getUserFollowersCount}>Check User's Followers</button>;
+}
+```
+
+## Advanced Usage with State
+
+```tsx
+import { useFetchFollowersCountByUserId } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function UserStatsCard({ userId, username }: { userId: string; username: string }) {
+  const fetchFollowersCountByUserId = useFetchFollowersCountByUserId();
+  const [followersCount, setFollowersCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const loadCount = async () => {
+      setLoading(true);
+      try {
+        const result = await fetchFollowersCountByUserId({ userId });
+        setFollowersCount(result.count);
+      } catch (error) {
+        console.error("Failed to load follower count:", error);
+        setFollowersCount(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCount();
+  }, [userId, fetchFollowersCountByUserId]);
+
+  return (
+    <div className="user-stats-card">
+      <h3>{username}</h3>
+      <div className="stats">
+        {loading ? (
+          <span>Loading...</span>
+        ) : (
+          <>
+            <span className="count">{followersCount?.toLocaleString() ?? 0}</span>
+            <span className="label">Followers</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following field:
+
+| Parameter | Type     | Required | Description                                        |
+|-----------|----------|----------|-------------------------------------------------|
+| `userId`  | `string` | Yes      | The ID of the user whose follower count to fetch |
+
+### Returns
+
+The function returns a Promise that resolves to an object containing:
+
+| Field   | Type     | Description                                    |
+|---------|----------|------------------------------------------------|
+| `count` | `number` | The total number of users following this user |
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No user ID is provided
+- No project is specified
+
+### Notes
+
+This is a public endpoint that doesn't require user authentication, making it suitable for displaying any user's follower count in public-facing features like user discovery or leaderboards.

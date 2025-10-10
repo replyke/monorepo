@@ -1,0 +1,102 @@
+# Get or Create User by Foreign ID
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/users/by-foreign-id`
+
+**Method:** `GET`
+
+**Authentication Required:** No
+
+---
+
+## Description
+
+Fetches a user by their `foreignId`. If no user exists, creates a new one. Also updates existing users if provided data differs.
+
+---
+
+## Request
+
+### Query Parameters
+
+| Parameter        | Type            | Required | Description                                                |
+| ---------------- | --------------- | -------- | ---------------------------------------------------------- |
+| `foreignId`      | `string`        | Yes      | A unique external user identifier.                         |
+| `name`           | `string`        | No       | User's display name.                                       |
+| `username`       | `string`        | No       | User's handle.                                             |
+| `avatar`         | `string`        | No       | URL to the user's avatar image.                            |
+| `bio`            | `string`        | No       | User bio or description.                                   |
+| `metadata`       | `string` (JSON) | No       | JSON string of additional user metadata.                   |
+| `secureMetadata` | `string` (JSON) | No       | JSON string of secure metadata (not returned in response). |
+
+### Example Request
+
+```sh
+GET /proj1234/users/by-foreign-id?foreignId=abc123&name=Jane&username=janedoe&metadata={"lang":"en"}
+```
+
+---
+
+## Response
+
+### Success Response (200 OK or 201 Created)
+
+```json
+{
+  "user": {
+    "id": "67890",
+    "projectId": "12345",
+    "foreignId": "abc123",
+    "name": "Jane",
+    "username": "janedoe",
+    "avatar": "https://example.com/avatar.jpg",
+    "bio": "Software Engineer",
+    "birthdate": null,
+    "reputation": 0,
+    "location": null,
+    "suspension": {
+      "isSuspended": false,
+      "reason": null,
+      "startDate": null,
+      "endDate": null
+    },
+    "metadata": {
+      "lang": "en"
+    },
+    "createdAt": "2024-01-01T12:00:00.000Z",
+    "updatedAt": "2024-02-01T12:00:00.000Z"
+  },
+  "created": true,
+  "updated": false
+}
+```
+
+### Error Responses
+
+#### Missing or Invalid Foreign ID (400 Bad Request)
+
+```json
+{
+  "error": "Missing or invalid foreign user ID.",
+  "code": "user/invalid-identifier"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error",
+  "code": "user/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- This endpoint is useful when managing users from external systems.
+- `secureMetadata` is accepted and used for updates, but never returned.
+- The response includes `created` and `updated` flags to indicate what occurred.

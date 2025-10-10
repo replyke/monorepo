@@ -1,0 +1,118 @@
+# Get Comments
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/comments`
+
+**Method:** `GET`
+
+**Authentication Required:** No
+
+---
+
+## Description
+
+Fetches a paginated list of comments filtered by entity ID, user ID, or parent comment ID.
+
+Supports optional sorting by newest, oldest, top (most upvoted), or most controversial. Replies, direct comments, and user-authored comments can all be queried. Optionally includes associated entity data.
+
+---
+
+## Request
+
+### Query Parameters
+
+| Parameter       | Type     | Required | Description                                                     |
+| --------------- | -------- | -------- | --------------------------------------------------------------- |
+| `entityId`      | `string` | No\*     | ID of the entity to fetch comments for.                         |
+| `userId`        | `string` | No\*     | ID of the user to fetch their comments.                         |
+| `parentId`      | `string` | No\*     | ID of the parent comment to fetch its replies.                  |
+| `sortBy`        | `string` | No       | Sorting method: `new` (default), `old`, `top`, `controversial`. |
+| `page`          | `number` | No       | Page number for pagination. Defaults to `1`.                    |
+| `limit`         | `number` | No       | Number of results per page (max: 100). Defaults to `10`.        |
+| `includeEntity` | `string` | No       | If `true`, includes related entity data in each comment.        |
+
+> **Note:** At least one of `entityId`, `userId`, or `parentId` must be provided.
+
+---
+
+## Response
+
+### Success Response (`200 OK`)
+
+Returns an array of comments matching the filters:
+
+```json
+[
+  {
+    "id": "comment-001",
+    "entityId": "entity-123",
+    "userId": "user-456",
+    "content": "This is a comment.",
+    "mentions": [],
+    "upvotes": ["user-789"],
+    "downvotes": [],
+    "attachments": [],
+    "metadata": {},
+    "createdAt": "2025-05-11T10:00:00.000Z",
+    "updatedAt": "2025-05-11T10:00:00.000Z"
+  }
+]
+```
+
+---
+
+### Error Responses
+
+#### Invalid Query (`400 Bad Request`)
+
+```json
+{
+  "error": "Invalid request data",
+  "code": "comment/invalid-request"
+}
+```
+
+#### Invalid Limit (`400 Bad Request`)
+
+```json
+{
+  "error": "Invalid request: limit must be a positive number.",
+  "code": "comment/invalid-limit"
+}
+```
+
+#### Invalid Page (`400 Bad Request`)
+
+```json
+{
+  "error": "Invalid request: page must be a whole number greater than 0.",
+  "code": "comment/invalid-page"
+}
+```
+
+#### Server Error (`500 Internal Server Error`)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "comment/server-error",
+  "details": "[error message]"
+}
+```
+
+---
+
+## Notes
+
+* One of `entityId`, `userId`, or `parentId` must be specified.
+* Sorting modes:
+
+  * `new`: Most recent comments first (default).
+  * `old`: Oldest comments first.
+  * `top`: Highest upvote-to-downvote ratio.
+  * `controversial`: High activity with mixed votes.
+* Results are paginated. Maximum of 100 per page.
+* If `includeEntity=true`, each comment includes basic data about its entity.
+* Votes are returned as arrays of user IDs.
+* Querying does not require authentication.

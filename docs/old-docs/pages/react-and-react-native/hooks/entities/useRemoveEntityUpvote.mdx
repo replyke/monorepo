@@ -1,0 +1,45 @@
+# `useRemoveEntityUpvote`
+
+## Overview
+
+The `useRemoveEntityUpvote` hook provides a way to remove a previously cast upvote from an entity.
+
+## Usage Example
+
+```tsx
+import { useRemoveEntityUpvote } from "@replyke/react-js";
+import { Button } from "@/components/ui/button";
+
+function EntityComponent({ entityId }: { entityId: string }) {
+  const removeUpvote = useRemoveEntityUpvote();
+
+  const handleRemoveUpvote = async () => {
+    try {
+      const response = await removeUpvote({ entityId });
+      console.log("Upvote removed:", response);
+    } catch (err) {
+      console.error("Failed to remove upvote:", err);
+    }
+  };
+
+  return <Button onClick={handleRemoveUpvote}>Remove Upvote</Button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The `removeEntityUpvote` function returned by the hook accepts a single object with the following field:
+
+| Parameter  | Type     | Description                                    |
+| ---------- | -------- | ---------------------------------------------- |
+| `entityId` | `string` | The ID of the entity whose upvote to remove. |
+
+### Returns
+
+The function returns a `Promise<Entity>` representing the API response:
+
+| Return Value | Type     | Description                                                    |
+| ------------ | -------- | -------------------------------------------------------------- |
+| `response`   | `Entity` | The updated entity after the upvote is successfully removed. |

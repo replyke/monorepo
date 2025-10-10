@@ -1,0 +1,127 @@
+# Update User
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/users/:userId`
+
+**Method:** `PATCH`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Update details of an existing user. Only fields provided in the request will be modified. Triggers webhook validation before updating.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description         |
+| --------- | -------- | -------- | ------------------- |
+| `userId`  | `string` | Yes      | The ID of the user. |
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Body Parameters
+
+The body must contain an `update` object with any of the following optional fields:
+
+| Field            | Type                | Description                              |
+| ---------------- | ------------------- | ---------------------------------------- |
+| `name`           | `string`            | Updated name.                            |
+| `username`       | `string`            | Updated username (sanitized).            |
+| `avatar`         | `string` (URL)      | URL to the user's new avatar.            |
+| `bio`            | `string`            | User biography.                          |
+| `birthdate`      | `string` (ISO Date) | User's birthdate.                        |
+| `location`       | `object`            | Object with `longitude` and `latitude`.  |
+| `metadata`       | `object`            | Additional metadata.                     |
+| `secureMetadata` | `object`            | Secure metadata (used but not returned). |
+
+#### Example Request
+
+```http
+PATCH /proj1234/users/67890
+Authorization: Bearer <ACCESS_TOKEN>
+Content-Type: application/json
+
+{
+  "update": {
+    "username": "new_username",
+    "location": { "longitude": 34.05, "latitude": -118.25 },
+    "metadata": { "theme": "dark" }
+  }
+}
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "id": "67890",
+  "username": "new_username",
+  "name": "John Doe",
+  "avatar": "https://example.com/avatar.jpg",
+  "bio": "New bio text",
+  "birthdate": "1990-01-01T00:00:00.000Z",
+  "location": {
+    "type": "Point",
+    "coordinates": [34.05, -118.25]
+  },
+  "metadata": {
+    "theme": "dark"
+  },
+  "suspensions": []
+}
+```
+
+### Error Responses
+
+#### Missing or Invalid Data (400 Bad Request)
+
+```json
+{
+  "error": "Missing required data",
+  "code": "user/missing-data"
+}
+```
+
+#### User Not Found (404 Not Found)
+
+```json
+{
+  "error": "User not found",
+  "code": "user/not-found"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error",
+  "code": "user/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- Requires authentication.
+- `validateUserUpdated` webhook is called before update.
+- `secureMetadata` is accepted but never returned.
+- `suspensions` are included in the response if active.
+- Location must be an object with `longitude` and `latitude`.

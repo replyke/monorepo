@@ -1,0 +1,444 @@
+# `useRemoveConnectionByUserId`
+
+## Overview
+
+The `useRemoveConnectionByUserId` hook allows the current logged-in user to remove a connection or withdraw a connection request using a user ID instead of a connection ID. This is a convenience hook that automatically finds and removes any connection relationship with the specified user.
+
+## Usage Example
+
+```tsx
+import { useRemoveConnectionByUserId } from "@replyke/react-js";
+
+function DisconnectButton({ targetUserId }: { targetUserId: string }) {
+  const removeConnectionByUserId = useRemoveConnectionByUserId();
+
+  const handleDisconnect = async () => {
+    try {
+      const result = await removeConnectionByUserId({ userId: targetUserId });
+      console.log(`Connection removed successfully:`, result);
+    } catch (error) {
+      console.error("Failed to remove connection:", error.message);
+    }
+  };
+
+  return <button onClick={handleDisconnect}>Disconnect</button>;
+}
+```
+
+## Advanced Usage with Confirmation
+
+```tsx
+import { useRemoveConnectionByUserId } from "@replyke/react-js";
+import { useState } from "react";
+
+function SmartDisconnectButton({
+  userId,
+  username,
+  connectionType,
+  onDisconnect
+}: {
+  userId: string;
+  username: string;
+  connectionType: 'connected' | 'pending-sent' | 'pending-received';
+  onDisconnect?: (userId: string) => void;
+}) {
+  const removeConnectionByUserId = useRemoveConnectionByUserId();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const getActionText = () => {
+    switch (connectionType) {
+      case 'connected':
+        return 'Disconnect';
+      case 'pending-sent':
+        return 'Withdraw Request';
+      case 'pending-received':
+        return 'Remove Request';
+      default:
+        return 'Remove Connection';
+    }
+  };
+
+  const getConfirmationMessage = () => {
+    switch (connectionType) {
+      case 'connected':
+        return `Are you sure you want to disconnect from ${username}?`;
+      case 'pending-sent':
+        return `Are you sure you want to withdraw your connection request to ${username}?`;
+      case 'pending-received':
+        return `Are you sure you want to remove the connection request from ${username}?`;
+      default:
+        return `Are you sure you want to remove this connection with ${username}?`;
+    }
+  };
+
+  const handleRemove = async () => {
+    const confirmed = window.confirm(getConfirmationMessage());
+    if (!confirmed) return;
+
+    setIsProcessing(true);
+    try {
+      const result = await removeConnectionByUserId({ userId });
+      console.log(`Successfully removed connection with ${username}:`, result);
+      onDisconnect?.(userId);
+
+      // Show success message based on action
+      const actionCompleted = connectionType === 'connected' ? 'disconnected from' :
+                            connectionType === 'pending-sent' ? 'withdrew request to' :
+                            'removed request from';
+      alert(`Successfully ${actionCompleted} ${username}.`);
+    } catch (error) {
+      console.error(`Failed to remove connection with ${username}:`, error);
+      alert("Failed to remove connection. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleRemove}
+      disabled={isProcessing}
+      className={`remove-connection-btn ${connectionType}`}
+    >
+      {isProcessing ? "Processing..." : getActionText()}
+    </button>
+  );
+}
+```
+
+## Usage in Connection Management
+
+```tsx
+import { useRemoveConnectionByUserId } from "@replyke/react-js";
+import { useState } from "react";
+
+interface ConnectionUser {
+  id: string;
+  username: string;
+  displayName?: string;
+  avatar?: string;
+  connectionStatus: 'connected' | 'pending-sent' | 'pending-received';
+  connectedAt?: string;
+  requestedAt?: string;
+}
+
+function ConnectionCard({
+  user,
+  onConnectionRemoved
+}: {
+  user: ConnectionUser;
+  onConnectionRemoved: (userId: string) => void;
+}) {
+  const removeConnectionByUserId = useRemoveConnectionByUserId();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleRemoveConnection = async () => {
+    const actionName = user.connectionStatus === 'connected' ? 'disconnect from' :
+                      user.connectionStatus === 'pending-sent' ? 'withdraw request to' :
+                      'remove request from';
+
+    const confirmed = window.confirm(
+      `Are you sure you want to ${actionName} ${user.displayName || user.username}?`
+    );
+
+    if (!confirmed) return;
+
+    setIsProcessing(true);
+    try {
+      await removeConnectionByUserId({ userId: user.id });
+      onConnectionRemoved(user.id);
+    } catch (error) {
+      console.error("Failed to remove connection:", error);
+      alert("Failed to remove connection. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const getStatusText = () => {
+    switch (user.connectionStatus) {
+      case 'connected':
+        return `Connected ${user.connectedAt ? new Date(user.connectedAt).toLocaleDateString() : ''}`;
+      case 'pending-sent':
+        return 'Request Sent';
+      case 'pending-received':
+        return 'Request Received';
+      default:
+        return 'Unknown Status';
+    }
+  };
+
+  const getActionButtonText = () => {
+    switch (user.connectionStatus) {
+      case 'connected':
+        return 'Disconnect';
+      case 'pending-sent':
+        return 'Withdraw';
+      case 'pending-received':
+        return 'Remove';
+      default:
+        return 'Remove';
+    }
+  };
+
+  return (
+    <div className="connection-card">
+      <div className="user-info">
+        {user.avatar && (
+          <img src={user.avatar} alt={`${user.username} avatar`} className="avatar" />
+        )}
+        <div className="user-details">
+          <h3>{user.displayName || user.username}</h3>
+          <p>@{user.username}</p>
+          <small className={`status ${user.connectionStatus}`}>
+            {getStatusText()}
+          </small>
+        </div>
+      </div>
+
+      <div className="actions">
+        <button
+          onClick={handleRemoveConnection}
+          disabled={isProcessing}
+          className={`action-btn ${user.connectionStatus}`}
+        >
+          {isProcessing ? "Processing..." : getActionButtonText()}
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+## Bulk Removal by User IDs
+
+```tsx
+import { useRemoveConnectionByUserId } from "@replyke/react-js";
+import { useState } from "react";
+
+interface BulkRemovalUser {
+  id: string;
+  username: string;
+  connectionStatus: 'connected' | 'pending-sent' | 'pending-received';
+}
+
+function BulkConnectionRemover({
+  users,
+  onComplete
+}: {
+  users: BulkRemovalUser[];
+  onComplete: (removedUserIds: string[]) => void;
+}) {
+  const removeConnectionByUserId = useRemoveConnectionByUserId();
+  const [processedUsers, setProcessedUsers] = useState<Set<string>>(new Set());
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+
+  const handleBulkRemoval = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to remove ${users.length} connections? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setIsProcessing(true);
+    const processed = new Set<string>();
+
+    for (const user of users) {
+      if (processed.has(user.id)) continue;
+
+      try {
+        setCurrentUser(user.username);
+        await removeConnectionByUserId({ userId: user.id });
+        processed.add(user.id);
+        setProcessedUsers(new Set(processed));
+
+        // Brief delay between operations
+        if (processed.size < users.length) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      } catch (error) {
+        console.error(`Failed to remove connection with ${user.username}:`, error);
+      }
+    }
+
+    setIsProcessing(false);
+    setCurrentUser(null);
+    onComplete(Array.from(processed));
+  };
+
+  return (
+    <div className="bulk-connection-remover">
+      <h3>Remove Multiple Connections</h3>
+      <p>Remove connections with {users.length} users</p>
+
+      {isProcessing && (
+        <div className="processing-status">
+          <p>Currently processing: <strong>{currentUser}</strong></p>
+          <div className="progress-bar">
+            <div
+              className="progress"
+              style={{ width: `${(processedUsers.size / users.length) * 100}%` }}
+            />
+          </div>
+          <span>{processedUsers.size} of {users.length} processed</span>
+        </div>
+      )}
+
+      <button
+        onClick={handleBulkRemoval}
+        disabled={isProcessing}
+        className="bulk-remove-btn"
+      >
+        {isProcessing
+          ? `Processing... (${processedUsers.size}/${users.length})`
+          : "Remove All Connections"
+        }
+      </button>
+
+      <div className="user-list">
+        {users.map(user => (
+          <div key={user.id} className="user-item">
+            <span className="username">{user.username}</span>
+            <span className={`status ${user.connectionStatus}`}>
+              {user.connectionStatus.replace('-', ' ')}
+            </span>
+            {processedUsers.has(user.id) && (
+              <span className="processed">✓ Removed</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## Usage with Error Recovery
+
+```tsx
+import { useRemoveConnectionByUserId } from "@replyke/react-js";
+import { useState } from "react";
+
+function ReliableDisconnectButton({
+  userId,
+  username,
+  maxRetries = 3
+}: {
+  userId: string;
+  username: string;
+  maxRetries?: number;
+}) {
+  const removeConnectionByUserId = useRemoveConnectionByUserId();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const attemptRemoval = async (attempt: number = 1): Promise<boolean> => {
+    try {
+      await removeConnectionByUserId({ userId });
+      return true;
+    } catch (error) {
+      console.error(`Attempt ${attempt} failed to remove connection with ${username}:`, error);
+
+      if (attempt < maxRetries) {
+        // Exponential backoff: wait 2^attempt seconds
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return attemptRemoval(attempt + 1);
+      }
+
+      return false;
+    }
+  };
+
+  const handleRemoveWithRetry = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to remove the connection with ${username}?`
+    );
+    if (!confirmed) return;
+
+    setIsProcessing(true);
+    setRetryCount(0);
+
+    try {
+      const success = await attemptRemoval();
+
+      if (success) {
+        alert(`Successfully removed connection with ${username}!`);
+      } else {
+        alert(`Failed to remove connection with ${username} after ${maxRetries} attempts. Please try again later.`);
+      }
+    } finally {
+      setIsProcessing(false);
+      setRetryCount(0);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleRemoveWithRetry}
+      disabled={isProcessing}
+      className="reliable-disconnect-btn"
+    >
+      {isProcessing
+        ? `Removing... ${retryCount > 0 ? `(Retry ${retryCount}/${maxRetries})` : ''}`
+        : "Remove Connection"
+      }
+    </button>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following field:
+
+| Parameter | Type     | Required | Description                                      |
+|-----------|----------|----------|--------------------------------------------------|
+| `userId`  | `string` | Yes      | The ID of the user to remove connection with    |
+
+### Returns
+
+The function returns a Promise that resolves to a `RemoveConnectionByUserIdResponse` object containing details about the removal operation.
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user is logged in
+- No user ID is provided
+- Attempting to remove connection with yourself
+- No connection exists with the specified user
+- Network connection issues
+
+### Advantages over useRemoveConnection
+
+**Convenience:**
+- No need to know the specific connection ID
+- Works with just a user ID (simpler API)
+- Automatically handles different connection states
+
+**Flexibility:**
+- Works for established connections, pending requests, and declined requests
+- Single API for all connection removal scenarios
+
+**User Experience:**
+- Simpler integration in user-facing components
+- More intuitive for developers building UI components
+
+### Use Cases
+
+This hook is ideal for:
+- User profile connection management
+- "Block" or "Remove" functionality in user lists
+- Cleanup operations when users are removed
+- Privacy controls and connection management
+- Administrative user management interfaces
+
+### Related Hooks
+
+- `useRemoveConnection` - Remove connection by connection ID
+- `useFetchConnectionStatus` - Check connection status before removal
+- `useConnectionManager` - Comprehensive connection state management
+- `useRequestConnection` - Send new connection requests after removal

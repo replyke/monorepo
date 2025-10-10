@@ -1,0 +1,45 @@
+# `useUpvoteEntity`
+
+## Overview
+
+The `useUpvoteEntity` hook provides a way to upvote an entity.
+
+## Usage Example
+
+```tsx
+import { useUpvoteEntity } from "@replyke/react-js";
+import { Button } from "@/components/ui/button";
+
+function EntityComponent({ entityId }: { entityId: string }) {
+  const upvoteEntity = useUpvoteEntity();
+
+  const handleUpvote = async () => {
+    try {
+      const response = await upvoteEntity({ entityId });
+      console.log("Entity upvoted:", response);
+    } catch (err) {
+      console.error("Failed to upvote:", err);
+    }
+  };
+
+  return <Button onClick={handleUpvote}>Upvote</Button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The `upvoteEntity` function returned by the hook accepts a single object with the following field:
+
+| Parameter  | Type     | Description                           |
+| ---------- | -------- | ------------------------------------- |
+| `entityId` | `string` | The ID of the entity to be upvoted. |
+
+### Returns
+
+The function returns a `Promise<Entity>` representing the API response:
+
+| Return Value | Type     | Description                                            |
+| ------------ | -------- | ------------------------------------------------------ |
+| `response`   | `Entity` | The updated entity after it is successfully upvoted. |

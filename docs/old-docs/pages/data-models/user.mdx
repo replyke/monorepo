@@ -1,0 +1,95 @@
+## User Object
+
+The **User** object is the public-facing user model returned by the Replyke API to client apps. It contains identity, profile, and activity-relevant fields but excludes private or admin-only information.
+
+### Properties
+
+| **Property** | **Type**                                                   | **Description**                                                |
+| ------------ | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| `id`         | `string`                                                   | Unique identifier for the user (UUID).                         |
+| `projectId`  | `string`                                                   | Identifier of the associated project (UUID).                   |
+| `role`       | `"admin" \| "editor" \| "visitor"`                         | Role assigned to the user in the project.                      |
+| `name`       | `string \| null`                                           | Display name of the user.                                      |
+| `username`   | `string \| null`                                           | Unique username, if set.                                       |
+| `avatar`     | `string \| null`                                           | URL to the user's avatar image.                                |
+| `bio`        | `string \| null`                                           | Optional short bio (max 300 characters).                       |
+| `birthdate`  | `Date \| null`                                             | User's birthdate.                                              |
+| `metadata`   | `Record<string, any>`                                      | Public metadata, available in shared content (max size: 10KB). |
+| `reputation` | `number`                                                   | Activity-based score managed by Replyke.                       |
+| `createdAt`  | `Date`                                                     | Timestamp when the user was created.                           |
+
+---
+
+## AuthUser Object
+
+The **AuthUser** object represents the authenticated user's own profile data delivered to their client. It includes both public and some private fields that are only accessible to the user themselves, plus suspension history.
+
+### Properties
+
+| **Property**     | **Type**                                                   | **Description**                                                |
+| ---------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| `id`             | `string`                                                   | Unique identifier for the user (UUID).                         |
+| `projectId`      | `string`                                                   | Identifier of the associated project (UUID).                   |
+| `foreignId`      | `string \| null`                                           | Optional external or static ID for mapping users from another system. |
+| `role`           | `"admin" \| "editor" \| "visitor"`                         | Role assigned to the user in the project.                      |
+| `email`          | `string \| null`                                           | User's email address (only visible to themselves).            |
+| `name`           | `string \| null`                                           | Display name of the user.                                      |
+| `username`       | `string \| null`                                           | Unique username, if set.                                       |
+| `avatar`         | `string \| null`                                           | URL to the user's avatar image.                                |
+| `bio`            | `string \| null`                                           | Optional short bio (max 300 characters).                       |
+| `birthdate`      | `Date \| null`                                             | User's birthdate.                                              |
+| `metadata`       | `Record<string, any>`                                      | Public metadata, available in shared content (max size: 10KB). |
+| `reputation`     | `number`                                                   | Activity-based score managed by Replyke.                       |
+| `isVerified`     | `boolean`                                                  | Whether the user is verified.                                  |
+| `isActive`       | `boolean`                                                  | Whether the account is currently active.                       |
+| `lastActive`     | `Date`                                                     | Timestamp of most recent user activity.                        |
+| `suspensions`    | `{ reason: string \| null, startDate: Date, endDate: Date \| null }[]` | Array of suspension records with reason and duration.          |
+
+---
+
+## UserFull Object
+
+The **UserFull** object is an internal model used within Replyke’s administrative interfaces. It contains the full user record, including sensitive, private, or backoffice-only fields.
+
+### Properties
+
+| **Property**     | **Type**                                                                                           | **Description**                                                       |
+| ---------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `id`             | `string`                                                                                           | Unique identifier for the user (UUID).                                |
+| `projectId`      | `string`                                                                                           | Identifier of the associated project (UUID).                          |
+| `foreignId`      | `string \| null`                                                                                   | Optional external or static ID for mapping users from another system. |
+| `role`           | `"admin" \| "editor" \| "visitor"`                                                                 | Role assigned to the user in the project.                             |
+| `email`          | `string \| null`                                                                                   | User’s email address.                                                 |
+| `name`           | `string \| null`                                                                                   | Display name.                                                         |
+| `username`       | `string \| null`                                                                                   | Unique username.                                                      |
+| `avatar`         | `string \| null`                                                                                   | Avatar image URL.                                                     |
+| `bio`            | `string \| null`                                                                                   | Bio (up to 300 characters).                                           |
+| `birthdate`      | `Date \| null`                                                                                     | Date of birth.                                                        |
+| `location`       | `{ type: "Point", coordinates: [number, number] } \| null`                                         | Optional user location in GeoJSON format.                             |
+| `metadata`       | `Record<string, any>`                                                                              | Public, sharable metadata (max 10KB).                                 |
+| `secureMetadata` | `Record<string, any>`                                                                              | Private metadata, excluded from shared views.                         |
+| `reputation`     | `number`                                                                                           | System-managed score based on participation.                          |
+| `isVerified`     | `boolean`                                                                                          | Whether the user is verified.                                         |
+| `isActive`       | `boolean`                                                                                          | Whether the account is currently active.                              |
+| `lastActive`     | `Date`                                                                                             | Timestamp of most recent user activity.                               |
+| `suspension`     | `{ isSuspended: boolean, reason: string \| null, startDate: Date \| null, endDate: Date \| null }` | Suspension status and duration.                                       |
+| `createdAt`      | `Date`                                                                                             | Creation timestamp.                                                   |
+| `updatedAt`      | `Date`                                                                                             | Last updated timestamp.                                               |
+| `deletedAt`      | `Date \| null`                                                                                     | Deletion timestamp, if applicable.                                    |
+
+---
+
+### Summary of Differences
+
+| **Field**                | **Included in `User`?** | **Included in `AuthUser`?** | **Included in `UserFull`?** | **Notes**                                         |
+| ------------------------ | ----------------------- | --------------------------- | --------------------------- | ------------------------------------------------- |
+| `foreignId`              | ❌                       | ✅                           | ✅                           | External mapping ID — excluded from public view. |
+| `email`                  | ❌                       | ✅                           | ✅                           | Sensitive — only shown to user themselves or admins. |
+| `location`               | ❌                       | ❌                           | ✅                           | Geographic data — admin use only.                |
+| `secureMetadata`         | ❌                       | ❌                           | ✅                           | Internal use only.                                |
+| `isVerified`             | ❌                       | ✅                           | ✅                           | Platform-level detail.                            |
+| `isActive`               | ❌                       | ✅                           | ✅                           | Account status — shown to user themselves.       |
+| `lastActive`             | ❌                       | ✅                           | ✅                           | Activity tracking.                                |
+| `suspensions`            | ❌                       | ✅                           | ❌                           | Suspension history — specific to AuthUser.       |
+| `suspension`             | ❌                       | ❌                           | ✅                           | Current suspension status — admin view only.     |
+| `updatedAt`, `deletedAt` | ❌                       | ❌                           | ✅                           | Full auditing data only shown in admin dashboard. |

@@ -1,0 +1,80 @@
+# Mark Notification as Read
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/app-notifications/:notificationId/mark-as-read`
+
+**Method:** `PATCH`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Mark a specific app notification as read for the authenticated user.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter        | Type     | Required | Description                         |
+| ---------------- | -------- | -------- | ----------------------------------- |
+| `notificationId` | `string` | Yes      | ID of the notification to mark read |
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Body Parameters
+
+_None_
+
+#### Example Request
+
+```http
+PATCH /proj1234/app-notifications/abcd123/mark-as-read
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```
+(No response body)
+```
+
+### Error Responses
+
+#### Notification Not Found (404 Not Found)
+
+```json
+{
+  "error": "Notification not found",
+  "code": "app-notification/not-found"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "app-notification/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- Only notifications belonging to the authenticated user can be marked as read.
+- If no matching notification is found, a 404 is returned.

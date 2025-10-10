@@ -1,0 +1,212 @@
+### Styling the Threaded Comment Section
+
+The threaded-style comment section requires a style configuration object to properly style its UI. This object holds all the values needed for styling various elements of the threaded comment system, including unlimited nesting levels, vote buttons, threading lines, and discussion-focused layout elements.
+
+Using the default configuration is straightforward, and for most use cases, it provides a good balance of aesthetics and usability for threaded discussions. However, you can also customize it extensively to align with your app's visual identity.
+
+---
+
+#### **Getting the Style Configuration**
+
+To use the threaded comment section, you must pass a `styleConfig` object to the `useThreadedComments` hook. You can obtain this configuration object using the `useThreadedStyle` hook.
+
+##### **Default Configuration**
+For a basic setup, you can use the default configuration by simply calling `useThreadedStyle` without any arguments:
+
+```typescript
+const styleConfig = useThreadedStyle();
+```
+
+Pass this `styleConfig` to the `useThreadedComments` hook along with the `entityId` and any other optional properties.
+
+##### **Custom Configuration**
+If you wish to customize the styles, you can pass a partial configuration object to the `useThreadedStyle` hook. Only the styles you want to change need to be included in the object.
+
+Here's an example:
+
+```typescript
+import React, { useMemo } from "react";
+import { useThreadedStyle, UseThreadedStyleProps } from "@replyke/comments-threaded-react-js";
+
+const customStyles = useMemo<Partial<UseThreadedStyleProps>>(
+  () => ({
+    commentFeedProps: {
+      backgroundColor: "#fafafa",
+    },
+    commentProps: {
+      upvoteColor: "#22c55e",
+      downvoteColor: "#ef4444",
+      threadingLineColor: "#d1d5db",
+      authorFontWeight: 600,
+    },
+    newCommentFormProps: {
+      verticalPadding: 16,
+      horizontalPadding: 24,
+      textareaBackgroundColor: "#ffffff",
+    },
+  }),
+  []
+);
+
+const styleConfig = useThreadedStyle(customStyles);
+```
+
+The returned `styleConfig` will include your customizations while retaining the default values for all other properties.
+
+---
+
+#### **Style Configuration Object Interface**
+
+The style configuration object has the following structure:
+
+```typescript
+export type ThreadedStyleConfig = {
+  type: "threaded";
+  commentFeedProps: CommentFeedStyleProps;
+  commentProps: CommentStyleProps;
+  newCommentFormProps: NewCommentFormStyleProps;
+};
+```
+
+Each section below details the properties available for customization:
+
+##### **CommentFeedStyleProps**
+Styles the comment feed container:
+
+```typescript
+export type CommentFeedStyleProps = {
+  backgroundColor: string;  // Background color of the comment feed
+  commentsGap: number;      // Space between individual comments (usually 0 for threaded)
+};
+```
+
+##### **CommentStyleProps**
+Styles individual comments with threaded-specific features:
+
+```typescript
+export interface CommentStyleProps {
+  // Spacing and layout
+  horizontalItemsGap: number;        // Gap between horizontal items
+  verticalItemsGap: number;          // Gap between vertical items
+
+  // Avatar styling
+  authorAvatarSize: number;          // Size of the author's avatar
+
+  // Typography - Author
+  authorFontSize: number;            // Font size for the author's name
+  authorFontWeight: FontWeight;      // Font weight for the author's name
+  authorFontColor: string;           // Font color for the author's name
+
+  // Typography - Timestamp
+  fromNowFontSize: number;           // Font size for the timestamp
+  fromNowFontColor: string;          // Font color for the timestamp
+
+  // Typography - Comment body
+  commentBodyFontSize: number;       // Font size for the comment text
+  commentBodyFontColor: string;      // Font color for the comment text
+
+  // Actions and reply button
+  actionsItemGap: number;            // Gap between action items
+  replyButtonFontSize: number;       // Font size for the reply button
+  replyButtonFontWeight: FontWeight; // Font weight for the reply button
+  replyButtonFontColor: string;      // Font color for the reply button
+
+  // Vote system (Reddit-style)
+  voteIconSize: number;              // Size of vote icons (up/down arrows)
+  upvoteColor: string;               // Color for upvote when active
+  upvoteHoverColor: string;          // Background color for upvote on hover
+  downvoteColor: string;             // Color for downvote when active
+  downvoteHoverColor: string;        // Background color for downvote on hover
+  voteContainerBackground: string;   // Background color for vote button container
+  neutralVoteColor: string;          // Color for inactive vote buttons
+
+  // Score display
+  scoreTextSize: number;             // Font size for the score text
+  scoreTextWeight: FontWeight;       // Font weight for the score text
+  scoreTextColor: string;            // Font color for neutral score
+  positiveScoreColor: string;        // Font color for positive score
+  negativeScoreColor: string;        // Font color for negative score
+
+  // Threading lines (visual connections between nested comments)
+  threadingLineColor: string;        // Color for threading lines
+
+  // Reply sections
+  repliesGap: number;                // Gap between replies
+  repliesPaddingTop: number;         // Padding above replies section
+  viewRepliesPaddingTop: number;     // Padding above "view replies" text
+
+  // Text labels
+  viewMoreRepliesText: string;       // Text for "view more replies" action
+  hideRepliesText: string;           // Text for "hide replies" action
+  justNowText: string;               // Text to display for very recent comments
+}
+```
+
+##### **NewCommentFormStyleProps**
+Styles the new comment input form:
+
+```typescript
+export type NewCommentFormStyleProps = {
+  // Form container
+  backgroundColor: string;          // Background color of the form
+  itemsGap: number;                 // Gap between items in the form
+  verticalPadding: number;          // Vertical padding inside the form
+  paddingLeft: number;              // Left padding inside the form
+  paddingRight: number;             // Right padding inside the form
+
+  // Avatar (for consistency, though threaded comments don't typically show avatars in forms)
+  withAvatar: boolean;              // Whether to show the user's avatar
+  authorAvatarSize: number;         // Size of the user's avatar
+
+  // Textarea styling
+  placeholderText: string;          // Placeholder text for the input
+  textareaTextSize: number;         // Font size of the textarea text
+  textareaTextColor: string;        // Text color of the textarea text
+  textareaBackgroundColor: string;  // Background color of the textarea
+
+  // Submit button
+  postButtonText: string;           // Text on the post button
+  postButtonFontSize: number;       // Font size for the post button text
+  postButtonFontWeight: FontWeight; // Font weight for the post button text
+  postButtonFontColor: string;      // Font color for the post button text
+};
+```
+
+---
+
+#### **Key Differences from Social Comments**
+
+The threaded styling system includes several unique features:
+
+1. **Vote System**: Upvote/downvote buttons with hover states and score colors
+2. **Threading Lines**: Visual connections showing comment hierarchy
+3. **Extended Score Display**: Positive, negative, and neutral score colors
+4. **Enhanced Textarea**: Additional styling options for discussion-focused input
+5. **Unlimited Nesting Support**: Styles that work at any nesting depth
+
+---
+
+#### **FontWeight Type**
+You can use the following types for font weights:
+
+```typescript
+export type FontWeight =
+  | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
+  | "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900";
+```
+
+---
+
+#### **Best Practices for Threaded Comments**
+
+1. **Use Consistent Colors**: Keep upvote/downvote colors consistent with your app's success/error colors
+2. **Subtle Threading Lines**: Use muted colors for threading lines to avoid visual clutter
+3. **Clear Hierarchy**: Ensure sufficient contrast between nested comment levels
+4. **Readable Typography**: Use appropriate font sizes and weights for extended reading
+5. **Accessible Vote Buttons**: Ensure vote buttons have clear hover states and sufficient size for interaction
+
+---
+
+### Conclusion
+
+The `useThreadedStyle` hook provides comprehensive control over the appearance of your threaded comment section. Whether you stick with the default forum-style appearance or create a completely custom design, this configuration system ensures your comment section supports deep discussions while maintaining visual clarity and usability at any nesting level.

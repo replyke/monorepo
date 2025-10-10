@@ -1,0 +1,489 @@
+# `useFetchSentPendingConnections`
+
+## Overview
+
+The `useFetchSentPendingConnections` hook fetches the list of connection requests that the current logged-in user has sent to other users but are still pending (awaiting response). This is useful for managing outgoing connection requests and tracking networking activity.
+
+## Usage Example
+
+```tsx
+import { useFetchSentPendingConnections } from "@replyke/react-js";
+
+function MySentRequestsList() {
+  const fetchSentPendingConnections = useFetchSentPendingConnections();
+
+  const loadSentRequests = async () => {
+    try {
+      const result = await fetchSentPendingConnections({ page: 1, limit: 10 });
+
+      console.log(`Found ${result.pagination.totalCount} pending requests sent`);
+      result.connections.forEach(connection => {
+        console.log(`Request sent to ${connection.user.username} on ${connection.createdAt}`);
+      });
+    } catch (error) {
+      console.error("Failed to fetch sent pending connections:", error.message);
+    }
+  };
+
+  return <button onClick={loadSentRequests}>Load My Sent Requests</button>;
+}
+```
+
+## Advanced Usage with State Management
+
+```tsx
+import { useFetchSentPendingConnections, PendingConnectionListResponse } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function SentRequestsManager() {
+  const fetchSentPendingConnections = useFetchSentPendingConnections();
+  const [sentRequests, setSentRequests] = useState<PendingConnectionListResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const loadSentRequests = async (page: number) => {
+    setLoading(true);
+    try {
+      const result = await fetchSentPendingConnections({ page, limit: 15 });
+      setSentRequests(result);
+    } catch (error) {
+      console.error("Failed to load sent requests:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSentRequests(currentPage);
+  }, [currentPage]);
+
+  const handleWithdrawRequest = (connectionId: string) => {
+    // This would typically call useRemoveConnection hook
+    console.log("Withdrawing request:", connectionId);
+    // After successful withdrawal, refresh the list
+    loadSentRequests(currentPage);
+  };
+
+  if (loading && !sentRequests) {
+    return <div>Loading sent requests...</div>;
+  }
+
+  return (
+    <div className="sent-requests-manager">
+      <h2>Sent Connection Requests ({sentRequests?.pagination.totalCount || 0})</h2>
+
+      {sentRequests?.connections.length === 0 ? (
+        <div className="empty-state">
+          <p>You haven't sent any connection requests yet.</p>
+        </div>
+      ) : (
+        <>
+          <div className="requests-list">
+            {sentRequests?.connections.map(connection => (
+              <div key={connection.id} className="request-item">
+                <div className="user-info">
+                  <h4>{connection.user.displayName || connection.user.username}</h4>
+                  <p>@{connection.user.username}</p>
+                  <small>
+                    Sent: {new Date(connection.createdAt).toLocaleDateString()}
+                  </small>
+                </div>
+
+                {connection.message && (
+                  <div className="request-message">
+                    <p>"{connection.message}"</p>
+                  </div>
+                )}
+
+                <div className="request-actions">
+                  <button
+                    onClick={() => handleWithdrawRequest(connection.id)}
+                    className="withdraw-btn"
+                  >
+                    Withdraw Request
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {sentRequests && sentRequests.pagination.totalPages > 1 && (
+            <div className="pagination">
+              <button
+                disabled={!sentRequests.pagination.hasPreviousPage || loading}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+              >
+                Previous
+              </button>
+
+              <span>
+                Page {sentRequests.pagination.currentPage} of {sentRequests.pagination.totalPages}
+              </span>
+
+              <button
+                disabled={!sentRequests.pagination.hasNextPage || loading}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+## Usage with Bulk Operations
+
+```tsx
+import { useFetchSentPendingConnections } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function BulkSentRequestsManager() {
+  const fetchSentPendingConnections = useFetchSentPendingConnections();
+  const [allSentRequests, setAllSentRequests] = useState<any[]>([]);
+  const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
+
+  const loadAllSentRequests = async () => {
+    setLoading(true);
+    try {
+      let allRequests: any[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const result = await fetchSentPendingConnections({ page: currentPage, limit: 50 });
+        allRequests = [...allRequests, ...result.connections];
+        hasMore = result.pagination.hasNextPage;
+        currentPage++;
+      }
+
+      setAllSentRequests(allRequests);
+    } catch (error) {
+      console.error("Failed to load all sent requests:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAllSentRequests();
+  }, []);
+
+  const handleSelectRequest = (connectionId: string) => {
+    const newSelected = new Set(selectedRequests);
+    if (newSelected.has(connectionId)) {
+      newSelected.delete(connectionId);
+    } else {
+      newSelected.add(connectionId);
+    }
+    setSelectedRequests(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedRequests.size === allSentRequests.length) {
+      setSelectedRequests(new Set());
+    } else {
+      setSelectedRequests(new Set(allSentRequests.map(req => req.id)));
+    }
+  };
+
+  const handleBulkWithdraw = async () => {
+    if (selectedRequests.size === 0) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to withdraw ${selectedRequests.size} connection requests?`
+    );
+    if (!confirmed) return;
+
+    // This would typically use useRemoveConnection for each selected request
+    console.log("Withdrawing requests:", Array.from(selectedRequests));
+
+    // After successful bulk withdrawal, refresh the list
+    setSelectedRequests(new Set());
+    await loadAllSentRequests();
+  };
+
+  return (
+    <div className="bulk-sent-requests-manager">
+      <div className="header">
+        <h2>Manage Sent Requests ({allSentRequests.length})</h2>
+
+        <div className="bulk-actions">
+          <label className="select-all">
+            <input
+              type="checkbox"
+              checked={selectedRequests.size === allSentRequests.length && allSentRequests.length > 0}
+              onChange={handleSelectAll}
+            />
+            Select All
+          </label>
+
+          {selectedRequests.size > 0 && (
+            <button
+              onClick={handleBulkWithdraw}
+              className="bulk-withdraw-btn"
+            >
+              Withdraw Selected ({selectedRequests.size})
+            </button>
+          )}
+        </div>
+      </div>
+
+      {loading ? (
+        <div>Loading sent requests...</div>
+      ) : (
+        <div className="requests-grid">
+          {allSentRequests.map(request => (
+            <div key={request.id} className="request-card">
+              <label className="request-selector">
+                <input
+                  type="checkbox"
+                  checked={selectedRequests.has(request.id)}
+                  onChange={() => handleSelectRequest(request.id)}
+                />
+              </label>
+
+              <div className="request-content">
+                <div className="user-info">
+                  <h4>{request.user.displayName || request.user.username}</h4>
+                  <p>@{request.user.username}</p>
+                </div>
+
+                <div className="request-meta">
+                  <small>Sent: {new Date(request.createdAt).toLocaleDateString()}</small>
+                  {request.message && (
+                    <p className="message">"{request.message}"</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Usage with Search and Filter
+
+```tsx
+import { useFetchSentPendingConnections } from "@replyke/react-js";
+import { useState, useEffect, useMemo } from "react";
+
+function SearchableSentRequests() {
+  const fetchSentPendingConnections = useFetchSentPendingConnections();
+  const [allRequests, setAllRequests] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
+  const [loading, setLoading] = useState(false);
+
+  const loadAllRequests = async () => {
+    setLoading(true);
+    try {
+      let allRequests: any[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const result = await fetchSentPendingConnections({ page: currentPage, limit: 100 });
+        allRequests = [...allRequests, ...result.connections];
+        hasMore = result.pagination.hasNextPage;
+        currentPage++;
+      }
+
+      setAllRequests(allRequests);
+    } catch (error) {
+      console.error("Failed to load requests:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAllRequests();
+  }, []);
+
+  const filteredAndSortedRequests = useMemo(() => {
+    let filtered = allRequests;
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(request =>
+        request.user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.user.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.message?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'oldest':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case 'name':
+          const nameA = a.user.displayName || a.user.username;
+          const nameB = b.user.displayName || b.user.username;
+          return nameA.localeCompare(nameB);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [allRequests, searchTerm, sortBy]);
+
+  return (
+    <div className="searchable-sent-requests">
+      <div className="controls">
+        <div className="search-box">
+          <input
+            type="text"
+            placeholder="Search requests by name or message..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="sort-controls">
+          <label>Sort by:</label>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="name">Name A-Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="results-summary">
+        <p>
+          Showing {filteredAndSortedRequests.length} of {allRequests.length} sent requests
+        </p>
+      </div>
+
+      {loading ? (
+        <div>Loading requests...</div>
+      ) : (
+        <div className="requests-list">
+          {filteredAndSortedRequests.map(request => (
+            <div key={request.id} className="request-item">
+              <div className="user-info">
+                <h4>{request.user.displayName || request.user.username}</h4>
+                <p>@{request.user.username}</p>
+                <small>
+                  Sent: {new Date(request.createdAt).toLocaleDateString()}
+                </small>
+              </div>
+
+              {request.message && (
+                <div className="request-message">
+                  <p>"{request.message}"</p>
+                </div>
+              )}
+
+              <div className="request-status">
+                <span className="status-badge pending">Pending</span>
+              </div>
+            </div>
+          ))}
+
+          {filteredAndSortedRequests.length === 0 && !loading && (
+            <div className="no-results">
+              {searchTerm.trim()
+                ? `No requests found matching "${searchTerm}"`
+                : "No sent requests found"
+              }
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an optional object with the following fields:
+
+| Parameter | Type     | Required | Default | Description                                    |
+|-----------|----------|----------|---------|------------------------------------------------|
+| `page`    | `number` | No       | 1       | Page number for pagination                     |
+| `limit`   | `number` | No       | 20      | Number of pending requests to return per page  |
+
+### Returns
+
+The function returns a Promise that resolves to a `PendingConnectionListResponse` object containing:
+
+#### `PendingConnectionListResponse`
+| Field         | Type                    | Description                                |
+|---------------|-------------------------|--------------------------------------------|
+| `connections` | `PendingConnection[]`   | Array of pending connection information    |
+| `pagination`  | `PaginationInfo`        | Pagination metadata                        |
+
+#### `PendingConnection`
+| Field       | Type     | Description                                           |
+|-------------|----------|-------------------------------------------------------|
+| `id`        | `string` | Unique ID of the connection request                   |
+| `user`      | `User`   | User object containing recipient information          |
+| `message`   | `string?`| Optional message sent with the connection request    |
+| `createdAt` | `string` | ISO date string of when the request was sent         |
+
+#### `PaginationInfo`
+| Field             | Type      | Description                                      |
+|-------------------|-----------|--------------------------------------------------|
+| `currentPage`     | `number`  | Current page number                              |
+| `totalPages`      | `number`  | Total number of pages available                  |
+| `totalCount`      | `number`  | Total number of sent pending requests            |
+| `hasNextPage`     | `boolean` | Whether there are more pages after current page |
+| `hasPreviousPage` | `boolean` | Whether there are pages before current page     |
+| `limit`           | `number`  | Number of items per page used in this request   |
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user is logged in
+- Network connection issues
+
+### Use Cases
+
+This hook is commonly used for:
+
+**Request Management:**
+- Displaying outgoing connection requests
+- Allowing users to withdraw pending requests
+- Tracking networking activity
+
+**User Experience:**
+- Preventing duplicate requests to the same user
+- Showing request status in user profiles
+- Managing networking workflow
+
+**Analytics & Insights:**
+- Understanding user networking behavior
+- Measuring connection request success rates
+- Identifying popular users in the network
+
+### Best Practices
+
+1. **Real-time Updates**: Refresh the list after actions like withdrawing requests
+2. **Pagination**: Use pagination for large lists to improve performance
+3. **Search & Filter**: Implement search functionality for better user experience
+4. **Bulk Actions**: Allow bulk withdrawal for power users
+5. **Status Indicators**: Show clear status for each request
+
+### Related Hooks
+
+- `useFetchReceivedPendingConnections` - Get incoming connection requests
+- `useRemoveConnection` - Withdraw sent connection requests
+- `useRequestConnection` - Send new connection requests
+- `useFetchConnectionStatus` - Check status with specific users

@@ -1,0 +1,59 @@
+# `useFetchFollowStatus`
+
+## Overview
+
+The `useFetchFollowStatus` hook allows you to check whether the current logged-in user is following a specific user. It returns detailed follow information including the follow relationship status, follow ID, and when the follow occurred.
+
+## Usage Example
+
+```tsx
+import { useFetchFollowStatus } from "@replyke/react-js";
+
+function FollowStatusChecker({ targetUserId }: { targetUserId: string }) {
+  const fetchFollowStatus = useFetchFollowStatus();
+
+  const checkFollowStatus = async () => {
+    try {
+      const status = await fetchFollowStatus({ userId: targetUserId });
+      if (status.isFollowing) {
+        console.log(`Following since ${status.followedAt}`);
+        console.log(`Follow ID: ${status.followId}`);
+      } else {
+        console.log("Not following this user");
+      }
+    } catch (error) {
+      console.error("Failed to fetch follow status:", error.message);
+    }
+  };
+
+  return <button onClick={checkFollowStatus}>Check Follow Status</button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following field:
+
+| Parameter | Type     | Required | Description                               |
+|-----------|----------|----------|-------------------------------------------|
+| `userId`  | `string` | Yes      | The ID of the user to check follow status for. |
+
+### Returns
+
+The function returns a Promise that resolves to an object containing:
+
+| Field         | Type      | Description                                           |
+|---------------|-----------|-------------------------------------------------------|
+| `isFollowing` | `boolean` | Whether the current user is following the target user |
+| `followId`    | `string?` | The ID of the follow relationship (if following)     |
+| `followedAt`  | `string?` | ISO date string of when the follow occurred          |
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user is logged in
+- No user ID is provided
+- Attempting to check follow status for yourself

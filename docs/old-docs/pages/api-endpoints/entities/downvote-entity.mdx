@@ -1,0 +1,105 @@
+# Downvote Entity
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/entities/:entityId/downvote`
+
+**Method:** `PATCH`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Downvotes an entity on behalf of the authenticated user. If the user has previously upvoted the entity, the upvote is removed.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter  | Type     | Required | Description           |
+| ---------- | -------- | -------- | --------------------- |
+| `entityId` | `string` | Yes      | The ID of the entity. |
+
+### Headers
+
+| Header          | Type     | Required | Description            |
+| --------------- | -------- | -------- | ---------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for auth. |
+
+### Body Parameters
+
+_None_
+
+#### Example Request
+
+```http
+PATCH /entities/abc123/downvote
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "id": "abc123",
+  "userId": "user_001",
+  "title": "Great Idea",
+  "upvotes": [],
+  "downvotes": ["user_001", "user_002"],
+  ...
+}
+```
+
+### Error Responses
+
+#### Missing Entity ID (400 Bad Request)
+
+```json
+{
+  "error": "Missing entityId in request.",
+  "code": "entity/invalid-id"
+}
+```
+
+#### Entity Not Found (404 Not Found)
+
+```json
+{
+  "error": "Entity not found.",
+  "code": "entity/not-found"
+}
+```
+
+#### Already Downvoted (409 Conflict)
+
+```json
+{
+  "error": "User already downvoted entity.",
+  "code": "entity/already-downvoted"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "entity/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- This action is only available to authenticated users.
+- Reputation points are updated for the entity owner.

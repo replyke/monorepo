@@ -1,0 +1,49 @@
+# `useFetchEntityByForeignId`
+
+## Overview
+
+The `useFetchEntityByForeignId` hook is used to retrieve details of a specific entity by providing its `foreignId`. This hook can optionally create a new entity if one wasn't found.
+
+## Usage Example
+
+```tsx
+import { useFetchEntityByForeignId } from "@replyke/react-js";
+
+function EntityDetails({ foreignId }: { foreignId: string }) {
+  const fetchEntityByForeignId = useFetchEntityByForeignId();
+
+  const handleFetchEntity = async () => {
+    try {
+      const entity = await fetchEntityByForeignId({
+        foreignId,
+      });
+
+      console.log("Fetched entity:", entity);
+    } catch (error) {
+      console.error("Failed to fetch entity:", error.message);
+    }
+  };
+
+  return <button onClick={handleFetchEntity}>Fetch Entity Details</button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+| Parameter       | Type      | Required | Description                                                                 |
+|-----------------|-----------|----------|-----------------------------------------------------------------------------|
+| `foreignId`      | `string`  | Yes       | The foreign ID of the entity to fetch.                                      |
+| `createIfNotFound`      | `boolean`  | No       | Whether a new entity should be created with this foreign ID if one wasn't found.                                      |
+
+
+### Returns
+
+The function resolves with an object representing the fetched entity:
+
+| Return Value | Type      | Description                              |
+|--------------|-----------|------------------------------------------|
+| `Entity`     | `object`  | The details of the retrieved entity.     |

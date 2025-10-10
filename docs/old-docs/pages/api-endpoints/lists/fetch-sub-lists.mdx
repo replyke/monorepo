@@ -1,0 +1,103 @@
+# Get Sub-Lists
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/lists/:listId/sub-lists`
+
+**Method:** `GET`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Fetches all sub-lists nested under the specified parent list for the authenticated user.
+
+---
+
+## Request
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description                |
+| --------- | -------- | -------- | -------------------------- |
+| `listId`  | `string` | Yes      | The ID of the parent list. |
+
+### Query Parameters
+
+_None_
+
+#### Example Request
+
+```http
+GET /proj1234/lists/list_abc/sub-lists
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+[
+  {
+    "id": "list_def",
+    "projectId": "proj1234",
+    "userId": "user_xyz",
+    "name": "Sub List 1",
+    "parentId": "list_abc",
+    "entityIds": [],
+    "subLists": [],
+    "createdAt": "2024-01-02T00:00:00.000Z",
+    "updatedAt": "2024-01-02T00:00:00.000Z"
+  },
+  {
+    "id": "list_ghi",
+    "projectId": "proj1234",
+    "userId": "user_xyz",
+    "name": "Sub List 2",
+    "parentId": "list_abc",
+    "entityIds": [],
+    "subLists": [],
+    "createdAt": "2024-01-02T00:00:00.000Z",
+    "updatedAt": "2024-01-02T00:00:00.000Z"
+  }
+]
+```
+
+### Error Responses
+
+#### Missing Parameters (400 Bad Request)
+
+```json
+{
+  "error": "Missing required parameters in request query",
+  "code": "list/missing-params"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Server error",
+  "code": "list/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- Only sub-lists belonging to the authenticated user and nested under the specified list are returned.
+- The returned sub-lists are populated with their own metadata (e.g., entity IDs, timestamps).

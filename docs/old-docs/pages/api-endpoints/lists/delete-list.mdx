@@ -1,0 +1,95 @@
+# Delete List
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/lists/:listId`
+
+**Method:** `DELETE`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Deletes a sub-list owned by the authenticated user. Root lists cannot be deleted.
+
+---
+
+## Request
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description                   |
+| --------- | -------- | -------- | ----------------------------- |
+| `listId`  | `string` | Yes      | The ID of the list to delete. |
+
+#### Example Request
+
+```http
+DELETE /proj1234/lists/list_abc
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## Response
+
+### Success Response (204 No Content)
+
+```
+(No response body)
+```
+
+### Error Responses
+
+#### Missing List ID (400 Bad Request)
+
+```json
+{
+  "error": "Missing list ID",
+  "code": "list/invalid-id"
+}
+```
+
+#### List Not Found (404 Not Found)
+
+```json
+{
+  "error": "List not found",
+  "code": "list/not-found"
+}
+```
+
+#### Root List Deletion Forbidden (403 Forbidden)
+
+```json
+{
+  "error": "Root lists cannot be deleted",
+  "code": "list/cannot-delete-root"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Server error",
+  "code": "list/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- Only sub-lists (lists with a non-null `parentId`) can be deleted.
+- Returns `204 No Content` on successful deletion.
+- Root lists are protected and cannot be deleted.

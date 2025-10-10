@@ -1,0 +1,109 @@
+# Remove Entity from List
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/lists/:listId/remove-entity`
+
+**Method:** `PATCH`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Removes an entity from the specified list for the authenticated user.
+
+---
+
+## Request
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description            |
+| --------- | -------- | -------- | ---------------------- |
+| `listId`  | `string` | Yes      | ID of the target list. |
+
+### Body Parameters
+
+| Field      | Type     | Required | Description                               |
+| ---------- | -------- | -------- | ----------------------------------------- |
+| `entityId` | `string` | Yes      | ID of the entity to remove from the list. |
+
+#### Example Request
+
+```json
+{
+  "entityId": "abc123"
+}
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "id": "list_abc",
+  "projectId": "proj1234",
+  "userId": "user_xyz",
+  "name": "Favorites",
+  "entityIds": ["xyz789"],
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-02T00:00:00.000Z"
+}
+```
+
+### Error Responses
+
+#### Missing Parameters (400 Bad Request)
+
+```json
+{
+  "error": "Missing listId or entityId",
+  "code": "list/missing-data"
+}
+```
+
+#### List Not Found (404 Not Found)
+
+```json
+{
+  "error": "List not found",
+  "code": "list/not-found"
+}
+```
+
+#### Entity Not Found in List (409 Conflict)
+
+```json
+{
+  "error": "Entity does not exist in the list",
+  "code": "list/entity-not-found"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "list/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- This operation has no effect if the entity is not already in the list.
+- The response includes the updated list with the entity removed.

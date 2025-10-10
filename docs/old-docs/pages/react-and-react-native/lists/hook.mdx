@@ -1,0 +1,158 @@
+
+# useLists Hook Documentation
+
+The **useLists** hook provides a simple yet powerful way to manage lists functionality within your application. Built on Redux architecture, it offers seamless integration into your UI with automatic state management and synchronization, ensuring users can create, manage, and interact with lists efficiently.
+
+## Key Features
+
+- **Redux-based**: Efficient state management with automatic caching and normalization
+- **No Provider Required**: Works directly without any wrapper components
+- **Automatic Project Context**: Detects project context from your existing ReplykeProvider
+- **Real-time Updates**: Changes sync automatically across all components using the hook
+
+## Hook Interface
+
+The **useLists** hook returns an interface with data and functions to manage lists:
+
+```typescript
+interface UseListsValues {
+  currentList: List | null;
+  subLists: List[];
+  loading: boolean;
+
+  openList: (list: List) => void;
+  goBack: () => void;
+  goToRoot: () => void;
+
+  isEntityInList: (selectedEntityId: string) => boolean;
+
+  createList: (props: { listName: string }) => Promise<void>;
+  updateList: (props: {
+    listId: string;
+    update: Partial<{ name: string }>;
+  }) => Promise<void>;
+  deleteList: (props: { list: List }) => Promise<void>;
+  addToList: (props: { entityId: string }) => Promise<void>;
+  removeFromList: (props: { entityId: string }) => Promise<void>;
+}
+```
+
+## Hook Values and Functions
+
+### Data Properties
+
+1.  **currentList**: The currently active list in context. If a user opens a sublist, this value updates to the sublist. If they navigate back, it updates to the previous list. Initially set to `null`, it automatically resolves to the user's default root list once fetched.
+2.  **subLists**: The sublists of the current list, managed automatically by Redux state.
+3.  **loading**: A boolean flag indicating if sublists are being fetched. It is only `true` when navigating to a new list, as fetched data is cached in Redux store for performance.
+
+### Functions
+
+1.  **openList**: Sets a specified list as the current list and fetches its sublists. Typically used when a user selects a sublist in the UI.
+    
+2.  **goBack**: Returns to the previous list. Can be used for any level above the root list.
+    
+3.  **goToRoot**: Navigates directly back to the root list in a single action.
+    
+4.  **isEntityInList**: Accepts an `entityId` and returns `true` if the entity is bookmarked in the current list, and `false` otherwise.
+    
+5.  **createList**: Creates a new sublist under the current list. Expects an object with a `listName` string.
+    
+6.  **updateList**: Updates the name of a list. Expects an object containing:
+    
+    -   `listId`: The ID of the list to update.
+    -   `update`: An object with the new `name` for the list.
+7.  **deleteList**: Deletes a specified list. Expects an object with the full `list` object to be deleted.
+    
+8.  **addToList**: Adds an entity to the current list. Expects an object containing `entityId`.
+    
+9.  **removeFromList**: Removes an entity from the current list. Expects an object containing `entityId`.
+    
+
+## Example Usage
+
+The `useLists` hook works directly without any provider wrapper. Here's how to integrate it into your components:
+
+```tsx
+import { useLists } from '@replyke/react-js';
+
+function ListsDrawer() {
+  const {
+    currentList,
+    subLists,
+    loading,
+    openList,
+    goBack,
+    createList,
+    addToList,
+    isEntityInList,
+  } = useLists();
+
+  return (
+    <div>
+      <h2>{currentList?.name || 'Root List'}</h2>
+
+      {loading && <p>Loading...</p>}
+
+      <ul>
+        {subLists.map((subList) => (
+          <li key={subList.id} onClick={() => openList(subList)}>
+            {subList.name} ({subList.entityIds.length} items)
+          </li>
+        ))}
+      </ul>
+
+      <button onClick={goBack} disabled={!currentList}>
+        Go Back
+      </button>
+
+      <button
+        onClick={() =>
+          createList({ listName: 'New Sublist' }).then(() =>
+            alert('List Created and synced across all components!')
+          )
+        }
+      >
+        Create Sublist
+      </button>
+    </div>
+  );
+}
+
+// Multiple components can use the hook simultaneously
+function BookmarkButton({ entityId }: { entityId: string }) {
+  const { isEntityInList, addToList, removeFromList } = useLists();
+
+  const isBookmarked = isEntityInList(entityId);
+
+  return (
+    <button
+      onClick={() =>
+        isBookmarked
+          ? removeFromList({ entityId })
+          : addToList({ entityId })
+      }
+    >
+      {isBookmarked ? '⭐ Bookmarked' : '☆ Bookmark'}
+    </button>
+  );
+}
+
+function App() {
+  return (
+    <div>
+      {/* No provider wrapper needed! */}
+      <ListsDrawer />
+      <BookmarkButton entityId="entity-123" />
+    </div>
+  );
+}
+```
+
+### Key Benefits of Redux Architecture
+
+- **Automatic Synchronization**: Changes in one component instantly reflect in all other components using the hook
+- **Performance**: Built-in caching prevents unnecessary API calls
+- **No Setup Required**: Works automatically once your app has a `ReplykeProvider`
+- **Type Safety**: Full TypeScript support with proper interfaces
+
+The **useLists** hook makes it easy to integrate and manage list functionality with minimal setup, providing developers with powerful tools to create dynamic and interactive user experiences with automatic state management.

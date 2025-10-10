@@ -1,0 +1,83 @@
+# Get Root List
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/lists/root`
+
+**Method:** `GET`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Retrieves the authenticated user's root list. If it doesn't exist, a new one is created automatically.
+
+---
+
+## Request
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Path Parameters
+
+| Parameter   | Type     | Required | Description                    |
+| ----------- | -------- | -------- | ------------------------------ |
+| `projectId` | `string` | Yes      | The ID of the project context. |
+
+### Query Parameters
+
+*None*
+
+#### Example Request
+
+```http
+GET /proj1234/lists/root
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "id": "list_abc",
+  "projectId": "proj1234",
+  "userId": "user_xyz",
+  "name": "root",
+  "isRoot": true,
+  "parentId": null,
+  "entityIds": [],
+  "subLists": [],
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### Error Responses
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Server error",
+  "code": "list/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+* Each user has a single root list per project.
+* If the root list does not exist, it will be created automatically.
+* The response includes all populated sub-lists and entity IDs if available.

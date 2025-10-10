@@ -1,0 +1,41 @@
+# `useIncrementEntityViews`
+
+## Overview
+
+The `useIncrementEntityViews` hook is used to increment the view count of a specific entity. It ensures that the view count is incremented only once per entity per session by tracking the status internally.
+
+## Usage Example
+
+```tsx
+import { useIncrementEntityViews } from "@replyke/react-js";
+
+function EntityViewTracker({ entityId }: { entityId: string }) {
+  const incrementEntityViews = useIncrementEntityViews();
+
+  const handleViewIncrement = async () => {
+    try {
+      await incrementEntityViews({ entityId });
+      console.log("Entity views incremented successfully.");
+    } catch (error) {
+      console.error("Failed to increment entity views:", error.message);
+    }
+  };
+
+  return <button onClick={handleViewIncrement}>Track Entity View</button>;
+}
+```
+
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+| Parameter   | Type      | Required | Description                             |
+|-------------|-----------|----------|-----------------------------------------|
+| `entityId`  | `string`  | Yes      | The unique ID of the entity to increment the views for. |
+
+### Returns
+
+The function does not return a value but ensures the view count is incremented on the server upon successful execution.

@@ -1,0 +1,308 @@
+# `useRequestConnection`
+
+## Overview
+
+The `useRequestConnection` hook allows the current logged-in user to send a connection request to another user. Connection requests can optionally include a message and return detailed information about the created connection request.
+
+## Usage Example
+
+```tsx
+import { useRequestConnection } from "@replyke/react-js";
+
+function ConnectButton({ targetUserId }: { targetUserId: string }) {
+  const requestConnection = useRequestConnection();
+
+  const handleConnect = async () => {
+    try {
+      const result = await requestConnection({
+        userId: targetUserId,
+        message: "I'd like to connect with you!"
+      });
+      console.log(`Connection request sent! Request ID: ${result.id}`);
+    } catch (error) {
+      console.error("Failed to send connection request:", error.message);
+    }
+  };
+
+  return <button onClick={handleConnect}>Send Connection Request</button>;
+}
+```
+
+## Advanced Usage with Custom Message
+
+```tsx
+import { useRequestConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+function ConnectionRequestForm({
+  targetUserId,
+  targetUsername
+}: {
+  targetUserId: string;
+  targetUsername: string;
+}) {
+  const requestConnection = useRequestConnection();
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const result = await requestConnection({
+        userId: targetUserId,
+        message: message.trim() || undefined
+      });
+
+      console.log("Connection request sent successfully:", result);
+      setShowForm(false);
+      setMessage("");
+      alert(`Connection request sent to ${targetUsername}!`);
+    } catch (error) {
+      console.error("Failed to send connection request:", error);
+      alert("Failed to send connection request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!showForm) {
+    return (
+      <button
+        onClick={() => setShowForm(true)}
+        className="connect-btn"
+      >
+        Connect with {targetUsername}
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="connection-request-form">
+      <h3>Connect with {targetUsername}</h3>
+
+      <div className="form-group">
+        <label htmlFor="message">Message (optional):</label>
+        <textarea
+          id="message"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Introduce yourself or explain why you'd like to connect..."
+          maxLength={500}
+          rows={3}
+        />
+        <small>{message.length}/500 characters</small>
+      </div>
+
+      <div className="form-actions">
+        <button
+          type="button"
+          onClick={() => setShowForm(false)}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="primary"
+        >
+          {isSubmitting ? "Sending..." : "Send Request"}
+        </button>
+      </div>
+    </form>
+  );
+}
+```
+
+## Usage in User Cards
+
+```tsx
+import { useRequestConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+function UserDiscoveryCard({
+  user
+}: {
+  user: { id: string; username: string; displayName?: string; }
+}) {
+  const requestConnection = useRequestConnection();
+  const [requestStatus, setRequestStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+
+  const handleConnect = async () => {
+    setRequestStatus('sending');
+    try {
+      await requestConnection({
+        userId: user.id,
+        message: `Hi ${user.displayName || user.username}, I'd like to connect!`
+      });
+      setRequestStatus('sent');
+    } catch (error) {
+      console.error("Failed to send connection request:", error);
+      setRequestStatus('idle');
+      alert("Failed to send connection request. Please try again.");
+    }
+  };
+
+  const renderConnectButton = () => {
+    switch (requestStatus) {
+      case 'sending':
+        return (
+          <button disabled className="connect-btn sending">
+            Sending...
+          </button>
+        );
+      case 'sent':
+        return (
+          <button disabled className="connect-btn sent">
+            ✓ Request Sent
+          </button>
+        );
+      default:
+        return (
+          <button onClick={handleConnect} className="connect-btn">
+            Connect
+          </button>
+        );
+    }
+  };
+
+  return (
+    <div className="user-discovery-card">
+      <div className="user-info">
+        <h3>{user.displayName || user.username}</h3>
+        <p>@{user.username}</p>
+      </div>
+
+      <div className="actions">
+        {renderConnectButton()}
+      </div>
+    </div>
+  );
+}
+```
+
+## Bulk Connection Requests
+
+```tsx
+import { useRequestConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+interface User {
+  id: string;
+  username: string;
+}
+
+function BulkConnectionManager({ users }: { users: User[] }) {
+  const requestConnection = useRequestConnection();
+  const [processedUsers, setProcessedUsers] = useState<Set<string>>(new Set());
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const sendBulkRequests = async () => {
+    setIsProcessing(true);
+    const processed = new Set<string>();
+
+    for (const user of users) {
+      if (processed.has(user.id)) continue;
+
+      try {
+        await requestConnection({
+          userId: user.id,
+          message: "I'd like to connect with you on this platform!"
+        });
+        processed.add(user.id);
+        setProcessedUsers(new Set(processed));
+
+        // Add delay to avoid rate limiting
+        if (processed.size < users.length) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      } catch (error) {
+        console.error(`Failed to send connection request to ${user.username}:`, error);
+      }
+    }
+
+    setIsProcessing(false);
+  };
+
+  return (
+    <div className="bulk-connection-manager">
+      <h3>Send Connection Requests</h3>
+      <p>Send connection requests to {users.length} users</p>
+
+      <div className="progress">
+        {processedUsers.size} of {users.length} requests sent
+      </div>
+
+      <button
+        onClick={sendBulkRequests}
+        disabled={isProcessing}
+        className="bulk-send-btn"
+      >
+        {isProcessing
+          ? `Sending... (${processedUsers.size}/${users.length})`
+          : "Send All Requests"
+        }
+      </button>
+
+      <div className="user-list">
+        {users.map(user => (
+          <div key={user.id} className="user-item">
+            <span>{user.username}</span>
+            {processedUsers.has(user.id) && (
+              <span className="status sent">✓ Sent</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+| Parameter | Type     | Required | Description                                    |
+|-----------|----------|----------|------------------------------------------------|
+| `userId`  | `string` | Yes      | The ID of the user to send a connection request to |
+| `message` | `string` | No       | Optional message to include with the request   |
+
+### Returns
+
+The function returns a Promise that resolves to a `ConnectionActionResponse` object containing:
+
+| Field       | Type     | Description                                        |
+|-------------|----------|----------------------------------------------------|
+| `id`        | `string` | The unique ID of the created connection request    |
+| `createdAt` | `string` | ISO date string of when the request was created   |
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user ID is provided
+- Network connection issues
+- Server-side validation errors
+- Rate limiting (if too many requests are sent)
+
+### Use Cases
+
+This hook is commonly used in:
+- User profile pages to send connection requests
+- User discovery and networking features
+- Professional networking interfaces
+- Social platform connection systems
+- Team collaboration request workflows
+
+### Related Hooks
+
+- `useAcceptConnection` - Accept incoming connection requests
+- `useDeclineConnection` - Decline connection requests
+- `useFetchConnectionStatus` - Check connection status with a user
+- `useConnectionManager` - Comprehensive connection state management

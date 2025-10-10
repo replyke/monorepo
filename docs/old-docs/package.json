@@ -1,0 +1,41 @@
+{
+  "name": "replyke-docs",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Documentation for Replyke v4",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "serve": "http-server out -p 3000",
+    "generate:pdf": "node scripts/generate-doc-pdf.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Replyke/docs-v6.git"
+  },
+  "author": "Yanay Tsabary",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Replyke/docs-v6/issues"
+  },
+  "homepage": "https://github.com/Replyke/docs-v6#readme",
+  "dependencies": {
+    "next": "^15.0.0",
+    "next-seo": "^6.8.0",
+    "nextra": "^3.0.0",
+    "nextra-theme-docs": "^3.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "18.11.10",
+    "globby": "^14.1.0",
+    "http-server": "^14.1.1",
+    "pdf-merger-js": "^5.1.2",
+    "puppeteer": "^24.9.0",
+    "typescript": "^4.9.3"
+  }
+}

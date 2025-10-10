@@ -1,0 +1,114 @@
+# Remove Connection by Connection ID
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/connections/:connectionId`
+
+**Method:** `DELETE`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Remove a specific connection by its ID. This can be used to withdraw a pending request (if you're the requester) or disconnect an established connection (if you're either party).
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter      | Type     | Required | Description                           |
+| -------------- | -------- | -------- | ------------------------------------- |
+| `connectionId` | `string` | Yes      | ID of the connection to remove |
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Body Parameters
+
+_None_
+
+#### Example Request
+
+```http
+DELETE api.replyke.com/api/v6/your-project-id/connections/connection-uuid-123
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## Response
+
+### Success Responses
+
+#### Withdraw Request (200 OK)
+When removing a pending request you sent:
+```json
+{
+  "message": "Connection request withdrawn successfully."
+}
+```
+
+#### Disconnect (200 OK)
+When removing an established connection:
+```json
+{
+  "message": "Connection removed successfully."
+}
+```
+
+### Error Responses
+
+#### Invalid Connection ID (400 Bad Request)
+
+```json
+{
+  "error": "Invalid connectionId",
+  "code": "connection/invalid-connection-id"
+}
+```
+
+#### Unauthorized (403 Forbidden)
+
+```json
+{
+  "error": "Unauthorized (wrong user for action)",
+  "code": "connection/unauthorized"
+}
+```
+
+#### Connection Not Found (404 Not Found)
+
+```json
+{
+  "error": "Connection not found",
+  "code": "connection/not-found"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error",
+  "code": "connection/server-error"
+}
+```
+
+---
+
+## Notes
+
+- Requires authentication
+- **Withdraw**: Only the requester can withdraw pending requests they sent
+- **Disconnect**: Either party can remove established connections
+- Deletes the connection record completely (allows fresh requests later)
+- Use this endpoint when you have the specific connection ID
+- Alternative: Use `DELETE api.replyke.com/api/v6/:projectId/users/:userId/connection` when you know the user ID
+- Rate limiting: 50 requests per 5 minutes

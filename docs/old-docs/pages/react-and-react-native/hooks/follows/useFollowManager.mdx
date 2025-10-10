@@ -1,0 +1,271 @@
+# `useFollowManager`
+
+## Overview
+
+The `useFollowManager` hook is a comprehensive follow state management solution that combines follow status checking, following, and unfollowing functionality into a single, easy-to-use interface. It automatically manages loading states and provides a toggle function for seamless follow/unfollow interactions.
+
+## Usage Example
+
+```tsx
+import { useFollowManager } from "@replyke/react-js";
+
+function FollowButton({ userId }: { userId: string }) {
+  const { isFollowing, isLoading, toggleFollow } = useFollowManager({ userId });
+
+  if (isLoading) {
+    return <button disabled>Loading...</button>;
+  }
+
+  return (
+    <button onClick={toggleFollow}>
+      {isFollowing ? "Unfollow" : "Follow"}
+    </button>
+  );
+}
+```
+
+## Advanced Usage with Complete UI State
+
+```tsx
+import { useFollowManager } from "@replyke/react-js";
+import { useState } from "react";
+
+function EnhancedFollowButton({
+  userId,
+  username
+}: {
+  userId: string;
+  username: string;
+}) {
+  const { isFollowing, isLoading, toggleFollow } = useFollowManager({ userId });
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleToggleFollow = async () => {
+    setIsProcessing(true);
+    try {
+      await toggleFollow();
+      const action = isFollowing ? "unfollowed" : "followed";
+      console.log(`Successfully ${action} ${username}`);
+    } catch (error) {
+      console.error("Failed to toggle follow status:", error);
+      alert("Failed to update follow status. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <button disabled className="follow-btn loading">
+        <span className="spinner">⏳</span>
+        Loading...
+      </button>
+    );
+  }
+
+  const isButtonDisabled = isProcessing || isLoading;
+  const buttonText = isProcessing
+    ? (isFollowing ? "Unfollowing..." : "Following...")
+    : (isFollowing ? "Unfollow" : "Follow");
+
+  return (
+    <button
+      onClick={handleToggleFollow}
+      disabled={isButtonDisabled}
+      className={`follow-btn ${isFollowing ? "following" : "not-following"}`}
+    >
+      {buttonText}
+    </button>
+  );
+}
+```
+
+## Usage in User Profile Card
+
+```tsx
+import { useFollowManager } from "@replyke/react-js";
+
+interface UserProfileCardProps {
+  user: {
+    id: string;
+    username: string;
+    displayName?: string;
+    avatar?: string;
+  };
+}
+
+function UserProfileCard({ user }: UserProfileCardProps) {
+  const { isFollowing, isLoading, toggleFollow } = useFollowManager({
+    userId: user.id
+  });
+
+  return (
+    <div className="user-profile-card">
+      <div className="avatar">
+        {user.avatar ? (
+          <img src={user.avatar} alt={`${user.username} avatar`} />
+        ) : (
+          <div className="avatar-placeholder">{user.username[0].toUpperCase()}</div>
+        )}
+      </div>
+
+      <div className="user-info">
+        <h3 className="display-name">{user.displayName || user.username}</h3>
+        <p className="username">@{user.username}</p>
+      </div>
+
+      <div className="actions">
+        {isLoading ? (
+          <div className="follow-status">Checking follow status...</div>
+        ) : (
+          <button
+            onClick={toggleFollow}
+            className={`follow-btn ${isFollowing ? "following" : ""}`}
+          >
+            {isFollowing ? (
+              <>
+                <span className="icon">✓</span>
+                Following
+              </>
+            ) : (
+              <>
+                <span className="icon">+</span>
+                Follow
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+## Usage with Follow Count Display
+
+```tsx
+import { useFollowManager } from "@replyke/react-js";
+import { useFetchFollowersCount } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function UserInteractionPanel({ userId, username }: { userId: string; username: string }) {
+  const { isFollowing, isLoading, toggleFollow } = useFollowManager({ userId });
+  const fetchFollowersCount = useFetchFollowersCount();
+  const [followerCount, setFollowerCount] = useState<number>(0);
+
+  useEffect(() => {
+    const loadFollowerCount = async () => {
+      try {
+        // This would be useFetchFollowersCountByUserId for the target user
+        // Using current user's count as example
+        const result = await fetchFollowersCount();
+        setFollowerCount(result.count);
+      } catch (error) {
+        console.error("Failed to load follower count:", error);
+      }
+    };
+
+    loadFollowerCount();
+  }, [fetchFollowersCount]);
+
+  const handleFollowToggle = async () => {
+    const wasFollowing = isFollowing;
+    await toggleFollow();
+
+    // Optimistically update follower count
+    if (wasFollowing) {
+      setFollowerCount(prev => Math.max(0, prev - 1));
+    } else {
+      setFollowerCount(prev => prev + 1);
+    }
+  };
+
+  return (
+    <div className="user-interaction-panel">
+      <div className="user-stats">
+        <h3>{username}</h3>
+        <p>{followerCount.toLocaleString()} followers</p>
+      </div>
+
+      <div className="follow-section">
+        {isLoading ? (
+          <div>Loading follow status...</div>
+        ) : (
+          <button
+            onClick={handleFollowToggle}
+            className={`follow-toggle-btn ${isFollowing ? "following" : ""}`}
+          >
+            {isFollowing ? "Unfollow" : "Follow"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook accepts an object with the following field:
+
+| Parameter | Type     | Required | Description                            |
+|-----------|----------|----------|----------------------------------------|
+| `userId`  | `string` | Yes      | The ID of the user to manage follow status for |
+
+### Returns
+
+The hook returns an object containing:
+
+| Field          | Type                  | Description                                    |
+|----------------|-----------------------|------------------------------------------------|
+| `isFollowing`  | `boolean \| null`     | Follow status (null while loading)            |
+| `isLoading`    | `boolean`             | Whether the follow status is being loaded     |
+| `toggleFollow` | `() => Promise<void>` | Function to toggle the follow status          |
+
+### States
+
+#### `isFollowing`
+- `null` - Follow status is being loaded or user is not logged in
+- `true` - Currently following the user
+- `false` - Not following the user
+
+#### `isLoading`
+- `true` - Initial follow status is being fetched
+- `false` - Follow status has been loaded
+
+### Error Handling
+
+The hook handles errors internally for status fetching, but the `toggleFollow` function can throw errors that should be caught by the consuming component.
+
+Common error scenarios:
+- Network issues during follow/unfollow operations
+- Authentication problems
+- User attempting to follow themselves
+- Server-side validation errors
+
+### Automatic Behavior
+
+The hook automatically:
+- Fetches initial follow status when the component mounts
+- Prevents actions when the user ID matches the current user's ID
+- Manages optimistic UI updates during toggle operations
+- Handles loading states for both initial load and toggle operations
+
+### Use Cases
+
+This hook is ideal for:
+- User profile pages with follow/unfollow buttons
+- User discovery interfaces
+- Social feed user cards
+- User search results
+- Follow recommendations
+- Bulk follow management interfaces
+
+### Related Hooks
+
+- `useFollowUser` - Basic follow functionality
+- `useUnfollowUserByUserId` - Basic unfollow functionality
+- `useFetchFollowStatus` - Follow status checking only
+- `useConnectionManager` - Similar management hook for connections

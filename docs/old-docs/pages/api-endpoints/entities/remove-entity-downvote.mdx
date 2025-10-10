@@ -1,0 +1,91 @@
+# Remove Downvote from Entity
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/entities/:entityId/remove-downvote`
+
+**Method:** `PATCH`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Removes a downvote from the authenticated user on the specified entity.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter  | Type     | Required | Description                 |
+| ---------- | -------- | -------- | --------------------------- |
+| `entityId` | `string` | Yes      | ID of the entity to modify. |
+
+### Headers
+
+| Header          | Type     | Required | Description                             |
+| --------------- | -------- | -------- | --------------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token of the authenticated user. |
+
+### Example Request
+
+```http
+PATCH /entities/abc123/remove-downvote
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+Returns the updated entity with the user’s downvote removed.
+
+```json
+{
+  "id": "abc123",
+  "userId": "user_456",
+  "downvotes": [],
+  ...
+}
+```
+
+### Error Responses
+
+#### Not Downvoted (409 Conflict)
+
+```json
+{
+  "error": "Can't remove downvote, as user didn't downvote entity or entity not found.",
+  "code": "entity/not-downvoted"
+}
+```
+
+#### Not Found (404 Not Found)
+
+```json
+{
+  "error": "Entity not found.",
+  "code": "entity/not-found"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "entity/server-error"
+}
+```
+
+---
+
+## Notes
+
+- Removing a downvote increases the entity author’s reputation.
+- The request will fail if the entity was never downvoted by the user.

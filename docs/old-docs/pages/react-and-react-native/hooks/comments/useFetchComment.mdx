@@ -1,0 +1,53 @@
+# `useFetchComment`
+
+## Overview
+
+The `useFetchComment` hook allows you to retrieve a specific comment by its ID. It optionally includes the parent comment, making it useful for displaying threaded comment structures or fetching detailed comment data.
+
+
+## Usage Example
+
+```tsx
+import { useFetchComment } from "@replyke/react-js";
+
+function CommentDetails({ commentId }: { commentId: string }) {
+  const fetchComment = useFetchComment();
+
+  const handleFetchComment = async () => {
+    try {
+      const { comment, parentComment } = await fetchComment({
+        commentId,
+        withParent: true,
+      });
+
+      console.log("Fetched comment:", comment);
+      console.log("Parent comment:", parentComment);
+    } catch (error) {
+      console.error("Failed to fetch comment:", error.message);
+    }
+  };
+
+  return <button onClick={handleFetchComment}>Fetch Comment</button>;
+}
+```
+
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+| Parameter     | Type       | Required | Description                                 |
+|---------------|------------|----------|---------------------------------------------|
+| `commentId`   | `string`   | Yes      | The ID of the comment to fetch.             |
+| `withParent`  | `boolean`  | No       | Whether to include the parent comment.      |
+
+### Returns
+
+The function resolves with an object containing the comment and optionally its parent comment:
+
+| Return Value      | Type                              | Description                              |
+|-------------------|-----------------------------------|------------------------------------------|
+| `comment`         | `Comment`                        | The details of the fetched comment.      |
+| `parentComment`   | `Comment \| null`                 | The parent comment, if requested.        |

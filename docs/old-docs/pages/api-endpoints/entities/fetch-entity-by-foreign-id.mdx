@@ -1,0 +1,89 @@
+# Get Entity by Foreign ID
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/entities/by-foreign-id`
+
+**Method:** `GET`
+
+**Authentication Required:** No
+
+---
+
+## Description
+
+Retrieves a single entity by its `foreignId`. If the entity does not exist and `createIfNotFound=true` is provided, a blank entity will be created and returned.
+
+---
+
+## Request
+
+### Query Parameters
+
+| Parameter          | Type     | Required | Description                                                                   |
+| ------------------ | -------- | -------- | ----------------------------------------------------------------------------- |
+| `foreignId`        | `string` | Yes      | The external ID used to locate the entity.                                    |
+| `createIfNotFound` | `string` | No       | If set to `true`, creates a blank entity if none exists with that foreign ID. |
+
+#### Example Request
+
+```http
+GET /proj1234/entities/by-foreign-id?foreignId=abc-123&createIfNotFound=true
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "id": "entity_xyz",
+  "projectId": "proj1234",
+  "foreignId": "abc-123",
+  "title": null,
+  "content": null,
+  "keywords": [],
+  "metadata": {},
+  ...
+}
+```
+
+### Error Responses
+
+#### Invalid Query (400 Bad Request)
+
+```json
+{
+  "error": "Missing valid foreignId in request query.",
+  "code": "entity/invalid-query-params"
+}
+```
+
+#### Not Found (404 Not Found)
+
+```json
+{
+  "error": "Entity not found",
+  "code": "entity/not-found"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error.",
+  "code": "entity/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- Authentication is not required.
+- This endpoint supports optional automatic entity creation.
+- If `createIfNotFound` is enabled, a webhook is triggered for validation.

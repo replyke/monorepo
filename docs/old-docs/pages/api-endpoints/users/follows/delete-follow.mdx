@@ -1,0 +1,100 @@
+# Unfollow User
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/users/:userId/follow`
+
+**Method:** `DELETE`
+
+**Authentication Required:** Yes
+
+---
+
+## Description
+
+Remove an existing follow relationship between the authenticated user and the specified user.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description                 |
+| --------- | -------- | -------- | --------------------------- |
+| `userId`  | `string` | Yes      | ID of the user to unfollow. |
+
+### Headers
+
+| Header          | Type     | Required | Description                      |
+| --------------- | -------- | -------- | -------------------------------- |
+| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+
+### Body Parameters
+
+_None_
+
+#### Example Request
+
+```http
+DELETE /users/user-uuid-123/follow
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+---
+
+## Response
+
+### Success Response (204 No Content)
+
+```
+(No response body)
+```
+
+### Error Responses
+
+#### Invalid User ID (400 Bad Request)
+
+```json
+{
+  "error": "Invalid userId",
+  "code": "follow/invalid-user-id"
+}
+```
+
+#### Self-Unfollow Attempt (400 Bad Request)
+
+```json
+{
+  "error": "Cannot unfollow yourself",
+  "code": "follow/self-follow"
+}
+```
+
+#### Not Following (404 Not Found)
+
+```json
+{
+  "error": "Not currently following this user",
+  "code": "follow/not-following"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error",
+  "code": "follow/server-error"
+}
+```
+
+---
+
+## Notes
+
+- Removes the follow relationship between the authenticated user and the specified user
+- Returns 204 No Content on successful unfollow with no response body
+- Cannot unfollow yourself
+- Returns 404 if no follow relationship exists
+- Rate limiting: 75 requests per 5 minutes

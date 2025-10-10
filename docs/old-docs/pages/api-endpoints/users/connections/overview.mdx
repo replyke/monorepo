@@ -1,0 +1,73 @@
+# User Connection Operations
+
+This section contains **user-centric connection operations** where you interact with connections in the context of a specific user. These endpoints are designed for operations that target a particular user by their ID.
+
+## Purpose
+
+User-centric connection endpoints allow developers to:
+- Send connection requests to a specific user
+- Check logged in user's connection status with a specific user
+- Remove connections with a specific user (decline/withdraw/disconnect)
+- View a specific user's connections list
+- Get connection counts for any user
+
+## Key Characteristics
+
+- **Target-focused**: Operations target a specific user by ID
+- **Requires userId parameter**: All endpoints need a specific user ID in the URL
+- **Smart actions**: Single endpoint handles multiple scenarios (decline/withdraw/disconnect)
+- **Authentication**: Required for all operations
+- **Bidirectional**: Connections require mutual agreement
+
+## Available Operations
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/users/:userId/connection` | POST | Send connection request to user |
+| `/users/:userId/connection` | GET | Check connection status with user |
+| `/users/:userId/connection` | DELETE | Decline/withdraw/disconnect with user |
+| `/users/:userId/connections` | GET | Get user's connections list |
+| `/users/:userId/connections-count` | GET | Get user's connections count |
+
+## Connection Status Types
+
+When checking connection status with a user, possible responses:
+- **`none`**: No connection exists
+- **`pending` (sent)**: Logged in user sent them a request
+- **`pending` (received)**: They sent logged in user a request
+- **`connected`**: Users are connected
+- **`declined`**: Request was declined
+
+## Smart DELETE Behavior
+
+The `DELETE /users/:userId/connection` endpoint automatically determines the correct action:
+- **Decline**: If they sent logged in user a pending request
+- **Withdraw**: If logged in user sent them a pending request
+- **Disconnect**: If users are connected
+
+## Examples
+
+**User-centric operations** (target specific users, require userId parameter):
+- "Send connection request to user-123" - requires userId parameter
+- "Check connection status with user-456" - requires userId parameter
+
+**Connection-centric operations** (logged in user's data, no userId parameter):
+- "Get all logged in user's established connections" - uses auth token, no userId
+- "Get logged in user's pending requests" - uses auth token, no userId
+
+## Difference from Connection-Centric Operations
+
+**User-centric** (`/users/:userId/connections/...`):
+- Operates on a **specific user** by their ID
+- Requires userId parameter in the URL
+- Can target any user (including public data)
+
+**Connection-centric** (`/connections/...`):
+- Operates on the **logged in user's** connection data
+- Uses authentication to identify the user
+- No userId parameter needed
+
+## Related Endpoints
+
+For managing logged in user's connections and getting logged in user's connection lists, see:
+- [Connection Operations](/api-endpoints/connections/overview) - Logged in user's connection management

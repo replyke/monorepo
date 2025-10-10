@@ -1,0 +1,90 @@
+import { Steps, Tabs } from "nextra/components";
+
+## Getting Started with Replyke
+
+Getting started with Replyke is simple and straightforward. Whether you’re working on a React or React Native project, the setup process is designed to get you up and running quickly.
+
+<Steps>
+### Install the package
+ 
+For React projects, install the Replyke package:
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+  <Tabs.Tab>
+  ```bash
+  npm install @replyke/react-js@beta // v6 is in open beta
+  ```
+  </Tabs.Tab>
+    <Tabs.Tab>
+  ```bash
+  pnpm add @replyke/react-js@beta // v6 is in open beta
+  ```
+  </Tabs.Tab>
+    <Tabs.Tab>
+  ```bash
+  yarn add @replyke/react-js@beta // v6 is in open beta
+  ```
+  </Tabs.Tab>
+</Tabs>
+
+For React Native projects, install the React Native-specific package:
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+  <Tabs.Tab>
+  ```bash
+  npm install @replyke/react-native@beta // v6 is in open beta
+  ```
+  </Tabs.Tab>
+    <Tabs.Tab>
+  ```bash
+  pnpm add @replyke/react-native@beta // v6 is in open beta
+  ```
+  </Tabs.Tab>
+    <Tabs.Tab>
+  ```bash
+  yarn add @replyke/react-native@beta // v6 is in open beta
+  ```
+  </Tabs.Tab>
+</Tabs>
+
+For Expo managed projects, install the Expo-specific package:
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+  <Tabs.Tab>
+  ```bash
+  npx expo install @replyke/expo@beta // v6 is in open beta
+  ```
+  </Tabs.Tab>
+    <Tabs.Tab>
+  ```bash
+  pnpm add @replyke/expo@beta // v6 is in open beta
+  ```
+  </Tabs.Tab>
+    <Tabs.Tab>
+  ```bash
+  yarn add @replyke/expo@beta // v6 is in open beta
+  ```
+  </Tabs.Tab>
+</Tabs>
+
+> **Note:** All instructions throughout the documentation apply equally to React and React Native projects.
+
+### Create a Project on Replyke’s Dashboard
+
+To start working with Replyke, visit the Replyke Dashboard and create a new project. Once your project is set up, you’ll receive a `projectId`, which you’ll use to initialize Replyke in your app.
+
+### Wrap Your App with the ReplykeProvider
+
+The `ReplykeProvider` component from Replyke should wrap your entire app to provide access to Replyke’s features. Place it at the top level of your application, passing the `projectId` as a prop. Here’s an example:
+
+```javascript
+import { ReplykeProvider } from "@replyke/react-js";
+
+<ReplykeProvider projectId={/* Your project ID */}>
+  {/* Rest of your app */}
+</ReplykeProvider>;
+```
+
+With this setup, your app is now ready to leverage Replyke’s powerful features. For further details, explore the specific sections of this documentation tailored to your needs.
+
+</Steps>

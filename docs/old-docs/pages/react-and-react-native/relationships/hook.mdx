@@ -1,0 +1,149 @@
+# `useFollowManager`
+
+## Overview
+
+The `useFollowManager` hook provides a comprehensive solution for managing follow relationships between users. It combines follow status checking, toggling, and state management into a single hook, making it ideal for implementing follow/unfollow buttons and managing follow state in user interfaces.
+
+Unlike individual hooks like `useFollowUser` or `useUnfollowUser`, this hook handles the complete follow workflow including loading states, optimistic updates, and automatic status fetching.
+
+## Usage Example
+
+```tsx
+import { useFollowManager } from "@replyke/react-js";
+
+function FollowButton({ userId }: { userId: string }) {
+  const { isFollowing, isLoading, toggleFollow } = useFollowManager({ userId });
+
+  if (isLoading) {
+    return <button disabled>Loading...</button>;
+  }
+
+  return (
+    <button onClick={toggleFollow}>
+      {isFollowing ? "Unfollow" : "Follow"}
+    </button>
+  );
+}
+
+// More complex example with status display
+function UserProfile({ userId }: { userId: string }) {
+  const { isFollowing, isLoading, toggleFollow } = useFollowManager({ userId });
+
+  return (
+    <div>
+      <h2>User Profile</h2>
+      <div>
+        {isLoading ? (
+          <span>Checking follow status...</span>
+        ) : (
+          <>
+            <span>Status: {isFollowing ? "Following" : "Not following"}</span>
+            <button
+              onClick={toggleFollow}
+              disabled={isLoading}
+            >
+              {isFollowing ? "Unfollow" : "Follow"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook accepts an object with the following field:
+
+| Parameter | Type     | Required | Description                              |
+|-----------|----------|----------|------------------------------------------|
+| `userId`  | `string` | Yes      | The ID of the user to manage follow status for. |
+
+### Returns
+
+The hook returns an object with the following fields:
+
+| Return Value   | Type                 | Description                                                        |
+|----------------|----------------------|--------------------------------------------------------------------|
+| `isFollowing`  | `boolean \| null`    | The current follow status. `null` while loading initial status.    |
+| `isLoading`    | `boolean`            | Whether the hook is currently loading or performing an operation.  |
+| `toggleFollow` | `() => Promise<void>`| Function to toggle the follow status (follow/unfollow).           |
+
+## Behavior & Features
+
+### Automatic Status Loading
+- Automatically fetches the current follow status when the hook is initialized
+- Handles loading states during the initial fetch
+- Skips loading if the target user is the same as the authenticated user
+
+### Optimistic Updates
+- Immediately updates the UI state when toggling follow status
+- Provides instant feedback to users without waiting for server response
+- Handles errors gracefully if the server request fails
+
+### Smart State Management
+- Prevents multiple simultaneous toggle operations
+- Maintains consistent state throughout the component lifecycle
+- Automatically updates when the target `userId` changes
+
+### Error Handling
+- Gracefully handles errors during status fetching
+- Defaults to `false` (not following) if status fetch fails
+- Logs errors to console for debugging purposes
+
+## Implementation Notes
+
+### Self-Follow Prevention
+The hook automatically prevents users from following themselves:
+- Skips status loading if `userId` matches the authenticated user's ID
+- Prevents toggle operations when targeting the same user
+
+### Loading States
+The hook provides two types of loading indication:
+- `isLoading: true` during initial status fetch
+- `isLoading: true` during follow/unfollow operations
+
+### Null States
+- `isFollowing` is `null` during initial loading
+- This allows UIs to distinguish between "loading" and "not following" states
+
+## Error Scenarios
+
+The hook handles several error scenarios:
+1. **Network errors** during status fetching or toggle operations
+2. **Authentication errors** if the user is not logged in
+3. **Invalid user IDs** that don't exist in the system
+
+All errors are logged to the console, and the hook maintains a stable state to prevent UI crashes.
+
+## Best Practices
+
+1. **Handle Loading States**: Always check `isLoading` before allowing user interactions
+2. **Null Checks**: Check for `isFollowing === null` to handle initial loading properly
+3. **Error Feedback**: Consider implementing user-visible error feedback for failed operations
+4. **Prevent Self-Follow**: The hook handles this automatically, but your UI should also reflect this
+
+```tsx
+// Good example with proper state handling
+function FollowButton({ userId }: { userId: string }) {
+  const { isFollowing, isLoading, toggleFollow } = useFollowManager({ userId });
+
+  // Handle loading state
+  if (isFollowing === null) {
+    return <button disabled>Loading...</button>;
+  }
+
+  return (
+    <button
+      onClick={toggleFollow}
+      disabled={isLoading}
+      className={isFollowing ? "following" : "not-following"}
+    >
+      {isLoading ? "Processing..." : (isFollowing ? "Unfollow" : "Follow")}
+    </button>
+  );
+}
+```
