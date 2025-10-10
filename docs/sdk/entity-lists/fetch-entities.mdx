@@ -1,0 +1,223 @@
+---
+title: "Fetch Entities"
+---
+
+# fetchEntities API Reference
+
+The `fetchEntities` function is the primary method for loading and filtering entity lists. It accepts filters, configuration, and options to control how entities are fetched and displayed.
+
+## Syntax
+
+```typescript
+entityList.fetchEntities(filters, config?, options?)
+```
+
+## Parameters
+
+### Filters (Required)
+User-controlled parameters that determine which entities to fetch:
+
+```typescript
+interface EntityListFilters {
+  sortBy: EntityListSortByOptions; // Required
+  timeFrame?: TimeFrame | null;
+  userId?: string | null;
+  followedOnly?: boolean;
+  keywordsFilters?: KeywordsFilters | null;
+  titleFilters?: TitleFilters | null;
+  contentFilters?: ContentFilters | null;
+  attachmentsFilters?: AttachmentsFilters | null;
+  locationFilters?: LocationFilters | null;
+  metadataFilters?: MetadataFilters | null;
+}
+```
+
+#### sortBy (Required)
+- `"hot"` - Replyke's hotness algorithm (default)
+- `"new"` - Newest first
+- `"top"` - Highest voted
+- `"controversial"` - Mixed voting scores
+
+#### timeFrame (Optional)
+- `"hour"` - Last hour
+- `"day"` - Last 24 hours
+- `"week"` - Last 7 days
+- `"month"` - Last 30 days
+- `"year"` - Last 12 months
+- `null` - No time restriction (default)
+
+### Configuration (Optional)
+System-level parameters that control fetch behavior:
+
+```typescript
+interface EntityListConfig {
+  sourceId?: string | null;
+  limit?: number;
+}
+```
+
+- **sourceId**: Logical separation of entities by context (default: `null`)
+- **limit**: Entities per page (default: `10`)
+
+### Options (Optional)
+Controls how the fetch operation behaves:
+
+```typescript
+interface EntityListFetchOptions {
+  immediate?: boolean;
+  clearImmediately?: boolean;
+  resetUnspecified?: boolean;
+}
+```
+
+- **immediate**: Skip debouncing, execute immediately (default: `false`)
+- **clearImmediately**: Clear current entities before fetching (default: `false`)
+- **resetUnspecified**: Reset unspecified filters to defaults (default: `false`)
+
+## Examples
+
+### Basic Usage
+```typescript
+// Minimal fetch
+entityList.fetchEntities({ sortBy: "hot" });
+
+// With configuration
+entityList.fetchEntities(
+  { sortBy: "new" },
+  { sourceId: "blog-posts", limit: 20 }
+);
+```
+
+### Common Patterns
+
+#### User Profile Feed
+```typescript
+entityList.fetchEntities(
+  { sortBy: "new", userId: "user123" },
+  { limit: 15 },
+  { resetUnspecified: true }
+);
+```
+
+#### Search Results
+```typescript
+entityList.fetchEntities(
+  {
+    sortBy: "new",
+    titleFilters: { includes: [searchQuery] },
+    timeFrame: "week"
+  },
+  { limit: 30 },
+  { immediate: true, clearImmediately: true }
+);
+```
+
+#### Trending Content
+```typescript
+entityList.fetchEntities({
+  sortBy: "hot",
+  timeFrame: "day",
+  followedOnly: false
+});
+```
+
+#### Location-Based Feed
+```typescript
+entityList.fetchEntities({
+  sortBy: "new",
+  locationFilters: {
+    latitude: 40.7128,
+    longitude: -74.0060,
+    radius: 10
+  }
+});
+```
+
+### Advanced Filtering
+
+#### Multiple Content Filters
+```typescript
+entityList.fetchEntities({
+  sortBy: "hot",
+  titleFilters: { includes: ["React", "Vue"] },
+  contentFilters: { doesNotInclude: ["deprecated"] },
+  keywordsFilters: {
+    includes: ["javascript"],
+    doesNotInclude: ["beginner"]
+  },
+  attachmentsFilters: { hasAttachments: true }
+});
+```
+
+#### Metadata Filtering
+```typescript
+entityList.fetchEntities({
+  sortBy: "new",
+  metadataFilters: {
+    includes: { category: "tech", difficulty: "advanced" },
+    exists: ["author", "publishDate"],
+    doesNotInclude: { status: "draft" }
+  }
+});
+```
+
+## Debouncing Behavior
+
+By default, `fetchEntities` debounces rapid calls with an 800ms delay to prevent excessive API requests:
+
+```typescript
+// These calls will be debounced
+entityList.fetchEntities({ sortBy: "hot", userId: "user1" });
+entityList.fetchEntities({ sortBy: "hot", userId: "user2" }); // Only this will execute
+
+// Bypass debouncing for immediate execution
+entityList.fetchEntities(
+  { sortBy: "hot", userId: "user3" },
+  undefined,
+  { immediate: true }
+);
+```
+
+## State Management
+
+After calling `fetchEntities`, the entity list state updates automatically:
+
+```typescript
+// Before fetch
+console.log(entityList.loading); // false
+console.log(entityList.entities); // []
+
+// Call fetch
+entityList.fetchEntities({ sortBy: "hot" });
+
+// During fetch
+console.log(entityList.loading); // true
+
+// After fetch completes
+console.log(entityList.loading); // false
+console.log(entityList.entities); // [entity1, entity2, ...]
+console.log(entityList.hasMore); // true/false
+```
+
+## Error Handling
+
+The function handles errors internally and updates the entity list state:
+
+```typescript
+// Errors are logged and state is updated
+// No need for try/catch in your component
+entityList.fetchEntities({ sortBy: "hot" });
+
+// Check for errors in your UI
+if (!entityList.loading && entityList.entities.length === 0) {
+  // Handle empty state (could be error or no results)
+}
+```
+
+## Performance Tips
+
+1. **Use debouncing** - Let the default 800ms debouncing handle rapid filter changes
+2. **Specify immediate** - Use `immediate: true` only when necessary (search, user actions)
+3. **Clear wisely** - Use `clearImmediately: true` for search results, avoid for filter updates
+4. **Reasonable limits** - Balance between UX and API costs with appropriate `limit` values
+5. **Reset sparingly** - Use `resetUnspecified: true` only when you want to clear all other filters

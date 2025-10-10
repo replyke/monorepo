@@ -1,0 +1,126 @@
+---
+title: "Overview"
+---
+
+## Comments: Bringing Social Interactions to Life
+
+Once your content is live and ready for engagement, adding a robust comment system transforms your platform into a dynamic, interactive space. Comments enable users to share their thoughts, provide feedback, and spark meaningful conversations. A well-implemented comment system fosters a sense of community and enhances user experience.
+
+Replyke provides comprehensive solutions for integrating comment sections into your application, offering two distinct styles to match your platform's needs: **Social Comments** and **Threaded Comments**. Whether you want a fully-featured, plug-and-play component or the flexibility to build a custom solution using powerful hooks, Replyke gives you the tools you need.
+
+## Comment Styles Overview
+
+Replyke offers two comment system styles, each optimized for different use cases and user experiences:
+
+### Social Comments (Instagram/TikTok Style)
+- **Visual Style**: Clean, social-media inspired design
+- **Nesting**: Maximum 2 levels (comments and replies)
+- **Interactions**: Heart/like system
+- **Best For**: Social platforms, content sharing, quick interactions
+- **Package**: `@replyke/comments-social-react-js` (React) / `@replyke/comments-social-react-native` (React Native)
+
+### Threaded Comments (Reddit Style)
+- **Visual Style**: Discussion-focused with clear threading
+- **Nesting**: Unlimited levels with visual indentation
+- **Interactions**: Upvote/downvote system
+- **Best For**: Forums, detailed discussions, complex conversations
+- **Package**: `@replyke/comments-threaded-react-js` (React only - React Native coming soon)
+
+Both styles share the same core functionality and can be customized extensively to match your app's design and behavior requirements.
+
+## Three Approaches to Comments
+
+Both comment styles offer the same three implementation approaches, giving you flexibility in how you integrate comments into your application:
+
+### 1. Drop-In Comment Section
+
+The fastest way to add a comment section is by using the complete comment section components:
+- **Social Style**: `SocialCommentSection` component
+- **Threaded Style**: `ThreadedCommentSection` component
+
+These components encapsulate the entire comment system with minimal setup required. This approach is ideal for developers who want a fully functional and styled comment section without having to build or manage individual parts.
+
+#### Key Features of the Drop-In Components:
+
+- **Mentions** – Users can mention others by their username, triggering notifications (if enabled). Mentions are clickable, allowing users to navigate directly to the mentioned user's profile.
+- **Replies & Interactions** – Supports nested replies with either likes (social style) or upvotes/downvotes (threaded style), with built-in notifications for interactions.
+- **Highlighted Comments** – Pass a comment or reply ID to highlight a specific comment, useful when directing users from a notification.
+- **GIF Support** – Add an API key in the dashboard to enable users to include GIFs in their comments.
+- **Built-in Authorization** – Ensures only authorized users can delete their comments and prevents duplicate interactions.
+- **Reporting & Moderation** – Includes a reporting system and an admin back office for managing reports, removing inappropriate comments, and banning users.
+- **Customizability** – Developers can fine-tune behavior and appearance using props, including styling, visibility control, and interaction callbacks.
+
+Minimal setup is required—just pass an entity identifier and optionally customize styles and behavior. This is the recommended approach for most use cases.
+
+Learn more:
+- [Social Comment Section](./comments/social/component)
+- [Threaded Comment Section](./comments/threaded/component)
+
+---
+
+### 2. Compose with Comment Building Blocks
+
+For developers who want more control over the layout and structure of the comment section while still using Replyke's core logic, both styles provide dedicated hooks:
+
+**Social Style** - The `useSocialComments` hook provides access to:
+- `CommentSectionProvider`
+- `CommentsFeed`
+- `NewCommentForm`
+- `SortByButton`
+
+**Threaded Style** - The `useThreadedComments` hook provides access to:
+- `CommentSectionProvider`
+- `CommentsFeed`
+- `NewCommentForm`
+
+This allows you to:
+
+- Control the exact layout and positioning of each element
+- Style each component independently
+- Retain all the functionality provided in the drop-in version
+
+This option is ideal if you want the full power of the pre-built comment system, but require a custom layout or need to integrate the comment section into a more complex page structure.
+
+Learn more:
+- [Social Hook and Provider](./comments/social/provider-and-hook)
+- [Threaded Hook and Provider](./comments/threaded/provider-and-hook)
+
+---
+
+### 3. Build Your Own Comment System with Hooks
+
+For developers who require complete control over their comment implementation, Replyke provides a set of powerful hooks. These hooks expose all necessary data and functionality, allowing you to build a fully customized comment system tailored to your needs.
+
+All available hooks can be found in the **Hooks/Comments** section of the documentation. This approach gives developers the freedom to:
+
+- Design a unique UI/UX for the comment section
+- Implement custom behaviors for replies, interactions, and mentions
+- Integrate their own authorization and moderation logic
+- Extend the comment system with additional features specific to their app
+
+This approach works with both social and threaded styles, as they share the same underlying core hooks and functionality.
+
+Learn more: [Comment Hooks Documentation](./hooks)
+
+---
+
+### Open Source and Community Contributions
+
+All comment components and hooks are open source. Developers are encouraged to contribute, whether by submitting features, UI variations, or fixes for both social and threaded styles.
+
+Over time, the goal is to expand the library of components to support a variety of interaction styles and use cases, potentially including additional comment system variations.
+
+Get involved here: [GitHub Repository](https://github.com/replyke/monorepo)
+
+---
+
+## What's Next?
+
+In the upcoming sections, we'll cover how to integrate both social and threaded comment systems into your app effortlessly:
+
+- **Social Comments**: Perfect for social platforms and quick interactions
+- **Threaded Comments**: Ideal for forums and detailed discussions
+
+If you prefer to build your own comment system, refer to the **Hooks/Comments** section for detailed guidance on the underlying APIs that power both styles.
+
+Regardless of the approach and style you choose, Replyke ensures that your platform fosters rich, meaningful interactions while simplifying the complexities of comment system development.

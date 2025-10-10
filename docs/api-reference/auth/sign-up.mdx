@@ -1,0 +1,116 @@
+---
+title: "Sign Up"
+---
+
+# Sign Up
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/auth/sign-up`
+
+**Method:** `POST`
+
+**Authentication Required:** No
+
+---
+
+## Description
+
+Register a new user by providing required credentials and optional profile data. Returns access and refresh tokens along with user data.
+
+---
+
+## Request
+
+### Body Parameters
+
+| Field            | Type                | Required | Description                                         |
+| ---------------- | ------------------- | -------- | --------------------------------------------------- |
+| `email`          | `string`            | Yes      | User's email address.                               |
+| `password`       | `string`            | Yes      | User's password.                                    |
+| `name`           | `string`            | No       | Full name of the user.                              |
+| `username`       | `string`            | No       | Unique username. Will be lowercased.                |
+| `avatar`         | `string` (URL)      | No       | URL to the user's avatar image.                     |
+| `bio`            | `string`            | No       | Short biography.                                    |
+| `location`       | `object`            | No       | Geolocation object with `longitude` and `latitude`. |
+| `birthdate`      | `string` (ISO date) | No       | User's birthdate.                                   |
+| `metadata`       | `object`            | No       | Custom public metadata.                             |
+| `secureMetadata` | `object`            | No       | Custom secure metadata (not returned to client).    |
+
+#### Example Request
+
+```json
+{
+  "email": "jane@example.com",
+  "password": "securePassword123",
+  "username": "janedoe",
+  "name": "Jane Doe",
+  "avatar": "https://example.com/avatar.jpg",
+  "bio": "Tech enthusiast",
+  "location": { "longitude": -73.935242, "latitude": 40.73061 },
+  "metadata": { "office": "boston" },
+  "secureMetadata": { "internalId": "abc123" }
+}
+```
+
+---
+
+## Response
+
+### Success Response (201 Created)
+
+```json
+{
+  "success": true,
+  "accessToken": "<ACCESS_TOKEN>",
+  "refreshToken": "<REFRESH_TOKEN>",
+  "user": {
+    "id": "user_123",
+    "email": "jane@example.com",
+    "username": "janedoe",
+    "name": "Jane Doe",
+    "avatar": "https://example.com/avatar.jpg",
+    "bio": "Tech enthusiast",
+    "location": {
+      "type": "Point",
+      "coordinates": [-73.935242, 40.73061]
+    },
+    "birthdate": "1995-01-01T00:00:00.000Z",
+    "metadata": { "office": "boston" },
+    "suspensions": [],
+    "reputation": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Error Responses
+
+#### Missing Required Fields (400 Bad Request)
+
+```json
+{
+  "error": "Missing required fields",
+  "code": "auth/missing-fields"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error",
+  "code": "auth/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- Sets an HttpOnly cookie named `replyke-refresh-jwt` with the refresh token.
+- Access token is returned in the response body.
+- Sensitive user data is excluded in the response.
+- A webhook is called before user creation to allow project-specific validation.

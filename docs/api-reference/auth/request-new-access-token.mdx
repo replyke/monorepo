@@ -1,0 +1,129 @@
+---
+title: "Request New Access Token"
+---
+
+# Request New Access Token
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/auth/request-new-access-token`
+
+**Method:** `POST`
+
+**Authentication Required:** No
+
+---
+
+## Description
+
+Request a new access token using a valid refresh token. The refresh token can be sent in the request body or as an HttpOnly cookie.
+
+---
+
+## Request
+
+### Headers
+
+| Header   | Type     | Required | Description                              |
+| -------- | -------- | -------- | ---------------------------------------- |
+| `Cookie` | `string` | No       | Can include `replyke-refresh-jwt` cookie |
+
+### Body Parameters
+
+| Field          | Type     | Required | Description                                       |
+| -------------- | -------- | -------- | ------------------------------------------------- |
+| `refreshToken` | `string` | No       | JWT refresh token (optional if cookie is present) |
+
+#### Example Request
+
+```json
+{
+  "refreshToken": "<REFRESH_TOKEN>"
+}
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "success": true,
+  "accessToken": "<NEW_ACCESS_TOKEN>",
+  "user": {
+    "id": "user_123",
+    "username": "janedoe",
+    "email": "jane@example.com",
+    "name": "Jane Doe",
+    "avatar": "https://example.com/avatar.jpg",
+    "bio": "Tech enthusiast",
+    "location": {
+      "type": "Point",
+      "coordinates": [-73.935242, 40.73061]
+    },
+    "birthdate": "1995-01-01T00:00:00.000Z",
+    "metadata": { "office": "boston" },
+    "suspensions": [],
+    "reputation": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+#### No Refresh Token Provided (200 OK)
+
+```json
+{
+  "accessToken": null,
+  "user": null
+}
+```
+
+### Error Responses
+
+#### Invalid Refresh Token Structure (403 Forbidden)
+
+```json
+{
+  "error": "Invalid refresh token.",
+  "code": "auth/invalid-refresh-token"
+}
+```
+
+#### Token Not Recognized (403 Forbidden)
+
+```json
+{
+  "error": "Refresh token not recognized.",
+  "code": "auth/refresh-token-mismatch"
+}
+```
+
+#### User Not Found (403 Forbidden)
+
+```json
+{
+  "error": "User not found.",
+  "code": "auth/no-user-found"
+}
+```
+
+#### Invalid or Expired Token (403 Forbidden)
+
+```json
+{
+  "error": "Invalid or expired refresh token.",
+  "code": "auth/refresh-token-invalid",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- The `replyke-refresh-jwt` cookie takes precedence if both are provided.
+- Returns null tokens and user object if no token is supplied.

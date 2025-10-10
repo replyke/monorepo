@@ -1,0 +1,81 @@
+---
+title: "Getting Started"
+description: "Get started with Replyke in React and React Native projects"
+icon: "rocket"
+---
+
+## Getting Started with Replyke
+
+Getting started with Replyke is simple and straightforward. Whether you're working on a React or React Native project, the setup process is designed to get you up and running quickly.
+
+<Steps>
+  <Step title="Install the package">
+    For React projects, install the Replyke package:
+
+    <CodeGroup>
+    ```bash npm
+    npm install @replyke/react-js@beta // v6 is in open beta
+    ```
+
+    ```bash pnpm
+    pnpm add @replyke/react-js@beta // v6 is in open beta
+    ```
+
+    ```bash yarn
+    yarn add @replyke/react-js@beta // v6 is in open beta
+    ```
+    </CodeGroup>
+
+    For React Native projects, install the React Native-specific package:
+
+    <CodeGroup>
+    ```bash npm
+    npm install @replyke/react-native@beta // v6 is in open beta
+    ```
+
+    ```bash pnpm
+    pnpm add @replyke/react-native@beta // v6 is in open beta
+    ```
+
+    ```bash yarn
+    yarn add @replyke/react-native@beta // v6 is in open beta
+    ```
+    </CodeGroup>
+
+    For Expo managed projects, install the Expo-specific package:
+
+    <CodeGroup>
+    ```bash npm
+    npx expo install @replyke/expo@beta // v6 is in open beta
+    ```
+
+    ```bash pnpm
+    pnpm add @replyke/expo@beta // v6 is in open beta
+    ```
+
+    ```bash yarn
+    yarn add @replyke/expo@beta // v6 is in open beta
+    ```
+    </CodeGroup>
+
+    <Note>All instructions throughout the documentation apply equally to React and React Native projects.</Note>
+  </Step>
+
+  <Step title="Create a Project on Replyke's Dashboard">
+    To start working with Replyke, visit the Replyke Dashboard and create a new project. Once your project is set up, you'll receive a `projectId`, which you'll use to initialize Replyke in your app.
+  </Step>
+
+  <Step title="Wrap Your App with the ReplykeProvider">
+    The `ReplykeProvider` component from Replyke should wrap your entire app to provide access to Replyke's features. Place it at the top level of your application, passing the `projectId` as a prop. Here's an example:
+
+    ```javascript
+    import { ReplykeProvider } from "@replyke/react-js";
+
+    <ReplykeProvider projectId={/* Your project ID */}>
+      {/* Rest of your app */}
+    </ReplykeProvider>;
+    ```
+
+    With this setup, your app is now ready to leverage Replyke's powerful features. For further details, explore the specific sections of this documentation tailored to your needs.
+  </Step>
+</Steps>

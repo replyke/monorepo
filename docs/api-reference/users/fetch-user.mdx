@@ -1,0 +1,110 @@
+---
+title: "Fetch User"
+---
+
+# Fetch User
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/users/:userId`
+
+**Method:** `GET`
+
+**Authentication Required:** No
+
+---
+
+## Description
+
+Fetch details of a specific user by their ID.
+
+---
+
+## Request
+
+### URL Parameters
+
+| Parameter | Type     | Required | Description                  |
+| --------- | -------- | -------- | ---------------------------- |
+| `userId`  | `string` | Yes      | The ID of the user to fetch. |
+
+### Headers
+
+_None_
+
+### Body Parameters
+
+_None_
+
+#### Example Request
+
+```sh
+GET /proj1234/users/67890
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "id": "67890",
+  "projectId": "12345",
+  "foreignId": "user-ref-001",
+  "name": "John Doe",
+  "username": "johndoe",
+  "avatar": "https://example.com/avatar.jpg",
+  "bio": "Tech enthusiast and developer.",
+  "birthdate": "1995-05-20T00:00:00.000Z",
+  "reputation": 120,
+  "location": {
+    "type": "Point",
+    "coordinates": [40.7128, -74.006]
+  },
+  "metadata": {
+    "preferredLanguage": "en",
+    "theme": "dark"
+  },
+  "createdAt": "2024-01-01T12:00:00.000Z",
+  "updatedAt": "2024-02-01T12:00:00.000Z"
+}
+```
+
+### Error Responses
+
+#### Missing or Invalid User ID (400 Bad Request)
+
+```json
+{
+  "error": "Missing or invalid userId in request parameters",
+  "code": "user/invalid-user-id"
+}
+```
+
+#### User Not Found (404 Not Found)
+
+```json
+{
+  "error": "User not found",
+  "code": "user/not-found"
+}
+```
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error",
+  "code": "user/server-error",
+  "details": "<Error message>"
+}
+```
+
+---
+
+## Notes
+
+- This endpoint excludes sensitive fields such as email, password hash, and secure metadata.
+- Useful for displaying public profile information of a user.

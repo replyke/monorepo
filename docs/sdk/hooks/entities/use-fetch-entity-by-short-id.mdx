@@ -1,0 +1,52 @@
+---
+title: "Use Fetch Entity By Short Id"
+---
+
+# `useFetchEntityByShortId`
+
+## Overview
+
+The `useFetchEntityByShortId` hook is used to retrieve details of a specific entity by providing its `shortId`.
+
+## Usage Example
+
+```tsx
+import { useFetchEntityByShortId } from "@replyke/react-js";
+
+function EntityDetails({ shortId }: { shortId: string }) {
+  const fetchEntityByShortId = useFetchEntityByShortId();
+
+  const handleFetchEntity = async () => {
+    try {
+      const entity = await fetchEntityByShortId({
+        shortId,
+      });
+
+      console.log("Fetched entity:", entity);
+    } catch (error) {
+      console.error("Failed to fetch entity:", error.message);
+    }
+  };
+
+  return <button onClick={handleFetchEntity}>Fetch Entity Details</button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+| Parameter       | Type      | Required | Description                                                                 |
+|-----------------|-----------|----------|-----------------------------------------------------------------------------|
+| `shortId`       | `string`  | Yes       | The short identifier for the entity.                                         |
+
+
+### Returns
+
+The function resolves with an object representing the fetched entity:
+
+| Return Value | Type      | Description                              |
+|--------------|-----------|------------------------------------------|
+| `Entity`     | `object`  | The details of the retrieved entity.     |

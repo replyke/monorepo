@@ -1,0 +1,61 @@
+---
+title: "Overview"
+---
+
+# User Follow Operations
+
+This section contains **user-centric follow operations** where you interact with follows in the context of a specific user. These endpoints are designed for operations that target a particular user by their ID.
+
+## Purpose
+
+User-centric follow endpoints allow developers to:
+- Follow or unfollow a specific user
+- Check logged in user's follow status with a specific user
+- View a specific user's followers and following lists
+- Get follower/following counts for any user
+
+## Key Characteristics
+
+- **Target-focused**: Operations target a specific user by ID
+- **Requires userId parameter**: All endpoints need a specific user ID in the URL
+- **Mixed authentication**: Actions require auth, public data viewing may not
+- **Specific relationship queries**: Focus on relationships with particular users
+
+## Available Operations
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/users/:userId/follow` | POST | Follow a specific user |
+| `/users/:userId/follow` | GET | Check if logged in user follows this user |
+| `/users/:userId/follow` | DELETE | Unfollow a specific user |
+| `/users/:userId/followers` | GET | Get user's followers list |
+| `/users/:userId/followers-count` | GET | Get user's followers count |
+| `/users/:userId/following` | GET | Get user's following list |
+| `/users/:userId/following-count` | GET | Get user's following count |
+
+## Examples
+
+**User-centric operations** (target specific users, require userId parameter):
+- "Follow user-123" - requires userId parameter
+- "Check if logged in user follows user-456" - requires userId parameter
+
+**Follow-centric operations** (logged in user's data, no userId parameter):
+- "Get all accounts the logged in user follows" - uses auth token, no userId
+- "Get logged in user's follower count" - uses auth token, no userId
+
+## Difference from Follow-Centric Operations
+
+**User-centric** (`/users/:userId/follows/...`):
+- Operates on a **specific user** by their ID
+- Requires userId parameter in the URL
+- Can target any user (including public data)
+
+**Follow-centric** (`/follows/...`):
+- Operates on the **logged in user's** follow data
+- Uses authentication to identify the user
+- No userId parameter needed
+
+## Related Endpoints
+
+For managing logged in user's follows and getting logged in user's follow lists, see:
+- [Follow Operations](/api-endpoints/follows/overview) - Logged in user's follow management

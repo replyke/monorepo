@@ -1,0 +1,109 @@
+---
+title: "Fetch Connections By User Id"
+---
+
+# Get User Connections
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/users/:userId/connections`
+
+**Method:** `GET`
+
+**Authentication Required:** No
+
+---
+
+## Description
+
+Get list of established connections for a specific user. This is a public endpoint that does not require authentication.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description                              |
+| --------- | -------- | -------- | ---------------------------------------- |
+| `userId`  | `string` | Yes      | ID of the user to get connections for |
+
+### Query Parameters
+
+| Parameter | Type     | Required | Description                                      |
+| --------- | -------- | -------- | ------------------------------------------------ |
+| `page`    | `number` | No       | Page number (default: 1)                        |
+| `limit`   | `number` | No       | Items per page (default: 20, max: 100)          |
+
+### Headers
+
+_None_
+
+### Body Parameters
+
+_None_
+
+#### Example Request
+
+```http
+GET api.replyke.com/api/v6/your-project-id/users/user-uuid-123/connections?page=1&limit=20
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "connections": [
+    {
+      "id": "connection-uuid",
+      "connectedUser": {
+        "id": "user-uuid",
+        "name": "John Doe",
+        "username": "johndoe",
+        "avatar": "https://example.com/avatar.jpg",
+        "bio": "Software Engineer",
+        "reputation": 150
+      },
+      "connectedAt": "2024-01-01T12:05:00.000Z",
+      "requestedAt": "2024-01-01T12:00:00.000Z",
+      "message": "Original connection message"
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 3,
+    "totalCount": 45,
+    "hasNextPage": true,
+    "hasPreviousPage": false,
+    "limit": 20
+  }
+}
+```
+
+### Error Responses
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error",
+  "code": "connection/server-error"
+}
+```
+
+---
+
+## Notes
+
+- This endpoint does **not** require authentication
+- Returns paginated list of established connections only
+- Each connection includes the connected user's details
+- Shows original connection request message if provided
+- Includes timestamps for when connection was requested and accepted
+- Public endpoint accessible to all users
+- Default pagination: 20 items per page, maximum 100 items per page
+- Rate limiting: 100 requests per 5 minutes

@@ -1,68 +1,298 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Replyke Documentation",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
     "dark": "#15803D"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.webp",
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Overview",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
               "index",
-              "quickstart",
-              "development"
+              "integration-options",
+              "authentication",
+              "security"
             ]
           },
           {
-            "group": "Customization",
+            "group": "SDKs",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "nodejs-sdk",
+              "js-sdk"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "SDK Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "React & React Native",
             "pages": [
-              "api-reference/introduction"
+              "sdk/getting-started"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Authentication",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "sdk/authentication/overview",
+              "sdk/authentication/built-in",
+              "sdk/authentication/external"
+            ]
+          },
+          {
+            "group": "Users",
+            "pages": [
+              "sdk/users/use-user-hook"
+            ]
+          },
+          {
+            "group": "Relationships",
+            "pages": [
+              "sdk/relationships/overview",
+              "sdk/relationships/hook"
+            ]
+          },
+          {
+            "group": "Entities",
+            "pages": [
+              "sdk/entities/overview",
+              "sdk/entities/provider-and-hook"
+            ]
+          },
+          {
+            "group": "Entity Lists",
+            "pages": [
+              "sdk/entity-lists/overview",
+              "sdk/entity-lists/fetch-entities",
+              "sdk/entity-lists/infuse-data",
+              "sdk/entity-lists/filters/title-filters",
+              "sdk/entity-lists/filters/content-filters",
+              "sdk/entity-lists/filters/keywords-filters",
+              "sdk/entity-lists/filters/attachments-filters",
+              "sdk/entity-lists/filters/location-filters",
+              "sdk/entity-lists/filters/metadata-filters"
+            ]
+          },
+          {
+            "group": "Comments",
+            "pages": [
+              "sdk/comments/overview",
+              "sdk/comments/social/component",
+              "sdk/comments/social/provider-and-hook",
+              "sdk/comments/social/styling",
+              "sdk/comments/social/callbacks",
+              "sdk/comments/threaded/component",
+              "sdk/comments/threaded/provider-and-hook",
+              "sdk/comments/threaded/styling",
+              "sdk/comments/threaded/callbacks",
+              "sdk/comments/gifs-and-emojis"
+            ]
+          },
+          {
+            "group": "Lists",
+            "pages": [
+              "sdk/lists/overview",
+              "sdk/lists/hook",
+              "sdk/lists/use-is-entity-saved"
+            ]
+          },
+          {
+            "group": "App Notifications",
+            "pages": [
+              "sdk/app-notifications/overview",
+              "sdk/app-notifications/hook",
+              "sdk/app-notifications/notification-templates",
+              "sdk/app-notifications/webhook-integration"
+            ]
+          },
+          {
+            "group": "Moderation",
+            "pages": [
+              "sdk/moderation"
+            ]
+          },
+          {
+            "group": "Hooks - Crypto",
+            "pages": [
+              "sdk/hooks/crypto/use-sign-testing-jwt"
+            ]
+          },
+          {
+            "group": "Hooks - Users",
+            "pages": [
+              "sdk/hooks/users/use-fetch-user",
+              "sdk/hooks/users/use-fetch-user-by-foreign-id",
+              "sdk/hooks/users/use-fetch-user-followers-count",
+              "sdk/hooks/users/use-fetch-user-following-count",
+              "sdk/hooks/users/use-fetch-user-suggestions",
+              "sdk/hooks/users/use-mentions",
+              "sdk/hooks/users/use-check-username-availability",
+              "sdk/hooks/users/use-update-user"
+            ]
+          },
+          {
+            "group": "Hooks - Follows",
+            "pages": [
+              "sdk/hooks/follows/use-follow-user"
+            ]
+          },
+          {
+            "group": "Hooks - Entities",
+            "pages": [
+              "sdk/hooks/entities/use-create-entity",
+              "sdk/hooks/entities/use-fetch-entity",
+              "sdk/hooks/entities/use-fetch-entity-by-foreign-id",
+              "sdk/hooks/entities/use-fetch-entity-by-short-id",
+              "sdk/hooks/entities/use-update-entity",
+              "sdk/hooks/entities/use-entity-votes",
+              "sdk/hooks/entities/use-upvote-entity",
+              "sdk/hooks/entities/use-remove-entity-upvote",
+              "sdk/hooks/entities/use-downvote-entity",
+              "sdk/hooks/entities/use-remove-entity-downvote",
+              "sdk/hooks/entities/use-increment-entity-views",
+              "sdk/hooks/entities/use-delete-entity",
+              "sdk/hooks/entities/use-entity-data"
+            ]
+          },
+          {
+            "group": "Hooks - Comments",
+            "pages": [
+              "sdk/hooks/comments/use-create-comment",
+              "sdk/hooks/comments/use-fetch-comment",
+              "sdk/hooks/comments/use-fetch-comment-by-foreign-id",
+              "sdk/hooks/comments/use-fetch-many-comments",
+              "sdk/hooks/comments/use-update-comment",
+              "sdk/hooks/comments/use-comment-votes",
+              "sdk/hooks/comments/use-upvote-comment",
+              "sdk/hooks/comments/use-remove-comment-upvote",
+              "sdk/hooks/comments/use-downvote-comment",
+              "sdk/hooks/comments/use-remove-comment-downvote",
+              "sdk/hooks/comments/use-delete-comment",
+              "sdk/hooks/comments/use-comment-section-data",
+              "sdk/hooks/comments/use-entity-comments",
+              "sdk/hooks/comments/use-profile-comments"
+            ]
+          },
+          {
+            "group": "Hooks - Storage",
+            "pages": [
+              "sdk/hooks/storage/use-upload-file"
+            ]
+          },
+          {
+            "group": "Hooks - Moderation",
+            "pages": [
+              "sdk/hooks/moderation/use-create-report"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "api-reference/getting-started",
+              "api-reference/authentication"
+            ]
+          },
+          {
+            "group": "Auth Endpoints",
+            "pages": [
+              "api-reference/auth/sign-in",
+              "api-reference/auth/sign-up",
+              "api-reference/auth/sign-out",
+              "api-reference/auth/request-new-access-token",
+              "api-reference/auth/verify-external-user",
+              "api-reference/auth/change-password"
+            ]
+          },
+          {
+            "group": "User Endpoints",
+            "pages": [
+              "api-reference/users/fetch-user",
+              "api-reference/users/fetch-user-by-foreign-id",
+              "api-reference/users/fetch-user-suggestions",
+              "api-reference/users/check-username-availability",
+              "api-reference/users/update-user"
+            ]
+          },
+          {
+            "group": "Follow Endpoints",
+            "pages": [
+              "api-reference/follows/overview",
+              "api-reference/follows/fetch-following",
+              "api-reference/follows/fetch-followers",
+              "api-reference/follows/fetch-following-count",
+              "api-reference/follows/fetch-followers-count",
+              "api-reference/follows/delete-follow"
+            ]
+          },
+          {
+            "group": "Entity Endpoints",
+            "pages": [
+              "api-reference/entities/overview"
+            ]
+          },
+          {
+            "group": "Comment Endpoints",
+            "pages": [
+              "api-reference/comments/overview"
+            ]
+          },
+          {
+            "group": "List Endpoints",
+            "pages": [
+              "api-reference/lists/overview"
+            ]
+          },
+          {
+            "group": "App Notification Endpoints",
+            "pages": [
+              "api-reference/app-notifications/overview"
+            ]
+          },
+          {
+            "group": "Crypto Endpoints",
+            "pages": [
+              "api-reference/crypto/overview"
+            ]
+          },
+          {
+            "group": "Storage Endpoints",
+            "pages": [
+              "api-reference/storage/overview"
+            ]
+          },
+          {
+            "group": "Moderation Endpoints",
+            "pages": [
+              "api-reference/moderation/overview"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Data Models",
+        "groups": [
+          {
+            "group": "Models",
+            "pages": [
+              "data-models/user",
+              "data-models/entity",
+              "data-models/comment",
+              "data-models/list",
+              "data-models/app-notification"
             ]
           }
         ]
@@ -71,52 +301,39 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Dashboard",
+          "href": "https://dash.replyke.com",
+          "icon": "gauge"
         }
       ]
     }
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/light.webp",
+    "dark": "/logo/dark.webp"
   },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "Dashboard",
+        "href": "https://dashboard.replyke.com"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
+    ]
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/replyke"
     }
   }
 }

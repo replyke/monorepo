@@ -1,0 +1,15 @@
+---
+title: "Overview"
+---
+
+### Integration Requirements
+
+Replyke authentication is built directly into the ReplykeProvider, making integration seamless. By simply wrapping your app in the ReplykeProvider as you have when setting things up, authentication context will be handled under the hood:
+
+```jsx
+<ReplykeProvider projectId={/* Your project ID */}>
+  {/* Rest of your app */}
+</ReplykeProvider>
+```
+
+This setup ensures that authentication and user management work smoothly across all platforms, providing the groundwork for secure and interactive user experiences in your application. The following sections will dive deeper into the technical aspects of authentication with Replyke.

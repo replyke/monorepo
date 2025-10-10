@@ -1,0 +1,105 @@
+---
+title: "Fetch Following"
+---
+
+# Get User Following List
+
+## Endpoint
+
+**URL:** `api.replyke.com/api/v6/:projectId/users/:userId/following`
+
+**Method:** `GET`
+
+**Authentication Required:** No
+
+---
+
+## Description
+
+Get list of accounts a specific user follows. This is a public endpoint that does not require authentication.
+
+---
+
+## Request
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description                                   |
+| --------- | -------- | -------- | --------------------------------------------- |
+| `userId`  | `string` | Yes      | ID of the user to get following list for |
+
+### Query Parameters
+
+| Parameter | Type     | Required | Description                                      |
+| --------- | -------- | -------- | ------------------------------------------------ |
+| `page`    | `number` | No       | Page number (default: 1)                        |
+| `limit`   | `number` | No       | Items per page (default: 20, max: 100)          |
+
+### Headers
+
+_None_
+
+### Body Parameters
+
+_None_
+
+#### Example Request
+
+```http
+GET /users/user-uuid-123/following?page=1&limit=20
+```
+
+---
+
+## Response
+
+### Success Response (200 OK)
+
+```json
+{
+  "following": [
+    {
+      "followId": "follow-uuid",
+      "user": {
+        "id": "user-uuid",
+        "name": "John Doe",
+        "username": "johndoe",
+        "avatar": "https://example.com/avatar.jpg",
+        "bio": "Software Engineer",
+        "reputation": 150
+      },
+      "followedAt": "2024-01-01T12:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 8,
+    "totalCount": 156,
+    "hasNextPage": true,
+    "hasPreviousPage": false,
+    "limit": 20
+  }
+}
+```
+
+### Error Responses
+
+#### Server Error (500 Internal Server Error)
+
+```json
+{
+  "error": "Internal server error",
+  "code": "follow/server-error"
+}
+```
+
+---
+
+## Notes
+
+- This endpoint does **not** require authentication
+- Returns paginated list of users that the specified user follows
+- Each following entry includes user details and when they were followed
+- Public endpoint accessible to all users
+- Default pagination: 20 items per page, maximum 100 items per page
+- Rate limiting: 100 requests per 5 minutes
