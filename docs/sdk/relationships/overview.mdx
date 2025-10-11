@@ -2,23 +2,29 @@
 title: "Overview"
 ---
 
-## Overview
-
 In modern applications, establishing relationships between users is a cornerstone of personalized and dynamic content. These relationships enable users to curate their experiences, foster community interaction, and build meaningful connections. Replyke provides two types of user relationships to suit different application needs:
 
-### Follow Relationships
-Unidirectional relationships where one user follows another (similar to Twitter/Instagram). These are ideal for:
-- Social media feeds and content curation
-- Creator/audience relationships
-- Public content discovery
-- One-way content subscriptions
+<CardGroup cols={2}>
+  <Card title="Follow Relationships" icon="user-plus">
+    Unidirectional relationships where one user follows another (similar to Twitter/Instagram).
 
-### Connection Relationships
-Bidirectional relationships that require mutual acceptance (similar to LinkedIn/Facebook). These are ideal for:
-- Professional networking
-- Mutual friendship systems
-- Private or restricted content sharing
-- Collaborative features requiring reciprocal relationships
+    **Ideal for:**
+    - Social media feeds and content curation
+    - Creator/audience relationships
+    - Public content discovery
+    - One-way content subscriptions
+  </Card>
+
+  <Card title="Connection Relationships" icon="handshake">
+    Bidirectional relationships that require mutual acceptance (similar to LinkedIn/Facebook).
+
+    **Ideal for:**
+    - Professional networking
+    - Mutual friendship systems
+    - Private or restricted content sharing
+    - Collaborative features requiring reciprocal relationships
+  </Card>
+</CardGroup>
 
 Replyke simplifies the implementation of both relationship types with dedicated manager hooks:
 - **`useFollowManager`**: Manages follow/unfollow relationships

@@ -2,7 +2,7 @@
 title: "Overview"
 ---
 
-# Entity Lists
+## Entity Lists
 
 Entity lists in Replyke provide powerful feed and list management functionality using Redux state management. The `useEntityList` hook allows you to create, manage, and filter lists of entities with built-in pagination, caching, and real-time updates.
 
@@ -68,7 +68,9 @@ const trending = useEntityList({ listId: "trending-posts" });
 
 ### Source IDs (Critical Concept)
 
+<Warning>
 **Always use `sourceId` when creating entities.** The `sourceId` logically separates different types of content within your project, preventing them from mixing inappropriately.
+</Warning>
 
 #### Why sourceId Matters
 
@@ -112,6 +114,7 @@ blogFeed.fetchEntities(
 
 #### Best Practices for sourceId
 
+<Tip title="Best Practices for sourceId">
 **✅ Always use sourceId, even initially:**
 ```typescript
 // Good - even if you only have one content type now
@@ -127,6 +130,7 @@ blogFeed.fetchEntities(
 - `"product-reviews"` - Product reviews
 - `"help-docs"` - Documentation content
 - `"announcements"` - Company announcements
+</Tip>
 
 
 ### Filters vs Configuration

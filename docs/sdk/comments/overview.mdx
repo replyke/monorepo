@@ -2,8 +2,6 @@
 title: "Overview"
 ---
 
-## Comments: Bringing Social Interactions to Life
-
 Once your content is live and ready for engagement, adding a robust comment system transforms your platform into a dynamic, interactive space. Comments enable users to share their thoughts, provide feedback, and spark meaningful conversations. A well-implemented comment system fosters a sense of community and enhances user experience.
 
 Replyke provides comprehensive solutions for integrating comment sections into your application, offering two distinct styles to match your platform's needs: **Social Comments** and **Threaded Comments**. Whether you want a fully-featured, plug-and-play component or the flexibility to build a custom solution using powerful hooks, Replyke gives you the tools you need.
@@ -12,19 +10,25 @@ Replyke provides comprehensive solutions for integrating comment sections into y
 
 Replyke offers two comment system styles, each optimized for different use cases and user experiences:
 
-### Social Comments (Instagram/TikTok Style)
-- **Visual Style**: Clean, social-media inspired design
-- **Nesting**: Maximum 2 levels (comments and replies)
-- **Interactions**: Heart/like system
-- **Best For**: Social platforms, content sharing, quick interactions
-- **Package**: `@replyke/comments-social-react-js` (React) / `@replyke/comments-social-react-native` (React Native)
+<CardGroup cols={2}>
+  <Card title="Social Comments" icon="heart">
+    Instagram/TikTok-style comments with a clean, social-media inspired design.
 
-### Threaded Comments (Reddit Style)
-- **Visual Style**: Discussion-focused with clear threading
-- **Nesting**: Unlimited levels with visual indentation
-- **Interactions**: Upvote/downvote system
-- **Best For**: Forums, detailed discussions, complex conversations
-- **Package**: `@replyke/comments-threaded-react-js` (React only - React Native coming soon)
+    - **Nesting**: Maximum 2 levels (comments and replies)
+    - **Interactions**: Heart/like system
+    - **Best For**: Social platforms, content sharing, quick interactions
+    - **Package**: `@replyke/comments-social-react-js` (React) / `@replyke/comments-social-react-native` (React Native)
+  </Card>
+
+  <Card title="Threaded Comments" icon="comments">
+    Reddit-style comments with discussion-focused threading.
+
+    - **Nesting**: Unlimited levels with visual indentation
+    - **Interactions**: Upvote/downvote system
+    - **Best For**: Forums, detailed discussions, complex conversations
+    - **Package**: `@replyke/comments-threaded-react-js` (React only - React Native coming soon)
+  </Card>
+</CardGroup>
 
 Both styles share the same core functionality and can be customized extensively to match your app's design and behavior requirements.
 
@@ -50,7 +54,9 @@ These components encapsulate the entire comment system with minimal setup requir
 - **Reporting & Moderation** – Includes a reporting system and an admin back office for managing reports, removing inappropriate comments, and banning users.
 - **Customizability** – Developers can fine-tune behavior and appearance using props, including styling, visibility control, and interaction callbacks.
 
+<Note>
 Minimal setup is required—just pass an entity identifier and optionally customize styles and behavior. This is the recommended approach for most use cases.
+</Note>
 
 Learn more:
 - [Social Comment Section](./comments/social/component)
@@ -106,11 +112,13 @@ Learn more: [Comment Hooks Documentation](./hooks)
 
 ### Open Source and Community Contributions
 
+<Info>
 All comment components and hooks are open source. Developers are encouraged to contribute, whether by submitting features, UI variations, or fixes for both social and threaded styles.
 
 Over time, the goal is to expand the library of components to support a variety of interaction styles and use cases, potentially including additional comment system variations.
 
 Get involved here: [GitHub Repository](https://github.com/replyke/monorepo)
+</Info>
 
 ---
 
