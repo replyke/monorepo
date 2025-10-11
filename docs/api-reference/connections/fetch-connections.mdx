@@ -1,0 +1,115 @@
+---
+title: "Get Current User Connections"
+api: "GET /:projectId/connections"
+description: "Get list of established connections for the current user"
+auth: "bearer"
+---
+
+Get list of established connections for the current user.
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number
+</ParamField>
+
+<ParamField query="limit" type="number" default="20">
+  Items per page (max: 100)
+</ParamField>
+
+## Response
+
+<ResponseField name="connections" type="array">
+  <Expandable title="connection object">
+    <ResponseField name="id" type="string">
+      Unique connection identifier
+    </ResponseField>
+    <ResponseField name="connectedUser" type="object">
+      <Expandable title="user properties">
+        <ResponseField name="id" type="string">
+          User identifier
+        </ResponseField>
+        <ResponseField name="name" type="string">
+          User's full name
+        </ResponseField>
+        <ResponseField name="username" type="string">
+          User's username
+        </ResponseField>
+        <ResponseField name="avatar" type="string">
+          URL to user's avatar image
+        </ResponseField>
+        <ResponseField name="bio" type="string">
+          User's biography
+        </ResponseField>
+        <ResponseField name="reputation" type="number">
+          User's reputation score
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="connectedAt" type="string">
+      Timestamp when connection was accepted
+    </ResponseField>
+    <ResponseField name="requestedAt" type="string">
+      Timestamp when request was initially sent
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      Original connection message
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  <Expandable title="properties">
+    <ResponseField name="currentPage" type="number">
+      Current page number
+    </ResponseField>
+    <ResponseField name="totalPages" type="number">
+      Total number of pages
+    </ResponseField>
+    <ResponseField name="totalCount" type="number">
+      Total number of connections
+    </ResponseField>
+    <ResponseField name="hasNextPage" type="boolean">
+      Whether there is a next page
+    </ResponseField>
+    <ResponseField name="hasPreviousPage" type="boolean">
+      Whether there is a previous page
+    </ResponseField>
+    <ResponseField name="limit" type="number">
+      Items per page
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized - 401 Unauthorized">
+    ```json
+    {
+      "error": "Authentication required",
+      "code": "auth/unauthorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "connection/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- Returns paginated list of established connections for the current user
+- Each connection includes the connected user's details
+- Includes timestamps for when connection was accepted
+- Default pagination: 20 items per page, maximum 100 items per page
+- Rate limiting: 100 requests per 5 minutes

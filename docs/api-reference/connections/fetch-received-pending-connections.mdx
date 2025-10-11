@@ -1,0 +1,116 @@
+---
+title: "Get Received Pending Requests"
+api: "GET /:projectId/connections/pending/received"
+description: "Get connection requests received by the current user that are still pending"
+auth: "bearer"
+---
+
+Get connection requests that others have sent to the current user and are still pending.
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number
+</ParamField>
+
+<ParamField query="limit" type="number" default="20">
+  Items per page (max: 100)
+</ParamField>
+
+## Response
+
+<ResponseField name="requests" type="array">
+  <Expandable title="request object">
+    <ResponseField name="id" type="string">
+      Unique connection identifier
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      Request type (always "received")
+    </ResponseField>
+    <ResponseField name="user" type="object">
+      <Expandable title="user properties">
+        <ResponseField name="id" type="string">
+          User identifier
+        </ResponseField>
+        <ResponseField name="name" type="string">
+          User's full name
+        </ResponseField>
+        <ResponseField name="username" type="string">
+          User's username
+        </ResponseField>
+        <ResponseField name="avatar" type="string">
+          URL to user's avatar image
+        </ResponseField>
+        <ResponseField name="bio" type="string">
+          User's biography
+        </ResponseField>
+        <ResponseField name="reputation" type="number">
+          User's reputation score
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="message" type="string">
+      Message included with the connection request
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      Timestamp when request was received
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  <Expandable title="properties">
+    <ResponseField name="currentPage" type="number">
+      Current page number
+    </ResponseField>
+    <ResponseField name="totalPages" type="number">
+      Total number of pages
+    </ResponseField>
+    <ResponseField name="totalCount" type="number">
+      Total number of received pending requests
+    </ResponseField>
+    <ResponseField name="hasNextPage" type="boolean">
+      Whether there is a next page
+    </ResponseField>
+    <ResponseField name="hasPreviousPage" type="boolean">
+      Whether there is a previous page
+    </ResponseField>
+    <ResponseField name="limit" type="number">
+      Items per page
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized - 401 Unauthorized">
+    ```json
+    {
+      "error": "Authentication required",
+      "code": "auth/unauthorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "connection/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- Returns paginated list of pending connection requests received by the current user
+- Each request includes the sender's details and their message
+- Shows when each request was received
+- Users can accept or decline these requests using the connection ID
+- Default pagination: 20 items per page, maximum 100 items per page
+- Rate limiting: 100 requests per 5 minutes

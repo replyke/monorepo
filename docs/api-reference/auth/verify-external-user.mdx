@@ -1,129 +1,155 @@
 ---
 title: "Verify External User"
+api: "POST /:projectId/auth/verify-external-user"
+description: "Verify and authenticate a user from an external system using JWT"
 ---
-
-# Verify External User
-
-## Endpoint
-
-**URL:** `api.replyke.com/api/v6/:projectId/auth/verify-external-user`
-
-**Method:** `POST`
-
-**Authentication Required:** No
-
----
-
-## Description
 
 Verifies a user identity using a signed JWT from an external project. If the user exists, it updates the profile. If not, it creates the user. Returns an access token, refresh token, and user data.
 
----
+## Body Parameters
 
-## Request
-
-### Body Parameters
-
-| Field     | Type     | Required | Description                                |
-| --------- | -------- | -------- | ------------------------------------------ |
-| `userJwt` | `string` | Yes      | Signed JWT issued by the external project. |
-
-#### Example Request
-
-```json
-{
-  "userJwt": "<EXTERNAL_USER_JWT>"
-}
-```
-
----
+<ParamField body="userJwt" type="string" required>
+  Signed JWT issued by the external project containing user identity information
+</ParamField>
 
 ## Response
 
-### Success Response (200 OK)
+<ResponseField name="success" type="boolean">
+  Indicates whether the verification was successful
+</ResponseField>
 
-```json
-{
-  "success": true,
-  "accessToken": "<ACCESS_TOKEN>",
-  "refreshToken": "<REFRESH_TOKEN>",
-  "user": {
-    "id": "user_123",
-    "email": "jane@example.com",
-    "username": "janedoe",
-    "name": "Jane Doe",
-    "avatar": "https://example.com/avatar.jpg",
-    "bio": "Tech enthusiast",
-    "location": {
-      "type": "Point",
-      "coordinates": [-73.935242, 40.73061]
-    },
-    "birthdate": "1995-01-01T00:00:00.000Z",
-    "metadata": { "office": "boston" },
-    "suspensions": [],
-    "reputation": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  }
-}
-```
+<ResponseField name="accessToken" type="string">
+  JWT access token for authenticating API requests
+</ResponseField>
 
-### Error Responses
+<ResponseField name="refreshToken" type="string">
+  JWT refresh token for obtaining new access tokens
+</ResponseField>
 
-#### Missing JWT (400 Bad Request)
+<ResponseField name="user" type="User Object">
+  The verified or newly created user object
 
-```json
-{
-  "error": "Missing userJwt",
-  "code": "auth/missing-jwt"
-}
-```
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      Unique user identifier
+    </ResponseField>
 
-#### Missing Keys (403 Forbidden)
+    <ResponseField name="email" type="string">
+      User's email address
+    </ResponseField>
 
-```json
-{
-  "error": "Missing JWT keys",
-  "code": "auth/missing-keys"
-}
-```
+    <ResponseField name="username" type="string">
+      User's username
+    </ResponseField>
 
-#### Invalid Token (403 Forbidden)
+    <ResponseField name="name" type="string">
+      User's full name
+    </ResponseField>
 
-```json
-{
-  "error": "Invalid token",
-  "code": "auth/invalid-token"
-}
-```
+    <ResponseField name="avatar" type="string">
+      URL to user's avatar image
+    </ResponseField>
 
-#### Project Mismatch (403 Forbidden)
+    <ResponseField name="bio" type="string">
+      User's biography
+    </ResponseField>
 
-```json
-{
-  "error": "Project ID mismatch",
-  "code": "auth/project-mismatch"
-}
-```
+    <ResponseField name="location" type="object">
+      <Expandable title="properties">
+        <ResponseField name="type" type="string">
+          GeoJSON type (always "Point")
+        </ResponseField>
 
-#### Unexpected Missing User (500 Internal Server Error)
+        <ResponseField name="coordinates" type="number[]">
+          Array of [longitude, latitude]
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
 
-```json
-{
-  "error": "Unexpected error fetching user after login",
-  "code": "auth/missing-user"
-}
-```
+    <ResponseField name="birthdate" type="string">
+      User's birthdate in ISO 8601 format
+    </ResponseField>
 
-#### Server Error (500 Internal Server Error)
+    <ResponseField name="metadata" type="object">
+      Custom public metadata
+    </ResponseField>
 
-```json
-{
-  "error": "Internal server error",
-  "code": "auth/server-error",
-  "details": "<Error message>"
-}
-```
+    <ResponseField name="suspensions" type="array">
+      Array of active suspensions
+    </ResponseField>
+
+    <ResponseField name="reputation" type="number">
+      User's reputation score
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      Account creation timestamp
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string">
+      Last update timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing JWT - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing userJwt",
+      "code": "auth/missing-jwt"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Missing Keys - 403 Forbidden">
+    ```json
+    {
+      "error": "Missing JWT keys",
+      "code": "auth/missing-keys"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid Token - 403 Forbidden">
+    ```json
+    {
+      "error": "Invalid token",
+      "code": "auth/invalid-token"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Project Mismatch - 403 Forbidden">
+    ```json
+    {
+      "error": "Project ID mismatch",
+      "code": "auth/project-mismatch"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Unexpected Missing User - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Unexpected error fetching user after login",
+      "code": "auth/missing-user"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "auth/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 ---
 

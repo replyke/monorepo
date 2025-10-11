@@ -1,0 +1,84 @@
+---
+title: "Get Sub-Lists"
+api: "GET /:projectId/lists/:listId/sub-lists"
+description: "Fetch all sub-lists nested under a parent list"
+auth: "bearer"
+---
+
+Fetches all sub-lists nested under the specified parent list for the authenticated user.
+
+## Path Parameters
+
+<ParamField path="listId" type="string" required>
+  The ID of the parent list
+</ParamField>
+
+## Response
+
+Returns an array of sub-list objects.
+
+<ResponseField name="id" type="string">
+  Unique list identifier
+</ResponseField>
+
+<ResponseField name="projectId" type="string">
+  Project identifier
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the user who owns the list
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the list
+</ResponseField>
+
+<ResponseField name="parentId" type="string">
+  ID of the parent list
+</ResponseField>
+
+<ResponseField name="entityIds" type="array">
+  Array of entity IDs saved in this list
+</ResponseField>
+
+<ResponseField name="subLists" type="array">
+  Array of nested sub-lists
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Creation timestamp in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Parameters - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing required parameters in request query",
+      "code": "list/missing-params"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Server error",
+      "code": "list/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Only sub-lists belonging to the authenticated user and nested under the specified list are returned.
+- The returned sub-lists are populated with their own metadata (e.g., entity IDs, timestamps).

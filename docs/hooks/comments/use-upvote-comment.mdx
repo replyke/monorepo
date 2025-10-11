@@ -1,0 +1,51 @@
+---
+title: "Use Upvote Comment"
+---
+
+# `useUpvoteComment`
+
+## Overview
+
+The `useUpvoteComment` hook provides a way to upvote an comment.
+
+## Usage Example
+
+```tsx
+import { useUpvoteComment } from "@replyke/react-js";
+import { Button } from "@/components/ui/button";
+
+function CommentComponent({ commentId }: { commentId: string }) {
+  const upvoteComment = useUpvoteComment();
+
+  const handleUpvote = async () => {
+    try {
+      const response = await upvoteComment({ commentId });
+      console.log("Comment upvoted:", response);
+    } catch (err) {
+      console.error("Failed to upvote:", err);
+    }
+  };
+
+  return <Button onClick={handleUpvote}>Upvote</Button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The `upvoteComment` function returned by the hook accepts a single object with the following field:
+
+
+<ParamField path="commentId" type="string">
+  The ID of the comment to be upvoted.
+</ParamField>
+
+### Returns
+
+The function returns a `Promise<Comment>` representing the API response:
+
+
+<ResponseField name="Updated comment" type="Comment">
+  The updated comment after it is successfully upvoted.
+</ResponseField>

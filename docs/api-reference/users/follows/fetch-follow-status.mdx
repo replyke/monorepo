@@ -1,0 +1,59 @@
+---
+title: "Fetch Follow Status"
+api: "GET /:projectId/users/:userId/follow"
+description: "Check if current user follows the specified user"
+auth: "bearer"
+---
+
+Check if the current user follows the specified user and get follow relationship details.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  ID of the user to check follow status with
+</ParamField>
+
+## Response
+
+<ResponseField name="isFollowing" type="boolean">
+  Whether the current user follows the specified user
+</ResponseField>
+
+<ResponseField name="followId" type="string | null">
+  ID of the follow relationship if it exists, null otherwise
+</ResponseField>
+
+<ResponseField name="followedAt" type="string | null">
+  Timestamp when the follow relationship was created, null if not following
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid User ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid userId",
+      "code": "follow/invalid-user-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Unauthorized - 401 Unauthorized">
+    ```json
+    {
+      "error": "Authentication required",
+      "code": "auth/unauthorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "follow/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,78 @@
+---
+title: "Delete Entity"
+api: "DELETE /:projectId/entities/:entityId"
+description: "Delete an existing entity"
+auth: "bearer"
+---
+
+Deletes an existing entity within the project. Only the entity author or a master user can perform this operation. Deletion also deducts reputation from the original author.
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  The ID of the entity to delete
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Returns 204 No Content on successful deletion
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid entityId.",
+      "code": "entity/invalid-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Unauthorized - 403 Forbidden">
+    ```json
+    {
+      "error": "Not authorized to delete this entity.",
+      "code": "entity/not-authorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Entity not found.",
+      "code": "entity/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Delete Failed - 404 Not Found">
+    ```json
+    {
+      "error": "Entity not found or already deleted.",
+      "code": "entity/delete-failed"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Failed to delete the entity.",
+      "code": "entity/server-error",
+      "details": "[error message]"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Only the original author or a master user can delete an entity.
+- Deleting an entity deducts reputation points from the author if applicable.
+- If the entity does not exist or was already deleted, the operation is a no-op.

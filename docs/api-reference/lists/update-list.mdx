@@ -1,0 +1,110 @@
+---
+title: "Update List"
+api: "PATCH /:projectId/lists/:listId"
+description: "Update the name of an existing list"
+auth: "bearer"
+---
+
+Updates the name of an existing non-root list belonging to the authenticated user.
+
+## Path Parameters
+
+<ParamField path="listId" type="string" required>
+  The ID of the list to update
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="update" type="object" required>
+  <Expandable title="properties">
+    <ParamField body="name" type="string" required>
+      Updated name for the list
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique list identifier
+</ResponseField>
+
+<ResponseField name="projectId" type="string">
+  Project identifier
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the user who owns the list
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Updated name of the list
+</ResponseField>
+
+<ResponseField name="parentId" type="string">
+  ID of the parent list
+</ResponseField>
+
+<ResponseField name="entityIds" type="array">
+  Array of entity IDs saved in this list
+</ResponseField>
+
+<ResponseField name="subLists" type="array">
+  Array of nested sub-lists
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Creation timestamp in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Data - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing list ID or update data",
+      "code": "list/missing-data"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Blank Name - 400 Bad Request">
+    ```json
+    {
+      "error": "Cannot set the name to blank",
+      "code": "list/blank-name"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="List Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "List not found",
+      "code": "list/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Server error",
+      "code": "list/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Only sub-lists (lists with a `parentId`) can be renamed via this endpoint.
+- The response includes the updated and populated list.

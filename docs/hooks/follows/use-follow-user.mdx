@@ -1,0 +1,47 @@
+---
+title: "Use Follow User"
+---
+
+# `useFollowUser`
+
+## Overview
+
+The `useFollowUser` hook allows a logged-in user to follow another user.
+
+
+## Usage Example
+
+```tsx
+import { useFollowUser } from "@replyke/react-js";
+
+function FollowUserButton({ targetUserId }: { targetUserId: string }) {
+  const followUser = useFollowUser();
+
+  const handleFollowUser = async () => {
+    try {
+      await followUser({ userId: targetUserId });
+      console.log("Successfully followed the user.");
+    } catch (error) {
+      console.error("Failed to follow user:", error.message);
+    }
+  };
+
+  return <button onClick={handleFollowUser}>Follow User</button>;
+}
+```
+
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following field:
+
+
+<ParamField path="userId" type="string" required>
+  The ID of the user to follow.
+</ParamField>
+
+### Returns
+
+The function does not return a value but ensures the follow action is executed successfully on the server.

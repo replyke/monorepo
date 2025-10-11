@@ -1,0 +1,128 @@
+---
+title: "Submit a Report"
+api: "POST /:projectId/reports"
+description: "Submit a report for a Comment or Entity to flag inappropriate content"
+auth: "bearer"
+---
+
+Submit a report for a `Comment` or `Entity`. Reports are tracked per user to avoid duplicate submissions.
+
+## Body Parameters
+
+<ParamField body="targetId" type="string" required>
+  ID of the target being reported (comment or entity)
+</ParamField>
+
+<ParamField body="targetType" type="string" required>
+  Type of target being reported. Must be either `Comment` or `Entity`
+</ParamField>
+
+<ParamField body="reason" type="string" required>
+  Reason for the report (e.g., "Spam", "Harassment", "Inappropriate content")
+</ParamField>
+
+<ParamField body="details" type="string">
+  Optional additional information about the report
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message describing the result
+</ResponseField>
+
+<ResponseField name="code" type="string">
+  Response code (e.g., "report/created", "report/already-reported", "report/updated")
+</ResponseField>
+
+## Success Responses
+
+<AccordionGroup>
+  <Accordion title="New Report Created - 201 Created">
+    ```json
+    {
+      "message": "Report submitted successfully",
+      "code": "report/created"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Report Already Exists - 200 OK">
+    ```json
+    {
+      "message": "Report already registered by this user",
+      "code": "report/already-reported"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Report Updated - 200 OK">
+    ```json
+    {
+      "message": "Report updated successfully",
+      "code": "report/updated"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Required Fields - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing required fields",
+      "code": "report/missing-data"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid Target Type - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid targetType",
+      "code": "report/invalid-type"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Target Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Comment not found",
+      "code": "report/target-not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Foreign Key Violation - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid targetId or projectId",
+      "code": "report/invalid-foreign-key"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Server error",
+      "code": "report/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- Only `Comment` and `Entity` are valid `targetType` values
+- Multiple users can report the same target, but each user is recorded only once
+- Submitting a second report for the same target updates the reporter list
+- Reports are reviewed by moderators through the Replyke dashboard
+- Rate limiting: 20 requests per 5 minutes

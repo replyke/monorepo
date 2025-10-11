@@ -1,0 +1,50 @@
+---
+title: "Fetch Followers Count"
+api: "GET /:projectId/users/:userId/followers-count"
+description: "Get the count of followers for a specific user"
+---
+
+Get the count of followers for a specific user. This is a public endpoint that does not require authentication.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  ID of the user to get followers count for
+</ParamField>
+
+## Response
+
+<ResponseField name="count" type="number">
+  Total number of followers for the specified user
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid User ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid or missing userId",
+      "code": "follow/invalid-user-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="User Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "User not found",
+      "code": "user/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "follow/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>

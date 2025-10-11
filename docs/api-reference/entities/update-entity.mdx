@@ -1,0 +1,139 @@
+---
+title: "Update Entity"
+api: "PATCH /:projectId/entities/:entityId"
+description: "Update an existing entity's properties"
+auth: "bearer"
+---
+
+Updates an existing entity. Only the entity's creator or a master-level user can perform this action.
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  The ID of the entity to update
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="title" type="string">
+  Updated title of the entity
+</ParamField>
+
+<ParamField body="content" type="string">
+  Updated content
+</ParamField>
+
+<ParamField body="attachments" type="array">
+  Updated attachments
+</ParamField>
+
+<ParamField body="keywords" type="array">
+  Updated list of keywords
+</ParamField>
+
+<ParamField body="location" type="object">
+  <Expandable title="properties">
+    <ParamField body="longitude" type="number" required>
+      Longitude coordinate
+    </ParamField>
+    <ParamField body="latitude" type="number" required>
+      Latitude coordinate
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Updated metadata
+</ParamField>
+
+<ParamField body="mentions" type="array">
+  Updated mentions list with objects like `{ id: string, username: string }`
+</ParamField>
+
+## Response
+
+Returns the updated entity object with all fields.
+
+<ResponseField name="id" type="string">
+  Unique entity identifier
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Updated entity title
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  Updated entity content
+</ResponseField>
+
+<ResponseField name="keywords" type="array">
+  Updated keywords array
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Updated metadata
+</ResponseField>
+
+<ResponseField name="location" type="object">
+  <Expandable title="properties">
+    <ResponseField name="type" type="string">
+      GeoJSON type (always "Point")
+    </ResponseField>
+    <ResponseField name="coordinates" type="number[]">
+      Array of [longitude, latitude]
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Entity ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing entityId in request.",
+      "code": "entity/invalid-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Unauthorized - 403 Forbidden">
+    ```json
+    {
+      "error": "User is not authorized to update this entity.",
+      "code": "entity/unauthorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Entity Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Entity not found.",
+      "code": "entity/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "entity/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Fields not included in the request body will remain unchanged.
+- The `location` field, if updated, must include both `longitude` and `latitude`.
+- A webhook `validateEntityUpdated` is triggered before the update is applied.

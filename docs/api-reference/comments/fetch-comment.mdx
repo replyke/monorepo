@@ -1,0 +1,81 @@
+---
+title: "Get Comment"
+api: "GET /:projectId/comments/:commentId"
+description: "Fetch a single comment by its ID"
+---
+
+Fetches a single comment by its ID. Optionally returns the parent comment if it exists and `withParent=true` is passed.
+
+## Path Parameters
+
+<ParamField path="commentId" type="string" required>
+  The ID of the comment to fetch
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="withParent" type="string">
+  If `true`, includes the parent comment in the response
+</ParamField>
+
+## Response
+
+<ResponseField name="comment" type="object">
+  <Expandable title="Comment object">
+    <ResponseField name="id" type="string">
+      Unique comment identifier
+    </ResponseField>
+    <ResponseField name="entityId" type="string">
+      ID of the entity this comment belongs to
+    </ResponseField>
+    <ResponseField name="content" type="string">
+      Comment content
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      Creation timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="parentComment" type="object">
+  Parent comment object (null if no parent or `withParent` not set)
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing or Invalid ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing a valid comment ID in request query",
+      "code": "comment/invalid-request"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Comment not found",
+      "code": "comment/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "comment/server-error",
+      "details": "[error message]"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Set `withParent=true` to retrieve the parent comment if it exists.
+- Returns `parentComment: null` if the comment has no parent or `withParent` is not set.

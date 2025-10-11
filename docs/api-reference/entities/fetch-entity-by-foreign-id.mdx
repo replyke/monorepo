@@ -1,0 +1,95 @@
+---
+title: "Get Entity by Foreign ID"
+api: "GET /:projectId/entities/by-foreign-id"
+description: "Retrieve an entity by its external foreign ID"
+---
+
+Retrieves a single entity by its `foreignId`. If the entity does not exist and `createIfNotFound=true` is provided, a blank entity will be created and returned.
+
+## Query Parameters
+
+<ParamField query="foreignId" type="string" required>
+  The external ID used to locate the entity
+</ParamField>
+
+<ParamField query="createIfNotFound" type="string">
+  If set to `true`, creates a blank entity if none exists with that foreign ID
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique entity identifier
+</ResponseField>
+
+<ResponseField name="projectId" type="string">
+  Project identifier
+</ResponseField>
+
+<ResponseField name="foreignId" type="string">
+  External reference ID
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Entity title (may be null for newly created entities)
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  Entity content (may be null for newly created entities)
+</ResponseField>
+
+<ResponseField name="keywords" type="array">
+  Array of keywords
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom metadata
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Creation timestamp in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Query - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing valid foreignId in request query.",
+      "code": "entity/invalid-query-params"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Entity not found",
+      "code": "entity/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "entity/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Authentication is not required.
+- This endpoint supports optional automatic entity creation.
+- If `createIfNotFound` is enabled, a webhook is triggered for validation.

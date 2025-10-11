@@ -1,0 +1,88 @@
+---
+title: "Remove Connection"
+api: "DELETE /:projectId/connections/:connectionId"
+description: "Remove a connection or withdraw a pending request"
+auth: "bearer"
+---
+
+Remove a specific connection by its ID. This can be used to withdraw a pending request (if you're the requester) or disconnect an established connection (if you're either party).
+
+## Path Parameters
+
+<ParamField path="connectionId" type="string" required>
+  ID of the connection to remove
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success message confirming the action
+</ResponseField>
+
+### Possible Success Messages
+
+**Withdraw Request:**
+```json
+{
+  "message": "Connection request withdrawn successfully."
+}
+```
+
+**Disconnect:**
+```json
+{
+  "message": "Connection removed successfully."
+}
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Connection ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid connectionId",
+      "code": "connection/invalid-connection-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Unauthorized - 403 Forbidden">
+    ```json
+    {
+      "error": "Unauthorized (wrong user for action)",
+      "code": "connection/unauthorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Connection Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Connection not found",
+      "code": "connection/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "connection/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- **Withdraw**: Only the requester can withdraw pending requests they sent
+- **Disconnect**: Either party can remove established connections
+- Deletes the connection record completely (allows fresh requests later)
+- Use this endpoint when you have the specific connection ID
+- Alternative: Use `DELETE /:projectId/users/:userId/connection` when you know the user ID
+- Rate limiting: 50 requests per 5 minutes

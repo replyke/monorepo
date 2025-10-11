@@ -1,83 +1,39 @@
 ---
 title: "Fetch Followers Count"
+api: "GET /:projectId/follows/followers-count"
+description: "Get the count of followers for the current user"
+auth: "bearer"
 ---
 
-# Get Current User Followers Count
-
-## Endpoint
-
-**URL:** `api.replyke.com/api/v6/:projectId/follows/followers-count`
-
-**Method:** `GET`
-
-**Authentication Required:** Yes
-
----
-
-## Description
-
-Get the count of followers for the current user.
-
----
-
-## Request
-
-### Path Parameters
-
-_None_
-
-### Query Parameters
-
-_None_
-
-### Headers
-
-| Header          | Type     | Required | Description                      |
-| --------------- | -------- | -------- | -------------------------------- |
-| `Authorization` | `string` | Yes      | Bearer token for authentication. |
-
-### Body Parameters
-
-_None_
-
-#### Example Request
-
-```http
-GET api.replyke.com/api/v6/your-project-id/follows/followers-count
-Authorization: Bearer <ACCESS_TOKEN>
-```
-
----
+Get the count of followers for the current authenticated user.
 
 ## Response
 
-### Success Response (200 OK)
+<ResponseField name="count" type="number">
+  Total number of followers for the current user
+</ResponseField>
 
-```json
-{
-  "count": 342
-}
-```
+## Error Responses
 
-### Error Responses
+<AccordionGroup>
+  <Accordion title="Unauthorized - 401 Unauthorized">
+    ```json
+    {
+      "error": "Authentication required",
+      "code": "auth/unauthorized"
+    }
+    ```
+  </Accordion>
 
-#### Unauthorized (401 Unauthorized)
-
-```json
-{
-  "error": "Authentication required",
-  "code": "auth/unauthorized"
-}
-```
-
-#### Server Error (500 Internal Server Error)
-
-```json
-{
-  "error": "Internal server error",
-  "code": "follow/server-error"
-}
-```
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "follow/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 ---
 

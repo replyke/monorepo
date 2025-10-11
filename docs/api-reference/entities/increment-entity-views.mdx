@@ -1,0 +1,72 @@
+---
+title: "Increment Entity Views"
+api: "PATCH /:projectId/entities/:entityId/increment-views"
+description: "Increment the view count of an entity"
+---
+
+This endpoint increments the view count of a specific entity by 1. It is typically triggered when a user visits or opens the entity. No authentication is required.
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  The unique ID of the entity
+</ParamField>
+
+## Response
+
+Returns the updated entity object with the incremented view count.
+
+<ResponseField name="id" type="string">
+  Unique entity identifier
+</ResponseField>
+
+<ResponseField name="views" type="number">
+  Updated view count
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Entity title
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  Entity content
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Entity ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid entity ID.",
+      "code": "entity/invalid-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Entity Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Entity not found.",
+      "code": "entity/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "An error occurred while updating entity views.",
+      "code": "entity/server-error",
+      "details": "<error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- This endpoint is safe to call multiple times.
+- No authentication is required.

@@ -1,0 +1,86 @@
+---
+title: "Downvote Entity"
+api: "PATCH /:projectId/entities/:entityId/downvote"
+description: "Downvote an entity on behalf of the authenticated user"
+auth: "bearer"
+---
+
+Downvotes an entity on behalf of the authenticated user. If the user has previously upvoted the entity, the upvote is removed.
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  The ID of the entity to downvote
+</ParamField>
+
+## Response
+
+Returns the updated entity object with the new downvote.
+
+<ResponseField name="id" type="string">
+  Unique entity identifier
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the entity creator
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Entity title
+</ResponseField>
+
+<ResponseField name="upvotes" type="array">
+  Array of user IDs who upvoted
+</ResponseField>
+
+<ResponseField name="downvotes" type="array">
+  Array of user IDs who downvoted (includes the current user)
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Entity ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing entityId in request.",
+      "code": "entity/invalid-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Entity Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Entity not found.",
+      "code": "entity/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Already Downvoted - 409 Conflict">
+    ```json
+    {
+      "error": "User already downvoted entity.",
+      "code": "entity/already-downvoted"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "entity/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- This action is only available to authenticated users.
+- Reputation points are updated for the entity owner.

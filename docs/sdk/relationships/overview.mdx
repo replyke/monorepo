@@ -4,8 +4,24 @@ title: "Overview"
 
 ## Overview
 
-In modern applications, establishing relationships between users, such as the ability to follow or unfollow others, is a cornerstone of personalized and dynamic content. These relationships enable users to curate their experiences by choosing whose content they want to see, fostering community interaction and engagement. By integrating follow relationships, you can enhance your application's functionality, tailoring content feeds to reflect user interests.
+In modern applications, establishing relationships between users is a cornerstone of personalized and dynamic content. These relationships enable users to curate their experiences, foster community interaction, and build meaningful connections. Replyke provides two types of user relationships to suit different application needs:
 
-Replyke simplifies the implementation of follow relationships with a dedicated useFollowManager hook. This hook is designed for ease of use, requiring minimal setup while offering robust functionality.
+### Follow Relationships
+Unidirectional relationships where one user follows another (similar to Twitter/Instagram). These are ideal for:
+- Social media feeds and content curation
+- Creator/audience relationships
+- Public content discovery
+- One-way content subscriptions
 
-Unlike other functionalities, relationships in Replyke do not require any secondary context provider. You can simply use the relationship hook directly in any of your components.
+### Connection Relationships
+Bidirectional relationships that require mutual acceptance (similar to LinkedIn/Facebook). These are ideal for:
+- Professional networking
+- Mutual friendship systems
+- Private or restricted content sharing
+- Collaborative features requiring reciprocal relationships
+
+Replyke simplifies the implementation of both relationship types with dedicated manager hooks:
+- **`useFollowManager`**: Manages follow/unfollow relationships
+- **`useConnectionManager`**: Manages connection requests, acceptance, and disconnection
+
+Unlike other functionalities, relationships in Replyke do not require any secondary context provider. You can simply use the relationship hooks directly in any of your components.

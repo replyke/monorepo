@@ -1,0 +1,86 @@
+---
+title: "Get Entity by Short ID"
+api: "GET /:projectId/entities/by-short-id"
+description: "Retrieve an entity using its short identifier"
+---
+
+Retrieves a single entity using its `shortId`. Publicly accessible.
+
+## Query Parameters
+
+<ParamField query="shortId" type="string" required>
+  The short identifier of the entity
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique entity identifier
+</ResponseField>
+
+<ResponseField name="shortId" type="string">
+  Short identifier for easy sharing
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Entity title
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  Entity content
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the user who created the entity
+</ResponseField>
+
+<ResponseField name="keywords" type="array">
+  Array of keywords
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Creation timestamp in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Short ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing shortId in request query.",
+      "code": "entity/invalid-query-params"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Entity not found",
+      "code": "entity/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "entity/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- No authentication is required.
+- The `shortId` is typically used for easily shareable or user-friendly URLs.

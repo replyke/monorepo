@@ -1,0 +1,52 @@
+---
+title: "Check if Entity is Saved"
+api: "GET /:projectId/lists/is-entity-saved"
+description: "Check if an entity is saved in any user list"
+auth: "bearer"
+---
+
+Checks if a given entity is saved in any list belonging to the authenticated user.
+
+## Query Parameters
+
+<ParamField query="entityId" type="string" required>
+  The ID of the entity to check for
+</ParamField>
+
+## Response
+
+Returns a boolean value indicating if the entity is saved.
+
+<ResponseField name="result" type="boolean">
+  `true` if the entity is saved in any list, `false` otherwise
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Entity ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing or invalid entityId in query",
+      "code": "list/invalid-entity-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "list/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Returns a boolean value indicating if the entity is saved in any of the user's lists.
+- This endpoint checks across all lists belonging to the authenticated user.

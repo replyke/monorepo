@@ -5,7 +5,14 @@
       "Bash(find:*)",
       "WebFetch(domain:mintlify.com)",
       "WebSearch",
-      "WebFetch(domain:www.mintlify.com)"
+      "WebFetch(domain:www.mintlify.com)",
+      "Bash(for:*)",
+      "Bash(do head -5 \"$file\")",
+      "Bash(done)",
+      "Bash(mint broken-links)",
+      "Bash(test:*)",
+      "Bash(node:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

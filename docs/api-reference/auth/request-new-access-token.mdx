@@ -1,125 +1,139 @@
 ---
 title: "Request New Access Token"
+api: "POST /:projectId/auth/request-new-access-token"
+description: "Obtain a new access token using a valid refresh token"
 ---
-
-# Request New Access Token
-
-## Endpoint
-
-**URL:** `api.replyke.com/api/v6/:projectId/auth/request-new-access-token`
-
-**Method:** `POST`
-
-**Authentication Required:** No
-
----
-
-## Description
 
 Request a new access token using a valid refresh token. The refresh token can be sent in the request body or as an HttpOnly cookie.
 
----
+## Headers
 
-## Request
+<ParamField header="Cookie" type="string">
+  Can include `replyke-refresh-jwt` cookie with the refresh token
+</ParamField>
 
-### Headers
+## Body Parameters
 
-| Header   | Type     | Required | Description                              |
-| -------- | -------- | -------- | ---------------------------------------- |
-| `Cookie` | `string` | No       | Can include `replyke-refresh-jwt` cookie |
-
-### Body Parameters
-
-| Field          | Type     | Required | Description                                       |
-| -------------- | -------- | -------- | ------------------------------------------------- |
-| `refreshToken` | `string` | No       | JWT refresh token (optional if cookie is present) |
-
-#### Example Request
-
-```json
-{
-  "refreshToken": "<REFRESH_TOKEN>"
-}
-```
-
----
+<ParamField body="refreshToken" type="string">
+  JWT refresh token (optional if provided via cookie). Cookie takes precedence if both are provided.
+</ParamField>
 
 ## Response
 
-### Success Response (200 OK)
+<ResponseField name="success" type="boolean">
+  Indicates whether the token refresh was successful
+</ResponseField>
 
-```json
-{
-  "success": true,
-  "accessToken": "<NEW_ACCESS_TOKEN>",
-  "user": {
-    "id": "user_123",
-    "username": "janedoe",
-    "email": "jane@example.com",
-    "name": "Jane Doe",
-    "avatar": "https://example.com/avatar.jpg",
-    "bio": "Tech enthusiast",
-    "location": {
-      "type": "Point",
-      "coordinates": [-73.935242, 40.73061]
-    },
-    "birthdate": "1995-01-01T00:00:00.000Z",
-    "metadata": { "office": "boston" },
-    "suspensions": [],
-    "reputation": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  }
-}
-```
+<ResponseField name="accessToken" type="string">
+  New JWT access token (null if no refresh token provided)
+</ResponseField>
 
-#### No Refresh Token Provided (200 OK)
+<ResponseField name="user" type="User Object">
+  Current user object (null if no refresh token provided)
 
-```json
-{
-  "accessToken": null,
-  "user": null
-}
-```
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      Unique user identifier
+    </ResponseField>
 
-### Error Responses
+    <ResponseField name="email" type="string">
+      User's email address
+    </ResponseField>
 
-#### Invalid Refresh Token Structure (403 Forbidden)
+    <ResponseField name="username" type="string">
+      User's username
+    </ResponseField>
 
-```json
-{
-  "error": "Invalid refresh token.",
-  "code": "auth/invalid-refresh-token"
-}
-```
+    <ResponseField name="name" type="string">
+      User's full name
+    </ResponseField>
 
-#### Token Not Recognized (403 Forbidden)
+    <ResponseField name="avatar" type="string">
+      URL to user's avatar image
+    </ResponseField>
 
-```json
-{
-  "error": "Refresh token not recognized.",
-  "code": "auth/refresh-token-mismatch"
-}
-```
+    <ResponseField name="bio" type="string">
+      User's biography
+    </ResponseField>
 
-#### User Not Found (403 Forbidden)
+    <ResponseField name="location" type="object">
+      <Expandable title="properties">
+        <ResponseField name="type" type="string">
+          GeoJSON type (always "Point")
+        </ResponseField>
 
-```json
-{
-  "error": "User not found.",
-  "code": "auth/no-user-found"
-}
-```
+        <ResponseField name="coordinates" type="number[]">
+          Array of [longitude, latitude]
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
 
-#### Invalid or Expired Token (403 Forbidden)
+    <ResponseField name="birthdate" type="string">
+      User's birthdate in ISO 8601 format
+    </ResponseField>
 
-```json
-{
-  "error": "Invalid or expired refresh token.",
-  "code": "auth/refresh-token-invalid",
-  "details": "<Error message>"
-}
-```
+    <ResponseField name="metadata" type="object">
+      Custom public metadata
+    </ResponseField>
+
+    <ResponseField name="suspensions" type="array">
+      Array of active suspensions
+    </ResponseField>
+
+    <ResponseField name="reputation" type="number">
+      User's reputation score
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      Account creation timestamp
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string">
+      Last update timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Refresh Token Structure - 403 Forbidden">
+    ```json
+    {
+      "error": "Invalid refresh token.",
+      "code": "auth/invalid-refresh-token"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Token Not Recognized - 403 Forbidden">
+    ```json
+    {
+      "error": "Refresh token not recognized.",
+      "code": "auth/refresh-token-mismatch"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="User Not Found - 403 Forbidden">
+    ```json
+    {
+      "error": "User not found.",
+      "code": "auth/no-user-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid or Expired Token - 403 Forbidden">
+    ```json
+    {
+      "error": "Invalid or expired refresh token.",
+      "code": "auth/refresh-token-invalid",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 ---
 

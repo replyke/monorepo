@@ -1,89 +1,45 @@
 ---
 title: "Check Username Availability"
+api: "GET /:projectId/users/check-username"
+description: "Check if a username is available for use"
 ---
-
-# Check Username Availability
-
-## Endpoint
-
-**URL:** `api.replyke.com/api/v6/:projectId/users/check-username`
-
-**Method:** `GET`
-
-**Authentication Required:** No
-
----
-
-## Description
 
 Check if a given username is available for use.
 
----
+## Query Parameters
 
-## Request
-
-### Query Parameters
-
-| Parameter  | Type     | Required | Description                             |
-| ---------- | -------- | -------- | --------------------------------------- |
-| `username` | `string` | Yes      | The username to check for availability. |
-
-### Headers
-
-_None_
-
-### Body Parameters
-
-_None_
-
-#### Example Request
-
-```sh
-GET /proj1234/users/check-username?username=johndoe
-```
-
----
+<ParamField query="username" type="string" required>
+  The username to check for availability
+</ParamField>
 
 ## Response
 
-### Success Response (200 OK)
+<ResponseField name="available" type="boolean">
+  `true` if the username is available, `false` if it's already taken
+</ResponseField>
 
-#### Username Available
+## Error Responses
 
-```json
-{
-  "available": true
-}
-```
+<AccordionGroup>
+  <Accordion title="Missing or Invalid Username - 400 Bad Request">
+    ```json
+    {
+      "error": "Username is required and must be a string.",
+      "code": "username/invalid-input"
+    }
+    ```
+  </Accordion>
 
-#### Username Taken
-
-```json
-{
-  "available": false
-}
-```
-
-### Error Responses
-
-#### Missing or Invalid Username (400 Bad Request)
-
-```json
-{
-  "error": "Username is required and must be a string.",
-  "code": "username/invalid-input"
-}
-```
-
-#### Server Error (500 Internal Server Error)
-
-```json
-{
-  "error": "An error occurred while checking username availability.",
-  "code": "username/server-error",
-  "details": "<Error message>"
-}
-```
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "An error occurred while checking username availability.",
+      "code": "username/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 ---
 

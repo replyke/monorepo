@@ -1,0 +1,122 @@
+---
+title: "Get Single Entity"
+api: "GET /:projectId/entities/:entityId"
+description: "Fetch a single entity by its ID"
+---
+
+Fetches a single entity by its ID. Publicly accessible.
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  ID of the entity to retrieve
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique entity identifier
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the user who created the entity
+</ResponseField>
+
+<ResponseField name="shortId" type="string">
+  Short identifier for easy sharing
+</ResponseField>
+
+<ResponseField name="foreignId" type="string">
+  External reference ID if provided
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Entity title
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  Entity content
+</ResponseField>
+
+<ResponseField name="keywords" type="array">
+  Array of keywords associated with the entity
+</ResponseField>
+
+<ResponseField name="attachments" type="array">
+  Array of attachment objects
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom metadata
+</ResponseField>
+
+<ResponseField name="location" type="object">
+  <Expandable title="properties">
+    <ResponseField name="type" type="string">
+      GeoJSON type (always "Point")
+    </ResponseField>
+    <ResponseField name="coordinates" type="number[]">
+      Array of [longitude, latitude]
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="upvotes" type="array">
+  Array of user IDs who upvoted
+</ResponseField>
+
+<ResponseField name="downvotes" type="array">
+  Array of user IDs who downvoted
+</ResponseField>
+
+<ResponseField name="views" type="number">
+  Number of times the entity was viewed
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Creation timestamp in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Entity ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing a valid entityId in request query.",
+      "code": "entity/invalid-resource-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Entity not found",
+      "code": "entity/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "entity/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- No authentication is required.
+- Entity score may be updated asynchronously after response is sent.
+- Returned entity includes metadata, vote counts, and replies count if available.

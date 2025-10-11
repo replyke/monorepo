@@ -1,110 +1,155 @@
 ---
 title: "Sign Up"
+api: "POST /:projectId/auth/sign-up"
+description: "Register a new user with credentials and optional profile data"
 ---
-
-# Sign Up
-
-## Endpoint
-
-**URL:** `api.replyke.com/api/v6/:projectId/auth/sign-up`
-
-**Method:** `POST`
-
-**Authentication Required:** No
-
----
-
-## Description
 
 Register a new user by providing required credentials and optional profile data. Returns access and refresh tokens along with user data.
 
----
+## Body Parameters
 
-## Request
+<ParamField body="email" type="string" required>
+  User's email address
+</ParamField>
 
-### Body Parameters
+<ParamField body="password" type="string" required>
+  User's password
+</ParamField>
 
-| Field            | Type                | Required | Description                                         |
-| ---------------- | ------------------- | -------- | --------------------------------------------------- |
-| `email`          | `string`            | Yes      | User's email address.                               |
-| `password`       | `string`            | Yes      | User's password.                                    |
-| `name`           | `string`            | No       | Full name of the user.                              |
-| `username`       | `string`            | No       | Unique username. Will be lowercased.                |
-| `avatar`         | `string` (URL)      | No       | URL to the user's avatar image.                     |
-| `bio`            | `string`            | No       | Short biography.                                    |
-| `location`       | `object`            | No       | Geolocation object with `longitude` and `latitude`. |
-| `birthdate`      | `string` (ISO date) | No       | User's birthdate.                                   |
-| `metadata`       | `object`            | No       | Custom public metadata.                             |
-| `secureMetadata` | `object`            | No       | Custom secure metadata (not returned to client).    |
+<ParamField body="name" type="string">
+  Full name of the user
+</ParamField>
 
-#### Example Request
+<ParamField body="username" type="string">
+  Unique username (will be automatically lowercased)
+</ParamField>
 
-```json
-{
-  "email": "jane@example.com",
-  "password": "securePassword123",
-  "username": "janedoe",
-  "name": "Jane Doe",
-  "avatar": "https://example.com/avatar.jpg",
-  "bio": "Tech enthusiast",
-  "location": { "longitude": -73.935242, "latitude": 40.73061 },
-  "metadata": { "office": "boston" },
-  "secureMetadata": { "internalId": "abc123" }
-}
-```
+<ParamField body="avatar" type="string">
+  URL to the user's avatar image
+</ParamField>
 
----
+<ParamField body="bio" type="string">
+  Short biography or description
+</ParamField>
+
+<ParamField body="location" type="object">
+  Geolocation object with `longitude` and `latitude` properties
+</ParamField>
+
+<ParamField body="birthdate" type="string">
+  User's birthdate in ISO 8601 format
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Custom public metadata that will be returned in API responses
+</ParamField>
+
+<ParamField body="secureMetadata" type="object">
+  Custom secure metadata (not returned to client, server-side only)
+</ParamField>
 
 ## Response
 
-### Success Response (201 Created)
+<ResponseField name="success" type="boolean">
+  Indicates whether the registration was successful
+</ResponseField>
 
-```json
-{
-  "success": true,
-  "accessToken": "<ACCESS_TOKEN>",
-  "refreshToken": "<REFRESH_TOKEN>",
-  "user": {
-    "id": "user_123",
-    "email": "jane@example.com",
-    "username": "janedoe",
-    "name": "Jane Doe",
-    "avatar": "https://example.com/avatar.jpg",
-    "bio": "Tech enthusiast",
-    "location": {
-      "type": "Point",
-      "coordinates": [-73.935242, 40.73061]
-    },
-    "birthdate": "1995-01-01T00:00:00.000Z",
-    "metadata": { "office": "boston" },
-    "suspensions": [],
-    "reputation": 0,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  }
-}
-```
+<ResponseField name="accessToken" type="string">
+  JWT access token for authenticating API requests
+</ResponseField>
 
-### Error Responses
+<ResponseField name="refreshToken" type="string">
+  JWT refresh token for obtaining new access tokens
+</ResponseField>
 
-#### Missing Required Fields (400 Bad Request)
+<ResponseField name="user" type="User Object">
+  The newly created user object
 
-```json
-{
-  "error": "Missing required fields",
-  "code": "auth/missing-fields"
-}
-```
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      Unique user identifier
+    </ResponseField>
 
-#### Server Error (500 Internal Server Error)
+    <ResponseField name="email" type="string">
+      User's email address
+    </ResponseField>
 
-```json
-{
-  "error": "Internal server error",
-  "code": "auth/server-error",
-  "details": "<Error message>"
-}
-```
+    <ResponseField name="username" type="string">
+      User's unique username
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      User's full name
+    </ResponseField>
+
+    <ResponseField name="avatar" type="string">
+      URL to user's avatar image
+    </ResponseField>
+
+    <ResponseField name="bio" type="string">
+      User's biography
+    </ResponseField>
+
+    <ResponseField name="location" type="object">
+      <Expandable title="properties">
+        <ResponseField name="type" type="string">
+          GeoJSON type (always "Point")
+        </ResponseField>
+
+        <ResponseField name="coordinates" type="number[]">
+          Array of [longitude, latitude]
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="birthdate" type="string">
+      User's birthdate in ISO 8601 format
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      Custom public metadata
+    </ResponseField>
+
+    <ResponseField name="suspensions" type="array">
+      Array of active suspensions (empty for new users)
+    </ResponseField>
+
+    <ResponseField name="reputation" type="number">
+      User's reputation score (starts at 0)
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      Account creation timestamp
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string">
+      Last update timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Required Fields - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing required fields",
+      "code": "auth/missing-fields"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "auth/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 ---
 

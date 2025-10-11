@@ -1,0 +1,59 @@
+---
+title: "Use Update Comment"
+---
+
+# `useUpdateComment`
+
+## Overview
+
+The `useUpdateComment` hook allows you to update the content of a specific comment. This is useful for enabling comment editing functionality in your application.
+
+
+## Usage Example
+
+```tsx
+import { useUpdateComment } from "@replyke/react-js";
+
+function EditComment({ commentId }: { commentId: string }) {
+  const updateComment = useUpdateComment();
+
+  const handleUpdateComment = async () => {
+    try {
+      const updatedComment = await updateComment({
+        commentId,
+        content: "This is the updated comment content!",
+      });
+
+      console.log("Comment updated successfully:", updatedComment);
+    } catch (error) {
+      console.error("Failed to update comment:", error.message);
+    }
+  };
+
+  return <button onClick={handleUpdateComment}>Update Comment</button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+
+<ParamField path="commentId" type="string" required>
+  The ID of the comment to update.
+</ParamField>
+
+<ParamField path="content" type="string" required>
+  The updated content for the comment.
+</ParamField>
+
+### Returns
+
+The function resolves with the updated comment object:
+
+
+<ResponseField name="Updated comment" type="Comment">
+  The details of the updated comment.
+</ResponseField>

@@ -1,0 +1,70 @@
+---
+title: "Delete Comment"
+api: "DELETE /:projectId/comments/:commentId"
+description: "Delete a comment from the project"
+auth: "bearer"
+---
+
+Deletes a comment from the project. Only the original author or a master client can delete the comment. Decreases the author's reputation. Recursively updates all replies to mark their parent as deleted (`parentDeletedAt`).
+
+## Path Parameters
+
+<ParamField path="commentId" type="string" required>
+  The ID of the comment to delete
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Returns 204 No Content on successful deletion
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Comment ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing comment ID",
+      "code": "comment/missing-comment-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Not Authorized - 403 Forbidden">
+    ```json
+    {
+      "error": "You do not have permission to delete this comment.",
+      "code": "comment/not-authorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Comment not found",
+      "code": "comment/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Server error",
+      "code": "comment/server-error",
+      "details": "[error message]"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Only the comment's author or a master client may delete the comment.
+- Upon deletion, the comment author's reputation is reduced.
+- All child replies have their `parentDeletedAt` timestamp updated recursively.
+- Replies are not deleted — they are marked as having a deleted parent.

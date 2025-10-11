@@ -1,0 +1,72 @@
+---
+title: "Get Root List"
+api: "GET /:projectId/lists/root"
+description: "Retrieve the authenticated user's root list"
+auth: "bearer"
+---
+
+Retrieves the authenticated user's root list. If it doesn't exist, a new one is created automatically.
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique list identifier
+</ResponseField>
+
+<ResponseField name="projectId" type="string">
+  Project identifier
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the user who owns the list
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the list (always "root" for root lists)
+</ResponseField>
+
+<ResponseField name="isRoot" type="boolean">
+  Indicates this is a root list (always true)
+</ResponseField>
+
+<ResponseField name="parentId" type="string">
+  Parent list ID (always null for root lists)
+</ResponseField>
+
+<ResponseField name="entityIds" type="array">
+  Array of entity IDs saved in this list
+</ResponseField>
+
+<ResponseField name="subLists" type="array">
+  Array of nested sub-lists
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Creation timestamp in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Server error",
+      "code": "list/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Each user has a single root list per project.
+- If the root list does not exist, it will be created automatically.
+- The response includes all populated sub-lists and entity IDs if available.

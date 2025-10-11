@@ -1,0 +1,69 @@
+---
+title: "Delete List"
+api: "DELETE /:projectId/lists/:listId"
+description: "Delete a sub-list owned by the authenticated user"
+auth: "bearer"
+---
+
+Deletes a sub-list owned by the authenticated user. Root lists cannot be deleted.
+
+## Path Parameters
+
+<ParamField path="listId" type="string" required>
+  The ID of the list to delete
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  Returns 204 No Content on successful deletion
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing List ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing list ID",
+      "code": "list/invalid-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Root List Deletion Forbidden - 403 Forbidden">
+    ```json
+    {
+      "error": "Root lists cannot be deleted",
+      "code": "list/cannot-delete-root"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="List Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "List not found",
+      "code": "list/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Server error",
+      "code": "list/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Only sub-lists (lists with a non-null `parentId`) can be deleted.
+- Returns `204 No Content` on successful deletion.
+- Root lists are protected and cannot be deleted.

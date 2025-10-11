@@ -1,101 +1,153 @@
 ---
 title: "Fetch User By Foreign Id"
+api: "GET /:projectId/users/by-foreign-id"
+description: "Get or create user by their external foreign ID"
 ---
-
-# Get or Create User by Foreign ID
-
-## Endpoint
-
-**URL:** `api.replyke.com/api/v6/:projectId/users/by-foreign-id`
-
-**Method:** `GET`
-
-**Authentication Required:** No
-
----
-
-## Description
 
 Fetches a user by their `foreignId`. If no user exists, creates a new one. Also updates existing users if provided data differs.
 
----
+## Query Parameters
 
-## Request
+<ParamField query="foreignId" type="string" required>
+  A unique external user identifier
+</ParamField>
 
-### Query Parameters
+<ParamField query="name" type="string">
+  User's display name
+</ParamField>
 
-| Parameter        | Type            | Required | Description                                                |
-| ---------------- | --------------- | -------- | ---------------------------------------------------------- |
-| `foreignId`      | `string`        | Yes      | A unique external user identifier.                         |
-| `name`           | `string`        | No       | User's display name.                                       |
-| `username`       | `string`        | No       | User's handle.                                             |
-| `avatar`         | `string`        | No       | URL to the user's avatar image.                            |
-| `bio`            | `string`        | No       | User bio or description.                                   |
-| `metadata`       | `string` (JSON) | No       | JSON string of additional user metadata.                   |
-| `secureMetadata` | `string` (JSON) | No       | JSON string of secure metadata (not returned in response). |
+<ParamField query="username" type="string">
+  User's handle/username
+</ParamField>
 
-### Example Request
+<ParamField query="avatar" type="string">
+  URL to the user's avatar image
+</ParamField>
 
-```sh
-GET /proj1234/users/by-foreign-id?foreignId=abc123&name=Jane&username=janedoe&metadata={"lang":"en"}
-```
+<ParamField query="bio" type="string">
+  User bio or description
+</ParamField>
 
----
+<ParamField query="metadata" type="string">
+  JSON string of additional user metadata
+</ParamField>
+
+<ParamField query="secureMetadata" type="string">
+  JSON string of secure metadata (not returned in response)
+</ParamField>
 
 ## Response
 
-### Success Response (200 OK or 201 Created)
+<ResponseField name="user" type="object">
+  The user object
 
-```json
-{
-  "user": {
-    "id": "67890",
-    "projectId": "12345",
-    "foreignId": "abc123",
-    "name": "Jane",
-    "username": "janedoe",
-    "avatar": "https://example.com/avatar.jpg",
-    "bio": "Software Engineer",
-    "birthdate": null,
-    "reputation": 0,
-    "location": null,
-    "suspension": {
-      "isSuspended": false,
-      "reason": null,
-      "startDate": null,
-      "endDate": null
-    },
-    "metadata": {
-      "lang": "en"
-    },
-    "createdAt": "2024-01-01T12:00:00.000Z",
-    "updatedAt": "2024-02-01T12:00:00.000Z"
-  },
-  "created": true,
-  "updated": false
-}
-```
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      User's unique identifier
+    </ResponseField>
 
-### Error Responses
+    <ResponseField name="projectId" type="string">
+      ID of the project this user belongs to
+    </ResponseField>
 
-#### Missing or Invalid Foreign ID (400 Bad Request)
+    <ResponseField name="foreignId" type="string">
+      External reference ID
+    </ResponseField>
 
-```json
-{
-  "error": "Missing or invalid foreign user ID.",
-  "code": "user/invalid-identifier"
-}
-```
+    <ResponseField name="name" type="string">
+      User's full name
+    </ResponseField>
 
-#### Server Error (500 Internal Server Error)
+    <ResponseField name="username" type="string">
+      User's username
+    </ResponseField>
 
-```json
-{
-  "error": "Internal server error",
-  "code": "user/server-error",
-  "details": "<Error message>"
-}
-```
+    <ResponseField name="avatar" type="string">
+      URL to user's avatar image
+    </ResponseField>
+
+    <ResponseField name="bio" type="string">
+      User's biography
+    </ResponseField>
+
+    <ResponseField name="birthdate" type="string | null">
+      User's birthdate
+    </ResponseField>
+
+    <ResponseField name="reputation" type="number">
+      User's reputation score
+    </ResponseField>
+
+    <ResponseField name="location" type="object | null">
+      User's location
+    </ResponseField>
+
+    <ResponseField name="suspension" type="object">
+      Suspension status
+
+      <Expandable title="properties">
+        <ResponseField name="isSuspended" type="boolean">
+          Whether the user is suspended
+        </ResponseField>
+
+        <ResponseField name="reason" type="string | null">
+          Suspension reason if applicable
+        </ResponseField>
+
+        <ResponseField name="startDate" type="string | null">
+          Suspension start date
+        </ResponseField>
+
+        <ResponseField name="endDate" type="string | null">
+          Suspension end date
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      Custom public metadata
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      Account creation timestamp
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string">
+      Last update timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="created" type="boolean">
+  Whether the user was created during this request
+</ResponseField>
+
+<ResponseField name="updated" type="boolean">
+  Whether the user was updated during this request
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing or Invalid Foreign ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing or invalid foreign user ID.",
+      "code": "user/invalid-identifier"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "user/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 ---
 

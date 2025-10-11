@@ -1,0 +1,94 @@
+---
+title: "Create Sub-List"
+api: "POST /:projectId/lists/:listId/sub-lists"
+description: "Create a new sub-list under a parent list"
+auth: "bearer"
+---
+
+Creates a new sub-list (nested list) under the specified parent list.
+
+## Path Parameters
+
+<ParamField path="listId" type="string" required>
+  ID of the parent list to nest under
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="listName" type="string" required>
+  Name of the new sub-list
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique list identifier
+</ResponseField>
+
+<ResponseField name="projectId" type="string">
+  Project identifier
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the user who owns the list
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Name of the list
+</ResponseField>
+
+<ResponseField name="parentId" type="string">
+  ID of the parent list
+</ResponseField>
+
+<ResponseField name="entityIds" type="array">
+  Array of entity IDs saved in this list
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Creation timestamp in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Parameters - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing required parameters in request body",
+      "code": "list/missing-parameters"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid Parent List - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid parent list ID for sub-list",
+      "code": "list/invalid-parent"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Server error",
+      "code": "list/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- The authenticated user's ID is automatically associated with the new list.
+- Only existing parent lists can be used for sub-list creation.
+- The response includes the populated list details.

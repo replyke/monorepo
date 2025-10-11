@@ -1,0 +1,88 @@
+---
+title: "Update Comment"
+api: "PATCH /:projectId/comments/:commentId"
+description: "Update an existing comment's content"
+auth: "bearer"
+---
+
+Updates the content of an existing comment. Only the original author or a master client may perform this operation.
+
+## Path Parameters
+
+<ParamField path="commentId" type="string" required>
+  The ID of the comment to update
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="content" type="string" required>
+  The updated comment content
+</ParamField>
+
+## Response
+
+Returns the updated comment object.
+
+<ResponseField name="id" type="string">
+  Unique comment identifier
+</ResponseField>
+
+<ResponseField name="entityId" type="string">
+  ID of the entity this comment belongs to
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  Updated comment content
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Data - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing required data",
+      "code": "comment/invalid-request"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Forbidden - 403 Forbidden">
+    ```json
+    {
+      "error": "You do not have permission to update this comment.",
+      "code": "comment/forbidden"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Comment not found",
+      "code": "comment/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "comment/server-error",
+      "details": "[error message]"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Only the author of the comment or a master client can update a comment.
+- If the comment doesn't exist or the user isn't authorized, appropriate error responses are returned.

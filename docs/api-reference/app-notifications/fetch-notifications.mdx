@@ -1,0 +1,106 @@
+---
+title: "Get App Notifications"
+api: "GET /:projectId/app-notifications"
+description: "Retrieve a paginated list of app notifications for the authenticated user"
+auth: "bearer"
+---
+
+Retrieve a paginated list of app notifications for the authenticated user, ordered by most recent first.
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number (must be a whole number >= 1)
+</ParamField>
+
+<ParamField query="limit" type="number" default="5">
+  Number of notifications to return (max: 50)
+</ParamField>
+
+## Response
+
+Returns an array of notification objects:
+
+<ResponseField name="notifications" type="array">
+  <Expandable title="notification object">
+    <ResponseField name="id" type="string">
+      Unique notification identifier
+    </ResponseField>
+    <ResponseField name="userId" type="string">
+      ID of the user receiving the notification
+    </ResponseField>
+    <ResponseField name="projectId" type="string">
+      Project identifier
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      Notification type (e.g., "new-follow", "comment-reply")
+    </ResponseField>
+    <ResponseField name="action" type="string">
+      Action associated with the notification (e.g., "open-profile")
+    </ResponseField>
+    <ResponseField name="metadata" type="object">
+      <Expandable title="properties">
+        <ResponseField name="initiatorId" type="string">
+          ID of the user who triggered the notification
+        </ResponseField>
+        <ResponseField name="initiatorName" type="string">
+          Name of the initiator
+        </ResponseField>
+        <ResponseField name="initiatorUsername" type="string">
+          Username of the initiator
+        </ResponseField>
+        <ResponseField name="initiatorAvatar" type="string">
+          URL to the initiator's avatar image
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      Timestamp when notification was created
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      Timestamp when notification was last updated
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Page - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid request: 'page' must be a whole number greater than 0",
+      "code": "app-notification/invalid-page"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid Limit - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid request: limit must be a number",
+      "code": "app-notification/invalid-limit"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "app-notification/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- Pagination is supported via `page` and `limit` query parameters
+- Maximum value for `limit` is 50, default is 5
+- Notifications are returned in reverse chronological order (most recent first)
+- Rate limiting: 100 requests per 5 minutes

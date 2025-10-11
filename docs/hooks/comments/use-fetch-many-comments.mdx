@@ -1,0 +1,83 @@
+---
+title: "Use Fetch Many Comments"
+---
+
+# `useFetchComments`
+
+## Overview
+
+The `useFetchManyComments` hook allows you to retrieve a list of comments based on various filters, such as the associated entity, user, or parent comment. It supports sorting, pagination, and optional inclusion of the related entity data.
+
+
+## Usage Example
+
+```tsx
+import { useFetchManyComments } from "@replyke/react-js";
+
+function CommentsList({ entityId }: { entityId: string }) {
+  const fetchManyComments = useFetchManyComments();
+
+  const handleFetchComments = async () => {
+    try {
+      const comments = await fetchManyComments({
+        entityId,
+        sortBy: "top",
+        page: 1,
+        limit: 10,
+        includeEntity: false,
+      });
+
+      console.log("Fetched comments:", comments);
+    } catch (error) {
+      console.error("Failed to fetch comments:", error.message);
+    }
+  };
+
+  return <button onClick={handleFetchComments}>Fetch Comments</button>;
+}
+```
+
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+
+<ParamField path="entityId" type="string \">
+  undefined`
+</ParamField>
+
+<ParamField path="userId" type="string \">
+  undefined`
+</ParamField>
+
+<ParamField path="parentId" type="string \">
+  undefined`
+</ParamField>
+
+<ParamField path="sortBy" type="CommentsSortByOptions">
+  The sorting criteria for comments (e.g., `top`, `new`). Defaults to 'new'.
+</ParamField>
+
+<ParamField path="page" type="number" required>
+  The page number for pagination.
+</ParamField>
+
+<ParamField path="limit" type="number \">
+  No
+</ParamField>
+
+<ParamField path="includeEntity" type="boolean \">
+  No
+</ParamField>
+
+### Returns
+
+The function resolves with an array of comments:
+
+
+<ResponseField name="Comments" type="Comment[]">
+  A list of comments matching the criteria.
+</ResponseField>

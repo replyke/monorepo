@@ -1,0 +1,78 @@
+---
+title: "Sign Testing JWT"
+api: "POST /:projectId/crypto/sign-testing-jwt"
+description: "Generate a signed JWT for testing purposes"
+---
+
+Generate a signed JWT for testing purposes using a provided private key, project ID, and payload.
+
+<Warning>
+This endpoint is intended for testing and should not be exposed in production environments.
+</Warning>
+
+## Body Parameters
+
+<ParamField body="projectId" type="string" required>
+  Project ID to use as the token issuer
+</ParamField>
+
+<ParamField body="privateKey" type="string" required>
+  Private key in base64-encoded PEM format
+</ParamField>
+
+<ParamField body="payload" type="object" required>
+  Payload to embed in the token. Must include an `id` field
+  <Expandable title="properties">
+    <ParamField body="id" type="string" required>
+      User identifier (will be used as the `sub` in the JWT)
+    </ParamField>
+    <ParamField body="name" type="string">
+      Optional user name
+    </ParamField>
+    <ParamField body="role" type="string">
+      Optional user role
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+Returns a signed JWT string:
+
+<ResponseField name="token" type="string">
+  The signed JWT token
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Params - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing user id in payload.",
+      "code": "crypto/missing-params"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "crypto/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- **For testing purposes only** - do not expose in production
+- The `payload` must contain an `id` field which will be used as the `sub` in the JWT
+- The signed token uses the RS256 algorithm and is valid for 5 minutes
+- The audience (`aud`) is set to `replyke.com`
+- No authentication required (intentionally, for testing)
+- Use this endpoint to generate test tokens for local development

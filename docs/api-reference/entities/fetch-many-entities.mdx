@@ -1,0 +1,139 @@
+---
+title: "Fetch Entities"
+api: "GET /:projectId/entities"
+description: "Fetch a list of entities with pagination, sorting, and advanced filtering"
+---
+
+Fetches a list of entities with full support for pagination, sorting, and advanced filtering. Can be accessed with or without authentication.
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number
+</ParamField>
+
+<ParamField query="limit" type="number" default="10">
+  Number of results per page (max: 100)
+</ParamField>
+
+<ParamField query="sortBy" type="string" default="hot">
+  Sorting strategy: `hot` (default), `top`, `new`, or `controversial`
+</ParamField>
+
+<ParamField query="timeFrame" type="string">
+  Filter by creation time: `hour`, `day`, `week`, `month`, `year`
+</ParamField>
+
+<ParamField query="sourceId" type="string">
+  Filter entities by a specific sourceId
+</ParamField>
+
+<ParamField query="userId" type="string">
+  Filter by a specific userId
+</ParamField>
+
+<ParamField query="followedOnly" type="string">
+  Set to `true` to only show entities by followed users (requires authentication)
+</ParamField>
+
+<ParamField query="keywordsFilters" type="object">
+  Filter entities by keyword inclusion/exclusion
+</ParamField>
+
+<ParamField query="metadataFilters" type="object">
+  Filter entities by metadata keys and values
+</ParamField>
+
+<ParamField query="titleFilters" type="object">
+  Filter by title presence or matching values
+</ParamField>
+
+<ParamField query="contentFilters" type="object">
+  Filter by content presence or matching values
+</ParamField>
+
+<ParamField query="attachmentsFilters" type="object">
+  Filter based on whether attachments exist
+</ParamField>
+
+<ParamField query="locationFilters" type="object">
+  Filter by location with radius, latitude, and longitude
+</ParamField>
+
+## Response
+
+Returns an array of entity objects.
+
+<ResponseField name="id" type="string">
+  Unique entity identifier
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the user who created the entity
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Entity title
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  Entity content
+</ResponseField>
+
+<ResponseField name="keywords" type="array">
+  Array of keywords
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Creation timestamp in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Limit - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid request: limit must be a positive number.",
+      "code": "entity/invalid-limit"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid Page - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid request: page must be a whole number greater than 0.",
+      "code": "entity/invalid-page"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "entity/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+### Sort Options
+- **hot**: Ranked by score (default)
+- **top**: Most upvoted
+- **new**: Most recent
+- **controversial**: Balanced upvotes/downvotes
+
+### Filtering
+- When `followedOnly` is true, the response includes only posts by followed users (must be logged in)
+- Supports complex filters including geospatial queries, keyword matching, content presence, and metadata rules

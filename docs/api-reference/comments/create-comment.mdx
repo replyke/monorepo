@@ -1,0 +1,174 @@
+---
+title: "Create Comment"
+api: "POST /:projectId/comments"
+description: "Create a new comment or reply on an entity"
+auth: "bearer"
+---
+
+Creates a new comment or reply on a specific entity. Comments can include text, a GIF, mentions, attachments, and metadata. Only authenticated users (or master clients) may create comments.
+
+## Body Parameters
+
+<ParamField body="entityId" type="string" required>
+  ID of the entity to attach the comment to
+</ParamField>
+
+<ParamField body="content" type="string">
+  Text content of the comment. Required unless `gif` is provided.
+</ParamField>
+
+<ParamField body="gif" type="object">
+  <Expandable title="IGif properties">
+    <ParamField body="altText" type="string">
+      Alternative text for the GIF
+    </ParamField>
+    <ParamField body="gifPreviewUrl" type="string">
+      Preview URL for the GIF
+    </ParamField>
+    <ParamField body="gifUrl" type="string">
+      Full GIF URL
+    </ParamField>
+    <ParamField body="id" type="string">
+      GIF identifier
+    </ParamField>
+    <ParamField body="url" type="string">
+      URL to the GIF
+    </ParamField>
+    <ParamField body="aspectRatio" type="string">
+      Aspect ratio of the GIF
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="mentions" type="array">
+  List of mentioned users with `{ id: string, username: string }` format
+</ParamField>
+
+<ParamField body="parentId" type="string">
+  ID of the parent comment (for replies)
+</ParamField>
+
+<ParamField body="referencedCommentId" type="string">
+  ID of a referenced (quoted) comment
+</ParamField>
+
+<ParamField body="foreignId" type="string">
+  Optional external reference ID
+</ParamField>
+
+<ParamField body="attachments" type="array">
+  List of attached files or resources
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Custom metadata for this comment
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Allowed only for master clients. Posts the comment on behalf of a user.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique comment identifier
+</ResponseField>
+
+<ResponseField name="entityId" type="string">
+  ID of the entity this comment belongs to
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the user who created the comment
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  Comment content
+</ResponseField>
+
+<ResponseField name="mentions" type="array">
+  List of mentioned users
+</ResponseField>
+
+<ResponseField name="gif" type="object">
+  GIF object if included
+</ResponseField>
+
+<ResponseField name="attachments" type="array">
+  Attached files or resources
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom metadata
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Creation timestamp in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Entity ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing entity ID",
+      "code": "comment/missing-entity-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Missing Content - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing required comment content",
+      "code": "comment/missing-content"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Missing User ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing user ID",
+      "code": "comment/missing-user-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Entity Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Entity not found",
+      "code": "comment/entity-not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "comment/server-error",
+      "details": "[error message]"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Either `content` or `gif` must be present.
+- If `userId` is provided, the request must come from a master client.
+- Reputation is awarded to the user who posts the comment.
+- Notifications are triggered automatically:
+  - To the entity author
+  - To the parent comment author (for replies)
+  - To each mentioned user (excluding duplicates)
+- API usage for comments is tracked via Redis.

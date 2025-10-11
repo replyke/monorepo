@@ -1,0 +1,147 @@
+---
+title: "Use Fetch Following Count"
+---
+
+# `useFetchFollowingCount`
+
+## Overview
+
+The `useFetchFollowingCount` hook fetches the total number of users that the current logged-in user is following. This is useful for displaying following counts in user profiles or dashboard statistics.
+
+## Usage Example
+
+```tsx
+import { useFetchFollowingCount } from "@replyke/react-js";
+
+function MyFollowingCounter() {
+  const fetchFollowingCount = useFetchFollowingCount();
+
+  const getMyFollowingCount = async () => {
+    try {
+      const result = await fetchFollowingCount();
+      console.log(`You are following ${result.count} users`);
+    } catch (error) {
+      console.error("Failed to fetch following count:", error.message);
+    }
+  };
+
+  return <button onClick={getMyFollowingCount}>Check Who I'm Following</button>;
+}
+```
+
+## Advanced Usage with State
+
+```tsx
+import { useFetchFollowingCount } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function FollowingCountDisplay() {
+  const fetchFollowingCount = useFetchFollowingCount();
+  const [count, setCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await fetchFollowingCount();
+        setCount(result.count);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load count');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCount();
+  }, [fetchFollowingCount]);
+
+  if (loading) return <div>Loading following count...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div className="following-count">
+      <h3>{count ?? 0}</h3>
+      <p>Following</p>
+    </div>
+  );
+}
+```
+
+## Usage in Profile Dashboard
+
+```tsx
+import { useFetchFollowingCount } from "@replyke/react-js";
+import { useEffect, useState } from "react";
+
+interface ProfileStats {
+  following: number;
+  // ... other stats
+}
+
+function ProfileStatsDashboard() {
+  const fetchFollowingCount = useFetchFollowingCount();
+  const [stats, setStats] = useState<ProfileStats>({ following: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const followingResult = await fetchFollowingCount();
+        setStats(prev => ({ ...prev, following: followingResult.count }));
+      } catch (error) {
+        console.error("Failed to load profile stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStats();
+  }, [fetchFollowingCount]);
+
+  if (loading) return <div>Loading profile stats...</div>;
+
+  return (
+    <div className="profile-stats-dashboard">
+      <div className="stat-card">
+        <div className="stat-number">{stats.following.toLocaleString()}</div>
+        <div className="stat-label">Following</div>
+        <div className="stat-description">Users you follow</div>
+      </div>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that takes no parameters.
+
+### Returns
+
+The function returns a Promise that resolves to an object containing:
+
+
+<ResponseField name="count" type="number">
+  The total number of users you are following
+</ResponseField>
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user is logged in
+
+### Use Cases
+
+This hook is commonly used in:
+- User profile pages to display following counts
+- Dashboard statistics and analytics
+- Social media style metrics
+- Navigation badges showing following numbers
+- User engagement tracking
+- Profile completion indicators

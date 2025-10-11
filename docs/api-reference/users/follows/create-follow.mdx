@@ -1,0 +1,91 @@
+---
+title: "Create Follow"
+api: "POST /:projectId/users/:userId/follow"
+description: "Follow another user"
+auth: "bearer"
+---
+
+Create a follow relationship between the authenticated user and another user. This establishes a one-way follow relationship where the authenticated user will follow the specified user.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  ID of the user to follow
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique identifier for the follow relationship
+</ResponseField>
+
+<ResponseField name="followerId" type="string">
+  ID of the user who is following (current authenticated user)
+</ResponseField>
+
+<ResponseField name="followedId" type="string">
+  ID of the user being followed
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Timestamp when the follow relationship was created
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid User ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid or missing userId",
+      "code": "follow/invalid-user-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Self-Follow Attempt - 400 Bad Request">
+    ```json
+    {
+      "error": "Cannot follow yourself",
+      "code": "follow/self-follow"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="User Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "User not found",
+      "code": "follow/user-not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Already Following - 409 Conflict">
+    ```json
+    {
+      "error": "Already following this user",
+      "code": "follow/already-following"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "follow/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- This endpoint creates a `Follow` relationship in the database
+- Follows are one-way relationships that do not require approval
+- Users cannot follow themselves
+- Duplicate follow requests return a 409 status
+- Rate limiting: 75 requests per 5 minutes

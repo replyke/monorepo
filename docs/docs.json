@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "Replyke Documentation",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#D22F55",
+    "light": "#F06789",
+    "dark": "#9E1E3E"
   },
   "favicon": "/favicon.webp",
   "navigation": {
@@ -24,10 +24,7 @@
           },
           {
             "group": "SDKs",
-            "pages": [
-              "nodejs-sdk",
-              "js-sdk"
-            ]
+            "pages": ["nodejs-sdk", "js-sdk"]
           }
         ]
       },
@@ -36,9 +33,7 @@
         "groups": [
           {
             "group": "React & React Native",
-            "pages": [
-              "sdk/getting-started"
-            ]
+            "pages": ["sdk/getting-started"]
           },
           {
             "group": "Authentication",
@@ -50,23 +45,19 @@
           },
           {
             "group": "Users",
-            "pages": [
-              "sdk/users/use-user-hook"
-            ]
+            "pages": ["sdk/users/use-user-hook"]
           },
           {
             "group": "Relationships",
             "pages": [
               "sdk/relationships/overview",
-              "sdk/relationships/hook"
+              "sdk/relationships/use-follow-manager",
+              "sdk/relationships/use-connection-manager"
             ]
           },
           {
             "group": "Entities",
-            "pages": [
-              "sdk/entities/overview",
-              "sdk/entities/provider-and-hook"
-            ]
+            "pages": ["sdk/entities/overview", "sdk/entities/provider-and-hook"]
           },
           {
             "group": "Entity Lists",
@@ -116,83 +107,114 @@
           },
           {
             "group": "Moderation",
+            "pages": ["sdk/moderation"]
+          }
+        ]
+      },
+      {
+        "tab": "Hooks Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["hooks"]
+          },
+          {
+            "group": "Crypto Hooks",
+            "pages": ["hooks/crypto/use-sign-testing-jwt"]
+          },
+          {
+            "group": "User Hooks",
             "pages": [
-              "sdk/moderation"
+              "hooks/users/use-fetch-user",
+              "hooks/users/use-fetch-user-by-foreign-id",
+              "hooks/users/use-fetch-user-followers-count",
+              "hooks/users/use-fetch-user-following-count",
+              "hooks/users/use-fetch-user-suggestions",
+              "hooks/users/use-mentions",
+              "hooks/users/use-check-username-availability",
+              "hooks/users/use-update-user"
             ]
           },
           {
-            "group": "Hooks - Crypto",
+            "group": "Follow Hooks",
             "pages": [
-              "sdk/hooks/crypto/use-sign-testing-jwt"
+              "hooks/follows/use-follow-user",
+              "hooks/follows/use-fetch-followers",
+              "hooks/follows/use-fetch-followers-by-user-id",
+              "hooks/follows/use-fetch-followers-count",
+              "hooks/follows/use-fetch-followers-count-by-user-id",
+              "hooks/follows/use-fetch-following",
+              "hooks/follows/use-fetch-following-by-user-id",
+              "hooks/follows/use-fetch-following-count",
+              "hooks/follows/use-fetch-following-count-by-user-id",
+              "hooks/follows/use-fetch-follow-status",
+              "hooks/follows/use-follow-manager",
+              "hooks/follows/use-unfollow-by-follow-id",
+              "hooks/follows/use-unfollow-user-by-user-id"
             ]
           },
           {
-            "group": "Hooks - Users",
+            "group": "Connection Hooks",
             "pages": [
-              "sdk/hooks/users/use-fetch-user",
-              "sdk/hooks/users/use-fetch-user-by-foreign-id",
-              "sdk/hooks/users/use-fetch-user-followers-count",
-              "sdk/hooks/users/use-fetch-user-following-count",
-              "sdk/hooks/users/use-fetch-user-suggestions",
-              "sdk/hooks/users/use-mentions",
-              "sdk/hooks/users/use-check-username-availability",
-              "sdk/hooks/users/use-update-user"
+              "hooks/connections/use-accept-connection",
+              "hooks/connections/use-connection-manager",
+              "hooks/connections/use-decline-connection",
+              "hooks/connections/use-fetch-connections",
+              "hooks/connections/use-fetch-connections-by-user-id",
+              "hooks/connections/use-fetch-connections-count",
+              "hooks/connections/use-fetch-connections-count-by-user-id",
+              "hooks/connections/use-fetch-connection-status",
+              "hooks/connections/use-fetch-received-pending-connections",
+              "hooks/connections/use-fetch-sent-pending-connections",
+              "hooks/connections/use-remove-connection",
+              "hooks/connections/use-remove-connection-by-user-id",
+              "hooks/connections/use-request-connection"
             ]
           },
           {
-            "group": "Hooks - Follows",
+            "group": "Entity Hooks",
             "pages": [
-              "sdk/hooks/follows/use-follow-user"
+              "hooks/entities/use-create-entity",
+              "hooks/entities/use-fetch-entity",
+              "hooks/entities/use-fetch-entity-by-foreign-id",
+              "hooks/entities/use-fetch-entity-by-short-id",
+              "hooks/entities/use-update-entity",
+              "hooks/entities/use-entity-votes",
+              "hooks/entities/use-upvote-entity",
+              "hooks/entities/use-remove-entity-upvote",
+              "hooks/entities/use-downvote-entity",
+              "hooks/entities/use-remove-entity-downvote",
+              "hooks/entities/use-increment-entity-views",
+              "hooks/entities/use-delete-entity",
+              "hooks/entities/use-entity-data"
             ]
           },
           {
-            "group": "Hooks - Entities",
+            "group": "Comment Hooks",
             "pages": [
-              "sdk/hooks/entities/use-create-entity",
-              "sdk/hooks/entities/use-fetch-entity",
-              "sdk/hooks/entities/use-fetch-entity-by-foreign-id",
-              "sdk/hooks/entities/use-fetch-entity-by-short-id",
-              "sdk/hooks/entities/use-update-entity",
-              "sdk/hooks/entities/use-entity-votes",
-              "sdk/hooks/entities/use-upvote-entity",
-              "sdk/hooks/entities/use-remove-entity-upvote",
-              "sdk/hooks/entities/use-downvote-entity",
-              "sdk/hooks/entities/use-remove-entity-downvote",
-              "sdk/hooks/entities/use-increment-entity-views",
-              "sdk/hooks/entities/use-delete-entity",
-              "sdk/hooks/entities/use-entity-data"
+              "hooks/comments/use-create-comment",
+              "hooks/comments/use-fetch-comment",
+              "hooks/comments/use-fetch-comment-by-foreign-id",
+              "hooks/comments/use-fetch-many-comments",
+              "hooks/comments/use-update-comment",
+              "hooks/comments/use-comment-votes",
+              "hooks/comments/use-upvote-comment",
+              "hooks/comments/use-remove-comment-upvote",
+              "hooks/comments/use-downvote-comment",
+              "hooks/comments/use-remove-comment-downvote",
+              "hooks/comments/use-delete-comment",
+              "hooks/comments/use-comment-section-data",
+              "hooks/comments/use-entity-comments",
+              "hooks/comments/use-profile-comments"
             ]
           },
           {
-            "group": "Hooks - Comments",
-            "pages": [
-              "sdk/hooks/comments/use-create-comment",
-              "sdk/hooks/comments/use-fetch-comment",
-              "sdk/hooks/comments/use-fetch-comment-by-foreign-id",
-              "sdk/hooks/comments/use-fetch-many-comments",
-              "sdk/hooks/comments/use-update-comment",
-              "sdk/hooks/comments/use-comment-votes",
-              "sdk/hooks/comments/use-upvote-comment",
-              "sdk/hooks/comments/use-remove-comment-upvote",
-              "sdk/hooks/comments/use-downvote-comment",
-              "sdk/hooks/comments/use-remove-comment-downvote",
-              "sdk/hooks/comments/use-delete-comment",
-              "sdk/hooks/comments/use-comment-section-data",
-              "sdk/hooks/comments/use-entity-comments",
-              "sdk/hooks/comments/use-profile-comments"
-            ]
+            "group": "Storage Hooks",
+            "pages": ["hooks/storage/use-upload-file"]
           },
           {
-            "group": "Hooks - Storage",
-            "pages": [
-              "sdk/hooks/storage/use-upload-file"
-            ]
-          },
-          {
-            "group": "Hooks - Moderation",
-            "pages": [
-              "sdk/hooks/moderation/use-create-report"
-            ]
+            "group": "Moderation Hooks",
+            "pages": ["hooks/moderation/use-create-report"]
           }
         ]
       },
@@ -228,6 +250,19 @@
             ]
           },
           {
+            "group": "User Follow Operations",
+            "pages": [
+              "api-reference/users/follows/overview",
+              "api-reference/users/follows/create-follow",
+              "api-reference/users/follows/delete-follow",
+              "api-reference/users/follows/fetch-follow-status",
+              "api-reference/users/follows/fetch-followers",
+              "api-reference/users/follows/fetch-followers-count",
+              "api-reference/users/follows/fetch-following",
+              "api-reference/users/follows/fetch-following-count"
+            ]
+          },
+          {
             "group": "Follow Endpoints",
             "pages": [
               "api-reference/follows/overview",
@@ -239,46 +274,93 @@
             ]
           },
           {
+            "group": "User Connection Operations",
+            "pages": [
+              "api-reference/users/connections/overview",
+              "api-reference/users/connections/request-connection",
+              "api-reference/users/connections/fetch-connection-status",
+              "api-reference/users/connections/fetch-connections-by-user-id",
+              "api-reference/users/connections/fetch-connections-count-by-user-id",
+              "api-reference/users/connections/remove-connection-by-user-id"
+            ]
+          },
+          {
+            "group": "Connection Endpoints",
+            "pages": [
+              "api-reference/connections/overview",
+              "api-reference/connections/fetch-connections",
+              "api-reference/connections/fetch-connections-count",
+              "api-reference/connections/fetch-sent-pending-connections",
+              "api-reference/connections/fetch-received-pending-connections",
+              "api-reference/connections/accept-connection",
+              "api-reference/connections/decline-connection",
+              "api-reference/connections/remove-connection"
+            ]
+          },
+          {
             "group": "Entity Endpoints",
             "pages": [
-              "api-reference/entities/overview"
+              "api-reference/entities/create-entity",
+              "api-reference/entities/fetch-entity",
+              "api-reference/entities/fetch-entity-by-foreign-id",
+              "api-reference/entities/fetch-entity-by-short-id",
+              "api-reference/entities/fetch-many-entities",
+              "api-reference/entities/update-entity",
+              "api-reference/entities/upvote-entity",
+              "api-reference/entities/downvote-entity",
+              "api-reference/entities/remove-entity-upvote",
+              "api-reference/entities/remove-entity-downvote",
+              "api-reference/entities/increment-entity-views",
+              "api-reference/entities/delete-entity"
             ]
           },
           {
             "group": "Comment Endpoints",
             "pages": [
-              "api-reference/comments/overview"
+              "api-reference/comments/create-comment",
+              "api-reference/comments/fetch-comment",
+              "api-reference/comments/fetch-comment-by-foreign-id",
+              "api-reference/comments/fetch-many-comments",
+              "api-reference/comments/update-comment",
+              "api-reference/comments/upvote-comment",
+              "api-reference/comments/downvote-comment",
+              "api-reference/comments/remove-comment-upvote",
+              "api-reference/comments/remove-comment-downvote",
+              "api-reference/comments/delete-comment"
             ]
           },
           {
             "group": "List Endpoints",
             "pages": [
-              "api-reference/lists/overview"
+              "api-reference/lists/create-new-list",
+              "api-reference/lists/fetch-root-list",
+              "api-reference/lists/fetch-sub-lists",
+              "api-reference/lists/is-entity-saved",
+              "api-reference/lists/update-list",
+              "api-reference/lists/add-entity-to-list",
+              "api-reference/lists/remove-entity-from-list",
+              "api-reference/lists/delete-list"
             ]
           },
           {
             "group": "App Notification Endpoints",
             "pages": [
-              "api-reference/app-notifications/overview"
-            ]
-          },
-          {
-            "group": "Crypto Endpoints",
-            "pages": [
-              "api-reference/crypto/overview"
+              "api-reference/app-notifications/fetch-notifications",
+              "api-reference/app-notifications/count-unread-notification",
+              "api-reference/app-notifications/mark-notification-as-read"
             ]
           },
           {
             "group": "Storage Endpoints",
-            "pages": [
-              "api-reference/storage/overview"
-            ]
+            "pages": ["api-reference/storage/upload-file"]
           },
           {
             "group": "Moderation Endpoints",
-            "pages": [
-              "api-reference/moderation/overview"
-            ]
+            "pages": ["api-reference/moderation/create-report"]
+          },
+          {
+            "group": "Crypto Endpoints",
+            "pages": ["api-reference/crypto/sign-testing-jwt"]
           }
         ]
       },
@@ -292,6 +374,8 @@
               "data-models/entity",
               "data-models/comment",
               "data-models/list",
+              "data-models/connection",
+              "data-models/follow",
               "data-models/app-notification"
             ]
           }
@@ -309,14 +393,14 @@
     }
   },
   "logo": {
-    "light": "/logo/light.webp",
-    "dark": "/logo/dark.webp"
+    "light": "/logo/dark.webp",
+    "dark": "/logo/light.webp"
   },
   "navbar": {
     "links": [
       {
         "label": "Dashboard",
-        "href": "https://dashboard.replyke.com"
+        "href": "https://dash.replyke.com"
       }
     ]
   },
@@ -334,6 +418,17 @@
   "footer": {
     "socials": {
       "github": "https://github.com/replyke"
+    }
+  },
+  "api": {
+    "mdx": {
+      "server": "https://api.replyke.com/api/v6",
+      "playground": {
+        "mode": "interactive"
+      }
+    },
+    "auth": {
+      "method": "bearer"
     }
   }
 }

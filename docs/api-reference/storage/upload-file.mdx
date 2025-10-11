@@ -1,0 +1,90 @@
+---
+title: "Upload File"
+api: "POST /:projectId/storage"
+description: "Upload a file to project storage with custom path structure"
+auth: "bearer"
+---
+
+Upload a file to project storage. The file is saved using a path structure defined by `pathParts`. The filename is sanitized using transliteration.
+
+## Headers
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `multipart/form-data`
+</ParamField>
+
+## Body Parameters (multipart/form-data)
+
+<ParamField body="file" type="file" required>
+  The file to upload. Must not exceed 15MB.
+</ParamField>
+
+<ParamField body="pathParts" type="string" required>
+  A JSON stringified array of folder path segments (e.g., `["profile", "images"]`)
+</ParamField>
+
+## Response
+
+<ResponseField name="fileId" type="string">
+  Unique identifier for the uploaded file
+</ResponseField>
+
+<ResponseField name="relativePath" type="string">
+  Relative path to the file (e.g., "profile/images/photo.jpg")
+</ResponseField>
+
+<ResponseField name="publicPath" type="string">
+  Public URL to access the file
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing File - 400 Bad Request">
+    ```json
+    {
+      "error": "No file provided",
+      "code": "storage/no-file"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid Path Parts - 400 Bad Request">
+    ```json
+    {
+      "error": "pathParts must be an array of strings",
+      "code": "storage/invalid-path-parts"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="File Too Large - 413 Payload Too Large">
+    ```json
+    {
+      "error": "File size exceeds the allowed limit of 15MB",
+      "code": "storage/file-too-large"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "storage/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- The uploaded file is stored at the location specified by `pathParts`, with the filename sanitized
+- Returns a public URL to access the file
+- Maximum file size: 15MB
+- Content-Type must be `multipart/form-data`
+- Rate limiting: 50 requests per 5 minutes

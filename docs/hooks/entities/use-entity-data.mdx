@@ -1,0 +1,166 @@
+---
+title: "Use Entity Data"
+---
+
+# `useEntityData`
+
+## Overview
+
+The `useEntityData` hook is a centralized utility for managing and interacting with a single entity in your application. Unlike the individual hooks such as `useFetchEntity` or `useUpdateEntity`, this hook integrates several functionalities to provide a streamlined approach for fetching, updating, deleting, and voting on a specific entity. It also includes logic to increment views and handle optimistic updates.
+
+## Usage Example
+
+```tsx
+import { useEntityData } from "@replyke/react-js";
+
+function EntityDetails({ entityId }: { entityId: string }) {
+  const {
+    entity,
+    userUpvotedEntity,
+    userDownvotedEntity,
+    upvoteEntity,
+    removeEntityUpvote,
+    downvoteEntity,
+    removeEntityDownvote,
+    incrementEntityViews,
+    deleteEntity,
+  } = useEntityData({ entityId });
+
+  useEffect(() => {
+    incrementEntityViews();
+  }, [incrementEntityViews]);
+
+  if (!entity) return <p>Loading...</p>;
+
+  return (
+    <div>
+      <h1>{entity.title}</h1>
+      <p>{entity.content}</p>
+
+      <button onClick={userUpvotedEntity ? removeEntityUpvote : upvoteEntity}>
+        {userUpvotedEntity ? "Remove Upvote" : "Upvote"}
+      </button>
+
+      <button
+        onClick={userDownvotedEntity ? removeEntityDownvote : downvoteEntity}
+      >
+        {userDownvotedEntity ? "Remove Downvote" : "Downvote"}
+      </button>
+
+      <button onClick={deleteEntity}>Delete Entity</button>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook accepts an object with the following fields. None are mandatory individually, but at least one of the ID properties, or a complete entity object, must be provided:
+
+
+<ParamField path="entity" type="Entity">
+  If provided, skips fetching and uses this entity as the initial value.
+</ParamField>
+
+<ParamField path="entityId" type="string">
+  The ID of the entity to fetch.
+</ParamField>
+
+<ParamField path="foreignId" type="string">
+  A foreign ID to fetch the entity.
+</ParamField>
+
+<ParamField path="shortId" type="string">
+  A short ID to fetch the entity.
+</ParamField>
+
+<ParamField path="createIfNotFound" type="boolean">
+  If `true`, creates the entity if not found during fetching.
+</ParamField>
+
+### Returns
+
+The hook returns an object with the following fields:
+
+
+<ResponseField name="entity" type="Entity \">
+  null \
+</ResponseField>
+
+<ResponseField name="setEntity" type="<code>React.Dispatch&lt;React.SetStateAction&lt;Entity &#124; null &#124; undefined&gt;&gt;</code>">
+  The entity setter function.
+</ResponseField>
+
+<ResponseField name="userUpvotedEntity" type="boolean">
+  Indicates if the current user has upvoted the entity.
+</ResponseField>
+
+<ResponseField name="userDownvotedEntity" type="boolean">
+  Indicates if the current user has downvoted the entity.
+</ResponseField>
+
+<ResponseField name="upvoteEntity" type="() => void">
+  Function to upvote the entity.
+</ResponseField>
+
+<ResponseField name="removeEntityUpvote" type="() => void">
+  Function to remove the user's upvote.
+</ResponseField>
+
+<ResponseField name="downvoteEntity" type="() => void">
+  Function to downvote the entity.
+</ResponseField>
+
+<ResponseField name="removeEntityDownvote" type="() => void">
+  Function to remove the user's downvote.
+</ResponseField>
+
+<ResponseField name="updateEntity" type="(props: Pick<UpdateEntityProps, "update">) => Promise<Entity \">
+  undefined>`
+</ResponseField>
+
+<ResponseField name="incrementEntityViews" type="() => Promise<void>">
+  Function to increment the entity's view count.
+</ResponseField>
+
+<ResponseField name="deleteEntity" type="() => Promise<void>">
+  Function to delete the entity.
+</ResponseField>
+
+---
+
+## Features
+
+### Fetching Entity
+
+The hook automatically fetches the entity using one of the provided identifiers (`entityId`, `foreignId`, or `shortId`). If an `entity` object is passed as a parameter, fetching is skipped.
+
+### Voting Functionality
+
+The hook integrates voting logic, allowing users to upvote, remove upvotes, downvote, and remove downvotes on the entity. It tracks the user's current vote state (`userUpvotedEntity`, `userDownvotedEntity`).
+
+### Updating Entity
+
+The `updateEntity` function simplifies updating the entity's data and optimistically updates the local state upon success.
+
+### Incrementing Views
+
+The `incrementEntityViews` function ensures that views are incremented only once per session.
+
+### Deleting Entity
+
+The `deleteEntity` function allows deleting the entity and updates the local state to remove it.
+
+---
+
+## Best Practices
+
+- **Use `incrementEntityViews` in `useEffect`**: Ensure that the view count increments only once when the entity details are rendered.
+- **Optimistic Updates**: Leverage the optimistic updates provided by `updateEntity` to improve user experience.
+- **Error Handling**: Handle errors gracefully using the provided `handleError` utility.
+
+---
+
+This comprehensive utility is ideal for managing individual entities in dynamic applications, providing a rich set of features out of the box.

@@ -1,124 +1,133 @@
 ---
 title: "Update User"
+api: "PATCH /:projectId/users/:userId"
+description: "Update details of an existing user"
+auth: "bearer"
 ---
-
-# Update User
-
-## Endpoint
-
-**URL:** `api.replyke.com/api/v6/:projectId/users/:userId`
-
-**Method:** `PATCH`
-
-**Authentication Required:** Yes
-
----
-
-## Description
 
 Update details of an existing user. Only fields provided in the request will be modified. Triggers webhook validation before updating.
 
----
+## Path Parameters
 
-## Request
+<ParamField path="userId" type="string" required>
+  The unique ID of the user to update
+</ParamField>
 
-### Path Parameters
+## Body Parameters
 
-| Parameter | Type     | Required | Description         |
-| --------- | -------- | -------- | ------------------- |
-| `userId`  | `string` | Yes      | The ID of the user. |
+<Info>
+  The body must contain an `update` object with one or more of the following fields
+</Info>
 
-### Headers
+<ParamField body="update.name" type="string">
+  Updated full name
+</ParamField>
 
-| Header          | Type     | Required | Description                      |
-| --------------- | -------- | -------- | -------------------------------- |
-| `Authorization` | `string` | Yes      | Bearer token for authentication. |
+<ParamField body="update.username" type="string">
+  Updated username (will be sanitized and lowercased)
+</ParamField>
 
-### Body Parameters
+<ParamField body="update.avatar" type="string">
+  URL to the user's new avatar image
+</ParamField>
 
-The body must contain an `update` object with any of the following optional fields:
+<ParamField body="update.bio" type="string">
+  Updated user biography
+</ParamField>
 
-| Field            | Type                | Description                              |
-| ---------------- | ------------------- | ---------------------------------------- |
-| `name`           | `string`            | Updated name.                            |
-| `username`       | `string`            | Updated username (sanitized).            |
-| `avatar`         | `string` (URL)      | URL to the user's new avatar.            |
-| `bio`            | `string`            | User biography.                          |
-| `birthdate`      | `string` (ISO Date) | User's birthdate.                        |
-| `location`       | `object`            | Object with `longitude` and `latitude`.  |
-| `metadata`       | `object`            | Additional metadata.                     |
-| `secureMetadata` | `object`            | Secure metadata (used but not returned). |
+<ParamField body="update.birthdate" type="string">
+  User's birthdate in ISO 8601 format
+</ParamField>
 
-#### Example Request
+<ParamField body="update.location" type="object">
+  Object with `longitude` and `latitude` properties
+</ParamField>
 
-```http
-PATCH /proj1234/users/67890
-Authorization: Bearer <ACCESS_TOKEN>
-Content-Type: application/json
+<ParamField body="update.metadata" type="object">
+  Custom public metadata
+</ParamField>
 
-{
-  "update": {
-    "username": "new_username",
-    "location": { "longitude": 34.05, "latitude": -118.25 },
-    "metadata": { "theme": "dark" }
-  }
-}
-```
-
----
+<ParamField body="update.secureMetadata" type="object">
+  Custom secure metadata (used server-side but never returned in responses)
+</ParamField>
 
 ## Response
 
-### Success Response (200 OK)
+<ResponseField name="id" type="string">
+  User's unique identifier
+</ResponseField>
 
-```json
-{
-  "id": "67890",
-  "username": "new_username",
-  "name": "John Doe",
-  "avatar": "https://example.com/avatar.jpg",
-  "bio": "New bio text",
-  "birthdate": "1990-01-01T00:00:00.000Z",
-  "location": {
-    "type": "Point",
-    "coordinates": [34.05, -118.25]
-  },
-  "metadata": {
-    "theme": "dark"
-  },
-  "suspensions": []
-}
-```
+<ResponseField name="username" type="string">
+  Updated username
+</ResponseField>
 
-### Error Responses
+<ResponseField name="name" type="string">
+  User's full name
+</ResponseField>
 
-#### Missing or Invalid Data (400 Bad Request)
+<ResponseField name="avatar" type="string">
+  URL to user's avatar image
+</ResponseField>
 
-```json
-{
-  "error": "Missing required data",
-  "code": "user/missing-data"
-}
-```
+<ResponseField name="bio" type="string">
+  User's biography
+</ResponseField>
 
-#### User Not Found (404 Not Found)
+<ResponseField name="birthdate" type="string">
+  User's birthdate in ISO 8601 format
+</ResponseField>
 
-```json
-{
-  "error": "User not found",
-  "code": "user/not-found"
-}
-```
+<ResponseField name="location" type="object">
+  <Expandable title="properties">
+    <ResponseField name="type" type="string">
+      GeoJSON type (always "Point")
+    </ResponseField>
 
-#### Server Error (500 Internal Server Error)
+    <ResponseField name="coordinates" type="number[]">
+      Array of [longitude, latitude]
+    </ResponseField>
+  </Expandable>
+</ResponseField>
 
-```json
-{
-  "error": "Internal server error",
-  "code": "user/server-error",
-  "details": "<Error message>"
-}
-```
+<ResponseField name="metadata" type="object">
+  Custom public metadata
+</ResponseField>
+
+<ResponseField name="suspensions" type="array">
+  Array of active suspensions (if any)
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing or Invalid Data - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing required data",
+      "code": "user/missing-data"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="User Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "User not found",
+      "code": "user/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "user/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 ---
 

@@ -1,0 +1,51 @@
+---
+title: "Mark Notification as Read"
+api: "PATCH /:projectId/app-notifications/:notificationId/mark-as-read"
+description: "Mark a specific app notification as read for the authenticated user"
+auth: "bearer"
+---
+
+Mark a specific app notification as read for the authenticated user.
+
+## Path Parameters
+
+<ParamField path="notificationId" type="string" required>
+  ID of the notification to mark as read
+</ParamField>
+
+## Response
+
+Success returns a 200 OK status with no response body.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Notification Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Notification not found",
+      "code": "app-notification/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "app-notification/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- Only notifications belonging to the authenticated user can be marked as read
+- If no matching notification is found, a 404 is returned
+- Successfully marking a notification as read will decrement the unread count
+- Rate limiting: 100 requests per 5 minutes

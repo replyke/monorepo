@@ -1,0 +1,39 @@
+---
+title: "Count Unread Notifications"
+api: "GET /:projectId/app-notifications/count"
+description: "Get the count of unread app notifications for the authenticated user"
+auth: "bearer"
+---
+
+Retrieve the number of unread app notifications for the authenticated user.
+
+## Response
+
+Returns a simple number representing the count of unread notifications:
+
+<ResponseField name="count" type="number">
+  Total number of unread notifications for the authenticated user
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "app-notification/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- Returns a simple number representing the count of unread notifications
+- Use this endpoint to display notification badge counts in your UI
+- Rate limiting: 100 requests per 5 minutes

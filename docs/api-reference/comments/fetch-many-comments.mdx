@@ -1,0 +1,149 @@
+---
+title: "Get Comments"
+api: "GET /:projectId/comments"
+description: "Fetch a paginated list of comments with filtering and sorting options"
+---
+
+Fetches a paginated list of comments filtered by entity ID, user ID, or parent comment ID. Supports optional sorting by newest, oldest, top (most upvoted), or most controversial. Replies, direct comments, and user-authored comments can all be queried. Optionally includes associated entity data.
+
+## Query Parameters
+
+<ParamField query="entityId" type="string">
+  ID of the entity to fetch comments for
+</ParamField>
+
+<ParamField query="userId" type="string">
+  ID of the user to fetch their comments
+</ParamField>
+
+<ParamField query="parentId" type="string">
+  ID of the parent comment to fetch its replies
+</ParamField>
+
+<ParamField query="sortBy" type="string" default="new">
+  Sorting method: `new` (default), `old`, `top`, `controversial`
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="limit" type="number" default="10">
+  Number of results per page (max: 100)
+</ParamField>
+
+<ParamField query="includeEntity" type="string">
+  If `true`, includes related entity data in each comment
+</ParamField>
+
+<Note>
+  At least one of `entityId`, `userId`, or `parentId` must be provided.
+</Note>
+
+## Response
+
+Returns an array of comment objects.
+
+<ResponseField name="id" type="string">
+  Unique comment identifier
+</ResponseField>
+
+<ResponseField name="entityId" type="string">
+  ID of the entity this comment belongs to
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the user who created the comment
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  Comment content
+</ResponseField>
+
+<ResponseField name="mentions" type="array">
+  List of mentioned users
+</ResponseField>
+
+<ResponseField name="upvotes" type="array">
+  Array of user IDs who upvoted
+</ResponseField>
+
+<ResponseField name="downvotes" type="array">
+  Array of user IDs who downvoted
+</ResponseField>
+
+<ResponseField name="attachments" type="array">
+  Attached files or resources
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom metadata
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Creation timestamp in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Query - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid request data",
+      "code": "comment/invalid-request"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid Limit - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid request: limit must be a positive number.",
+      "code": "comment/invalid-limit"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid Page - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid request: page must be a whole number greater than 0.",
+      "code": "comment/invalid-page"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "comment/server-error",
+      "details": "[error message]"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+### Filtering
+- One of `entityId`, `userId`, or `parentId` must be specified.
+- Querying does not require authentication.
+
+### Sorting Modes
+- **new**: Most recent comments first (default)
+- **old**: Oldest comments first
+- **top**: Highest upvote-to-downvote ratio
+- **controversial**: High activity with mixed votes
+
+### Additional Features
+- Results are paginated. Maximum of 100 per page.
+- If `includeEntity=true`, each comment includes basic data about its entity.
+- Votes are returned as arrays of user IDs.

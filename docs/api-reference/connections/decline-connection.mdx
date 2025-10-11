@@ -1,0 +1,80 @@
+---
+title: "Decline Connection Request"
+api: "PUT /:projectId/connections/:connectionId/decline"
+description: "Decline a pending connection request"
+auth: "bearer"
+---
+
+Decline a specific pending connection request. Only the receiver of the connection request can decline it.
+
+## Path Parameters
+
+<ParamField path="connectionId" type="string" required>
+  ID of the connection to decline
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique connection identifier
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Connection status (will be "declined")
+</ResponseField>
+
+<ResponseField name="respondedAt" type="string">
+  Timestamp when the request was declined in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Connection ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid connectionId",
+      "code": "connection/invalid-connection-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Unauthorized - 403 Forbidden">
+    ```json
+    {
+      "error": "Only receiver can decline requests",
+      "code": "connection/unauthorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Connection Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Pending connection not found",
+      "code": "connection/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "connection/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- Only the receiver of the connection request can decline it
+- Updates connection status from "pending" to "declined"
+- Sets the respondedAt timestamp
+- Prevents the original requester from sending new requests (only receiver can re-initiate)
+- No notification is sent to the requester
+- Rate limiting: 50 requests per 5 minutes

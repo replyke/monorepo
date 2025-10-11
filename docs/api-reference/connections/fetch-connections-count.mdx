@@ -1,0 +1,45 @@
+---
+title: "Get Current User Connections Count"
+api: "GET /:projectId/connections/count"
+description: "Get the count of established connections for the current user"
+auth: "bearer"
+---
+
+Get the count of established connections for the current user.
+
+## Response
+
+<ResponseField name="count" type="number">
+  Total number of established connections for the current user
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized - 401 Unauthorized">
+    ```json
+    {
+      "error": "Authentication required",
+      "code": "auth/unauthorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "connection/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- Returns the total number of established connections for the current user
+- Only counts accepted connections, not pending or declined requests
+- Rate limiting: 100 requests per 5 minutes

@@ -1,0 +1,57 @@
+---
+title: "Use Fetch User Suggestions"
+---
+
+# `useFetchUserSuggestions`
+
+## Overview
+
+The `useFetchUserSuggestions` hook is used to retrieve a list of suggested users based on a search query. This is commonly used in features like @mentions, user search, or friend suggestions.
+
+## Usage Example
+
+```tsx
+import { useFetchUserSuggestions } from "@replyke/react-js";
+
+function UserSuggestions({ query }: { query: string }) {
+  const fetchUserSuggestions = useFetchUserSuggestions();
+
+  const handleFetchSuggestions = async () => {
+    try {
+      const suggestions = await fetchUserSuggestions({ query });
+      console.log("User suggestions:", suggestions);
+    } catch (error) {
+      console.error("Failed to fetch user suggestions:", error.message);
+    }
+  };
+
+  return <button onClick={handleFetchSuggestions}>Get User Suggestions</button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts the following parameter:
+
+
+<ParamField path="query" type="string" required>
+  The search query for user suggestions.
+</ParamField>
+
+### Returns
+
+The function resolves with an array of user objects:
+
+
+<ResponseField name="User[]" type="User[]">
+  A list of user objects matching the query.
+</ResponseField>
+
+## Implementation Details
+
+- Uses the public API endpoint (no authentication required)
+- Searches users within the current project context
+- Returns full `User` objects with all available user information
+- Typically used as a building block for more complex mention functionality

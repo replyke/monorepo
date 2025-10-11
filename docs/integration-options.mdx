@@ -13,26 +13,75 @@ Replyke offers two primary ways to integrate into your application, depending on
   your domain in the dashboard of your project.
 </Warning>
 
-## Using the React or React Native Client Packages (Recommended)
+<CardGroup cols={2}>
+  <Card title="React & React Native SDK" icon="react" href="/sdk/getting-started">
+    **Recommended for React developers**
 
-If your application is built with **React or React Native**, the easiest and most efficient way to integrate Replyke is through the provided client packages. These packages handle much of the complexity for you, including:
+    The easiest and most efficient integration method with:
+    - Automatic token management and refresh
+    - Built-in state management
+    - Optimized API calls
+    - Optional pre-built UI components
+    - Full TypeScript support
+  </Card>
 
-- **Authentication Handling** – Handles authentication by managing tokens and automatically refreshing them when necessary.
-- **State Management** – Seamless updates and reactivity with minimal effort.
-- **Optimized API Calls** – Abstracts away API interactions for a smoother developer experience.
-- **UI Components (Optional)** – Includes ready-to-use, customizable, UI components.
+  <Card title="REST API" icon="brackets-curly" href="/api-reference/getting-started">
+    **For other frameworks and server-side**
 
-For most developers working with React or React Native, using the client packages is the best approach as it drastically simplifies the integration process and reduces the amount of work required.
+    Direct API integration for maximum flexibility:
+    - Works with any framework (Vue, Angular, Svelte, etc.)
+    - Server-to-server communication
+    - NodeJS package available
+    - Full control over implementation
+    - Manual token management required
+  </Card>
+</CardGroup>
+
+## React & React Native Client Packages
+
+If your application is built with **React or React Native**, the client packages drastically simplify integration:
+
+<AccordionGroup>
+  <Accordion title="Authentication Handling" icon="key">
+    Automatically manages tokens and refreshes them when necessary, so you never have to worry about expired sessions.
+  </Accordion>
+
+  <Accordion title="State Management" icon="database">
+    Seamless updates and reactivity with minimal effort. Changes propagate automatically throughout your app.
+  </Accordion>
+
+  <Accordion title="Optimized API Calls" icon="bolt">
+    Abstracts away API interactions for a smoother developer experience with built-in caching and optimization.
+  </Accordion>
+
+  <Accordion title="UI Components (Optional)" icon="palette">
+    Includes ready-to-use, customizable UI components for comments, feeds, and more.
+  </Accordion>
+</AccordionGroup>
+
+For most developers working with React or React Native, using the client packages is the best approach.
 
 ## Using the API Directly
 
-If your application is built with a framework other than React or React Native (such as Vue, Angular, Svelte, or a backend-only implementation), you can integrate Replyke via the **API**.
+If your application uses a different framework or you need server-side integration, the REST API provides full flexibility:
 
-This approach requires handling authentication, state management, and API calls manually, but it allows full flexibility to integrate Replyke into any tech stack.
+<Tabs>
+  <Tab title="Client-Side">
+    For frameworks like Vue, Angular, or Svelte, make direct API calls from your client application. You'll need to:
+    - Handle authentication tokens manually
+    - Manage state updates yourself
+    - Implement API call logic
+    - Consider using the Vanilla JS package for easier integration
+  </Tab>
 
-- **Client-Side API Usage** – For frameworks other than React/React Native, simply implement Replyke by making direct API calls from your client.
-- **Server-Side API Usage** – If you need Replyke functionality from the backend for operations that don't involve your client, or aren't allowed client-side, your server could also communicate with Replyke via the API using a service key that could be issued in your project's dashboard. Replyke also provides a NodeJS package to simplify the integration for you.
-- **Authentication Handling** – Developers need to manage authentication manually, including storing tokens securely and refreshing them when necessary.
+  <Tab title="Server-Side">
+    For backend operations or server-to-server communication:
+    - Use a service key from your project dashboard
+    - Implement secure token storage
+    - Consider using the NodeJS package for simplified integration
+    - Full control over authentication flow
+  </Tab>
+</Tabs>
 
 ## Which Option Should You Choose?
 

@@ -1,99 +1,63 @@
 ---
 title: "Delete Follow"
+api: "DELETE /:projectId/follows/:followId"
+description: "Remove a follow relationship by its ID"
+auth: "bearer"
 ---
-
-# Unfollow by Follow ID
-
-## Endpoint
-
-**URL:** `api.replyke.com/api/v6/:projectId/follows/:followId`
-
-**Method:** `DELETE`
-
-**Authentication Required:** Yes
-
----
-
-## Description
 
 Remove a specific follow relationship by its ID.
 
----
+## Path Parameters
 
-## Request
-
-### Path Parameters
-
-| Parameter  | Type     | Required | Description                                |
-| ---------- | -------- | -------- | ------------------------------------------ |
-| `followId` | `string` | Yes      | ID of the follow relationship to remove |
-
-### Headers
-
-| Header          | Type     | Required | Description                      |
-| --------------- | -------- | -------- | -------------------------------- |
-| `Authorization` | `string` | Yes      | Bearer token for authentication. |
-
-### Body Parameters
-
-_None_
-
-#### Example Request
-
-```http
-DELETE api.replyke.com/api/v6/your-project-id/follows/follow-uuid-123
-Authorization: Bearer <ACCESS_TOKEN>
-```
-
----
+<ParamField path="followId" type="string" required>
+  ID of the follow relationship to remove
+</ParamField>
 
 ## Response
 
-### Success Response (200 OK)
+<ResponseField name="message" type="string">
+  Success confirmation message
+</ResponseField>
 
-```json
-{
-  "message": "Follow removed successfully."
-}
-```
+## Error Responses
 
-### Error Responses
+<AccordionGroup>
+  <Accordion title="Invalid Follow ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid followId",
+      "code": "follow/invalid-follow-id"
+    }
+    ```
+  </Accordion>
 
-#### Invalid Follow ID (400 Bad Request)
+  <Accordion title="Unauthorized - 403 Forbidden">
+    ```json
+    {
+      "error": "Unauthorized (not your follow relationship)",
+      "code": "follow/unauthorized"
+    }
+    ```
+  </Accordion>
 
-```json
-{
-  "error": "Invalid followId",
-  "code": "follow/invalid-follow-id"
-}
-```
+  <Accordion title="Follow Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Follow relationship not found",
+      "code": "follow/not-found"
+    }
+    ```
+  </Accordion>
 
-#### Unauthorized (403 Forbidden)
-
-```json
-{
-  "error": "Unauthorized (not your follow relationship)",
-  "code": "follow/unauthorized"
-}
-```
-
-#### Follow Not Found (404 Not Found)
-
-```json
-{
-  "error": "Follow relationship not found",
-  "code": "follow/not-found"
-}
-```
-
-#### Server Error (500 Internal Server Error)
-
-```json
-{
-  "error": "Internal server error",
-  "code": "follow/server-error"
-}
-```
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "follow/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 ---
 

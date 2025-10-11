@@ -1,0 +1,165 @@
+---
+title: "Create Entity"
+api: "POST /:projectId/entities"
+description: "Create a new entity with optional metadata, attachments, and location"
+---
+
+Creates a new entity. Can be used with or without authentication. When authenticated, author gains reputation.
+
+## Body Parameters
+
+<ParamField body="userId" type="string">
+  Optional ID of the user creating the entity. Must match the authenticated user.
+</ParamField>
+
+<ParamField body="foreignId" type="string">
+  External reference ID
+</ParamField>
+
+<ParamField body="sourceId" type="string">
+  Optional origin identifier
+</ParamField>
+
+<ParamField body="title" type="string">
+  Title of the entity
+</ParamField>
+
+<ParamField body="content" type="string">
+  Content body of the entity
+</ParamField>
+
+<ParamField body="attachments" type="array">
+  Array of attachment objects
+</ParamField>
+
+<ParamField body="keywords" type="array">
+  Array of keywords associated with the entity
+</ParamField>
+
+<ParamField body="mentions" type="array">
+  List of mentioned users with `{ id: string, username: string }` format
+</ParamField>
+
+<ParamField body="location" type="object">
+  <Expandable title="properties">
+    <ParamField body="longitude" type="number" required>
+      Longitude coordinate
+    </ParamField>
+    <ParamField body="latitude" type="number" required>
+      Latitude coordinate
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional custom metadata object
+</ParamField>
+
+<ParamField body="excludeUserId" type="boolean">
+  If true, excludes assigning a user ID
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique entity identifier
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the user who created the entity
+</ResponseField>
+
+<ResponseField name="shortId" type="string">
+  Short identifier for easy sharing
+</ResponseField>
+
+<ResponseField name="foreignId" type="string">
+  External reference ID if provided
+</ResponseField>
+
+<ResponseField name="sourceId" type="string">
+  Origin identifier if provided
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Entity title
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  Entity content
+</ResponseField>
+
+<ResponseField name="attachments" type="array">
+  Array of attachment objects
+</ResponseField>
+
+<ResponseField name="keywords" type="array">
+  Array of keywords
+</ResponseField>
+
+<ResponseField name="mentions" type="array">
+  Array of mentioned users
+</ResponseField>
+
+<ResponseField name="location" type="object">
+  <Expandable title="properties">
+    <ResponseField name="type" type="string">
+      GeoJSON type (always "Point")
+    </ResponseField>
+    <ResponseField name="coordinates" type="number[]">
+      Array of [longitude, latitude]
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom metadata
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Creation timestamp in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp in ISO 8601 format
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized - 403 Forbidden">
+    ```json
+    {
+      "error": "User is not authorized to create this entity.",
+      "code": "entity/unauthorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid Project ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid projectId, project does not exist.",
+      "code": "report/invalid-foreign-key"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "entity/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- If `userId` is provided, it must match the logged-in user unless the request is from a master key.
+- Mentions will trigger a notification if the mentioned user is not the creator.
+- User reputation is updated if an authenticated user creates the entity.

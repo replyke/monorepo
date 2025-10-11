@@ -1,68 +1,42 @@
 ---
 title: "Sign Out"
+api: "POST /:projectId/auth/sign-out"
+description: "Sign out a user by invalidating their refresh token"
 ---
-
-# Sign Out
-
-## Endpoint
-
-**URL:** `api.replyke.com/api/v6/:projectId/auth/sign-out`
-
-**Method:** `POST`
-
-**Authentication Required:** No
-
----
-
-## Description
 
 Signs the user out by deleting the refresh token from the database and clearing the HttpOnly cookie. Accepts the refresh token from either the request body or cookie.
 
----
+## Headers
 
-## Request
+<ParamField header="Cookie" type="string">
+  Can include `replyke-refresh-jwt` cookie with the refresh token
+</ParamField>
 
-### Headers
+## Body Parameters
 
-| Header   | Type     | Required | Description                              |
-| -------- | -------- | -------- | ---------------------------------------- |
-| `Cookie` | `string` | No       | Can include `replyke-refresh-jwt` cookie |
-
-### Body Parameters
-
-| Field          | Type     | Required | Description                                       |
-| -------------- | -------- | -------- | ------------------------------------------------- |
-| `refreshToken` | `string` | No       | JWT refresh token (optional if cookie is present) |
-
-#### Example Request
-
-```json
-{
-  "refreshToken": "<REFRESH_TOKEN>"
-}
-```
-
----
+<ParamField body="refreshToken" type="string">
+  JWT refresh token (optional if provided via cookie)
+</ParamField>
 
 ## Response
 
-### Success Response (204 No Content)
+<Info>
+  Returns **204 No Content** on success with no response body
+</Info>
 
-```
-(No response body)
-```
+## Error Responses
 
-### Error Responses
-
-#### Server Error (500 Internal Server Error)
-
-```json
-{
-  "error": "Internal server error.",
-  "code": "auth/server-error",
-  "details": "<Error message>"
-}
-```
+<AccordionGroup>
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "auth/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 ---
 
