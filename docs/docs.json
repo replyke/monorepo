@@ -75,18 +75,29 @@
           },
           {
             "group": "Comments",
+            "pages": ["sdk/comments/overview"]
+          },
+          {
+            "group": "Social Comments",
             "pages": [
-              "sdk/comments/overview",
               "sdk/comments/social/component",
               "sdk/comments/social/provider-and-hook",
               "sdk/comments/social/styling",
-              "sdk/comments/social/callbacks",
+              "sdk/comments/social/callbacks"
+            ]
+          },
+          {
+            "group": "Threaded Comments",
+            "pages": [
               "sdk/comments/threaded/component",
               "sdk/comments/threaded/provider-and-hook",
               "sdk/comments/threaded/styling",
-              "sdk/comments/threaded/callbacks",
-              "sdk/comments/gifs-and-emojis"
+              "sdk/comments/threaded/callbacks"
             ]
+          },
+          {
+            "group": "Comments Advanced",
+            "pages": ["sdk/comments/gifs-and-emojis"]
           },
           {
             "group": "Lists",
