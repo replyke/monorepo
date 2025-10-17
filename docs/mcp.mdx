@@ -1,0 +1,130 @@
+---
+title: "MCP Server"
+description: "Integrate Replyke with AI tools using the Model Context Protocol"
+icon: "brain-circuit"
+---
+
+# Replyke MCP Server
+
+The Replyke MCP (Model Context Protocol) Server enables AI-powered tools like Claude Code, Cursor, and Windsurf to directly access and search the Replyke documentation. This allows for more contextual and accurate responses when working with Replyke in your AI development environment.
+
+## What is MCP?
+
+The Model Context Protocol (MCP) is a standardized way for AI tools to connect to external data sources and services. By installing the Replyke MCP server, your AI assistant can search and reference the complete Replyke documentation in real-time.
+
+## Server URL
+
+```
+https://docs.replyke.com/mcp
+```
+
+## Available Tools
+
+### SearchReplykeDocumentation
+
+Search across the Replyke Documentation knowledge base to find relevant information, code examples, API references, and guides.
+
+**When to use:**
+- Answering questions about Replyke features
+- Finding specific documentation pages
+- Understanding how features work
+- Locating implementation details and code examples
+
+**Returns:**
+- Contextual content from documentation
+- Page titles and descriptions
+- Direct links to documentation pages
+
+## Installation
+
+### Claude Code
+
+To add the Replyke MCP server to Claude Code:
+
+1. Open your Claude Code MCP settings
+2. Add the Replyke MCP server URL:
+   ```
+   https://docs.replyke.com/mcp
+   ```
+3. Restart Claude Code to activate the integration
+
+### Cursor
+
+To add the Replyke MCP server to Cursor:
+
+1. Open Cursor settings
+2. Navigate to the MCP section
+3. Add the Replyke MCP server URL:
+   ```
+   https://docs.replyke.com/mcp
+   ```
+4. Restart Cursor to activate the integration
+
+### Windsurf
+
+To add the Replyke MCP server to Windsurf:
+
+1. Open Windsurf settings
+2. Navigate to the MCP integration settings
+3. Add the Replyke MCP server URL:
+   ```
+   https://docs.replyke.com/mcp
+   ```
+4. Restart Windsurf to activate the integration
+
+## Usage Examples
+
+Once installed, your AI assistant can automatically search the Replyke documentation when you ask questions like:
+
+- "How do I implement authentication with Replyke?"
+- "Show me how to use the comments feature"
+- "What are the available user hooks?"
+- "How do I fetch entities with filters?"
+
+The AI will use the MCP server to retrieve accurate, up-to-date information directly from the official documentation.
+
+## Benefits
+
+<CardGroup cols={2}>
+  <Card title="Real-time Documentation Access" icon="book-open">
+    Your AI assistant always has access to the latest Replyke documentation
+  </Card>
+
+  <Card title="Contextual Code Assistance" icon="code">
+    Get more accurate code suggestions based on actual Replyke patterns
+  </Card>
+
+  <Card title="Faster Development" icon="bolt">
+    Reduce context switching by getting answers without leaving your editor
+  </Card>
+
+  <Card title="Always Up-to-Date" icon="arrows-rotate">
+    No need to manually update documentation - the MCP server always reflects the current docs
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+If the MCP integration is not working:
+
+1. Verify the server URL is entered correctly
+2. Ensure your AI tool supports MCP
+3. Restart your AI tool after adding the server
+4. Check your internet connection
+5. Verify the MCP server is accessible at `https://docs.replyke.com/mcp`
+
+## Learn More
+
+<CardGroup cols={3}>
+  <Card title="Getting Started" icon="play" href="/sdk/getting-started">
+    Start building with Replyke
+  </Card>
+
+  <Card title="API Reference" icon="code" href="/api-reference/getting-started">
+    Explore the API documentation
+  </Card>
+
+  <Card title="SDK Reference" icon="book" href="/sdk/getting-started">
+    Learn about SDK features
+  </Card>
+</CardGroup>

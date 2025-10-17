@@ -12,7 +12,7 @@ The **User** object is the public-facing user model returned by the Replyke API 
 | ------------ | ---------------------------------------------------------- | -------------------------------------------------------------- |
 | `id`         | `string`                                                   | Unique identifier for the user (UUID).                         |
 | `projectId`  | `string`                                                   | Identifier of the associated project (UUID).                   |
-| `role`       | `"admin" \| "editor" \| "visitor"`                         | Role assigned to the user in the project.                      |
+| `role`       | `"admin" \| "moderator" \| "visitor"`                         | Role assigned to the user in the project.                      |
 | `name`       | `string \| null`                                           | Display name of the user.                                      |
 | `username`   | `string \| null`                                           | Unique username, if set.                                       |
 | `avatar`     | `string \| null`                                           | URL to the user's avatar image.                                |
@@ -35,7 +35,7 @@ The **AuthUser** object represents the authenticated user's own profile data del
 | `id`             | `string`                                                   | Unique identifier for the user (UUID).                         |
 | `projectId`      | `string`                                                   | Identifier of the associated project (UUID).                   |
 | `foreignId`      | `string \| null`                                           | Optional external or static ID for mapping users from another system. |
-| `role`           | `"admin" \| "editor" \| "visitor"`                         | Role assigned to the user in the project.                      |
+| `role`           | `"admin" \| "moderator" \| "visitor"`                         | Role assigned to the user in the project.                      |
 | `email`          | `string \| null`                                           | User's email address (only visible to themselves).            |
 | `name`           | `string \| null`                                           | Display name of the user.                                      |
 | `username`       | `string \| null`                                           | Unique username, if set.                                       |
@@ -62,7 +62,7 @@ The **UserFull** object is an internal model used within Replyke’s administrat
 | `id`             | `string`                                                                                           | Unique identifier for the user (UUID).                                |
 | `projectId`      | `string`                                                                                           | Identifier of the associated project (UUID).                          |
 | `foreignId`      | `string \| null`                                                                                   | Optional external or static ID for mapping users from another system. |
-| `role`           | `"admin" \| "editor" \| "visitor"`                                                                 | Role assigned to the user in the project.                             |
+| `role`           | `"admin" \| "moderator" \| "visitor"`                                                                 | Role assigned to the user in the project.                             |
 | `email`          | `string \| null`                                                                                   | User’s email address.                                                 |
 | `name`           | `string \| null`                                                                                   | Display name.                                                         |
 | `username`       | `string \| null`                                                                                   | Unique username.                                                      |

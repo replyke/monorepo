@@ -19,7 +19,8 @@
               "index",
               "integration-options",
               "authentication",
-              "security"
+              "security",
+              "mcp"
             ]
           },
           {
