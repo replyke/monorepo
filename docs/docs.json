@@ -20,7 +20,7 @@
               "integration-options",
               "authentication",
               "security",
-              "mcp"
+              "mcp-server"
             ]
           },
           {
