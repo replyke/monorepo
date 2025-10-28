@@ -1,0 +1,146 @@
+{
+  "name": "comments-threaded",
+  "platform": "react",
+  "style": "styled",
+  "version": "1.0.0",
+  "description": "Threaded comment system with upvotes/downvotes, nested replies, and moderation",
+  "author": "Replyke",
+  "license": "Apache-2.0",
+  "dependencies": [
+    "@replyke/react-js@^6.0.0",
+    "@replyke/ui-core-react-js@^6.0.0"
+  ],
+  "files": [
+    {
+      "path": "files/threaded-comment-section.tsx",
+      "type": "component",
+      "description": "Main entry component for threaded comments"
+    },
+    {
+      "path": "files/new-comment-form.tsx",
+      "type": "component",
+      "description": "Form for creating new top-level comments"
+    },
+    {
+      "path": "files/mention-suggestions.tsx",
+      "type": "component",
+      "description": "User mention suggestions dropdown"
+    },
+    {
+      "path": "files/comments-feed/comments-feed.tsx",
+      "type": "component",
+      "description": "Main feed container for displaying comments"
+    },
+    {
+      "path": "files/comments-feed/loaded-comments.tsx",
+      "type": "component",
+      "description": "Renders loaded comment threads"
+    },
+    {
+      "path": "files/comments-feed/fetching-comments-skeletons.tsx",
+      "type": "component",
+      "description": "Loading skeleton states"
+    },
+    {
+      "path": "files/comments-feed/no-comments-placeholder.tsx",
+      "type": "component",
+      "description": "Empty state when no comments exist"
+    },
+    {
+      "path": "files/comments-feed/comment-thread/index.ts",
+      "type": "component",
+      "description": "Comment thread barrel export"
+    },
+    {
+      "path": "files/comments-feed/comment-thread/comment-thread.tsx",
+      "type": "component",
+      "description": "Individual comment thread with replies"
+    },
+    {
+      "path": "files/comments-feed/comment-thread/comment-replies.tsx",
+      "type": "component",
+      "description": "Reply list container"
+    },
+    {
+      "path": "files/comments-feed/comment-thread/action-menu.tsx",
+      "type": "component",
+      "description": "Comment action menu (edit, delete, report)"
+    },
+    {
+      "path": "files/comments-feed/comment-thread/new-reply-form.tsx",
+      "type": "component",
+      "description": "Form for replying to comments"
+    },
+    {
+      "path": "files/comments-feed/comment-thread/single-comment/index.ts",
+      "type": "component",
+      "description": "Single comment barrel export"
+    },
+    {
+      "path": "files/comments-feed/comment-thread/single-comment/single-comment.tsx",
+      "type": "component",
+      "description": "Individual comment component"
+    },
+    {
+      "path": "files/comments-feed/comment-thread/single-comment/vote-buttons.tsx",
+      "type": "component",
+      "description": "Upvote/downvote buttons with score"
+    },
+    {
+      "path": "files/comments-feed/comment-thread/single-comment/reply-button-and-info.tsx",
+      "type": "component",
+      "description": "Reply button and reply count"
+    },
+    {
+      "path": "files/comments-feed/comment-thread/single-comment/toggle-replies-visibility.tsx",
+      "type": "component",
+      "description": "Button to show/hide replies"
+    },
+    {
+      "path": "files/comments-feed/comment-thread/single-comment/indentation-threading-lines.tsx",
+      "type": "component",
+      "description": "Visual threading lines for nested comments"
+    },
+    {
+      "path": "files/modals/comment-menu-modal/comment-menu-modal.tsx",
+      "type": "component",
+      "description": "Modal for comment actions"
+    },
+    {
+      "path": "files/modals/comment-menu-modal/main-content.tsx",
+      "type": "component",
+      "description": "Main content of comment menu modal"
+    },
+    {
+      "path": "files/modals/comment-menu-modal/report-content.tsx",
+      "type": "component",
+      "description": "Report comment form"
+    },
+    {
+      "path": "files/modals/comment-menu-modal-owner/comment-menu-modal-owner.tsx",
+      "type": "component",
+      "description": "Comment menu for comment owners"
+    },
+    {
+      "path": "hooks/use-threaded-comments.tsx",
+      "type": "hook",
+      "description": "Main hook for threaded comment functionality"
+    },
+    {
+      "path": "hooks/use-modal-manager.tsx",
+      "type": "hook",
+      "description": "Hook for managing modal state"
+    },
+    {
+      "path": "utils/prop-comparison.ts",
+      "type": "util",
+      "description": "Utilities for prop comparison and memoization"
+    },
+    {
+      "path": "context/modal-manager-context.tsx",
+      "type": "context",
+      "description": "Context for modal management"
+    }
+  ],
+  "registryUrl": "https://raw.githubusercontent.com/replyke/replyke-components/main/registry/react/comments-threaded/styled"
+}
