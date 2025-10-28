@@ -4,10 +4,10 @@ import {
   CommentSectionProvider,
   Entity,
 } from "@replyke/react-js";
-import { CommentsFeed } from "../files/comments-feed/comments-feed";
-import { NewCommentForm } from "../files/new-comment-form";
-import { CommentMenuModal } from "../files/modals/comment-menu-modal/comment-menu-modal";
-import { CommentMenuModalOwner } from "../files/modals/comment-menu-modal-owner/comment-menu-modal-owner";
+import CommentsFeed from "../files/comments-feed/comments-feed";
+import NewCommentForm from "../files/new-comment-form";
+import CommentMenuModal from "../files/modals/comment-menu-modal/comment-menu-modal";
+import CommentMenuModalOwner from "../files/modals/comment-menu-modal-owner/comment-menu-modal-owner";
 import { ModalManagerProvider } from "../context/modal-manager-context";
 import { ThreadedStyleCallbacks } from "../files/threaded-comment-section";
 
@@ -40,7 +40,7 @@ function useThreadedComments({
         foreignId={foreignId}
         shortId={shortId}
         createIfNotFound={createIfNotFound}
-        callbacks={callbacks}
+        callbacks={callbacks as Record<string, (...args: any[]) => void>}
         defaultSortBy={defaultSortBy}
         limit={limit}
         highlightedCommentId={highlightedCommentId}

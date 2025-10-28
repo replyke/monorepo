@@ -19,22 +19,6 @@ function VoteButtons({
   const { user } = useUser();
   const { callbacks } = useCommentSection();
 
-  // 🎨 CUSTOMIZATION: Vote button styling
-  const voteIconSize = 12; // Default: 12px
-  const upvoteColor = "#3B82F6"; // Default: blue-500
-  const upvoteHoverColor = "#EFF6FF"; // Default: blue-50
-  const downvoteColor = "#EF4444"; // Default: red-500
-  const downvoteHoverColor = "#FEF2F2"; // Default: red-50
-  const voteContainerBackground = "#F3F4F6"; // Default: gray-100
-  const neutralVoteColor = "#6B7280"; // Default: gray-500
-
-  // 🎨 CUSTOMIZATION: Score display styling
-  const scoreTextSize = 12; // Default: 12px
-  const scoreTextWeight = 500; // Default: medium
-  const scoreTextColor = "#374151"; // Default: gray-700
-  const positiveScoreColor = "#3B82F6"; // Default: blue-500
-  const negativeScoreColor = "#EF4444"; // Default: red-500
-
   const {
     upvoteComment,
     downvoteComment,
@@ -74,12 +58,13 @@ function VoteButtons({
     }
   };
 
+  // 🎨 CUSTOMIZATION: Vote button styling (Default: 12px for small, 16px for normal)
   const iconSize =
     size === "small"
-      ? { width: `${voteIconSize}px`, height: `${voteIconSize}px` }
-      : { width: `${voteIconSize + 4}px`, height: `${voteIconSize + 4}px` };
-  const textSize =
-    size === "small" ? `${scoreTextSize}px` : `${scoreTextSize + 2}px`;
+      ? { width: "12px", height: "12px" }
+      : { width: "16px", height: "16px" };
+  // 🎨 CUSTOMIZATION: Score display styling (Default: 12px for small, 14px for normal)
+  const textSize = size === "small" ? "12px" : "14px";
   const padding = size === "small" ? "4px 8px" : "6px 12px";
 
   return (
@@ -87,7 +72,8 @@ function VoteButtons({
       style={{
         display: "inline-flex",
         alignItems: "center",
-        backgroundColor: voteContainerBackground,
+        // 🎨 CUSTOMIZATION: Vote button styling (Default: gray-100)
+        backgroundColor: "#F3F4F6",
         borderRadius: "9999px",
         padding: padding,
         gap: "4px",
@@ -112,20 +98,25 @@ function VoteButtons({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: userVote === "up" ? upvoteColor : "transparent",
-          color: userVote === "up" ? "#FFFFFF" : neutralVoteColor,
+          // 🎨 CUSTOMIZATION: Vote button styling (Default: blue-500)
+          backgroundColor: userVote === "up" ? "#3B82F6" : "transparent",
+          // 🎨 CUSTOMIZATION: Vote button styling (Default: gray-500 when neutral)
+          color: userVote === "up" ? "#FFFFFF" : "#6B7280",
           border: "none",
           cursor: "pointer",
         }}
         onMouseEnter={(e) => {
           if (userVote !== "up") {
-            e.currentTarget.style.color = upvoteColor;
-            e.currentTarget.style.backgroundColor = upvoteHoverColor;
+            // 🎨 CUSTOMIZATION: Vote button styling (Default: blue-500)
+            e.currentTarget.style.color = "#3B82F6";
+            // 🎨 CUSTOMIZATION: Vote button styling (Default: blue-50)
+            e.currentTarget.style.backgroundColor = "#EFF6FF";
           }
         }}
         onMouseLeave={(e) => {
           if (userVote !== "up") {
-            e.currentTarget.style.color = neutralVoteColor;
+            // 🎨 CUSTOMIZATION: Vote button styling (Default: gray-500)
+            e.currentTarget.style.color = "#6B7280";
             e.currentTarget.style.backgroundColor = "transparent";
           }
         }}
@@ -149,16 +140,18 @@ function VoteButtons({
       {/* Score */}
       <span
         style={{
-          fontWeight: scoreTextWeight,
+          // 🎨 CUSTOMIZATION: Score display styling (Default: medium)
+          fontWeight: 500,
           fontSize: textSize,
           minWidth: "20px",
           textAlign: "center",
+          // 🎨 CUSTOMIZATION: Score display styling (Default: blue-500 for positive, red-500 for negative, gray-700 for neutral)
           color:
             netScore > 0
-              ? positiveScoreColor
+              ? "#3B82F6"
               : netScore < 0
-              ? negativeScoreColor
-              : scoreTextColor,
+              ? "#EF4444"
+              : "#374151",
         }}
       >
         {netScore}
@@ -183,20 +176,25 @@ function VoteButtons({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: userVote === "down" ? downvoteColor : "transparent",
-          color: userVote === "down" ? "#FFFFFF" : neutralVoteColor,
+          // 🎨 CUSTOMIZATION: Vote button styling (Default: red-500)
+          backgroundColor: userVote === "down" ? "#EF4444" : "transparent",
+          // 🎨 CUSTOMIZATION: Vote button styling (Default: gray-500 when neutral)
+          color: userVote === "down" ? "#FFFFFF" : "#6B7280",
           border: "none",
           cursor: "pointer",
         }}
         onMouseEnter={(e) => {
           if (userVote !== "down") {
-            e.currentTarget.style.color = downvoteColor;
-            e.currentTarget.style.backgroundColor = downvoteHoverColor;
+            // 🎨 CUSTOMIZATION: Vote button styling (Default: red-500)
+            e.currentTarget.style.color = "#EF4444";
+            // 🎨 CUSTOMIZATION: Vote button styling (Default: red-50)
+            e.currentTarget.style.backgroundColor = "#FEF2F2";
           }
         }}
         onMouseLeave={(e) => {
           if (userVote !== "down") {
-            e.currentTarget.style.color = neutralVoteColor;
+            // 🎨 CUSTOMIZATION: Vote button styling (Default: gray-500)
+            e.currentTarget.style.color = "#6B7280";
             e.currentTarget.style.backgroundColor = "transparent";
           }
         }}

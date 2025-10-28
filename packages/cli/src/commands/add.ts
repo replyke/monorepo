@@ -85,7 +85,9 @@ export async function add(componentName: string) {
 
     // Show usage example
     console.log(chalk.bold('\n📖 Usage:'));
-    console.log(chalk.dim(`  import { ThreadedCommentSection } from './${path.relative(process.cwd(), path.join(config.paths.components, componentName))}';`));
+    console.log(chalk.dim(`  import ThreadedCommentSection from './${path.relative(process.cwd(), path.join(config.paths.components, componentName))}';`));
+    console.log(chalk.dim(`  // Or import types:`));
+    console.log(chalk.dim(`  import ThreadedCommentSection, { ThreadedStyleCallbacks } from './${path.relative(process.cwd(), path.join(config.paths.components, componentName))}';`));
     console.log();
 
   } catch (error) {
@@ -128,43 +130,34 @@ async function createIndexFile(
   const componentDir = path.join(process.cwd(), config.paths.components, componentName);
   const indexPath = path.join(componentDir, 'index.ts');
 
-  // Collect exports by type
-  const componentExports: string[] = [];
-  const hookExports: string[] = [];
-  const contextExports: string[] = [];
-  const utilExports: string[] = [];
+  // Find the main entry component (matches component name or is at root of files/)
+  const mainComponentFile = registry.files.find(
+    (file) =>
+      file.path.startsWith('files/') &&
+      (file.path === `files/${componentName}.tsx` ||
+        file.path === `files/${componentName}.ts` ||
+        file.path.includes('comment-section'))
+  );
 
-  for (const file of registry.files) {
-    const fileName = path.basename(file.path, path.extname(file.path));
-    const exportName = toPascalCase(fileName);
-
-    if (file.path.startsWith('files/')) {
-      // Main component files - export from components/
-      const relativePath = file.path.substring(6).replace(/\\/g, '/'); // Remove 'files/' prefix
-      const dirPath = path.dirname(relativePath);
-      const importPath = dirPath === '.'
-        ? `./components/${fileName}`
-        : `./components/${dirPath}/${fileName}`;
-      componentExports.push(`export { default as ${exportName} } from '${importPath}';`);
-      componentExports.push(`export * from '${importPath}';`); // Also export named exports
-    } else if (file.path.startsWith('hooks/')) {
-      hookExports.push(`export { default as ${exportName} } from './hooks/${fileName}';`);
-      hookExports.push(`export * from './hooks/${fileName}';`); // Also export named exports
-    } else if (file.path.startsWith('context/')) {
-      contextExports.push(`export * from './context/${fileName}';`);
-    } else if (file.path.startsWith('utils/')) {
-      utilExports.push(`export * from './utils/${fileName}';`);
-    }
+  if (!mainComponentFile) {
+    console.warn('Could not find main component file, skipping index generation');
+    return;
   }
 
-  // Generate index file content
-  const indexContent = `// Auto-generated barrel export file
-// Main Components
-${componentExports.join('\n')}
+  const fileName = path.basename(mainComponentFile.path, path.extname(mainComponentFile.path));
+  const relativePath = mainComponentFile.path.substring(6).replace(/\\/g, '/'); // Remove 'files/' prefix
+  const dirPath = path.dirname(relativePath);
+  const importPath =
+    dirPath === '.'
+      ? `./components/${fileName}`
+      : `./components/${dirPath}/${fileName}`;
 
-${hookExports.length > 0 ? `// Hooks\n${hookExports.join('\n')}\n` : ''}
-${contextExports.length > 0 ? `// Context\n${contextExports.join('\n')}\n` : ''}
-${utilExports.length > 0 ? `// Utilities\n${utilExports.join('\n')}\n` : ''}`;
+  // Generate index file content - only export the main component
+  const indexContent = `// Auto-generated barrel export file
+// Main component
+export { default } from '${importPath}';
+export * from '${importPath}';
+`;
 
   // Write index file
   await fs.writeFile(indexPath, indexContent, 'utf-8');

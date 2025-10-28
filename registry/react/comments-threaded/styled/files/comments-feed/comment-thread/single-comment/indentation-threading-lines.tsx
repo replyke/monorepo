@@ -1,8 +1,6 @@
 import React from "react";
 
 function IndentationThreadingLines({ isLastReply }: { isLastReply: boolean }) {
-  // 🎨 CUSTOMIZATION: Threading line color
-  const threadingLineColor = "#D1D5DB"; // Default: gray-300
   return (
     <>
       {/* Vertical line from parent thread continuing down - only if not the last reply */}
@@ -11,7 +9,8 @@ function IndentationThreadingLines({ isLastReply }: { isLastReply: boolean }) {
           style={{
             position: "absolute",
             width: "1px",
-            backgroundColor: threadingLineColor,
+            // 🎨 CUSTOMIZATION: Threading line color (Default: gray-300)
+            backgroundColor: "#D1D5DB",
             zIndex: 0,
             left: "-12px",
             top: "0px",
@@ -27,7 +26,8 @@ function IndentationThreadingLines({ isLastReply }: { isLastReply: boolean }) {
           top: "-8px",
           width: "1px",
           height: "18px",
-          backgroundColor: threadingLineColor,
+          // 🎨 CUSTOMIZATION: Threading line color (Default: gray-300)
+          backgroundColor: "#D1D5DB",
           zIndex: 0,
           left: "-12px",
         }}
@@ -40,8 +40,9 @@ function IndentationThreadingLines({ isLastReply }: { isLastReply: boolean }) {
           top: "10px",
           width: "12px",
           height: "16px",
-          borderLeft: `1.5px solid ${threadingLineColor}`,
-          borderBottom: `1.5px solid ${threadingLineColor}`,
+          // 🎨 CUSTOMIZATION: Threading line color (Default: gray-300)
+          borderLeft: "1.5px solid #D1D5DB",
+          borderBottom: "1.5px solid #D1D5DB",
           borderTop: "1.5px solid transparent",
           borderRight: "1.5px solid transparent",
           borderBottomLeftRadius: "12px",

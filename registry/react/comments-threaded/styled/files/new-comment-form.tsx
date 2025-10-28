@@ -24,21 +24,6 @@ function NewCommentForm() {
   const [isGiphyVisible, setIsGiphyVisible] = useState(false);
   const { createComment, callbacks } = useCommentSection();
 
-  // 🎨 CUSTOMIZATION: Comment form styling
-  const backgroundColor = "#FFFFFF"; // Default: white
-  const itemsGap = 8; // Default: 8px
-  const verticalPadding = 8; // Default: 8px
-  const paddingLeft = 8; // Default: 8px
-  const paddingRight = 8; // Default: 8px
-  const placeholderText = "Add your reply..."; // Default placeholder
-  const textareaTextSize = 12; // Default: 12px
-  const textareaTextColor = "#111827"; // Default: gray-900
-  const textareaBackgroundColor = "transparent"; // Default: transparent
-  const postButtonText = "Post"; // Default button text
-  const postButtonFontSize = 12; // Default: 12px
-  const postButtonFontWeight = 400; // Default: regular
-  const postButtonFontColor = "#FFFFFF"; // Default: white
-
   const hasContent = content.trim().length > 0;
 
   const { cursorPosition, isSelectionActive } = useTextareaCursorIndicator({
@@ -167,14 +152,16 @@ function NewCommentForm() {
           style={{
             display: "flex",
             alignItems: "flex-end",
-            backgroundColor: backgroundColor,
+            // 🎨 CUSTOMIZATION: Comment form styling (Default: white)
+            backgroundColor: "#FFFFFF",
             borderRadius: "16px",
             border: `1px solid ${hasContent ? "#BFDBFE" : "#E5E7EB"}`,
             boxShadow: hasContent
               ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
               : "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
             transition: "all 300ms ease-in-out",
-            padding: `${verticalPadding}px`,
+            // 🎨 CUSTOMIZATION: Comment form styling (Default: 8px)
+            padding: "8px",
           }}
           onMouseEnter={(e) => {
             if (!hasContent) {
@@ -192,13 +179,18 @@ function NewCommentForm() {
           <textarea
             ref={textAreaRef}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={placeholderText}
+            // 🎨 CUSTOMIZATION: Comment form styling (Default placeholder)
+            placeholder="Add your reply..."
             style={{
               flex: 1,
-              padding: `${verticalPadding}px`,
-              backgroundColor: textareaBackgroundColor,
-              color: textareaTextColor,
-              fontSize: `${textareaTextSize}px`,
+              // 🎨 CUSTOMIZATION: Comment form styling (Default: 8px)
+              padding: "8px",
+              // 🎨 CUSTOMIZATION: Comment form styling (Default: transparent)
+              backgroundColor: "transparent",
+              // 🎨 CUSTOMIZATION: Comment form styling (Default: gray-900)
+              color: "#111827",
+              // 🎨 CUSTOMIZATION: Comment form styling (Default: 12px)
+              fontSize: "12px",
               lineHeight: "1.625",
               outline: "none",
               resize: "none",
@@ -213,12 +205,16 @@ function NewCommentForm() {
               disabled={isSubmitting}
               style={{
                 flexShrink: 0,
-                padding: `${verticalPadding}px`,
+                // 🎨 CUSTOMIZATION: Comment form styling (Default: 8px)
+                padding: "8px",
                 border: "none",
                 outline: "none",
-                fontWeight: postButtonFontWeight,
-                fontSize: postButtonFontSize,
-                color: postButtonFontColor,
+                // 🎨 CUSTOMIZATION: Comment form styling (Default: regular)
+                fontWeight: 400,
+                // 🎨 CUSTOMIZATION: Comment form styling (Default: 12px)
+                fontSize: "12px",
+                // 🎨 CUSTOMIZATION: Comment form styling (Default: white)
+                color: "#FFFFFF",
                 cursor: "pointer",
                 backgroundColor: "transparent",
               }}
@@ -231,7 +227,8 @@ function NewCommentForm() {
               disabled={!hasContent || isSubmitting}
               style={{
                 flexShrink: 0,
-                padding: `${verticalPadding}px`,
+                // 🎨 CUSTOMIZATION: Comment form styling (Default: 8px)
+                padding: "8px",
                 borderRadius: "50%",
                 backgroundColor:
                   hasContent && !isSubmitting ? "#2563EB" : "#E5E7EB",
@@ -268,8 +265,9 @@ function NewCommentForm() {
             >
               <svg
                 style={{
-                  height: `${textareaTextSize}px`,
-                  width: `${textareaTextSize}px`,
+                  // 🎨 CUSTOMIZATION: Comment form styling (Default: 12px)
+                  height: "12px",
+                  width: "12px",
                   transition: "transform 200ms ease-in-out",
                   transform: hasContent ? "scale(1)" : "scale(1)",
                 }}

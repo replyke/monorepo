@@ -9,26 +9,24 @@ function ReplyButtonAndInfo({
   replyCount: number;
   setShowReplyForm: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  // 🎨 CUSTOMIZATION: Reply button styling
-  const replyButtonFontSize = 12; // Default: 12px
-  const replyButtonFontWeight = 500; // Default: medium
-  const replyButtonFontColor = "#6B7280"; // Default: gray-500
-  const actionsItemGap = 16; // Default: 16px
-  const fromNowFontColor = "#6B7280"; // Default: gray-500
   return (
     <div
       style={{
         display: "flex",
         alignItems: "center",
-        gap: `${actionsItemGap}px`,
-        fontSize: `${replyButtonFontSize}px`,
+        // 🎨 CUSTOMIZATION: Reply button styling (Default: 16px)
+        gap: "16px",
+        // 🎨 CUSTOMIZATION: Reply button styling (Default: 12px)
+        fontSize: "12px",
       }}
     >
       <button
         onClick={() => setShowReplyForm((prev) => !prev)}
         style={{
-          color: replyButtonFontColor,
-          fontWeight: replyButtonFontWeight,
+          // 🎨 CUSTOMIZATION: Reply button styling (Default: gray-500)
+          color: "#6B7280",
+          // 🎨 CUSTOMIZATION: Reply button styling (Default: medium)
+          fontWeight: 500,
           padding: "4px 8px",
           borderRadius: "4px",
           marginLeft: "-8px",
@@ -49,7 +47,12 @@ function ReplyButtonAndInfo({
         Reply
       </button>
       {hasReplies && (
-        <span style={{ color: fromNowFontColor }}>
+        <span
+          style={{
+            // 🎨 CUSTOMIZATION: Reply button styling (Default: gray-500)
+            color: "#6B7280",
+          }}
+        >
           {replyCount} {replyCount === 1 ? "reply" : "replies"}
         </span>
       )}

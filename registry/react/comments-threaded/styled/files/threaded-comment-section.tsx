@@ -78,19 +78,17 @@ function ThreadedCommentSectionInner({
   isVisible: boolean;
   children?: React.ReactNode;
 }) {
-  // 🎨 CUSTOMIZATION: Layout styling
-  const backgroundColor = "#fff"; // Default: white
-  const verticalPadding = 8; // Default: 8px
-
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <div
         style={{
           flex: 1,
           overflowY: "auto",
-          backgroundColor: backgroundColor,
-          paddingTop: `${verticalPadding}px`,
-          paddingBottom: `${verticalPadding}px`,
+          // 🎨 CUSTOMIZATION: Layout styling (Default: white)
+          backgroundColor: "#fff",
+          // 🎨 CUSTOMIZATION: Layout styling (Default: 8px)
+          paddingTop: "8px",
+          paddingBottom: "8px",
         }}
       >
         <CommentsFeed>{children}</CommentsFeed>
@@ -99,7 +97,8 @@ function ThreadedCommentSectionInner({
       <div
         style={{
           borderTop: "1px solid #e5e7eb",
-          paddingTop: `${verticalPadding}px`,
+          // 🎨 CUSTOMIZATION: Layout styling (Default: 8px)
+          paddingTop: "8px",
         }}
       >
         {isVisible && <NewCommentForm />}

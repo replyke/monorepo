@@ -8,7 +8,7 @@ import {
   useUser,
 } from "@replyke/react-js";
 import { FlagIcon } from "@replyke/ui-core-react-js";
-import useModalManager from "../../../hooks/useModalManager";
+import useModalManager from "../../../hooks/use-modal-manager";
 
 function ReportContent({ resetView }: { resetView: () => void }) {
   const { user } = useUser();

@@ -40,29 +40,6 @@ function SingleComment({
   const [comment, setComment] = useState(commentFromSection);
   const [showReplyForm, setShowReplyForm] = useState(false);
 
-  // 🎨 CUSTOMIZATION: Avatar styling
-  const authorAvatarSize = 24; // Default: 24px
-
-  // 🎨 CUSTOMIZATION: Typography - Author
-  const authorFontSize = 12; // Default: 12px
-  const authorFontWeight = 500; // Default: medium
-  const authorFontColor = "#374151"; // Default: gray-700
-
-  // 🎨 CUSTOMIZATION: Typography - Timestamp
-  const fromNowFontSize = 12; // Default: 12px
-  const fromNowFontColor = "#6B7280"; // Default: gray-500
-
-  // 🎨 CUSTOMIZATION: Typography - Comment body
-  const commentBodyFontSize = 12; // Default: 12px
-  const commentBodyFontColor = "#1F2937"; // Default: gray-800
-
-  // 🎨 CUSTOMIZATION: Spacing
-  const horizontalItemsGap = 12; // Default: 12px
-  const verticalItemsGap = 8; // Default: 8px
-
-  // 🎨 CUSTOMIZATION: Threading lines
-  const threadingLineColor = "#D1D5DB"; // Default: gray-300
-
   const maxDepth = 6; // Limit visual nesting depth
   const actualDepth = Math.min(depth, maxDepth);
 
@@ -88,7 +65,8 @@ function SingleComment({
 
       <div
         style={{
-          padding: `${verticalItemsGap}px 0`,
+          // 🎨 CUSTOMIZATION: Spacing (Default: 8px)
+          padding: "8px 0",
           borderRadius: "6px",
           transition: "colors 150ms ease-in-out",
         }}
@@ -98,16 +76,19 @@ function SingleComment({
           <div
             style={{
               flexShrink: 0,
-              marginRight: `${horizontalItemsGap}px`,
+              // 🎨 CUSTOMIZATION: Spacing (Default: 12px)
+              marginRight: "12px",
               position: "relative",
-              marginTop: `${verticalItemsGap / 2}px`,
+              // 🎨 CUSTOMIZATION: Spacing (Default: 4px, derived from 8/2)
+              marginTop: "4px",
             }}
           >
             <div style={{ position: "relative", zIndex: 10 }}>
               <UserAvatar
                 user={comment.user}
-                borderRadius={authorAvatarSize}
-                size={authorAvatarSize}
+                // 🎨 CUSTOMIZATION: Avatar styling (Default: 24px)
+                borderRadius={24}
+                size={24}
               />
             </div>
             {/* Vertical line extending down from this comment's avatar when it has replies */}
@@ -118,7 +99,8 @@ function SingleComment({
                   left: "50%",
                   top: "20px",
                   width: "1px",
-                  backgroundColor: threadingLineColor,
+                  // 🎨 CUSTOMIZATION: Threading lines (Default: gray-300)
+                  backgroundColor: "#D1D5DB",
                   zIndex: 0,
                   height: "calc(100% + 10px)",
                 }}
@@ -133,23 +115,30 @@ function SingleComment({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                marginBottom: `${verticalItemsGap / 2}px`,
+                // 🎨 CUSTOMIZATION: Spacing (Default: 4px, derived from 8/2)
+                marginBottom: "4px",
               }}
             >
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: `${verticalItemsGap}px`,
-                  fontSize: `${fromNowFontSize}px`,
-                  color: fromNowFontColor,
+                  // 🎨 CUSTOMIZATION: Spacing (Default: 8px)
+                  gap: "8px",
+                  // 🎨 CUSTOMIZATION: Typography - Timestamp (Default: 12px)
+                  fontSize: "12px",
+                  // 🎨 CUSTOMIZATION: Typography - Timestamp (Default: gray-500)
+                  color: "#6B7280",
                 }}
               >
                 <span
                   style={{
-                    fontWeight: authorFontWeight,
-                    fontSize: authorFontSize,
-                    color: authorFontColor,
+                    // 🎨 CUSTOMIZATION: Typography - Author (Default: medium)
+                    fontWeight: 500,
+                    // 🎨 CUSTOMIZATION: Typography - Author (Default: 12px)
+                    fontSize: "12px",
+                    // 🎨 CUSTOMIZATION: Typography - Author (Default: gray-700)
+                    color: "#374151",
                   }}
                 >
                   {getUserName(comment.user)}
@@ -176,9 +165,12 @@ function SingleComment({
                 {comment.content && (
                   <p
                     style={{
-                      fontSize: `${commentBodyFontSize}px`,
-                      color: commentBodyFontColor,
-                      marginBottom: `${horizontalItemsGap}px`,
+                      // 🎨 CUSTOMIZATION: Typography - Comment body (Default: 12px)
+                      fontSize: "12px",
+                      // 🎨 CUSTOMIZATION: Typography - Comment body (Default: gray-800)
+                      color: "#1F2937",
+                      // 🎨 CUSTOMIZATION: Spacing (Default: 12px)
+                      marginBottom: "12px",
                       lineHeight: "1.625",
                     }}
                   >
@@ -208,7 +200,8 @@ function SingleComment({
                       borderRadius: "0.25rem",
                       overflow: "hidden",
                       objectFit: "cover",
-                      marginBottom: `${horizontalItemsGap}px`,
+                      // 🎨 CUSTOMIZATION: Spacing (Default: 12px)
+                      marginBottom: "12px",
                     }}
                   />
                 )}

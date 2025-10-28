@@ -19,14 +19,6 @@ function NewReplyForm({
 
   const { createComment, callbacks } = useCommentSection();
 
-  // 🎨 CUSTOMIZATION: Reply form styling
-  const backgroundColor = "#FFFFFF"; // Default: white
-  const verticalPadding = 8; // Default: 8px
-  const placeholderText = "Add your reply..."; // Default placeholder
-  const textareaTextSize = 12; // Default: 12px
-  const textareaTextColor = "#111827"; // Default: gray-900
-  const textareaBackgroundColor = "transparent"; // Default: transparent
-
   const handleReply = async () => {
     if (!replyContent.trim() || isSubmitting) return;
 
@@ -68,12 +60,18 @@ function NewReplyForm({
   }, [isSubmitting]);
 
   return (
-    <div style={{ marginTop: `${verticalPadding}px` }}>
+    <div
+      style={{
+        // 🎨 CUSTOMIZATION: Reply form styling (Default: 8px)
+        marginTop: "8px",
+      }}
+    >
       <div
         style={{
           display: "flex",
           alignItems: "flex-end",
-          backgroundColor: backgroundColor,
+          // 🎨 CUSTOMIZATION: Reply form styling (Default: white)
+          backgroundColor: "#FFFFFF",
           borderRadius: "16px",
           border: `1px solid ${
             replyContent.trim().length > 0 ? "#BFDBFE" : "#E5E7EB"
@@ -83,7 +81,8 @@ function NewReplyForm({
               ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
               : "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
           transition: "all 300ms ease-in-out",
-          padding: `${verticalPadding - 2}px`,
+          // 🎨 CUSTOMIZATION: Reply form styling (Default: 6px, derived from 8-2)
+          padding: "6px",
         }}
         onMouseEnter={(e) => {
           if (replyContent.trim().length === 0) {
@@ -101,13 +100,18 @@ function NewReplyForm({
         <textarea
           value={replyContent}
           onChange={(e) => setReplyContent(e.target.value)}
-          placeholder={placeholderText}
+          // 🎨 CUSTOMIZATION: Reply form styling (Default placeholder)
+          placeholder="Add your reply..."
           style={{
             flex: 1,
-            padding: `${verticalPadding - 2}px ${verticalPadding}px`,
-            backgroundColor: textareaBackgroundColor,
-            color: textareaTextColor,
-            fontSize: `${textareaTextSize}px`,
+            // 🎨 CUSTOMIZATION: Reply form styling (Default: 6px 8px, derived from verticalPadding)
+            padding: "6px 8px",
+            // 🎨 CUSTOMIZATION: Reply form styling (Default: transparent)
+            backgroundColor: "transparent",
+            // 🎨 CUSTOMIZATION: Reply form styling (Default: gray-900)
+            color: "#111827",
+            // 🎨 CUSTOMIZATION: Reply form styling (Default: 12px)
+            fontSize: "12px",
             lineHeight: "1.625",
             outline: "none",
             resize: "none",
@@ -126,7 +130,8 @@ function NewReplyForm({
             onClick={handleCancelReply}
             style={{
               padding: "4px 8px",
-              fontSize: `${textareaTextSize}px`,
+              // 🎨 CUSTOMIZATION: Reply form styling (Default: 12px)
+              fontSize: "12px",
               color: "#4B5563",
               borderRadius: "4px",
               transition: "colors 150ms ease-in-out",
@@ -151,7 +156,8 @@ function NewReplyForm({
             disabled={!replyContent.trim() || isSubmitting}
             style={{
               flexShrink: 0,
-              padding: `${verticalPadding - 2}px`,
+              // 🎨 CUSTOMIZATION: Reply form styling (Default: 6px, derived from 8-2)
+              padding: "6px",
               borderRadius: "50%",
               backgroundColor:
                 replyContent.trim().length > 0 && !isSubmitting
@@ -209,8 +215,9 @@ function NewReplyForm({
             ) : (
               <svg
                 style={{
-                  height: `${textareaTextSize}px`,
-                  width: `${textareaTextSize}px`,
+                  // 🎨 CUSTOMIZATION: Reply form styling (Default: 12px)
+                  height: "12px",
+                  width: "12px",
                   transition: "transform 200ms ease-in-out",
                   transform: "scale(1)",
                 }}
