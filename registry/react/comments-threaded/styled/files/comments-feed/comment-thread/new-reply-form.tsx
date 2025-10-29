@@ -4,7 +4,7 @@ import {
   useUser,
   Comment as CommentType,
 } from "@replyke/react-js";
-import useModalManager from "../../../hooks/use-modal-manager";
+import useUIState from "../../../hooks/use-ui-state";
 
 function NewReplyForm({
   comment,
@@ -13,7 +13,7 @@ function NewReplyForm({
   comment: CommentType;
   setShowReplyForm: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  const { theme } = useModalManager();
+  const { theme } = useUIState();
   const { user } = useUser();
 
   const [replyContent, setReplyContent] = useState("");

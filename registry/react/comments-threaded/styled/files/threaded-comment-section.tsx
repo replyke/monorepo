@@ -56,7 +56,7 @@ import useThreadedComments from "../hooks/use-threaded-comments";
 import CommentsFeed from "./comments-feed/comments-feed";
 import NewCommentForm from "./new-comment-form";
 import { deepEqual, warnPropChanges } from "../utils/prop-comparison";
-import useModalManager from "../hooks/use-modal-manager";
+import useUIState from "../hooks/use-ui-state";
 
 // Simplified callbacks interface (removed from -core package)
 export interface ThreadedStyleCallbacks {
@@ -120,7 +120,7 @@ function ThreadedCommentSectionInner({
   isVisible: boolean;
   children?: React.ReactNode;
 }) {
-  const { theme } = useModalManager();
+  const { theme } = useUIState();
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Modal, resetDiv } from "@replyke/ui-core-react-js";
-import useModalManager from "../../../hooks/use-modal-manager";
+import useUIState from "../../../hooks/use-ui-state";
 import MainContent from "./main-content";
 import ReportContent from "./report-content";
 
 function CommentMenuModal() {
   const { isCommentOptionsModalOpen, closeCommentOptionsModal, theme } =
-    useModalManager();
+    useUIState();
 
   const [view, setView] = useState<"main" | "report">("main");
 

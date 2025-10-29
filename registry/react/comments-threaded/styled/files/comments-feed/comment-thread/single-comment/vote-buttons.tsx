@@ -4,7 +4,7 @@ import {
   Comment as CommentType,
   useCommentVotes,
 } from "@replyke/react-js";
-import useModalManager from "../../../../hooks/use-modal-manager";
+import useUIState from "../../../../hooks/use-ui-state";
 
 interface VoteButtonsProps {
   comment: CommentType;
@@ -17,7 +17,7 @@ function VoteButtons({
   setComment,
   size = "small",
 }: VoteButtonsProps) {
-  const { theme } = useModalManager();
+  const { theme } = useUIState();
   const { user } = useUser();
   const { callbacks } = useCommentSection();
 

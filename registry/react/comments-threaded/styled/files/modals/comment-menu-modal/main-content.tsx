@@ -1,8 +1,8 @@
 import { resetButton, resetUl } from "@replyke/ui-core-react-js";
-import useModalManager from "../../../hooks/use-modal-manager";
+import useUIState from "../../../hooks/use-ui-state";
 
 function MainContent({ clickReport }: { clickReport: () => void }) {
-  const { closeCommentOptionsModal, theme } = useModalManager();
+  const { closeCommentOptionsModal, theme } = useUIState();
   return (
     <ul
       style={{

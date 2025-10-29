@@ -1,5 +1,5 @@
 import { useUser, Comment as CommentType } from "@replyke/react-js";
-import useModalManager from "../../../hooks/use-modal-manager";
+import useUIState from "../../../hooks/use-ui-state";
 
 interface ActionMenuProps {
   comment: CommentType;
@@ -9,7 +9,7 @@ function ActionMenu({ comment }: ActionMenuProps) {
   const { user } = useUser();
 
   const { openCommentOptionsModal, openCommentOptionsModalOwner, theme } =
-    useModalManager();
+    useUIState();
 
   return (
     <div style={{ position: "relative" }}>

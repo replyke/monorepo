@@ -11,10 +11,10 @@ import {
   GiphyContainer,
 } from "@replyke/ui-core-react-js";
 import MentionSuggestions from "./mention-suggestions";
-import useModalManager from "../hooks/use-modal-manager";
+import useUIState from "../hooks/use-ui-state";
 
 function NewCommentForm() {
-  const { theme } = useModalManager();
+  const { theme } = useUIState();
   const { user } = useUser();
   const { project } = useProject();
   const giphyApiKey = project?.integrations.find((int) => int.name === "giphy")

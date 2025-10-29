@@ -15,7 +15,7 @@ import NewReplyForm from "../new-reply-form";
 import ToggleRepliesVisibilty from "./toggle-replies-visibility";
 import IndentationThreadingLines from "./indentation-threading-lines";
 import ReplyButtonAndInfo from "./reply-button-and-info";
-import useModalManager from "../../../../hooks/use-modal-manager";
+import useUIState from "../../../../hooks/use-ui-state";
 
 interface SingleCommentProps {
   comment: CommentType;
@@ -38,7 +38,7 @@ function SingleComment({
 }: SingleCommentProps) {
   const { user } = useUser();
   const { callbacks, highlightedComment } = useCommentSection();
-  const { theme } = useModalManager();
+  const { theme } = useUIState();
   const [comment, setComment] = useState(commentFromSection);
   const [showReplyForm, setShowReplyForm] = useState(false);
 

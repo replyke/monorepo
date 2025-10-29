@@ -1,8 +1,8 @@
 import React from "react";
-import useModalManager from "../../../../hooks/use-modal-manager";
+import useUIState from "../../../../hooks/use-ui-state";
 
 function IndentationThreadingLines({ isLastReply }: { isLastReply: boolean }) {
-  const { theme } = useModalManager();
+  const { theme } = useUIState();
 
   return (
     <>

@@ -1,7 +1,7 @@
 import React, { createContext, useState, useMemo, useCallback } from "react";
 import { Comment as CommentType } from "@replyke/react-js";
 
-type ModalManagerContext = {
+type UIStateContext = {
   isCommentOptionsModalOpen: boolean;
   isCommentOptionsModalOwnerOpen: boolean;
 
@@ -9,23 +9,18 @@ type ModalManagerContext = {
   closeCommentOptionsModal: () => void;
   openCommentOptionsModalOwner: (newComment?: CommentType) => void;
   closeCommentOptionsModalOwner: () => void;
-  //   openReportCommentModal: () => void;
-  //   closeReportCommentModal: () => void;
 
   optionsComment: CommentType | null;
   setOptionsComment: React.Dispatch<React.SetStateAction<CommentType | null>>;
 
   theme: 'light' | 'dark';
-
-  //   reportedComment: CommentType | null;
-  //   setReportedComment: React.Dispatch<React.SetStateAction<CommentType | null>>;
 };
 
-export const ModalManagerContext = createContext<Partial<ModalManagerContext>>(
+export const UIStateContext = createContext<Partial<UIStateContext>>(
   {}
 );
 
-export const ModalManagerProvider = ({
+export const UIStateProvider = ({
   children,
   theme = 'light',
 }: {
@@ -40,10 +35,6 @@ export const ModalManagerProvider = ({
   const [optionsComment, setOptionsComment] = useState<CommentType | null>(
     null
   );
-
-  //   const [reportedComment, setReportedComment] = useState<CommentType | null>(
-  //     null
-  //   );
 
   const openCommentOptionsModal = useCallback((newComment?: CommentType) => {
     if (newComment) setOptionsComment(newComment);
@@ -65,15 +56,6 @@ export const ModalManagerProvider = ({
     setOptionsComment(null);
   }, []);
 
-  //   const openReportCommentModal = (newComment?: CommentType) => {
-  //     if (newComment) setOptionsComment(newComment);
-  //     reportCommentModalRef.current?.snapToIndex(0);
-  //   };
-
-  //   const closeReportCommentModal = () => {
-  //     reportCommentModalRef.current?.close();
-  //   };
-
   const contextValue = useMemo(() => ({
     isCommentOptionsModalOpen,
     isCommentOptionsModalOwnerOpen,
@@ -82,15 +64,11 @@ export const ModalManagerProvider = ({
     closeCommentOptionsModal,
     openCommentOptionsModalOwner,
     closeCommentOptionsModalOwner,
-    // openReportCommentModal,
-    // closeReportCommentModal,
 
     optionsComment,
     setOptionsComment,
 
     theme,
-    // reportedComment,
-    // setReportedComment,
   }), [
     isCommentOptionsModalOpen,
     isCommentOptionsModalOwnerOpen,
@@ -103,8 +81,8 @@ export const ModalManagerProvider = ({
   ]);
 
   return (
-    <ModalManagerContext.Provider value={contextValue}>
+    <UIStateContext.Provider value={contextValue}>
       {children}
-    </ModalManagerContext.Provider>
+    </UIStateContext.Provider>
   );
 };

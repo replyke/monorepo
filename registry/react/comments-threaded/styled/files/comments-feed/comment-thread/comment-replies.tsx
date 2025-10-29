@@ -1,7 +1,7 @@
 import React from "react";
 import { Comment as CommentType } from "@replyke/react-js";
 import { CommentThreadProps } from "./comment-thread";
-import useModalManager from "../../../hooks/use-modal-manager";
+import useUIState from "../../../hooks/use-ui-state";
 
 interface CommentRepliesProps {
   depth: number;
@@ -28,7 +28,7 @@ function CommentReplies({
   onReportComment,
   CommentThreadComponent,
 }: CommentRepliesProps) {
-  const { theme } = useModalManager();
+  const { theme } = useUIState();
 
   // Don't render anything if collapsed or no replies
   if (isCollapsed || visibleReplies.length === 0) {

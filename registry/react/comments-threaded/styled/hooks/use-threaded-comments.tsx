@@ -8,7 +8,7 @@ import CommentsFeed from "../files/comments-feed/comments-feed";
 import NewCommentForm from "../files/new-comment-form";
 import CommentMenuModal from "../files/modals/comment-menu-modal/comment-menu-modal";
 import CommentMenuModalOwner from "../files/modals/comment-menu-modal-owner/comment-menu-modal-owner";
-import { ModalManagerProvider } from "../context/modal-manager-context";
+import { UIStateProvider } from "../context/ui-state-context";
 import { ThreadedStyleCallbacks } from "../files/threaded-comment-section";
 
 function useThreadedComments({
@@ -47,13 +47,13 @@ function useThreadedComments({
         limit={limit}
         highlightedCommentId={highlightedCommentId}
       >
-        <ModalManagerProvider theme={theme}>
+        <UIStateProvider theme={theme}>
           <>
             {children}
             <CommentMenuModal />
             <CommentMenuModalOwner />
           </>
-        </ModalManagerProvider>
+        </UIStateProvider>
       </CommentSectionProvider>
     );
   }, [

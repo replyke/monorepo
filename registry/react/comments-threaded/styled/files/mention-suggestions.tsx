@@ -1,6 +1,6 @@
 import { User } from "@replyke/react-js";
 import { UserAvatar, UserMentionSkeleton } from "@replyke/ui-core-react-js";
-import useModalManager from "../hooks/use-modal-manager";
+import useUIState from "../hooks/use-ui-state";
 
 interface MentionSuggestionsProps {
   isMentionActive: boolean;
@@ -15,7 +15,7 @@ function MentionSuggestions({
   mentionSuggestions,
   handleMentionClick,
 }: MentionSuggestionsProps) {
-  const { theme } = useModalManager();
+  const { theme } = useUIState();
 
   if (!isMentionActive) return null;
 

@@ -1,7 +1,7 @@
-import useModalManager from "../../hooks/use-modal-manager";
+import useUIState from "../../hooks/use-ui-state";
 
 function NoCommentsPlaceHolder() {
-  const { theme } = useModalManager();
+  const { theme } = useUIState();
 
   return (
     <div>

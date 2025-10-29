@@ -1,4 +1,4 @@
-import useModalManager from "../../../../hooks/use-modal-manager";
+import useUIState from "../../../../hooks/use-ui-state";
 
 function ToggleRepliesVisibilty({
   isCollapsed,
@@ -7,7 +7,7 @@ function ToggleRepliesVisibilty({
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }) {
-  const { theme } = useModalManager();
+  const { theme } = useUIState();
 
   return (
     <button

@@ -5,7 +5,7 @@ import {
   resetDiv,
   resetUl,
 } from "@replyke/ui-core-react-js";
-import useModalManager from "../../../hooks/use-modal-manager";
+import useUIState from "../../../hooks/use-ui-state";
 
 function CommentMenuModalOwner() {
   const {
@@ -13,7 +13,7 @@ function CommentMenuModalOwner() {
     isCommentOptionsModalOwnerOpen,
     closeCommentOptionsModalOwner,
     theme,
-  } = useModalManager();
+  } = useUIState();
 
   const { deleteComment } = useCommentSection();
 

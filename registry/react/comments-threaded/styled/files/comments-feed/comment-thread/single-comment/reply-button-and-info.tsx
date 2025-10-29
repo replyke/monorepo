@@ -1,5 +1,5 @@
 import React from "react";
-import useModalManager from "../../../../hooks/use-modal-manager";
+import useUIState from "../../../../hooks/use-ui-state";
 
 function ReplyButtonAndInfo({
   hasReplies,
@@ -10,7 +10,7 @@ function ReplyButtonAndInfo({
   replyCount: number;
   setShowReplyForm: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  const { theme } = useModalManager();
+  const { theme } = useUIState();
 
   return (
     <div

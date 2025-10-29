@@ -8,12 +8,12 @@ import {
   useUser,
 } from "@replyke/react-js";
 import { FlagIcon } from "@replyke/ui-core-react-js";
-import useModalManager from "../../../hooks/use-modal-manager";
+import useUIState from "../../../hooks/use-ui-state";
 
 function ReportContent({ resetView }: { resetView: () => void }) {
   const { user } = useUser();
   const { callbacks } = useCommentSection();
-  const { optionsComment, closeCommentOptionsModal, theme } = useModalManager();
+  const { optionsComment, closeCommentOptionsModal, theme } = useUIState();
   const createCommentReport = useCreateReport({ type: "comment" });
 
   const [submitting, setSubmitting] = useState(false);
