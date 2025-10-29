@@ -84,10 +84,11 @@ export async function add(componentName: string) {
     checkComponentDependencies(registry.dependencies);
 
     // Show usage example
+    const relativeImportPath = path.relative(process.cwd(), path.join(config.paths.components, componentName));
     console.log(chalk.bold('\n📖 Usage:'));
-    console.log(chalk.dim(`  import ThreadedCommentSection from './${path.relative(process.cwd(), path.join(config.paths.components, componentName))}';`));
-    console.log(chalk.dim(`  // Or import types:`));
-    console.log(chalk.dim(`  import ThreadedCommentSection, { ThreadedStyleCallbacks } from './${path.relative(process.cwd(), path.join(config.paths.components, componentName))}';`));
+    console.log(chalk.dim(`  import { ThreadedCommentSection } from './${relativeImportPath}';`));
+    console.log(chalk.dim(`  // With types:`));
+    console.log(chalk.dim(`  import { ThreadedCommentSection, type ThreadedStyleCallbacks } from './${relativeImportPath}';`));
     console.log();
 
   } catch (error) {
@@ -130,33 +131,9 @@ async function createIndexFile(
   const componentDir = path.join(process.cwd(), config.paths.components, componentName);
   const indexPath = path.join(componentDir, 'index.ts');
 
-  // Find the main entry component (matches component name or is at root of files/)
-  const mainComponentFile = registry.files.find(
-    (file) =>
-      file.path.startsWith('files/') &&
-      (file.path === `files/${componentName}.tsx` ||
-        file.path === `files/${componentName}.ts` ||
-        file.path.includes('comment-section'))
-  );
-
-  if (!mainComponentFile) {
-    console.warn('Could not find main component file, skipping index generation');
-    return;
-  }
-
-  const fileName = path.basename(mainComponentFile.path, path.extname(mainComponentFile.path));
-  const relativePath = mainComponentFile.path.substring(6).replace(/\\/g, '/'); // Remove 'files/' prefix
-  const dirPath = path.dirname(relativePath);
-  const importPath =
-    dirPath === '.'
-      ? `./components/${fileName}`
-      : `./components/${dirPath}/${fileName}`;
-
-  // Generate index file content - only export the main component
-  const indexContent = `// Auto-generated barrel export file
-// Main component
-export { default } from '${importPath}';
-export * from '${importPath}';
+  // Hardcoded index content for comments-threaded
+  const indexContent = `export { default as ThreadedCommentSection } from './components/threaded-comment-section';
+export * from './components/threaded-comment-section';
 `;
 
   // Write index file
