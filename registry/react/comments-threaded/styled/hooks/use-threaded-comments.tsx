@@ -21,6 +21,7 @@ function useThreadedComments({
   defaultSortBy,
   limit,
   highlightedCommentId,
+  theme = 'light',
 }: {
   entity?: Entity | undefined | null;
   entityId?: string | undefined | null;
@@ -31,6 +32,7 @@ function useThreadedComments({
   defaultSortBy?: CommentsSortByOptions;
   limit?: number;
   highlightedCommentId?: string | null;
+  theme?: 'light' | 'dark';
 }) {
   const MemoizedCommentSectionProvider = useMemo(() => {
     return ({ children }: { children: ReactNode }) => (
@@ -45,7 +47,7 @@ function useThreadedComments({
         limit={limit}
         highlightedCommentId={highlightedCommentId}
       >
-        <ModalManagerProvider>
+        <ModalManagerProvider theme={theme}>
           <>
             {children}
             <CommentMenuModal />
@@ -63,7 +65,8 @@ function useThreadedComments({
     callbacks,
     defaultSortBy,
     limit,
-    highlightedCommentId
+    highlightedCommentId,
+    theme
   ]);
 
   return useMemo(() => ({

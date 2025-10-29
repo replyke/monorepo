@@ -15,6 +15,7 @@ import NewReplyForm from "../new-reply-form";
 import ToggleRepliesVisibilty from "./toggle-replies-visibility";
 import IndentationThreadingLines from "./indentation-threading-lines";
 import ReplyButtonAndInfo from "./reply-button-and-info";
+import useModalManager from "../../../../hooks/use-modal-manager";
 
 interface SingleCommentProps {
   comment: CommentType;
@@ -37,6 +38,7 @@ function SingleComment({
 }: SingleCommentProps) {
   const { user } = useUser();
   const { callbacks, highlightedComment } = useCommentSection();
+  const { theme } = useModalManager();
   const [comment, setComment] = useState(commentFromSection);
   const [showReplyForm, setShowReplyForm] = useState(false);
 
@@ -54,7 +56,7 @@ function SingleComment({
         marginLeft: `${indentationPx}px`,
         backgroundColor:
           highlightedComment?.comment.id === comment.id
-            ? "#dbeafe"
+            ? (theme === 'dark' ? "#1E40AF" : "#dbeafe")
             : "transparent",
       }}
     >
@@ -100,7 +102,7 @@ function SingleComment({
                   top: "20px",
                   width: "1px",
                   // 🎨 CUSTOMIZATION: Threading lines (Default: gray-300)
-                  backgroundColor: "#D1D5DB",
+                  backgroundColor: theme === 'dark' ? "#6B7280" : "#D1D5DB",
                   zIndex: 0,
                   height: "calc(100% + 10px)",
                 }}
@@ -128,7 +130,7 @@ function SingleComment({
                   // 🎨 CUSTOMIZATION: Typography - Timestamp (Default: 12px)
                   fontSize: "12px",
                   // 🎨 CUSTOMIZATION: Typography - Timestamp (Default: gray-500)
-                  color: "#6B7280",
+                  color: theme === 'dark' ? "#9CA3AF" : "#6B7280",
                 }}
               >
                 <span
@@ -138,15 +140,15 @@ function SingleComment({
                     // 🎨 CUSTOMIZATION: Typography - Author (Default: 12px)
                     fontSize: "12px",
                     // 🎨 CUSTOMIZATION: Typography - Author (Default: gray-700)
-                    color: "#374151",
+                    color: theme === 'dark' ? "#D1D5DB" : "#374151",
                   }}
                 >
                   {getUserName(comment.user)}
                 </span>
-                <span>•</span>
+                <span style={{ color: theme === 'dark' ? "#9CA3AF" : "#6B7280" }}>•</span>
                 <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
                 {isCollapsed && hasReplies && (
-                  <span className="text-blue-600 text-xs">
+                  <span style={{ color: theme === 'dark' ? "#60A5FA" : "#3B82F6", fontSize: "12px" }}>
                     ({replyCount} {replyCount === 1 ? "reply" : "replies"})
                   </span>
                 )}
@@ -168,7 +170,7 @@ function SingleComment({
                       // 🎨 CUSTOMIZATION: Typography - Comment body (Default: 12px)
                       fontSize: "12px",
                       // 🎨 CUSTOMIZATION: Typography - Comment body (Default: gray-800)
-                      color: "#1F2937",
+                      color: theme === 'dark' ? "#E5E7EB" : "#1F2937",
                       // 🎨 CUSTOMIZATION: Spacing (Default: 12px)
                       marginBottom: "12px",
                       lineHeight: "1.625",

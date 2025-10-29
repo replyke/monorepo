@@ -8,7 +8,7 @@ interface ActionMenuProps {
 function ActionMenu({ comment }: ActionMenuProps) {
   const { user } = useUser();
 
-  const { openCommentOptionsModal, openCommentOptionsModalOwner } =
+  const { openCommentOptionsModal, openCommentOptionsModalOwner, theme } =
     useModalManager();
 
   return (
@@ -21,7 +21,7 @@ function ActionMenu({ comment }: ActionMenuProps) {
         }
         style={{
           padding: "2px",
-          color: "#9CA3AF",
+          color: theme === 'dark' ? "#6B7280" : "#9CA3AF",
           transition: "colors 150ms ease-in-out",
           borderRadius: "4px",
           background: "transparent",
@@ -29,11 +29,11 @@ function ActionMenu({ comment }: ActionMenuProps) {
           cursor: "pointer",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.color = "#4B5563";
-          e.currentTarget.style.backgroundColor = "#F3F4F6";
+          e.currentTarget.style.color = theme === 'dark' ? "#9CA3AF" : "#4B5563";
+          e.currentTarget.style.backgroundColor = theme === 'dark' ? "#374151" : "#F3F4F6";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.color = "#9CA3AF";
+          e.currentTarget.style.color = theme === 'dark' ? "#6B7280" : "#9CA3AF";
           e.currentTarget.style.backgroundColor = "transparent";
         }}
         title="More options"

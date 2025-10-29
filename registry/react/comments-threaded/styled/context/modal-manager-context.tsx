@@ -15,6 +15,8 @@ type ModalManagerContext = {
   optionsComment: CommentType | null;
   setOptionsComment: React.Dispatch<React.SetStateAction<CommentType | null>>;
 
+  theme: 'light' | 'dark';
+
   //   reportedComment: CommentType | null;
   //   setReportedComment: React.Dispatch<React.SetStateAction<CommentType | null>>;
 };
@@ -25,8 +27,10 @@ export const ModalManagerContext = createContext<Partial<ModalManagerContext>>(
 
 export const ModalManagerProvider = ({
   children,
+  theme = 'light',
 }: {
   children: React.ReactNode;
+  theme?: 'light' | 'dark';
 }) => {
   const [isCommentOptionsModalOpen, setIsCommentOptionsModalOpen] =
     useState(false);
@@ -83,6 +87,8 @@ export const ModalManagerProvider = ({
 
     optionsComment,
     setOptionsComment,
+
+    theme,
     // reportedComment,
     // setReportedComment,
   }), [
@@ -93,6 +99,7 @@ export const ModalManagerProvider = ({
     openCommentOptionsModalOwner,
     closeCommentOptionsModalOwner,
     optionsComment,
+    theme,
   ]);
 
   return (

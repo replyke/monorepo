@@ -1,6 +1,7 @@
 import React from "react";
 import { Comment as CommentType } from "@replyke/react-js";
 import { CommentThreadProps } from "./comment-thread";
+import useModalManager from "../../../hooks/use-modal-manager";
 
 interface CommentRepliesProps {
   depth: number;
@@ -27,6 +28,8 @@ function CommentReplies({
   onReportComment,
   CommentThreadComponent,
 }: CommentRepliesProps) {
+  const { theme } = useModalManager();
+
   // Don't render anything if collapsed or no replies
   if (isCollapsed || visibleReplies.length === 0) {
     return null;
@@ -65,7 +68,7 @@ function CommentReplies({
               alignItems: "center",
               gap: "8px",
               fontSize: "12px",
-              color: "#2563EB",
+              color: theme === 'dark' ? "#3B82F6" : "#2563EB",
               fontWeight: "500",
               transition: "all 150ms ease-in-out",
               padding: "4px 8px",
@@ -75,11 +78,11 @@ function CommentReplies({
               cursor: "pointer",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#1D4ED8";
-              e.currentTarget.style.backgroundColor = "#EFF6FF";
+              e.currentTarget.style.color = theme === 'dark' ? "#2563EB" : "#1D4ED8";
+              e.currentTarget.style.backgroundColor = theme === 'dark' ? "#1E3A8A" : "#EFF6FF";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = "#2563EB";
+              e.currentTarget.style.color = theme === 'dark' ? "#3B82F6" : "#2563EB";
               e.currentTarget.style.backgroundColor = "transparent";
             }}
           >

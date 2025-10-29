@@ -2,7 +2,7 @@ import { resetButton, resetUl } from "@replyke/ui-core-react-js";
 import useModalManager from "../../../hooks/use-modal-manager";
 
 function MainContent({ clickReport }: { clickReport: () => void }) {
-  const { closeCommentOptionsModal } = useModalManager();
+  const { closeCommentOptionsModal, theme } = useModalManager();
   return (
     <ul
       style={{
@@ -21,7 +21,7 @@ function MainContent({ clickReport }: { clickReport: () => void }) {
           style={{
             ...resetButton,
             fontWeight: 600,
-            color: "#DC2626",
+            color: theme === 'dark' ? "#EF4444" : "#DC2626",
             paddingLeft: 24,
             paddingRight: 24,
             paddingTop: 8,
@@ -32,7 +32,7 @@ function MainContent({ clickReport }: { clickReport: () => void }) {
           Report
         </button>
       </li>
-      <div style={{ height: 1, width: "100%", backgroundColor: "#e7e7e7" }} />
+      <div style={{ height: 1, width: "100%", backgroundColor: theme === 'dark' ? "#4B5563" : "#e7e7e7" }} />
       <li
         style={{
           display: "flex",
@@ -43,6 +43,7 @@ function MainContent({ clickReport }: { clickReport: () => void }) {
         <button
           style={{
             ...resetButton,
+            color: theme === 'dark' ? "#D1D5DB" : "#374151", // 🎨 CUSTOMIZATION: Cancel button text color
             paddingLeft: 24,
             paddingRight: 24,
             paddingTop: 8,

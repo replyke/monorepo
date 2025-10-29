@@ -1,3 +1,5 @@
+import useModalManager from "../../../../hooks/use-modal-manager";
+
 function ToggleRepliesVisibilty({
   isCollapsed,
   onToggleCollapse,
@@ -5,6 +7,8 @@ function ToggleRepliesVisibilty({
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }) {
+  const { theme } = useModalManager();
+
   return (
     <button
       onClick={onToggleCollapse}
@@ -15,22 +19,22 @@ function ToggleRepliesVisibilty({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#6B7280",
-        backgroundColor: "#F3F4F6",
+        color: theme === 'dark' ? "#9CA3AF" : "#6B7280",
+        backgroundColor: theme === 'dark' ? "#374151" : "#F3F4F6",
         borderRadius: "2px",
         transition: "all 150ms ease-in-out",
         fontSize: "14px",
         fontWeight: "bold",
-        border: isCollapsed ? "1px solid #D1D5DB" : "none",
+        border: isCollapsed ? (theme === 'dark' ? "1px solid #6B7280" : "1px solid #D1D5DB") : "none",
         cursor: "pointer",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.color = "#374151";
-        e.currentTarget.style.backgroundColor = "#E5E7EB";
+        e.currentTarget.style.color = theme === 'dark' ? "#D1D5DB" : "#374151";
+        e.currentTarget.style.backgroundColor = theme === 'dark' ? "#4B5563" : "#E5E7EB";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.color = "#6B7280";
-        e.currentTarget.style.backgroundColor = "#F3F4F6";
+        e.currentTarget.style.color = theme === 'dark' ? "#9CA3AF" : "#6B7280";
+        e.currentTarget.style.backgroundColor = theme === 'dark' ? "#374151" : "#F3F4F6";
       }}
       title={isCollapsed ? "Expand thread" : "Collapse thread"}
     >

@@ -13,7 +13,7 @@ import useModalManager from "../../../hooks/use-modal-manager";
 function ReportContent({ resetView }: { resetView: () => void }) {
   const { user } = useUser();
   const { callbacks } = useCommentSection();
-  const { optionsComment, closeCommentOptionsModal } = useModalManager();
+  const { optionsComment, closeCommentOptionsModal, theme } = useModalManager();
   const createCommentReport = useCreateReport({ type: "comment" });
 
   const [submitting, setSubmitting] = useState(false);
@@ -47,10 +47,10 @@ function ReportContent({ resetView }: { resetView: () => void }) {
   return (
     <div style={{ padding: 24, width: "100%" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <FlagIcon size={24} color="#000" />
-        <span style={{ fontSize: "24px" }}>Submit a report</span>
+        <FlagIcon size={24} color={theme === 'dark' ? "#FFFFFF" : "#000"} />
+        <span style={{ fontSize: "24px", color: theme === 'dark' ? "#F9FAFB" : "#111827" }}>Submit a report</span>
       </div>
-      <p style={{ marginTop: "24px" }}>
+      <p style={{ marginTop: "24px", color: theme === 'dark' ? "#D1D5DB" : "#374151" }}>
         Thank you for looking out for our community. Let us know what is
         happening, and we'll look into it.
       </p>
@@ -70,9 +70,9 @@ function ReportContent({ resetView }: { resetView: () => void }) {
             style={{
               padding: "4px 8px",
               borderRadius: "6px",
-              backgroundColor: key === reason ? "#000" : "#e5e7eb",
+              backgroundColor: key === reason ? (theme === 'dark' ? "#FFFFFF" : "#000") : (theme === 'dark' ? "#4B5563" : "#e5e7eb"),
               cursor: "pointer",
-              color: key === reason ? "#fff" : "#9d9d9e",
+              color: key === reason ? (theme === 'dark' ? "#000" : "#fff") : (theme === 'dark' ? "#9CA3AF" : "#9d9d9e"),
               fontSize: 14,
             }}
           >
@@ -95,8 +95,8 @@ function ReportContent({ resetView }: { resetView: () => void }) {
           fontWeight: "500",
           lineHeight: "1.25",
           borderRadius: "0.375rem",
-          backgroundColor: buttonActive ? "#000" : "#e5e7eb",
-          color: buttonActive ? "#ffffff" : "#9d9d9e",
+          backgroundColor: buttonActive ? (theme === 'dark' ? "#FFFFFF" : "#000") : (theme === 'dark' ? "#4B5563" : "#e5e7eb"),
+          color: buttonActive ? (theme === 'dark' ? "#000" : "#ffffff") : (theme === 'dark' ? "#6B7280" : "#9d9d9e"),
           cursor: buttonActive ? "pointer" : "not-allowed",
           transition:
             "background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease",

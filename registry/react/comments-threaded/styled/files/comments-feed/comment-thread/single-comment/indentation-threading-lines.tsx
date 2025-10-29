@@ -1,6 +1,9 @@
 import React from "react";
+import useModalManager from "../../../../hooks/use-modal-manager";
 
 function IndentationThreadingLines({ isLastReply }: { isLastReply: boolean }) {
+  const { theme } = useModalManager();
+
   return (
     <>
       {/* Vertical line from parent thread continuing down - only if not the last reply */}
@@ -10,7 +13,7 @@ function IndentationThreadingLines({ isLastReply }: { isLastReply: boolean }) {
             position: "absolute",
             width: "1px",
             // 🎨 CUSTOMIZATION: Threading line color (Default: gray-300)
-            backgroundColor: "#D1D5DB",
+            backgroundColor: theme === 'dark' ? "#6B7280" : "#D1D5DB",
             zIndex: 0,
             left: "-12px",
             top: "0px",
@@ -27,7 +30,7 @@ function IndentationThreadingLines({ isLastReply }: { isLastReply: boolean }) {
           width: "1px",
           height: "18px",
           // 🎨 CUSTOMIZATION: Threading line color (Default: gray-300)
-          backgroundColor: "#D1D5DB",
+          backgroundColor: theme === 'dark' ? "#6B7280" : "#D1D5DB",
           zIndex: 0,
           left: "-12px",
         }}
@@ -41,8 +44,8 @@ function IndentationThreadingLines({ isLastReply }: { isLastReply: boolean }) {
           width: "12px",
           height: "16px",
           // 🎨 CUSTOMIZATION: Threading line color (Default: gray-300)
-          borderLeft: "1.5px solid #D1D5DB",
-          borderBottom: "1.5px solid #D1D5DB",
+          borderLeft: theme === 'dark' ? "1.5px solid #6B7280" : "1.5px solid #D1D5DB",
+          borderBottom: theme === 'dark' ? "1.5px solid #6B7280" : "1.5px solid #D1D5DB",
           borderTop: "1.5px solid transparent",
           borderRight: "1.5px solid transparent",
           borderBottomLeftRadius: "12px",

@@ -4,6 +4,7 @@ import {
   useUser,
   Comment as CommentType,
 } from "@replyke/react-js";
+import useModalManager from "../../../hooks/use-modal-manager";
 
 function NewReplyForm({
   comment,
@@ -12,6 +13,7 @@ function NewReplyForm({
   comment: CommentType;
   setShowReplyForm: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  const { theme } = useModalManager();
   const { user } = useUser();
 
   const [replyContent, setReplyContent] = useState("");
@@ -71,10 +73,10 @@ function NewReplyForm({
           display: "flex",
           alignItems: "flex-end",
           // 🎨 CUSTOMIZATION: Reply form styling (Default: white)
-          backgroundColor: "#FFFFFF",
+          backgroundColor: theme === 'dark' ? "#1F2937" : "#FFFFFF",
           borderRadius: "16px",
           border: `1px solid ${
-            replyContent.trim().length > 0 ? "#BFDBFE" : "#E5E7EB"
+            replyContent.trim().length > 0 ? (theme === 'dark' ? "#1E40AF" : "#BFDBFE") : (theme === 'dark' ? "#4B5563" : "#E5E7EB")
           }`,
           boxShadow:
             replyContent.trim().length > 0
@@ -109,7 +111,7 @@ function NewReplyForm({
             // 🎨 CUSTOMIZATION: Reply form styling (Default: transparent)
             backgroundColor: "transparent",
             // 🎨 CUSTOMIZATION: Reply form styling (Default: gray-900)
-            color: "#111827",
+            color: theme === 'dark' ? "#F9FAFB" : "#111827",
             // 🎨 CUSTOMIZATION: Reply form styling (Default: 12px)
             fontSize: "12px",
             lineHeight: "1.625",
@@ -132,7 +134,7 @@ function NewReplyForm({
               padding: "4px 8px",
               // 🎨 CUSTOMIZATION: Reply form styling (Default: 12px)
               fontSize: "12px",
-              color: "#4B5563",
+              color: theme === 'dark' ? "#9CA3AF" : "#4B5563",
               borderRadius: "4px",
               transition: "colors 150ms ease-in-out",
               background: "transparent",
@@ -140,11 +142,11 @@ function NewReplyForm({
               cursor: "pointer",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#1F2937";
-              e.currentTarget.style.backgroundColor = "#F3F4F6";
+              e.currentTarget.style.color = theme === 'dark' ? "#E5E7EB" : "#1F2937";
+              e.currentTarget.style.backgroundColor = theme === 'dark' ? "#374151" : "#F3F4F6";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = "#4B5563";
+              e.currentTarget.style.color = theme === 'dark' ? "#9CA3AF" : "#4B5563";
               e.currentTarget.style.backgroundColor = "transparent";
             }}
             disabled={isSubmitting}
@@ -161,12 +163,12 @@ function NewReplyForm({
               borderRadius: "50%",
               backgroundColor:
                 replyContent.trim().length > 0 && !isSubmitting
-                  ? "#2563EB"
-                  : "#E5E7EB",
+                  ? (theme === 'dark' ? "#3B82F6" : "#2563EB")
+                  : (theme === 'dark' ? "#4B5563" : "#E5E7EB"),
               color:
                 replyContent.trim().length > 0 && !isSubmitting
                   ? "#FFFFFF"
-                  : "#9CA3AF",
+                  : (theme === 'dark' ? "#6B7280" : "#9CA3AF"),
               boxShadow:
                 "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
               transition: "all 200ms ease-in-out",
@@ -179,20 +181,20 @@ function NewReplyForm({
             }}
             onMouseEnter={(e) => {
               if (replyContent.trim().length > 0 && !isSubmitting) {
-                e.currentTarget.style.backgroundColor = "#1D4ED8";
+                e.currentTarget.style.backgroundColor = theme === 'dark' ? "#2563EB" : "#1D4ED8";
                 e.currentTarget.style.boxShadow =
                   "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
               }
             }}
             onMouseLeave={(e) => {
               if (replyContent.trim().length > 0 && !isSubmitting) {
-                e.currentTarget.style.backgroundColor = "#2563EB";
+                e.currentTarget.style.backgroundColor = theme === 'dark' ? "#3B82F6" : "#2563EB";
                 e.currentTarget.style.boxShadow =
                   "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)";
               }
             }}
             onFocus={(e) => {
-              e.currentTarget.style.outline = "2px solid #3B82F6";
+              e.currentTarget.style.outline = theme === 'dark' ? "2px solid #60A5FA" : "2px solid #3B82F6";
               e.currentTarget.style.outlineOffset = "2px";
             }}
             onBlur={(e) => {
@@ -205,7 +207,7 @@ function NewReplyForm({
                 style={{
                   height: "12px",
                   width: "12px",
-                  border: "1px solid #FFFFFF",
+                  border: theme === 'dark' ? "1px solid #F9FAFB" : "1px solid #FFFFFF",
                   borderTopColor: "transparent",
                   borderRadius: "50%",
                   transform: `rotate(${spinRotation}deg)`,

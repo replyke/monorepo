@@ -1,5 +1,6 @@
 import { User } from "@replyke/react-js";
 import { UserAvatar, UserMentionSkeleton } from "@replyke/ui-core-react-js";
+import useModalManager from "../hooks/use-modal-manager";
 
 interface MentionSuggestionsProps {
   isMentionActive: boolean;
@@ -14,6 +15,8 @@ function MentionSuggestions({
   mentionSuggestions,
   handleMentionClick,
 }: MentionSuggestionsProps) {
+  const { theme } = useModalManager();
+
   if (!isMentionActive) return null;
 
   return (
@@ -24,9 +27,9 @@ function MentionSuggestions({
         left: 0,
         right: 0,
         zIndex: 50,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: theme === 'dark' ? "#1F2937" : "#FFFFFF",
         borderRadius: "12px",
-        border: "1px solid #E5E7EB",
+        border: theme === 'dark' ? "1px solid #4B5563" : "1px solid #E5E7EB",
         boxShadow:
           "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
         maxHeight: "200px",
@@ -57,7 +60,7 @@ function MentionSuggestions({
                   transition: "background-color 150ms ease-in-out",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#F3F4F6";
+                  e.currentTarget.style.backgroundColor = theme === 'dark' ? "#374151" : "#F3F4F6";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = "transparent";
@@ -75,7 +78,7 @@ function MentionSuggestions({
                     style={{
                       fontSize: "14px",
                       fontWeight: "500",
-                      color: "#111827",
+                      color: theme === 'dark' ? "#F9FAFB" : "#111827",
                     }}
                   >
                     @{user.username}
@@ -85,7 +88,7 @@ function MentionSuggestions({
                       style={{
                         fontSize: "12px",
                         fontWeight: "400",
-                        color: "#6B7280",
+                        color: theme === 'dark' ? "#9CA3AF" : "#6B7280",
                       }}
                     >
                       {user.name}
@@ -100,7 +103,7 @@ function MentionSuggestions({
             style={{
               padding: "16px",
               textAlign: "center" as const,
-              color: "#6B7280",
+              color: theme === 'dark' ? "#9CA3AF" : "#6B7280",
               fontSize: "14px",
             }}
           >

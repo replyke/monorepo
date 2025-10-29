@@ -11,8 +11,10 @@ import {
   GiphyContainer,
 } from "@replyke/ui-core-react-js";
 import MentionSuggestions from "./mention-suggestions";
+import useModalManager from "../hooks/use-modal-manager";
 
 function NewCommentForm() {
+  const { theme } = useModalManager();
   const { user } = useUser();
   const { project } = useProject();
   const giphyApiKey = project?.integrations.find((int) => int.name === "giphy")
@@ -153,9 +155,9 @@ function NewCommentForm() {
             display: "flex",
             alignItems: "flex-end",
             // 🎨 CUSTOMIZATION: Comment form styling (Default: white)
-            backgroundColor: "#FFFFFF",
+            backgroundColor: theme === 'dark' ? "#1F2937" : "#FFFFFF",
             borderRadius: "16px",
-            border: `1px solid ${hasContent ? "#BFDBFE" : "#E5E7EB"}`,
+            border: `1px solid ${hasContent ? (theme === 'dark' ? "#1E40AF" : "#BFDBFE") : (theme === 'dark' ? "#4B5563" : "#E5E7EB")}`,
             boxShadow: hasContent
               ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
               : "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
@@ -188,7 +190,7 @@ function NewCommentForm() {
               // 🎨 CUSTOMIZATION: Comment form styling (Default: transparent)
               backgroundColor: "transparent",
               // 🎨 CUSTOMIZATION: Comment form styling (Default: gray-900)
-              color: "#111827",
+              color: theme === 'dark' ? "#F9FAFB" : "#111827",
               // 🎨 CUSTOMIZATION: Comment form styling (Default: 12px)
               fontSize: "12px",
               lineHeight: "1.625",
@@ -214,7 +216,7 @@ function NewCommentForm() {
                 // 🎨 CUSTOMIZATION: Comment form styling (Default: 12px)
                 fontSize: "12px",
                 // 🎨 CUSTOMIZATION: Comment form styling (Default: white)
-                color: "#FFFFFF",
+                color: theme === 'dark' ? "#F9FAFB" : "#FFFFFF",
                 cursor: "pointer",
                 backgroundColor: "transparent",
               }}
@@ -231,8 +233,8 @@ function NewCommentForm() {
                 padding: "8px",
                 borderRadius: "50%",
                 backgroundColor:
-                  hasContent && !isSubmitting ? "#2563EB" : "#E5E7EB",
-                color: hasContent && !isSubmitting ? "#FFFFFF" : "#9CA3AF",
+                  hasContent && !isSubmitting ? (theme === 'dark' ? "#3B82F6" : "#2563EB") : (theme === 'dark' ? "#4B5563" : "#E5E7EB"),
+                color: hasContent && !isSubmitting ? "#FFFFFF" : (theme === 'dark' ? "#6B7280" : "#9CA3AF"),
                 boxShadow:
                   "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
                 transition: "all 200ms ease-in-out",
@@ -242,20 +244,20 @@ function NewCommentForm() {
               }}
               onMouseEnter={(e) => {
                 if (hasContent && !isSubmitting) {
-                  e.currentTarget.style.backgroundColor = "#1D4ED8";
+                  e.currentTarget.style.backgroundColor = theme === 'dark' ? "#2563EB" : "#1D4ED8";
                   e.currentTarget.style.boxShadow =
                     "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (hasContent && !isSubmitting) {
-                  e.currentTarget.style.backgroundColor = "#2563EB";
+                  e.currentTarget.style.backgroundColor = theme === 'dark' ? "#3B82F6" : "#2563EB";
                   e.currentTarget.style.boxShadow =
                     "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)";
                 }
               }}
               onFocus={(e) => {
-                e.currentTarget.style.outline = "2px solid #3B82F6";
+                e.currentTarget.style.outline = theme === 'dark' ? "2px solid #60A5FA" : "2px solid #3B82F6";
                 e.currentTarget.style.outlineOffset = "2px";
               }}
               onBlur={(e) => {

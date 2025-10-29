@@ -10,6 +10,45 @@
  * - @replyke/ui-core-react-js ^6.0.0
  *
  * @see https://docs.replyke.com/components/comments-threaded
+ *
+ * ====================
+ * THEME COLOR PALETTE
+ * ====================
+ *
+ * This component supports light and dark themes via the `theme` prop.
+ * Use theme === 'dark' ? DARK_COLOR : LIGHT_COLOR for conditional styling.
+ *
+ * BACKGROUNDS:
+ * - #FFFFFF → #1F2937 (main background)
+ * - #F3F4F6 → #374151 (secondary background, hover states)
+ * - #EFF6FF → #1E3A8A (blue hover backgrounds)
+ * - #FEF2F2 → #7F1D1D (red hover backgrounds)
+ * - #dbeafe → #1E40AF (highlighted comment background)
+ *
+ * TEXT:
+ * - #111827 → #F9FAFB (primary text)
+ * - #1F2937 → #E5E7EB (body text)
+ * - #374151 → #D1D5DB (author names, secondary text)
+ * - #4B5563 → #9CA3AF (hover text)
+ * - #6B7280 → #9CA3AF (timestamps, tertiary text)
+ * - #8e8e8e → #9CA3AF (placeholder text)
+ * - #9CA3AF → #6B7280 (disabled states)
+ * - #000000 → #FFFFFF (report modal elements)
+ *
+ * BORDERS:
+ * - #E5E7EB → #4B5563 (primary borders)
+ * - #D1D5DB → #6B7280 (threading lines, secondary borders)
+ * - #e7e7e7 → #4B5563 (dividers)
+ *
+ * BLUES (links, actions, upvotes):
+ * - #3B82F6 → #60A5FA (primary blue)
+ * - #2563EB → #3B82F6 (buttons)
+ * - #1D4ED8 → #2563EB (button hover)
+ * - #BFDBFE → #1E40AF (active borders)
+ *
+ * REDS (downvotes, destructive actions):
+ * - #EF4444 → #F87171 (primary red)
+ * - #DC2626 → #EF4444 (destructive buttons)
  */
 import React from "react";
 import { Entity } from "@replyke/react-js";
@@ -17,6 +56,7 @@ import useThreadedComments from "../hooks/use-threaded-comments";
 import CommentsFeed from "./comments-feed/comments-feed";
 import NewCommentForm from "./new-comment-form";
 import { deepEqual, warnPropChanges } from "../utils/prop-comparison";
+import useModalManager from "../hooks/use-modal-manager";
 
 // Simplified callbacks interface (removed from -core package)
 export interface ThreadedStyleCallbacks {
@@ -33,6 +73,7 @@ interface ThreadedCommentSectionProps {
   callbacks?: ThreadedStyleCallbacks;
   isVisible?: boolean;
   highlightedCommentId?: string | undefined | null;
+  theme?: 'light' | 'dark';
   children?: React.ReactNode;
 }
 
@@ -52,7 +93,8 @@ const arePropsEqual = (
     prevProps.entityId !== nextProps.entityId ||
     prevProps.foreignId !== nextProps.foreignId ||
     prevProps.shortId !== nextProps.shortId ||
-    prevProps.isVisible !== nextProps.isVisible
+    prevProps.isVisible !== nextProps.isVisible ||
+    prevProps.theme !== nextProps.theme
   ) {
     return false;
   }
@@ -78,6 +120,8 @@ function ThreadedCommentSectionInner({
   isVisible: boolean;
   children?: React.ReactNode;
 }) {
+  const { theme } = useModalManager();
+
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <div
@@ -85,7 +129,7 @@ function ThreadedCommentSectionInner({
           flex: 1,
           overflowY: "auto",
           // 🎨 CUSTOMIZATION: Layout styling (Default: white)
-          backgroundColor: "#fff",
+          backgroundColor: theme === 'dark' ? "#1F2937" : "#fff",
           // 🎨 CUSTOMIZATION: Layout styling (Default: 8px)
           paddingTop: "8px",
           paddingBottom: "8px",
@@ -96,7 +140,7 @@ function ThreadedCommentSectionInner({
 
       <div
         style={{
-          borderTop: "1px solid #e5e7eb",
+          borderTop: theme === 'dark' ? "1px solid #4B5563" : "1px solid #e5e7eb",
           // 🎨 CUSTOMIZATION: Layout styling (Default: 8px)
           paddingTop: "8px",
         }}
@@ -115,6 +159,7 @@ function ThreadedCommentSection({
   callbacks,
   isVisible = true,
   highlightedCommentId,
+  theme = 'light',
   children,
 }: ThreadedCommentSectionProps) {
   const { CommentSectionProvider } = useThreadedComments({
@@ -124,6 +169,7 @@ function ThreadedCommentSection({
     shortId,
     callbacks,
     highlightedCommentId,
+    theme,
   });
 
   return (

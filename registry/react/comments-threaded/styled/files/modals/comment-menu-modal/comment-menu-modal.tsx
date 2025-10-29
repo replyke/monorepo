@@ -5,7 +5,7 @@ import MainContent from "./main-content";
 import ReportContent from "./report-content";
 
 function CommentMenuModal() {
-  const { isCommentOptionsModalOpen, closeCommentOptionsModal } =
+  const { isCommentOptionsModalOpen, closeCommentOptionsModal, theme } =
     useModalManager();
 
   const [view, setView] = useState<"main" | "report">("main");
@@ -22,7 +22,7 @@ function CommentMenuModal() {
         onClick={(e) => e.stopPropagation()}
         style={{
           ...resetDiv,
-          backgroundColor: "white",
+          backgroundColor: theme === 'dark' ? "#1F2937" : "white",
           borderRadius: 8,
           width: "100%",
           maxWidth: 520,

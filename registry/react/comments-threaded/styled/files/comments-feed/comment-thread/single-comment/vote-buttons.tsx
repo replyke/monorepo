@@ -4,6 +4,7 @@ import {
   Comment as CommentType,
   useCommentVotes,
 } from "@replyke/react-js";
+import useModalManager from "../../../../hooks/use-modal-manager";
 
 interface VoteButtonsProps {
   comment: CommentType;
@@ -16,6 +17,7 @@ function VoteButtons({
   setComment,
   size = "small",
 }: VoteButtonsProps) {
+  const { theme } = useModalManager();
   const { user } = useUser();
   const { callbacks } = useCommentSection();
 
@@ -73,7 +75,7 @@ function VoteButtons({
         display: "inline-flex",
         alignItems: "center",
         // 🎨 CUSTOMIZATION: Vote button styling (Default: gray-100)
-        backgroundColor: "#F3F4F6",
+        backgroundColor: theme === 'dark' ? "#374151" : "#F3F4F6",
         borderRadius: "9999px",
         padding: padding,
         gap: "4px",
@@ -99,24 +101,24 @@ function VoteButtons({
           alignItems: "center",
           justifyContent: "center",
           // 🎨 CUSTOMIZATION: Vote button styling (Default: blue-500)
-          backgroundColor: userVote === "up" ? "#3B82F6" : "transparent",
+          backgroundColor: userVote === "up" ? (theme === 'dark' ? "#60A5FA" : "#3B82F6") : "transparent",
           // 🎨 CUSTOMIZATION: Vote button styling (Default: gray-500 when neutral)
-          color: userVote === "up" ? "#FFFFFF" : "#6B7280",
+          color: userVote === "up" ? "#FFFFFF" : (theme === 'dark' ? "#9CA3AF" : "#6B7280"),
           border: "none",
           cursor: "pointer",
         }}
         onMouseEnter={(e) => {
           if (userVote !== "up") {
             // 🎨 CUSTOMIZATION: Vote button styling (Default: blue-500)
-            e.currentTarget.style.color = "#3B82F6";
+            e.currentTarget.style.color = theme === 'dark' ? "#60A5FA" : "#3B82F6";
             // 🎨 CUSTOMIZATION: Vote button styling (Default: blue-50)
-            e.currentTarget.style.backgroundColor = "#EFF6FF";
+            e.currentTarget.style.backgroundColor = theme === 'dark' ? "#1E3A8A" : "#EFF6FF";
           }
         }}
         onMouseLeave={(e) => {
           if (userVote !== "up") {
             // 🎨 CUSTOMIZATION: Vote button styling (Default: gray-500)
-            e.currentTarget.style.color = "#6B7280";
+            e.currentTarget.style.color = theme === 'dark' ? "#9CA3AF" : "#6B7280";
             e.currentTarget.style.backgroundColor = "transparent";
           }
         }}
@@ -148,10 +150,10 @@ function VoteButtons({
           // 🎨 CUSTOMIZATION: Score display styling (Default: blue-500 for positive, red-500 for negative, gray-700 for neutral)
           color:
             netScore > 0
-              ? "#3B82F6"
+              ? (theme === 'dark' ? "#60A5FA" : "#3B82F6")
               : netScore < 0
-              ? "#EF4444"
-              : "#374151",
+              ? (theme === 'dark' ? "#F87171" : "#EF4444")
+              : (theme === 'dark' ? "#D1D5DB" : "#374151"),
         }}
       >
         {netScore}
@@ -177,24 +179,24 @@ function VoteButtons({
           alignItems: "center",
           justifyContent: "center",
           // 🎨 CUSTOMIZATION: Vote button styling (Default: red-500)
-          backgroundColor: userVote === "down" ? "#EF4444" : "transparent",
+          backgroundColor: userVote === "down" ? (theme === 'dark' ? "#F87171" : "#EF4444") : "transparent",
           // 🎨 CUSTOMIZATION: Vote button styling (Default: gray-500 when neutral)
-          color: userVote === "down" ? "#FFFFFF" : "#6B7280",
+          color: userVote === "down" ? "#FFFFFF" : (theme === 'dark' ? "#9CA3AF" : "#6B7280"),
           border: "none",
           cursor: "pointer",
         }}
         onMouseEnter={(e) => {
           if (userVote !== "down") {
             // 🎨 CUSTOMIZATION: Vote button styling (Default: red-500)
-            e.currentTarget.style.color = "#EF4444";
+            e.currentTarget.style.color = theme === 'dark' ? "#F87171" : "#EF4444";
             // 🎨 CUSTOMIZATION: Vote button styling (Default: red-50)
-            e.currentTarget.style.backgroundColor = "#FEF2F2";
+            e.currentTarget.style.backgroundColor = theme === 'dark' ? "#7F1D1D" : "#FEF2F2";
           }
         }}
         onMouseLeave={(e) => {
           if (userVote !== "down") {
             // 🎨 CUSTOMIZATION: Vote button styling (Default: gray-500)
-            e.currentTarget.style.color = "#6B7280";
+            e.currentTarget.style.color = theme === 'dark' ? "#9CA3AF" : "#6B7280";
             e.currentTarget.style.backgroundColor = "transparent";
           }
         }}

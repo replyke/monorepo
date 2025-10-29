@@ -1,4 +1,5 @@
 import React from "react";
+import useModalManager from "../../../../hooks/use-modal-manager";
 
 function ReplyButtonAndInfo({
   hasReplies,
@@ -9,6 +10,8 @@ function ReplyButtonAndInfo({
   replyCount: number;
   setShowReplyForm: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  const { theme } = useModalManager();
+
   return (
     <div
       style={{
@@ -24,7 +27,7 @@ function ReplyButtonAndInfo({
         onClick={() => setShowReplyForm((prev) => !prev)}
         style={{
           // 🎨 CUSTOMIZATION: Reply button styling (Default: gray-500)
-          color: "#6B7280",
+          color: theme === 'dark' ? "#9CA3AF" : "#6B7280",
           // 🎨 CUSTOMIZATION: Reply button styling (Default: medium)
           fontWeight: 500,
           padding: "4px 8px",
@@ -36,11 +39,11 @@ function ReplyButtonAndInfo({
           cursor: "pointer",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.color = "#2563EB";
-          e.currentTarget.style.backgroundColor = "#EFF6FF";
+          e.currentTarget.style.color = theme === 'dark' ? "#3B82F6" : "#2563EB";
+          e.currentTarget.style.backgroundColor = theme === 'dark' ? "#1E3A8A" : "#EFF6FF";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.color = "#6B7280";
+          e.currentTarget.style.color = theme === 'dark' ? "#9CA3AF" : "#6B7280";
           e.currentTarget.style.backgroundColor = "transparent";
         }}
       >
@@ -50,7 +53,7 @@ function ReplyButtonAndInfo({
         <span
           style={{
             // 🎨 CUSTOMIZATION: Reply button styling (Default: gray-500)
-            color: "#6B7280",
+            color: theme === 'dark' ? "#9CA3AF" : "#6B7280",
           }}
         >
           {replyCount} {replyCount === 1 ? "reply" : "replies"}

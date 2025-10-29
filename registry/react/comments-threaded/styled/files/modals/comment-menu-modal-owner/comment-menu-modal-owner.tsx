@@ -12,6 +12,7 @@ function CommentMenuModalOwner() {
     optionsComment,
     isCommentOptionsModalOwnerOpen,
     closeCommentOptionsModalOwner,
+    theme,
   } = useModalManager();
 
   const { deleteComment } = useCommentSection();
@@ -37,7 +38,7 @@ function CommentMenuModalOwner() {
         onClick={(e) => e.stopPropagation()}
         style={{
           ...resetDiv,
-          backgroundColor: "white",
+          backgroundColor: theme === 'dark' ? "#1F2937" : "white",
           borderRadius: 8,
           width: "100%",
           maxWidth: 240,
@@ -63,7 +64,7 @@ function CommentMenuModalOwner() {
               style={{
                 ...resetButton,
                 fontWeight: 600,
-                color: "#DC2626",
+                color: theme === 'dark' ? "#EF4444" : "#DC2626",
                 paddingLeft: 24,
                 paddingRight: 24,
                 paddingTop: 8,
@@ -75,7 +76,7 @@ function CommentMenuModalOwner() {
             </button>
           </li>
           <div
-            style={{ height: 1, width: "100%", backgroundColor: "#e7e7e7" }}
+            style={{ height: 1, width: "100%", backgroundColor: theme === 'dark' ? "#4B5563" : "#e7e7e7" }}
           />
           <li
             style={{
@@ -87,6 +88,7 @@ function CommentMenuModalOwner() {
             <button
               style={{
                 ...resetButton,
+                color: theme === 'dark' ? "#D1D5DB" : "#374151", // 🎨 CUSTOMIZATION: Cancel button text color
                 paddingLeft: 24,
                 paddingRight: 24,
                 paddingTop: 8,
