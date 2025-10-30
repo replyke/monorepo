@@ -129,10 +129,8 @@ function NewCommentForm() {
     // if (pushMention.id === previousPushMention?.id) return;
 
     if (!pushMention.username) {
-      (
-        callbacks?.userCantBeMentionedCallback ??
-        (() => alert("User has no username"))
-      )();
+      
+        callbacks?.userCantBeMentionedCallback?.();
       return;
     }
 

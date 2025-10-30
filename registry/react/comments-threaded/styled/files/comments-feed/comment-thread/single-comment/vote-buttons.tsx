@@ -85,10 +85,8 @@ function VoteButtons({
       <button
         onClick={() => {
           if (!user) {
-            (
-              callbacks?.loginRequiredCallback ||
-              (() => alert("Please login first."))
-            )();
+            
+              callbacks?.loginRequiredCallback?.();
             return;
           }
   if (!user.username && callbacks?.usernameRequiredCallback) {
@@ -167,10 +165,8 @@ function VoteButtons({
       <button
         onClick={() => {
           if (!user) {
-            (
-              callbacks?.loginRequiredCallback ||
-              (() => alert("Please login first."))
-            )();
+            
+              callbacks?.loginRequiredCallback?.();
             return;
           }
           if (user && !user.username) {
