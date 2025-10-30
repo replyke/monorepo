@@ -18,6 +18,11 @@ export interface Registry {
   dependencies: string[];
   files: RegistryFile[];
   registryUrl: string;
+  exports?: {
+    mainComponent: string;
+    mainFile: string;
+    typeExports?: string[];
+  };
 }
 
 const __filename = fileURLToPath(import.meta.url);

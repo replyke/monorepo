@@ -1,6 +1,6 @@
 {
   "name": "@replyke/cli",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "CLI for installing Replyke UI components",
   "type": "module",
   "bin": {

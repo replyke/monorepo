@@ -84,11 +84,12 @@ export async function add(componentName: string) {
     checkComponentDependencies(registry.dependencies);
 
     // Show usage example
+    const componentInfo = getComponentInfo(registry);
     const relativeImportPath = path.relative(process.cwd(), path.join(config.paths.components, componentName));
     console.log(chalk.bold('\n📖 Usage:'));
-    console.log(chalk.dim(`  import { ThreadedCommentSection } from './${relativeImportPath}';`));
+    console.log(chalk.dim(`  import { ${componentInfo.mainComponent} } from './${relativeImportPath}';`));
     console.log(chalk.dim(`  // With types:`));
-    console.log(chalk.dim(`  import { ThreadedCommentSection, type ThreadedStyleCallbacks } from './${relativeImportPath}';`));
+    console.log(chalk.dim(`  import { ${componentInfo.mainComponent}, type ${componentInfo.typeExport} } from './${relativeImportPath}';`));
     console.log();
 
   } catch (error) {
@@ -131,9 +132,12 @@ async function createIndexFile(
   const componentDir = path.join(process.cwd(), config.paths.components, componentName);
   const indexPath = path.join(componentDir, 'index.ts');
 
-  // Hardcoded index content for comments-threaded
-  const indexContent = `export { default as ThreadedCommentSection } from './components/threaded-comment-section';
-export * from './components/threaded-comment-section';
+  // Get component info dynamically
+  const componentInfo = getComponentInfo(registry);
+
+  // Generate index content dynamically
+  const indexContent = `export { default as ${componentInfo.mainComponent} } from './components/${componentInfo.mainFile}';
+export * from './components/${componentInfo.mainFile}';
 `;
 
   // Write index file
@@ -145,6 +149,34 @@ function toPascalCase(str: string): string {
     .split(/[-_]/)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join('');
+}
+
+interface ComponentInfo {
+  mainComponent: string;
+  mainFile: string;
+  typeExport: string;
+}
+
+function getComponentInfo(registry: Registry): ComponentInfo {
+  // If registry has explicit exports metadata, use it
+  if (registry.exports) {
+    return {
+      mainComponent: registry.exports.mainComponent,
+      mainFile: registry.exports.mainFile,
+      typeExport: registry.exports.typeExports?.[0] || '',
+    };
+  }
+
+  // Fall back to naming convention pattern
+  // e.g., "comments-threaded" -> "threaded" -> "Threaded"
+  const variant = registry.name.replace(/^comments-/, '');
+  const pascalVariant = toPascalCase(variant);
+
+  return {
+    mainComponent: `${pascalVariant}CommentSection`,
+    mainFile: `${variant}-comment-section`,
+    typeExport: `${pascalVariant}StyleCallbacks`,
+  };
 }
 
 function checkComponentDependencies(dependencies: string[]) {
