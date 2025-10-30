@@ -38,33 +38,6 @@ function NewCommentForm({ withEmojis }: { withEmojis?: boolean }) {
 
   const [isGiphyVisible, setIsGiphyVisible] = useState(false);
 
-  // 🎨 CUSTOMIZATION: Form background color (Default: white)
-  const backgroundColor = theme === 'dark' ? '#1F2937' : '#fff';
-
-  // 🎨 CUSTOMIZATION: Form layout (Default: true - show avatar)
-  const withAvatar = true;
-
-  // 🎨 CUSTOMIZATION: Form spacing (Default: 8px gap, 8px vertical padding)
-  const itemsGap = 8;
-  const verticalPadding = 8;
-  const paddingLeft = 8;
-  const paddingRight = 16;
-
-  // 🎨 CUSTOMIZATION: Avatar size (Default: 32px)
-  const authorAvatarSize = 32;
-
-  // 🎨 CUSTOMIZATION: Textarea styling
-  const placeholderText = "Add a comment...";
-  const textareaTextSize = 14;
-  const textareaBackgroundColor = theme === 'dark' ? '#1F2937' : '#fff';
-  const textareaTextColor = theme === 'dark' ? '#E5E7EB' : '#000';
-
-  // 🎨 CUSTOMIZATION: Post button styling
-  const postButtonText = "Post";
-  const postButtonFontSize = 14;
-  const postButtonFontColor = theme === 'dark' ? '#60A5FA' : '#0A99F6'; // Blue
-  const postButtonFontWeight = 600;
-
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [content, setContent] = useState(""); // We've managed everything via the ref, but we need this to know if we render a post button or a show gifs button
 
@@ -215,7 +188,8 @@ function NewCommentForm({ withEmojis }: { withEmojis?: boolean }) {
         style={{
           ...resetDiv,
           position: "relative",
-          backgroundColor,
+          // 🎨 CUSTOMIZATION: Form background color (Default: white)
+          backgroundColor: theme === 'dark' ? '#1F2937' : '#fff',
         }}
       >
         <div style={{ width: "100%", position: "relative" }}>
@@ -227,7 +201,7 @@ function NewCommentForm({ withEmojis }: { withEmojis?: boolean }) {
             handleMentionClick={handleMentionClick}
           />
         </div>
-        <div style={{ position: "relative", zIndex: 20, backgroundColor }}>
+        <div style={{ position: "relative", zIndex: 20, backgroundColor: theme === 'dark' ? '#1F2937' : '#fff' }}>
           {withEmojis && (
             <EmojiSuggestions
               onEmojiClick={(emoji) => {
@@ -243,36 +217,38 @@ function NewCommentForm({ withEmojis }: { withEmojis?: boolean }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "flex-end",
-
-              gap: itemsGap,
-              paddingTop: verticalPadding,
-              paddingBottom: verticalPadding,
-              paddingLeft,
-              paddingRight,
+              // 🎨 CUSTOMIZATION: Form spacing (Default: 8px gap, 8px vertical padding)
+              gap: 8,
+              paddingTop: 8,
+              paddingBottom: 8,
+              paddingLeft: 8,
+              paddingRight: 16,
             }}
           >
-            {user && withAvatar ? (
+            {/* 🎨 CUSTOMIZATION: Form layout (Default: true - show avatar, 32px size) */}
+            {user && true ? (
               <UserAvatar
                 user={user}
-                size={authorAvatarSize}
-                borderRadius={authorAvatarSize}
+                size={32}
+                borderRadius={32}
               />
             ) : (
-              <div style={{ height: authorAvatarSize, width: 2 }} />
+              <div style={{ height: 32, width: 2 }} />
             )}
             <textarea
               id="replyke-social-textarea"
               rows={1}
               ref={textAreaRef}
-              placeholder={placeholderText}
+              placeholder="Add a comment..."
               onChange={(e) => setContent(e.target.value)}
               required
               style={{
                 ...resetTextInput,
                 width: "100%",
-                fontSize: textareaTextSize,
-                color: textareaTextColor,
-                backgroundColor: textareaBackgroundColor,
+                // 🎨 CUSTOMIZATION: Textarea styling
+                fontSize: 14,
+                color: theme === 'dark' ? '#E5E7EB' : '#000',
+                backgroundColor: theme === 'dark' ? '#1F2937' : '#fff',
               }}
             />
             {content.length === 0 && giphyApiKey ? (
@@ -284,9 +260,10 @@ function NewCommentForm({ withEmojis }: { withEmojis?: boolean }) {
                   ...resetButton,
                   border: "none",
                   outline: "none",
-                  fontWeight: postButtonFontWeight,
-                  fontSize: postButtonFontSize,
-                  color: postButtonFontColor,
+                  // 🎨 CUSTOMIZATION: Post button styling
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: theme === 'dark' ? '#60A5FA' : '#0A99F6',
                   cursor: "pointer",
                 }}
               >
@@ -301,13 +278,14 @@ function NewCommentForm({ withEmojis }: { withEmojis?: boolean }) {
                   ...resetButton,
                   border: "none",
                   outline: "none",
-                  fontWeight: postButtonFontWeight,
-                  fontSize: postButtonFontSize,
-                  color: postButtonFontColor,
+                  // 🎨 CUSTOMIZATION: Post button styling
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: theme === 'dark' ? '#60A5FA' : '#0A99F6',
                   cursor: "pointer",
                 }}
               >
-                {postButtonText}
+                Post
               </button>
             )}
           </div>

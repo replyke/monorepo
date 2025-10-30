@@ -4,18 +4,15 @@ import useUIState from "../../hooks/use-ui-state";
 function FetchingCommentsSkeletons() {
   const { theme } = useUIState();
 
-  // 🎨 CUSTOMIZATION: Feed background and gap (Default: white, 8px gap)
-  const backgroundColor = theme === 'dark' ? '#1F2937' : '#fff';
-  const commentsGap = 8;
-
   return (
     <div
       style={{
         ...resetDiv,
         display: "flex",
         flexDirection: "column",
-        gap: commentsGap,
-        backgroundColor,
+        // 🎨 CUSTOMIZATION: Feed background and gap (Default: white, 8px gap)
+        gap: 8,
+        backgroundColor: theme === 'dark' ? '#1F2937' : '#fff',
         paddingBottom: 24,
         paddingRight: 16,
         paddingLeft: 16,

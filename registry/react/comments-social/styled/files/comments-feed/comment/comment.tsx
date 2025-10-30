@@ -18,7 +18,7 @@ import {
   parseContentWithMentions,
 } from "@replyke/ui-core-react-js";
 
-import { Replies } from "./replies/replies";
+import Replies from "./replies";
 import HeartButton from "./heart-button";
 import useUIState from "../../../hooks/use-ui-state";
 
@@ -42,46 +42,6 @@ const Comment = React.memo(
       highlightedComment,
     } = useCommentSection();
     const { theme } = useUIState();
-
-    // 🎨 CUSTOMIZATION: Comment spacing (Default: 12px horizontal, 8px vertical)
-    const horizontalItemsGap = 12;
-    const verticalItemsGap = 8;
-
-    // 🎨 CUSTOMIZATION: Avatar size (Default: 32px)
-    const authorAvatarSize = 32;
-
-    // 🎨 CUSTOMIZATION: Author name typography
-    const authorFontSize = 13;
-    const authorFontWeight = 700;
-    const authorFontColor = theme === 'dark' ? '#F9FAFB' : '#000';
-
-    // 🎨 CUSTOMIZATION: Timestamp typography
-    const fromNowFontSize = 12;
-    const fromNowFontColor = theme === 'dark' ? '#9CA3AF' : '#737373';
-
-    // 🎨 CUSTOMIZATION: Comment body typography
-    const commentBodyFontSize = 14;
-    const commentBodyFontColor = theme === 'dark' ? '#E5E7EB' : '#000';
-
-    // 🎨 CUSTOMIZATION: Action button spacing and typography
-    const actionsItemGap = 8;
-    const replyButtonFontSize = 12;
-    const replyButtonFontWeight = 600;
-    const replyButtonFontColor = theme === 'dark' ? '#9CA3AF' : '#737373';
-
-    // 🎨 CUSTOMIZATION: Heart icon styling
-    const heartIconSize = 14;
-    const heartIconFullColor = theme === 'dark' ? '#F87171' : '#DC2626';
-    const heartIconEmptyColor = theme === 'dark' ? '#9CA3AF' : '#8E8E8E';
-    const heartIconPaddingBottom = 4;
-
-    // 🎨 CUSTOMIZATION: Likes count typography
-    const likesCountFontSize = 12;
-    const likesCountFontWeight = 400;
-    const likesCountFontColor = theme === 'dark' ? '#9CA3AF' : '#8E8E8E';
-
-    // 🎨 CUSTOMIZATION: Text labels
-    const justNowText = "Just now";
 
     const [hovered, setHovered] = useState(false); // State to track hover
 
@@ -152,7 +112,8 @@ const Comment = React.memo(
         >
           <div
             style={{
-              gap: horizontalItemsGap,
+              // 🎨 CUSTOMIZATION: Comment spacing (Default: 12px horizontal, 8px vertical)
+              gap: 12,
               display: "flex",
               flexDirection: "row",
               alignItems: "flex-start",
@@ -170,15 +131,16 @@ const Comment = React.memo(
                 }
               }}
             >
+              {/* 🎨 CUSTOMIZATION: Avatar size (Default: 32px) */}
               <UserAvatar
                 user={comment.user}
-                borderRadius={authorAvatarSize}
-                size={authorAvatarSize}
+                borderRadius={32}
+                size={32}
               />
             </div>
             <div
               style={{
-                gap: verticalItemsGap,
+                gap: 8,
                 flex: 1,
                 display: "flex",
                 flexDirection: "column",
@@ -206,18 +168,20 @@ const Comment = React.memo(
                   }}
                   style={{
                     ...resetP,
-                    fontWeight: authorFontWeight,
-                    fontSize: authorFontSize,
-                    color: authorFontColor,
+                    // 🎨 CUSTOMIZATION: Author name typography
+                    fontWeight: 700,
+                    fontSize: 13,
+                    color: theme === 'dark' ? '#F9FAFB' : '#000',
                   }}
                 >
                   {getUserName(comment.user, "username")}
                 </div>
+                {/* 🎨 CUSTOMIZATION: Timestamp typography */}
                 <FromNow
                   time={comment.createdAt}
-                  fontSize={fromNowFontSize}
-                  color={fromNowFontColor}
-                  justNowText={justNowText}
+                  fontSize={12}
+                  color={theme === 'dark' ? '#9CA3AF' : '#737373'}
+                  justNowText="Just now"
                 />
               </div>
 
@@ -225,8 +189,9 @@ const Comment = React.memo(
                 <p
                   style={{
                     ...resetP,
-                    fontSize: commentBodyFontSize,
-                    color: commentBodyFontColor,
+                    // 🎨 CUSTOMIZATION: Comment body typography
+                    fontSize: 14,
+                    color: theme === 'dark' ? '#E5E7EB' : '#000',
                   }}
                 >
                   {parseContentWithMentions(
@@ -262,7 +227,8 @@ const Comment = React.memo(
               <div
                 style={{
                   ...resetDiv,
-                  gap: actionsItemGap,
+                  // 🎨 CUSTOMIZATION: Action button spacing and typography
+                  gap: 8,
                   display: "flex",
                   flexDirection: "row",
                   alignItems: "center",
@@ -276,9 +242,9 @@ const Comment = React.memo(
                   }
                   style={{
                     ...resetButton,
-                    color: replyButtonFontColor,
-                    fontSize: replyButtonFontSize,
-                    fontWeight: replyButtonFontWeight,
+                    color: theme === 'dark' ? '#9CA3AF' : '#737373',
+                    fontSize: 12,
+                    fontWeight: 600,
                   }}
                 >
                   Reply
@@ -306,21 +272,23 @@ const Comment = React.memo(
                 alignItems: "center",
               }}
             >
+              {/* 🎨 CUSTOMIZATION: Heart icon styling */}
               <HeartButton
                 userUpvoted={userUpvotedComment}
                 handleUpvote={handleUpvoteComment}
                 handleRemoveUpvote={handleRemoveCommentUpvote}
-                iconSize={heartIconSize}
-                emptyColor={heartIconEmptyColor}
-                fullColor={heartIconFullColor}
+                iconSize={14}
+                emptyColor={theme === 'dark' ? '#9CA3AF' : '#8E8E8E'}
+                fullColor={theme === 'dark' ? '#F87171' : '#DC2626'}
                 padding={4}
-                paddingBottom={heartIconPaddingBottom}
+                paddingBottom={4}
               />
               <div
                 style={{
-                  fontSize: likesCountFontSize,
-                  color: likesCountFontColor,
-                  fontWeight: likesCountFontWeight,
+                  // 🎨 CUSTOMIZATION: Likes count typography
+                  fontSize: 12,
+                  color: theme === 'dark' ? '#9CA3AF' : '#8E8E8E',
+                  fontWeight: 400,
                 }}
               >
                 {comment.upvotes.length}

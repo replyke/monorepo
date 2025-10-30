@@ -20,13 +20,6 @@ const ShowHideButton = ({
 }) => {
   const { theme } = useUIState();
 
-  // 🎨 CUSTOMIZATION: Show/hide button styling (Default: 8px top padding)
-  const viewRepliesPaddingTop = 8;
-
-  // 🎨 CUSTOMIZATION: Text labels
-  const viewMoreRepliesText = "View more replies ($count)";
-  const hideRepliesText = "Hide replies";
-
   let action: ("show" | "hide" | "load-more")[] = [];
   let text = "";
 
@@ -34,7 +27,8 @@ const ShowHideButton = ({
     // This case is if the replies were never expanded before (page === 0)
     case !areRepliesVisible && page === 0:
       action = ["show", "load-more"];
-      text = viewMoreRepliesText.replace(
+      // 🎨 CUSTOMIZATION: Text label for "View more replies ($count)"
+      text = "View more replies ($count)".replace(
         "$count",
         totalRepliesCount.toString()
       );
@@ -43,7 +37,7 @@ const ShowHideButton = ({
     // This case is if the replies have been shown previously but are now hidden (user had o oad all before hidding)
     case !areRepliesVisible && page > 0:
       action = ["show"];
-      text = viewMoreRepliesText.replace(
+      text = "View more replies ($count)".replace(
         "$count",
         totalRepliesCount.toString()
       );
@@ -52,7 +46,7 @@ const ShowHideButton = ({
     // This case is if the replies are visible and there are more replies to load
     case areRepliesVisible && totalRepliesCount > loadedRepliesCount:
       action = ["load-more"];
-      text = viewMoreRepliesText.replace(
+      text = "View more replies ($count)".replace(
         "$count",
         (totalRepliesCount - loadedRepliesCount).toString()
       );
@@ -61,7 +55,8 @@ const ShowHideButton = ({
     // This case is if the replies are visible and all of them have been loaded
     case areRepliesVisible && totalRepliesCount <= loadedRepliesCount:
       action = ["hide"];
-      text = hideRepliesText;
+      // 🎨 CUSTOMIZATION: Text label for "Hide replies"
+      text = "Hide replies";
       break;
   }
 
@@ -76,7 +71,8 @@ const ShowHideButton = ({
       }}
       style={{
         ...resetButton,
-        paddingTop: viewRepliesPaddingTop,
+        // 🎨 CUSTOMIZATION: Show/hide button styling (Default: 8px top padding)
+        paddingTop: 8,
         paddingLeft: 56,
         paddingRight: 16,
         display: "flex",

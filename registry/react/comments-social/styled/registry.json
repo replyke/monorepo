@@ -72,6 +72,11 @@
       "description": "Like button with heart icon"
     },
     {
+      "path": "files/comments-feed/comment/index.ts",
+      "type": "component",
+      "description": "Comment barrel export"
+    },
+    {
       "path": "files/comments-feed/comment/replies/replies.tsx",
       "type": "component",
       "description": "Nested replies container"
@@ -80,6 +85,11 @@
       "path": "files/comments-feed/comment/replies/show-hide-button.tsx",
       "type": "component",
       "description": "Button to show/hide/load more replies"
+    },
+    {
+      "path": "files/comments-feed/comment/replies/index.ts",
+      "type": "component",
+      "description": "Replies barrel export"
     },
     {
       "path": "files/modals/comment-menu-modal/comment-menu-modal.tsx",

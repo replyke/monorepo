@@ -16,10 +16,6 @@ export function Replies({ commentId }: { commentId: string }) {
 
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
 
-  // 🎨 CUSTOMIZATION: Reply spacing (Default: 12px gap, 8px top padding)
-  const repliesGap = 12;
-  const repliesPaddingTop = 8;
-
   const comment = entityCommentsTree![commentId]?.comment;
 
   const filteredReplies = useMemo(() => {
@@ -48,10 +44,11 @@ export function Replies({ commentId }: { commentId: string }) {
       {someRepliesShow && (
         <div
           style={{
-            paddingTop: repliesPaddingTop,
+            // 🎨 CUSTOMIZATION: Reply spacing (Default: 12px gap, 8px top padding)
+            paddingTop: 8,
             display: "flex",
             flexDirection: "column",
-            gap: repliesGap,
+            gap: 12,
           }}
         >
           {/* New replies should always show first*/}
