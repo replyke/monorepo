@@ -1,0 +1,136 @@
+{
+  "name": "comments-social",
+  "platform": "react",
+  "style": "styled",
+  "version": "1.0.0",
+  "description": "Social-style comment system with likes, nested replies, and moderation (Instagram-inspired)",
+  "author": "Replyke",
+  "license": "Apache-2.0",
+  "dependencies": [
+    "@replyke/react-js@^6.0.0",
+    "@replyke/ui-core-react-js@^6.0.0"
+  ],
+  "files": [
+    {
+      "path": "files/social-comment-section.tsx",
+      "type": "component",
+      "description": "Main entry component for social comments"
+    },
+    {
+      "path": "files/new-comment-form.tsx",
+      "type": "component",
+      "description": "Form for creating new top-level comments"
+    },
+    {
+      "path": "files/reply-banner.tsx",
+      "type": "component",
+      "description": "Banner showing who user is replying to"
+    },
+    {
+      "path": "files/mention-suggestions.tsx",
+      "type": "component",
+      "description": "User mention suggestions dropdown"
+    },
+    {
+      "path": "files/sort-by-button.tsx",
+      "type": "component",
+      "description": "Sort comments button (top/new/old)"
+    },
+    {
+      "path": "files/comments-feed/comments-feed.tsx",
+      "type": "component",
+      "description": "Main feed container for displaying comments"
+    },
+    {
+      "path": "files/comments-feed/loaded-comments.tsx",
+      "type": "component",
+      "description": "Renders loaded comments list"
+    },
+    {
+      "path": "files/comments-feed/fetching-comments-skeletons.tsx",
+      "type": "component",
+      "description": "Loading skeleton states"
+    },
+    {
+      "path": "files/comments-feed/no-comments-placeholder.tsx",
+      "type": "component",
+      "description": "Empty state when no comments exist"
+    },
+    {
+      "path": "files/comments-feed/comments-footer-component.tsx",
+      "type": "component",
+      "description": "Footer with load more spinner"
+    },
+    {
+      "path": "files/comments-feed/comment/comment.tsx",
+      "type": "component",
+      "description": "Individual comment with author, body, heart button"
+    },
+    {
+      "path": "files/comments-feed/comment/heart-button.tsx",
+      "type": "component",
+      "description": "Like button with heart icon"
+    },
+    {
+      "path": "files/comments-feed/comment/index.ts",
+      "type": "component",
+      "description": "Comment barrel export"
+    },
+    {
+      "path": "files/comments-feed/comment/replies/replies.tsx",
+      "type": "component",
+      "description": "Nested replies container"
+    },
+    {
+      "path": "files/comments-feed/comment/replies/show-hide-button.tsx",
+      "type": "component",
+      "description": "Button to show/hide/load more replies"
+    },
+    {
+      "path": "files/comments-feed/comment/replies/index.ts",
+      "type": "component",
+      "description": "Replies barrel export"
+    },
+    {
+      "path": "files/modals/comment-menu-modal/comment-menu-modal.tsx",
+      "type": "component",
+      "description": "Modal for comment actions (report)"
+    },
+    {
+      "path": "files/modals/comment-menu-modal/main-content.tsx",
+      "type": "component",
+      "description": "Main content of comment menu modal"
+    },
+    {
+      "path": "files/modals/comment-menu-modal/report-content.tsx",
+      "type": "component",
+      "description": "Report comment form"
+    },
+    {
+      "path": "files/modals/comment-menu-modal-owner/comment-menu-modal-owner.tsx",
+      "type": "component",
+      "description": "Comment menu for comment owners (delete)"
+    },
+    {
+      "path": "hooks/use-social-comments.tsx",
+      "type": "hook",
+      "description": "Main hook for social comment functionality"
+    },
+    {
+      "path": "hooks/use-ui-state.tsx",
+      "type": "hook",
+      "description": "Hook for managing UI state (modals and theme)"
+    },
+    {
+      "path": "utils/prop-comparison.ts",
+      "type": "util",
+      "description": "Utilities for prop comparison and memoization"
+    },
+    {
+      "path": "context/ui-state-context.tsx",
+      "type": "context",
+      "description": "Context for UI state (modals and theme)"
+    }
+  ],
+  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-social/styled"
+}
