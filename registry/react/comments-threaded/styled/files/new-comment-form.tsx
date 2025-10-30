@@ -70,10 +70,10 @@ function NewCommentForm() {
         return;
       }
 
-      if (user && !user.username) {
-        callbacks?.usernameRequiredCallback?.();
-        return;
-      }
+  if (!user.username && callbacks?.usernameRequiredCallback) {
+      callbacks.usernameRequiredCallback();
+      return;
+    }
 
       const tempContent = textArea.value.trim();
       setIsSubmitting(true);
@@ -115,11 +115,11 @@ function NewCommentForm() {
         return;
       }
 
-      if (user && !user.username) {
-        callbacks?.usernameRequiredCallback?.();
-        setIsGiphyVisible(false);
-        return;
-      }
+        if (!user.username && callbacks?.usernameRequiredCallback) {
+      callbacks.usernameRequiredCallback();
+      setIsGiphyVisible(false);
+      return;
+    }
 
       const textArea = textAreaRef.current;
       if (!textArea) throw new Error("Can not find textarea");

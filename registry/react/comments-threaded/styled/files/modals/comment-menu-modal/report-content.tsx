@@ -32,10 +32,10 @@ function ReportContent({ resetView }: { resetView: () => void }) {
         callbacks?.loginRequiredCallback?.();
         return;
       }
-      if (user && !user.username) {
-        callbacks?.usernameRequiredCallback?.();
-        return;
-      }
+  if (!user.username && callbacks?.usernameRequiredCallback) {
+      callbacks.usernameRequiredCallback();
+      return;
+    }
       setSubmitting(true);
       await createCommentReport({ targetId: optionsComment.id, reason });
       closeCommentOptionsModal?.();

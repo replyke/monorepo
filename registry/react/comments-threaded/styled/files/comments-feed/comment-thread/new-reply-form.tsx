@@ -34,8 +34,8 @@ function NewReplyForm({
       return;
     }
 
-    if (user && !user.username) {
-      callbacks?.usernameRequiredCallback?.();
+  if (!user.username && callbacks?.usernameRequiredCallback) {
+      callbacks.usernameRequiredCallback();
       return;
     }
 

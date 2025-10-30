@@ -91,10 +91,10 @@ function VoteButtons({
             )();
             return;
           }
-          if (user && !user.username) {
-            callbacks?.usernameRequiredCallback?.();
-            return;
-          }
+  if (!user.username && callbacks?.usernameRequiredCallback) {
+      callbacks.usernameRequiredCallback();
+      return;
+    }
           handleVote("up");
         }}
         style={{
