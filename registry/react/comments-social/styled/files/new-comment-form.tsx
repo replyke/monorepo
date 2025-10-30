@@ -26,7 +26,7 @@ import ReplyBanner from "./reply-banner";
 import MentionSuggestions from "./mention-suggestions";
 import useUIState from "../hooks/use-ui-state";
 
-function NewCommentForm({ withEmojis }: { withEmojis?: boolean }) {
+function NewCommentForm() {
   const { user } = useUser();
   const { project } = useProject();
   const giphyApiKey = project?.integrations.find((int) => int.name === "giphy")
@@ -202,16 +202,15 @@ function NewCommentForm({ withEmojis }: { withEmojis?: boolean }) {
           />
         </div>
         <div style={{ position: "relative", zIndex: 20, backgroundColor: theme === 'dark' ? '#1F2937' : '#fff' }}>
-          {withEmojis && (
-            <EmojiSuggestions
-              onEmojiClick={(emoji) => {
-                const textArea = textAreaRef.current;
-                if (!textArea) throw new Error("Can't find textarea");
-                textArea.value += emoji;
-                setContent((c) => c + emoji);
-              }}
-            />
-          )}
+          {/* 🔧 CUSTOMIZE: Remove this component if you don't want emoji picker */}
+          <EmojiSuggestions
+            onEmojiClick={(emoji) => {
+              const textArea = textAreaRef.current;
+              if (!textArea) throw new Error("Can't find textarea");
+              textArea.value += emoji;
+              setContent((c) => c + emoji);
+            }}
+          />
           <div
             style={{
               display: "flex",

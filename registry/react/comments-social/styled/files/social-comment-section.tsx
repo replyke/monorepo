@@ -51,36 +51,12 @@ import NewCommentForm from "./new-comment-form";
 import { deepEqual, warnPropChanges } from "../utils/prop-comparison";
 import useUIState from "../hooks/use-ui-state";
 
-// Simplified callbacks interface (removed from -core package)
-export interface SocialStyleCallbacks {
-  loginRequiredCallback?: () => void;
-  onCommentClick?: (commentId: string) => void;
-  onUserClick?: (userId: string) => void;
-}
-
-type ButtonStyle = {
-  backgroundColor: string;
-  padding: string;
-  borderRadius: string;
-  color: string;
-  fontSize: string;
-};
-
-type ButtonStyles = {
-  active?: ButtonStyle;
-  inactive?: ButtonStyle;
-};
-
 interface SocialCommentSectionProps {
   entity?: Entity | undefined | null;
   entityId?: string | undefined | null;
   foreignId?: string | undefined | null;
   shortId?: string | undefined | null;
-  callbacks?: SocialStyleCallbacks;
   isVisible?: boolean;
-  sortOptions?: Array<"top" | "new" | "old"> | null;
-  header?: React.ReactNode;
-  withEmojis?: boolean;
   highlightedCommentId?: string | undefined | null;
   theme?: 'light' | 'dark';
   children?: React.ReactNode;
@@ -94,7 +70,6 @@ const arePropsEqual = (
   // Add development warnings for unnecessary prop changes
   warnPropChanges("SocialCommentSection", prevProps, nextProps, [
     "entity",
-    "callbacks",
   ]);
 
   // Compare primitive values
@@ -103,7 +78,6 @@ const arePropsEqual = (
     prevProps.foreignId !== nextProps.foreignId ||
     prevProps.shortId !== nextProps.shortId ||
     prevProps.isVisible !== nextProps.isVisible ||
-    prevProps.withEmojis !== nextProps.withEmojis ||
     prevProps.highlightedCommentId !== nextProps.highlightedCommentId ||
     prevProps.theme !== nextProps.theme
   ) {
@@ -115,22 +89,7 @@ const arePropsEqual = (
     return false;
   }
 
-  // Deep compare callbacks to handle cases where
-  // parent component creates new objects with same content
-  if (!deepEqual(prevProps.callbacks, nextProps.callbacks)) {
-    return false;
-  }
-
-  // Compare sortOptions array
-  if (!deepEqual(prevProps.sortOptions, nextProps.sortOptions)) {
-    return false;
-  }
-
-  // Compare header and children (reference comparison for React nodes)
-  if (prevProps.header !== nextProps.header) {
-    return false;
-  }
-
+  // Compare children (reference comparison for React nodes)
   if (prevProps.children !== nextProps.children) {
     return false;
   }
@@ -140,18 +99,16 @@ const arePropsEqual = (
 
 function SocialCommentSectionInner({
   isVisible,
-  sortOptions,
-  header,
-  withEmojis,
   children,
 }: {
   isVisible: boolean;
-  sortOptions: Array<"top" | "new" | "old"> | null;
-  header?: React.ReactNode;
-  withEmojis?: boolean;
   children?: React.ReactNode;
 }) {
   const { theme } = useUIState();
+
+  // 🔧 CUSTOMIZE: Sort options for comments
+  // Remove or reorder these options as needed
+  const sortOptions: Array<"top" | "new" | "old"> = ["top", "new", "old"];
 
   const buttonStyles = {
     active: {
@@ -172,8 +129,6 @@ function SocialCommentSectionInner({
   };
 
   const renderSortButtons = () => {
-    if (!sortOptions) return null;
-
     const optionsMap: Record<
       "top" | "new" | "old",
       { label: string; priority: "top" | "new" | "old" }
@@ -198,7 +153,7 @@ function SocialCommentSectionInner({
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {(header || sortOptions) && (
+      {sortOptions.length > 0 && (
         <div
           style={{
             display: "flex",
@@ -209,10 +164,10 @@ function SocialCommentSectionInner({
             paddingBottom: "12px",
             alignItems: "center",
             gap: "4px",
+            justifyContent: "flex-end",
           }}
         >
-          <div style={{ flex: 1 }}>{header}</div>
-          {sortOptions !== null && renderSortButtons()}
+          {renderSortButtons()}
         </div>
       )}
 
@@ -231,7 +186,7 @@ function SocialCommentSectionInner({
         // 🎨 CUSTOMIZATION: Form border color
         borderTop: theme === 'dark' ? "1px solid #4B5563" : "1px solid #e5e7eb"
       }}>
-        {isVisible && <NewCommentForm withEmojis={withEmojis} />}
+        {isVisible && <NewCommentForm />}
       </div>
     </div>
   );
@@ -242,11 +197,7 @@ function SocialCommentSection({
   entityId,
   foreignId,
   shortId,
-  callbacks,
   isVisible = true,
-  sortOptions = ["top", "new", "old"],
-  header,
-  withEmojis,
   highlightedCommentId,
   theme = 'light',
   children,
@@ -256,7 +207,6 @@ function SocialCommentSection({
     entityId,
     foreignId,
     shortId,
-    callbacks,
     theme,
     highlightedCommentId,
   });
@@ -265,9 +215,6 @@ function SocialCommentSection({
     <CommentSectionProvider>
       <SocialCommentSectionInner
         isVisible={isVisible}
-        sortOptions={sortOptions}
-        header={header}
-        withEmojis={withEmojis}
       >
         {children}
       </SocialCommentSectionInner>
