@@ -1,4 +1,4 @@
-import { User } from "@replyke/react-js";
+import { User, useCommentSection } from "@replyke/react-js";
 import { UserAvatar, UserMentionSkeleton } from "@replyke/ui-core-react-js";
 import useUIState from "../hooks/use-ui-state";
 
@@ -16,6 +16,7 @@ function MentionSuggestions({
   handleMentionClick,
 }: MentionSuggestionsProps) {
   const { theme } = useUIState();
+  const { callbacks } = useCommentSection();
 
   if (!isMentionActive) return null;
 
@@ -49,7 +50,13 @@ function MentionSuggestions({
             {mentionSuggestions.map((user) => (
               <div
                 key={user.id}
-                onClick={() => handleMentionClick(user)}
+                onClick={() => {
+                  if (!user.username) {
+                    callbacks?.userCantBeMentionedCallback?.();
+                    return;
+                  }
+                  handleMentionClick(user);
+                }}
                 style={{
                   cursor: "pointer",
                   display: "flex",

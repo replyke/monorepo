@@ -91,6 +91,10 @@ function VoteButtons({
             )();
             return;
           }
+          if (user && !user.username) {
+            callbacks?.usernameRequiredCallback?.();
+            return;
+          }
           handleVote("up");
         }}
         style={{
@@ -167,6 +171,10 @@ function VoteButtons({
               callbacks?.loginRequiredCallback ||
               (() => alert("Please login first."))
             )();
+            return;
+          }
+          if (user && !user.username) {
+            callbacks?.usernameRequiredCallback?.();
             return;
           }
           handleVote("down");

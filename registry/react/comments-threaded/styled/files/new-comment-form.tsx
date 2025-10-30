@@ -58,10 +58,20 @@ function NewCommentForm() {
       e?.preventDefault();
 
       const textArea = textAreaRef.current;
-      if (!textArea || !hasContent || isSubmitting) return;
+      if (!textArea || isSubmitting) return;
+
+      if (!hasContent) {
+        callbacks?.commentTooShortCallback?.();
+        return;
+      }
 
       if (!user) {
         callbacks?.loginRequiredCallback();
+        return;
+      }
+
+      if (user && !user.username) {
+        callbacks?.usernameRequiredCallback?.();
         return;
       }
 
@@ -99,6 +109,18 @@ function NewCommentForm() {
       altText: string | undefined;
       aspectRatio: number;
     }) => {
+      if (!user) {
+        callbacks?.loginRequiredCallback?.();
+        setIsGiphyVisible(false);
+        return;
+      }
+
+      if (user && !user.username) {
+        callbacks?.usernameRequiredCallback?.();
+        setIsGiphyVisible(false);
+        return;
+      }
+
       const textArea = textAreaRef.current;
       if (!textArea) throw new Error("Can not find textarea");
 
@@ -113,7 +135,7 @@ function NewCommentForm() {
         handleError(err, "Creating comment failed: ");
       }
     },
-    [createComment, mentions, resetMentions]
+    [createComment, mentions, resetMentions, user, callbacks]
   );
 
   // Add keyboard event handler for Enter key

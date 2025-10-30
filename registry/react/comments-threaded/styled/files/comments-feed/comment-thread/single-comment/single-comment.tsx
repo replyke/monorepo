@@ -85,7 +85,16 @@ function SingleComment({
               marginTop: "4px",
             }}
           >
-            <div style={{ position: "relative", zIndex: 10 }}>
+            <div
+              style={{ position: "relative", zIndex: 10, cursor: "pointer" }}
+              onClick={() => {
+                if (user?.id === comment.user.id) {
+                  callbacks?.currentUserClickCallback?.();
+                } else {
+                  callbacks?.otherUserClickCallback?.(comment.user.id, comment.user.foreignId);
+                }
+              }}
+            >
               <UserAvatar
                 user={comment.user}
                 // 🎨 CUSTOMIZATION: Avatar styling (Default: 24px)
@@ -141,6 +150,20 @@ function SingleComment({
                     fontSize: "12px",
                     // 🎨 CUSTOMIZATION: Typography - Author (Default: gray-700)
                     color: theme === 'dark' ? "#D1D5DB" : "#374151",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    if (user?.id === comment.user.id) {
+                      callbacks?.currentUserClickCallback?.();
+                    } else {
+                      callbacks?.otherUserClickCallback?.(comment.user.id, comment.user.foreignId);
+                    }
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.textDecoration = "underline";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.textDecoration = "none";
                   }}
                 >
                   {getUserName(comment.user)}
