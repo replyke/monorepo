@@ -46,12 +46,26 @@ export async function fetchRegistry(
       return await fs.readJson(registryPath);
     }
 
-    // TODO: In production, fetch from GitHub
-    // const url = `https://raw.githubusercontent.com/replyke/replyke-components/main/registry/${config.platform}/${componentName}/${config.style}/registry.json`;
-    // const response = await fetch(url);
-    // return await response.json();
+    // Fetch from GitHub (for production/npx usage)
+    const url = `https://raw.githubusercontent.com/replyke/cli/main/registry/${config.platform}/${componentName}/${config.style}/registry.json`;
 
-    return null;
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.error(`Component "${componentName}" with style "${config.style}" not found in registry.`);
+        } else {
+          console.error(`Failed to fetch registry: ${response.status} ${response.statusText}`);
+        }
+        return null;
+      }
+
+      return await response.json();
+    } catch (fetchError) {
+      console.error(`Error fetching from GitHub: ${fetchError}`);
+      return null;
+    }
   } catch (error) {
     console.error('Error fetching registry:', error);
     return null;
@@ -82,12 +96,22 @@ export async function fetchFile(
       return await fs.readFile(localPath, 'utf-8');
     }
 
-    // TODO: In production, fetch from GitHub
-    // const fileUrl = `${registryUrl}/${filePath}`;
-    // const response = await fetch(fileUrl);
-    // return await response.text();
+    // Fetch from GitHub (for production/npx usage)
+    const fileUrl = `${registryUrl}/${filePath}`;
 
-    return null;
+    try {
+      const response = await fetch(fileUrl);
+
+      if (!response.ok) {
+        console.error(`Failed to fetch file ${filePath}: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      return await response.text();
+    } catch (fetchError) {
+      console.error(`Error fetching file ${filePath} from GitHub: ${fetchError}`);
+      return null;
+    }
   } catch (error) {
     console.error(`Error fetching file ${filePath}:`, error);
     return null;

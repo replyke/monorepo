@@ -11,11 +11,9 @@ export interface ReplykeConfig {
   typescript: boolean;
   paths: {
     components: string;
-    lib: string;
   };
   aliases: {
     '@/components': string;
-    '@/lib': string;
   };
 }
 
@@ -43,8 +41,8 @@ export async function init() {
       name: 'style',
       message: 'Which styling approach?',
       choices: [
-        { title: 'Inline Styles (more portable)', value: 'styled' },
-        { title: 'Tailwind CSS (coming soon)', value: 'tailwind', disabled: true },
+        { title: 'Tailwind CSS', value: 'tailwind' },
+        { title: 'Inline Styles', value: 'styled' },
       ],
     },
     {
@@ -52,12 +50,6 @@ export async function init() {
       name: 'componentsPath',
       message: 'Where should components be installed?',
       initial: 'src/components',
-    },
-    {
-      type: 'text',
-      name: 'libPath',
-      message: 'Where should utility files be installed?',
-      initial: 'src/lib',
     },
   ]);
 
@@ -73,11 +65,9 @@ export async function init() {
     typescript: true,
     paths: {
       components: answers.componentsPath || 'src/components',
-      lib: answers.libPath || 'src/lib',
     },
     aliases: {
       '@/components': `./src/components`,
-      '@/lib': `./src/lib`,
     },
   };
 
