@@ -1,21 +1,21 @@
-import fs from 'fs-extra';
-import path from 'path';
-import chalk from 'chalk';
-import ora from 'ora';
-import { ReplykeConfig } from './init.js';
-import { fetchRegistry, fetchFile, Registry } from '../utils/registry.js';
-import { transformImports } from '../utils/transform.js';
+import fs from "fs-extra";
+import path from "path";
+import chalk from "chalk";
+import ora from "ora";
+import { ReplykeConfig } from "./init.js";
+import { fetchRegistry, fetchFile, Registry } from "../utils/registry.js";
+import { transformImports } from "../utils/transform.js";
 
 export async function add(componentName: string) {
-  const spinner = ora('Initializing...').start();
+  const spinner = ora("Initializing...").start();
 
   try {
     // Read configuration
-    const configPath = path.join(process.cwd(), 'replyke.json');
+    const configPath = path.join(process.cwd(), "replyke.json");
 
     if (!(await fs.pathExists(configPath))) {
-      spinner.fail('No replyke.json found');
-      console.log(chalk.yellow('\n⚠️  Please run: npx @replyke/cli init'));
+      spinner.fail("No replyke.json found");
+      console.log(chalk.yellow("\n⚠️  Please run: npx @replyke/cli init"));
       process.exit(1);
     }
 
@@ -31,12 +31,17 @@ export async function add(componentName: string) {
       process.exit(1);
     }
 
-    spinner.text = 'Downloading files...';
+    spinner.text = "Downloading files...";
 
     // Download and install each file
     let filesInstalled = 0;
 
     for (const file of registry.files) {
+      // Skip development files
+      if (shouldExcludeFile(file.path)) {
+        continue;
+      }
+
       const fileContent = await fetchFile(registry.registryUrl, file.path);
 
       if (!fileContent) {
@@ -51,73 +56,96 @@ export async function add(componentName: string) {
       const targetPath = getTargetPath(file.path, config, componentName);
       const fullPath = path.join(process.cwd(), targetPath);
 
-//       // Add @internal JSDoc comment for component files to discourage direct imports
-//       if (file.path.startsWith('files/') || file.path.startsWith('hooks/')) {
-//         const internalComment = `/**
-//  * @internal
-//  * Import from the barrel export instead:
-//  * import { ${toPascalCase(path.basename(file.path, path.extname(file.path)))} } from '@/components/${componentName}'
-//  */\n\n`;
-//         transformed = internalComment + transformed;
-//       }
+      //       // Add @internal JSDoc comment for component files to discourage direct imports
+      //       if (file.path.startsWith('files/') || file.path.startsWith('hooks/')) {
+      //         const internalComment = `/**
+      //  * @internal
+      //  * Import from the barrel export instead:
+      //  * import { ${toPascalCase(path.basename(file.path, path.extname(file.path)))} } from '@/components/${componentName}'
+      //  */\n\n`;
+      //         transformed = internalComment + transformed;
+      //       }
 
       // Ensure directory exists
       await fs.ensureDir(path.dirname(fullPath));
 
       // Write file
-      await fs.writeFile(fullPath, transformed, 'utf-8');
+      await fs.writeFile(fullPath, transformed, "utf-8");
       filesInstalled++;
     }
 
     // Create barrel export index file
-    spinner.text = 'Creating index file...';
+    spinner.text = "Creating index file...";
     await createIndexFile(componentName, config, registry);
     filesInstalled++;
 
     spinner.succeed(`Added ${componentName}`);
 
     // Show success message
-    console.log(chalk.green(`\n✅ Successfully installed ${filesInstalled} files!`));
-    console.log(chalk.dim(`\n📁 Files added to ${path.join(config.paths.components, componentName)}`));
+    console.log(
+      chalk.green(`\n✅ Successfully installed ${filesInstalled} files!`)
+    );
+    console.log(
+      chalk.dim(
+        `\n📁 Files added to ${path.join(
+          config.paths.components,
+          componentName
+        )}`
+      )
+    );
 
     // Check dependencies
     checkComponentDependencies(registry.dependencies);
 
     // Show usage example
     const componentInfo = getComponentInfo(registry);
-    const relativeImportPath = path.relative(process.cwd(), path.join(config.paths.components, componentName));
-    console.log(chalk.bold('\n📖 Usage:'));
-    console.log(chalk.dim(`  import { ${componentInfo.mainComponent} } from './${relativeImportPath}';`));
+    const relativeImportPath = path.relative(
+      process.cwd(),
+      path.join(config.paths.components, componentName)
+    );
+    console.log(chalk.bold("\n📖 Usage:"));
+    console.log(
+      chalk.dim(
+        `  import { ${componentInfo.mainComponent} } from './${relativeImportPath}';`
+      )
+    );
     console.log(chalk.dim(`  // With types:`));
-    console.log(chalk.dim(`  import { ${componentInfo.mainComponent}, type ${componentInfo.typeExport} } from './${relativeImportPath}';`));
+    console.log(
+      chalk.dim(
+        `  import { ${componentInfo.mainComponent}, type ${componentInfo.typeExport} } from './${relativeImportPath}';`
+      )
+    );
     console.log();
-
   } catch (error) {
-    spinner.fail('Failed to add component');
-    console.error(chalk.red('\n❌ Error:'), error);
+    spinner.fail("Failed to add component");
+    console.error(chalk.red("\n❌ Error:"), error);
     process.exit(1);
   }
 }
 
-function getTargetPath(filePath: string, config: ReplykeConfig, componentName: string): string {
+function getTargetPath(
+  filePath: string,
+  config: ReplykeConfig,
+  componentName: string
+): string {
   // Create parent directory for the component
   const componentDir = path.join(config.paths.components, componentName);
 
   // Check if it's a hook, util, or context file
-  if (filePath.startsWith('hooks/')) {
-    return path.join(componentDir, 'hooks', path.basename(filePath));
+  if (filePath.startsWith("hooks/")) {
+    return path.join(componentDir, "hooks", path.basename(filePath));
   }
-  if (filePath.startsWith('utils/')) {
-    return path.join(componentDir, 'utils', path.basename(filePath));
+  if (filePath.startsWith("utils/")) {
+    return path.join(componentDir, "utils", path.basename(filePath));
   }
-  if (filePath.startsWith('context/')) {
-    return path.join(componentDir, 'context', path.basename(filePath));
+  if (filePath.startsWith("context/")) {
+    return path.join(componentDir, "context", path.basename(filePath));
   }
 
   // Component files from 'files/' go into 'components/' subdirectory
-  if (filePath.startsWith('files/')) {
+  if (filePath.startsWith("files/")) {
     const normalizedPath = filePath.substring(6); // Remove 'files/' prefix
-    return path.join(componentDir, 'components', normalizedPath);
+    return path.join(componentDir, "components", normalizedPath);
   }
 
   // Fallback for any other files
@@ -129,8 +157,12 @@ async function createIndexFile(
   config: ReplykeConfig,
   registry: Registry
 ): Promise<void> {
-  const componentDir = path.join(process.cwd(), config.paths.components, componentName);
-  const indexPath = path.join(componentDir, 'index.ts');
+  const componentDir = path.join(
+    process.cwd(),
+    config.paths.components,
+    componentName
+  );
+  const indexPath = path.join(componentDir, "index.ts");
 
   // Get component info dynamically
   const componentInfo = getComponentInfo(registry);
@@ -141,14 +173,14 @@ export * from './components/${componentInfo.mainFile}';
 `;
 
   // Write index file
-  await fs.writeFile(indexPath, indexContent, 'utf-8');
+  await fs.writeFile(indexPath, indexContent, "utf-8");
 }
 
 function toPascalCase(str: string): string {
   return str
     .split(/[-_]/)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join('');
+    .join("");
 }
 
 interface ComponentInfo {
@@ -163,13 +195,13 @@ function getComponentInfo(registry: Registry): ComponentInfo {
     return {
       mainComponent: registry.exports.mainComponent,
       mainFile: registry.exports.mainFile,
-      typeExport: registry.exports.typeExports?.[0] || '',
+      typeExport: registry.exports.typeExports?.[0] || "",
     };
   }
 
   // Fall back to naming convention pattern
   // e.g., "comments-threaded" -> "threaded" -> "Threaded"
-  const variant = registry.name.replace(/^comments-/, '');
+  const variant = registry.name.replace(/^comments-/, "");
   const pascalVariant = toPascalCase(variant);
 
   return {
@@ -180,10 +212,44 @@ function getComponentInfo(registry: Registry): ComponentInfo {
 }
 
 function checkComponentDependencies(dependencies: string[]) {
-  console.log(chalk.bold('\n📦 Required dependencies:'));
+  console.log(chalk.bold("\n📦 Required dependencies:"));
   dependencies.forEach((dep) => {
-    const [name, version] = dep.split('@').filter(Boolean);
-    console.log(chalk.dim(`  - ${name}@${version || 'latest'}`));
+    const [name, version] = dep.split("@").filter(Boolean);
+    console.log(chalk.dim(`  - ${name}@${version || "latest"}`));
   });
-  console.log(chalk.dim('\nMake sure these are installed in your project.\n'));
+  console.log(chalk.dim("\nMake sure these are installed in your project.\n"));
+}
+
+/**
+ * Check if a file should be excluded from installation (development files only)
+ */
+function shouldExcludeFile(filePath: string): boolean {
+  const fileName = path.basename(filePath);
+  const excludedFiles = [
+    'package.json',
+    'tsconfig.json',
+    '.gitignore',
+    'pnpm-lock.yaml',
+    'package-lock.json',
+    'yarn.lock',
+    '.eslintrc',
+    '.prettierrc',
+  ];
+
+  // Exclude specific files
+  if (excludedFiles.includes(fileName)) {
+    return true;
+  }
+
+  // Exclude node_modules directory
+  if (filePath.includes('node_modules')) {
+    return true;
+  }
+
+  // Exclude hidden files (starting with .)
+  if (fileName.startsWith('.')) {
+    return true;
+  }
+
+  return false;
 }

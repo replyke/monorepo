@@ -1,0 +1,20 @@
+{
+  "name": "@replyke/registry",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Component registry for Replyke CLI - development dependencies only",
+  "dependencies": {
+    "@replyke/react-js": "^6.0.0",
+    "@replyke/ui-core-react-js": "^6.0.0",
+    "styled-components": "^6.0.0",
+    "tailwindcss": "^3.0.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^2.0.0"
+  },
+  "devDependencies": {
+    "react": "^18.0.0",
+    "@types/react": "^18.0.0",
+    "@types/styled-components": "^5.1.26",
+    "typescript": "^5.3.3"
+  }
+}
