@@ -70,6 +70,11 @@ function NewCommentForm() {
       return;
     }
 
+    if (!user.username && callbacks?.usernameRequiredCallback) {
+      callbacks.usernameRequiredCallback();
+      return;
+    }
+
     const textArea = textAreaRef.current;
     if (!textArea) throw new Error("Can not find textarea");
 

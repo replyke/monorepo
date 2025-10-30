@@ -26,16 +26,10 @@ function useSocialComments({
   highlightedCommentId?: string | null;
   theme?: 'light' | 'dark';
 }) {
-  // 🔧 CUSTOMIZE: Default sort order for comments
-  // Options: "top" | "new" | "old"
-  const defaultSortBy = "top";
-
-  // 🔧 CUSTOMIZE: Number of comments to load per page
-  const limit = 10;
 
   // 🔧 CUSTOMIZE: Callback handlers for user interactions
   // Replace these placeholder implementations with your own logic
-  const dummyCallbacks = useMemo(() => ({
+  const callbacks = useMemo(() => ({
     // Called when a user tries to perform an action without being logged in
     loginRequiredCallback: () => {
       // 🔧 CUSTOMIZE: Handle login requirement
@@ -80,9 +74,9 @@ function useSocialComments({
         foreignId={foreignId}
         shortId={shortId}
         createIfNotFound={createIfNotFound}
-        callbacks={dummyCallbacks as Record<string, (...args: any[]) => void>}
-        defaultSortBy={defaultSortBy}
-        limit={limit}
+        callbacks={callbacks as Record<string, (...args: any[]) => void>}
+        defaultSortBy="top"
+        limit={10}
         highlightedCommentId={highlightedCommentId}
       >
         <UIStateProvider theme={theme}>
@@ -101,8 +95,6 @@ function useSocialComments({
     shortId,
     createIfNotFound,
     dummyCallbacks,
-    defaultSortBy,
-    limit,
     theme,
     highlightedCommentId
   ]);
