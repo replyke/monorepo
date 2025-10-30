@@ -74,7 +74,16 @@ function SingleComment({
             className="flex-shrink-0 mr-3 relative mt-1"
             // 🎨 CUSTOMIZATION: Spacing
           >
-            <div className="relative z-10">
+            <div
+              className="relative z-10 cursor-pointer"
+              onClick={() => {
+                if (user?.id === comment.user.id) {
+                  callbacks?.currentUserClickCallback?.();
+                } else {
+                  callbacks?.otherUserClickCallback?.(comment.user.id, comment.user.foreignId);
+                }
+              }}
+            >
               <UserAvatar
                 user={comment.user}
                 // 🎨 CUSTOMIZATION: Avatar styling (Default: 24px)
@@ -107,8 +116,15 @@ function SingleComment({
                 // 🎨 CUSTOMIZATION: Typography and spacing
               >
                 <span
-                  className="font-medium text-xs text-gray-700 dark:text-gray-300"
+                  className="font-medium text-xs text-gray-700 dark:text-gray-300 cursor-pointer hover:underline"
                   // 🎨 CUSTOMIZATION: Author name styling
+                  onClick={() => {
+                    if (user?.id === comment.user.id) {
+                      callbacks?.currentUserClickCallback?.();
+                    } else {
+                      callbacks?.otherUserClickCallback?.(comment.user.id, comment.user.foreignId);
+                    }
+                  }}
                 >
                   {getUserName(comment.user)}
                 </span>

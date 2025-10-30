@@ -56,19 +56,11 @@ import CommentsFeed from "./comments-feed/comments-feed";
 import NewCommentForm from "./new-comment-form";
 import { deepEqual, warnPropChanges } from "../utils/prop-comparison";
 
-// Simplified callbacks interface (removed from -core package)
-export interface ThreadedStyleCallbacks {
-  loginRequiredCallback?: () => void;
-  onCommentClick?: (commentId: string) => void;
-  onUserClick?: (userId: string) => void;
-}
-
 interface ThreadedCommentSectionProps {
   entity?: Entity | undefined | null;
   entityId?: string | undefined | null;
   foreignId?: string | undefined | null;
   shortId?: string | undefined | null;
-  callbacks?: ThreadedStyleCallbacks;
   isVisible?: boolean;
   highlightedCommentId?: string | undefined | null;
   children?: React.ReactNode;
@@ -82,7 +74,6 @@ const arePropsEqual = (
   // Add development warnings for unnecessary prop changes
   warnPropChanges("ThreadedCommentSection", prevProps, nextProps, [
     "entity",
-    "callbacks",
   ]);
 
   // Compare primitive values
@@ -90,7 +81,8 @@ const arePropsEqual = (
     prevProps.entityId !== nextProps.entityId ||
     prevProps.foreignId !== nextProps.foreignId ||
     prevProps.shortId !== nextProps.shortId ||
-    prevProps.isVisible !== nextProps.isVisible
+    prevProps.isVisible !== nextProps.isVisible ||
+    prevProps.highlightedCommentId !== nextProps.highlightedCommentId
   ) {
     return false;
   }
@@ -100,9 +92,8 @@ const arePropsEqual = (
     return false;
   }
 
-  // Deep compare callbacks to handle cases where
-  // parent component creates new objects with same content
-  if (!deepEqual(prevProps.callbacks, nextProps.callbacks)) {
+  // Compare children (reference comparison for React nodes)
+  if (prevProps.children !== nextProps.children) {
     return false;
   }
 
@@ -144,7 +135,6 @@ function ThreadedCommentSection({
   entityId,
   foreignId,
   shortId,
-  callbacks,
   isVisible = true,
   highlightedCommentId,
   children,
@@ -154,7 +144,6 @@ function ThreadedCommentSection({
     entityId,
     foreignId,
     shortId,
-    callbacks,
     highlightedCommentId,
   });
 

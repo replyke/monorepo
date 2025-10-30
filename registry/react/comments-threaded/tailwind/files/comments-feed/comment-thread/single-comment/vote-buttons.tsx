@@ -79,8 +79,12 @@ function VoteButtons({
       <button
         onClick={() => {
           if (!user) {
-            
+
               callbacks?.loginRequiredCallback?.();
+            return;
+          }
+          if (!user.username && callbacks?.usernameRequiredCallback) {
+            callbacks.usernameRequiredCallback();
             return;
           }
           handleVote("up");
@@ -132,8 +136,12 @@ function VoteButtons({
       <button
         onClick={() => {
           if (!user) {
-            
+
               callbacks?.loginRequiredCallback?.();
+            return;
+          }
+          if (!user.username && callbacks?.usernameRequiredCallback) {
+            callbacks.usernameRequiredCallback();
             return;
           }
           handleVote("down");

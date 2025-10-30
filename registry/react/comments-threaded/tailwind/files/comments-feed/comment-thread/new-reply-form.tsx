@@ -21,12 +21,23 @@ function NewReplyForm({
   const { createComment, callbacks } = useCommentSection();
 
   const handleReply = async () => {
-    if (!replyContent.trim() || isSubmitting) return;
+    if (isSubmitting) return;
+
+    if (!replyContent.trim()) {
+      callbacks?.commentTooShortCallback?.();
+      return;
+    }
 
     if (!user) {
       callbacks?.loginRequiredCallback();
       return;
     }
+
+    if (!user.username && callbacks?.usernameRequiredCallback) {
+      callbacks.usernameRequiredCallback();
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await createComment?.({

@@ -1,4 +1,4 @@
-import { User } from "@replyke/react-js";
+import { User, useCommentSection } from "@replyke/react-js";
 import { UserAvatar, UserMentionSkeleton } from "@replyke/ui-core-react-js";
 
 interface MentionSuggestionsProps {
@@ -14,6 +14,8 @@ function MentionSuggestions({
   mentionSuggestions,
   handleMentionClick,
 }: MentionSuggestionsProps) {
+  const { callbacks } = useCommentSection();
+
   if (!isMentionActive) return null;
 
   return (
@@ -32,7 +34,13 @@ function MentionSuggestions({
             {mentionSuggestions.map((user) => (
               <div
                 key={user.id}
-                onClick={() => handleMentionClick(user)}
+                onClick={() => {
+                  if (!user.username) {
+                    callbacks?.userCantBeMentionedCallback?.();
+                    return;
+                  }
+                  handleMentionClick(user);
+                }}
                 className="cursor-pointer flex items-center gap-3 p-2 rounded-lg transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <UserAvatar user={user} size={32} />
