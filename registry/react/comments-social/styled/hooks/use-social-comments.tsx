@@ -94,7 +94,7 @@ function useSocialComments({
     foreignId,
     shortId,
     createIfNotFound,
-    dummyCallbacks,
+    callbacks,
     theme,
     highlightedCommentId
   ]);
