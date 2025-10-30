@@ -20,6 +20,7 @@ function useSocialComments({
   callbacks,
   defaultSortBy,
   limit,
+  highlightedCommentId,
   theme = 'light',
 }: {
   entity?: Entity | undefined | null;
@@ -30,6 +31,7 @@ function useSocialComments({
   callbacks?: SocialStyleCallbacks;
   defaultSortBy?: CommentsSortByOptions;
   limit?: number;
+  highlightedCommentId?: string | null;
   theme?: 'light' | 'dark';
 }) {
   const MemoizedCommentSectionProvider = useMemo(() => {
@@ -43,6 +45,7 @@ function useSocialComments({
         callbacks={callbacks as Record<string, (...args: any[]) => void>}
         defaultSortBy={defaultSortBy}
         limit={limit}
+        highlightedCommentId={highlightedCommentId}
       >
         <UIStateProvider theme={theme}>
           <>

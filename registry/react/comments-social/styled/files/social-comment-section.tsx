@@ -83,7 +83,6 @@ interface SocialCommentSectionProps {
   withEmojis?: boolean;
   highlightedCommentId?: string | undefined | null;
   theme?: 'light' | 'dark';
-  sortByStyleConfig?: ButtonStyles;
   children?: React.ReactNode;
 }
 
@@ -127,11 +126,6 @@ const arePropsEqual = (
     return false;
   }
 
-  // Compare sortByStyleConfig
-  if (!deepEqual(prevProps.sortByStyleConfig, nextProps.sortByStyleConfig)) {
-    return false;
-  }
-
   // Compare header and children (reference comparison for React nodes)
   if (prevProps.header !== nextProps.header) {
     return false;
@@ -150,14 +144,12 @@ function SocialCommentSectionInner({
   header,
   withEmojis,
   children,
-  sortByStyleConfig,
 }: {
   isVisible: boolean;
   sortOptions: Array<"top" | "new" | "old"> | null;
   header?: React.ReactNode;
   withEmojis?: boolean;
   children?: React.ReactNode;
-  sortByStyleConfig?: ButtonStyles;
 }) {
   const { theme } = useUIState();
 
@@ -169,7 +161,6 @@ function SocialCommentSectionInner({
       borderRadius: "6px",
       color: theme === 'dark' ? '#F9FAFB' : 'white',
       fontSize: "12px",
-      ...(sortByStyleConfig?.active ?? {}),
     },
     inactive: {
       // 🎨 CUSTOMIZATION: Sort button inactive styles
@@ -177,7 +168,6 @@ function SocialCommentSectionInner({
       padding: "4px 8px",
       borderRadius: "6px",
       fontSize: "12px",
-      ...(sortByStyleConfig?.inactive ?? {}),
     },
   };
 
@@ -259,7 +249,6 @@ function SocialCommentSection({
   withEmojis,
   highlightedCommentId,
   theme = 'light',
-  sortByStyleConfig,
   children,
 }: SocialCommentSectionProps) {
   const { CommentSectionProvider } = useSocialComments({
@@ -269,6 +258,7 @@ function SocialCommentSection({
     shortId,
     callbacks,
     theme,
+    highlightedCommentId,
   });
 
   return (
@@ -278,7 +268,6 @@ function SocialCommentSection({
         sortOptions={sortOptions}
         header={header}
         withEmojis={withEmojis}
-        sortByStyleConfig={sortByStyleConfig}
       >
         {children}
       </SocialCommentSectionInner>
