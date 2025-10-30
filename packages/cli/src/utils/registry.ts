@@ -63,12 +63,18 @@ export async function fetchFile(
   filePath: string
 ): Promise<string | null> {
   try {
-    // For local development, read from local filesystem
+    // For local development, extract platform/component/style from registryUrl
+    // registryUrl format: .../registry/react/comments-threaded/styled or .../registry/react/comments-threaded/tailwind
+    const urlParts = registryUrl.split('/');
+    const style = urlParts[urlParts.length - 1]; // Get last part (styled or tailwind)
+    const componentName = urlParts[urlParts.length - 2]; // Get component name
+    const platform = urlParts[urlParts.length - 3]; // Get platform
+
     const localPath = path.join(
       LOCAL_REGISTRY_PATH,
-      'react', // Hardcoded for now
-      'comments-threaded',
-      'styled',
+      platform,
+      componentName,
+      style,
       filePath
     );
 

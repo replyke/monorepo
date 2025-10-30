@@ -1,14 +1,19 @@
 {
   "name": "comments-threaded",
   "platform": "react",
-  "style": "styled",
+  "style": "tailwind",
   "version": "1.0.0",
-  "description": "Threaded comment system with upvotes/downvotes, nested replies, and moderation",
+  "description": "Threaded comment system with upvotes/downvotes, nested replies, and moderation (Tailwind CSS variant with dark mode support)",
   "author": "Replyke",
   "license": "Apache-2.0",
   "dependencies": [
     "@replyke/react-js@^6.0.0",
     "@replyke/ui-core-react-js@^6.0.0"
+  ],
+  "devDependencies": [
+    "tailwindcss@^3.0.0",
+    "clsx@^2.0.0",
+    "tailwind-merge@^2.0.0"
   ],
   "files": [
     {
@@ -142,5 +147,5 @@
       "description": "Context for UI state (modals and theme)"
     }
   ],
-  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-threaded/styled"
+  "registryUrl": "https://raw.githubusercontent.com/replyke/replyke-components/main/registry/react/comments-threaded/tailwind"
 }
