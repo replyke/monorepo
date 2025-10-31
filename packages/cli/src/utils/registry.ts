@@ -18,7 +18,7 @@ export interface Registry {
   dependencies: string[];
   files: RegistryFile[];
   registryUrl: string;
-  exports?: {
+  exports: {
     mainComponent: string;
     mainFile: string;
     typeExports?: string[];

@@ -128,5 +128,10 @@
       "description": "Context for UI state (bottom sheets and theme)"
     }
   ],
-  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react-native/comments-social/styled"
+  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react-native/comments-social/styled",
+  "exports": {
+    "mainComponent": "SocialCommentSection",
+    "mainFile": "social-comment-section",
+    "typeExports": ["SocialStyleCallbacks"]
+  }
 }

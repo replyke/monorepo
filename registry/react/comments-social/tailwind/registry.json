@@ -132,5 +132,10 @@
       "description": "Context for UI state (modals and theme)"
     }
   ],
-  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-social/styled"
+  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-social/styled",
+  "exports": {
+    "mainComponent": "SocialCommentSection",
+    "mainFile": "social-comment-section",
+    "typeExports": ["SocialStyleCallbacks"]
+  }
 }

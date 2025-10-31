@@ -142,5 +142,10 @@
       "description": "Context for UI state (modals and theme)"
     }
   ],
-  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-threaded/styled"
+  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-threaded/styled",
+  "exports": {
+    "mainComponent": "ThreadedCommentSection",
+    "mainFile": "threaded-comment-section",
+    "typeExports": ["ThreadedStyleCallbacks"]
+  }
 }

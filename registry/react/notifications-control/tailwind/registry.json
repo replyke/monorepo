@@ -1,0 +1,49 @@
+{
+  "name": "notifications-control",
+  "platform": "react",
+  "style": "tailwind",
+  "version": "1.0.0",
+  "description": "Notification dropdown control with real-time updates, infinite scroll, and light/dark theme support (Tailwind variant)",
+  "author": "Replyke",
+  "license": "Apache-2.0",
+  "dependencies": [
+    "@replyke/react-js@^6.0.0",
+    "framer-motion@^11.0.0",
+    "lucide-react@^0.400.0",
+    "clsx@^2.0.0",
+    "tailwind-merge@^2.0.0"
+  ],
+  "files": [
+    {
+      "path": "files/notification-control.tsx",
+      "type": "component",
+      "description": "Main notification dropdown control with positioning (Tailwind)"
+    },
+    {
+      "path": "files/notification-list.tsx",
+      "type": "component",
+      "description": "Notification list with infinite scroll, loading and empty states (Tailwind)"
+    },
+    {
+      "path": "files/notification-item.tsx",
+      "type": "component",
+      "description": "Individual notification item with avatar, icon, and actions (Tailwind)"
+    },
+    {
+      "path": "files/notification-icon.tsx",
+      "type": "component",
+      "description": "Type-based notification icon with theme-aware colors (Tailwind)"
+    },
+    {
+      "path": "utils/notification-utils.ts",
+      "type": "util",
+      "description": "Utility functions for time formatting and text truncation"
+    }
+  ],
+  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/notifications-control/tailwind",
+  "exports": {
+    "mainComponent": "NotificationControl",
+    "mainFile": "notification-control",
+    "typeExports": []
+  }
+}

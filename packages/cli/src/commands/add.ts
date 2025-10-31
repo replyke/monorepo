@@ -190,24 +190,11 @@ interface ComponentInfo {
 }
 
 function getComponentInfo(registry: Registry): ComponentInfo {
-  // If registry has explicit exports metadata, use it
-  if (registry.exports) {
-    return {
-      mainComponent: registry.exports.mainComponent,
-      mainFile: registry.exports.mainFile,
-      typeExport: registry.exports.typeExports?.[0] || "",
-    };
-  }
-
-  // Fall back to naming convention pattern
-  // e.g., "comments-threaded" -> "threaded" -> "Threaded"
-  const variant = registry.name.replace(/^comments-/, "");
-  const pascalVariant = toPascalCase(variant);
-
+  // Registry exports metadata is now required
   return {
-    mainComponent: `${pascalVariant}CommentSection`,
-    mainFile: `${variant}-comment-section`,
-    typeExport: `${pascalVariant}StyleCallbacks`,
+    mainComponent: registry.exports.mainComponent,
+    mainFile: registry.exports.mainFile,
+    typeExport: registry.exports.typeExports?.[0] || "",
   };
 }
 
