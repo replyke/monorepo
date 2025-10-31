@@ -6,6 +6,9 @@
   "dependencies": {
     "@replyke/react-js": "^6.0.0",
     "@replyke/ui-core-react-js": "^6.0.0",
+    "@replyke/core": "^6.0.0",
+    "@replyke/ui-core-react-native": "^6.0.0",
+    "@gorhom/bottom-sheet": "^4.0.0",
     "styled-components": "^6.0.0",
     "tailwindcss": "^3.0.0",
     "clsx": "^2.0.0",
@@ -13,7 +16,9 @@
   },
   "devDependencies": {
     "react": "^18.0.0",
+    "react-native": "^0.72.0",
     "@types/react": "^18.0.0",
+    "@types/react-native": "^0.72.0",
     "@types/styled-components": "^5.1.26",
     "typescript": "^5.3.3"
   }
