@@ -1,39 +1,20 @@
 /**
  * Strip TypeScript types from code and convert to JavaScript
+ * Uses detype to preserve original formatting and readability
  * @param code - The TypeScript source code
  * @param filePath - The file path (used to determine if it's .tsx or .ts)
  * @returns JavaScript code with types removed
  */
 export async function stripTypes(code: string, filePath: string): Promise<string> {
   try {
-    // Lazy load @swc/core only when needed (for JavaScript projects)
-    const { transformSync } = await import('@swc/core');
+    // Lazy load detype only when needed (for JavaScript projects)
+    const { detype } = await import('detype');
 
-    const isTsx = filePath.endsWith('.tsx');
-
-    const result = transformSync(code, {
+    const result = await detype(code, {
       filename: filePath,
-      jsc: {
-        parser: {
-          syntax: 'typescript',
-          tsx: isTsx,
-        },
-        target: 'es2020',
-        // Preserve imports/exports as-is
-        transform: {
-          react: {
-            runtime: 'automatic',
-          },
-        },
-      },
-      module: {
-        type: 'es6',
-      },
-      // Don't minify, keep formatting readable
-      minify: false,
     });
 
-    return result.code;
+    return result;
   } catch (error) {
     throw new Error(
       `Failed to strip types from ${filePath}: ${error instanceof Error ? error.message : String(error)}`
