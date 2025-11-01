@@ -188,13 +188,6 @@ export * from './components/${componentInfo.mainFile}';
   await fs.writeFile(indexPath, indexContent, "utf-8");
 }
 
-function toPascalCase(str: string): string {
-  return str
-    .split(/[-_]/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join("");
-}
-
 interface ComponentInfo {
   mainComponent: string;
   mainFile: string;
