@@ -1,7 +1,7 @@
 {
   "name": "comments-social",
   "platform": "react",
-  "style": "styled",
+  "style": "tailwind",
   "version": "1.0.0",
   "description": "Social-style comment system with likes, nested replies, and moderation (Instagram-inspired)",
   "author": "Replyke",
@@ -132,7 +132,7 @@
       "description": "Context for UI state (modals and theme)"
     }
   ],
-  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-social/styled",
+  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-social/tailwind",
   "exports": {
     "mainComponent": "SocialCommentSection",
     "mainFile": "social-comment-section",

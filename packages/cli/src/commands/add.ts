@@ -57,7 +57,7 @@ export async function add(componentName: string) {
       // Strip TypeScript types if project is JavaScript
       let finalFilePath = file.path;
       if (!config.typescript && (file.path.endsWith('.ts') || file.path.endsWith('.tsx'))) {
-        transformed = stripTypes(transformed, file.path);
+        transformed = await stripTypes(transformed, file.path);
         finalFilePath = convertFileExtension(file.path);
       }
 

@@ -68,7 +68,7 @@ export async function fetchRegistry(
         return null;
       }
 
-      return await response.json();
+      return await response.json() as Registry;
     } catch (fetchError) {
       console.error(`Error fetching from GitHub (${url}):`, fetchError);
       return null;
