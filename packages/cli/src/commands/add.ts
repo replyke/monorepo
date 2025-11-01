@@ -6,6 +6,7 @@ import { ReplykeConfig } from "./init.js";
 import { fetchRegistry, fetchFile, Registry } from "../utils/registry.js";
 import { transformImports } from "../utils/transform.js";
 import { checkComponentDependencies } from "../utils/dependencies.js";
+import { stripTypes, convertFileExtension } from "../utils/strip-types.js";
 
 export async function add(componentName: string) {
   const spinner = ora("Initializing...").start();
@@ -53,8 +54,15 @@ export async function add(componentName: string) {
       // Transform imports to match user's project
       let transformed = transformImports(fileContent, config);
 
+      // Strip TypeScript types if project is JavaScript
+      let finalFilePath = file.path;
+      if (!config.typescript && (file.path.endsWith('.ts') || file.path.endsWith('.tsx'))) {
+        transformed = stripTypes(transformed, file.path);
+        finalFilePath = convertFileExtension(file.path);
+      }
+
       // Determine target path
-      const targetPath = getTargetPath(file.path, config, componentName);
+      const targetPath = getTargetPath(finalFilePath, config, componentName);
       const fullPath = path.join(process.cwd(), targetPath);
 
       //       // Add @internal JSDoc comment for component files to discourage direct imports
@@ -163,7 +171,10 @@ async function createIndexFile(
     config.paths.components,
     componentName
   );
-  const indexPath = path.join(componentDir, "index.ts");
+
+  // Use .js for JavaScript projects, .ts for TypeScript projects
+  const indexExtension = config.typescript ? 'ts' : 'js';
+  const indexPath = path.join(componentDir, `index.${indexExtension}`);
 
   // Get component info dynamically
   const componentInfo = getComponentInfo(registry);
