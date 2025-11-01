@@ -2,7 +2,7 @@ import prompts from 'prompts';
 import fs from 'fs-extra';
 import path from 'path';
 import chalk from 'chalk';
-import { detectProjectType } from '../utils/detect.js';
+import { detectProjectType, detectTypeScript } from '../utils/detect.js';
 
 export interface ReplykeConfig {
   platform: 'react' | 'react-native' | 'expo';
@@ -21,6 +21,7 @@ export async function init() {
 
   // Detect project type
   const projectType = await detectProjectType();
+  const hasTypeScript = await detectTypeScript();
 
   // Prompt user for configuration
   const answers = await prompts([
@@ -61,7 +62,7 @@ export async function init() {
   const config: ReplykeConfig = {
     platform: answers.platform,
     style: answers.style || 'styled',
-    typescript: true,
+    typescript: hasTypeScript,
     paths: {
       components: answers.componentsPath || 'src/components',
     },

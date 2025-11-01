@@ -147,7 +147,7 @@
       "description": "Context for UI state (modals and theme)"
     }
   ],
-  "registryUrl": "https://raw.githubusercontent.com/replyke/replyke-components/main/registry/react/comments-threaded/tailwind",
+  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-threaded/tailwind",
   "exports": {
     "mainComponent": "ThreadedCommentSection",
     "mainFile": "threaded-comment-section",

@@ -47,7 +47,9 @@ export async function fetchRegistry(
     );
 
     // Check if local registry exists (for development)
-    if (await fs.pathExists(registryPath)) {
+    const localExists = await fs.pathExists(registryPath);
+
+    if (localExists) {
       return await fs.readJson(registryPath);
     }
 
@@ -61,14 +63,14 @@ export async function fetchRegistry(
         if (response.status === 404) {
           console.error(`Component "${componentName}" with style "${config.style}" not found in registry.`);
         } else {
-          console.error(`Failed to fetch registry: ${response.status} ${response.statusText}`);
+          console.error(`Failed to fetch registry from ${url}: ${response.status} ${response.statusText}`);
         }
         return null;
       }
 
       return await response.json();
     } catch (fetchError) {
-      console.error(`Error fetching from GitHub: ${fetchError}`);
+      console.error(`Error fetching from GitHub (${url}):`, fetchError);
       return null;
     }
   } catch (error) {
@@ -97,7 +99,9 @@ export async function fetchFile(
       filePath
     );
 
-    if (await fs.pathExists(localPath)) {
+    const localExists = await fs.pathExists(localPath);
+
+    if (localExists) {
       return await fs.readFile(localPath, 'utf-8');
     }
 
@@ -108,13 +112,13 @@ export async function fetchFile(
       const response = await fetch(fileUrl);
 
       if (!response.ok) {
-        console.error(`Failed to fetch file ${filePath}: ${response.status} ${response.statusText}`);
+        console.error(`Failed to fetch file from ${fileUrl}: ${response.status} ${response.statusText}`);
         return null;
       }
 
       return await response.text();
     } catch (fetchError) {
-      console.error(`Error fetching file ${filePath} from GitHub: ${fetchError}`);
+      console.error(`Error fetching file from GitHub (${fileUrl}):`, fetchError);
       return null;
     }
   } catch (error) {

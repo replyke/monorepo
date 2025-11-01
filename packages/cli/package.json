@@ -1,6 +1,6 @@
 {
   "name": "@replyke/cli",
-  "version": "0.1.9",
+  "version": "0.1.16",
   "description": "CLI for installing Replyke UI components",
   "type": "module",
   "bin": {
@@ -21,7 +21,8 @@
     "ora": "^8.0.1",
     "fs-extra": "^11.2.0",
     "node-fetch": "^3.3.2",
-    "execa": "^8.0.1"
+    "execa": "^8.0.1",
+    "@swc/core": "^1.9.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

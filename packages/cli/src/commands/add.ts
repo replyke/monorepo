@@ -163,7 +163,10 @@ async function createIndexFile(
     config.paths.components,
     componentName
   );
-  const indexPath = path.join(componentDir, "index.ts");
+
+  // Use .js for JavaScript projects, .ts for TypeScript projects
+  const indexExtension = config.typescript ? 'ts' : 'js';
+  const indexPath = path.join(componentDir, `index.${indexExtension}`);
 
   // Get component info dynamically
   const componentInfo = getComponentInfo(registry);

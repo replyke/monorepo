@@ -30,3 +30,31 @@ export async function detectProjectType(): Promise<'react' | 'react-native' | 'u
     return 'unknown';
   }
 }
+
+export async function detectTypeScript(): Promise<boolean> {
+  try {
+    // Check for tsconfig.json
+    const tsconfigPath = path.join(process.cwd(), 'tsconfig.json');
+    if (await fs.pathExists(tsconfigPath)) {
+      return true;
+    }
+
+    // Check for typescript in package.json dependencies
+    const packageJsonPath = path.join(process.cwd(), 'package.json');
+    if (await fs.pathExists(packageJsonPath)) {
+      const packageJson = await fs.readJson(packageJsonPath);
+      const deps = {
+        ...packageJson.dependencies,
+        ...packageJson.devDependencies,
+      };
+
+      if (deps['typescript'] || deps['@types/react']) {
+        return true;
+      }
+    }
+
+    return false;
+  } catch (error) {
+    return false;
+  }
+}
