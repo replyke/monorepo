@@ -1,0 +1,261 @@
+---
+title: "Components Overview"
+description: "Own your components with Replyke's CLI-based distribution system"
+icon: "puzzle-piece"
+---
+
+# Replyke Components
+
+Replyke has fundamentally changed how developers add comment systems to their applications. We've moved from the traditional **npm package approach** to a **CLI-based component distribution** system inspired by shadcn/ui.
+
+<Info>
+**The new philosophy:** Copy, paste, customize. Not install and configure.
+
+You get **source code**, not packages. You **own** your components and can modify anything.
+</Info>
+
+---
+
+## Why the Change?
+
+The old npm package approach had significant limitations:
+
+<AccordionGroup>
+  <Accordion title="Opaque Abstraction" icon="box">
+    Components were black boxes in `node_modules`. Users couldn't see or modify the internal structure, logic, or sub-components without forking the entire package.
+  </Accordion>
+
+  <Accordion title="Limited Customization" icon="palette">
+    Only surfaces exposed via `styleCallbacks` prop could be customized. Want to change the layout? Add a new feature? Remove an element? Not possible without forking.
+  </Accordion>
+
+  <Accordion title="Configuration Hell" icon="gears">
+    Styling required passing dozens of callback functions, creating verbose and hard-to-maintain code. Simple color changes needed complex configuration objects.
+  </Accordion>
+
+  <Accordion title="No True Ownership" icon="lock">
+    The code lived in `node_modules`, not in your source control. Updates risked breaking changes. You were locked into the package's design decisions.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## The New Approach
+
+With the CLI-based system, you get complete control:
+
+### How It Works
+
+<Steps>
+  <Step title="Initialize Replyke">
+    ```bash
+    npx @replyke/cli init
+    ```
+    Configure your platform (React/React Native), styling preference (Tailwind/Inline), and component installation path.
+  </Step>
+
+  <Step title="Add Components">
+    ```bash
+    npx @replyke/cli add comments-threaded
+    # or
+    npx @replyke/cli add comments-social
+    ```
+    Components are copied directly into your `src/components/` directory.
+  </Step>
+
+  <Step title="Use & Customize">
+    ```tsx
+    import { ThreadedCommentSection } from './components/comments-threaded';
+
+    <ThreadedCommentSection entityId="my-post-123" />
+    ```
+    The component works out of the box. Want to customize? Just edit the source files directly.
+  </Step>
+</Steps>
+
+---
+
+## Benefits
+
+| Old Approach (npm) | New Approach (CLI) |
+|-------------------|-------------------|
+| Components hidden in `node_modules` | Source code in your project |
+| Limited to `styleCallbacks` prop | Edit source code directly |
+| Dozens of callback functions | Minimal props |
+| Can't modify layout or logic | Full control over everything |
+| Package updates may break things | You control when and how to update |
+| Not in version control | Committed to your repo |
+
+---
+
+## Available Components
+
+<CardGroup cols={3}>
+  <Card title="Threaded Comments" icon="comments" href="/components/components/threaded/overview">
+    Reddit-style threaded discussions with:
+    - Unlimited nesting depth
+    - Upvote/downvote system
+    - Visual threading lines
+    - Collapsible threads
+
+    **Best for:** Forums, technical discussions, detailed conversations
+  </Card>
+
+  <Card title="Social Comments" icon="heart" href="/components/components/social/overview">
+    Instagram-style social comments with:
+    - Single-level nesting
+    - Heart/like system
+    - Clean, minimal design
+    - Top/New/Old sorting
+
+    **Best for:** Social platforms, media content, quick interactions
+  </Card>
+
+  <Card title="Notification Control" icon="bell" href="/components/components/notifications/overview">
+    Dropdown notification bell control with:
+    - Real-time notification updates
+    - Smart viewport positioning
+    - Mark as read functionality
+    - Infinite scroll
+
+    **Best for:** Navigation bars, headers, notification systems
+  </Card>
+</CardGroup>
+
+---
+
+## Styling Options
+
+Each component comes in two styling variants:
+
+### Inline Styles
+- All styles as `style={{}}` objects in JSX
+- No external dependencies
+- Works everywhere
+- Easy to find and change colors
+- Theme support via conditional logic
+
+### Tailwind CSS
+- Utility classes for styling
+- Requires Tailwind CSS installed
+- Dark mode via `dark:` prefix
+- More concise code
+- Easy to integrate with design systems
+
+Choose during `init` — you can always switch by re-installing components.
+
+---
+
+## What Gets Installed
+
+When you add a component, you get approximately **25 TypeScript/TSX files**:
+
+```
+src/components/comments-threaded/
+├── index.ts                    # Entry point
+├── components/                 # All UI components (20 files)
+│   ├── threaded-comment-section.tsx
+│   ├── new-comment-form.tsx
+│   ├── comments-feed/
+│   └── modals/
+├── hooks/                      # React hooks (2 files)
+├── utils/                      # Utilities
+└── context/                    # React context
+```
+
+Every file is:
+- ✅ Visible in your project
+- ✅ Editable
+- ✅ TypeScript with full type annotations
+- ✅ Documented with inline comments
+
+---
+
+## Required Dependencies
+
+Components are **not standalone**. They depend on Replyke's core libraries for:
+- Comment data fetching & caching
+- Real-time updates
+- Authentication integration
+- Vote/like handling
+- Moderation actions
+
+**For React (Web):**
+```json
+{
+  "dependencies": {
+    "@replyke/react-js": "^6.0.0",
+    "@replyke/ui-core-react-js": "^6.0.0"
+  }
+}
+```
+
+**For React Native / Expo:**
+```json
+{
+  "dependencies": {
+    "@replyke/react-native": "^6.0.0",  // or @replyke/expo
+    "@replyke/ui-core-react-native": "^6.0.0"
+  }
+}
+```
+
+The CLI checks for these and offers to install them during `init`.
+
+---
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card title="Installation Guide" icon="rocket" href="/components/installation/cli-setup">
+    Set up the CLI and configure your project
+  </Card>
+
+  <Card title="Quick Start" icon="bolt" href="/components/installation/quick-start">
+    Get comments working in under 5 minutes
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/components/customization/overview">
+    Learn how to customize colors, layout, and functionality
+  </Card>
+
+  <Card title="Migration Guide" icon="arrow-right-arrow-left" href="/components/migration/npm-to-cli">
+    Migrate from old npm packages to CLI
+  </Card>
+</CardGroup>
+
+---
+
+## Philosophy
+
+The Replyke CLI follows these principles:
+
+1. **Minimal Props** - Components work with just `entityId`. No complex configuration required.
+2. **Sensible Defaults** - Beautiful, accessible styling out of the box.
+3. **Edit, Don't Configure** - Customize by editing source code, not passing config objects.
+4. **Progressive Disclosure** - Ignore implementation details until you need to customize.
+5. **Self-Documenting Code** - Clear file names, thorough comments, and color palettes documented in headers.
+
+---
+
+## Open Source
+
+All components are **open source** under the Apache 2.0 license. You can:
+- Fork and modify freely
+- Publish your own variants
+- Contribute improvements back to the community
+- Use in commercial projects
+
+<Info>
+**GitHub Repository:** [github.com/replyke/cli](https://github.com/replyke/cli)
+</Info>
+
+---
+
+## Legacy Documentation
+
+Looking for the old npm package documentation? See the [Legacy (Deprecated)](/components/legacy/overview) section.
+
+<Warning>
+The old npm package approach (`@replyke/comments-threaded-react-js`, `@replyke/comments-social-react-js`) is deprecated. We recommend migrating to the CLI-based system for better customization and control.
+</Warning>

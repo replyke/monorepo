@@ -1,0 +1,211 @@
+---
+title: "Notification Control Overview"
+description: "Dropdown notification bell control for real-time app notifications"
+icon: "bell"
+---
+
+# Notification Control
+
+A dropdown notification control component for displaying real-time application notifications. Think GitHub, LinkedIn, or Facebook's notification bell - shows unread count and displays a dropdown list when clicked.
+
+---
+
+## Overview
+
+NotificationControl is a lightweight, customizable component that integrates into your navigation bar to display user notifications.
+
+<Frame>
+  <img src="/images/notification-control-preview.png" alt="Notification Control Preview" />
+</Frame>
+
+---
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Real-Time Updates" icon="bolt">
+    Powered by Replyke's notification system with automatic real-time updates when new notifications arrive.
+  </Card>
+
+  <Card title="Smart Positioning" icon="location-arrow">
+    Dropdown automatically positions itself to stay within viewport bounds. Never overflows screen edges.
+  </Card>
+
+  <Card title="Infinite Scroll" icon="arrows-down-to-line">
+    Load more notifications on demand. Starts with 10, loads more as needed.
+  </Card>
+
+  <Card title="Mark as Read" icon="check">
+    Click to mark individual notifications as read, or use "Mark all read" for bulk actions.
+  </Card>
+
+  <Card title="Unread Badge" icon="circle-dot">
+    Shows unread count on the trigger component. Updates automatically in real-time.
+  </Card>
+
+  <Card title="Theme Support" icon="palette">
+    Full light/dark mode support with both inline styles and Tailwind variants.
+  </Card>
+</CardGroup>
+
+---
+
+## What It's NOT
+
+<Warning>
+This is **not** a full-page notifications center or inbox. It's a dropdown control component designed for navigation bars and headers.
+
+For a full notifications page, use the `useAppNotifications` hook from `@replyke/react-js` to build your custom interface.
+</Warning>
+
+---
+
+## Use Cases
+
+**Perfect for:**
+- Navigation bar notification bells
+- Header dropdown notifications
+- Real-time notification alerts
+- Social media style notification systems
+- SaaS dashboard notifications
+
+**File Complexity:**
+- **5 files total** (much simpler than comment components)
+- Minimal state management
+- Easy to customize
+
+---
+
+## Notification Types Supported
+
+The component supports various notification types with appropriate icons:
+
+| Type | Icon | Use Case |
+|------|------|----------|
+| `system` | Wrench | System announcements |
+| `entity-comment` | MessageCircle | New comment on entity |
+| `comment-reply` | MessageSquare | Reply to your comment |
+| `entity-mention` | @ | Mentioned in entity |
+| `comment-mention` | @ | Mentioned in comment |
+| `entity-upvote` | Heart | Upvote on entity |
+| `comment-upvote` | Heart | Upvote on comment |
+| `new-follow` | UserPlus | New follower |
+| `connection-accepted` | UserPlus | Connection accepted |
+| `connection-request` | UserPlus | Connection request |
+
+Icons are from **lucide-react**.
+
+---
+
+## Platform Support
+
+| Platform | Status |
+|----------|--------|
+| React (Web) | ✅ Fully supported |
+| React Native | ⚠️ Coming soon |
+| Expo | ⚠️ Coming soon |
+
+---
+
+## Styling Variants
+
+Like all Replyke CLI components, NotificationControl comes in two styling options:
+
+<Tabs>
+  <Tab title="Inline Styles">
+    All styles as `style={{}}` objects with OKLCH color space.
+
+    **Features:**
+    - No CSS dependencies
+    - Theme controlled via `theme` prop (`"auto" | "light" | "dark"`)
+    - Works everywhere
+    - Better color accuracy with OKLCH
+
+    **Example:**
+    ```tsx
+    <NotificationControl
+      theme="auto"  // or "light" | "dark"
+      {...props}
+    />
+    ```
+  </Tab>
+
+  <Tab title="Tailwind CSS">
+    Uses Tailwind utility classes for styling.
+
+    **Features:**
+    - Requires Tailwind CSS
+    - Dark mode via `dark:` prefix
+    - More concise code
+    - Requires `darkMode: 'class'` in config
+
+    **Example:**
+    ```tsx
+    <html className={isDark ? 'dark' : ''}>
+      <NotificationControl {...props} />
+    </html>
+    ```
+  </Tab>
+</Tabs>
+
+Choose your preference during `npx @replyke/cli init`.
+
+---
+
+## Required Dependencies
+
+```json
+{
+  "dependencies": {
+    "@replyke/react-js": "^6.0.0",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.400.0"
+  }
+}
+```
+
+**Tailwind variant additionally requires:**
+```json
+{
+  "dependencies": {
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^2.0.0"
+  }
+}
+```
+
+The CLI checks for these during installation.
+
+---
+
+## Comparison with Comment Components
+
+| Aspect | NotificationControl | Comment Components |
+|--------|-------------------|-------------------|
+| **Complexity** | Simple (5 files) | Complex (25+ files) |
+| **Purpose** | Dropdown bell notification | Full comment section |
+| **Main Use** | Navigation bar | Page content area |
+| **Layout** | Flat list | Deep threading |
+| **Bundle Size** | ~15KB minified | ~80KB minified |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/components/components/notifications/installation">
+    Add notification control to your project
+  </Card>
+
+  <Card title="Props & API" icon="sliders" href="/components/components/notifications/props-api">
+    Learn about component props
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/components/components/notifications/customization">
+    Customize colors, layout, and behavior
+  </Card>
+
+  <Card title="Integration Examples" icon="code" href="/components/components/notifications/integration-examples">
+    See real-world integration examples
+  </Card>
+</CardGroup>

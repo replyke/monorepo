@@ -1,0 +1,369 @@
+---
+title: "Customization Guide"
+description: "Customize notification control appearance and behavior"
+icon: "paintbrush"
+---
+
+# Customizing Notification Control
+
+Since you own the source code, you can customize everything: colors, layout, icons, behavior, and more.
+
+---
+
+## Changing Colors
+
+### Styled Variant (Inline Styles)
+
+Open `notification-control.tsx` and find the `colors` object:
+
+```tsx
+const colors = {
+  background: isDarkTheme ? "oklch(0.205 0 0)" : "#ffffff",
+  border: isDarkTheme ? "oklch(1 0 0 / 10%)" : "#e5e7eb",
+  text: isDarkTheme ? "oklch(0.985 0 0)" : "#0f172a",
+  textMuted: isDarkTheme ? "oklch(0.708 0 0)" : "#64748b",
+  separator: isDarkTheme ? "oklch(1 0 0 / 10%)" : "#f1f5f9",
+};
+```
+
+**Change to your brand colors:**
+
+```tsx
+const colors = {
+  background: isDarkTheme ? "#1a1a2e" : "#f8f9fa",  // Your colors
+  border: isDarkTheme ? "#3a3a5c" : "#dee2e6",
+  text: isDarkTheme ? "#eaeaea" : "#212529",
+  textMuted: isDarkTheme ? "#a0a0c0" : "#6c757d",
+  separator: isDarkTheme ? "#2a2a4c" : "#e9ecef",
+};
+```
+
+### Tailwind Variant
+
+Change classes directly in files:
+
+```tsx
+// Before
+<div className="bg-white dark:bg-gray-900">
+
+// After
+<div className="bg-slate-50 dark:bg-slate-950">
+```
+
+Or extend `tailwind.config.js`:
+
+```js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        'notification-bg': '#f8f9fa',
+        'notification-border': '#dee2e6',
+      }
+    }
+  }
+}
+```
+
+---
+
+## Modifying Layout
+
+### Change Dropdown Width
+
+In `notification-control.tsx`:
+
+```tsx
+// Change from 400px to 500px
+width: "500px",  // Desktop
+```
+
+### Change Max Height
+
+```tsx
+// Change scrollable area height
+<div style={{ maxHeight: "600px" }}>  {/* was 500px */}
+```
+
+### Add Custom Header
+
+```tsx
+{/* Add before notifications list */}
+<div style={{ padding: "12px", borderBottom: `1px solid ${colors.separator}` }}>
+  <h3>Your Notifications</h3>
+</div>
+```
+
+---
+
+## Customizing Notification Items
+
+### Change Avatar Size
+
+Open `notification-item.tsx`:
+
+```tsx
+// Change from 32px to 40px
+<div className="w-10 h-10">  {/* was w-8 h-8 */}
+  <img src={avatar} />
+</div>
+```
+
+### Remove Unread Indicator
+
+```tsx
+// Delete or comment out:
+{!notification.isRead && (
+  <div className="unread-dot" />  // Remove this
+)}
+```
+
+### Add Timestamp Badge
+
+```tsx
+// Add to notification-item.tsx
+<div className="absolute top-2 right-2">
+  <span className="text-xs text-gray-500">
+    {new Date(notification.createdAt).toLocaleDateString()}
+  </span>
+</div>
+```
+
+---
+
+## Changing Icons
+
+### Change Icon Colors
+
+Open `notification-icon.tsx` and modify `getIconConfig`:
+
+```tsx
+"comment-reply": {
+  Icon: MessageSquare,
+  colorClass: "text-purple-600 dark:text-purple-400",  // Changed from blue
+  bgClass: "bg-purple-100 dark:bg-purple-500/15",
+},
+```
+
+### Use Different Icons
+
+Replace lucide-react icons with your own:
+
+```tsx
+import { CustomIcon } from '@/components/icons';
+
+"comment-reply": {
+  Icon: CustomIcon,  // Your icon
+  colorClass: "text-blue-600",
+  bgClass: "bg-blue-100",
+},
+```
+
+---
+
+## Customizing Time Format
+
+Open `utils/notification-utils.ts`:
+
+```tsx
+export function formatRelativeTime(dateInput: string | Date): string {
+  const now = Date.now();
+  const date = new Date(dateInput);
+  const diffInSeconds = Math.floor((now - date.getTime()) / 1000);
+
+  // Show exact time for recent notifications
+  if (diffInSeconds < 60) {
+    return date.toLocaleTimeString();  // "2:34 PM" instead of "Just now"
+  }
+
+  // Or use a different format
+  if (diffInSeconds < 3600) {
+    return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+  }
+
+  // ... rest of function
+}
+```
+
+---
+
+## Adding Features
+
+### Add Confirmation Before Mark All Read
+
+In `notification-control.tsx`:
+
+```tsx
+const handleMarkAllRead = () => {
+  if (window.confirm('Mark all notifications as read?')) {
+    // existing logic
+  }
+};
+```
+
+### Add Sound on New Notification
+
+```tsx
+useEffect(() => {
+  if (unreadCount > previousUnreadCount) {
+    const audio = new Audio('/notification-sound.mp3');
+    audio.play();
+  }
+}, [unreadCount]);
+```
+
+### Add Desktop Notifications
+
+```tsx
+useEffect(() => {
+  if (unreadCount > 0 && Notification.permission === 'granted') {
+    new Notification('New notification', {
+      body: 'You have unread notifications',
+      icon: '/icon.png'
+    });
+  }
+}, [unreadCount]);
+```
+
+---
+
+## Dropdown Positioning
+
+### Force Fixed Positioning
+
+In `notification-control.tsx`, change positioning strategy:
+
+```tsx
+// Change from absolute to fixed
+position: "fixed" as const,
+top: "60px",  // Below your header
+right: "20px",
+```
+
+### Align to Left
+
+```tsx
+// Change right alignment to left
+left: "0px",
+right: "auto",
+```
+
+---
+
+## Animation Customization
+
+The component uses framer-motion. Modify animations:
+
+```tsx
+// In notification-control.tsx
+<motion.div
+  initial={{ opacity: 0, y: -10 }}
+  animate={{ opacity: 1, y: 0 }}
+  exit={{ opacity: 0, y: -10 }}
+  transition={{ duration: 0.3 }}  // Adjust duration
+>
+```
+
+**Change animation style:**
+
+```tsx
+// Slide in from right instead of fade
+initial={{ opacity: 0, x: 100 }}
+animate={{ opacity: 1, x: 0 }}
+exit={{ opacity: 0, x: 100 }}
+```
+
+---
+
+## Empty State Customization
+
+Open `notification-list.tsx` and find the empty state:
+
+```tsx
+{notifications.length === 0 && (
+  <div className="empty-state">
+    <Bell size={48} />  {/* Change icon size */}
+    <p>No notifications yet</p>  {/* Change text */}
+    <p>You're all caught up! 🎉</p>  {/* Add custom message */}
+  </div>
+)}
+```
+
+---
+
+## Loading State Customization
+
+Change skeleton loader appearance:
+
+```tsx
+// In notification-list.tsx
+<div className="skeleton" style={{
+  height: "80px",  // Change height
+  borderRadius: "12px",  // More rounded
+  background: "linear-gradient(...)",  // Custom gradient
+}} />
+```
+
+---
+
+## Common Customizations
+
+<AccordionGroup>
+  <Accordion title="Change badge color" icon="palette">
+    In your trigger component:
+
+    ```tsx
+    <span className="bg-purple-500">  {/* was bg-red-500 */}
+      {unreadCount}
+    </span>
+    ```
+  </Accordion>
+
+  <Accordion title="Add notification categories" icon="folder">
+    In `notification-control.tsx`, add tabs or filters:
+
+    ```tsx
+    const [filter, setFilter] = useState('all');
+
+    <div className="tabs">
+      <button onClick={() => setFilter('all')}>All</button>
+      <button onClick={() => setFilter('mentions')}>Mentions</button>
+      <button onClick={() => setFilter('replies')}>Replies</button>
+    </div>
+    ```
+  </Accordion>
+
+  <Accordion title="Show notification count in title" icon="window">
+    In your app root:
+
+    ```tsx
+    useEffect(() => {
+      document.title = unreadCount > 0
+        ? `(${unreadCount}) My App`
+        : 'My App';
+    }, [unreadCount]);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Integration Examples" icon="code" href="/components/components/notifications/integration-examples">
+    See real-world examples
+  </Card>
+
+  <Card title="Props & API" icon="sliders" href="/components/components/notifications/props-api">
+    Component props reference
+  </Card>
+
+  <Card title="Installation" icon="download" href="/components/components/notifications/installation">
+    Installation guide
+  </Card>
+
+  <Card title="Overview" icon="bell" href="/components/components/notifications/overview">
+    Back to overview
+  </Card>
+</CardGroup>

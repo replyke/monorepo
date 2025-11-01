@@ -1,0 +1,189 @@
+---
+title: "Colors & Theming"
+description: "Customize colors and implement dark mode"
+icon: "palette"
+---
+
+# Colors & Theming
+
+Change colors to match your brand and implement dark mode.
+
+---
+
+## Inline Styles Variant
+
+### Color Palette Guides
+
+Component files have color palette documentation in their headers:
+
+```tsx
+/**
+ * ====================
+ * THEME COLOR PALETTE
+ * ====================
+ *
+ * BACKGROUNDS:
+ * - #FFFFFF → #1F2937 (main background)
+ * - #F3F4F6 → #374151 (secondary background, hover)
+ *
+ * TEXT:
+ * - #111827 → #F9FAFB (primary text)
+ * - #6B7280 → #9CA3AF (secondary text)
+ *
+ * BLUES (links, actions, upvotes):
+ * - #3B82F6 → #60A5FA (primary blue)
+ *
+ * REDS (downvotes, delete):
+ * - #EF4444 → #F87171 (primary red)
+ */
+```
+
+Format: `Light Color → Dark Color`
+
+### Changing Colors
+
+1. **Find the color to change** using your editor's search
+2. **Replace with your brand color**
+
+```tsx
+// Before
+<button style={{
+  backgroundColor: '#3B82F6'  // Replyke blue
+}}>
+
+// After
+<button style={{
+  backgroundColor: '#9333EA'  // Your purple
+}}>
+```
+
+### Dark Mode (Inline Styles)
+
+Use the `theme` prop:
+
+```tsx
+<ThreadedCommentSection
+  entityId="post_123"
+  theme={isDarkMode ? 'dark' : 'light'}
+/>
+```
+
+Components check theme and apply colors:
+
+```tsx
+<div style={{
+  backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+  color: theme === 'dark' ? '#F9FAFB' : '#111827'
+}}>
+```
+
+---
+
+## Tailwind CSS Variant
+
+### Changing Colors
+
+#### Option 1: Change Classes Directly
+
+```tsx
+// Before
+<button className="bg-blue-600 hover:bg-blue-700">
+
+// After
+<button className="bg-purple-600 hover:bg-purple-700">
+```
+
+#### Option 2: Extend Tailwind Config
+
+```js
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#9333EA',    // Your brand color
+        // Override blue palette
+        blue: {
+          600: '#9333EA',      // Now bg-blue-600 uses your color
+        }
+      }
+    }
+  }
+}
+```
+
+### Dark Mode (Tailwind)
+
+Components use `dark:` prefix for dark mode:
+
+```tsx
+<div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50">
+```
+
+**Setup:**
+
+1. Configure Tailwind for class-based dark mode:
+
+```js
+// tailwind.config.js
+module.exports = {
+  darkMode: 'class',  // Important!
+  // ...
+}
+```
+
+2. Add `dark` class to parent element:
+
+```tsx
+<html className={isDarkMode ? 'dark' : ''}>
+  <App />
+</html>
+```
+
+All components automatically switch to dark mode.
+
+---
+
+## Common Customizations
+
+### Change Primary Brand Color
+
+**Inline Styles:**
+```bash
+# Find & replace in all component files
+Find: #3B82F6
+Replace: #9333EA
+```
+
+**Tailwind:**
+```bash
+# Find & replace in all component files
+Find: blue-600
+Replace: purple-600
+
+Find: blue-700
+Replace: purple-700
+```
+
+### Customize Dark Mode Colors
+
+Edit the dark color values in components:
+
+```tsx
+// Make dark mode even darker
+backgroundColor: theme === 'dark' ? '#0F172A' : '#FFFFFF'  // Slate-900 instead of gray-800
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Layout & Structure" icon="table-columns" href="/components/customization/layout-structure">
+    Modify component layout
+  </Card>
+
+  <Card title="Styling Variants" icon="wand-magic-sparkles" href="/components/customization/styling-variants">
+    Inline styles vs Tailwind
+  </Card>
+</CardGroup>

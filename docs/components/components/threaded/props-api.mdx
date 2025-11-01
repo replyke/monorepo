@@ -1,0 +1,365 @@
+---
+title: "Props & API"
+description: "ThreadedCommentSection component props and configuration"
+icon: "sliders"
+---
+
+# Threaded Comments Props
+
+The `ThreadedCommentSection` component follows a **minimal props philosophy**. It works with just `entityId` and offers optional props for specific needs.
+
+---
+
+## Component Import
+
+```tsx
+import { ThreadedCommentSection } from './components/comments-threaded';
+```
+
+---
+
+## Props Interface
+
+```tsx
+interface ThreadedCommentSectionProps {
+  // Entity identification (provide ONE of these)
+  entity?: Entity | undefined | null;
+  entityId?: string | undefined | null;
+  foreignId?: string | undefined | null;
+  shortId?: string | undefined | null;
+
+  // Optional features
+  isVisible?: boolean;
+  highlightedCommentId?: string | undefined | null;
+  theme?: 'light' | 'dark';                    // Only for styled variant
+  children?: React.ReactNode;
+}
+```
+
+---
+
+## Entity Identification
+
+**One of these is required** to identify which entity (post, article, etc.) the comments belong to:
+
+### `entity`
+
+**Type:** `Entity | undefined | null`
+
+A complete Entity object.
+
+```tsx
+<ThreadedCommentSection
+  entity={{
+    id: "entity_123",
+    projectId: "proj_456",
+    foreignId: "post-789",
+    // ... other entity fields
+  }}
+/>
+```
+
+**Use when:** You already have the full entity object from `useFetchEntity` or similar hooks.
+
+---
+
+### `entityId`
+
+**Type:** `string | undefined | null`
+
+The internal Replyke ID for the entity.
+
+```tsx
+<ThreadedCommentSection
+  entityId="entity_123"
+/>
+```
+
+**Use when:** You know the Replyke entity ID.
+
+---
+
+### `foreignId`
+
+**Type:** `string | undefined | null`
+
+Your external/custom ID for the entity.
+
+```tsx
+<ThreadedCommentSection
+  foreignId="blog-post-789"
+/>
+```
+
+**Use when:** You're using your own IDs and haven't fetched the Replyke entity yet. This is the **most common approach**.
+
+---
+
+### `shortId`
+
+**Type:** `string | undefined | null`
+
+A short, human-readable identifier (if you've set one).
+
+```tsx
+<ThreadedCommentSection
+  shortId="my-first-post"
+/>
+```
+
+**Use when:** You've created entities with custom short IDs for URLs.
+
+<Note>
+**You only need ONE of these props.** They're mutually compatible — use whichever fits your data model best.
+</Note>
+
+---
+
+## Optional Props
+
+### `isVisible`
+
+**Type:** `boolean`
+
+**Default:** `true`
+
+Controls whether the comment section is visible. Useful when rendering inside a drawer, modal, or conditional layout.
+
+```tsx
+const [showComments, setShowComments] = useState(false);
+
+<ThreadedCommentSection
+  entityId="post_123"
+  isVisible={showComments}
+/>
+```
+
+**Why it exists:** Ensures event listeners and behaviors are only active when the component is visible, improving performance.
+
+---
+
+### `highlightedCommentId`
+
+**Type:** `string | undefined | null`
+
+ID of a specific comment to highlight when the section loads.
+
+```tsx
+<ThreadedCommentSection
+  entityId="post_123"
+  highlightedCommentId="comment_456"  // This comment will be highlighted
+/>
+```
+
+**Use cases:**
+- Deep-linking from notifications
+- Jumping to a specific comment from a URL param
+- Drawing attention to a particular comment
+
+**What happens:**
+- The component scrolls to the highlighted comment
+- The comment is visually highlighted (background color change)
+- Highlight fades after a few seconds
+
+---
+
+### `theme`
+
+**Type:** `'light' | 'dark'`
+
+**Default:** `'light'`
+
+**Only for styled (inline styles) variant.** Sets the color theme for the entire comment section.
+
+```tsx
+const [isDark, setIsDark] = useState(false);
+
+<ThreadedCommentSection
+  entityId="post_123"
+  theme={isDark ? 'dark' : 'light'}
+/>
+```
+
+<Tabs>
+  <Tab title="Inline Styles Variant">
+    **Uses this prop.** Component checks `theme` prop and conditionally renders dark or light colors:
+
+    ```tsx
+    style={{
+      backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF'
+    }}
+    ```
+
+    Wire it to your app's theme state for synchronized dark mode.
+  </Tab>
+
+  <Tab title="Tailwind Variant">
+    **Ignores this prop.** Uses Tailwind's dark mode system instead.
+
+    Add `dark` class to a parent element:
+
+    ```tsx
+    <html className={isDark ? 'dark' : ''}>
+      <ThreadedCommentSection entityId="post_123" />
+    </html>
+    ```
+
+    Requires `darkMode: 'class'` in `tailwind.config.js`.
+  </Tab>
+</Tabs>
+
+---
+
+### `children`
+
+**Type:** `React.ReactNode`
+
+Optional React node(s) rendered within the comment feed area.
+
+```tsx
+<ThreadedCommentSection entityId="post_123">
+  <div className="text-center text-gray-500 my-4">
+    💬 Join the discussion!
+  </div>
+</ThreadedCommentSection>
+```
+
+**Use for:** Custom messaging, banners, or UI elements within the comment section.
+
+---
+
+## Complete Examples
+
+### Minimal Usage
+
+```tsx
+<ThreadedCommentSection
+  foreignId="blog-post-123"
+/>
+```
+
+That's it! Works perfectly with just this.
+
+---
+
+### With Dark Mode (Inline Styles)
+
+```tsx
+import { useState } from 'react';
+import { ThreadedCommentSection } from './components/comments-threaded';
+
+function BlogPost({ post }) {
+  const [isDark, setIsDark] = useState(false);
+
+  return (
+    <>
+      <button onClick={() => setIsDark(!isDark)}>
+        Toggle Theme
+      </button>
+
+      <ThreadedCommentSection
+        foreignId={post.id}
+        theme={isDark ? 'dark' : 'light'}
+      />
+    </>
+  );
+}
+```
+
+---
+
+### With Highlighted Comment
+
+```tsx
+import { useSearchParams } from 'react-router-dom';
+import { ThreadedCommentSection } from './components/comments-threaded';
+
+function BlogPost({ post }) {
+  const [searchParams] = useSearchParams();
+  const highlightedId = searchParams.get('commentId');
+
+  return (
+    <ThreadedCommentSection
+      foreignId={post.id}
+      highlightedCommentId={highlightedId}
+    />
+  );
+}
+
+// URL: /blog/my-post?commentId=comment_abc123
+// Will highlight comment_abc123
+```
+
+---
+
+### Full Example with All Props
+
+```tsx
+import { useSearchParams } from 'react-router-dom';
+import { ThreadedCommentSection } from './components/comments-threaded';
+import { useFetchEntity } from '@replyke/react-js';
+
+function BlogPost({ postId }) {
+  const [searchParams] = useSearchParams();
+  const [showComments, setShowComments] = useState(true);
+  const [isDark, setIsDark] = useState(false);
+
+  const { data: entity } = useFetchEntity({ foreignId: postId });
+
+  return (
+    <>
+      <button onClick={() => setShowComments(!showComments)}>
+        {showComments ? 'Hide' : 'Show'} Comments
+      </button>
+
+      <ThreadedCommentSection
+        entity={entity}  // Using full entity object
+        isVisible={showComments}
+        highlightedCommentId={searchParams.get('commentId')}
+        theme={isDark ? 'dark' : 'light'}
+      >
+        <div className="text-center text-sm text-gray-500 my-2">
+          💬 Be respectful in the discussion
+        </div>
+      </ThreadedCommentSection>
+    </>
+  );
+}
+```
+
+---
+
+## TypeScript Support
+
+The component is fully typed. Import types if needed:
+
+```tsx
+import type { ThreadedCommentSectionProps } from './components/comments-threaded';
+
+const props: ThreadedCommentSectionProps = {
+  entityId: 'entity_123',
+  theme: 'dark',
+};
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="File Structure" icon="folder-tree" href="/components/components/threaded/file-structure">
+    Understand component organization
+  </Card>
+
+  <Card title="Features" icon="star" href="/components/components/threaded/features">
+    Explore all features
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/components/customization/overview">
+    Customize the component
+  </Card>
+
+  <Card title="Installation" icon="download" href="/components/components/threaded/installation">
+    Installation guide
+  </Card>
+</CardGroup>

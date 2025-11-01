@@ -1,0 +1,174 @@
+---
+title: "Legacy Documentation"
+description: "Deprecated npm package documentation"
+icon: "triangle-exclamation"
+---
+
+<Warning>
+**This section contains deprecated documentation** for the old npm package approach (`@replyke/comments-threaded-react-js`, `@replyke/comments-social-react-js`).
+
+These packages still work but are **no longer recommended**. We've moved to a CLI-based component distribution system that gives you full source code ownership and unlimited customization.
+</Warning>
+
+---
+
+# Legacy Component Documentation
+
+This section preserves documentation for developers still using the old npm packages.
+
+---
+
+## Why These Are Deprecated
+
+The npm package approach had significant limitations:
+
+- **Limited customization:** Only surfaces exposed via `styleCallbacks` could be styled
+- **Complex configuration:** Dozens of callback functions required for styling
+- **Hidden code:** Components lived in `node_modules`, not visible or editable
+- **Version lock-in:** Updates could break your implementation
+- **No layout control:** Couldn't rearrange, remove, or add UI elements
+
+---
+
+## Recommended Migration Path
+
+We **strongly recommend** migrating to the new CLI-based approach:
+
+<CardGroup cols={2}>
+  <Card title="Migration Guide" icon="arrow-right-arrow-left" href="/components/migration/npm-to-cli">
+    Complete step-by-step migration guide
+  </Card>
+
+  <Card title="New Components Overview" icon="puzzle-piece" href="/components/overview">
+    Learn about the CLI-based system
+  </Card>
+
+  <Card title="Quick Start" icon="rocket" href="/components/installation/quick-start">
+    Get started with CLI in under 5 minutes
+  </Card>
+
+  <Card title="Benefits" icon="star" href="/components/overview">
+    Why CLI is better than npm packages
+  </Card>
+</CardGroup>
+
+---
+
+## Legacy Documentation Index
+
+If you need to reference the old npm package documentation:
+
+### Social Comments (Legacy)
+
+- [Component](/components/legacy/social/component) - Using `SocialCommentSection`
+- [Provider & Hook](/components/legacy/social/provider-and-hook) - Lower-level control
+- [Styling](/components/legacy/social/styling) - `styleConfig` and `useSocialStyle`
+- [Callbacks](/components/legacy/social/callbacks) - Interaction callbacks
+
+### Threaded Comments (Legacy)
+
+- [Component](/components/legacy/threaded/component) - Using `ThreadedCommentSection`
+- [Provider & Hook](/components/legacy/threaded/provider-and-hook) - Lower-level control
+- [Styling](/components/legacy/threaded/styling) - `styleConfig` and `useThreadedStyle`
+- [Callbacks](/components/legacy/threaded/callbacks) - Interaction callbacks
+
+### Advanced (Legacy)
+
+- [GIFs & Emojis](/components/legacy/gifs-and-emojis) - Enable GIF and emoji support
+
+---
+
+## npm Package Names
+
+For reference, the legacy packages were:
+
+**React (Web):**
+- `@replyke/comments-threaded-react-js`
+- `@replyke/comments-social-react-js`
+
+**React Native:**
+- `@replyke/comments-social-react-native`
+
+---
+
+## Support Status
+
+| Package | Status | Support |
+|---------|--------|---------|
+| `@replyke/comments-threaded-react-js` | Deprecated | Security fixes only |
+| `@replyke/comments-social-react-js` | Deprecated | Security fixes only |
+| `@replyke/comments-social-react-native` | Deprecated | Security fixes only |
+
+**New features and improvements will only be added to CLI components.**
+
+---
+
+## Still Have Questions?
+
+<AccordionGroup>
+  <Accordion title="Why should I migrate?" icon="question">
+    The CLI approach gives you:
+    - Full source code ownership
+    - Unlimited customization (not just styleCallbacks)
+    - Simpler API (no complex props)
+    - Better version control
+    - Ability to modify layout and functionality
+
+    See the [Migration Guide](/components/migration/npm-to-cli) for full details.
+  </Accordion>
+
+  <Accordion title="How long will legacy packages be supported?" icon="clock">
+    Legacy packages will receive **security fixes only**. No new features or improvements will be added.
+
+    We recommend migrating when convenient, but there's no immediate deadline.
+  </Accordion>
+
+  <Accordion title="Will my data migrate?" icon="database">
+    **Yes.** Your existing entities, comments, votes, and user data work seamlessly with CLI components. The backend is unchanged.
+  </Accordion>
+
+  <Accordion title="Is migration difficult?" icon="wrench">
+    Migration is straightforward:
+    1. Install CLI components
+    2. Update imports
+    3. Remove styleCallbacks prop
+    4. Apply customizations in source files
+
+    Most projects can migrate in under 30 minutes.
+
+    See the [Migration Guide](/components/migration/npm-to-cli).
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Get Started with CLI
+
+Ready to migrate?
+
+<Steps>
+  <Step title="Read the Migration Guide">
+    [Migration Guide](/components/migration/npm-to-cli) - Complete walkthrough
+  </Step>
+
+  <Step title="Install CLI Components">
+    ```bash
+    npx @replyke/cli init
+    npx @replyke/cli add comments-threaded
+    ```
+  </Step>
+
+  <Step title="Test Side-by-Side">
+    Test the CLI version alongside your npm version before fully migrating.
+  </Step>
+
+  <Step title="Apply Customizations">
+    Use the [Mapping Guide](/components/migration/mapping-guide) to apply your old styleCallbacks customizations.
+  </Step>
+</Steps>
+
+---
+
+<Info>
+**Need help migrating?** Join our [Discord community](https://discord.gg/replyke) or open an issue on [GitHub](https://github.com/replyke/cli/issues).
+</Info>

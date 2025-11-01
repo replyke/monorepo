@@ -29,6 +29,7 @@
           }
         ]
       },
+
       {
         "tab": "SDK Reference",
         "groups": [
@@ -75,32 +76,6 @@
             ]
           },
           {
-            "group": "Comments",
-            "pages": ["sdk/comments/overview"]
-          },
-          {
-            "group": "Social Comments",
-            "pages": [
-              "sdk/comments/social/component",
-              "sdk/comments/social/provider-and-hook",
-              "sdk/comments/social/styling",
-              "sdk/comments/social/callbacks"
-            ]
-          },
-          {
-            "group": "Threaded Comments",
-            "pages": [
-              "sdk/comments/threaded/component",
-              "sdk/comments/threaded/provider-and-hook",
-              "sdk/comments/threaded/styling",
-              "sdk/comments/threaded/callbacks"
-            ]
-          },
-          {
-            "group": "Comments Advanced",
-            "pages": ["sdk/comments/gifs-and-emojis"]
-          },
-          {
             "group": "Lists",
             "pages": [
               "sdk/lists/overview",
@@ -120,6 +95,91 @@
           {
             "group": "Moderation",
             "pages": ["sdk/moderation"]
+          }
+        ]
+      },
+      {
+        "tab": "Components",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["components/overview"]
+          },
+          {
+            "group": "Installation",
+            "pages": [
+              "components/installation/cli-setup",
+              "components/installation/configuration",
+              "components/installation/quick-start"
+            ]
+          },
+          {
+            "group": "Component Types",
+            "pages": ["components/components/overview"]
+          },
+          {
+            "group": "Threaded Comments",
+            "pages": [
+              "components/components/threaded/overview",
+              "components/components/threaded/installation",
+              "components/components/threaded/props-api",
+              "components/components/threaded/file-structure",
+              "components/components/threaded/features"
+            ]
+          },
+          {
+            "group": "Social Comments",
+            "pages": [
+              "components/components/social/overview",
+              "components/components/social/installation",
+              "components/components/social/props-api",
+              "components/components/social/file-structure",
+              "components/components/social/features"
+            ]
+          },
+          {
+            "group": "Notification Control",
+            "pages": [
+              "components/components/notifications/overview",
+              "components/components/notifications/installation",
+              "components/components/notifications/props-api",
+              "components/components/notifications/customization",
+              "components/components/notifications/integration-examples"
+            ]
+          },
+          {
+            "group": "Customization",
+            "pages": [
+              "components/customization/overview",
+              "components/customization/colors-theming",
+              "components/customization/layout-structure",
+              "components/customization/styling-variants",
+              "components/customization/adding-features",
+              "components/customization/advanced"
+            ]
+          },
+          {
+            "group": "Migration",
+            "pages": [
+              "components/migration/npm-to-cli",
+              "components/migration/mapping-guide",
+              "components/migration/faq"
+            ]
+          },
+          {
+            "group": "Legacy (Deprecated)",
+            "pages": [
+              "components/legacy/overview",
+              "components/legacy/social/component",
+              "components/legacy/social/provider-and-hook",
+              "components/legacy/social/styling",
+              "components/legacy/social/callbacks",
+              "components/legacy/threaded/component",
+              "components/legacy/threaded/provider-and-hook",
+              "components/legacy/threaded/styling",
+              "components/legacy/threaded/callbacks",
+              "components/legacy/gifs-and-emojis"
+            ]
           }
         ]
       },

@@ -1,0 +1,90 @@
+---
+title: "Gifs And Emojis"
+---
+
+<Warning>
+**This documentation is deprecated.** We've moved to a CLI-based component approach that gives you full ownership and customization of the source code. Please see the [new component documentation](/components/overview) and [migration guide](/components/migration/npm-to-cli) for the recommended approach.
+</Warning>
+
+# GIFs and Emojis
+
+This guide covers GIF and emoji functionality that's available in both social and threaded comment styles.
+
+## **GIF Integration with GIPHY**
+
+GIFs have become a staple in online communication, adding a layer of expression and fun that plain text simply can't achieve. With Replyke, integrating GIF support into your comment systems is effortless thanks to our built-in GIPHY integration. This feature works with both social and threaded comment styles. Here's everything you need to know:
+
+#### **How It Works**
+
+-   Replyke uses the GIPHY API to allow users to post GIFs as comments seamlessly.
+-   Developers only need to generate a GIPHY API key and set it in their Replyke project dashboard.
+-   Once the API key is added in the dashboard, users will see an option to add GIFs when leaving comments.
+
+#### **No API Key? No Problem**
+
+-   If no API key is provided, the GIF button will be hidden in the app's UI.
+-   This ensures that the absence of GIF functionality does not negatively impact the user experience or interfere with the design.
+
+#### **Why Add GIF Support?**
+
+1.  **Enhanced User Engagement**  
+    GIFs bring conversations to life, making them more dynamic and enjoyable. Whether it’s a funny response, a heartfelt sentiment, or a moment of celebration, a well-placed GIF can elevate the interaction.
+    
+2.  **Cultural Relevance**  
+    With GIFs being widely used across social platforms, offering this feature ensures your app remains modern and aligned with user expectations.
+    
+3.  **Flexibility for Developers**  
+    Adding GIF support is entirely optional. Developers have full control over enabling or disabling it, depending on their app's needs.
+    
+
+#### **Setting Up GIF Support**
+
+1.  [Generate a GIPHY API Key](https://developers.giphy.com/) by creating a developer account.
+2.  Add the API key to your Replyke project dashboard.
+
+---------
+
+### **Emojis in Your App**
+
+#### **Why Emojis Matter**
+
+Emojis have become a universal language in digital communication, transcending text to convey emotions, tone, and context. Whether it’s a thumbs-up 👍, a laughing face 😂, or a heartfelt ❤️, emojis add personality and richness to interactions, making them an essential feature in any app that supports user-generated content.
+
+Unlike GIFs, emojis are already part of every mobile and desktop keyboard, meaning users can add them to comments without requiring any extra UI elements. However, Replyke goes a step further to encourage their use and make commenting even more engaging.
+
+#### **Emoji Suggestions Bar**
+
+To make it easier and more intuitive for users to add emojis to their comments, Replyke includes a built-in **Emoji Suggestions Bar**. This bar, displayed above the new comment input field, features a selection of commonly used emojis, helping users effortlessly bring more life and emotion into their comments.
+
+#### **How It Works**
+
+-   The Emoji Suggestions Bar is included **by default** in the **Social Comments** style only.
+-   Users can simply click on their preferred emoji from the bar to add it directly to their comment.
+
+#### **Availability by Comment Style**
+
+**Social Comments:**
+The emoji suggestions bar is included by default and can be disabled using the `withEmojis` prop:
+
+```jsx
+<SocialCommentSection withEmojis={false} />
+```
+
+**Threaded Comments:**
+The emoji suggestions bar is **not available** in threaded comments. The threaded style focuses on discussion content and uses a simpler comment input approach. Users can still add emojis using their device's keyboard.
+
+**For Custom Implementations:**
+If you're building custom comment sections using the lower-level hooks, the emoji bar functionality is only available when using social comment components.
+
+Regardless of the comment style, users can always add emojis using their device's keyboard.
+
+#### **Why Enable the Emoji Bar?**
+
+1.  **Encourage Expressive Comments**  
+    Providing users with a visible selection of emojis makes it more likely that they’ll include them, resulting in comments that feel more expressive and fun.
+    
+2.  **Quick and Convenient**  
+    Users don’t need to switch to their keyboard’s emoji menu—common emojis are right there, just a click away.
+    
+3.  **Built-In Simplicity**  
+    Since the Emoji Bar is integrated into the `NewCommentForm` component, there’s no additional setup required to start using it.

@@ -12,7 +12,8 @@
       "Bash(mint broken-links)",
       "Bash(test:*)",
       "Bash(node:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(do head -3 \"$file\")"
     ],
     "deny": [],
     "ask": []

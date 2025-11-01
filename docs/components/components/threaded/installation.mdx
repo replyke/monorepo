@@ -1,0 +1,320 @@
+---
+title: "Installing Threaded Comments"
+description: "Add Reddit-style threaded comments to your project"
+icon: "download"
+---
+
+# Installing Threaded Comments
+
+Add Reddit-style threaded comments to your project with a single command.
+
+---
+
+## Prerequisites
+
+Before installing, make sure you've completed the CLI setup:
+
+<Steps>
+  <Step title="Initialize CLI">
+    ```bash
+    npx @replyke/cli init
+    ```
+
+    This creates your `replyke.json` configuration file.
+  </Step>
+
+  <Step title="Install Dependencies">
+    ```bash
+    npm install @replyke/react-js @replyke/ui-core-react-js
+    ```
+
+    Required for React (Web). The CLI will check for these.
+  </Step>
+</Steps>
+
+See the [CLI Setup Guide](/components/installation/cli-setup) for details.
+
+---
+
+## Installation Command
+
+Run the add command in your project directory:
+
+```bash
+npx @replyke/cli add comments-threaded
+```
+
+---
+
+## What Gets Installed
+
+The CLI will:
+
+1. **Fetch the component** from the registry (based on your `replyke.json` config)
+2. **Copy ~25 files** into your project at `{componentsPath}/comments-threaded/`
+3. **Transform imports** to work with your project structure
+4. **Create index.ts** barrel export for clean imports
+5. **Display usage examples** and required dependencies
+
+### File Structure Created
+
+```
+src/components/comments-threaded/          # Your componentsPath
+├── index.ts                                # Barrel export (entry point)
+├── components/                             # All UI components (20 files)
+│   ├── threaded-comment-section.tsx       # Main component
+│   ├── new-comment-form.tsx               # Top-level comment form
+│   ├── mention-suggestions.tsx            # @ mention autocomplete
+│   ├── comments-feed/
+│   │   ├── comments-feed.tsx              # Feed container
+│   │   ├── loaded-comments.tsx            # Renders comment list
+│   │   ├── fetching-comments-skeletons.tsx # Loading states
+│   │   ├── no-comments-placeholder.tsx    # Empty state
+│   │   └── comment-thread/
+│   │       ├── comment-thread.tsx         # Thread with replies
+│   │       ├── comment-replies.tsx        # Reply list
+│   │       ├── action-menu.tsx            # Edit/delete/report menu
+│   │       ├── new-reply-form.tsx         # Reply form
+│   │       └── single-comment/
+│   │           ├── single-comment.tsx     # Individual comment
+│   │           ├── vote-buttons.tsx       # Upvote/downvote
+│   │           ├── reply-button-and-info.tsx
+│   │           ├── toggle-replies-visibility.tsx
+│   │           └── indentation-threading-lines.tsx
+│   └── modals/
+│       ├── comment-menu-modal/            # Report modal (3 files)
+│       └── comment-menu-modal-owner/      # Owner actions (1 file)
+├── hooks/                                  # React hooks (2 files)
+│   ├── use-threaded-comments.tsx          # Main comment logic hook
+│   └── use-ui-state.tsx                   # UI state management
+├── utils/                                  # Utilities (1 file)
+│   └── prop-comparison.ts                 # Memoization helpers
+└── context/                                # React context (1 file)
+    └── ui-state-context.tsx               # Modal & theme context
+```
+
+**Total: ~25 TypeScript/TSX files**
+
+---
+
+## CLI Output Example
+
+```bash
+$ npx @replyke/cli add comments-threaded
+
+✅ Successfully installed comments-threaded!
+
+📁 Files added to: src/components/comments-threaded/
+📦 Total files: 25
+
+Required dependencies:
+  - @replyke/react-js@^6.0.0
+  - @replyke/ui-core-react-js@^6.0.0
+
+Usage:
+  import { ThreadedCommentSection } from './components/comments-threaded';
+
+  <ThreadedCommentSection entityId="your-entity-id" />
+
+Next steps:
+  1. Wrap your app with <ReplykeProvider>
+  2. Import and use the component
+  3. Customize by editing the source files directly
+```
+
+---
+
+## Using the Component
+
+After installation, import and use the component:
+
+```tsx
+import { ThreadedCommentSection } from './components/comments-threaded';
+
+function BlogPost({ post }) {
+  return (
+    <div>
+      <h1>{post.title}</h1>
+      <article>{post.content}</article>
+
+      {/* Add threaded comments */}
+      <ThreadedCommentSection
+        entityId={post.id}
+      />
+    </div>
+  );
+}
+```
+
+<Info>
+Make sure your app is wrapped with `<ReplykeProvider>`. See the [Quick Start Guide](/components/installation/quick-start) for setup details.
+</Info>
+
+---
+
+## Customization
+
+All source files are now in your project and fully editable. Change anything you want:
+
+**Change colors:**
+```tsx
+// Edit: src/components/comments-threaded/components/single-comment/single-comment.tsx
+
+<span style={{
+  color: '#9333EA' // Changed from default blue
+}}>
+  {author.name}
+</span>
+```
+
+**Modify layout:**
+```tsx
+// Edit: src/components/comments-threaded/components/threaded-comment-section.tsx
+
+return (
+  <div>
+    {/* Add custom header */}
+    <h2>Discussion ({totalComments} comments)</h2>
+
+    <NewCommentForm />
+    <CommentsFeed />
+  </div>
+);
+```
+
+See the [Customization Guide](/components/customization/overview) for more examples.
+
+---
+
+## Switching Styling Variants
+
+If you want to switch between Tailwind and Inline Styles after installation:
+
+<Steps>
+  <Step title="Delete Current Components">
+    ```bash
+    rm -rf src/components/comments-threaded
+    ```
+  </Step>
+
+  <Step title="Update Configuration">
+    Edit `replyke.json`:
+    ```json
+    {
+      "style": "styled"  // Change "tailwind" to "styled" or vice versa
+    }
+    ```
+  </Step>
+
+  <Step title="Re-install">
+    ```bash
+    npx @replyke/cli add comments-threaded
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+This will replace your component files. If you've made customizations, back them up first!
+</Warning>
+
+---
+
+## Verification
+
+After installation, verify everything works:
+
+<Steps>
+  <Step title="Check Files Exist">
+    ```bash
+    ls src/components/comments-threaded
+    # Should show: index.ts, components/, hooks/, utils/, context/
+    ```
+  </Step>
+
+  <Step title="Try Importing">
+    ```tsx
+    import { ThreadedCommentSection } from './components/comments-threaded';
+    // Should have no TypeScript errors
+    ```
+  </Step>
+
+  <Step title="Run Your Dev Server">
+    ```bash
+    npm run dev
+    ```
+
+    The component should render without errors.
+  </Step>
+</Steps>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Error: Platform not supported" icon="triangle-exclamation">
+    Threaded comments are currently only available for React (Web).
+
+    **Check your `replyke.json`:**
+    ```json
+    {
+      "platform": "react"  // Must be "react" for threaded comments
+    }
+    ```
+
+    For React Native/Expo, use [Social Comments](/components/components/social/installation) instead.
+  </Accordion>
+
+  <Accordion title="Import errors" icon="file-import">
+    Make sure your import path matches your `componentsPath`:
+
+    ```tsx
+    // If componentsPath is "src/components"
+    import { ThreadedCommentSection } from './components/comments-threaded';
+
+    // If componentsPath is "app/ui"
+    import { ThreadedCommentSection } from './ui/comments-threaded';
+    ```
+  </Accordion>
+
+  <Accordion title="TypeScript errors" icon="code">
+    Ensure your `tsconfig.json` includes the components directory:
+
+    ```json
+    {
+      "include": ["src/**/*"]
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Component already exists" icon="copy">
+    The CLI won't overwrite existing files. To reinstall:
+
+    ```bash
+    rm -rf src/components/comments-threaded
+    npx @replyke/cli add comments-threaded
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Props & API" icon="sliders" href="/components/components/threaded/props-api">
+    Learn about available props
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/components/components/threaded/file-structure">
+    Understand the component organization
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/components/customization/overview">
+    Customize colors, layout, and functionality
+  </Card>
+
+  <Card title="Features" icon="star" href="/components/components/threaded/features">
+    Explore all features
+  </Card>
+</CardGroup>

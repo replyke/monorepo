@@ -1,0 +1,173 @@
+---
+title: "Threaded Comments Overview"
+description: "Reddit-style threaded comment system with unlimited nesting"
+icon: "comments"
+---
+
+# Threaded Comments
+
+Reddit-style threaded comment system with unlimited nesting depth, upvote/downvote functionality, and visual threading lines.
+
+---
+
+## Overview
+
+Threaded comments are perfect for forums, technical discussions, and any platform where users need to have deep, structured conversations with clear visual hierarchy.
+
+<Frame>
+  <img src="/images/threaded-comments-preview.png" alt="Threaded Comments Preview" />
+</Frame>
+
+---
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Unlimited Nesting" icon="sitemap">
+    Comments can be nested infinitely deep. Users can reply to any comment, creating branching conversation threads.
+  </Card>
+
+  <Card title="Upvote/Downvote System" icon="arrow-up-arrow-down">
+    Reddit-style voting with visible scores. Helps surface quality content and provides social proof.
+  </Card>
+
+  <Card title="Visual Threading" icon="diagram-project">
+    Clear indentation and connection lines show comment hierarchy. Easy to follow complex conversations.
+  </Card>
+
+  <Card title="Collapsible Threads" icon="compress">
+    Users can collapse entire comment chains to navigate long discussions more easily.
+  </Card>
+
+  <Card title="@ Mentions" icon="at">
+    Tag other users with `@username`. Clickable mentions with autocomplete suggestions.
+  </Card>
+
+  <Card title="Highlighted Comments" icon="highlighter">
+    Deep-link to specific comments. Useful when directing users from notifications.
+  </Card>
+
+  <Card title="Edit & Delete" icon="pen-to-square">
+    Comment authors can edit or delete their own comments. Full moderation support.
+  </Card>
+
+  <Card title="Reporting & Moderation" icon="flag">
+    Built-in reporting system. Admin dashboard for managing reports and banning users.
+  </Card>
+</CardGroup>
+
+---
+
+## Use Cases
+
+**Perfect for:**
+- Developer forums and Q&A sites
+- Technical blog posts
+- News sites with discussion sections
+- Community forums
+- Reddit-style platforms
+- Long-form content with detailed discussions
+
+**Not ideal for:**
+- Quick social media interactions (use Social Comments instead)
+- Mobile-first, minimal designs (use Social Comments instead)
+- Platforms that want positive-only engagement (no downvotes)
+
+---
+
+## Platform Support
+
+| Platform | Status |
+|----------|--------|
+| React (Web) | ✅ Fully supported |
+| React Native | ⚠️ In progress |
+| Expo | ⚠️ In progress |
+
+---
+
+## Styling Variants
+
+Threaded comments are available in two styling options:
+
+<Tabs>
+  <Tab title="Tailwind CSS">
+    Uses Tailwind utility classes for styling.
+
+    **Requires:** Tailwind CSS installed in your project
+
+    **Example:**
+    ```tsx
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+    ```
+
+    **Best for:** Projects using Tailwind, design system integration
+  </Tab>
+
+  <Tab title="Inline Styles">
+    Uses inline `style={{}}` objects with conditional dark mode logic.
+
+    **Requires:** Nothing additional
+
+    **Example:**
+    ```tsx
+    <div style={{
+      backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+      padding: '16px',
+      borderRadius: '8px',
+      border: `1px solid ${theme === 'dark' ? '#4B5563' : '#E5E7EB'}`
+    }}>
+    ```
+
+    **Best for:** Projects without Tailwind, explicit styling
+  </Tab>
+</Tabs>
+
+Choose your preference during `npx @replyke/cli init`.
+
+---
+
+## Required Dependencies
+
+Threaded comments depend on these Replyke packages for core functionality:
+
+```json
+{
+  "dependencies": {
+    "@replyke/react-js": "^6.0.0",
+    "@replyke/ui-core-react-js": "^6.0.0"
+  }
+}
+```
+
+These handle:
+- Comment data fetching & caching
+- Real-time updates
+- Authentication integration
+- Vote handling
+- Moderation actions
+
+<Info>
+The CLI will check for these dependencies and prompt you to install them if missing.
+</Info>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/components/components/threaded/installation">
+    Add threaded comments to your project
+  </Card>
+
+  <Card title="Props & API" icon="sliders" href="/components/components/threaded/props-api">
+    Learn about available props and options
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/components/components/threaded/file-structure">
+    Understand the component file organization
+  </Card>
+
+  <Card title="Features" icon="star" href="/components/components/threaded/features">
+    Explore all features in detail
+  </Card>
+</CardGroup>

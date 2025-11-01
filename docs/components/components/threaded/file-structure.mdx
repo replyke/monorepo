@@ -1,0 +1,236 @@
+---
+title: "File Structure"
+description: "Understanding the threaded comments file organization"
+icon: "folder-tree"
+---
+
+# File Structure
+
+When you install threaded comments, you get approximately 25 TypeScript/TSX files organized into a clear structure.
+
+---
+
+## Directory Tree
+
+```
+src/components/comments-threaded/
+├── index.ts                              # Barrel export (entry point)
+├── components/                           # UI components (20 files)
+│   ├── threaded-comment-section.tsx     # Main component
+│   ├── new-comment-form.tsx             # Top-level comment form
+│   ├── mention-suggestions.tsx          # @ mention autocomplete
+│   ├── comments-feed/
+│   │   ├── comments-feed.tsx            # Feed container
+│   │   ├── loaded-comments.tsx          # Renders comment list
+│   │   ├── fetching-comments-skeletons.tsx
+│   │   ├── no-comments-placeholder.tsx
+│   │   └── comment-thread/
+│   │       ├── comment-thread.tsx       # Thread with replies
+│   │       ├── comment-replies.tsx      # Reply list
+│   │       ├── action-menu.tsx          # Edit/delete/report menu
+│   │       ├── new-reply-form.tsx       # Reply form
+│   │       └── single-comment/
+│   │           ├── single-comment.tsx   # Individual comment
+│   │           ├── vote-buttons.tsx     # Upvote/downvote
+│   │           ├── reply-button-and-info.tsx
+│   │           ├── toggle-replies-visibility.tsx
+│   │           └── indentation-threading-lines.tsx
+│   └── modals/
+│       ├── comment-menu-modal/          # Report modal (3 files)
+│       │   ├── comment-menu-modal.tsx
+│       │   ├── modal-background.tsx
+│       │   └── report-modal-content.tsx
+│       └── comment-menu-modal-owner/    # Owner actions
+│           └── comment-menu-modal-owner.tsx
+├── hooks/                                # React hooks (2 files)
+│   ├── use-threaded-comments.tsx        # Main comment logic
+│   └── use-ui-state.tsx                 # UI state management
+├── utils/                                # Utilities (1 file)
+│   └── prop-comparison.ts               # Memoization helpers
+└── context/                              # React context (1 file)
+    └── ui-state-context.tsx             # Modal & theme context
+```
+
+---
+
+## Key Files
+
+### `index.ts` - Entry Point
+
+Barrel export that makes imports clean:
+
+```tsx
+export { default as ThreadedCommentSection } from './components/threaded-comment-section';
+export * from './components/threaded-comment-section';
+```
+
+**Allows:**
+```tsx
+import { ThreadedCommentSection } from './components/comments-threaded';
+```
+
+Instead of:
+```tsx
+import ThreadedCommentSection from './components/comments-threaded/components/threaded-comment-section';
+```
+
+---
+
+### `threaded-comment-section.tsx` - Main Component
+
+The entry component that orchestrates everything. Edit this to:
+- Add custom headers or footers
+- Modify the layout
+- Change the overall structure
+
+---
+
+### `new-comment-form.tsx` - Comment Input
+
+The textarea and submit button for top-level comments. Edit this to:
+- Customize placeholder text
+- Change button styles
+- Add character counters
+- Modify form behavior
+
+---
+
+### `single-comment.tsx` - Individual Comment
+
+The core comment display component. Edit this to:
+- Change author name styling
+- Modify comment body layout
+- Add custom badges or labels
+- Adjust spacing and padding
+
+---
+
+### `vote-buttons.tsx` - Voting UI
+
+Upvote and downvote buttons with score display. Edit this to:
+- Change button colors
+- Modify vote count formatting
+- Add animations
+- Change icon styles
+
+---
+
+## Common Customizations
+
+### Change Colors
+
+**Inline Styles Variant:**
+
+Open any component file. Look for the color palette guide in the header:
+
+```tsx
+/**
+ * COLOR PALETTE
+ * - #3B82F6 → Primary blue (upvotes, links)
+ * - #EF4444 → Red (downvotes, delete)
+ * - #111827 → #F9FAFB (text)
+ * - #FFFFFF → #1F2937 (backgrounds)
+ */
+```
+
+Find and replace hex codes throughout the file.
+
+**Tailwind Variant:**
+
+Edit `tailwind.config.js` or change classes directly in files:
+
+```tsx
+// Change
+<button className="bg-blue-600 hover:bg-blue-700">
+
+// To
+<button className="bg-purple-600 hover:bg-purple-700">
+```
+
+---
+
+### Modify Layout
+
+Open `threaded-comment-section.tsx` and rearrange JSX:
+
+```tsx
+return (
+  <div>
+    {/* Add custom header */}
+    <h2>Discussion ({totalComments} comments)</h2>
+
+    {isVisible && <NewCommentForm />}
+    <CommentsFeed />
+
+    {/* Add custom footer */}
+    <p>Powered by Replyke</p>
+  </div>
+);
+```
+
+---
+
+### Remove Features
+
+Don't want vote buttons? Just comment them out or delete:
+
+```tsx
+// In single-comment.tsx
+return (
+  <div>
+    <AuthorInfo />
+    <CommentBody />
+    {/* <VoteButtons /> */}  {/* Removed voting */}
+    <ReplyButton />
+  </div>
+);
+```
+
+---
+
+## File Responsibilities
+
+| Directory | Purpose |
+|-----------|---------|
+| `/components/` | All UI/JSX components |
+| `/hooks/` | React hooks for state and logic |
+| `/utils/` | Helper functions (memoization, etc.) |
+| `/context/` | React context providers |
+| `/modals/` | Modal dialogs (report, actions) |
+
+---
+
+## Import Patterns
+
+Files use relative imports internally:
+
+```tsx
+// In threaded-comment-section.tsx
+import CommentsFeed from './comments-feed/comments-feed';
+import NewCommentForm from './new-comment-form';
+import { useThreadedComments } from '../hooks/use-threaded-comments';
+```
+
+The CLI handles import transformations during installation, so everything works out of the box.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Props & API" icon="sliders" href="/components/components/threaded/props-api">
+    Component props reference
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/components/customization/overview">
+    Customize colors, layout, functionality
+  </Card>
+
+  <Card title="Features" icon="star" href="/components/components/threaded/features">
+    Explore all features
+  </Card>
+
+  <Card title="Installation" icon="download" href="/components/components/threaded/installation">
+    Installation guide
+  </Card>
+</CardGroup>

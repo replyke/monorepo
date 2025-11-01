@@ -1,0 +1,128 @@
+---
+title: "Layout & Structure"
+description: "Modify component layout and structure"
+icon: "table-columns"
+---
+
+# Layout & Structure
+
+Rearrange, add, or remove UI elements.
+
+---
+
+## Adding Elements
+
+### Add Custom Header
+
+```tsx
+// File: threaded-comment-section.tsx
+
+return (
+  <div>
+    {/* Add custom header */}
+    <div className="flex justify-between items-center mb-4">
+      <h2>Discussion ({totalComments} comments)</h2>
+      <button onClick={sortBy}>Sort</button>
+    </div>
+
+    <NewCommentForm />
+    <CommentsFeed />
+  </div>
+);
+```
+
+### Add Custom Footer
+
+```tsx
+return (
+  <div>
+    <NewCommentForm />
+    <CommentsFeed />
+
+    {/* Add footer */}
+    <footer className="text-center text-gray-500 mt-4">
+      Powered by Replyke
+    </footer>
+  </div>
+);
+```
+
+---
+
+## Removing Elements
+
+### Remove Vote Buttons
+
+```tsx
+// File: single-comment.tsx
+
+return (
+  <div>
+    <AuthorInfo />
+    <CommentBody />
+    {/* <VoteButtons /> */}  {/* Removed */}
+    <ReplyButton />
+  </div>
+);
+```
+
+### Remove Reply Functionality
+
+```tsx
+// File: single-comment.tsx
+
+return (
+  <div>
+    <AuthorInfo />
+    <CommentBody />
+    <VoteButtons />
+    {/* <ReplyButton /> */}  {/* Removed */}
+  </div>
+);
+```
+
+---
+
+## Rearranging Elements
+
+### Move Reply Button Above Comment Body
+
+```tsx
+// Before
+<AuthorInfo />
+<CommentBody />
+<ReplyButton />
+
+// After
+<AuthorInfo />
+<ReplyButton />  {/* Moved up */}
+<CommentBody />
+```
+
+---
+
+## Modifying Spacing
+
+**Inline Styles:**
+```tsx
+<div style={{ padding: '24px' }}>  {/* Was 16px */}
+```
+
+**Tailwind:**
+```tsx
+<div className="p-6">  {/* Was p-4 */}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Adding Features" icon="plus" href="/components/customization/adding-features">
+    Add custom functionality
+  </Card>
+
+  <Card title="Colors & Theming" icon="palette" href="/components/customization/colors-theming">
+    Customize colors
+  </Card>
+</CardGroup>

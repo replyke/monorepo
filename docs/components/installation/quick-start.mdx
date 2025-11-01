@@ -1,0 +1,470 @@
+---
+title: "Quick Start"
+description: "Get comment components running in under 5 minutes"
+icon: "rocket"
+---
+
+# Quick Start Guide
+
+This guide will have you up and running with Replyke comment components in under 5 minutes.
+
+---
+
+## Before You Begin
+
+Make sure you have:
+
+- ✅ Node.js 18+ installed
+- ✅ A React, React Native, or Expo project
+- ✅ A [Replyke project](https://dash.replyke.com) created
+
+---
+
+## Step 1: Initialize the CLI
+
+Run the init command in your project directory:
+
+```bash
+cd your-project
+npx @replyke/cli init
+```
+
+### Answer the prompts:
+
+<Steps>
+  <Step title="Select Platform">
+    ```
+    ? Which platform are you using?
+    ❯ React (Web)
+      React Native
+      Expo
+    ```
+
+    Choose your platform with arrow keys and press Enter.
+  </Step>
+
+  <Step title="Choose Styling">
+    ```
+    ? Which styling approach do you prefer?
+    ❯ Tailwind CSS
+      Inline Styles
+    ```
+
+    - Select **Tailwind CSS** if you use Tailwind
+    - Select **Inline Styles** otherwise
+  </Step>
+
+  <Step title="Set Component Path">
+    ```
+    ? Where should components be installed? (src/components)
+    ```
+
+    Press Enter to use the default, or type a custom path.
+  </Step>
+</Steps>
+
+The CLI will create a `replyke.json` configuration file and check for dependencies.
+
+---
+
+## Step 2: Install Dependencies (if needed)
+
+If you haven't already, install the required Replyke packages:
+
+<Tabs>
+  <Tab title="React (Web)">
+    ```bash
+    npm install @replyke/react-js
+    ```
+  </Tab>
+
+  <Tab title="React Native">
+    ```bash
+    npm install @replyke/react-native
+    ```
+  </Tab>
+
+  <Tab title="Expo">
+    ```bash
+    npm install @replyke/expo
+    ```
+  </Tab>
+</Tabs>
+
+<Info>
+The CLI will prompt you to install these if they're missing.
+</Info>
+
+---
+
+## Step 3: Add a Component
+
+Choose which comment style you want and add it:
+
+<Tabs>
+  <Tab title="Threaded Comments">
+    For Reddit-style threaded discussions:
+
+    ```bash
+    npx @replyke/cli add comments-threaded
+    ```
+
+    **What you get:**
+    - Unlimited nesting depth
+    - Upvote/downvote system
+    - Threading lines showing hierarchy
+    - Collapsible threads
+
+    **Best for:** Forums, technical discussions, detailed conversations
+  </Tab>
+
+  <Tab title="Social Comments">
+    For Instagram-style social comments:
+
+    ```bash
+    npx @replyke/cli add comments-social
+    ```
+
+    **What you get:**
+    - Single-level nesting (comments + replies)
+    - Heart/like system
+    - Top/New/Old sorting
+    - Clean, minimal design
+
+    **Best for:** Social platforms, media content, quick interactions
+  </Tab>
+</Tabs>
+
+The CLI will:
+- ✅ Copy ~25 source files into your project
+- ✅ Create an `index.ts` barrel export
+- ✅ Show you usage examples
+
+---
+
+## Step 4: Set Up ReplykeProvider
+
+Wrap your app (or the part using comments) with `ReplykeProvider`:
+
+<Tabs>
+  <Tab title="React (Web)">
+    ```tsx
+    // App.tsx
+    import { ReplykeProvider } from '@replyke/react-js';
+
+    const PROJECT_ID = 'your-project-id';
+
+    function App() {
+      return (
+        <ReplykeProvider
+          projectId={PROJECT_ID}
+          signedToken={yourAuthToken}
+        >
+          {/* Your app content */}
+        </ReplykeProvider>
+      );
+    }
+    ```
+  </Tab>
+
+  <Tab title="React Native / Expo">
+    ```tsx
+    // App.tsx
+    import { ReplykeProvider } from '@replyke/react-native'; // or '@replyke/expo'
+
+    const PROJECT_ID = 'your-project-id';
+
+    function App() {
+      return (
+        <ReplykeProvider
+          projectId={PROJECT_ID}
+          signedToken={yourAuthToken}
+        >
+          {/* Your app content */}
+        </ReplykeProvider>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+For authentication setup and obtaining `signedToken`, see the [Authentication](/authentication) guide.
+</Note>
+
+---
+
+## Step 5: Use the Component
+
+Import and use the comment section in your page/screen:
+
+<Tabs>
+  <Tab title="Threaded Comments">
+    ```tsx
+    // BlogPost.tsx
+    import { ThreadedCommentSection } from './components/comments-threaded';
+
+    function BlogPost({ post }) {
+      return (
+        <div>
+          <h1>{post.title}</h1>
+          <p>{post.content}</p>
+
+          {/* Add comment section */}
+          <ThreadedCommentSection
+            entityId={post.id}
+          />
+        </div>
+      );
+    }
+    ```
+  </Tab>
+
+  <Tab title="Social Comments">
+    ```tsx
+    // Post.tsx
+    import { SocialCommentSection } from './components/comments-social';
+
+    function Post({ post }) {
+      return (
+        <div>
+          <img src={post.image} />
+          <p>{post.caption}</p>
+
+          {/* Add comment section */}
+          <SocialCommentSection
+            entityId={post.id}
+          />
+        </div>
+      );
+    }
+    ```
+  </Tab>
+</Tabs>
+
+That's it! 🎉 You now have a fully functional comment system.
+
+---
+
+## Complete Example
+
+Here's a minimal end-to-end example:
+
+<Tabs>
+  <Tab title="Threaded Comments">
+    ```tsx
+    import { useEffect, useState } from 'react';
+    import { ReplykeProvider, useSignTestingJwt } from '@replyke/react-js';
+    import { ThreadedCommentSection } from './components/comments-threaded';
+
+    const PROJECT_ID = import.meta.env.VITE_PUBLIC_REPLYKE_PROJECT_ID;
+    const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_REPLYKE_SECRET_KEY;
+
+    const DUMMY_USER = { id: 'user1', username: 'tech_developer' };
+
+    function App() {
+      const signTestingJwt = useSignTestingJwt();
+      const [signedToken, setSignedToken] = useState<string>();
+
+      useEffect(() => {
+        const handleSignJwt = async () => {
+          const token = await signTestingJwt({
+            projectId: PROJECT_ID,
+            privateKey: PRIVATE_KEY,
+            payload: DUMMY_USER,
+          });
+          setSignedToken(token);
+        };
+
+        handleSignJwt();
+      }, []);
+
+      return (
+        <ReplykeProvider projectId={PROJECT_ID} signedToken={signedToken}>
+          <div className="max-w-4xl mx-auto p-8">
+            <h1>My Blog Post</h1>
+            <p>This is my awesome blog post content...</p>
+
+            <ThreadedCommentSection entityId="blog-post-123" />
+          </div>
+        </ReplykeProvider>
+      );
+    }
+
+    export default App;
+    ```
+  </Tab>
+
+  <Tab title="Social Comments">
+    ```tsx
+    import { useEffect, useState } from 'react';
+    import { ReplykeProvider, useSignTestingJwt } from '@replyke/react-js';
+    import { SocialCommentSection } from './components/comments-social';
+
+    const PROJECT_ID = import.meta.env.VITE_PUBLIC_REPLYKE_PROJECT_ID;
+    const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_REPLYKE_SECRET_KEY;
+
+    const DUMMY_USER = { id: 'user1', username: 'social_user' };
+
+    function App() {
+      const signTestingJwt = useSignTestingJwt();
+      const [signedToken, setSignedToken] = useState<string>();
+
+      useEffect(() => {
+        const handleSignJwt = async () => {
+          const token = await signTestingJwt({
+            projectId: PROJECT_ID,
+            privateKey: PRIVATE_KEY,
+            payload: DUMMY_USER,
+          });
+          setSignedToken(token);
+        };
+
+        handleSignJwt();
+      }, []);
+
+      return (
+        <ReplykeProvider projectId={PROJECT_ID} signedToken={signedToken}>
+          <div className="max-w-2xl mx-auto p-8">
+            <img src="post.jpg" className="w-full rounded-lg" />
+            <p className="mt-4">Check out this amazing photo! 📸</p>
+
+            <SocialCommentSection entityId="post-456" />
+          </div>
+        </ReplykeProvider>
+      );
+    }
+
+    export default App;
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## What's Installed
+
+After adding a component, check your `src/components/` directory:
+
+```bash
+src/components/comments-threaded/  # or comments-social/
+├── index.ts                        # Entry point
+├── components/                     # All UI components (~20 files)
+│   ├── threaded-comment-section.tsx
+│   ├── new-comment-form.tsx
+│   ├── comments-feed/
+│   ├── modals/
+│   └── ...
+├── hooks/                          # React hooks
+│   ├── use-threaded-comments.tsx
+│   └── use-ui-state.tsx
+├── utils/                          # Utilities
+│   └── prop-comparison.ts
+└── context/                        # React context
+    └── ui-state-context.tsx
+```
+
+**All files are:**
+- ✅ Fully editable TypeScript/TSX
+- ✅ Documented with inline comments
+- ✅ Yours to customize
+
+---
+
+## Customizing
+
+Want to change colors, layout, or functionality? Just edit the source files!
+
+<CodeGroup>
+```tsx components/comments-threaded/components/threaded-comment-section.tsx
+// Change primary color from blue to purple
+<button
+  style={{
+    backgroundColor: '#9333EA' // was #3B82F6
+  }}
+>
+  Reply
+</button>
+```
+
+```tsx components/comments-social/components/single-comment.tsx
+// Add a custom badge next to author names
+<div>
+  <span>{author.name}</span>
+  <span className="text-xs bg-gold-500 px-2 py-1 rounded">PRO</span>
+</div>
+```
+</CodeGroup>
+
+See the [Customization Guide](/components/customization/overview) for detailed examples.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Component Props" icon="sliders" href="/components/components/threaded/props-api">
+    Learn about available props and options
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/components/components/threaded/file-structure">
+    Understand the component file organization
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/components/customization/overview">
+    Customize colors, layout, and functionality
+  </Card>
+
+  <Card title="Styling Variants" icon="palette" href="/components/customization/styling-variants">
+    Inline styles vs Tailwind CSS
+  </Card>
+</CardGroup>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Import errors after adding component" icon="triangle-exclamation">
+    Make sure the import path matches your `componentsPath` in `replyke.json`:
+
+    ```tsx
+    // If componentsPath is "src/components"
+    import { ThreadedCommentSection } from './components/comments-threaded';
+
+    // If componentsPath is "app/ui"
+    import { ThreadedCommentSection } from './ui/comments-threaded';
+    ```
+  </Accordion>
+
+  <Accordion title="Components not rendering" icon="eye-slash">
+    1. Check that you've wrapped your app with `<ReplykeProvider>`
+    2. Verify `projectId` and `signedToken` are set correctly
+    3. Check browser console for errors
+  </Accordion>
+
+  <Accordion title="TypeScript errors" icon="code">
+    Make sure your `tsconfig.json` includes the components directory:
+
+    ```json
+    {
+      "include": ["src/**/*"]
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Dark mode not working (Tailwind)" icon="moon">
+    For Tailwind dark mode to work, you need:
+
+    1. `darkMode: 'class'` in `tailwind.config.js`
+    2. A `dark` class on a parent element:
+
+    ```tsx
+    <html className={isDark ? 'dark' : ''}>
+    ```
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+Need more help? Check the [full documentation](/components/overview) or ask in our [Discord community](https://discord.gg/replyke).
+</Info>

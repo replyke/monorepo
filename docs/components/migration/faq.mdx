@@ -1,0 +1,167 @@
+---
+title: "Migration FAQ"
+description: "Common questions about migrating to CLI components"
+icon: "circle-question"
+---
+
+# Migration FAQ
+
+Common questions about migrating from npm packages to CLI components.
+
+---
+
+## General Questions
+
+<AccordionGroup>
+  <Accordion title="Do I still need @replyke/react-js?" icon="box">
+    **Yes.** The CLI components are UI only. They depend on `@replyke/react-js` for data fetching, caching, authentication, and core functionality.
+
+    ```json
+    {
+      "dependencies": {
+        "@replyke/react-js": "^6.0.0",
+        "@replyke/ui-core-react-js": "^6.0.0"
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Can I use both npm and CLI components?" icon="code-compare">
+    **Not recommended.** Pick one approach per project. Mixing them will be confusing and increase bundle size.
+  </Accordion>
+
+  <Accordion title="What if I've heavily customized styleCallbacks?" icon="paintbrush">
+    You'll need to manually apply your customizations to the source files. Use the [Mapping Guide](/components/migration/mapping-guide) to find where each callback maps to.
+
+    The benefit: You'll have even more control since you can customize anything, not just exposed callbacks.
+  </Accordion>
+
+  <Accordion title="Will my existing entities/comments still work?" icon="database">
+    **Yes.** The backend data is unchanged. CLI components use the same APIs and data models.
+
+    Your existing comments, votes, and user data will work seamlessly.
+  </Accordion>
+
+  <Accordion title="Do I need to migrate immediately?" icon="clock">
+    **No, but recommended.** The old npm packages are deprecated but still functional. Migrate when convenient.
+
+    New features and improvements will only be added to CLI components going forward.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Technical Questions
+
+<AccordionGroup>
+  <Accordion title="Can I publish my customized components?" icon="upload">
+    **Yes!** It's Apache 2.0 licensed. You can fork, modify, and even publish your own variant.
+  </Accordion>
+
+  <Accordion title="How do I get updates?" icon="arrows-rotate">
+    Currently: Re-run `add` to a different directory and manually merge changes.
+
+    **Future:** A `diff` command will show what changed, making updates easier while preserving customizations.
+  </Accordion>
+
+  <Accordion title="Does this work with Next.js / Remix / Gatsby?" icon="react">
+    **Yes.** CLI components are just React components. They work with any React framework.
+  </Accordion>
+
+  <Accordion title="Does this work with TypeScript?" icon="code">
+    **Yes.** All component files are `.tsx` with full type annotations.
+  </Accordion>
+
+  <Accordion title="Can I convert between styled and tailwind?" icon="wand-sparkles">
+    Manually, yes (rewrite styles). Automatically, not yet.
+
+    **Recommendation:** Choose wisely during `init`. If you need to switch, delete components and re-add with new configuration.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Customization Questions
+
+<AccordionGroup>
+  <Accordion title="Where do I start with customizations?" icon="paintbrush">
+    1. **Colors:** Search for hex codes or Tailwind classes and replace
+    2. **Layout:** Edit main component files (threaded-comment-section.tsx, etc.)
+    3. **Functionality:** Edit component files and hooks
+
+    See [Customization Guide](/components/customization/overview) for examples.
+  </Accordion>
+
+  <Accordion title="I broke something. How do I reset?" icon="rotate-left">
+    **Option 1:** Use version control (git) to revert your changes
+
+    ```bash
+    git checkout src/components/comments-threaded/
+    ```
+
+    **Option 2:** Delete and reinstall
+
+    ```bash
+    rm -rf src/components/comments-threaded
+    npx @replyke/cli add comments-threaded
+    ```
+  </Accordion>
+
+  <Accordion title="Can I customize individual files without breaking updates?" icon="file-code">
+    Since there's no automatic update system yet, you won't "break" updates.
+
+    When updates become available, you'll manually merge changes into your customized files.
+
+    **Tip:** Comment your customizations clearly:
+
+    ```tsx
+    // CUSTOM: Changed color to match brand
+    color: '#9333EA'
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Support
+
+<AccordionGroup>
+  <Accordion title="Where can I get help?" icon="life-ring">
+    - **Documentation:** [docs.replyke.com](https://docs.replyke.com)
+    - **Discord:** [discord.gg/replyke](https://discord.gg/replyke)
+    - **GitHub Issues:** [github.com/replyke/cli](https://github.com/replyke/cli/issues)
+  </Accordion>
+
+  <Accordion title="Can I contribute?" icon="heart">
+    **Yes!** The components are open source. Contributions welcome:
+
+    - UI improvements
+    - New component variants
+    - Bug fixes
+    - Documentation improvements
+
+    Visit the [GitHub repo](https://github.com/replyke/cli) to contribute.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Migration Guide" icon="arrow-right-arrow-left" href="/components/migration/npm-to-cli">
+    Complete migration walkthrough
+  </Card>
+
+  <Card title="Mapping Guide" icon="map" href="/components/migration/mapping-guide">
+    Callback-to-file mapping
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/components/customization/overview">
+    Customize components
+  </Card>
+
+  <Card title="Quick Start" icon="rocket" href="/components/installation/quick-start">
+    Get started with CLI
+  </Card>
+</CardGroup>

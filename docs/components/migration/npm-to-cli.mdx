@@ -1,0 +1,257 @@
+---
+title: "Migration Guide"
+description: "Migrate from npm packages to CLI components"
+icon: "arrow-right-arrow-left"
+---
+
+# Migrating from npm to CLI
+
+Step-by-step guide to migrate from old npm packages to the new CLI-based components.
+
+---
+
+## Why Migrate?
+
+The new CLI approach offers:
+
+- ✅ Full source code ownership
+- ✅ Unlimited customization
+- ✅ No `styleCallbacks` complexity
+- ✅ Direct code editing
+- ✅ Better version control
+- ✅ No black-box abstractions
+
+---
+
+## Migration Steps
+
+<Steps>
+  <Step title="Install CLI Components (Side-by-Side)">
+    First, install the CLI version alongside your existing npm package for testing:
+
+    ```bash
+    npx @replyke/cli init
+    npx @replyke/cli add comments-threaded
+    # or
+    npx @replyke/cli add comments-social
+    ```
+
+    This creates components at `src/components/comments-threaded/` without removing your npm package.
+  </Step>
+
+  <Step title="Update Imports">
+    Change your import statements:
+
+    **Before (npm package):**
+    ```tsx
+    import { ThreadedCommentSection } from '@replyke/comments-threaded-react-js';
+    ```
+
+    **After (CLI component):**
+    ```tsx
+    import { ThreadedCommentSection } from './components/comments-threaded';
+    ```
+  </Step>
+
+  <Step title="Remove styleCallbacks Prop">
+    The CLI components don't use `styleCallbacks`. Remove that prop:
+
+    **Before:**
+    ```tsx
+    <ThreadedCommentSection
+      entityId="post_123"
+      styleCallbacks={{
+        commentContainer: (theme) => ({ backgroundColor: '#F3F4F6' }),
+        authorName: (theme) => ({ color: '#2563EB', fontWeight: 'bold' }),
+        // ... 50 more callbacks
+      }}
+    />
+    ```
+
+    **After:**
+    ```tsx
+    <ThreadedCommentSection entityId="post_123" />
+    ```
+  </Step>
+
+  <Step title="Apply Customizations in Source Files">
+    Instead of `styleCallbacks`, edit the source files directly.
+
+    Example: If you had `authorName` styling, edit `single-comment.tsx`:
+
+    ```tsx
+    // File: src/components/comments-threaded/components/single-comment/single-comment.tsx
+
+    <span style={{
+      color: '#2563EB',      // Your custom color
+      fontWeight: 'bold'     // Your custom weight
+    }}>
+      {author.name}
+    </span>
+    ```
+
+    See [Mapping Guide](/components/migration/mapping-guide) for all callback-to-file mappings.
+  </Step>
+
+  <Step title="Test Thoroughly">
+    Test the CLI version alongside the npm version to ensure feature parity.
+
+    ```tsx
+    // Temporarily switch between versions for testing
+    const useNewVersion = true;
+
+    {useNewVersion ? (
+      <ThreadedCommentSection entityId="post_123" />  // CLI version
+    ) : (
+      <OldThreadedCommentSection entityId="post_123" styleCallbacks={...} />  // npm version
+    )}
+    ```
+  </Step>
+
+  <Step title="Uninstall Old Package">
+    Once you're confident, uninstall the npm package:
+
+    ```bash
+    npm uninstall @replyke/comments-threaded-react-js
+    # or
+    npm uninstall @replyke/comments-social-react-js
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Complete Example
+
+### Before (npm package)
+
+```tsx
+import { ThreadedCommentSection } from '@replyke/comments-threaded-react-js';
+
+function BlogPost({ post }) {
+  return (
+    <>
+      <article>{post.content}</article>
+
+      <ThreadedCommentSection
+        foreignId={post.id}
+        styleCallbacks={{
+          commentContainer: (theme) => ({
+            backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+            padding: '12px',
+            borderRadius: '8px'
+          }),
+          authorName: (theme) => ({
+            color: theme === 'dark' ? '#60A5FA' : '#2563EB',
+            fontWeight: 'bold'
+          }),
+          // ... dozens more callbacks
+        }}
+      />
+    </>
+  );
+}
+```
+
+### After (CLI component)
+
+```tsx
+import { ThreadedCommentSection } from './components/comments-threaded';
+
+function BlogPost({ post }) {
+  const [isDark, setIsDark] = useState(false);
+
+  return (
+    <>
+      <article>{post.content}</article>
+
+      <ThreadedCommentSection
+        foreignId={post.id}
+        theme={isDark ? 'dark' : 'light'}  // Only for inline styles variant
+      />
+    </>
+  );
+}
+```
+
+Then customize by editing source files:
+
+```tsx
+// File: src/components/comments-threaded/components/single-comment/single-comment.tsx
+
+<div style={{
+  backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+  padding: '12px',
+  borderRadius: '8px'
+}}>
+  <span style={{
+    color: theme === 'dark' ? '#60A5FA' : '#2563EB',
+    fontWeight: 'bold'
+  }}>
+    {author.name}
+  </span>
+  {/* ... */}
+</div>
+```
+
+---
+
+## Benefits After Migration
+
+| Before (npm) | After (CLI) |
+|--------------|-------------|
+| Complex `styleCallbacks` object | Simple `theme` prop |
+| Limited to exposed surfaces | Customize anything |
+| Hidden in node_modules | Visible in your repo |
+| Can't modify layout | Edit JSX directly |
+| Package updates may break | You control updates |
+
+---
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Missing customizations after migration" icon="triangle-exclamation">
+    You need to manually apply your `styleCallbacks` customizations to the source files.
+
+    Use the [Mapping Guide](/components/migration/mapping-guide) to find where each callback maps to.
+  </Accordion>
+
+  <Accordion title="Different styling approach" icon="palette">
+    If you used Tailwind before but CLI installed inline styles (or vice versa), reconfigure:
+
+    ```bash
+    rm -rf src/components/comments-threaded
+    # Edit replyke.json: change "style"
+    npx @replyke/cli add comments-threaded
+    ```
+  </Accordion>
+
+  <Accordion title="Breaking changes in core SDK" icon="code">
+    The CLI components use the same core SDK (`@replyke/react-js`). No breaking changes there.
+
+    Only the component API changed (removed `styleCallbacks`).
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Mapping Guide" icon="map" href="/components/migration/mapping-guide">
+    Map styleCallbacks to source files
+  </Card>
+
+  <Card title="Migration FAQ" icon="circle-question" href="/components/migration/faq">
+    Common migration questions
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/components/customization/overview">
+    Customize your new components
+  </Card>
+
+  <Card title="Legacy Docs" icon="book" href="/components/legacy/overview">
+    View old npm package docs
+  </Card>
+</CardGroup>

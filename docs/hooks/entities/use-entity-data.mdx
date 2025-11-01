@@ -85,8 +85,8 @@ The hook accepts an object with the following fields. None are mandatory individ
 The hook returns an object with the following fields:
 
 
-<ResponseField name="entity" type="Entity \">
-  null \
+<ResponseField name="entity" type="Entity | null">
+  The current entity object, or null if not yet loaded.
 </ResponseField>
 
 <ResponseField name="setEntity" type="<code>React.Dispatch&lt;React.SetStateAction&lt;Entity &#124; null &#124; undefined&gt;&gt;</code>">
@@ -117,8 +117,8 @@ The hook returns an object with the following fields:
   Function to remove the user's downvote.
 </ResponseField>
 
-<ResponseField name="updateEntity" type="(props: Pick<UpdateEntityProps, "update">) => Promise<Entity \">
-  undefined>`
+<ResponseField name="updateEntity" type="(props: Pick<UpdateEntityProps, 'update'>) => Promise<Entity | undefined>">
+  Function to update the entity with optimistic updates.
 </ResponseField>
 
 <ResponseField name="incrementEntityViews" type="() => Promise<void>">

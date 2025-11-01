@@ -1,0 +1,81 @@
+---
+title: "Social Comments Props"
+description: "SocialCommentSection props and API"
+icon: "sliders"
+---
+
+# Social Comments Props
+
+Minimal props API for Instagram-style social comments.
+
+---
+
+## Props Interface
+
+```tsx
+interface SocialCommentSectionProps {
+  // Entity identification (ONE required)
+  entity?: Entity | undefined | null;
+  entityId?: string | undefined | null;
+  foreignId?: string | undefined | null;
+  shortId?: string | undefined | null;
+
+  // Optional
+  isVisible?: boolean;
+  theme?: 'light' | 'dark';  // Styled variant only
+  children?: React.ReactNode;
+}
+```
+
+---
+
+## Entity Identification
+
+Same as threaded comments — provide ONE of:
+- `entity` - Full Entity object
+- `entityId` - Replyke entity ID
+- `foreignId` - Your custom ID (most common)
+- `shortId` - Short human-readable ID
+
+---
+
+## Minimal Example
+
+```tsx
+<SocialCommentSection
+  foreignId="photo_123"
+/>
+```
+
+---
+
+## With Dark Mode
+
+**Inline Styles:**
+```tsx
+<SocialCommentSection
+  foreignId="photo_123"
+  theme={isDark ? 'dark' : 'light'}
+/>
+```
+
+**Tailwind:**
+```tsx
+<html className={isDark ? 'dark' : ''}>
+  <SocialCommentSection foreignId="photo_123" />
+</html>
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="File Structure" icon="folder-tree" href="/components/components/social/file-structure">
+    Component organization
+  </Card>
+
+  <Card title="Features" icon="star" href="/components/components/social/features">
+    Feature overview
+  </Card>
+</CardGroup>

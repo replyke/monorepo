@@ -1,0 +1,282 @@
+---
+title: "Features"
+description: "Explore all threaded comments features"
+icon: "star"
+---
+
+# Threaded Comments Features
+
+Comprehensive feature overview for Reddit-style threaded comments.
+
+---
+
+## Core Features
+
+### Unlimited Nesting
+
+Comments can be nested infinitely deep. Users can reply to any comment, creating branching conversation threads.
+
+```tsx
+Comment 1
+  └─ Reply to Comment 1
+      └─ Reply to Reply
+          └─ Reply to Reply to Reply
+              └─ And so on...
+```
+
+**Visual indicators:**
+- Indentation shows depth
+- Threading lines connect replies to parents
+- Each level is clearly distinguished
+
+---
+
+### Upvote/Downvote System
+
+Reddit-style voting with visible vote scores.
+
+**Features:**
+- Upvote button (▲)
+- Downvote button (▼)
+- Net score display (upvotes - downvotes)
+- Visual feedback on vote state
+- Only one vote per user per comment
+- Change vote or remove vote
+
+**Authorization:**
+- Only authenticated users can vote
+- Can't vote on your own comments
+- Duplicate votes prevented automatically
+
+---
+
+### Visual Threading
+
+Clear visual hierarchy with indentation and connection lines.
+
+**Default spacing:**
+- Each reply level indented by 16px
+- Threading lines show parent-child relationships
+- Collapsible threads to hide long chains
+
+**Customizable:**
+Edit `indentation-threading-lines.tsx` to adjust spacing, colors, or line styles.
+
+---
+
+### Collapsible Threads
+
+Users can collapse/expand entire comment chains.
+
+**How it works:**
+- Click [-] to collapse a comment and all its replies
+- Click [+] to expand a collapsed thread
+- Collapsed state shows reply count
+- Useful for navigating long discussions
+
+---
+
+### @ Mentions
+
+Tag other users with `@username`.
+
+**Features:**
+- Autocomplete suggestions as you type
+- Clickable mentions navigate to user profiles
+- Mentioned users receive notifications (if enabled)
+- Works in both comments and replies
+
+**Implementation:**
+- `mention-suggestions.tsx` handles autocomplete
+- Mentions are parsed and linked automatically
+- Integrates with your `otherUserClickCallback`
+
+---
+
+### Highlighted Comments
+
+Deep-link to specific comments with visual highlighting.
+
+**Use cases:**
+- Notification links ("John replied to your comment")
+- URL params (`?commentId=abc123`)
+- Drawing attention to specific comments
+
+**How it works:**
+```tsx
+<ThreadedCommentSection
+  foreignId="post_123"
+  highlightedCommentId="comment_abc"
+/>
+```
+
+The component:
+1. Scrolls to the highlighted comment
+2. Applies a highlight background color
+3. Fades the highlight after a few seconds
+
+---
+
+### Edit & Delete
+
+Comment authors can edit or delete their own comments.
+
+**Edit:**
+- Click "Edit" from action menu
+- Modify comment text inline
+- Save or cancel changes
+- Shows "edited" indicator
+
+**Delete:**
+- Click "Delete" from action menu
+- Confirmation dialog (customizable)
+- Soft delete (comment shows "[deleted]")
+- Preserves thread structure
+
+**Authorization:**
+- Only comment author can edit/delete
+- Moderators/admins have additional permissions (via dashboard)
+
+---
+
+### Reporting & Moderation
+
+Built-in reporting system for inappropriate content.
+
+**User perspective:**
+- Click "Report" from action menu
+- Select reason (spam, harassment, etc.)
+- Submit report
+
+**Admin perspective:**
+- Reports appear in Replyke dashboard
+- Review and take action (delete comment, ban user)
+- Full moderation toolkit
+
+---
+
+### Loading States
+
+Skeleton loaders while fetching comments.
+
+**Features:**
+- Realistic skeleton UI mimics comment structure
+- Smooth transition when data loads
+- Prevents layout shift
+
+**File:** `fetching-comments-skeletons.tsx`
+
+---
+
+### Empty States
+
+Friendly placeholder when no comments exist.
+
+**Default message:** "No comments yet. Be the first to comment!"
+
+**Customization:**
+Edit `no-comments-placeholder.tsx` to change messaging or add illustrations.
+
+---
+
+### Real-Time Updates
+
+Comments automatically update when new comments are added by other users.
+
+**Powered by:**
+- `@replyke/react-js` real-time subscriptions
+- WebSocket connections
+- Automatic cache invalidation
+
+**No configuration needed** — works out of the box.
+
+---
+
+### Dark Mode Support
+
+Full dark mode support with automatic color switching.
+
+**Inline Styles Variant:**
+```tsx
+<ThreadedCommentSection
+  foreignId="post_123"
+  theme={isDark ? 'dark' : 'light'}
+/>
+```
+
+**Tailwind Variant:**
+```tsx
+<html className={isDark ? 'dark' : ''}>
+  <ThreadedCommentSection foreignId="post_123" />
+</html>
+```
+
+All colors adapt automatically.
+
+---
+
+### GIF Support (Optional)
+
+Enable GIF picker in comment forms.
+
+**Setup:**
+1. Add Giphy API key in [Replyke Dashboard](https://dash.replyke.com)
+2. GIF picker automatically appears in comment forms
+3. Users can search and insert GIFs
+
+**No code changes needed** — enabled via dashboard configuration.
+
+---
+
+### Accessibility
+
+Built with accessibility in mind:
+
+- Semantic HTML
+- Keyboard navigation support
+- ARIA labels
+- Focus management
+- Screen reader friendly
+
+---
+
+## Feature Matrix
+
+| Feature | Included | Customizable |
+|---------|----------|--------------|
+| Unlimited nesting | ✅ | ✅ (max depth can be limited) |
+| Upvote/downvote | ✅ | ✅ (can remove, change icons) |
+| Threading lines | ✅ | ✅ (colors, spacing) |
+| Collapsible threads | ✅ | ✅ (behavior, icons) |
+| @ Mentions | ✅ | ✅ (autocomplete styling) |
+| Highlighted comments | ✅ | ✅ (highlight color, duration) |
+| Edit comments | ✅ | ✅ (can disable, add confirmation) |
+| Delete comments | ✅ | ✅ (can add confirmation dialog) |
+| Reporting | ✅ | ✅ (report reasons, modal styling) |
+| Loading states | ✅ | ✅ (skeleton design) |
+| Empty states | ✅ | ✅ (messaging, design) |
+| Real-time updates | ✅ | ❌ (handled by core SDK) |
+| Dark mode | ✅ | ✅ (all colors customizable) |
+| GIF support | ✅ | ❌ (enabled in dashboard) |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Customization" icon="paintbrush" href="/components/customization/overview">
+    Learn how to customize features
+  </Card>
+
+  <Card title="Props & API" icon="sliders" href="/components/components/threaded/props-api">
+    Component props reference
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/components/components/threaded/file-structure">
+    Understand file organization
+  </Card>
+
+  <Card title="Installation" icon="download" href="/components/components/threaded/installation">
+    Installation guide
+  </Card>
+</CardGroup>
