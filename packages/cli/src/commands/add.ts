@@ -5,6 +5,7 @@ import ora from "ora";
 import { ReplykeConfig } from "./init.js";
 import { fetchRegistry, fetchFile, Registry } from "../utils/registry.js";
 import { transformImports } from "../utils/transform.js";
+import { checkComponentDependencies } from "../utils/dependencies.js";
 
 export async function add(componentName: string) {
   const spinner = ora("Initializing...").start();
@@ -95,7 +96,7 @@ export async function add(componentName: string) {
     );
 
     // Check dependencies
-    checkComponentDependencies(registry.dependencies);
+    await checkComponentDependencies(registry.dependencies);
 
     // Show usage example
     const componentInfo = getComponentInfo(registry);
@@ -196,15 +197,6 @@ function getComponentInfo(registry: Registry): ComponentInfo {
     mainFile: registry.exports.mainFile,
     typeExport: registry.exports.typeExports?.[0] || "",
   };
-}
-
-function checkComponentDependencies(dependencies: string[]) {
-  console.log(chalk.bold("\n📦 Required dependencies:"));
-  dependencies.forEach((dep) => {
-    const [name, version] = dep.split("@").filter(Boolean);
-    console.log(chalk.dim(`  - ${name}@${version || "latest"}`));
-  });
-  console.log(chalk.dim("\nMake sure these are installed in your project.\n"));
 }
 
 /**

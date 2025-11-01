@@ -3,7 +3,6 @@ import fs from 'fs-extra';
 import path from 'path';
 import chalk from 'chalk';
 import { detectProjectType } from '../utils/detect.js';
-import { checkDependencies } from '../utils/dependencies.js';
 
 export interface ReplykeConfig {
   platform: 'react' | 'react-native' | 'expo';
@@ -77,12 +76,10 @@ export async function init() {
 
   console.log(chalk.green('\n✅ Configuration saved to replyke.json'));
 
-  // Check for peer dependencies
-  await checkDependencies(config.platform);
-
   console.log(chalk.bold('\n🎉 Replyke CLI initialized successfully!\n'));
   console.log(chalk.dim('Next steps:'));
-  console.log(chalk.dim('  1. Run: npx @replyke/cli add comments-threaded'));
+  console.log(chalk.dim('  1. Run: npx @replyke/cli add <component-name>'));
+  console.log(chalk.dim('     Available: comments-threaded, comments-social, notifications-control'));
   console.log(chalk.dim('  2. Import components in your app'));
   console.log(chalk.dim('  3. Customize styles directly in the component files\n'));
 }
