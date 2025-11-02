@@ -1,22 +1,20 @@
 /**
  * Strip TypeScript types from code and convert to JavaScript
- * Uses sucrase to preserve original formatting and readability
+ * Uses ts-blank-space to preserve original formatting and JSX syntax
  * @param code - The TypeScript source code
  * @param filePath - The file path (used to determine if it's .tsx or .ts)
- * @returns JavaScript code with types removed
+ * @returns JavaScript code with types removed and JSX preserved
  */
 export async function stripTypes(code: string, filePath: string): Promise<string> {
   try {
-    // Lazy load sucrase only when needed (for JavaScript projects)
-    const { transform } = await import('sucrase');
+    // Lazy load ts-blank-space only when needed (for JavaScript projects)
+    const tsBlankSpace = (await import('ts-blank-space')).default;
 
-    const result = transform(code, {
-      transforms: ['typescript', 'jsx'],
-      filePath,
-      preserveDynamicImport: true,
-    });
+    // ts-blank-space default export: (code: string) => string
+    // Automatically handles both .ts and .tsx files
+    const result = tsBlankSpace(code);
 
-    return result.code;
+    return result;
   } catch (error) {
     throw new Error(
       `Failed to strip types from ${filePath}: ${error instanceof Error ? error.message : String(error)}`
