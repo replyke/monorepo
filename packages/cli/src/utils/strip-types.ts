@@ -9,13 +9,14 @@ export async function stripTypes(code: string, filePath: string): Promise<string
   try {
     // Lazy load Babel only when needed (for JavaScript projects)
     const { transform } = await import('@babel/core');
-    // Import the plugin directly (not as a string) for lazy loading
+    // Import preset and plugin directly (not as strings) for lazy loading
+    const presetTypescript = (await import('@babel/preset-typescript')).default;
     const pluginSyntaxJsx = (await import('@babel/plugin-syntax-jsx')).default;
 
     const result = transform(code, {
       filename: filePath,
       presets: [
-        ['@babel/preset-typescript', {
+        [presetTypescript, {
           isTSX: true,           // Enable TSX parsing
           allExtensions: true    // Parse all files as TS/TSX
         }]
