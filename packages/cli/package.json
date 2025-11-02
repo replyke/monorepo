@@ -1,6 +1,6 @@
 {
   "name": "@replyke/cli",
-  "version": "0.1.21",
+  "version": "0.1.23",
   "description": "CLI for installing Replyke UI components",
   "type": "module",
   "bin": {
@@ -22,7 +22,9 @@
     "fs-extra": "^11.2.0",
     "node-fetch": "^3.3.2",
     "execa": "^8.0.1",
-    "ts-blank-space": "^0.6.2"
+    "@babel/core": "^7.24.0",
+    "@babel/preset-typescript": "^7.24.0",
+    "@babel/plugin-syntax-jsx": "^7.24.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

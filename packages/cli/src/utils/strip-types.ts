@@ -1,20 +1,38 @@
 /**
- * Strip TypeScript types from code and convert to JavaScript
- * Uses ts-blank-space to preserve original formatting and JSX syntax
+ * Strip TypeScript types from code and preserve JSX syntax
+ * Uses Babel with @babel/preset-typescript and @babel/plugin-syntax-jsx
  * @param code - The TypeScript source code
- * @param filePath - The file path (used to determine if it's .tsx or .ts)
+ * @param filePath - The file path (used for error reporting)
  * @returns JavaScript code with types removed and JSX preserved
  */
 export async function stripTypes(code: string, filePath: string): Promise<string> {
   try {
-    // Lazy load ts-blank-space only when needed (for JavaScript projects)
-    const tsBlankSpace = (await import('ts-blank-space')).default;
+    // Lazy load Babel only when needed (for JavaScript projects)
+    const { transform } = await import('@babel/core');
+    // Import the plugin directly (not as a string) for lazy loading
+    const pluginSyntaxJsx = (await import('@babel/plugin-syntax-jsx')).default;
 
-    // ts-blank-space default export: (code: string) => string
-    // Automatically handles both .ts and .tsx files
-    const result = tsBlankSpace(code);
+    const result = transform(code, {
+      filename: filePath,
+      presets: [
+        ['@babel/preset-typescript', {
+          isTSX: true,           // Enable TSX parsing
+          allExtensions: true    // Parse all files as TS/TSX
+        }]
+      ],
+      plugins: [pluginSyntaxJsx],  // Pass the actual plugin function
+      configFile: false,        // Don't look for babel.config.js
+      babelrc: false,           // Don't look for .babelrc
+      sourceMaps: false,        // No source maps needed
+      compact: false,           // Don't minimize output
+      retainLines: true         // Try to keep line numbers similar
+    });
 
-    return result;
+    if (!result || !result.code) {
+      throw new Error('Babel transformation returned no code');
+    }
+
+    return result.code;
   } catch (error) {
     throw new Error(
       `Failed to strip types from ${filePath}: ${error instanceof Error ? error.message : String(error)}`
