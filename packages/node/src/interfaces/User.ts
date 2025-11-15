@@ -1,8 +1,9 @@
+export type UserRole = "admin" | "moderator" | "visitor";
 export type UserFull = {
   id: string;
   projectId: string;
   foreignId: string | null;
-  role: "admin" | "editor" | "visitor";
+  role: UserRole;
   email: string | null;
   name: string | null;
   username: string | null;
@@ -53,7 +54,6 @@ export type AuthUser = Pick<
 // This is used in some places where we need to return a user object to the client, either of themselves or of someone else.
 export type User = Omit<
   UserFull,
-  | "foreignId"
   | "email"
   | "secureMetadata"
   | "isVerified"

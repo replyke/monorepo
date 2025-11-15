@@ -1,11 +1,14 @@
 type AppNotificationType =
+  | "system"
   | "entity-comment"
   | "comment-reply"
   | "entity-mention"
   | "comment-mention"
   | "entity-upvote"
   | "comment-upvote"
-  | "new-follow";
+  | "new-follow"
+  | "connection-request"
+  | "connection-accepted";
 // | "followRequest"
 // | "followRequestAccepted"
 // | "friendRequest"
@@ -24,9 +27,25 @@ interface BaseAppNotification {
   type: AppNotificationType; // Type of notification
   isRead: boolean; // Read status
   metadata: Record<string, any>; // Additional data specific to the notification type
-  title?: string;
-  content?: string;
-  createdAt: Date; // Timestamp of creation
+  createdAt: string; // ISO timestamp string
+}
+
+// User need to sett from dashboard:
+// title
+// content
+// With button? When button does?
+
+export interface SystemNotification extends BaseAppNotification {
+  type: "system";
+  action: string;
+  metadata: {
+    title?: string;
+    content?: string;
+    buttonData: {
+      text: string;
+      url: string;
+    } | null;
+  };
 }
 
 export interface EntityCommentNotification extends BaseAppNotification {
@@ -151,6 +170,30 @@ export interface NewFollowNotification extends BaseAppNotification {
   };
 }
 
+export interface ConnectionRequestNotification extends BaseAppNotification {
+  type: "connection-request";
+  action: "open-profile";
+  metadata: {
+    connectionId: string;
+    initiatorId: string;
+    initiatorName: string | null | undefined;
+    initiatorUsername: string | null | undefined;
+    initiatorAvatar: string | null | undefined;
+  };
+}
+
+export interface ConnectionAcceptedNotification extends BaseAppNotification {
+  type: "connection-accepted";
+  action: "open-profile";
+  metadata: {
+    connectionId: string;
+    initiatorId: string;
+    initiatorName: string | null | undefined;
+    initiatorUsername: string | null | undefined;
+    initiatorAvatar: string | null | undefined;
+  };
+}
+
 // export interface FollowRequestNotification extends BaseAppNotification {
 //   type: "followRequest";
 //   metadata: {
@@ -234,13 +277,16 @@ export interface NewFollowNotification extends BaseAppNotification {
 
 // Unified Notification Type
 export type UnifiedAppNotification =
+  | SystemNotification
   | EntityCommentNotification
   | CommentReplyNotification
   | EntityMentionNotification
   | CommentMentionNotification
   | EntityUpvoteNotification
   | CommentUpvoteNotification
-  | NewFollowNotification;
+  | NewFollowNotification
+  | ConnectionRequestNotification
+  | ConnectionAcceptedNotification;
 // | LikeNotification
 // | ReplyNotification
 // | MentionNotification
@@ -267,4 +313,12 @@ export type NotificationTemplates = {
   entityUpvote: NotificationTemplate;
   commentUpvote: NotificationTemplate;
   newFollow: NotificationTemplate;
+  connectionRequest: NotificationTemplate;
+  connectionAccepted: NotificationTemplate;
 };
+
+export type PotentiallyPopulatedUnifiedAppNotification =
+  UnifiedAppNotification & {
+    title?: string;
+    content?: string;
+  };

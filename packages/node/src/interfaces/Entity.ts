@@ -14,6 +14,7 @@ export interface Entity {
   foreignId: string | null; // If integrated on top of existing data, this would be the id of the item in your system. Could also accept static values such as "about-page"
   shortId: string; // Automatically generated - also unique - could be used to generate sharing links
   projectId: string;
+  sourceId: string | null;
   user?: User | null;
   title: string | null;
   content: string | null;

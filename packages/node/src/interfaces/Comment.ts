@@ -26,6 +26,7 @@ export interface Comment {
   upvotes: string[]; // Array of user IDs
   downvotes: string[]; // Array of user IDs
   repliesCount: number; // Count of replies
+  metadata: Record<string, any>; // JSON object that could contain any other data about the comment which is relevant. Limited to 10KB size.
   createdAt: Date; // Timestamp for creation
   updatedAt: Date; // Timestamp for updating
   deletedAt: Date | null; // Timestamp for updating
