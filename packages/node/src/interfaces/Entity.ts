@@ -15,6 +15,7 @@ export interface Entity {
   shortId: string; // Automatically generated - also unique - could be used to generate sharing links
   projectId: string;
   sourceId: string | null;
+  spaceId: string | null; // Optional space association - entities can be organized into spaces
   user?: User | null;
   title: string | null;
   content: string | null;

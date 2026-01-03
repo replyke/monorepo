@@ -4,6 +4,7 @@ import { Entity } from "../../interfaces/Entity";
 export interface CreateEntityProps {
   foreignId?: string;
   sourceId?: string;
+  spaceId?: string;
   title?: string;
   content?: string;
   attachments?: any[];

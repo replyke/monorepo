@@ -31,6 +31,7 @@ export interface LocationFilters {
 
 export interface FetchManyEntitiesProps {
   sourceId?: string;
+  spaceId?: string;
 
   // Sorting & Pagination
   sortBy?: "hot" | "top" | "controversial";
