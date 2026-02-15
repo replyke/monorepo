@@ -27,14 +27,37 @@ import {
   MessageSquare,
   LucideIcon,
   Wrench,
+  Smile,
+  Sparkles,
+  Frown,
+  Angry,
+  Laugh,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { AppNotification } from "@replyke/react-js";
 import { cn } from "@/lib/utils";
 
 interface NotificationIconProps {
   type: AppNotification.UnifiedAppNotification["type"];
+  reactionType?: string;
   className?: string;
 }
+
+// Get icon for specific reaction types
+const getReactionIcon = (reactionType?: string): LucideIcon => {
+  switch (reactionType) {
+    case "love": return Heart;
+    case "wow": return Sparkles;
+    case "sad": return Frown;
+    case "angry": return Angry;
+    case "funny": return Laugh;
+    case "upvote": return ThumbsUp;
+    case "downvote": return ThumbsDown;
+    case "like":
+    default: return Smile;
+  }
+};
 
 // Icon configuration with Tailwind classes
 const getIconConfig = (): Record<
@@ -80,6 +103,16 @@ const getIconConfig = (): Record<
     colorClass: "text-red-600 dark:text-red-400",
     bgClass: "bg-red-100 dark:bg-red-500/15",
   },
+  "entity-reaction": {
+    Icon: Smile,
+    colorClass: "text-orange-600 dark:text-orange-400",
+    bgClass: "bg-orange-100 dark:bg-orange-500/15",
+  },
+  "comment-reaction": {
+    Icon: Smile,
+    colorClass: "text-orange-600 dark:text-orange-400",
+    bgClass: "bg-orange-100 dark:bg-orange-500/15",
+  },
   "new-follow": {
     Icon: UserPlus,
     colorClass: "text-green-600 dark:text-green-400",
@@ -97,10 +130,15 @@ const getIconConfig = (): Record<
   },
 });
 
-function NotificationIcon({ type, className }: NotificationIconProps) {
+function NotificationIcon({ type, reactionType, className }: NotificationIconProps) {
   const iconConfig = getIconConfig();
   const config = iconConfig[type];
-  const { Icon, colorClass, bgClass } = config;
+  const { colorClass, bgClass } = config;
+
+  // For reaction types, use reaction-specific icon
+  const Icon = (type === "entity-reaction" || type === "comment-reaction")
+    ? getReactionIcon(reactionType)
+    : config.Icon;
 
   return (
     <div

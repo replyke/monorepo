@@ -6,14 +6,37 @@ import {
   MessageSquare,
   LucideIcon,
   Wrench,
+  Smile,
+  Sparkles,
+  Frown,
+  Angry,
+  Laugh,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { AppNotification } from "@replyke/react-js";
 
 interface NotificationIconProps {
   type: AppNotification.UnifiedAppNotification["type"];
+  reactionType?: string;
   style?: React.CSSProperties;
   isDarkTheme: boolean;
 }
+
+// Get icon for specific reaction types
+const getReactionIcon = (reactionType?: string): LucideIcon => {
+  switch (reactionType) {
+    case "love": return Heart;
+    case "wow": return Sparkles;
+    case "sad": return Frown;
+    case "angry": return Angry;
+    case "funny": return Laugh;
+    case "upvote": return ThumbsUp;
+    case "downvote": return ThumbsDown;
+    case "like":
+    default: return Smile;
+  }
+};
 
 // Theme-aware icon configuration
 const getIconConfig = (isDark = false) => {
@@ -60,6 +83,16 @@ const getIconConfig = (isDark = false) => {
       color: { light: "#dc2626", dark: "#ef4444" },
       backgroundColor: { light: "#fee2e2", dark: "rgba(239, 68, 68, 0.15)" },
     },
+    "entity-reaction": {
+      Icon: Smile,
+      color: { light: "#ea580c", dark: "#fb923c" },
+      backgroundColor: { light: "#ffedd5", dark: "rgba(251, 146, 60, 0.15)" },
+    },
+    "comment-reaction": {
+      Icon: Smile,
+      color: { light: "#ea580c", dark: "#fb923c" },
+      backgroundColor: { light: "#ffedd5", dark: "rgba(251, 146, 60, 0.15)" },
+    },
     "new-follow": {
       Icon: UserPlus,
       color: { light: "#16a34a", dark: "#22c55e" },
@@ -102,12 +135,18 @@ const getIconConfig = (isDark = false) => {
 
 function NotificationIcon({
   type,
+  reactionType,
   style = {},
   isDarkTheme,
 }: NotificationIconProps) {
   const iconConfig = getIconConfig(isDarkTheme);
   const config = iconConfig[type];
-  const { Icon, color, backgroundColor } = config;
+  const { color, backgroundColor } = config;
+
+  // For reaction types, use reaction-specific icon
+  const Icon = (type === "entity-reaction" || type === "comment-reaction")
+    ? getReactionIcon(reactionType)
+    : config.Icon;
 
   return (
     <div

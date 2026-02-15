@@ -147,7 +147,11 @@ function NotificationItem({
             )}
           </div>
           <div className="mt-0.5">
-            <NotificationIcon type={notification.type} className="w-6 h-6" />
+            <NotificationIcon
+              type={notification.type}
+              reactionType={(notification.metadata as any)?.reactionType}
+              className="w-6 h-6"
+            />
           </div>
         </div>
 

@@ -271,6 +271,7 @@ function NotificationItem({
           <div style={{ marginTop: "2px" }}>
             <NotificationIcon
               type={notification.type}
+              reactionType={(notification.metadata as any)?.reactionType}
               style={{ width: "24px", height: "24px" }}
               isDarkTheme={isDarkTheme}
             />

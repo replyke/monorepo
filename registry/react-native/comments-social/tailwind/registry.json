@@ -1,0 +1,138 @@
+{
+  "name": "comments-social",
+  "platform": "react-native",
+  "style": "tailwind",
+  "version": "1.0.0",
+  "description": "Social-style comment system with likes, nested replies, and moderation (Instagram-inspired) for React Native with Tailwind CSS",
+  "author": "Replyke",
+  "license": "Apache-2.0",
+  "dependencies": [
+    "@replyke/core@^6.0.0",
+    "@replyke/ui-core-react-native@^6.0.0",
+    "@gorhom/bottom-sheet@^4.0.0",
+    "nativewind@^4.0.0"
+  ],
+  "files": [
+    {
+      "path": "files/social-comment-section.tsx",
+      "type": "component",
+      "description": "Main entry component for social comments"
+    },
+    {
+      "path": "files/sort-by-button/sort-by-button.tsx",
+      "type": "component",
+      "description": "Sort comments button (top/new/old)"
+    },
+    {
+      "path": "files/new-comment-form/new-comment-form.tsx",
+      "type": "component",
+      "description": "Form for creating new top-level comments"
+    },
+    {
+      "path": "files/reply-banner/reply-banner.tsx",
+      "type": "component",
+      "description": "Banner showing who user is replying to"
+    },
+    {
+      "path": "files/mention-suggestions/mention-suggestions.tsx",
+      "type": "component",
+      "description": "User mention suggestions list"
+    },
+    {
+      "path": "files/comments-feed/comments-feed.tsx",
+      "type": "component",
+      "description": "Main feed container for displaying comments"
+    },
+    {
+      "path": "files/comments-feed/loaded-comments.tsx",
+      "type": "component",
+      "description": "Renders loaded comments list"
+    },
+    {
+      "path": "files/comments-feed/fetching-comments-skeletons.tsx",
+      "type": "component",
+      "description": "Loading skeleton states"
+    },
+    {
+      "path": "files/comments-feed/no-comments-placeholder.tsx",
+      "type": "component",
+      "description": "Empty state when no comments exist"
+    },
+    {
+      "path": "files/comments-feed/comments-footer-component.tsx",
+      "type": "component",
+      "description": "Footer with load more spinner"
+    },
+    {
+      "path": "files/comments-feed/comment/comment.tsx",
+      "type": "component",
+      "description": "Individual comment with author, body, heart button"
+    },
+    {
+      "path": "files/comments-feed/comment/heart-button.tsx",
+      "type": "component",
+      "description": "Like button with heart icon"
+    },
+    {
+      "path": "files/comments-feed/comment/index.ts",
+      "type": "component",
+      "description": "Comment barrel export"
+    },
+    {
+      "path": "files/comments-feed/comment/replies/replies.tsx",
+      "type": "component",
+      "description": "Nested replies container"
+    },
+    {
+      "path": "files/comments-feed/comment/replies/show-hide-button.tsx",
+      "type": "component",
+      "description": "Button to show/hide/load more replies"
+    },
+    {
+      "path": "files/comments-feed/comment/replies/index.ts",
+      "type": "component",
+      "description": "Replies barrel export"
+    },
+    {
+      "path": "files/sheets/comment-options-sheet.tsx",
+      "type": "component",
+      "description": "Bottom sheet for comment actions (report)"
+    },
+    {
+      "path": "files/sheets/comment-options-sheet-owner.tsx",
+      "type": "component",
+      "description": "Bottom sheet for comment owner actions (delete)"
+    },
+    {
+      "path": "files/sheets/report-comment-sheet.tsx",
+      "type": "component",
+      "description": "Bottom sheet for reporting comments"
+    },
+    {
+      "path": "hooks/use-social-comments.tsx",
+      "type": "hook",
+      "description": "Main hook for social comment functionality"
+    },
+    {
+      "path": "hooks/use-ui-state.tsx",
+      "type": "hook",
+      "description": "Hook for managing UI state (sheets and theme)"
+    },
+    {
+      "path": "utils/prop-comparison.ts",
+      "type": "util",
+      "description": "Utilities for prop comparison and memoization"
+    },
+    {
+      "path": "context/ui-state-context.tsx",
+      "type": "context",
+      "description": "Context for UI state (bottom sheets and theme)"
+    }
+  ],
+  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react-native/comments-social/tailwind",
+  "exports": {
+    "mainComponent": "SocialCommentSection",
+    "mainFile": "social-comment-section",
+    "typeExports": ["SocialStyleCallbacks"]
+  }
+}
