@@ -40,3 +40,6 @@ function bindModule<
   }
   return bound;
 }
+
+// Export pagination types
+export type { PaginatedResponse, PaginationMetadata } from "./interfaces/IPaginatedResponse";
