@@ -55,3 +55,6 @@ async function verifyClient(client: ReplykeHttpClient): Promise<void> {
     throw new Error("[Replyke] Invalid API key or project ID.");
   }
 }
+
+// Export pagination types
+export type { PaginatedResponse, PaginationMetadata } from "./interfaces/IPaginatedResponse";

@@ -22,7 +22,6 @@ export type UserFull = {
   lastActive: Date; // Timestamp for last activity
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date | null;
 };
 
 // These are the details the get delivered to the authenticated user's client (about themselves)
@@ -60,5 +59,4 @@ export type User = Omit<
   | "isActive"
   | "lastActive"
   | "updatedAt"
-  | "deletedAt"
 >;

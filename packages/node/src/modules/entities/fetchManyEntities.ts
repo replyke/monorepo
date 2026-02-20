@@ -1,5 +1,6 @@
 import { ReplykeHttpClient } from "../../core/client";
 import { Entity } from "../../interfaces/Entity";
+import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
 export interface KeywordsFilters {
   includes?: string[];
@@ -70,10 +71,13 @@ export interface FetchManyEntitiesProps {
 export async function fetchManyEntities(
   client: ReplykeHttpClient,
   data: FetchManyEntitiesProps
-): Promise<Entity[]> {
+): Promise<PaginatedResponse<Entity>> {
   const path = `/entities`;
-  const response = await client.projectInstance.get<Entity[]>(path, {
-    params: data,
-  });
+  const response = await client.projectInstance.get<PaginatedResponse<Entity>>(
+    path,
+    {
+      params: data,
+    }
+  );
   return response.data;
 }
