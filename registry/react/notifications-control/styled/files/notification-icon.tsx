@@ -7,6 +7,7 @@ import {
   LucideIcon,
   Wrench,
   Smile,
+  Trophy,
   Sparkles,
   Frown,
   Angry,
@@ -92,6 +93,26 @@ const getIconConfig = (isDark = false) => {
       Icon: Smile,
       color: { light: "#ea580c", dark: "#fb923c" },
       backgroundColor: { light: "#ffedd5", dark: "rgba(251, 146, 60, 0.15)" },
+    },
+    "entity-reaction-milestone-specific": {
+      Icon: Trophy,
+      color: { light: "#d97706", dark: "#fbbf24" },
+      backgroundColor: { light: "#fef3c7", dark: "rgba(251, 191, 36, 0.15)" },
+    },
+    "entity-reaction-milestone-total": {
+      Icon: Trophy,
+      color: { light: "#d97706", dark: "#fbbf24" },
+      backgroundColor: { light: "#fef3c7", dark: "rgba(251, 191, 36, 0.15)" },
+    },
+    "comment-reaction-milestone-specific": {
+      Icon: Trophy,
+      color: { light: "#d97706", dark: "#fbbf24" },
+      backgroundColor: { light: "#fef3c7", dark: "rgba(251, 191, 36, 0.15)" },
+    },
+    "comment-reaction-milestone-total": {
+      Icon: Trophy,
+      color: { light: "#d97706", dark: "#fbbf24" },
+      backgroundColor: { light: "#fef3c7", dark: "rgba(251, 191, 36, 0.15)" },
     },
     "new-follow": {
       Icon: UserPlus,

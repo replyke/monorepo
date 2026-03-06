@@ -18,6 +18,7 @@
  * - Purple (mentions): bg-purple-100 dark:bg-purple-500/15, text-purple-600 dark:text-purple-400
  * - Red (upvotes): bg-red-100 dark:bg-red-500/15, text-red-600 dark:text-red-400
  * - Green (follows): bg-green-100 dark:bg-green-500/15, text-green-600 dark:text-green-400
+ * - Amber (milestones): bg-amber-100 dark:bg-amber-500/15, text-amber-600 dark:text-amber-400
  */
 import {
   MessageCircle,
@@ -28,6 +29,7 @@ import {
   LucideIcon,
   Wrench,
   Smile,
+  Trophy,
   Sparkles,
   Frown,
   Angry,
@@ -112,6 +114,26 @@ const getIconConfig = (): Record<
     Icon: Smile,
     colorClass: "text-orange-600 dark:text-orange-400",
     bgClass: "bg-orange-100 dark:bg-orange-500/15",
+  },
+  "entity-reaction-milestone-specific": {
+    Icon: Trophy,
+    colorClass: "text-amber-600 dark:text-amber-400",
+    bgClass: "bg-amber-100 dark:bg-amber-500/15",
+  },
+  "entity-reaction-milestone-total": {
+    Icon: Trophy,
+    colorClass: "text-amber-600 dark:text-amber-400",
+    bgClass: "bg-amber-100 dark:bg-amber-500/15",
+  },
+  "comment-reaction-milestone-specific": {
+    Icon: Trophy,
+    colorClass: "text-amber-600 dark:text-amber-400",
+    bgClass: "bg-amber-100 dark:bg-amber-500/15",
+  },
+  "comment-reaction-milestone-total": {
+    Icon: Trophy,
+    colorClass: "text-amber-600 dark:text-amber-400",
+    bgClass: "bg-amber-100 dark:bg-amber-500/15",
   },
   "new-follow": {
     Icon: UserPlus,
