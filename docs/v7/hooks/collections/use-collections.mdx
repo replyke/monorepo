@@ -80,7 +80,7 @@ This hook accepts no required parameters. Pass an empty object or nothing.
   Jump directly back to the root collection.
 </ResponseField>
 
-<ResponseField name="isEntitySaved" type="(entityId: string, collectionId?: string) => Promise<{ saved: boolean; inSpecificCollection?: boolean; collections: Array<{ id: string; name: string }> }>">
+<ResponseField name="isEntitySaved" type="({ entityId, collectionId }: { entityId: string; collectionId?: string }) => Promise<{ saved: boolean; inSpecificCollection?: boolean; collections: Array<{ id: string; name: string }> }>">
   Check whether an entity is saved in any collection. If `collectionId` is provided, also returns `inSpecificCollection` indicating whether it is in that specific folder.
 </ResponseField>
 

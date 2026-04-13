@@ -111,11 +111,11 @@ await removeFromCollection({ entityId: entity.id });
 `isEntitySaved` queries whether a specific entity is saved anywhere in the user's collections. Optionally pass a `collectionId` to check a specific folder.
 
 ```tsx
-const result = await isEntitySaved(entity.id);
+const result = await isEntitySaved({ entityId: entity.id });
 // result.saved — true if saved in any collection
 // result.collections — list of { id, name } for each collection containing it
 
-const specificResult = await isEntitySaved(entity.id, collection.id);
+const specificResult = await isEntitySaved({ entityId: entity.id, collectionId: collection.id });
 // specificResult.inSpecificCollection — true if in that specific collection
 ```
 
