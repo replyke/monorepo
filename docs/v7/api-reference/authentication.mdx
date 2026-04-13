@@ -1,0 +1,72 @@
+---
+title: "Authentication"
+description: "How to authenticate API requests with Bearer tokens and manage token refresh"
+---
+
+Most Replyke API endpoints require an authenticated user. Authentication uses short-lived JWT access tokens passed as `Bearer` tokens in the `Authorization` header.
+
+## Bearer Token
+
+Include the access token on every protected request:
+
+```http
+GET /v7/:projectId/app-notifications
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+Access tokens expire after **30 minutes**.
+
+## Obtaining Tokens
+
+Tokens are issued by the auth endpoints. Depending on your auth setup:
+
+| Method | Endpoint |
+|--------|----------|
+| Email + password sign-up | [POST `/auth/sign-up`](/api-reference/auth/sign-up) |
+| Email + password sign-in | [POST `/auth/sign-in`](/api-reference/auth/sign-in) |
+| External user (JWT-verified) | [POST `/auth/verify-external-user`](/api-reference/auth/verify-external-user) |
+| OAuth (Google, GitHub, etc.) | [POST `/oauth/authorize`](/api-reference/oauth/authorize) |
+
+All of these return the same token structure:
+
+```json
+{
+  "accessToken": "eyJ...",
+  "refreshToken": "eyJ...",
+  "user": { ... }
+}
+```
+
+## Refreshing Tokens
+
+When an access token expires, use the refresh token to obtain a new access token:
+
+```http
+POST /v7/:projectId/auth/request-new-access-token
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJ..."
+}
+```
+
+The response includes a new `accessToken` and a rotated `refreshToken`. Always store and use the latest refresh token — reusing a revoked one will invalidate the entire session. Each rotated refresh token is valid for another **30 days**, so active users stay signed in indefinitely. Only if a refresh token goes unused for 30 days will it expire and require the user to sign in again.
+
+See [Request New Access Token](/api-reference/auth/request-new-access-token) for full details.
+
+## SDK Token Management
+
+If you are using the Replyke SDK (`@replyke/react-js`, `@replyke/react-native`, etc.), **you do not need to manage tokens manually**. The SDK stores tokens, attaches them to every request, and automatically refreshes them before they expire.
+
+Token management is only relevant when calling the REST API directly — for example, from a server-side environment using the [Node SDK](/sdk/getting-started) or a custom HTTP client.
+
+## Unauthenticated Requests
+
+Some endpoints are publicly accessible without a token (e.g., fetching public entity data). These endpoints do not require an `Authorization` header. Endpoints that require auth will return `401 Unauthorized` if the token is missing or expired.
+
+```json
+{
+  "error": "Unauthorized",
+  "code": "auth/unauthorized"
+}
+```

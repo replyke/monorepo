@@ -1,0 +1,76 @@
+---
+title: "Create report"
+description: "Submit a report against an entity or comment"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function to submit a content report on behalf of the authenticated user. Pass `type: "comment"` or `type: "entity"` when calling the hook — the returned function is pre-configured for that target type.
+
+If the same target has already been reported, the user's report is appended to the existing report record (the system deduplicates reports per-user). Reporting the same target twice has no additional effect.
+
+<Note>Requires an authenticated user.</Note>
+
+## Usage Example
+
+```tsx
+import { useCreateReport } from "@replyke/react-js";
+
+function ReportEntityButton({ entityId }: { entityId: string }) {
+  const createEntityReport = useCreateReport({ type: "entity" });
+
+  const handleReport = async () => {
+    await createEntityReport({
+      targetId: entityId,
+      reason: "spam",
+    });
+    alert("Report submitted.");
+  };
+
+  return <button onClick={handleReport}>Report</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="type" type='"comment" | "entity"' required>
+  The target type this hook instance will report against. Determines the shape of the returned function.
+</ParamField>
+
+## Returned Function
+
+The hook returns either `createCommentReport` or `createEntityReport` depending on the `type` argument. Both functions accept the same parameters:
+
+<ParamField body="targetId" type="string" required>
+  The ID of the comment or entity being reported.
+</ParamField>
+
+<ParamField body="reason" type="ReportReasonKey" required>
+  The reason for the report. Must be one of the following keys:
+
+  | Key | Label |
+  |-----|-------|
+  | `spam` | It's spam |
+  | `inappropriateContent` | Contains inappropriate content |
+  | `harassment` | It's harassment or bullying |
+  | `misinformation` | Spreads false information |
+  | `hateSpeech` | Contains hate speech or symbols |
+  | `violence` | Promotes violence or dangerous behavior |
+  | `illegalActivity` | Promotes illegal activity |
+  | `selfHarm` | Promotes self-harm or suicide |
+  | `other` | Other |
+</ParamField>
+
+<ParamField body="details" type="string">
+  Optional free-text elaboration on the reason.
+</ParamField>
+
+## Returns
+
+The returned function returns `Promise<void>`. It resolves when the report is accepted (whether created or appended to an existing one).
+
+## Notes
+
+- If the target has already been reported by this user, the server returns `200` with code `report/already-reported` without error. The hook function resolves normally in this case.
+- Reports are scoped to the space the content belongs to, enabling space moderators to action them. See [`useFetchModeratedReports`](/hooks/reports/use-fetch-moderated-reports).

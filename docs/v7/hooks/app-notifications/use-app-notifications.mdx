@@ -1,0 +1,98 @@
+---
+title: "Use app notifications"
+description: "Fetch notifications, track unread count, and mark as read"
+icon: "cube"
+---
+
+## Overview
+
+Redux-powered hook that provides a paginated notification feed for the current authenticated user. Loads notifications and unread count on mount, supports infinite scrolling via `loadMore`, and exposes mark-as-read actions with optimistic updates.
+
+For integration guidance and template configuration, see [App Notifications](/sdk/app-notifications/hook).
+
+## Usage Example
+
+```tsx
+import { useAppNotifications } from "@replyke/react-js";
+
+function NotificationBell() {
+  const { unreadAppNotificationsCount } = useAppNotifications();
+
+  return <span>{unreadAppNotificationsCount} unread</span>;
+}
+
+function NotificationList() {
+  const {
+    appNotifications,
+    loading,
+    hasMore,
+    loadMore,
+    markNotificationAsRead,
+  } = useAppNotifications({
+    limit: 20,
+    notificationTemplates: {
+      entityComment: { content: "$initiatorName commented on your post" },
+      newFollow: { content: "$initiatorName followed you" },
+    },
+  });
+
+  return (
+    <ul>
+      {appNotifications.map((n) => (
+        <li key={n.id} onClick={() => markNotificationAsRead({ notificationId: n.id })}>
+          {n.content ?? n.type}
+        </li>
+      ))}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="limit" type="number">
+  Number of notifications to load per page. Defaults to `10`.
+</ParamField>
+
+<ParamField path="notificationTemplates" type="Partial<NotificationTemplates>">
+  Optional display text templates for each notification type. Applied at render time. See [Notification Templates](/sdk/app-notifications/notification-templates).
+</ParamField>
+
+## Returns
+
+<ResponseField name="appNotifications" type="UnifiedAppNotification[]">
+  Array of notification records, augmented with `title` and `content` if templates are provided.
+</ResponseField>
+
+<ResponseField name="unreadAppNotificationsCount" type="number">
+  Total number of unread notifications for the current user.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a fetch is in progress.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if there are additional pages to load.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Triggers loading the next page of notifications and appending them to the list.
+</ResponseField>
+
+<ResponseField name="markNotificationAsRead" type="({ notificationId: string }) => Promise<void>">
+  Marks a single notification as read with an optimistic local update.
+</ResponseField>
+
+<ResponseField name="markAllNotificationsAsRead" type="() => Promise<void>">
+  Marks all notifications as read with an optimistic local update.
+</ResponseField>
+
+<ResponseField name="resetAppNotifications" type="() => Promise<void>">
+  Clears and re-fetches from page 1.
+</ResponseField>
+
+<Note>
+  This hook requires the current user to be authenticated. It will not load until `user` and `projectId` are available.
+</Note>

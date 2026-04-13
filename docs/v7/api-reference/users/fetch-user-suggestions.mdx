@@ -1,0 +1,78 @@
+---
+title: "Fetch User Suggestions"
+api: "GET /:projectId/api/v7/users/suggestions"
+description: "Search for users by username prefix — for @mention autocomplete"
+---
+
+Returns up to 5 users whose usernames contain the provided query string, ranked by prefix match first, then alphabetically. Designed for `@mention` autocomplete and user search UIs.
+
+<Note>
+  Sensitive fields (email, hash, salt, `isVerified`, `isActive`,
+  `lastActive`) are excluded from suggestions results.
+</Note>
+
+## Query Parameters
+
+<ParamField query="query" type="string" required>
+  The search string. Matches usernames that contain this value
+  (case-insensitive). Users whose usernames start with `query` are ranked
+  first.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200` with an array of up to 5 user objects:
+
+<ResponseField name="id" type="string">
+  Unique user ID (UUID).
+</ResponseField>
+
+<ResponseField name="foreignId" type="string | null">
+  External identifier from your system.
+</ResponseField>
+
+<ResponseField name="name" type="string | null">
+  Display name.
+</ResponseField>
+
+<ResponseField name="username" type="string | null">
+  The user's username.
+</ResponseField>
+
+<ResponseField name="avatar" type="string | null">
+  Avatar image URL.
+</ResponseField>
+
+<ResponseField name="bio" type="string | null">
+  Short bio text.
+</ResponseField>
+
+<ResponseField name="metadata" type="object | null">
+  Public custom key-value data.
+</ResponseField>
+
+<ResponseField name="reputation" type="number">
+  Reputation score.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO timestamp of account creation.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Query — 400">
+    ```json
+    {
+      "error": "...",
+      "code": "user/invalid-query"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useFetchUserSuggestions` hook](/hooks/users/use-fetch-user-suggestions)
+- [`useUserMentions` hook](/hooks/users/use-user-mentions)

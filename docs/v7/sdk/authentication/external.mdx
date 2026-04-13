@@ -1,0 +1,134 @@
+---
+title: "External Auth"
+description: "Integrating your own auth system via signed JWT"
+---
+
+If you already have a user authentication system (such as Clerk, Auth0, Firebase Auth, or your own backend), you can integrate it with Replyke without requiring users to create a separate Replyke account. Your backend signs a JWT with a project-specific private key; the SDK exchanges that JWT for Replyke tokens.
+
+## How It Works
+
+<Steps>
+  <Step title="Your backend signs a JWT">
+    After your own auth system verifies the user, your server signs a JWT using
+    your Replyke project's RSA private key. The token identifies the user by
+    their ID in your system.
+  </Step>
+  <Step title="The SDK exchanges the JWT">
+    Call `verifyExternalUser` (available via the `useAuth` hook or directly) with
+    the signed JWT. Replyke verifies the signature, looks up or creates the user,
+    and returns Replyke access and refresh tokens.
+  </Step>
+  <Step title="The user is authenticated">
+    From this point, the user is signed into Replyke and all SDK hooks work
+    normally. Token refresh is handled automatically.
+  </Step>
+</Steps>
+
+## JWT Requirements
+
+Your backend must sign the JWT using **RS256** (RSA 256-bit) with your project's private key. The payload must include:
+
+| Claim | Description |
+|-------|-------------|
+| `sub` | The user's ID in your system (becomes `foreignId` in Replyke) |
+| `iss` | Your Replyke project ID |
+| `userData` | Object with optional profile fields (see below) |
+
+### `userData` fields
+
+All fields in `userData` are optional. If a user already exists and any field has changed, Replyke updates the stored value.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `email` | `string` | User's email address |
+| `name` | `string` | Display name |
+| `username` | `string` | Unique username within the project |
+| `avatar` | `string` | URL of avatar image |
+| `bio` | `string` | Short bio text |
+| `location` | object | `{ latitude, longitude }` |
+| `birthdate` | `string` | ISO 8601 date string |
+| `metadata` | object | Public custom data |
+| `secureMetadata` | object | Private custom data |
+
+## Backend Example (Node.js)
+
+```ts
+import jwt from "jsonwebtoken";
+import fs from "fs";
+
+const privateKey = fs.readFileSync("replyke-private-key.pem");
+
+function createReplykeJwt(userId: string, userData: object) {
+  return jwt.sign(
+    {
+      sub: userId,
+      iss: "your-replyke-project-id",
+      userData,
+    },
+    privateKey,
+    { algorithm: "RS256", expiresIn: "5m" }
+  );
+}
+```
+
+<Warning>
+  Keep your RSA private key on your server. Never expose it to the client.
+  The JWT should be generated server-side and passed to the frontend at
+  sign-in time.
+</Warning>
+
+## Frontend Integration
+
+Pass the signed JWT directly to `ReplykeProvider` (or `ReplykeIntegrationProvider` if you manage your own Redux store) via the `signedToken` prop. The SDK exchanges the token automatically on initialization — no manual API calls required.
+
+<CodeGroup>
+```tsx Standard setup
+import { ReplykeProvider } from "@replyke/react-js";
+
+function App() {
+  // Fetch or derive the signed JWT from your own auth system
+  const signedToken = useMyAuthSystem().replykeJwt;
+
+  return (
+    <ReplykeProvider projectId="your-project-id" signedToken={signedToken}>
+      <YourApp />
+    </ReplykeProvider>
+  );
+}
+```
+
+```tsx Integration mode (own Redux store)
+import { ReplykeIntegrationProvider } from "@replyke/react-js";
+
+function App() {
+  // Fetch or derive the signed JWT from your own auth system
+  const signedToken = useMyAuthSystem().replykeJwt;
+
+  return (
+    <Provider store={yourStore}>
+      <ReplykeIntegrationProvider projectId="your-project-id" signedToken={signedToken}>
+        <YourApp />
+      </ReplykeIntegrationProvider>
+    </Provider>
+  );
+}
+```
+</CodeGroup>
+
+Whenever `signedToken` changes (e.g., after a new user signs in), the SDK re-initializes auth with the updated token automatically.
+
+<Tip>
+  The `verify-external-user` exchange happens inside the provider — you never
+  need to call the endpoint manually. The provider creates the user if they do
+  not exist, updates their profile if any `userData` fields have changed, and
+  handles token refresh from that point forward.
+</Tip>
+
+## User Identity
+
+When a user signs in via external auth, Replyke stores the `sub` claim as `foreignId` on the user record and creates a `UserIdentity` entry with `provider: "external"`. On subsequent sign-ins, the user is looked up by identity first, then by `foreignId` as a fallback, then by email.
+
+## See Also
+
+- [Verify External User API reference](/api-reference/auth/verify-external-user)
+- [Authentication overview](/sdk/authentication/overview)

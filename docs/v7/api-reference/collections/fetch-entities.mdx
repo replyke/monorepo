@@ -1,0 +1,68 @@
+---
+title: "Fetch Collection Entities"
+api: "GET /:projectId/api/v7/collections/:collectionId/entities"
+description: "Get paginated entities saved in a collection"
+---
+
+Returns a paginated list of entities saved in the specified collection. The collection must belong to the authenticated user.
+
+## Path Parameters
+
+<ParamField path="collectionId" type="string" required>
+  The ID of the collection to fetch entities from.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="number" optional>
+  Page number (1-indexed). Default: `1`.
+</ParamField>
+
+<ParamField query="limit" type="number" optional>
+  Number of entities per page. Default: `20`.
+</ParamField>
+
+<ParamField query="sortBy" type='"new" | "top" | "hot" | "added"' optional>
+  Sort mode. `added` sorts by when the entity was saved; others sort by entity properties. Default: `"new"`.
+</ParamField>
+
+<ParamField query="sortDir" type='"asc" | "desc"' optional>
+  Sort direction. Default: `"desc"`.
+</ParamField>
+
+<ParamField query="include" type="string" optional>
+  Comma-separated list of associations to include: `user`, `space`, `topcomment`.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="Entity[]">
+  The page of entity objects. Each entity includes `isSaved: true`.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata.
+
+  <Expandable>
+    <ResponseField name="page" type="number">Current page.</ResponseField>
+    <ResponseField name="limit" type="number">Page size.</ResponseField>
+    <ResponseField name="totalPages" type="number">Total number of pages.</ResponseField>
+    <ResponseField name="totalItems" type="number">Total count of saved entities.</ResponseField>
+    <ResponseField name="hasMore" type="boolean">`true` if more pages exist.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Collection Not Found — 404">
+    ```json
+    { "error": "Collection not found", "code": "collection/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Internal server error.", "code": "collection/server-error" }
+    ```
+  </Accordion>
+</AccordionGroup>

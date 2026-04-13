@@ -1,0 +1,45 @@
+---
+title: "Fetch following count by user ID"
+description: "Get the following count for any user by their ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that fetches the total count of users that a given user follows. This is a public endpoint — authentication is not required.
+
+## Usage Example
+
+```tsx
+import { useFetchFollowingCountByUserId } from "@replyke/react-js";
+
+function UserStats({ userId }: { userId: string }) {
+  const fetchFollowingCountByUserId = useFetchFollowingCountByUserId();
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchFollowingCountByUserId({ userId }).then((res) => setCount(res.count));
+  }, [userId]);
+
+  return <span>{count ?? "..."} following</span>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user whose following count to fetch.
+</ParamField>
+
+## Returns
+
+<ResponseField name="count" type="number">
+  Total number of users that the specified user is following.
+</ResponseField>
+
+## Related
+
+- [useFetchFollowingCount](/hooks/follows/use-fetch-following-count) — get count for the current user
+- [useFetchFollowingByUserId](/hooks/follows/use-fetch-following-by-user-id) — fetch the full list

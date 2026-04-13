@@ -1,0 +1,118 @@
+---
+title: "Notification Templates"
+description: "Customize the display text shown for each notification type"
+---
+
+Replyke stores notifications as structured records with typed `metadata` — not pre-rendered strings. Your app controls how each notification type is displayed using **notification templates**.
+
+Templates are passed to `useAppNotifications` via the `notificationTemplates` prop. Each template can define a `title` and/or `content`. Each field accepts either:
+
+- A **string** with `$variable` placeholders that are filled from the notification's metadata, or
+- A **function** that receives a typed variables object and returns a string — useful when you need full control, such as translating specific values or applying conditional logic.
+
+## String template example
+
+```tsx
+import { useAppNotifications } from "@replyke/react-js";
+
+const templates = {
+  entityComment: {
+    title: "New comment",
+    content: "$initiatorName commented on your post",
+  },
+  commentReply: {
+    title: "New reply",
+    content: "$initiatorName replied to your comment",
+  },
+  newFollow: {
+    title: "New follower",
+    content: "$initiatorName started following you",
+  },
+  connectionRequest: {
+    title: "Connection request",
+    content: "$initiatorName wants to connect",
+  },
+};
+
+function NotificationFeed() {
+  const { appNotifications } = useAppNotifications({ notificationTemplates: templates });
+
+  return (
+    <ul>
+      {appNotifications.map((n) => (
+        <li key={n.id}>
+          <strong>{n.title}</strong>
+          <p>{n.content}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Function template example
+
+Function templates are useful when string interpolation isn't enough — for example, when you need to translate a reaction type value into another language, or apply conditional phrasing.
+
+```tsx
+const templates = {
+  entityReaction: {
+    title: ({ initiatorName, reactionType }) => {
+      const reactionLabel =
+        reactionType === "upvote" ? "me gusta" :
+        reactionType === "heart"  ? "corazón"  : reactionType;
+      return `${initiatorName} reaccionó con ${reactionLabel} a tu publicación`;
+    },
+  },
+  commentReaction: {
+    // Mix string and function in the same template
+    title: ({ initiatorName, reactionType }) => {
+      const reactionLabel =
+        reactionType === "upvote" ? "me gusta" :
+        reactionType === "heart"  ? "corazón"  : reactionType;
+      return `${initiatorName} reaccionó con ${reactionLabel} a tu comentario`;
+    },
+    content: "$commentContent",
+  },
+};
+```
+
+TypeScript will infer the exact variables available for each notification type, so you get autocompletion and type safety when destructuring the parameter.
+
+## Template keys and available variables
+
+Each key in `notificationTemplates` corresponds to one notification type. The variables available to both string placeholders and function templates are listed below.
+
+| Template key | Notification type | Available variables |
+|---|---|---|
+| `entityComment` | `entity-comment` | `initiatorName`, `initiatorUsername`, `entityTitle`, `entityContent`, `commentContent` |
+| `commentReply` | `comment-reply` | `initiatorName`, `initiatorUsername`, `entityTitle`, `entityContent`, `commentContent`, `replyContent` |
+| `entityMention` | `entity-mention` | `initiatorName`, `initiatorUsername`, `entityTitle`, `entityContent` |
+| `commentMention` | `comment-mention` | `initiatorName`, `initiatorUsername`, `entityTitle`, `entityContent`, `commentContent` |
+| `entityUpvote` | `entity-upvote` | `initiatorName`, `initiatorUsername`, `entityTitle`, `entityContent` |
+| `commentUpvote` | `comment-upvote` | `initiatorName`, `initiatorUsername`, `entityTitle`, `entityContent`, `commentContent` |
+| `entityReaction` | `entity-reaction` | `initiatorName`, `initiatorUsername`, `entityTitle`, `entityContent`, `reactionType` |
+| `commentReaction` | `comment-reaction` | `initiatorName`, `initiatorUsername`, `entityTitle`, `entityContent`, `commentContent`, `reactionType` |
+| `entityReactionMilestoneSpecific` | `entity-reaction-milestone-specific` | `entityTitle`, `entityContent`, `reactionType`, `milestoneCount` |
+| `entityReactionMilestoneTotal` | `entity-reaction-milestone-total` | `entityTitle`, `entityContent`, `milestoneCount` |
+| `commentReactionMilestoneSpecific` | `comment-reaction-milestone-specific` | `entityTitle`, `entityContent`, `commentContent`, `reactionType`, `milestoneCount` |
+| `commentReactionMilestoneTotal` | `comment-reaction-milestone-total` | `entityTitle`, `entityContent`, `commentContent`, `milestoneCount` |
+| `newFollow` | `new-follow` | `initiatorName`, `initiatorUsername` |
+| `connectionRequest` | `connection-request` | `initiatorName`, `initiatorUsername` |
+| `connectionAccepted` | `connection-accepted` | `initiatorName`, `initiatorUsername` |
+| `spaceMembershipApproved` | `space-membership-approved` | `spaceName`, `spaceShortId`, `spaceSlug` |
+
+<Note>
+  All template keys are optional. If a template is not provided for a given notification type, Replyke uses a built-in default string template for that type. You only need to supply the keys you want to customize.
+</Note>
+
+## Accessing raw metadata
+
+For building fully custom UIs, access the raw `metadata` directly on each notification. Every notification includes:
+
+- `id` — the notification's unique ID
+- `type` — the notification type string
+- `isRead` — whether the user has read it
+- `action` — a hint string for the action to take on tap (e.g., `"open-entity"`, `"open-comment"`, `"open-profile"`)
+- `metadata` — type-specific fields (entity IDs, initiator info, etc.)
+- `createdAt` — ISO timestamp

@@ -1,0 +1,76 @@
+---
+title: "Fetch followers"
+description: "Fetch the current user's followers with pagination"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that fetches the paginated list of users who follow the currently authenticated user. Each entry includes the follow record ID, the follower's user profile, and the timestamp.
+
+For fetching another user's followers, see `useFetchFollowersByUserId`.
+
+## Usage Example
+
+```tsx
+import { useFetchFollowers } from "@replyke/react-js";
+
+function FollowersList() {
+  const fetchFollowers = useFetchFollowers();
+  const [followers, setFollowers] = useState([]);
+
+  useEffect(() => {
+    fetchFollowers({ page: 1, limit: 20 }).then((res) => {
+      setFollowers(res.data);
+    });
+  }, []);
+
+  return (
+    <ul>
+      {followers.map(({ followId, user }) => (
+        <li key={followId}>{user.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="page" type="number">
+  Page number to fetch. Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Number of results per page. Defaults to `20`.
+</ParamField>
+
+## Returns
+
+Returns a `PaginatedResponse` containing an array of follower entries:
+
+<ResponseField name="data" type="FollowerWithFollowInfo[]">
+  Array of follower entries.
+  <Expandable title="FollowerWithFollowInfo properties">
+    <ResponseField name="followId" type="string">
+      ID of the follow record.
+    </ResponseField>
+    <ResponseField name="user" type="User">
+      The follower's user profile. See [User data model](/data-models/user).
+    </ResponseField>
+    <ResponseField name="followedAt" type="string">
+      ISO timestamp of when the follow was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata including `currentPage`, `totalPages`, `totalCount`, `hasNextPage`, and `hasPreviousPage`.
+</ResponseField>
+
+## Related
+
+- [useFetchFollowersByUserId](/hooks/follows/use-fetch-followers-by-user-id) — fetch another user's followers
+- [useFetchFollowersCount](/hooks/follows/use-fetch-followers-count) — get total follower count

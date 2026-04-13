@@ -1,0 +1,36 @@
+---
+title: "Verify Email Link"
+api: "GET /:projectId/api/v7/auth/verify-email-link"
+description: "Verify a user's email address via a link clicked in an email"
+---
+
+Verifies a user's email address when they click the link from a verification email sent with `mode: "link"`. On success, `isVerified` is set to `true` and the token is invalidated.
+
+This endpoint is called automatically by the browser — you do not call it directly from your app. It is the target URL embedded in the verification button in the email.
+
+## Query Parameters
+
+<ParamField query="token" type="string" required>
+  The verification token embedded in the link by the server.
+</ParamField>
+
+<ParamField query="redirect" type="string">
+  The URL to redirect the user to after verification. This is set automatically by the server based on the `redirectUrl` you passed to [Send Verification Email](/api-reference/auth/send-verification-email).
+
+  On success: redirects to `{redirectUrl}?verified=true`
+  On failure: redirects to `{redirectUrl}?verified=false&error=invalid-or-expired-token`
+</ParamField>
+
+## Behaviour
+
+| Outcome | `redirect` present | `redirect` absent |
+|---------|-------------------|------------------|
+| Success | Redirect to `{redirectUrl}?verified=true` | Render hosted success page |
+| Invalid / expired token | Redirect to `{redirectUrl}?verified=false&error=invalid-or-expired-token` | Render hosted error page |
+| Server error | Redirect to `{redirectUrl}?verified=false&error=server-error` | Render hosted error page |
+
+## See Also
+
+- [Send Verification Email endpoint](/api-reference/auth/send-verification-email)
+- [`useSendVerificationEmail` hook](/hooks/auth/use-send-verification-email)
+- [Built-in Auth guide](/sdk/authentication/built-in)

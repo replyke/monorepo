@@ -1,0 +1,43 @@
+---
+title: "Check My Membership"
+api: "GET /:projectId/api/v7/spaces/:spaceId/membership/me"
+description: "Get the current user's membership status and permissions in a space"
+---
+
+Returns the authenticated user's membership status and resolved permissions in a space. Returns membership info even for `pending` or `banned` states.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+## Response
+
+<ResponseField name="isMember" type="boolean">
+  Whether the user has an active membership.
+</ResponseField>
+
+<ResponseField name="role" type="string | null">
+  `"admin"`, `"moderator"`, `"member"`, or `null` if not a member.
+</ResponseField>
+
+<ResponseField name="status" type="string | null">
+  `"pending"`, `"active"`, `"banned"`, `"rejected"`, or `null` if no membership record exists.
+</ResponseField>
+
+<ResponseField name="joinedAt" type="Date | null">
+  When the membership was created. `null` if not a member.
+</ResponseField>
+
+<ResponseField name="permissions" type="object">
+  <Expandable title="properties">
+    <ResponseField name="canPost" type="boolean">Whether the user can post.</ResponseField>
+    <ResponseField name="canModerate" type="boolean">Whether the user can moderate.</ResponseField>
+    <ResponseField name="canRead" type="boolean">Whether the user can read content.</ResponseField>
+    <ResponseField name="isAdmin" type="boolean">Whether the user is an admin.</ResponseField>
+    <ResponseField name="isModerator" type="boolean">Whether the user is a moderator.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+See also: [useCheckMyMembership](/hooks/spaces/use-check-my-membership)

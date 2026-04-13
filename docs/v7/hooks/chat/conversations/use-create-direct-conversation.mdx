@@ -1,0 +1,46 @@
+---
+title: "Create direct conversation"
+description: "Create or retrieve a 1:1 direct conversation with another user"
+icon: "plug"
+---
+
+## Overview
+
+Returns an async function that creates a direct (1:1) conversation with a given user. If a direct conversation between the two users already exists on the server, it is returned rather than creating a duplicate. The conversation is also stored in Redux state.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useCreateDirectConversation } from "@replyke/react-js";
+
+function UserCard({ userId }: { userId: string }) {
+  const createDirect = useCreateDirectConversation();
+
+  const handleMessage = async () => {
+    const conversation = await createDirect({ userId });
+    // Navigate to the conversation, e.g. router.push(`/chat/${conversation.id}`)
+  };
+
+  return <button onClick={handleMessage}>Message</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField body="userId" type="string" required>
+  The ID of the user to start a conversation with.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Conversation" type="Conversation">
+  The created or retrieved direct [Conversation](/data-models/conversation).
+</ResponseField>
+
+## Notes
+
+- For integration guidance, see [Chat: Conversations](/sdk/chat/conversations).

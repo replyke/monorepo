@@ -1,0 +1,56 @@
+---
+title: "Report Message"
+api: "POST /:projectId/api/v7/conversations/:conversationId/messages/:messageId/report"
+description: "Submit a report on a chat message"
+---
+
+Submits a report flagging a message for review. The caller must be a member of the conversation and cannot report their own messages.
+
+If a report for this message already exists, the caller's report is added to it (incrementing the reporter count). If the caller already reported this message, a 200 is returned without creating a duplicate.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+<ParamField path="messageId" type="string" required>
+  The ID of the message to report.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="reason" type="string" required>
+  The reason for the report (e.g. `"spam"`, `"harassment"`, `"inappropriate"`).
+</ParamField>
+
+<ParamField body="details" type="string">
+  Optional additional details about the report.
+</ParamField>
+
+## Response
+
+Returns one of:
+- `201 Created` — new report submitted: `{ "message": "Report submitted.", "code": "report/created" }`
+- `200 OK` — added to existing report: `{ "message": "Report updated.", "code": "report/updated" }`
+- `200 OK` — already reported by this user: `{ "message": "Report already registered by this user.", "code": "report/already-reported" }`
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "You are not a member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Message not found.", "code": "chat/message-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Self-Report — 400 Bad Request">
+    ```json
+    { "error": "You cannot report your own message.", "code": "report/self-report" }
+    ```
+  </Accordion>
+</AccordionGroup>

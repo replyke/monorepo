@@ -1,0 +1,268 @@
+---
+title: "App Notification"
+description: "The AppNotification interface shape including all notification types and their metadata"
+---
+
+App notifications are in-app alerts sent to users when relevant activity occurs. Every notification shares a common base shape, and each notification type carries type-specific data in its `metadata` field.
+
+## Base Fields
+
+All notification types include these fields:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique notification identifier (UUID). |
+| `userId` | `string` | The recipient's user ID. |
+| `type` | `AppNotificationType` | The notification type. See types listed below. |
+| `action` | `string` | Suggested action for the client when the notification is tapped (e.g. `"open-comment"`, `"open-entity"`, `"open-profile"`). |
+| `isRead` | `boolean` | Whether the user has read this notification. |
+| `metadata` | `Record<string, any>` | Type-specific data. See per-type metadata below. |
+| `title` | `string \| undefined` | Display title derived from the notification template. Only present when the notification has been populated — not guaranteed on every notification object. |
+| `content` | `string \| undefined` | Display content derived from the notification template. Only present when the notification has been populated — not guaranteed on every notification object. |
+| `createdAt` | `string` | ISO timestamp when the notification was created. |
+
+## Notification Types
+
+### `entity-comment`
+
+Triggered when someone comments on the user's entity.
+
+**Action**: `"open-comment"`
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `entityId` | `string` | ID of the entity. |
+| `entityShortId` | `string` | Short ID for sharing links. |
+| `entityTitle` | `string \| null` | Entity title. |
+| `entityContent` | `string \| null` | Entity content preview. |
+| `commentId` | `string` | ID of the new comment. |
+| `commentContent` | `string \| null` | Comment content preview. |
+| `initiatorId` | `string` | ID of the user who commented. |
+| `initiatorName` | `string \| null` | Display name of the commenter. |
+| `initiatorUsername` | `string \| null` | Username of the commenter. |
+| `initiatorAvatar` | `string \| null` | Avatar URL of the commenter. |
+
+### `comment-reply`
+
+Triggered when someone replies to the user's comment.
+
+**Action**: `"open-comment"`
+
+Same metadata as `entity-comment`, plus:
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `replyId` | `string` | ID of the reply. |
+| `replyContent` | `string \| null` | Reply content preview. |
+
+### `entity-mention`
+
+Triggered when a user is mentioned in an entity.
+
+**Action**: `"open-entity"`
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `entityId` | `string` | ID of the entity containing the mention. |
+| `entityShortId` | `string` | Short ID for sharing links. |
+| `entityTitle` | `string \| null` | Entity title. |
+| `entityContent` | `string \| null` | Entity content preview. |
+| `initiatorId` | `string` | ID of the user who made the mention. |
+| `initiatorName` | `string \| null` | Display name. |
+| `initiatorUsername` | `string \| null` | Username. |
+| `initiatorAvatar` | `string \| null` | Avatar URL. |
+
+### `comment-mention`
+
+Triggered when a user is mentioned in a comment.
+
+**Action**: `"open-comment"`
+
+Same as `entity-mention` metadata, plus:
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `commentId` | `string` | ID of the comment containing the mention. |
+| `commentContent` | `string \| null` | Comment content preview. |
+
+### `entity-upvote`
+
+Triggered when someone upvotes the user's entity.
+
+**Action**: `"open-entity"`
+
+Same as `entity-mention` metadata.
+
+### `comment-upvote`
+
+Triggered when someone upvotes the user's comment.
+
+**Action**: `"open-comment"`
+
+Same as `comment-mention` metadata.
+
+### `entity-reaction`
+
+Triggered when someone reacts to the user's entity.
+
+**Action**: `"open-entity"`
+
+Same as `entity-mention` metadata, plus:
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `reactionType` | `string` | The reaction type that was applied. |
+
+### `comment-reaction`
+
+Triggered when someone reacts to the user's comment.
+
+**Action**: `"open-comment"`
+
+Same as `comment-mention` metadata, plus `reactionType`.
+
+### `entity-reaction-milestone-specific`
+
+Triggered when an entity reaches a milestone count for a specific reaction type.
+
+**Action**: `"open-entity"`
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `entityId` | `string` | ID of the entity. |
+| `entityShortId` | `string` | Short ID. |
+| `entityTitle` | `string \| null` | Entity title. |
+| `entityContent` | `string \| null` | Content preview. |
+| `reactionType` | `string` | The reaction type that hit the milestone. |
+| `milestoneCount` | `number` | The milestone count reached. |
+| `lastThreeUsers` | `MilestoneUser[]` | The three most recent reactors. |
+
+### `entity-reaction-milestone-total`
+
+Triggered when an entity reaches a milestone for total reactions across all types.
+
+**Action**: `"open-entity"`
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `entityId` | `string` | ID of the entity. |
+| `entityShortId` | `string` | Short ID. |
+| `entityTitle` | `string \| null` | Entity title. |
+| `entityContent` | `string \| null` | Content preview. |
+| `milestoneCount` | `number` | The total reaction milestone reached. |
+| `reactionCounts` | `Record<string, number>` | Breakdown of counts by reaction type. |
+| `lastThreeUsers` | `MilestoneUser[]` | The three most recent reactors. |
+
+### `comment-reaction-milestone-specific`
+
+Triggered when a comment reaches a milestone count for a specific reaction type.
+
+**Action**: `"open-comment"`
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `entityId` | `string` | ID of the entity the comment belongs to. |
+| `entityShortId` | `string` | Short ID. |
+| `entityTitle` | `string \| null` | Entity title. |
+| `entityContent` | `string \| null` | Entity content preview. |
+| `commentId` | `string` | ID of the comment. |
+| `commentContent` | `string \| null` | Comment content preview. |
+| `reactionType` | `string` | The reaction type that hit the milestone. |
+| `milestoneCount` | `number` | The milestone count reached. |
+| `lastThreeUsers` | `MilestoneUser[]` | The three most recent reactors. |
+
+### `comment-reaction-milestone-total`
+
+Triggered when a comment reaches a milestone for total reactions across all types.
+
+**Action**: `"open-comment"`
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `entityId` | `string` | ID of the entity the comment belongs to. |
+| `entityShortId` | `string` | Short ID. |
+| `entityTitle` | `string \| null` | Entity title. |
+| `entityContent` | `string \| null` | Entity content preview. |
+| `commentId` | `string` | ID of the comment. |
+| `commentContent` | `string \| null` | Comment content preview. |
+| `milestoneCount` | `number` | The total reaction milestone reached. |
+| `reactionCounts` | `Record<string, number>` | Breakdown of counts by reaction type. |
+| `lastThreeUsers` | `MilestoneUser[]` | The three most recent reactors. |
+
+### `new-follow`
+
+Triggered when someone follows the user.
+
+**Action**: `"open-profile"`
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `initiatorId` | `string` | ID of the new follower. |
+| `initiatorName` | `string \| null` | Display name. |
+| `initiatorUsername` | `string \| null` | Username. |
+| `initiatorAvatar` | `string \| null` | Avatar URL. |
+
+### `connection-request`
+
+Triggered when someone sends the user a connection request.
+
+**Action**: `"open-profile"`
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `connectionId` | `string` | ID of the connection record. |
+| `initiatorId` | `string` | ID of the requester. |
+| `initiatorName` | `string \| null` | Display name. |
+| `initiatorUsername` | `string \| null` | Username. |
+| `initiatorAvatar` | `string \| null` | Avatar URL. |
+
+### `connection-accepted`
+
+Triggered when someone accepts the user's connection request.
+
+**Action**: `"open-profile"`
+
+Same metadata fields as `connection-request`.
+
+### `space-membership-approved`
+
+Triggered when a space moderator approves the user's pending membership request.
+
+**Action**: `"open-space"`
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `spaceId` | `string` | ID of the space. |
+| `spaceName` | `string` | Name of the space. |
+| `spaceShortId` | `string` | Short ID for sharing links. |
+| `spaceSlug` | `string \| null \| undefined` | URL slug of the space. |
+| `spaceAvatar` | `string \| null \| undefined` | Avatar URL of the space. |
+
+### `system`
+
+A manually triggered notification from the project dashboard.
+
+**Action**: Configurable.
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `title` | `string \| undefined` | Optional notification title. |
+| `content` | `string \| undefined` | Optional notification body. |
+| `buttonData` | `{ text: string; url: string } \| null` | Optional call-to-action button data. |
+
+## Nested Types
+
+### MilestoneUser
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | User ID. |
+| `name` | `string \| null \| undefined` | Display name. |
+| `username` | `string \| null \| undefined` | Username. |
+| `avatar` | `string \| null \| undefined` | Avatar URL. |
+
+## See Also
+
+- [useAppNotifications hook](/hooks/app-notifications/use-app-notifications)
+- [Fetch Notifications](/api-reference/app-notifications/fetch-notifications)
+- [Notification Templates](/sdk/app-notifications/notification-templates)

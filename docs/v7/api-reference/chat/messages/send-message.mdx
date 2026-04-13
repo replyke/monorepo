@@ -1,0 +1,75 @@
+---
+title: "Send Message"
+api: "POST /:projectId/api/v7/conversations/:conversationId/messages"
+description: "Send a message to a conversation"
+---
+
+Creates a new message in a conversation. The caller must be an active member. At least one of `content`, `gif`, or a file attachment is required.
+
+For space conversations with `postingPermission: "admins"`, only users with `admin` or `moderator` role in the parent Space can send messages.
+
+This endpoint accepts `multipart/form-data` to support file attachments alongside message content.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation to send the message to.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="content" type="string">
+  Text content of the message. Optional if a GIF or file is provided.
+</ParamField>
+
+<ParamField body="gif" type="object">
+  GIF attachment. Optional. See [GifData](/data-models/chat-message#gifdata) for the expected shape.
+</ParamField>
+
+<ParamField body="mentions" type="array">
+  Array of [Mention](/data-models/chat-message#mention) objects for @mentions in the message content. Optional.
+</ParamField>
+
+<ParamField body="parentMessageId" type="string">
+  ID of a message in this conversation to reply to in a thread. The referenced message must be a main-stream message (threads are one level deep only). Optional.
+</ParamField>
+
+<ParamField body="quotedMessageId" type="string">
+  ID of a message to quote inline. The message stays in the main stream but renders the quoted content as a preview. Optional.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Custom key-value data. Limited to 10 KB. Optional.
+</ParamField>
+
+<ParamField body="localId" type="string">
+  Client-generated identifier for optimistic deduplication. The server echoes it back in the response but never stores it. Optional.
+</ParamField>
+
+<ParamField body="files" type="file[]">
+  File attachments (multipart/form-data). Up to 10 files per message. Optional.
+</ParamField>
+
+## Response
+
+Returns the created [ChatMessage](/data-models/chat-message) object, fully populated with `user`, `quotedMessage`, `files`, `reactionCounts` (empty on creation), and `userReactions` (empty on creation). If `localId` was provided, it is echoed in the response.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Empty Message — 400 Bad Request">
+    ```json
+    { "error": "Message must have content, a GIF, or at least one file.", "code": "chat/empty-message" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "You are not a member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Parent — 400 Bad Request">
+    ```json
+    { "error": "Parent message not found, not in this conversation, already removed, or is itself a reply.", "code": "chat/invalid-parent" }
+    ```
+  </Accordion>
+</AccordionGroup>

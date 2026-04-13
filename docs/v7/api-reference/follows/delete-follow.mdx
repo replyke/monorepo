@@ -1,0 +1,43 @@
+---
+title: "Delete Follow"
+api: "DELETE /:projectId/api/v7/follows/:followId"
+description: "Remove a follow relationship by its follow ID"
+---
+
+Removes a follow relationship by the follow record ID. Only the follower (the user who created the follow) can delete it. Use [Unfollow User](/api-reference/users/follows/unfollow-user) instead if you only have the target user's ID.
+
+## Path Parameters
+
+<ParamField path="followId" type="string" required>
+  The ID (UUID) of the follow record to delete.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `204` with no body.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Follow Not Found — 404">
+    ```json
+    {
+      "error": "Follow relationship does not exist.",
+      "code": "follow/not-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden — 403">
+    ```json
+    {
+      "error": "You do not have permission to delete this follow relationship.",
+      "code": "follow/forbidden"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useUnfollowByFollowId` hook](/hooks/follows/use-unfollow-by-follow-id)
+- [Unfollow User (by user ID)](/api-reference/users/follows/unfollow-user)

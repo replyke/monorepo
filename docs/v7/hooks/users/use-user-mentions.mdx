@@ -1,0 +1,132 @@
+---
+title: "Use user mentions"
+description: "Detect @mention triggers, fetch user suggestions, and track mentioned users in text input"
+icon: "cube"
+---
+
+## Overview
+
+`useUserMentions` manages the full `@mention` flow inside a text input. It monitors the cursor position and content, detects when the user is typing an `@mention`, debounces a search call, and returns suggestions to display. When the user selects a suggestion, it inserts the username into the content and tracks the mention.
+
+This hook is intended to be used alongside a controlled text input where you manage the content and cursor position.
+
+## Usage Example
+
+```tsx
+import { useUserMentions } from "@replyke/react-js";
+import { useState, useRef } from "react";
+
+function CommentInput() {
+  const [content, setContent] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [isSelectionActive, setIsSelectionActive] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const {
+    isMentionActive,
+    loading,
+    mentionSuggestions,
+    handleMentionClick,
+    mentions,
+  } = useUserMentions({
+    content,
+    setContent,
+    focus: () => inputRef.current?.focus(),
+    cursorPosition,
+    isSelectionActive,
+  });
+
+  return (
+    <div>
+      <textarea
+        ref={inputRef}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        onSelect={(e) => {
+          const target = e.target as HTMLTextAreaElement;
+          setCursorPosition(target.selectionStart);
+          setIsSelectionActive(target.selectionStart !== target.selectionEnd);
+        }}
+      />
+      {isMentionActive && (
+        <ul>
+          {loading && <li>Loading...</li>}
+          {mentionSuggestions.map((user) => (
+            <li key={user.id} onClick={() => handleMentionClick(user)}>
+              {user.username}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+```
+
+## Props
+
+<ParamField path="content" type="string" required>
+  The current text content of the input.
+</ParamField>
+
+<ParamField path="setContent" type="(value: string) => void" required>
+  Setter for the content. Called when a mention is selected and the username is inserted.
+</ParamField>
+
+<ParamField path="focus" type="() => void" required>
+  A function that re-focuses the input. Called after a mention is selected.
+</ParamField>
+
+<ParamField path="cursorPosition" type="number" required>
+  The current cursor position (character index) within the content.
+</ParamField>
+
+<ParamField path="isSelectionActive" type="boolean" required>
+  Whether the user has text selected. Mention detection is suppressed while a selection is active.
+</ParamField>
+
+<ParamField path="trigger" type="string">
+  The character that activates mention mode. Defaults to `"@"`.
+</ParamField>
+
+<ParamField path="minChars" type="number">
+  Minimum characters after the trigger before fetching suggestions. Defaults to `3`.
+</ParamField>
+
+<ParamField path="debounceDelay" type="number">
+  Milliseconds to wait after the user stops typing before fetching suggestions. Defaults to `1000`.
+</ParamField>
+
+<ParamField path="validPattern" type="string">
+  Regex pattern (as a string) that the text after the trigger must match. Defaults to `"[\\w.]+"`.
+</ParamField>
+
+## Return Values
+
+<ResponseField name="isMentionActive" type="boolean">
+  `true` when the cursor is inside a valid mention trigger sequence.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while user suggestions are being fetched.
+</ResponseField>
+
+<ResponseField name="mentionSuggestions" type="User[]">
+  The list of matching users to display as suggestions.
+</ResponseField>
+
+<ResponseField name="handleMentionClick" type="(user: User) => void">
+  Call this when the user selects a suggestion. Replaces the trigger text in `content` with the user's username, adds the user to `mentions`, and closes the suggestion list.
+</ResponseField>
+
+<ResponseField name="mentions" type="Mention[]">
+  Accumulated list of confirmed mentions in the current content. Each entry has `id`, `foreignId`, `username`, and `type: "user"`.
+</ResponseField>
+
+<ResponseField name="addMention" type="(user: User) => void">
+  Manually adds a user to the `mentions` list. Used internally by `handleMentionClick`.
+</ResponseField>
+
+<ResponseField name="resetMentions" type="() => void">
+  Clears the `mentions` list and resets all mention state. Call this after the content is submitted.
+</ResponseField>

@@ -1,0 +1,46 @@
+---
+title: "Check slug availability"
+description: "Check whether a space slug is available for use"
+icon: "plug"
+---
+
+## Overview
+
+`useCheckSlugAvailability` returns a callable function that verifies whether a slug is available in the current project. Useful for live validation in a space creation or settings form.
+
+## Usage Example
+
+```tsx
+import { useCheckSlugAvailability } from "@replyke/react-js";
+import { useState } from "react";
+
+function SlugInput() {
+  const checkSlug = useCheckSlugAvailability();
+  const [available, setAvailable] = useState<boolean | null>(null);
+
+  const handleBlur = async (slug: string) => {
+    const result = await checkSlug({ slug });
+    setAvailable(result.available);
+  };
+
+  return (
+    <div>
+      <input onBlur={(e) => handleBlur(e.target.value)} />
+      {available === false && <p>Slug is already taken.</p>}
+      {available === true && <p>Slug is available!</p>}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="slug" type="string" required>
+  The slug to check. Must match the slug pattern: letters, numbers, hyphens, and underscores (Unicode supported).
+</ParamField>
+
+## Returns
+
+<ResponseField name="available" type="boolean">
+  `true` if the slug is not currently in use within the project.
+</ResponseField>

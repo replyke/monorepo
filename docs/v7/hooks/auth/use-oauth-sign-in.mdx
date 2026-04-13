@@ -1,0 +1,129 @@
+---
+title: "Use OAuth sign-in"
+description: "Initiate OAuth sign-in, link OAuth providers, and handle the callback — web only"
+icon: "cube"
+---
+
+## Overview
+
+`useOAuthSignIn` handles the full redirect-based OAuth flow for web apps. It provides three functions:
+
+- **`initiateOAuth`** — redirect an unauthenticated user to the provider's authorization page to sign in or sign up.
+- **`linkOAuthProvider`** — redirect an already-authenticated user to link an additional OAuth provider to their account.
+- **`handleOAuthCallback`** — call this on the OAuth callback page to extract tokens from the URL fragment and set the authenticated session.
+
+<Note>
+  This hook is available in `@replyke/react-js` only. It uses `window.location` and is not compatible with React Native.
+</Note>
+
+## Usage Example
+
+**Initiating sign-in:**
+
+```tsx
+import { useOAuthSignIn } from "@replyke/react-js";
+
+function SignInPage() {
+  const { initiateOAuth, isLoading, error } = useOAuthSignIn();
+
+  return (
+    <>
+      <button
+        onClick={() =>
+          initiateOAuth({
+            provider: "google",
+            redirectAfterAuth: "https://myapp.com/auth/callback",
+          })
+        }
+        disabled={isLoading}
+      >
+        Sign in with Google
+      </button>
+      {error && <p>{error}</p>}
+    </>
+  );
+}
+```
+
+**Handling the callback:**
+
+```tsx
+import { useEffect } from "react";
+import { useOAuthSignIn } from "@replyke/react-js";
+
+function OAuthCallbackPage() {
+  const { handleOAuthCallback } = useOAuthSignIn();
+
+  useEffect(() => {
+    handleOAuthCallback();
+  }, []);
+
+  return <p>Signing you in...</p>;
+}
+```
+
+**Linking an additional provider:**
+
+```tsx
+import { useOAuthSignIn } from "@replyke/react-js";
+
+function LinkGitHub() {
+  const { linkOAuthProvider } = useOAuthSignIn();
+
+  return (
+    <button
+      onClick={() =>
+        linkOAuthProvider({
+          provider: "github",
+          redirectAfterAuth: "https://myapp.com/settings",
+        })
+      }
+    >
+      Connect GitHub
+    </button>
+  );
+}
+```
+
+## Returns
+
+<ResponseField name="initiateOAuth" type="function">
+  Starts the OAuth sign-in / sign-up flow for unauthenticated users. Redirects
+  the browser to the provider's authorization page.
+
+  **Parameters:**
+  - `provider` (required) — OAuth provider identifier (e.g. `"google"`, `"github"`).
+  - `redirectAfterAuth` (optional) — URL to redirect to after authentication. Defaults to the current page URL.
+</ResponseField>
+
+<ResponseField name="linkOAuthProvider" type="function">
+  Links an additional OAuth provider to the currently authenticated user. The
+  user must already be signed in. Redirects the browser to the provider's
+  authorization page.
+
+  **Parameters:**
+  - `provider` (required) — OAuth provider identifier (e.g. `"google"`, `"github"`).
+  - `redirectAfterAuth` (optional) — URL to redirect to after linking. Defaults to the current page URL.
+</ResponseField>
+
+<ResponseField name="handleOAuthCallback" type="() => boolean">
+  Reads tokens from the URL fragment (`#accessToken=...&refreshToken=...`) after
+  the provider redirects back to your app. On success, stores the tokens and
+  initializes the session. Returns `true` if tokens were found and set, `false`
+  otherwise.
+
+  Call this inside a `useEffect` on your callback page.
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  `true` while the authorization request is in progress. Stays `true` after the
+  redirect is triggered (since the page navigates away).
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the OAuth flow fails, or `null` when there is no error.
+</ResponseField>
+
+## Integration Guide
+
+For full OAuth setup instructions, see [OAuth Authentication](/sdk/authentication/oauth).

@@ -1,0 +1,77 @@
+---
+title: "Overview"
+description: "Build community spaces with membership, moderation, rules, and optional chat"
+---
+
+Spaces are community containers where users can gather, post content, and interact under customizable rules. Each space has its own membership system, permission levels, moderation tools, and optionally an integrated chat conversation.
+
+## In This Section
+
+<CardGroup cols={2}>
+  <Card title="Provider & Hook" href="/sdk/spaces/provider-and-hook">
+    Load a space into context and access its state and operations
+  </Card>
+  <Card title="Membership" href="/sdk/spaces/membership">
+    Join/leave spaces, approval workflows, role management
+  </Card>
+  <Card title="Moderation" href="/sdk/spaces/moderation">
+    Approve or remove content, handle member and content reports
+  </Card>
+  <Card title="Rules" href="/sdk/spaces/rules">
+    Create and display community rules for members
+  </Card>
+  <Card title="Digest & Newsletter" href="/sdk/spaces/digest-newsletter">
+    Send periodic content summaries to a webhook endpoint
+  </Card>
+  <Card title="Space Lists" href="/sdk/spaces/space-lists">
+    Browse and paginate spaces with filtering and sorting
+  </Card>
+</CardGroup>
+
+## Core Architecture
+
+Spaces follow the provider + hook pattern used throughout Replyke. Wrap your space UI with a `SpaceProvider` and access everything via `useSpace`.
+
+```tsx
+import { SpaceProvider, useSpace } from "@replyke/react-js";
+
+function SpacePage() {
+  return (
+    <SpaceProvider spaceId="space-uuid">
+      <SpaceContent />
+    </SpaceProvider>
+  );
+}
+
+function SpaceContent() {
+  const { space, isMember, canPost, joinSpace } = useSpace();
+
+  if (!space) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h1>{space.name}</h1>
+      {!isMember && (
+        <button onClick={joinSpace}>Join Space</button>
+      )}
+    </div>
+  );
+}
+```
+
+## Permission Model
+
+Each space has two independent permission settings:
+
+- **`readingPermission`** — `"anyone"` or `"members"`. Controls who can see content.
+- **`postingPermission`** — `"anyone"`, `"members"`, or `"admins"`. Controls who can post.
+
+When the current user is authenticated and is a member, `useSpace` exposes their resolved permissions (`canPost`, `canRead`, `canModerate`, `isAdmin`, `isModerator`).
+
+## Hierarchy
+
+Spaces can be nested up to 10 levels deep. A child space is created by passing a `parentSpaceId` to `useCreateSpace`. Only admins of the parent space can create child spaces. Parent admins and moderators are automatically cascaded into new child spaces with their existing roles.
+
+## What's Next
+
+Start with the [Provider & Hook](/sdk/spaces/provider-and-hook) to learn how to set up a space in your component tree, then explore membership and moderation features.

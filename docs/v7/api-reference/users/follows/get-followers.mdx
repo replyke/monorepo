@@ -1,0 +1,60 @@
+---
+title: "Get Followers"
+api: "GET /:projectId/api/v7/users/:userId/followers"
+description: "Get a paginated list of users who follow a specific user"
+---
+
+Returns a paginated list of users who follow the specified user. This endpoint is public — no authentication required.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Replyke user ID (UUID) of the user whose followers to retrieve.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number for pagination. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Number of results per page. Defaults to `20`, maximum `100`.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200` with a paginated response:
+
+<ResponseField name="data" type="array">
+  Array of follow entries.
+  <Expandable title="item properties">
+    <ResponseField name="followId" type="string">
+      ID of the follow record.
+    </ResponseField>
+    <ResponseField name="user" type="object">
+      Public profile of the follower user. Sensitive fields (email, hash, secureMetadata, etc.) are excluded.
+    </ResponseField>
+    <ResponseField name="followedAt" type="string">
+      ISO timestamp of when the follow was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="totalCount" type="number">
+  Total number of followers.
+</ResponseField>
+
+<ResponseField name="page" type="number">
+  Current page number.
+</ResponseField>
+
+<ResponseField name="limit" type="number">
+  Page size used for this response.
+</ResponseField>
+
+## See Also
+
+- [`useFetchFollowers` hook](/hooks/follows/use-fetch-followers)
+- [`useFetchFollowersByUserId` hook](/hooks/follows/use-fetch-followers-by-user-id)
+- [Follow data model](/data-models/follow)

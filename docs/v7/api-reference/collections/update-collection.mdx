@@ -1,0 +1,39 @@
+---
+title: "Update Collection"
+api: "PATCH /:projectId/api/v7/collections/:collectionId"
+description: "Rename a collection"
+---
+
+Updates the name of a sub-collection. The root collection cannot be renamed (it has `parentId: null`, which this endpoint rejects).
+
+## Path Parameters
+
+<ParamField path="collectionId" type="string" required>
+  The ID of the collection to update.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="name" type="string" required>
+  The new name for the collection.
+</ParamField>
+
+## Response
+
+Returns the updated [Collection](/data-models/collection) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Collection Not Found — 404">
+    Returned when the collection doesn't exist, doesn't belong to the user, or is the root collection (which cannot be renamed).
+    ```json
+    { "error": "Collection not found", "code": "collection/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Server error", "code": "collection/server-error" }
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,42 @@
+---
+title: "Get Follow Status"
+api: "GET /:projectId/api/v7/users/:userId/follow"
+description: "Check whether the authenticated user follows a specific user"
+---
+
+Returns the follow status between the authenticated user and the specified user. If the authenticated user is following, the response includes the follow record ID and timestamp.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Replyke user ID (UUID) of the user to check follow status for.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200`. The shape differs based on follow status:
+
+**When following:**
+
+<ResponseField name="isFollowing" type="boolean">
+  `true` — the authenticated user follows this user.
+</ResponseField>
+
+<ResponseField name="followId" type="string">
+  ID of the follow record.
+</ResponseField>
+
+<ResponseField name="followedAt" type="string">
+  ISO timestamp of when the follow was created.
+</ResponseField>
+
+**When not following:**
+
+<ResponseField name="isFollowing" type="boolean">
+  `false`.
+</ResponseField>
+
+## See Also
+
+- [`useFetchFollowStatus` hook](/hooks/follows/use-fetch-follow-status)
+- [Follow data model](/data-models/follow)

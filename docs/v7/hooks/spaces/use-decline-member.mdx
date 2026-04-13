@@ -1,0 +1,45 @@
+---
+title: "Decline member"
+description: "Decline a pending membership request"
+icon: "plug"
+---
+
+## Overview
+
+`useDeclineMember` returns a callable function for declining a pending join request. Sets the membership status to `"rejected"`. Requires the caller to be a moderator or admin.
+
+## Usage Example
+
+```tsx
+import { useDeclineMember } from "@replyke/react-js";
+
+function PendingMemberRow({ spaceId, memberId }: { spaceId: string; memberId: string }) {
+  const decline = useDeclineMember();
+
+  return (
+    <button onClick={() => decline({ spaceId, memberId })}>
+      Decline
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="memberId" type="string" required>
+  UUID of the membership record to decline.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="membership" type="object">
+  Updated membership with `id` and `status: "rejected"`.
+</ResponseField>

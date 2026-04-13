@@ -1,0 +1,40 @@
+---
+title: "Check if entity is saved"
+description: "Check whether an entity is saved in any of the user's collections"
+icon: "bookmark"
+---
+
+## Overview
+
+`useIsEntitySaved` provides a function to check whether a specific entity is saved in any collection owned by the current user. The function returns the full result — including the list of collections the entity is saved in — leaving state management to the caller.
+
+<Note>Requires an authenticated user. Throws if called without a logged-in user, an entity ID, or a project ID.</Note>
+
+## Usage Example
+
+```tsx
+import { useState } from "react";
+import { useIsEntitySaved } from "@replyke/react-js";
+
+function SaveStatus({ entityId }) {
+  const { checkIfEntityIsSaved } = useIsEntitySaved();
+  const [savedStatus, setSavedStatus] = useState(null);
+
+  useEffect(() => {
+    checkIfEntityIsSaved({ entityId }).then(setSavedStatus);
+  }, [entityId]);
+
+  if (savedStatus === null) return <p>Checking...</p>;
+  return <p>{savedStatus.saved ? "Saved" : "Not saved"}</p>;
+}
+```
+
+## Returns
+
+<ResponseField name="checkIfEntityIsSaved" type="({ entityId }: { entityId: string }) => Promise<{ saved: boolean; collections: Array<{ id: string; name: string }> }>">
+  Calls the API to determine whether the entity is saved in any of the user's collections. Returns the full result including the list of collections the entity belongs to.
+</ResponseField>
+
+<Note>
+  To also check membership in a specific collection, use `isEntitySaved` from `useCollections` — it accepts an optional `collectionId` and returns `inSpecificCollection` in addition to the full data.
+</Note>

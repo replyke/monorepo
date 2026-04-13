@@ -1,0 +1,50 @@
+---
+title: "Use entity"
+description: "Access entity state and actions from EntityProvider"
+icon: "cube"
+---
+
+## Overview
+
+`useEntity` reads from the nearest `EntityProvider` in the component tree and returns the entity's state and actions. It does not fetch data itself — it accesses what `EntityProvider` has already loaded.
+
+<Note>
+  `useEntity` must be used inside an `EntityProvider`. See [EntityProvider & useEntity](/sdk/entities/provider-and-hook) for setup instructions.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useEntity } from "@replyke/react-js";
+
+function EntityContent() {
+  const { entity, updateEntity, deleteEntity } = useEntity();
+
+  if (!entity) return <p>Loading...</p>;
+
+  return (
+    <div>
+      <h1>{entity.title}</h1>
+      <p>Views: {entity.views}</p>
+    </div>
+  );
+}
+```
+
+## Return Values
+
+<ResponseField name="entity" type="Entity | null | undefined">
+  The current entity. `undefined` while loading, `null` if not found.
+</ResponseField>
+
+<ResponseField name="setEntity" type="React.Dispatch">
+  Direct state setter for the entity. Use for manual local state overrides.
+</ResponseField>
+
+<ResponseField name="updateEntity" type="(props: { update }) => Promise<Entity | undefined>">
+  Updates the entity on the server and syncs local state. Accepts `title`, `content`, `attachments`, `keywords`, `location`, `metadata`, and `mentions`.
+</ResponseField>
+
+<ResponseField name="deleteEntity" type="() => Promise<void>">
+  Deletes the entity and sets local state to `undefined`.
+</ResponseField>

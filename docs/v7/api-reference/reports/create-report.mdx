@@ -1,0 +1,58 @@
+---
+title: "Create Report"
+api: "POST /:projectId/api/v7/reports"
+description: "Submit a content report for an entity or comment"
+---
+
+Submits a report on an entity or comment. If a report already exists for the target, the authenticated user's report is added to it (increments `reporterCount`). If the same user has already reported the same target, a `200` is returned without creating a duplicate.
+
+**Authentication required.**
+
+## Body Parameters
+
+<ParamField body="targetId" type="string" required>
+  The UUID of the entity or comment being reported.
+</ParamField>
+
+<ParamField body="targetType" type="string" required>
+  The type of content being reported. One of: `entity`, `comment`.
+</ParamField>
+
+<ParamField body="reason" type="string" required>
+  The reason for the report (e.g., "spam", "harassment", "misinformation"). Must not be empty.
+</ParamField>
+
+<ParamField body="details" type="string">
+  Optional additional context or description provided by the reporter.
+</ParamField>
+
+## Response
+
+Returns `201 Created` when a new report is created:
+
+```json
+{ "message": "Report submitted successfully", "code": "report/created" }
+```
+
+Returns `200 OK` when an existing report is updated with a new reporter:
+
+```json
+{ "message": "Report updated successfully", "code": "report/updated" }
+```
+
+Returns `200 OK` when the user has already reported this target:
+
+```json
+{ "message": "Report already registered by this user", "code": "report/already-reported" }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Target Not Found — 404">
+    ```json
+    { "error": "<targetType> not found", "code": "report/target-not-found" }
+    ```
+    The error message reflects the reported type, e.g. `"entity not found"` or `"comment not found"`.
+  </Accordion>
+</AccordionGroup>

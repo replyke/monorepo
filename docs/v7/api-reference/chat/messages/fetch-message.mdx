@@ -1,0 +1,36 @@
+---
+title: "Fetch Message"
+api: "GET /:projectId/api/v7/conversations/:conversationId/messages/:messageId"
+description: "Fetch a single message by ID"
+---
+
+Returns a single [ChatMessage](/data-models/chat-message) by ID, fully populated with `user`, `quotedMessage`, `files`, `reactionCounts`, and `userReactions`. The caller must be a member of the conversation.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+<ParamField path="messageId" type="string" required>
+  The ID of the message to fetch.
+</ParamField>
+
+## Response
+
+Returns a [ChatMessage](/data-models/chat-message) with all populated fields including `reactionCounts` and `userReactions` for the requesting user.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "You are not a member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Message not found.", "code": "chat/message-not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,92 @@
+---
+title: "Drafts & Publishing"
+description: "Create entities as drafts and publish them when ready"
+---
+
+Replyke supports a draft/publish workflow for entities. An entity created with `isDraft: true` is stored but not publicly visible. When the creator is ready, they publish it and it becomes visible to others.
+
+## Creating a Draft
+
+Pass `isDraft: true` to `useCreateEntity`:
+
+```tsx
+import { useCreateEntity } from "@replyke/react-js";
+
+function NewPostEditor() {
+  const createEntity = useCreateEntity();
+
+  const saveDraft = async () => {
+    const draft = await createEntity({
+      title: "My Post",
+      content: "Work in progress...",
+      isDraft: true,
+    });
+    console.log("Draft saved:", draft.id);
+  };
+
+  return <button onClick={saveDraft}>Save Draft</button>;
+}
+```
+
+## Listing the Current User's Drafts
+
+Use `useFetchDrafts` to retrieve all unpublished drafts for the authenticated user:
+
+```tsx
+import { useFetchDrafts } from "@replyke/react-js";
+import { useEffect, useState } from "react";
+
+function DraftsList() {
+  const fetchDrafts = useFetchDrafts();
+  const [drafts, setDrafts] = useState([]);
+
+  useEffect(() => {
+    fetchDrafts({ page: 1, limit: 20 }).then((res) => setDrafts(res.data));
+  }, []);
+
+  return (
+    <ul>
+      {drafts.map((d) => (
+        <li key={d.id}>{d.title || "Untitled draft"}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+`useFetchDrafts` parameters:
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `page` | `number` | Page number for pagination |
+| `limit` | `number` | Results per page |
+| `sourceId` | `string` | Filter by source ID |
+| `spaceId` | `string` | Filter by space |
+| `include` | `string \| string[]` | Populate related data (`"user"`, `"space"`, etc.) |
+
+Returns a paginated response: `{ data: Entity[], pagination: { page, pageSize, totalPages, totalItems, hasMore } }`.
+
+## Publishing a Draft
+
+Use `usePublishDraft` to publish an existing draft:
+
+```tsx
+import { usePublishDraft } from "@replyke/react-js";
+
+function DraftItem({ entityId }: { entityId: string }) {
+  const publishDraft = usePublishDraft();
+
+  const handlePublish = async () => {
+    const published = await publishDraft({ entityId });
+    console.log("Published:", published.isDraft); // false
+  };
+
+  return <button onClick={handlePublish}>Publish</button>;
+}
+```
+
+After publishing, `entity.isDraft` is `false` and the entity is publicly visible.
+
+<Note>
+  Only the entity's creator can publish their own drafts. The request requires an authenticated user.
+</Note>

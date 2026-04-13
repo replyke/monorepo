@@ -1,0 +1,117 @@
+---
+title: "Membership"
+description: "Join and leave spaces, manage members, handle approval workflows, and assign roles"
+---
+
+Each space has its own membership list. Members can be regular users, moderators, or admins. Spaces can require join approval, and moderators/admins can approve, decline, ban, or unban members.
+
+## Joining and Leaving
+
+The simplest membership operations are exposed directly from `useSpace`:
+
+```tsx
+import { useSpace } from "@replyke/react-js";
+
+function MembershipButton() {
+  const { isMember, isPending, joinSpace, leaveSpace } = useSpace();
+
+  if (isPending) return <p>Waiting for approval...</p>;
+  if (isMember) return <button onClick={leaveSpace}>Leave</button>;
+  return <button onClick={joinSpace}>Join</button>;
+}
+```
+
+When a space has `requireJoinApproval: true`, `joinSpace()` creates a `pending` membership that must be approved by a moderator or admin before the user becomes `active`.
+
+## Fetching Members
+
+Use standalone hooks to fetch member lists:
+
+```tsx
+import { useFetchSpaceMembers, useFetchSpaceTeam } from "@replyke/react-js";
+
+// Paginated list of all members
+const fetchMembers = useFetchSpaceMembers();
+const { data, pagination } = await fetchMembers({ spaceId, page: 1, limit: 20 });
+// data: SpaceMemberWithUser[]
+
+// All admins + moderators (no pagination)
+const fetchTeam = useFetchSpaceTeam();
+const { data } = await fetchTeam({ spaceId });
+// data: SpaceMemberWithUser[]
+```
+
+## Checking Membership Status
+
+Check the current user's membership without loading the full space:
+
+```tsx
+import { useCheckMyMembership } from "@replyke/react-js";
+
+const checkMembership = useCheckMyMembership();
+const result = await checkMembership({ spaceId });
+// result: { isMember, role, status, joinedAt, permissions }
+```
+
+## Approving and Declining Requests
+
+Moderators and admins can process pending membership requests:
+
+```tsx
+import { useApproveMember, useDeclineMember } from "@replyke/react-js";
+
+const approve = useApproveMember();
+const decline = useDeclineMember();
+
+await approve({ spaceId, memberId });
+await decline({ spaceId, memberId });
+```
+
+<Note>Both `useApproveMember` and `useDeclineMember` require the caller to be a moderator or admin of the space.</Note>
+
+## Role Management
+
+Admins can change a member's role:
+
+```tsx
+import { useUpdateMemberRole } from "@replyke/react-js";
+
+const updateRole = useUpdateMemberRole();
+await updateRole({ spaceId, memberId, role: "moderator" });
+// Valid roles: "admin" | "moderator" | "member"
+```
+
+## Banning and Unbanning
+
+Moderators can ban and unban members:
+
+```tsx
+import { useRemoveMember, useUnbanMember } from "@replyke/react-js";
+
+const removeMember = useRemoveMember();
+const unban = useUnbanMember();
+
+await removeMember({ spaceId, memberId });
+await unban({ spaceId, memberId });
+```
+
+<Warning>Banning a member sets their status to `"banned"`. Moderators can only ban regular members. Admins can ban moderators and regular members. Only the space creator can ban admins.</Warning>
+
+## Sub-space Cascade
+
+When a child space is created, all admins and moderators of the parent space are automatically added to the child space with their same roles. This ensures governance cascades to sub-communities without manual setup.
+
+## Hook Reference
+
+| Hook | Description |
+|------|-------------|
+| [`useFetchSpaceMembers`](/hooks/spaces/use-fetch-space-members) | Paginated list of space members |
+| [`useFetchSpaceTeam`](/hooks/spaces/use-fetch-space-team) | All admins and moderators (no pagination) |
+| [`useCheckMyMembership`](/hooks/spaces/use-check-my-membership) | Current user's membership status |
+| [`useApproveMember`](/hooks/spaces/use-approve-member) | Approve a pending join request |
+| [`useDeclineMember`](/hooks/spaces/use-decline-member) | Decline a pending join request |
+| [`useUpdateMemberRole`](/hooks/spaces/use-update-member-role) | Change a member's role |
+| [`useRemoveMember`](/hooks/spaces/use-remove-member) | Ban/remove a member |
+| [`useUnbanMember`](/hooks/spaces/use-unban-member) | Unban a banned member |
+| [`useJoinSpace`](/hooks/spaces/use-join-space) | Join a space |
+| [`useLeaveSpace`](/hooks/spaces/use-leave-space) | Leave a space |

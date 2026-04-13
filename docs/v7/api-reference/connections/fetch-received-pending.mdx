@@ -1,0 +1,68 @@
+---
+title: "Fetch Received Pending Connections"
+api: "GET /:projectId/api/v7/connections/pending/received"
+description: "Get connection requests received by the authenticated user that are still pending"
+---
+
+Returns a paginated list of connection requests that other users have sent to the authenticated user and that have not yet been responded to.
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number for pagination. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Number of results per page. Defaults to `20`. Max `100`.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200` with a paginated response:
+
+<ResponseField name="data" type="array">
+  Array of pending connection request entries.
+  <Expandable title="item properties">
+    <ResponseField name="id" type="string">
+      Connection record ID.
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      Always `"received"` for this endpoint.
+    </ResponseField>
+    <ResponseField name="user" type="object">
+      Public profile of the user who sent the request. Sensitive fields are excluded.
+    </ResponseField>
+    <ResponseField name="message" type="string | null">
+      Optional message included with the request.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO timestamp of when the request was sent.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata.
+  <Expandable title="properties">
+    <ResponseField name="page" type="number">
+      Current page number.
+    </ResponseField>
+    <ResponseField name="pageSize" type="number">
+      Number of items per page.
+    </ResponseField>
+    <ResponseField name="totalItems" type="number">
+      Total number of received pending requests.
+    </ResponseField>
+    <ResponseField name="totalPages" type="number">
+      Total number of pages.
+    </ResponseField>
+    <ResponseField name="hasMore" type="boolean">
+      Whether there are more pages after the current one.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## See Also
+
+- [`useFetchReceivedPendingConnections` hook](/hooks/connections/use-fetch-received-pending-connections)
+- [Fetch Sent Pending Connections](/api-reference/connections/fetch-sent-pending)

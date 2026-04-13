@@ -1,0 +1,47 @@
+---
+title: "Fetch space conversation"
+description: "Fetch the chat conversation associated with a space"
+icon: "plug"
+---
+
+## Overview
+
+Fetches the single `Conversation` that is tied to a Space. Each Space has exactly one conversation of type `"space"`. Use this hook to retrieve the conversation ID before rendering message components.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchSpaceConversation } from "@replyke/react-js";
+
+function SpaceChatPanel({ spaceId }: { spaceId: string }) {
+  const { conversation, loading } = useFetchSpaceConversation({ spaceId });
+
+  if (loading) return <div>Loading...</div>;
+  if (!conversation) return null;
+
+  return <MessageList conversationId={conversation.id} />;
+}
+```
+
+## Props
+
+<ParamField body="spaceId" type="string" required>
+  The ID of the space whose conversation to fetch.
+</ParamField>
+
+## Returns
+
+<ResponseField name="conversation" type="Conversation | null">
+  The [Conversation](/data-models/conversation) associated with the space, or `null` while loading.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while the fetch is in progress.
+</ResponseField>
+
+## Notes
+
+- The conversation is fetched on mount and stored in both local state and Redux.
+- For integration guidance, see [Chat: Conversations](/sdk/chat/conversations).

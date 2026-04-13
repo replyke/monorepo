@@ -1,0 +1,38 @@
+---
+title: "Verify Email"
+api: "POST /:projectId/api/v7/auth/verify-email"
+description: "Verify a user's email address using a token from a verification email"
+---
+
+Verifies a user's email address using the token sent by the [Send Verification Email](/api-reference/auth/send-verification-email) endpoint (when `mode` is `"code"`). On success, the user's `isVerified` field is set to `true` and the token is invalidated.
+
+This endpoint is unauthenticated — the token itself proves identity.
+
+## Body Parameters
+
+<ParamField body="token" type="string" required>
+  The verification token from the email. Must match exactly, including case.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` when the email was successfully verified.
+</ResponseField>
+
+## Error Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `auth/invalid-or-expired-token` | 400 | The token does not exist in Redis — either it was never issued, has expired (5-minute TTL), or has already been used. |
+
+<Note>
+  Tokens are single-use. Once consumed, the same token returns a 400 error.
+  Tokens expire after 5 minutes regardless of whether they are used.
+</Note>
+
+## See Also
+
+- [`useVerifyEmail` hook](/hooks/auth/use-verify-email)
+- [Send Verification Email endpoint](/api-reference/auth/send-verification-email)
+- [Built-in Auth guide](/sdk/authentication/built-in)

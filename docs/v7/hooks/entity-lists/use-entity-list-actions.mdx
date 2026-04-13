@@ -1,0 +1,74 @@
+---
+title: "Use entity list actions"
+description: "Low-level actions for fetching, creating, and deleting entities in a list"
+icon: "cube"
+---
+
+## Overview
+
+`useEntityListActions` provides the low-level Redux-backed actions that power `useEntityList`. In most cases you should use `useEntityList` directly. Use this hook when you need to trigger fetch, create, or delete operations from a component that is separate from the one consuming the list state.
+
+## Usage Example
+
+```tsx
+import { useEntityListActions } from "@replyke/react-js";
+
+function RefreshButton() {
+  const { fetchEntities } = useEntityListActions();
+
+  const handleRefresh = async () => {
+    await fetchEntities("my-feed", {
+      page: 1,
+      sortBy: "hot",
+      limit: 20,
+    });
+  };
+
+  return <button onClick={handleRefresh}>Refresh</button>;
+}
+```
+
+## Return Values
+
+<ResponseField name="fetchEntities" type="(listId: string, options: FetchEntitiesOptions) => Promise<Entity[] | null>">
+  Fetches a page of entities and dispatches the result into the Redux list state.
+
+  <Expandable title="FetchEntitiesOptions">
+    <ResponseField name="page" type="number" required>
+      Page number (1-indexed).
+    </ResponseField>
+    <ResponseField name="sortBy" type='"hot" | "top" | "new" | "controversial" | "metadata.field"' required>
+      Sort algorithm. See [Fetching Entities](/sdk/entity-lists/fetch-entities) for options.
+    </ResponseField>
+    <ResponseField name="limit" type="number" required>
+      Results per page.
+    </ResponseField>
+    <ResponseField name="sortByReaction" type='"upvote" | "downvote" | "like" | "love" | "wow" | "sad" | "angry" | "funny"'>
+      Used when `sortBy` is `"top"`.
+    </ResponseField>
+    <ResponseField name="sortDir" type='"asc" | "desc"'>Sort direction.</ResponseField>
+    <ResponseField name="sortType" type='"auto" | "numeric" | "text" | "boolean" | "timestamp"'>
+      Type hint for metadata sorts.
+    </ResponseField>
+    <ResponseField name="sourceId" type="string">Filter by source ID.</ResponseField>
+    <ResponseField name="spaceId" type="string">Filter by space ID.</ResponseField>
+    <ResponseField name="userId" type="string">Filter by user ID.</ResponseField>
+    <ResponseField name="followedOnly" type="boolean">Only show entities from followed users.</ResponseField>
+    <ResponseField name="timeFrame" type='"day" | "week" | "month" | "year"'>Time window filter.</ResponseField>
+    <ResponseField name="include" type='string | ("space" | "user" | "topComment" | "saved" | "files")[]'>Populate related data.</ResponseField>
+    <ResponseField name="keywordsFilters" type="KeywordsFilters">Filter by keywords.</ResponseField>
+    <ResponseField name="titleFilters" type="TitleFilters">Filter by title content.</ResponseField>
+    <ResponseField name="contentFilters" type="ContentFilters">Filter by body content.</ResponseField>
+    <ResponseField name="attachmentsFilters" type="AttachmentsFilters">Filter by attachments.</ResponseField>
+    <ResponseField name="locationFilters" type="LocationFilters">Filter by geographic proximity.</ResponseField>
+    <ResponseField name="metadataFilters" type="MetadataFilters">Filter by metadata fields.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="createEntity" type="(listId: string, options: CreateEntityOptions) => Promise<Entity | undefined>">
+  Creates an entity and inserts it into the specified list.
+</ResponseField>
+
+<ResponseField name="deleteEntity" type="(listId: string, options: { entityId: string }) => Promise<void>">
+  Deletes an entity and removes it from the specified list.
+</ResponseField>

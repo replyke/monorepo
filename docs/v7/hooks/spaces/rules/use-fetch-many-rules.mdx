@@ -1,0 +1,51 @@
+---
+title: "Fetch many rules"
+description: "Fetch all rules for a space"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchManyRules` returns a callable function that fetches all community rules for a space. Rules are publicly readable — no authentication is required.
+
+## Usage Example
+
+```tsx
+import { useFetchManyRules } from "@replyke/react-js";
+import { useEffect, useState } from "react";
+
+function RulesList({ spaceId }: { spaceId: string }) {
+  const fetchRules = useFetchManyRules();
+  const [rules, setRules] = useState([]);
+
+  useEffect(() => {
+    fetchRules({ spaceId }).then(({ data }) => setRules(data));
+  }, [spaceId]);
+
+  return (
+    <ol>
+      {rules.map((rule) => (
+        <li key={rule.id}><strong>{rule.title}</strong> — {rule.description}</li>
+      ))}
+    </ol>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space whose rules to fetch.
+</ParamField>
+
+## Returns
+
+<ResponseField name="data" type="Rule[]">
+  Array of rule objects ordered by their `order` field.
+</ResponseField>
+
+<ResponseField name="count" type="number">
+  Total number of rules.
+</ResponseField>
+
+For the Rule data shape, see [Rules guide](/sdk/spaces/rules).

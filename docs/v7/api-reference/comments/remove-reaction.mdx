@@ -1,0 +1,29 @@
+---
+title: "Remove Comment Reaction"
+api: "DELETE /:projectId/api/v7/comments/:commentId/reactions"
+description: "Remove the authenticated user's reaction from a comment"
+---
+
+Removes the authenticated user's reaction from a comment. The comment's `reactionCounts` map is decremented for the removed reaction type.
+
+**Authentication required.**
+
+## Path Parameters
+
+<ParamField path="commentId" type="string" required>
+  The UUID of the comment to remove the reaction from.
+</ParamField>
+
+## Response
+
+Returns the updated [Comment](/data-models/comment) object with the new `reactionCounts`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Comment not found.", "code": "comment/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

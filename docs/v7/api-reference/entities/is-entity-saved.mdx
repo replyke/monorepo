@@ -1,0 +1,43 @@
+---
+title: "Is Entity Saved"
+api: "GET /:projectId/api/v7/entities/is-entity-saved"
+description: "Check whether an entity is saved in any of the current user's collections"
+---
+
+Returns whether the specified entity is saved in any collection belonging to the authenticated user, along with the list of matching collections.
+
+## Query Parameters
+
+<ParamField query="entityId" type="string" required>
+  The ID of the entity to check.
+</ParamField>
+
+## Response
+
+<ResponseField name="saved" type="boolean">
+  `true` if the entity is saved in at least one collection.
+</ResponseField>
+
+<ResponseField name="collections" type="Array<{ id: string; name: string }>">
+  List of collections (by ID and name) that contain this entity.
+</ResponseField>
+
+```json
+{
+  "saved": true,
+  "collections": [
+    { "id": "col_abc", "name": "To Read" },
+    { "id": "col_xyz", "name": "Favorites" }
+  ]
+}
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Internal server error.", "code": "collection/server-error" }
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,58 @@
+---
+title: "Webhook Integration"
+description: "Forward app notification events to your backend for push delivery"
+---
+
+App Notifications in Replyke are in-app records — they appear in a notification feed inside your app. To deliver push notifications (iOS APNs, Android FCM) when users are not actively using the app, you can configure a webhook that fires whenever a notification is created.
+
+## How It Works
+
+<Steps>
+  <Step title="Configure a webhook URL in the dashboard">
+    In your Replyke project dashboard, go to **Settings → Webhooks** and add a webhook URL pointing to your backend endpoint. Select the **App Notification Created** event.
+  </Step>
+  <Step title="Receive the event on your backend">
+    When Replyke creates an app notification, it sends an HTTP POST to your webhook URL with a JSON payload describing the notification:
+
+    ```json
+    {
+      "type": "app-notification.created",
+      "projectId": "your-project-id",
+      "data": {
+        "projectId": "your-project-id",
+        "userId": "recipient-user-id",
+        "type": "entity-comment",
+        "action": "open-comment",
+        "metadata": {
+          "entityId": "...",
+          "commentId": "...",
+          "initiatorId": "...",
+          "initiatorName": "Alice"
+        }
+      }
+    }
+    ```
+  </Step>
+  <Step title="Look up the recipient's push token">
+    Use `data.userId` to look up the FCM or APNs token stored in your own database for that user.
+  </Step>
+  <Step title="Send the push notification">
+    Use your push provider (Firebase Admin SDK, APNs, Expo Push, etc.) to send a push notification to the device. Build the message text using `data.type` and `data.metadata` from the webhook payload.
+  </Step>
+</Steps>
+
+## Payload Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | `string` | Always `"app-notification.created"` |
+| `projectId` | `string` | The Replyke project ID |
+| `data.projectId` | `string` | The Replyke project ID (repeated inside data) |
+| `data.userId` | `string` | The recipient's user ID |
+| `data.type` | `string` | The notification type (e.g., `"entity-comment"`) |
+| `data.action` | `string` | Navigation hint for the push tap action |
+| `data.metadata` | `object` | Type-specific data — see [Notification Templates](/sdk/app-notifications/notification-templates) for fields per type |
+
+<Note>
+  You are responsible for managing and storing push tokens in your own backend. Replyke does not store device tokens.
+</Note>

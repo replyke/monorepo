@@ -1,0 +1,66 @@
+---
+title: "File"
+description: "The File and FileImage interface shapes for uploaded media"
+---
+
+A `File` record represents a file uploaded to Replyke's storage system. Files can be attached to users (avatars, banners), entities, comments, chat messages, or spaces. Image files include an additional `image` extension with processed variants at multiple sizes.
+
+## File
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique file identifier (UUID). |
+| `projectId` | `string` | The project this file belongs to. |
+| `userId` | `string \| null` | The user this file is associated with (for avatars/banners). |
+| `entityId` | `string \| null` | The entity this file is attached to. |
+| `commentId` | `string \| null` | The comment this file is attached to. |
+| `chatMessageId` | `string \| null` | The chat message this file is attached to. |
+| `spaceId` | `string \| null` | The space this file is associated with. |
+| `type` | `"image" \| "video" \| "document" \| "other"` | The file category. |
+| `originalPath` | `string` | Proxied URL to the original uploaded file. |
+| `originalSize` | `number` | Size of the original file in bytes. |
+| `originalMimeType` | `string` | MIME type of the original file (e.g. `"image/jpeg"`). |
+| `position` | `number` | Display order when multiple files are attached to the same record. |
+| `metadata` | `Record<string, any>` | Custom key-value data for this file. |
+| `image` | `FileImage` | Present only when `type` is `"image"`. Contains processed image variants. |
+| `createdAt` | `Date` | When the file was uploaded. |
+| `updatedAt` | `Date` | When the file record was last updated. |
+
+## FileImage
+
+For image files, the `image` field contains processing results and variant URLs.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `fileId` | `string` | The parent file's ID. |
+| `originalWidth` | `number` | Width of the original image in pixels. |
+| `originalHeight` | `number` | Height of the original image in pixels. |
+| `variants` | `Record<string, FileImageVariant>` | Processed variants keyed by size name (e.g. `thumbnail`, `small`, `medium`, `large`). |
+| `processingStatus` | `"completed" \| "failed"` | Whether image processing succeeded. |
+| `processingError` | `string \| null` | Error message if processing failed. |
+| `format` | `string` | The output format requested by the uploader (e.g. `"webp"`). |
+| `quality` | `number` | The output quality requested (1–100). |
+| `exifStripped` | `boolean` | Whether EXIF metadata was removed from the output. |
+| `createdAt` | `Date` | When the image record was created. |
+| `updatedAt` | `Date` | When the image record was last updated. |
+
+## FileImageVariant
+
+Each entry in `FileImage.variants` has this shape:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `path` | `string` | Relative storage path for this variant. |
+| `publicPath` | `string` | Proxied public URL for this variant. |
+| `width` | `number` | Width of this variant in pixels. |
+| `height` | `number` | Height of this variant in pixels. |
+| `size` | `number` | File size of this variant in bytes. |
+| `format` | `string` | Format of this variant (e.g. `"webp"`, `"jpeg"`). |
+
+## See Also
+
+- [Upload Image](/api-reference/storage/upload-image)
+- [Upload File](/api-reference/storage/upload-file)
+- [useUploadImage hook](/hooks/storage/use-upload-image)
+- [useUploadFile hook](/hooks/storage/use-upload-file)
+- [User](/data-models/user)

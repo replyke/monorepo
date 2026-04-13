@@ -1,0 +1,74 @@
+---
+title: "Link OAuth Provider"
+api: "POST /:projectId/api/v7/oauth/link"
+description: "Link a new OAuth provider to the current authenticated user"
+---
+
+Initiates an OAuth 2.0 flow to link an additional provider to the currently authenticated user's account. Requires a valid access token. The flow and callback behavior are identical to the [Authorize OAuth](/api-reference/oauth/authorize) endpoint.
+
+The authenticated user's ID is taken from the access token — it cannot be specified in the request body.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer {accessToken}` — a valid access token for the user linking the provider.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="provider" type="string" required>
+  The OAuth provider to link. Must be one of: `"google"`, `"github"`, `"apple"`,
+  `"facebook"`.
+</ParamField>
+
+<ParamField body="redirectAfterAuth" type="string" required>
+  The URL to redirect the user to after authorization. Must be a valid URL and
+  must be in the provider's configured allowed redirect URIs.
+</ParamField>
+
+## Response
+
+<ResponseField name="authorizationUrl" type="string">
+  The provider's authorization URL. Redirect the user's browser to this URL.
+</ResponseField>
+
+## Callback
+
+After the user authorizes with the provider, they are redirected to `redirectAfterAuth` with one of:
+
+**On success** — Tokens in the URL fragment (new tokens are issued for the linked account):
+```
+https://yourapp.com/callback#accessToken=...&refreshToken=...
+```
+
+**On error** — Error details in query parameters:
+```
+https://yourapp.com/callback?error=...&error_description=...
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Provider Not Configured — 400">
+    ```json
+    {
+      "error": "OAuth provider 'github' is not configured or not enabled for this project",
+      "code": "oauth/provider-not-configured"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Redirect URI — 400">
+    ```json
+    {
+      "error": "redirectAfterAuth is not in the allowed redirect URIs for this project",
+      "code": "oauth/invalid-redirect-uri"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [OAuth integration guide](/sdk/authentication/oauth)
+- [Authorize OAuth](/api-reference/oauth/authorize)
+- [`useOAuthIdentities` hook](/hooks/auth/use-oauth-identities)

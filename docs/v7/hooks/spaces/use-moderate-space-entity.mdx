@@ -1,0 +1,50 @@
+---
+title: "Moderate space entity"
+description: "Approve or remove an entity within a space"
+icon: "plug"
+---
+
+## Overview
+
+`useModerateSpaceEntity` returns a callable function for taking moderation action on an entity in a space. Requires the caller to be a moderator or admin.
+
+## Usage Example
+
+```tsx
+import { useModerateSpaceEntity } from "@replyke/react-js";
+
+function EntityModerationActions({ spaceId, entityId }: { spaceId: string; entityId: string }) {
+  const moderate = useModerateSpaceEntity();
+
+  return (
+    <div>
+      <button onClick={() => moderate({ spaceId, entityId, action: "approve" })}>
+        Approve
+      </button>
+      <button onClick={() => moderate({ spaceId, entityId, action: "remove" })}>
+        Remove
+      </button>
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space containing the entity.
+</ParamField>
+
+<ParamField path="entityId" type="string" required>
+  UUID of the entity to moderate.
+</ParamField>
+
+<ParamField path="action" type='"approve" | "remove"' required>
+  The moderation action to take.
+</ParamField>
+
+## Returns
+
+A confirmation response from the server.
+
+For integration guidance, see [Moderation](/sdk/spaces/moderation).

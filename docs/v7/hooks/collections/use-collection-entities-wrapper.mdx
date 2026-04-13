@@ -1,0 +1,123 @@
+---
+title: "Use collection entities"
+description: "Fetch and paginate entities saved in a collection"
+icon: "cube"
+---
+
+## Overview
+
+`useCollectionEntitiesWrapper` fetches the paginated list of entities saved in a collection. It supports multiple sort modes and infinite-scroll pagination via `loadMore`.
+
+If no `collectionId` is passed, it defaults to the current collection from the Redux collections state (i.e., whatever `useCollections` is currently navigated to).
+
+## Usage Example
+
+```tsx
+import { useCollectionEntitiesWrapper } from "@replyke/react-js";
+
+function SavedFeed({ collectionId }) {
+  const {
+    entities,
+    loading,
+    hasMore,
+    sortBy,
+    setSortBy,
+    loadMore,
+    refetch,
+  } = useCollectionEntitiesWrapper({
+    collectionId,
+    defaultSortBy: "added",
+    defaultSortDir: "desc",
+    limit: 20,
+  });
+
+  return (
+    <div>
+      <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+        <option value="added">Recently Added</option>
+        <option value="new">Newest</option>
+        <option value="top">Top Voted</option>
+      </select>
+      <ul>
+        {entities.map((entity) => (
+          <li key={entity.id}>{entity.title}</li>
+        ))}
+      </ul>
+      {hasMore && (
+        <button onClick={loadMore} disabled={loading}>
+          Load more
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField body="collectionId" type="string | null" optional>
+  The collection to fetch entities from. Defaults to the current collection in Redux state.
+</ParamField>
+
+<ParamField body="limit" type="number" optional>
+  Number of entities per page. Default: `20`.
+</ParamField>
+
+<ParamField body="defaultSortBy" type='"new" | "top" | "hot" | "added"' optional>
+  Initial sort mode. Default: `"added"` (sorted by when the entity was saved).
+</ParamField>
+
+<ParamField body="defaultSortDir" type='"asc" | "desc"' optional>
+  Initial sort direction. Default: `"desc"`.
+</ParamField>
+
+<ParamField body="include" type="EntityIncludeParam" optional>
+  Optional associations to include with each entity (e.g., `"user"`, `"space"`, `"topcomment"`).
+</ParamField>
+
+## Returns
+
+<ResponseField name="entities" type="Entity[]">
+  The current list of fetched entities. Appended to on each `loadMore` call.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while fetching the initial page or loading more.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional pages are available.
+</ResponseField>
+
+<ResponseField name="sortBy" type='"new" | "top" | "hot" | "added"'>
+  Current sort mode.
+</ResponseField>
+
+<ResponseField name="sortDir" type='"asc" | "desc"'>
+  Current sort direction.
+</ResponseField>
+
+<ResponseField name="setSortBy" type="(sortBy: 'new' | 'top' | 'hot' | 'added') => void">
+  Change the sort mode. Resets the entity list and re-fetches from page 1.
+</ResponseField>
+
+<ResponseField name="setSortDir" type="(sortDir: 'asc' | 'desc') => void">
+  Change the sort direction. Resets the entity list and re-fetches from page 1.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Load the next page of entities. Appends to the existing list.
+</ResponseField>
+
+<ResponseField name="refetch" type="() => void">
+  Reset and re-fetch from page 1.
+</ResponseField>
+
+## Sort Modes
+
+| Value | Description |
+|-------|-------------|
+| `added` | Sorted by when the entity was added to the collection |
+| `new` | Sorted by entity creation date |
+| `top` | Sorted by vote count |
+| `hot` | Sorted by hot score (engagement-based) |

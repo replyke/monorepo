@@ -1,0 +1,47 @@
+---
+title: "Fetch user spaces"
+description: "Fetch spaces where the current user is a member"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchUserSpaces` returns a callable function that fetches all spaces where the authenticated user has an active membership. The response includes membership metadata alongside each space.
+
+## Usage Example
+
+```tsx
+import { useFetchUserSpaces } from "@replyke/react-js";
+
+function MySpaces() {
+  const fetchUserSpaces = useFetchUserSpaces();
+
+  const loadSpaces = async () => {
+    const result = await fetchUserSpaces({ page: 1, limit: 20 });
+    // result.data: UserSpaceItem[]
+    result.data.forEach(({ space, membership }) => {
+      console.log(space.name, membership.role, membership.status);
+    });
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="page" type="number">
+  Page number. Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Number of results per page.
+</ParamField>
+
+## Returns
+
+<ResponseField name="data" type="UserSpaceItem[]">
+  Each item contains a `space` ([Space](/data-models/space)) and a `membership` object with `membershipId`, `role`, `status`, and `joinedAt`.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Standard pagination metadata.
+</ResponseField>

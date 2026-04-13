@@ -1,0 +1,44 @@
+---
+title: "Join space"
+description: "Join a space or submit a join request"
+icon: "plug"
+---
+
+## Overview
+
+`useJoinSpace` returns a callable function for joining a space. If the space has `requireJoinApproval: true`, the membership is created with `status: "pending"` until approved by a moderator or admin. Otherwise, it is immediately `active`.
+
+<Note>When using `SpaceProvider`, call `joinSpace` from `useSpace` — it handles optimistic state updates automatically.</Note>
+
+## Usage Example
+
+```tsx
+import { useJoinSpace } from "@replyke/react-js";
+
+function JoinButton({ spaceId }: { spaceId: string }) {
+  const joinSpace = useJoinSpace();
+
+  const handleJoin = async () => {
+    const result = await joinSpace({ spaceId });
+    console.log(result.membership.status); // "pending" or "active"
+  };
+
+  return <button onClick={handleJoin}>Join</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space to join.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="membership" type="object">
+  The created membership record with `id`, `spaceId`, `userId`, `role` (`"member"`), `status`, and `joinedAt`.
+</ResponseField>

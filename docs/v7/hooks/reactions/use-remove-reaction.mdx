@@ -1,0 +1,43 @@
+---
+title: "Remove reaction"
+description: "Remove the authenticated user's reaction from an entity or comment"
+icon: "plug"
+---
+
+## Overview
+
+`useRemoveReaction` is a low-level hook that removes the authenticated user's current reaction. For most use cases, use [`useReactionToggle`](/hooks/reactions/use-reaction-toggle) instead.
+
+<Note>Requires an authenticated user.</Note>
+
+## Usage Example
+
+```tsx
+import { useRemoveReaction } from "@replyke/react-js";
+
+function RemoveReactionButton({ entityId }: { entityId: string }) {
+  const removeReaction = useRemoveReaction();
+
+  const handle = async () => {
+    await removeReaction({ targetType: "entity", targetId: entityId });
+  };
+
+  return <button onClick={handle}>Remove Reaction</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="targetType" type='"entity" | "comment"' required>
+  The type of the reaction target.
+</ParamField>
+
+<ParamField path="targetId" type="string" required>
+  The ID of the entity or comment.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Entity | Comment" type="Entity | Comment">
+  The updated entity or comment with the reaction removed (`userReaction: null` and decremented counts).
+</ResponseField>

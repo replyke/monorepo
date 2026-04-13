@@ -1,0 +1,46 @@
+---
+title: "Fetch user by foreign ID"
+description: "Fetch a user's public profile by their foreign ID"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchUserByForeignId` returns a function that fetches a user's public profile using their `foreignId` — the ID from your own system that was associated with this user during authentication.
+
+Use this when you have your own user ID and need to look up the corresponding Replyke user profile.
+
+## Usage Example
+
+```tsx
+import { useFetchUserByForeignId } from "@replyke/react-js";
+
+function UserCard({ myUserId }: { myUserId: string }) {
+  const fetchUser = useFetchUserByForeignId();
+
+  const load = async () => {
+    const user = await fetchUser({ foreignId: myUserId });
+    console.log(user);
+  };
+
+  return <button onClick={load}>Load Profile</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="foreignId" type="string" required>
+  The foreign ID to look up. This is the identifier from your own system that was passed when the user was created or verified.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Optional. Pass `"files"` to populate `avatarFile` and `bannerFile` with full `File` objects.
+</ParamField>
+
+## Returns
+
+<ResponseField name="User" type="User">
+  The user's public profile. See [User data model](/data-models/user).
+</ResponseField>

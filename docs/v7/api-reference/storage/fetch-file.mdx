@@ -1,0 +1,113 @@
+---
+title: "Fetch File"
+api: "GET /:projectId/api/v7/storage/:fileId"
+description: "Retrieve file metadata and proxy URLs by file ID"
+---
+
+Returns metadata and proxy URLs for a file. For image files, also returns the image extension data including all variants.
+
+Requires an authenticated user.
+
+**Rate limit**: 100 requests per 5 minutes.
+
+## Path Parameters
+
+<ParamField path="fileId" type="string" required>
+  The UUID of the file to retrieve.
+</ParamField>
+
+## Response
+
+### Base fields (all file types)
+
+<ResponseField name="fileId" type="string">
+  The file's UUID.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  One of: `image`, `video`, `document`, `other`.
+</ResponseField>
+
+<ResponseField name="originalPath" type="string">
+  Proxy URL for the original file.
+</ResponseField>
+
+<ResponseField name="originalSize" type="number">
+  File size in bytes at the time of upload.
+</ResponseField>
+
+<ResponseField name="originalMimeType" type="string">
+  MIME type of the uploaded file.
+</ResponseField>
+
+<ResponseField name="position" type="number">
+  Display order in a multi-attachment context.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom metadata stored at upload time. Always includes `originalName` and `uploadedAt`.
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  ID of the user who uploaded the file (present if associated).
+</ResponseField>
+
+<ResponseField name="entityId" type="string">
+  ID of the associated entity (present if provided at upload).
+</ResponseField>
+
+<ResponseField name="commentId" type="string">
+  ID of the associated comment (present if provided at upload).
+</ResponseField>
+
+<ResponseField name="spaceId" type="string">
+  ID of the associated space (present if provided at upload).
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  ISO 8601 timestamp.
+</ResponseField>
+
+### Image extension (only when `type === "image"`)
+
+<ResponseField name="image" type="object">
+  Image processing details.
+
+  <Expandable title="image fields">
+    <ResponseField name="originalWidth" type="number">
+      Pixel width of the source image before processing.
+    </ResponseField>
+    <ResponseField name="originalHeight" type="number">
+      Pixel height of the source image before processing.
+    </ResponseField>
+    <ResponseField name="variants" type="object">
+      Named variants. Each key maps to `{ publicPath, width, height, size, format }`.
+    </ResponseField>
+    <ResponseField name="processingStatus" type="string">
+      `"completed"` or `"failed"`.
+    </ResponseField>
+    <ResponseField name="format" type="string">
+      Output format (e.g., `"webp"`).
+    </ResponseField>
+    <ResponseField name="quality" type="number">
+      Quality setting used during processing.
+    </ResponseField>
+    <ResponseField name="exifStripped" type="boolean">
+      Whether EXIF metadata was removed.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "File not found", "code": "storage/file-not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

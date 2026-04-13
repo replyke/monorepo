@@ -1,0 +1,21 @@
+---
+title: "Leave Space"
+api: "DELETE /:projectId/api/v7/spaces/:spaceId/leave"
+description: "Leave a space"
+---
+
+Removes the authenticated user's membership from a space.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space to leave.
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+See also: [useLeaveSpace](/hooks/spaces/use-leave-space)

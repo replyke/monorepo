@@ -1,0 +1,45 @@
+---
+title: "Use delete conversation"
+description: "Delete a conversation"
+icon: "plug"
+---
+
+## Overview
+
+Returns an async function that deletes a conversation via the API. This is a low-level hook — it makes the DELETE request without touching Redux state. The caller is responsible for navigating away or removing the conversation from any local lists after deletion.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useDeleteConversation } from "@replyke/react-js";
+
+function DeleteButton({ conversationId }: { conversationId: string }) {
+  const deleteConversation = useDeleteConversation();
+
+  const handleDelete = async () => {
+    await deleteConversation({ conversationId });
+    // Navigate away or update local state here
+  };
+
+  return <button onClick={handleDelete}>Delete</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation to delete.
+</ParamField>
+
+## Returns
+
+`Promise<void>`
+
+## Notes
+
+- This hook does not update Redux state. After deletion, navigate away or remove the conversation from any local lists manually.
+- For integration guidance, see [Chat: Conversations](/sdk/chat/conversations).

@@ -1,0 +1,106 @@
+---
+title: "Message Threads"
+description: "Threading replies under a parent message"
+---
+
+Threads allow users to reply to a specific message in a focused side-conversation without cluttering the main message stream. Each top-level message can have replies, and the `threadReplyCount` field on the message shows how many replies exist.
+
+## How Threads Work
+
+- Any message can be the root of a thread (a `parentMessageId` of `null`).
+- Thread replies have `parentMessageId` set to the root message's ID.
+- Threads are one level deep — replies cannot have their own threads.
+- The `threadReplyCount` on a root message is updated in real-time via the `thread:reply_count` socket event.
+
+## Using useMessageThread
+
+`useMessageThread` is a convenience hook that combines message loading and sending for a specific message thread:
+
+```tsx
+import { useMessageThread } from "@replyke/react-js";
+
+function ThreadPanel({
+  conversationId,
+  messageId,
+}: {
+  conversationId: string;
+  messageId: string;
+}) {
+  const { replies, loading, hasMore, loadMore, sendReply } = useMessageThread({
+    conversationId,
+    messageId,
+  });
+  const [text, setText] = useState("");
+
+  const handleReply = async () => {
+    if (!text.trim()) return;
+    await sendReply({ content: text });
+    setText("");
+  };
+
+  return (
+    <div>
+      <h3>Thread</h3>
+      {replies.map((reply) => (
+        <div key={reply.id}>
+          <strong>{reply.user?.name}</strong>: {reply.content}
+        </div>
+      ))}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Reply..."
+      />
+      <button onClick={handleReply}>Reply</button>
+    </div>
+  );
+}
+```
+
+Replies are loaded in ascending order (oldest first) and `loadMore` fetches newer replies.
+
+See [`useMessageThread`](/hooks/chat/messages/use-message-thread).
+
+## Using useChatMessages Directly
+
+For more control, use `useChatMessages` with a `parentId` to load thread replies:
+
+```tsx
+import { useChatMessages, useSendMessage } from "@replyke/react-js";
+
+const { messages: replies, loading, hasMore, loadOlder } = useChatMessages({
+  conversationId,
+  parentId: messageId,   // pass parentId to load thread replies
+});
+
+const send = useSendMessage({ conversationId });
+
+// Send a thread reply
+await send({
+  content: "My reply",
+  parentMessageId: messageId,
+});
+```
+
+## Showing the Reply Count
+
+The root message object includes a `threadReplyCount` field. Use it to render a "View thread" button:
+
+```tsx
+function Message({ message, onOpenThread }) {
+  return (
+    <div>
+      <p>{message.content}</p>
+      {message.threadReplyCount > 0 && (
+        <button onClick={() => onOpenThread(message.id)}>
+          {message.threadReplyCount}{" "}
+          {message.threadReplyCount === 1 ? "reply" : "replies"}
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+`threadReplyCount` is kept in sync automatically by `ChatProvider` when a new reply is sent by any participant.

@@ -1,0 +1,95 @@
+---
+title: "Get Connection Status"
+api: "GET /:projectId/api/v7/users/:userId/connection"
+description: "Check the connection status between the authenticated user and another user"
+---
+
+Returns the connection status between the authenticated user and the specified user. The response shape varies depending on whether there is no connection, a pending request, an accepted connection, or a declined request.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Replyke user ID (UUID) of the other user.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200`. The shape depends on the connection state:
+
+**No connection:**
+
+<ResponseField name="status" type="string">
+  `"none"`.
+</ResponseField>
+
+**Pending request:**
+
+<ResponseField name="status" type="string">
+  `"pending"`.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  `"sent"` if the authenticated user sent the request; `"received"` if they received it.
+</ResponseField>
+
+<ResponseField name="connectionId" type="string">
+  ID of the connection record.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO timestamp of when the request was sent.
+</ResponseField>
+
+**Accepted (connected):**
+
+<ResponseField name="status" type="string">
+  `"connected"`.
+</ResponseField>
+
+<ResponseField name="connectionId" type="string">
+  ID of the connection record.
+</ResponseField>
+
+<ResponseField name="connectedAt" type="string">
+  ISO timestamp of when the connection was accepted.
+</ResponseField>
+
+<ResponseField name="requestedAt" type="string">
+  ISO timestamp of the original request.
+</ResponseField>
+
+**Declined:**
+
+<ResponseField name="status" type="string">
+  `"declined"`.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  `"sent"` or `"received"` — perspective of the authenticated user.
+</ResponseField>
+
+<ResponseField name="connectionId" type="string">
+  ID of the connection record.
+</ResponseField>
+
+<ResponseField name="respondedAt" type="string">
+  ISO timestamp of when the request was declined.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Self-Check — 400">
+    ```json
+    {
+      "error": "Cannot check connection status with yourself",
+      "code": "connection/self-check"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useFetchConnectionStatus` hook](/hooks/connections/use-fetch-connection-status)
+- [Connection data model](/data-models/connection)

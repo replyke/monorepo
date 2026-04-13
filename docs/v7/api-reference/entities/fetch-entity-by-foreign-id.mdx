@@ -1,0 +1,45 @@
+---
+title: "Fetch Entity by Foreign ID"
+api: "GET /:projectId/api/v7/entities/by-foreign-id"
+description: "Get an entity by its foreign ID, optionally creating it if not found"
+---
+
+Returns an entity matching the given `foreignId` within the project. Optionally creates a blank entity if none exists — useful for automatically bootstrapping entities when a user first visits a page or URL in your application.
+
+## Query Parameters
+
+<ParamField query="foreignId" type="string" required>
+  The foreign ID to look up. This is the identifier from your application (URL, slug, database ID, etc.).
+</ParamField>
+
+<ParamField query="createIfNotFound" type="string">
+  When `"true"`, creates a blank entity with this `foreignId` if no entity is found. The new entity has no title, content, or user attribution. Defaults to `"false"`.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include:
+  - `user` — the author's user profile
+  - `space` — the space the entity belongs to
+  - `topComment` — the highest-voted comment
+  - `saved` — whether the authenticated user has saved this entity
+  - `files` — uploaded file/image attachments
+</ParamField>
+
+## Response
+
+Returns an [Entity](/data-models/entity) object.
+
+<Note>
+  This endpoint returns entities regardless of moderation status, so the client can display the appropriate moderation state. Draft entities are only returned to their author (or with a service/master key).
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Entity not found", "code": "entity/not-found" }
+    ```
+    Returned when no entity with this `foreignId` exists and `createIfNotFound` is not `"true"`.
+  </Accordion>
+</AccordionGroup>

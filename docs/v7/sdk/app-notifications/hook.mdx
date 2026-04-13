@@ -1,0 +1,94 @@
+---
+title: "Notifications Hook"
+description: "Fetch, paginate, and manage app notifications with useAppNotifications"
+---
+
+`useAppNotifications` is the primary hook for building a notification feed. It loads notifications, tracks the unread count, handles pagination, and exposes actions for marking notifications as read.
+
+## Basic Usage
+
+```tsx
+import { useAppNotifications } from "@replyke/react-js";
+
+function NotificationFeed() {
+  const {
+    appNotifications,
+    unreadAppNotificationsCount,
+    loading,
+    hasMore,
+    loadMore,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+  } = useAppNotifications({ limit: 20 });
+
+  return (
+    <div>
+      <p>{unreadAppNotificationsCount} unread</p>
+      <button onClick={markAllNotificationsAsRead}>Mark all as read</button>
+      {appNotifications.map((n) => (
+        <div
+          key={n.id}
+          style={{ fontWeight: n.isRead ? "normal" : "bold" }}
+          onClick={() => markNotificationAsRead({ notificationId: n.id })}
+        >
+          {n.title ?? n.type}
+        </div>
+      ))}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="limit" type="number">
+  Number of notifications to load per page. Defaults to `10`.
+</ParamField>
+
+<ParamField path="notificationTemplates" type="Partial<NotificationTemplates>">
+  Optional map of display text templates for each notification type. See [Notification Templates](/sdk/app-notifications/notification-templates).
+</ParamField>
+
+## Returns
+
+<ResponseField name="appNotifications" type="UnifiedAppNotification[]">
+  The list of notification records. If `notificationTemplates` is provided, each notification is augmented with a `title` and/or `content` field derived from the template.
+</ResponseField>
+
+<ResponseField name="unreadAppNotificationsCount" type="number">
+  The total number of unread notifications for the current user.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a fetch is in progress.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if there are more notifications to load beyond the currently loaded set.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Increments the internal page counter, triggering a fetch of the next page and appending results to `appNotifications`.
+</ResponseField>
+
+<ResponseField name="markNotificationAsRead" type="({ notificationId: string }) => Promise<void>">
+  Marks a single notification as read. Applies an optimistic update immediately before the API call.
+</ResponseField>
+
+<ResponseField name="markAllNotificationsAsRead" type="() => Promise<void>">
+  Marks all of the current user's notifications as read. Applies an optimistic update immediately.
+</ResponseField>
+
+<ResponseField name="resetAppNotifications" type="() => Promise<void>">
+  Clears the current notification list and re-fetches from page 1. Useful for pull-to-refresh.
+</ResponseField>
+
+<Note>
+  The hook is backed by Redux. Notifications are shared globally in the Redux store — multiple instances of the hook in different components will share the same state.
+</Note>
+
+## Related
+
+- [Notification Templates](/sdk/app-notifications/notification-templates) — customize display text per type
+- [useAppNotifications hook reference](/hooks/app-notifications/use-app-notifications)

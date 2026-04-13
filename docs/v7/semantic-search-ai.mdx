@@ -1,0 +1,145 @@
+---
+title: "Semantic Search & AI"
+description: "Automatic content embedding and semantic search across entities, comments, messages, users, and spaces — plus an AI-powered ask endpoint."
+icon: "magnifying-glass"
+---
+
+When semantic search is enabled for your project, Replyke automatically generates vector embeddings for content as it is created or updated. Those embeddings power two capabilities:
+
+1. **Semantic search** — find content, users, and spaces by meaning, not just keywords
+2. **AI ask** — a retrieval-augmented endpoint that synthesizes a streamed answer from your content in response to a natural-language question
+
+<Note>
+  Semantic search and AI features require a paid plan. Projects on the free tier cannot use embedding-based endpoints.
+</Note>
+
+---
+
+## What Gets Embedded
+
+Replyke embeds the following content types automatically, with no configuration required beyond enabling the feature:
+
+| Content Type | What is embedded |
+|-------------|-----------------|
+| **Entities** | Title, body, and other text fields |
+| **Comments** | Comment text content |
+| **Chat messages** | Message text content |
+| **Users** | Profile text assembled from name, username, and bio |
+| **Spaces** | Space name, description, and related metadata |
+
+Embeddings are generated asynchronously after content is created or updated.
+
+---
+
+## Semantic Search
+
+There are three search endpoints, each scoped to a different content domain:
+
+### Search Content
+
+Searches across entities, comments, and chat messages. You can filter by source type and optionally scope results to a specific space or conversation.
+
+- **Parameters:** `query`, `sourceTypes` (array of `"entity" | "comment" | "message"`), `spaceId` (optional), `conversationId` (optional), `limit`
+- **Returns:** Array of results, each with `sourceType`, `similarity` score (0–1), and the full hydrated `record` (entity, comment, or message object)
+
+### Search Users
+
+Searches user profiles by semantic similarity to the query. Useful for finding users by description, interests, or bio content.
+
+- **Parameters:** `query`, `limit`
+- **Returns:** Array of results, each with `similarity` score and the full `record` (user object)
+
+### Search Spaces
+
+Searches spaces by semantic similarity.
+
+- **Parameters:** `query`, `limit`
+- **Returns:** Array of results, each with `similarity` score and the full `record` (space object)
+
+Results across all three endpoints include a `similarity` field (cosine similarity, 0–1) alongside the hydrated record, so you can display or filter by relevance score.
+
+---
+
+## AI Ask
+
+The ask endpoint takes a natural-language question, retrieves the most relevant content chunks from your project, and streams a synthesized answer using an LLM — grounded entirely in your content.
+
+### How It Works
+
+<Steps>
+  <Step title="Query embedding">
+    The question is embedded into a vector using the same model used for content.
+  </Step>
+  <Step title="Retrieval">
+    The most semantically similar content is retrieved from your project's embeddings. Results can be scoped to a specific space or conversation.
+  </Step>
+  <Step title="Generation">
+    The retrieved content is used as context for the LLM, which synthesizes an answer grounded in your data. If the context does not contain enough information to answer, the model says so.
+  </Step>
+  <Step title="Streaming response">
+    The answer is streamed back via Server-Sent Events (SSE). After the answer completes, a `sources` event delivers the hydrated source records that were used as context.
+  </Step>
+</Steps>
+
+### Response Format (SSE)
+
+The ask endpoint responds with `Content-Type: text/event-stream`. Events are delivered in this order:
+
+| Event | Data | Description |
+|-------|------|-------------|
+| `token` | `{ "content": "..." }` | One token of the generated answer |
+| `sources` | Array of content results | The hydrated source records used as context |
+| `done` | `{}` | Stream complete |
+| `error` | `{ "error": "..." }` | Only sent if an error occurs after streaming starts |
+
+```ts
+const response = await fetch("/:projectId/api/v7/search/ask", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${accessToken}`,
+  },
+  body: JSON.stringify({
+    query: "What are the community rules about self-promotion?",
+    sourceTypes: ["entity", "comment"],
+    spaceId: "optional-space-id",
+    limit: 10,
+  }),
+});
+
+const reader = response.body!.getReader();
+const decoder = new TextDecoder();
+
+for await (const chunk of readLines(reader, decoder)) {
+  if (chunk.startsWith("event: token")) {
+    // append token to UI
+  } else if (chunk.startsWith("event: sources")) {
+    // display source citations
+  } else if (chunk.startsWith("event: done")) {
+    // finalize
+  }
+}
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | `string` | Yes | The natural-language question |
+| `sourceTypes` | `string[]` | Yes | Content types to search: `"entity"`, `"comment"`, `"message"` |
+| `spaceId` | `string` | No | Scope retrieval to a specific space |
+| `conversationId` | `string` | No | Scope retrieval to a specific conversation |
+| `limit` | `number` | No | Max number of source records to return |
+
+---
+
+## SDK Integration
+
+The SDK provides hooks for all three search endpoints and the ask endpoint:
+
+- `useSearchContent` — search entities, comments, and messages
+- `useSearchUsers` — search user profiles
+- `useSearchSpaces` — search spaces
+- `useAskContent` — ask a question and receive a streamed answer
+
+See [SDK Reference → Search & AI](/sdk/search/overview) and the [Hooks Reference → Search](/hooks/search/use-search-content) for detailed usage.

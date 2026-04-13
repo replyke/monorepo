@@ -1,0 +1,91 @@
+---
+title: "Chat Setup"
+description: "Add ChatProvider to your app to enable real-time messaging"
+---
+
+`ChatProvider` is the root component for the entire chat system. It establishes and manages the Socket.io connection, fetches initial unread counts, and provides the shared socket instance to all hooks that need it.
+
+<Note>
+  `ChatProvider` must be placed inside `ReplykeProvider` and above any component that uses chat hooks.
+</Note>
+
+## Adding ChatProvider
+
+<Steps>
+  <Step title="Import and wrap your app">
+    Place `ChatProvider` inside `ReplykeProvider` but outside your conversation UI:
+
+    ```tsx
+    import { ReplykeProvider, ChatProvider } from "@replyke/react-js";
+
+    function App() {
+      return (
+        <ReplykeProvider projectId="your-project-id">
+          <ChatProvider>
+            <YourApp />
+          </ChatProvider>
+        </ReplykeProvider>
+      );
+    }
+    ```
+  </Step>
+  <Step title="Authentication">
+    `ChatProvider` only connects the socket when a user is authenticated. If no access token is available, no connection is attempted. The socket reconnects automatically when the user signs in and disconnects when they sign out.
+  </Step>
+</Steps>
+
+## What ChatProvider Does
+
+When a user is authenticated, `ChatProvider`:
+
+1. **Opens a Socket.io connection** to the Replyke server, authenticated with the user's access token
+2. **Fetches initial unread counts** (total unread messages and count of conversations with unread messages) so badges are accurate before the conversation list is loaded
+3. **Listens for real-time events** — new messages, message edits, deletions, reactions, typing indicators, and conversation updates
+4. **Updates Redux state** automatically as events arrive, so all components using chat hooks stay in sync
+
+## Token Rotation
+
+When the access token rotates (e.g. after a refresh), `ChatProvider` updates the socket's auth credentials and forces a re-handshake. The socket is not torn down — room memberships are preserved.
+
+## Checking Connection State
+
+Use [`useChatSocket`](/hooks/chat/use-chat-socket) to read the connection state in your UI:
+
+```tsx
+import { useChatSocket } from "@replyke/react-js";
+
+function ConnectionBadge() {
+  const { connected } = useChatSocket();
+  return <span>{connected ? "Online" : "Connecting..."}</span>;
+}
+```
+
+## Unread Counts
+
+Two hooks expose the unread counts fetched on mount:
+
+- [`useTotalUnreadCount`](/hooks/chat/use-total-unread-count) — total number of unread messages across all conversations
+- [`useUnreadConversationCount`](/hooks/chat/use-unread-conversation-count) — number of conversations with at least one unread message
+
+These are useful for badges in navigation:
+
+```tsx
+import { useTotalUnreadCount } from "@replyke/react-js";
+
+function NavBadge() {
+  const unread = useTotalUnreadCount();
+  if (unread === 0) return null;
+  return <span className="badge">{unread}</span>;
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Conversations" icon="comments" href="/sdk/chat/conversations">
+    Create and list conversations
+  </Card>
+  <Card title="Messages" icon="message" href="/sdk/chat/messages">
+    Send and receive messages
+  </Card>
+</CardGroup>

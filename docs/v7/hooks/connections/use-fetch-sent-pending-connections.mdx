@@ -1,0 +1,80 @@
+---
+title: "Fetch sent pending connections"
+description: "Fetch connection requests sent by the current user that are still pending"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that fetches the paginated list of connection requests the current authenticated user has sent that have not yet been accepted or declined.
+
+## Usage Example
+
+```tsx
+import { useFetchSentPendingConnections } from "@replyke/react-js";
+
+function SentRequests() {
+  const fetchSentPendingConnections = useFetchSentPendingConnections();
+  const [requests, setRequests] = useState([]);
+
+  useEffect(() => {
+    fetchSentPendingConnections({ page: 1 }).then((res) => {
+      setRequests(res.data);
+    });
+  }, []);
+
+  return (
+    <ul>
+      {requests.map(({ id, user }) => (
+        <li key={id}>Pending request to {user.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="page" type="number">
+  Page number to fetch. Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Number of results per page. Defaults to `20`.
+</ParamField>
+
+## Returns
+
+Returns a `PaginatedResponse` containing pending connection entries:
+
+<ResponseField name="data" type="PendingConnection[]">
+  Array of pending connection entries.
+  <Expandable title="PendingConnection properties">
+    <ResponseField name="id" type="string">
+      ID of the connection record.
+    </ResponseField>
+    <ResponseField name="user" type="User">
+      The user the request was sent to. See [User data model](/data-models/user).
+    </ResponseField>
+    <ResponseField name="type" type='"sent"'>
+      Always `"sent"` for this endpoint.
+    </ResponseField>
+    <ResponseField name="message" type="string | undefined">
+      Optional message included with the request.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO timestamp when the request was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata including `page`, `pageSize`, `totalPages`, `totalItems`, and `hasMore`.
+</ResponseField>
+
+## Related
+
+- [useFetchReceivedPendingConnections](/hooks/connections/use-fetch-received-pending-connections) — incoming requests
+- [useRemoveConnection](/hooks/connections/use-remove-connection) — withdraw a sent request

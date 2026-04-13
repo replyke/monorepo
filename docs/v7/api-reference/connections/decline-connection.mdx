@@ -1,0 +1,55 @@
+---
+title: "Decline Connection"
+api: "PATCH /:projectId/api/v7/connections/:connectionId/decline"
+description: "Decline a pending connection request"
+---
+
+Declines a pending connection request. Only the receiver of the original request can decline it. The connection record status is updated to `"declined"` rather than being deleted.
+
+## Path Parameters
+
+<ParamField path="connectionId" type="string" required>
+  The ID (UUID) of the pending connection record to decline.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200`:
+
+<ResponseField name="id" type="string">
+  Connection record ID.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  `"declined"`.
+</ResponseField>
+
+<ResponseField name="respondedAt" type="string">
+  ISO timestamp of when the request was declined.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    {
+      "error": "Pending connection request not found.",
+      "code": "connection/not-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    {
+      "error": "Only the receiver can decline a connection request.",
+      "code": "connection/unauthorized"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useDeclineConnection` hook](/hooks/connections/use-decline-connection)
+- [Accept Connection](/api-reference/connections/accept-connection)

@@ -1,0 +1,68 @@
+---
+title: "Overview"
+description: "The 8-type reaction system for entities and comments"
+---
+
+Replyke supports 8 distinct reaction types on both entities and comments. Each reaction type has a defined impact on the author's reputation score.
+
+## Reaction Types
+
+| Type | Reputation Impact |
+|------|:-:|
+| `upvote` | +1 |
+| `downvote` | -1 |
+| `like` | +1 |
+| `love` | +2 |
+| `wow` | +1 |
+| `sad` | 0 |
+| `angry` | 0 |
+| `funny` | +1 |
+
+Each entity and comment stores a `reactionCounts` object with a count for each type, and a `userReaction` field with the authenticated user's current reaction (or `null`).
+
+## The Toggle Pattern
+
+The recommended way to work with reactions is `useReactionToggle`. It manages optimistic updates, handles toggling (selecting the same reaction again removes it), and reverts state on server errors.
+
+```tsx
+import { useReactionToggle } from "@replyke/react-js";
+
+function ReactionButton({ entity }) {
+  const { currentReaction, reactionCounts, toggleReaction, loading } = useReactionToggle({
+    targetType: "entity",
+    targetId: entity.id,
+    initialReaction: entity.userReaction,
+    initialReactionCounts: entity.reactionCounts,
+  });
+
+  return (
+    <button
+      onClick={() => toggleReaction({ reactionType: "upvote" })}
+      disabled={loading}
+    >
+      {reactionCounts.upvote ?? 0} Upvotes
+      {currentReaction === "upvote" ? " (active)" : ""}
+    </button>
+  );
+}
+```
+
+## Hooks
+
+<CardGroup cols={2}>
+  <Card title="useReactionToggle" href="/hooks/reactions/use-reaction-toggle">
+    Manage reaction state with optimistic updates and toggle behavior. The recommended hook for reaction UIs.
+  </Card>
+  <Card title="useAddReaction" href="/hooks/reactions/use-add-reaction">
+    Low-level hook to add a reaction to an entity or comment.
+  </Card>
+  <Card title="useRemoveReaction" href="/hooks/reactions/use-remove-reaction">
+    Low-level hook to remove the authenticated user's reaction.
+  </Card>
+  <Card title="useFetchEntityReactions" href="/hooks/reactions/use-fetch-entity-reactions">
+    Fetch a paginated list of reactions on an entity, optionally filtered by type.
+  </Card>
+  <Card title="useFetchCommentReactions" href="/hooks/reactions/use-fetch-comment-reactions">
+    Fetch a paginated list of reactions on a comment, optionally filtered by type.
+  </Card>
+</CardGroup>

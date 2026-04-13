@@ -1,0 +1,45 @@
+---
+title: "Delete rule"
+description: "Delete a community rule from a space"
+icon: "plug"
+---
+
+## Overview
+
+`useDeleteRule` returns a callable function for permanently deleting a rule. Only space admins can delete rules.
+
+## Usage Example
+
+```tsx
+import { useDeleteRule } from "@replyke/react-js";
+
+function DeleteRuleButton({ spaceId, ruleId }: { spaceId: string; ruleId: string }) {
+  const deleteRule = useDeleteRule();
+
+  return (
+    <button onClick={() => deleteRule({ spaceId, ruleId })}>
+      Delete Rule
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="ruleId" type="string" required>
+  UUID of the rule to delete.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="deletedRule" type="object">
+  The `id` and `title` of the deleted rule.
+</ResponseField>

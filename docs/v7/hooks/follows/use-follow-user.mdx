@@ -1,0 +1,42 @@
+---
+title: "Follow user"
+description: "Follow a user by their ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that follows a target user. The current user must be authenticated. Use `useFollowManager` if you need status tracking and toggle behavior; use this hook directly when you need fine-grained control.
+
+## Usage Example
+
+```tsx
+import { useFollowUser } from "@replyke/react-js";
+
+function FollowButton({ userId }: { userId: string }) {
+  const followUser = useFollowUser();
+
+  const handleFollow = async () => {
+    await followUser({ userId });
+  };
+
+  return <button onClick={handleFollow}>Follow</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user to follow.
+</ParamField>
+
+## Returns
+
+The function returns `Promise<void>`.
+
+## Related
+
+- [useUnfollowUserByUserId](/hooks/follows/use-unfollow-user-by-user-id) — unfollow by user ID
+- [useFetchFollowStatus](/hooks/follows/use-fetch-follow-status) — check follow status before calling

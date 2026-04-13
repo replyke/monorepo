@@ -1,0 +1,34 @@
+---
+title: "Fetch Top Comment"
+api: "GET /:projectId/api/v7/entities/:entityId/top-comment"
+description: "Get the highest-voted comment on an entity"
+---
+
+Returns the single comment with the most upvotes for the given entity. Useful for previewing the best comment alongside an entity in a feed. When multiple comments are tied, the oldest is returned.
+
+Returns `null` if the entity has no comments.
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  The UUID of the entity.
+</ParamField>
+
+## Response
+
+Returns a [Comment](/data-models/comment) object, or `null` if there are no comments.
+
+```json
+null
+```
+
+or
+
+```json
+{
+  "id": "uuid",
+  "content": "Great post!",
+  "upvotes": ["userId1", "userId2"],
+  ...
+}
+```

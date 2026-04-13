@@ -1,0 +1,67 @@
+---
+title: "Unlink OAuth Identity"
+api: "DELETE /:projectId/api/v7/oauth/identities/:identityId"
+description: "Remove a linked OAuth identity from the current user"
+---
+
+Unlinks an OAuth identity from the authenticated user's account. The identity is permanently deleted.
+
+Requires a valid access token. The identity must belong to the authenticated user.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer {accessToken}` — a valid access token for the authenticated user.
+</ParamField>
+
+## Path Parameters
+
+<ParamField path="identityId" type="string" required>
+  UUID of the identity to unlink. Retrieve identity IDs from the
+  [List Identities](/api-reference/oauth/list-identities) endpoint.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` when the identity was successfully unlinked.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Identity Not Found — 404">
+    ```json
+    {
+      "error": "Identity not found",
+      "code": "oauth/identity-not-found"
+    }
+    ```
+    Returned when the identity does not exist or does not belong to the
+    authenticated user.
+  </Accordion>
+  <Accordion title="Last Identity — 400">
+    ```json
+    {
+      "error": "Cannot unlink the last identity. Set a password first or link another provider.",
+      "code": "oauth/last-identity"
+    }
+    ```
+    Returned when this is the only identity on the account and the user
+    has no password set. Unlinking would lock the user out.
+  </Accordion>
+  <Accordion title="User Not Found — 404">
+    ```json
+    {
+      "error": "User not found",
+      "code": "oauth/user-not-found"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useOAuthIdentities` hook](/hooks/auth/use-oauth-identities)
+- [List Identities](/api-reference/oauth/list-identities)
+- [OAuth integration guide](/sdk/authentication/oauth)

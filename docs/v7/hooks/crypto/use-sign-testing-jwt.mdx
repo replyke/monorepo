@@ -1,0 +1,73 @@
+---
+title: "Sign testing JWT"
+description: "Generate a signed JWT for testing external auth — development only"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that calls the Replyke API to sign a JWT using your project's private key. This is intended **exclusively for development and testing** of external authentication flows — it lets you generate valid user JWTs from the client without setting up a backend.
+
+<Warning>
+**Never use this hook in production.** Calling this function exposes your project's private key in client-side code, which is a critical security vulnerability. In production, JWT signing must happen on your backend server. See the [External Authentication](/sdk/authentication/external) guide.
+</Warning>
+
+## Usage Example
+
+```tsx
+import { useSignTestingJwt } from "@replyke/react-js";
+import { useAuth } from "@replyke/react-js";
+
+function DevAuthHelper() {
+  const signTestingJwt = useSignTestingJwt();
+  const { signInWithToken } = useAuth();
+
+  const signInAsTestUser = async () => {
+    const token = await signTestingJwt({
+      projectId: "your-project-id",
+      privateKey: "your-private-key", // ⚠️ Development only
+      userData: {
+        id: "external-user-123",
+        name: "Test User",
+        email: "test@example.com",
+      },
+    });
+
+    if (token) {
+      await signInWithToken(token);
+    }
+  };
+
+  return <button onClick={signInAsTestUser}>Sign in as test user</button>;
+}
+```
+
+## Parameters
+
+<ParamField body="projectId" type="string" required>
+  Your Replyke project ID.
+</ParamField>
+
+<ParamField body="privateKey" type="string" required>
+  Your project's private key, used to sign the JWT. This key is available in your Replyke dashboard. **Never expose this in production code.**
+</ParamField>
+
+<ParamField body="userData" type="object" required>
+  The user data to encode in the JWT payload. Must include `id` (the external user's identifier). Additional fields are passed through as custom claims.
+
+  ```ts
+  {
+    id: string;           // Required: external user identifier
+    [key: string]: any;   // Optional: name, email, avatar, etc.
+  }
+  ```
+</ParamField>
+
+## Returns
+
+Returns `Promise<string | undefined>`. On success, resolves to a signed JWT string that can be passed to the external auth sign-in flow.
+
+## Notes
+
+- The function logs a console warning each time it is called as a reminder that it is not for production use.
+- Use the returned token with the external authentication flow described in [External Authentication](/sdk/authentication/external).

@@ -1,0 +1,81 @@
+---
+title: "Use collections actions"
+description: "Low-level actions for fetching, creating, updating, and deleting collections"
+icon: "cube"
+---
+
+## Overview
+
+`useCollectionsActions` exposes every collection action as a standalone callable function. It is used internally by `useCollections` but can also be used directly when you need fine-grained control over collection operations without the navigation state.
+
+<Note>For most use cases, prefer `useCollections` — it combines these actions with navigation state. Use `useCollectionsActions` only when you need to perform actions independently of a navigation context.</Note>
+
+## Usage Example
+
+```tsx
+import { useCollectionsActions } from "@replyke/react-js";
+
+function QuickSaveButton({ entityId, collectionId, projectId }) {
+  const { addToCollection } = useCollectionsActions();
+
+  return (
+    <button onClick={() => addToCollection({ projectId, collectionId, entityId })}>
+      Save
+    </button>
+  );
+}
+```
+
+## Returns
+
+### Navigation
+
+<ResponseField name="openCollection" type="(collection: Collection) => void">
+  Push a collection onto the Redux navigation stack.
+</ResponseField>
+
+<ResponseField name="goBack" type="() => void">
+  Pop the current collection from the navigation stack.
+</ResponseField>
+
+<ResponseField name="goToRoot" type="() => void">
+  Reset navigation to the root collection.
+</ResponseField>
+
+### Data Fetching
+
+<ResponseField name="fetchRootCollection" type="({ projectId }: { projectId: string }) => Promise<void>">
+  Fetch and set the user's root collection in Redux state.
+</ResponseField>
+
+<ResponseField name="fetchSubCollections" type="({ projectId, collectionId }: { projectId: string; collectionId: string }) => Promise<void>">
+  Fetch sub-collections for a given collection and update Redux state.
+</ResponseField>
+
+### CRUD Operations
+
+<ResponseField name="createCollection" type="({ projectId, parentCollectionId, collectionName }: ...) => Promise<void>">
+  Create a new sub-collection under the specified parent collection. Navigates into the new collection after creation.
+</ResponseField>
+
+<ResponseField name="updateCollection" type="({ projectId, collectionId, update }: ...) => Promise<void>">
+  Update a collection's `name`.
+</ResponseField>
+
+<ResponseField name="deleteCollection" type="({ projectId, collection }: ...) => Promise<void>">
+  Delete a collection. Updates Redux state to navigate back to the parent.
+</ResponseField>
+
+<ResponseField name="addToCollection" type="({ projectId, collectionId, entityId }: ...) => Promise<void>">
+  Add an entity to a collection by creating a junction table entry.
+</ResponseField>
+
+<ResponseField name="removeFromCollection" type="({ projectId, collectionId, entityId }: ...) => Promise<void>">
+  Remove an entity from a collection.
+</ResponseField>
+
+### Utility
+
+<ResponseField name="resetCollections" type="() => void">
+  Clear all collections state from Redux (e.g., on sign-out).
+</ResponseField>

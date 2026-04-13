@@ -1,0 +1,91 @@
+---
+title: "Handle space comment report"
+description: "Action a comment report as a space moderator"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that allows a space moderator to take action on a comment report. Available actions are: remove the comment, ban the comment's author from the space, or dismiss the report.
+
+<Note>Requires the authenticated user to have `admin` or `moderator` role in the target space.</Note>
+
+## Usage Example
+
+```tsx
+import { useHandleSpaceCommentReport } from "@replyke/react-js";
+
+function CommentReportActions({ report }) {
+  const handleSpaceCommentReport = useHandleSpaceCommentReport();
+
+  const removeComment = async () => {
+    await handleSpaceCommentReport({
+      spaceId: report.spaceId,
+      reportId: report.id,
+      commentId: report.targetId,
+      actions: ["remove-comment"],
+      summary: "Removed comment for harassment",
+    });
+  };
+
+  const dismiss = async () => {
+    await handleSpaceCommentReport({
+      spaceId: report.spaceId,
+      reportId: report.id,
+      commentId: report.targetId,
+      actions: ["dismiss"],
+      summary: "No violation found",
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={removeComment}>Remove Comment</button>
+      <button onClick={dismiss}>Dismiss</button>
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField body="spaceId" type="string" required>
+  The ID of the space the report belongs to.
+</ParamField>
+
+<ParamField body="reportId" type="string" required>
+  The ID of the report to action.
+</ParamField>
+
+<ParamField body="commentId" type="string" required>
+  The ID of the reported comment.
+</ParamField>
+
+<ParamField body="actions" type="Array<'remove-comment' | 'ban-user' | 'dismiss'>" required>
+  One or more actions to take:
+
+  - `remove-comment` — Removes the comment.
+  - `ban-user` — Bans the comment's author from the space (requires `userId`).
+  - `dismiss` — Marks the report as dismissed.
+</ParamField>
+
+<ParamField body="summary" type="string" required>
+  A moderator note describing the action taken.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The ID of the user to ban. Required when `ban-user` is included in `actions`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  The reason for banning, if applicable.
+</ParamField>
+
+## Returns
+
+Returns `Promise<{ message: string; code: string }>`.
+
+## Notes
+
+- This is the comment equivalent of [`useHandleSpaceEntityReport`](/hooks/reports/use-handle-space-entity-report).
+- To fetch pending reports, use [`useFetchModeratedReports`](/hooks/reports/use-fetch-moderated-reports).

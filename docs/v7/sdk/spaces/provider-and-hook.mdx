@@ -1,0 +1,217 @@
+---
+title: "SpaceProvider & useSpace"
+description: "Load a space into React context and access its state, permissions, and operations"
+---
+
+The `SpaceProvider` and `useSpace` hook are the primary way to work with a single space in your app. The provider fetches and manages the space data; the hook exposes everything to your components.
+
+## SpaceProvider
+
+Place `SpaceProvider` anywhere in your tree where space data is needed. You can identify the space by UUID, shortId, or slug — or skip the fetch entirely by passing a pre-fetched space object directly.
+
+```tsx
+import { SpaceProvider } from "@replyke/react-js";
+
+// By UUID
+<SpaceProvider spaceId="space-uuid">
+  <SpaceContent />
+</SpaceProvider>
+
+// By shortId
+<SpaceProvider shortId="abc123">
+  <SpaceContent />
+</SpaceProvider>
+
+// By slug
+<SpaceProvider slug="my-community">
+  <SpaceContent />
+</SpaceProvider>
+
+// Pre-fetched object (no fetch needed — useful for SSR or when the space is already loaded)
+<SpaceProvider space={mySpace}>
+  <SpaceContent />
+</SpaceProvider>
+```
+
+### Props
+
+<ParamField body="spaceId" type="string">
+  UUID of the space to load. Use this, `shortId`, or `slug`.
+</ParamField>
+
+<ParamField body="shortId" type="string">
+  Short identifier of the space. Use this, `spaceId`, or `slug`.
+</ParamField>
+
+<ParamField body="slug" type="string">
+  URL slug of the space. Use this, `spaceId`, or `shortId`.
+</ParamField>
+
+<ParamField body="space" type="SpaceDetailed">
+  A pre-fetched space object. Skips the initial fetch if provided. Useful for SSR or when the space is already loaded in a parent component.
+</ParamField>
+
+<ParamField body="include" type='"files" | string[]'>
+  Optional. Pass `"files"` to include avatar and banner file data in the fetched space.
+</ParamField>
+
+<Note>`SpaceProvider` renders `null` if none of `spaceId`, `shortId`, `slug`, or `space` is provided.</Note>
+
+## useSpace
+
+`useSpace` must be called inside a descendant of `SpaceProvider`.
+
+```tsx
+import { useSpace } from "@replyke/react-js";
+
+function SpaceContent() {
+  const {
+    space,
+    isMember,
+    isAdmin,
+    isModerator,
+    canPost,
+    canModerate,
+    membershipStatus,
+    isPending,
+    isBanned,
+    breadcrumb,
+    parentSpace,
+    childSpaces,
+    joinSpace,
+    leaveSpace,
+    updateSpace,
+    deleteSpace,
+    loading,
+    error,
+  } = useSpace();
+}
+```
+
+## Return Values
+
+### Space State
+
+<ResponseField name="space" type="SpaceDetailed | null | undefined">
+  The loaded space object. `undefined` while loading, `null` if not found.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while the space is being fetched.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the fetch failed.
+</ResponseField>
+
+### Membership & Permissions
+
+<ResponseField name="isMember" type="boolean">
+  `true` if the current user has an active membership in this space.
+</ResponseField>
+
+<ResponseField name="isAdmin" type="boolean">
+  `true` if the current user is an admin of this space.
+</ResponseField>
+
+<ResponseField name="isModerator" type="boolean">
+  `true` if the current user is a moderator of this space.
+</ResponseField>
+
+<ResponseField name="canPost" type="boolean">
+  `true` if the current user can post entities in this space, based on the space's `postingPermission` and the user's membership status.
+</ResponseField>
+
+<ResponseField name="canModerate" type="boolean">
+  `true` if the current user can perform moderation actions in this space.
+</ResponseField>
+
+<ResponseField name="membershipStatus" type='"pending" | "active" | "banned" | null'>
+  The current user's raw membership status. `null` if not a member.
+</ResponseField>
+
+<ResponseField name="isPending" type="boolean">
+  `true` if the user's join request is awaiting approval.
+</ResponseField>
+
+<ResponseField name="isBanned" type="boolean">
+  `true` if the user is banned from this space.
+</ResponseField>
+
+### Hierarchy
+
+<ResponseField name="breadcrumb" type="SpacePreview[]">
+  Ordered list of ancestor spaces from root to direct parent. Empty for root-level spaces.
+</ResponseField>
+
+<ResponseField name="parentSpace" type="SpacePreview | null">
+  Preview of the immediate parent space. `null` for root spaces.
+</ResponseField>
+
+<ResponseField name="childSpaces" type="SpacePreview[]">
+  Previews of direct child spaces (up to 10 returned by the API).
+</ResponseField>
+
+### Operations
+
+<ResponseField name="joinSpace" type="() => Promise<void>">
+  Join the current space. If the space requires approval, the membership enters `pending` status.
+</ResponseField>
+
+<ResponseField name="leaveSpace" type="() => Promise<void>">
+  Leave the current space.
+</ResponseField>
+
+<ResponseField name="updateSpace" type="(props: { update }) => Promise<SpaceDetailed | undefined>">
+  Update space settings. Only available to admins.
+</ResponseField>
+
+<ResponseField name="deleteSpace" type="() => Promise<void>">
+  Delete the space and all associated data. Only available to admins.
+</ResponseField>
+
+<ResponseField name="setSpace" type="React.Dispatch">
+  Directly set the space state. Useful for optimistic local updates.
+</ResponseField>
+
+## Example: Space Page with Membership Button
+
+```tsx
+import { SpaceProvider, useSpace } from "@replyke/react-js";
+
+function SpacePage({ spaceId }: { spaceId: string }) {
+  return (
+    <SpaceProvider spaceId={spaceId}>
+      <SpaceHeader />
+    </SpaceProvider>
+  );
+}
+
+function SpaceHeader() {
+  const { space, isMember, isPending, joinSpace, leaveSpace, loading } = useSpace();
+
+  if (loading) return <p>Loading...</p>;
+  if (!space) return <p>Space not found.</p>;
+
+  return (
+    <div>
+      <h1>{space.name}</h1>
+      <p>{space.description}</p>
+      <p>{space.membersCount} members</p>
+      {!isMember && !isPending && (
+        <button onClick={joinSpace}>Join</button>
+      )}
+      {isPending && <p>Waiting for approval...</p>}
+      {isMember && (
+        <button onClick={leaveSpace}>Leave</button>
+      )}
+    </div>
+  );
+}
+```
+
+## See Also
+
+- [Space data model](/data-models/space)
+- [Membership guide](/sdk/spaces/membership)
+- [useSpace hook reference](/hooks/spaces/use-space)

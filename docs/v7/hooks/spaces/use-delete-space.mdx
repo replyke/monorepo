@@ -1,0 +1,48 @@
+---
+title: "Delete space"
+description: "Delete a space and all its associated data"
+icon: "plug"
+---
+
+## Overview
+
+`useDeleteSpace` returns a callable function for deleting a space. Only space admins can delete a space. Deletion cascades to all entities, members, child spaces, rules, and reports associated with the space.
+
+<Warning>Deleting a space is permanent. All entities, comments, members, child spaces, and rules belonging to the space are also deleted.</Warning>
+
+## Usage Example
+
+```tsx
+import { useDeleteSpace } from "@replyke/react-js";
+
+function DeleteSpaceButton({ spaceId }: { spaceId: string }) {
+  const deleteSpace = useDeleteSpace();
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure? This cannot be undone.")) return;
+    await deleteSpace({ spaceId });
+  };
+
+  return <button onClick={handleDelete}>Delete Space</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space to delete.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="deletedSpace" type="object">
+  The `id` and `name` of the deleted space.
+</ResponseField>
+
+<ResponseField name="counts" type="object">
+  Counts of deleted resources: `entities`, `members`, `childSpaces`.
+</ResponseField>

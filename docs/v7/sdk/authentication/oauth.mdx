@@ -1,0 +1,144 @@
+---
+title: "OAuth"
+description: "Google, GitHub, Apple, and Facebook OAuth provider integration"
+---
+
+Replyke supports OAuth 2.0 sign-in with Google, GitHub, Apple, and Facebook. The flow is redirect-based: the user is sent to the provider's authorization page and returns to a callback URL in your app with tokens embedded in the URL fragment.
+
+<Note>
+  OAuth providers must be configured in the Replyke dashboard before use. Each
+  provider requires a client ID, client secret, and a list of allowed redirect
+  URIs.
+</Note>
+
+## Web Integration
+
+The `useOAuthSignIn` hook (from `@replyke/react-js`) handles the full web OAuth flow.
+
+```tsx
+import { useOAuthSignIn } from "@replyke/react-js";
+```
+
+### Initiating Sign-In
+
+Call `initiateOAuth` with the provider name and the URL your app will redirect back to after authentication.
+
+```tsx
+import { useOAuthSignIn } from "@replyke/react-js";
+
+function SignInWithGoogle() {
+  const { initiateOAuth, isLoading, error } = useOAuthSignIn();
+
+  const handleClick = async () => {
+    // The user will be redirected to Google's authorization page.
+    // isLoading stays true during the redirect.
+    await initiateOAuth("google", "https://yourapp.com/auth/callback");
+  };
+
+  return (
+    <button onClick={handleClick} disabled={isLoading}>
+      {isLoading ? "Redirecting..." : "Sign in with Google"}
+    </button>
+  );
+}
+```
+
+Supported provider values: `"google"`, `"github"`, `"apple"`, `"facebook"`.
+
+### Handling the Callback
+
+On the page your app redirects back to, call `handleOAuthCallback` once on mount. It reads the tokens from the URL fragment, stores them in the SDK, and cleans the URL.
+
+```tsx
+import { useEffect } from "react";
+import { useOAuthSignIn } from "@replyke/react-js";
+import { useNavigate } from "react-router-dom";
+
+function AuthCallbackPage() {
+  const { handleOAuthCallback, error } = useOAuthSignIn();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const success = handleOAuthCallback();
+    if (success) {
+      navigate("/dashboard");
+    }
+  }, []);
+
+  if (error) return <p>Authentication failed: {error}</p>;
+
+  return <p>Authenticating...</p>;
+}
+```
+
+`handleOAuthCallback` returns `true` if tokens were found in the URL fragment and `false` otherwise. If the provider returned an error (for example, the user denied access), the error is surfaced through the `error` field.
+
+### Linking an Additional Provider
+
+Authenticated users can link additional OAuth providers to their account using `linkOAuthProvider`. This requires the user to already be signed in.
+
+```tsx
+import { useOAuthSignIn } from "@replyke/react-js";
+
+function LinkGitHubButton() {
+  const { linkOAuthProvider } = useOAuthSignIn();
+
+  return (
+    <button onClick={() => linkOAuthProvider("github", "https://yourapp.com/settings/callback")}>
+      Connect GitHub
+    </button>
+  );
+}
+```
+
+The callback page logic is identical for both sign-in and link flows — `handleOAuthCallback` handles both cases.
+
+## How Tokens Are Returned
+
+After the provider callback, Replyke redirects to your `redirectAfterAuth` URL with tokens in the **URL fragment** (not query parameters):
+
+```
+https://yourapp.com/auth/callback#accessToken=...&refreshToken=...
+```
+
+Fragments are not sent to servers and do not appear in server access logs, which prevents token leakage. `handleOAuthCallback` extracts them automatically.
+
+## Managing Linked Identities
+
+Use `useOAuthIdentities` to list and unlink OAuth identities on the current user's account.
+
+```tsx
+import { useOAuthIdentities } from "@replyke/react-js";
+
+function LinkedAccounts() {
+  const { identities, fetchIdentities, unlinkIdentity, isLoading } = useOAuthIdentities();
+
+  useEffect(() => {
+    fetchIdentities();
+  }, []);
+
+  return (
+    <ul>
+      {identities.map((identity) => (
+        <li key={identity.id}>
+          {identity.provider} — {identity.email}
+          <button onClick={() => unlinkIdentity(identity.id)}>Unlink</button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+<Warning>
+  Unlinking an identity is blocked if it is the last identity on the account and
+  the user has no password set. This prevents the user from being locked out.
+</Warning>
+
+## See Also
+
+- [`useOAuthIdentities` hook reference](/hooks/auth/use-oauth-identities)
+- [OAuth Authorize API reference](/api-reference/oauth/authorize)
+- [OAuth Link API reference](/api-reference/oauth/link)
+- [List Identities API reference](/api-reference/oauth/list-identities)
+- [Unlink Identity API reference](/api-reference/oauth/unlink-identity)

@@ -1,0 +1,35 @@
+---
+title: "Unfollow User"
+api: "DELETE /:projectId/api/v7/users/:userId/follow"
+description: "Unfollow a user by their user ID"
+---
+
+Removes the follow relationship between the authenticated user and the specified user. This is a convenience alternative to [Delete Follow](/api-reference/follows/delete-follow) — it looks up the follow record by user ID rather than requiring the follow ID.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Replyke user ID (UUID) of the user to unfollow.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `204` with no body.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Following — 404">
+    ```json
+    {
+      "error": "Follow relationship does not exist.",
+      "code": "follow/not-found"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useUnfollowUserByUserId` hook](/hooks/follows/use-unfollow-user-by-user-id)
+- [Delete Follow](/api-reference/follows/delete-follow) — remove by follow ID instead

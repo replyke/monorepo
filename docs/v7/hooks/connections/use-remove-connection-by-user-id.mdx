@@ -1,0 +1,56 @@
+---
+title: "Remove connection by user ID"
+description: "Remove a connection with a user by their user ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that removes a connection with another user by their `userId`, without needing the connection record ID. The server determines the correct action (withdraw, disconnect, or decline) based on the current state. The current user must be authenticated.
+
+<Note>
+  This hook is used internally by `useConnectionManager`'s `removeConnectionSmart` function.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useRemoveConnectionByUserId } from "@replyke/react-js";
+
+function RemoveButton({ userId }: { userId: string }) {
+  const removeConnectionByUserId = useRemoveConnectionByUserId();
+
+  return (
+    <button onClick={() => removeConnectionByUserId({ userId })}>
+      Remove Connection
+    </button>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user to disconnect from. Cannot be the current user's own ID.
+</ParamField>
+
+## Returns
+
+<ResponseField name="id" type="string | undefined">
+  The connection record ID, if applicable.
+</ResponseField>
+
+<ResponseField name="action" type='"withdraw" | "disconnect" | "decline" | undefined'>
+  The action performed by the server.
+</ResponseField>
+
+<ResponseField name="message" type="string | undefined">
+  A confirmation message.
+</ResponseField>
+
+## Related
+
+- [useRemoveConnection](/hooks/connections/use-remove-connection) — remove by connection ID
+- [useConnectionManager](/hooks/connections/use-connection-manager) — wraps this as `removeConnectionSmart`

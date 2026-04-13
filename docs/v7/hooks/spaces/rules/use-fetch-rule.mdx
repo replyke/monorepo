@@ -1,0 +1,38 @@
+---
+title: "Fetch rule"
+description: "Fetch a single rule by its ID"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchRule` returns a callable function that fetches a single community rule by ID. Rules are publicly readable — no authentication is required.
+
+## Usage Example
+
+```tsx
+import { useFetchRule } from "@replyke/react-js";
+
+function RuleDetail({ spaceId, ruleId }: { spaceId: string; ruleId: string }) {
+  const fetchRule = useFetchRule();
+
+  const loadRule = async () => {
+    const rule = await fetchRule({ spaceId, ruleId });
+    console.log(rule.title, rule.description);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="ruleId" type="string" required>
+  UUID of the rule to fetch.
+</ParamField>
+
+## Returns
+
+A single Rule object with `id`, `projectId`, `spaceId`, `title`, `description`, `order`, `lastApprovedBy`, `createdAt`, and `updatedAt`.

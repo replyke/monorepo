@@ -1,0 +1,79 @@
+---
+title: "Create space"
+description: "Create a new space with optional avatar and banner images"
+icon: "plug"
+---
+
+## Overview
+
+`useCreateSpace` returns a callable function for creating a new space. The request can include avatar and banner image uploads. The creator is automatically added as an admin.
+
+## Usage Example
+
+```tsx
+import { useCreateSpace } from "@replyke/react-js";
+
+function CreateSpaceForm() {
+  const createSpace = useCreateSpace();
+
+  const handleSubmit = async () => {
+    const space = await createSpace({
+      name: "Design Community",
+      slug: "design-community",
+      description: "A place for designers to share work and ideas.",
+      readingPermission: "anyone",
+      postingPermission: "members",
+      requireJoinApproval: false,
+    });
+    console.log("Created:", space.id);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="name" type="string" required>
+  Display name for the space. 3–100 characters.
+</ParamField>
+
+<ParamField path="slug" type="string">
+  Optional URL slug. Must be unique per project. Supports letters, numbers, hyphens, and underscores (Unicode allowed).
+</ParamField>
+
+<ParamField path="description" type="string">
+  Optional description. Up to 1,000 characters.
+</ParamField>
+
+<ParamField path="avatar" type="{ file: File | Blob; options: UploadImageOptions }">
+  Optional avatar image to upload. The `options` object controls format, quality, dimensions, and variants.
+</ParamField>
+
+<ParamField path="banner" type="{ file: File | Blob; options: UploadImageOptions }">
+  Optional banner image to upload.
+</ParamField>
+
+<ParamField path="readingPermission" type='"anyone" | "members"'>
+  Who can read content. Defaults to `"anyone"`.
+</ParamField>
+
+<ParamField path="postingPermission" type='"anyone" | "members" | "admins"'>
+  Who can post entities. Defaults to `"members"`.
+</ParamField>
+
+<ParamField path="requireJoinApproval" type="boolean">
+  Whether new members must be approved. Defaults to `true`.
+</ParamField>
+
+<ParamField path="metadata" type="Record<string, any>">
+  Optional custom metadata. Up to 1 MB.
+</ParamField>
+
+<ParamField path="parentSpaceId" type="string">
+  Optional UUID of a parent space. The creator must be an admin of the parent space.
+</ParamField>
+
+## Returns
+
+Returns the created [Space](/data-models/space) object.
+
+<Note>When creating a child space, all admins and moderators of the parent space are automatically added to the new child space with their same roles.</Note>

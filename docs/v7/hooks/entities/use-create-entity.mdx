@@ -1,0 +1,110 @@
+---
+title: "Create entity"
+description: "Create a new entity with optional file and image uploads"
+icon: "plug"
+---
+
+## Overview
+
+`useCreateEntity` returns a function that creates a new entity. It supports both JSON and multipart form requests — the hook automatically selects multipart when images or files are included.
+
+## Usage Example
+
+```tsx
+import { useCreateEntity } from "@replyke/react-js";
+
+function NewPost() {
+  const createEntity = useCreateEntity();
+
+  const handleCreate = async () => {
+    const entity = await createEntity({
+      title: "Hello World",
+      content: "My first post",
+      keywords: ["intro", "welcome"],
+    });
+    console.log("Created:", entity.id);
+  };
+
+  return <button onClick={handleCreate}>Create Post</button>;
+}
+```
+
+### With image upload
+
+```tsx
+const entity = await createEntity({
+  title: "Photo post",
+  images: {
+    files: [imageFile],
+    options: { width: 1200, height: 800, fit: "cover" },
+  },
+});
+```
+
+## Parameters
+
+<ParamField path="foreignId" type="string">
+  An ID from your own system to link this entity to an existing item.
+</ParamField>
+
+<ParamField path="sourceId" type="string">
+  An identifier for grouping entities by source (e.g., a section of your app).
+</ParamField>
+
+<ParamField path="spaceId" type="string">
+  The ID of the space this entity belongs to.
+</ParamField>
+
+<ParamField path="title" type="string">
+  Entity title.
+</ParamField>
+
+<ParamField path="content" type="string">
+  Entity body content.
+</ParamField>
+
+<ParamField path="attachments" type="Record<string, any>[]">
+  Array of attachment objects. Flexible structure — can represent media URLs, file metadata, or any structured data.
+</ParamField>
+
+<ParamField path="keywords" type="string[]">
+  Tags or keywords for filtering and discovery.
+</ParamField>
+
+<ParamField path="mentions" type="Mention[]">
+  Users mentioned in the entity content.
+</ParamField>
+
+<ParamField path="location" type="{ latitude: number; longitude: number }">
+  Geographic location for the entity.
+</ParamField>
+
+<ParamField path="metadata" type="Record<string, any>">
+  Arbitrary project-specific data. Limited to 10 KB.
+</ParamField>
+
+<ParamField path="isDraft" type="boolean">
+  If `true`, creates the entity as a draft (not publicly visible). Default `false`.
+</ParamField>
+
+<ParamField path="excludeUserId" type="boolean">
+  If `true`, the authenticated user is not associated as the entity author.
+</ParamField>
+
+<ParamField path="requireUser" type="boolean">
+  If `true`, the request fails if no authenticated user is present.
+</ParamField>
+
+<ParamField path="images" type="{ files: File[]; options?: UploadImageOptions }">
+  Images to upload and attach. Triggers a multipart form request.
+</ParamField>
+
+<ParamField path="files" type="{ files: File[]; options?: { pathParts?: string[] } }">
+  Files to upload and attach. Triggers a multipart form request.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Entity" type="Entity">
+  The newly created entity. See [Entity data model](/data-models/entity).
+</ResponseField>

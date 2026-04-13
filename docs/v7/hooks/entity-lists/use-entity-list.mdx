@@ -1,0 +1,139 @@
+---
+title: "Use entity list"
+description: "Manage a paginated entity feed with filtering, sorting, and infinite scroll"
+icon: "cube"
+---
+
+## Overview
+
+`useEntityList` is the primary hook for building entity feeds. Each call receives a unique `listId` that namespaces its Redux state, so multiple independent lists can coexist on the same page.
+
+See [Fetching Entities](/sdk/entity-lists/fetch-entities) for a full guide on using this hook.
+
+## Usage Example
+
+```tsx
+import { useEntityList } from "@replyke/react-js";
+import { useEffect } from "react";
+
+function Feed() {
+  const {
+    entities,
+    loading,
+    hasMore,
+    fetchEntities,
+    loadMore,
+  } = useEntityList({ listId: "main-feed" });
+
+  useEffect(() => {
+    fetchEntities({}, { sortBy: "hot" }, { limit: 20, include: ["user"] });
+  }, []);
+
+  return (
+    <>
+      {entities.map((e) => <div key={e.id}>{e.title}</div>)}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+    </>
+  );
+}
+```
+
+## Props
+
+<ParamField path="listId" type="string" required>
+  Unique identifier for this list. Used to namespace Redux state. Must be stable across renders.
+</ParamField>
+
+<ParamField path="infuseData" type="(foreignId: string) => Promise<Record<string, any> | null>">
+  Optional. A function called for each entity with a `foreignId`. Its result is merged into the entity under an `infusion` key. See [Infusing Data](/sdk/entity-lists/infuse-data).
+</ParamField>
+
+## Return Values
+
+<ResponseField name="entities" type="Entity[]">
+  The current list of loaded entities.
+</ResponseField>
+
+<ResponseField name="infusedEntities" type="(Entity & { infusion: Record<string, any> })[]">
+  Entities merged with data from `infuseData`. Empty array if `infuseData` was not provided.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a fetch or load-more is in progress.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` when there are more pages to load.
+</ResponseField>
+
+<ResponseField name="fetchEntities" type="(filters, sort?, config?, options?) => void">
+  Loads the first page with the given filters, sort, and config. Debounced by default (800ms). See [Fetching Entities](/sdk/entity-lists/fetch-entities) for the full parameter reference.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Appends the next page of results. Must be called after `fetchEntities` has been invoked at least once.
+</ResponseField>
+
+<ResponseField name="createEntity" type="(props: EntityListCreateEntityProps) => Promise<Entity | undefined>">
+  Creates a new entity and inserts it into the list. Accepts the same fields as `useCreateEntity`, plus `insertPosition: "first" | "last"`.
+</ResponseField>
+
+<ResponseField name="deleteEntity" type="(props: { entityId: string }) => Promise<void>">
+  Deletes an entity and removes it from the local list state.
+</ResponseField>
+
+<ResponseField name="sortBy" type='"hot" | "top" | "new" | "controversial" | "metadata.field" | null'>
+  Current sort algorithm.
+</ResponseField>
+
+<ResponseField name="sortByReaction" type='"upvote" | "downvote" | "like" | "love" | "wow" | "sad" | "angry" | "funny" | null'>
+  Current reaction sort type (used when `sortBy` is `"top"`).
+</ResponseField>
+
+<ResponseField name="sortDir" type='"asc" | "desc" | null'>
+  Current sort direction.
+</ResponseField>
+
+<ResponseField name="sortType" type='"auto" | "numeric" | "text" | "boolean" | "timestamp" | null'>
+  Current sort type hint for metadata sorts.
+</ResponseField>
+
+<ResponseField name="timeFrame" type='"day" | "week" | "month" | "year" | null'>
+  Active time frame filter.
+</ResponseField>
+
+<ResponseField name="sourceId" type="string | null">
+  Active source ID filter (from config).
+</ResponseField>
+
+<ResponseField name="userId" type="string | null">
+  Active user ID filter.
+</ResponseField>
+
+<ResponseField name="followedOnly" type="boolean">
+  Whether the followed-only filter is active.
+</ResponseField>
+
+<ResponseField name="keywordsFilters" type="KeywordsFilters | null">
+  Active keywords filter.
+</ResponseField>
+
+<ResponseField name="titleFilters" type="TitleFilters | null">
+  Active title filter.
+</ResponseField>
+
+<ResponseField name="contentFilters" type="ContentFilters | null">
+  Active content filter.
+</ResponseField>
+
+<ResponseField name="attachmentsFilters" type="AttachmentsFilters | null">
+  Active attachments filter.
+</ResponseField>
+
+<ResponseField name="locationFilters" type="LocationFilters | null">
+  Active location filter.
+</ResponseField>
+
+<ResponseField name="metadataFilters" type="MetadataFilters | null">
+  Active metadata filter.
+</ResponseField>

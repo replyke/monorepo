@@ -1,0 +1,26 @@
+---
+title: "Sign Out"
+api: "POST /:projectId/api/v7/auth/sign-out"
+description: "Sign out the current user and invalidate the refresh token family"
+---
+
+Signs out a user by invalidating their refresh token and the entire token family associated with it. All rotated tokens from the same session are revoked, preventing future token refreshes.
+
+The endpoint always returns `204 No Content`, even if the refresh token is missing, invalid, or already expired. This ensures sign-out is always safe to call.
+
+## Body Parameters
+
+<ParamField body="refreshToken" type="string">
+  The refresh token JWT to invalidate. If omitted or `null`, the server returns
+  `204` without performing any revocation.
+</ParamField>
+
+## Response
+
+Returns `204 No Content` on success. No response body.
+
+## See Also
+
+- [`useAuth` hook](/hooks/auth/use-auth) — `signOut`
+- [`useSignOutAll` hook](/hooks/auth/use-sign-out-all)
+- [Built-in Auth guide](/sdk/authentication/built-in)

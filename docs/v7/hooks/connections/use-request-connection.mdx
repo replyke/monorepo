@@ -1,0 +1,57 @@
+---
+title: "Request connection"
+description: "Send a connection request to a user"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that sends a connection request to another user. An optional message can be included with the request. The current user must be authenticated.
+
+## Usage Example
+
+```tsx
+import { useRequestConnection } from "@replyke/react-js";
+
+function ConnectButton({ userId }: { userId: string }) {
+  const requestConnection = useRequestConnection();
+
+  const handleConnect = async () => {
+    const result = await requestConnection({ userId, message: "Let's connect!" });
+    console.log("Request sent:", result.id);
+  };
+
+  return <button onClick={handleConnect}>Connect</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user to send a connection request to.
+</ParamField>
+
+<ParamField path="message" type="string">
+  An optional message to include with the connection request.
+</ParamField>
+
+## Returns
+
+<ResponseField name="id" type="string">
+  The ID of the newly created connection record.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The status of the connection, e.g. `"pending"`.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string | undefined">
+  ISO timestamp when the request was created.
+</ResponseField>
+
+## Related
+
+- [useConnectionManager](/hooks/connections/use-connection-manager) — handles this with state tracking
+- [useAcceptConnection](/hooks/connections/use-accept-connection) — for the recipient to accept

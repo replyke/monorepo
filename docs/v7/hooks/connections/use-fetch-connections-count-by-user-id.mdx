@@ -1,0 +1,45 @@
+---
+title: "Fetch connections count by user ID"
+description: "Get the connection count for any user by their ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that fetches the total number of accepted connections for any user, identified by `userId`. This is a public endpoint — authentication is not required.
+
+## Usage Example
+
+```tsx
+import { useFetchConnectionsCountByUserId } from "@replyke/react-js";
+
+function UserStats({ userId }: { userId: string }) {
+  const fetchConnectionsCountByUserId = useFetchConnectionsCountByUserId();
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchConnectionsCountByUserId({ userId }).then((res) => setCount(res.count));
+  }, [userId]);
+
+  return <span>{count ?? "..."} connections</span>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user whose connection count to fetch.
+</ParamField>
+
+## Returns
+
+<ResponseField name="count" type="number">
+  Total number of accepted connections for the specified user.
+</ResponseField>
+
+## Related
+
+- [useFetchConnectionsCount](/hooks/connections/use-fetch-connections-count) — get count for the current user
+- [useFetchConnectionsByUserId](/hooks/connections/use-fetch-connections-by-user-id) — fetch the full list

@@ -1,0 +1,67 @@
+---
+title: "Use replies"
+description: "Fetch and paginate replies for a specific comment"
+icon: "cube"
+---
+
+## Overview
+
+`useReplies` loads replies for a specific comment from the `entityCommentsTree` managed by the nearest `CommentSectionProvider`. It fetches a page of replies when the `page` state increases above `0`.
+
+<Note>
+  Must be used inside a `CommentSectionProvider`. Replies are merged into the shared `entityCommentsTree`.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useReplies } from "@replyke/react-js";
+
+function CommentItem({ commentId }: { commentId: string }) {
+  const { replies, newReplies, loading, setPage } = useReplies({
+    commentId,
+    sortBy: "new",
+  });
+
+  return (
+    <div>
+      <button onClick={() => setPage((p) => p + 1)}>Load replies</button>
+      {[...newReplies, ...replies].map((r) => (
+        <div key={r.id}>{r.content}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Props
+
+<ParamField path="commentId" type="string" required>
+  The ID of the comment to load replies for.
+</ParamField>
+
+<ParamField path="sortBy" type="CommentsSortByOptions" required>
+  Sort order for replies: `"top"`, `"new"`, or `"controversial"`.
+</ParamField>
+
+## Return Values
+
+<ResponseField name="replies" type="(Comment & { new: boolean })[]">
+  Paginated replies (not newly submitted in this session).
+</ResponseField>
+
+<ResponseField name="newReplies" type="(Comment & { new: boolean })[]">
+  Replies submitted in this session, sorted newest-first.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while replies are being fetched.
+</ResponseField>
+
+<ResponseField name="page" type="number">
+  Current page number. Starts at `0` (no replies loaded). Increment to load replies.
+</ResponseField>
+
+<ResponseField name="setPage" type="Dispatch<SetStateAction<number>>">
+  Increment to trigger loading the next page of replies.
+</ResponseField>

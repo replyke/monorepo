@@ -1,0 +1,56 @@
+---
+title: "Ban Member"
+api: "PATCH /:projectId/api/v7/spaces/:spaceId/members/:memberId/ban"
+description: "Ban a member from a space"
+---
+
+Sets a member's status to `"banned"`. Requires the caller to be a moderator or admin. Moderators can only ban regular members. Only the **space creator** can ban admins, and the last admin cannot be banned.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="memberId" type="string" required>
+  UUID of the membership record to ban.
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="membership" type="object">
+  The updated membership record with `status: "banned"`.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Membership Not Found — 404">
+    ```json
+    { "error": "Membership not found.", "code": "space/membership-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Insufficient Permissions — 403">
+    Moderators attempting to ban another moderator or admin.
+    ```json
+    { "error": "Moderators can only remove regular members.", "code": "space/insufficient-permissions" }
+    ```
+  </Accordion>
+  <Accordion title="Creator Required — 403">
+    Non-creator attempting to ban an admin.
+    ```json
+    { "error": "Only the space creator can ban admins.", "code": "space/creator-required" }
+    ```
+  </Accordion>
+  <Accordion title="Last Admin — 400">
+    ```json
+    { "error": "Cannot remove the last admin. Promote another member to admin first.", "code": "space/last-admin" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useRemoveMember](/hooks/spaces/use-remove-member), [Unban Member](/api-reference/spaces/membership/unban-member)

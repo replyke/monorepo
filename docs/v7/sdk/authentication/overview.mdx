@@ -1,0 +1,63 @@
+---
+title: "Overview"
+description: "Auth state, sign-up/in/out, and the token model"
+---
+
+Replyke supports three authentication modes that can be used independently or together in the same project: built-in email/password auth, external auth via signed JWTs from your own auth system, and OAuth (Google, GitHub, Apple, Facebook). The SDK handles token storage, refresh, and multi-account state automatically.
+
+## In This Section
+
+<CardGroup cols={2}>
+  <Card title="Built-in Auth" icon="lock" href="/sdk/authentication/built-in">
+    Register and sign in users with email and password. Replyke manages the credentials, tokens, and password reset flow.
+  </Card>
+  <Card title="External Auth" icon="code" href="/sdk/authentication/external">
+    Bring your own auth system. Sign a JWT with your project's private key and exchange it for Replyke tokens.
+  </Card>
+  <Card title="OAuth" icon="key" href="/sdk/authentication/oauth">
+    Let users sign in with Google, GitHub, Apple, or Facebook using a redirect-based OAuth 2.0 flow.
+  </Card>
+  <Card title="Multi-Account" icon="users" href="/sdk/authentication/multi-account">
+    Allow users to be signed into multiple accounts simultaneously and switch between them.
+  </Card>
+</CardGroup>
+
+## Token Model
+
+Replyke uses a two-token system:
+
+- **Access token** — A short-lived JWT (30 minutes) included in API requests as a `Bearer` token. The SDK manages this automatically and refreshes it in the background.
+- **Refresh token** — A long-lived JWT (30 days) used to obtain new access tokens. Stored locally by the SDK's AccountManager. Refresh tokens rotate on every use; reuse of a revoked token invalidates the entire session family.
+
+You do not need to manage tokens directly. The `useAuth` hook exposes them if needed for advanced use cases.
+
+## Core Hook
+
+The `useAuth` hook is the primary interface for authentication state and actions:
+
+```tsx
+import { useAuth } from "@replyke/react-js";
+
+function AuthExample() {
+  const {
+    initialized,
+    accessToken,
+    signInWithEmailAndPassword,
+    signOut,
+  } = useAuth();
+
+  if (!initialized) return <p>Loading...</p>;
+  if (!accessToken) return <p>Not signed in.</p>;
+
+  return (
+    <button onClick={() => signOut()}>Sign out</button>
+  );
+}
+```
+
+<Note>
+  `initialized` is `false` until the SDK has attempted to restore a session from
+  the stored refresh token. Always check `initialized` before rendering
+  auth-dependent UI.
+</Note>
+

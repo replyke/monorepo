@@ -1,0 +1,25 @@
+---
+title: "Fetch Root Collection"
+api: "GET /:projectId/api/v7/collections/root"
+description: "Get or create the current user's root collection"
+---
+
+Returns the root collection for the authenticated user. If no root collection exists yet, one is created automatically with the name `"root"`.
+
+## Response
+
+Returns a [Collection](/data-models/collection) object with `parentId: null` and `isRoot: true`.
+
+<Note>
+  This endpoint is the entry point for the collections system. Call it once on load to initialize the user's collection tree. Sub-collections are fetched separately via the sub-collections endpoint.
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Server error", "code": "collection/server-error" }
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,74 @@
+---
+title: "Fetch Entity Reactions"
+api: "GET /:projectId/api/v7/entities/:entityId/reactions"
+description: "Get a paginated list of reactions on an entity"
+---
+
+Returns a paginated list of reactions for an entity, each with the reacting user's profile. Useful for displaying "liked by" lists or reaction breakdowns.
+
+No authentication required.
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  The UUID of the entity.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField query="limit" type="number" default="20">
+  Number of reactions per page. Maximum `100`.
+</ParamField>
+
+<ParamField query="reactionType" type="string">
+  Filter to a specific reaction type. One of: `upvote`, `downvote`, `like`, `love`, `wow`, `sad`, `angry`, `funny`. When omitted, all reaction types are returned.
+</ParamField>
+
+<ParamField query="sortDir" type="string" default="DESC">
+  Sort by creation time. `ASC` or `DESC`.
+</ParamField>
+
+## Response
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "reactionType": "like",
+      "userId": "uuid",
+      "targetId": "entityId",
+      "targetType": "entity",
+      "user": {
+        "id": "uuid",
+        "name": "Alice",
+        "username": "alice",
+        "avatar": "https://...",
+        "reputation": 120
+      },
+      "createdAt": "2025-01-01T00:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 42,
+    "totalPages": 3,
+    "hasMore": true
+  }
+}
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Entity not found.", "code": "entity/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

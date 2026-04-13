@@ -1,0 +1,29 @@
+---
+title: "Remove Entity Reaction"
+api: "DELETE /:projectId/api/v7/entities/:entityId/reactions"
+description: "Remove the authenticated user's reaction from an entity"
+---
+
+Removes the authenticated user's reaction from an entity. The entity's `reactionCounts` map is decremented for the removed reaction type.
+
+**Authentication required.**
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  The UUID of the entity to remove the reaction from.
+</ParamField>
+
+## Response
+
+Returns the updated [Entity](/data-models/entity) object with the new `reactionCounts`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Entity not found.", "code": "entity/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

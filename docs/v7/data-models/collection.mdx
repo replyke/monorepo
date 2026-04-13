@@ -1,0 +1,51 @@
+---
+title: "Collection"
+description: "A named folder in a user's personal save library for organizing entities"
+---
+
+## Overview
+
+A `Collection` is a user-owned, hierarchical folder used to save and organize entities. Every user has a single root collection created automatically on first access. Users can create any number of sub-collections nested under the root or under other sub-collections.
+
+Collections are private — each collection belongs to one user and is not visible to others.
+
+## Fields
+
+<ResponseField name="id" type="string">
+  Unique identifier for the collection (UUID).
+</ResponseField>
+
+<ResponseField name="projectId" type="string">
+  The project this collection belongs to.
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  The user who owns this collection.
+</ResponseField>
+
+<ResponseField name="parentId" type="string | null">
+  The ID of the parent collection. `null` for the root collection.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Display name of the collection. The root collection is always named `"root"`.
+</ResponseField>
+
+<ResponseField name="entityCount" type="number">
+  Number of entities directly saved in this collection (not counting sub-collections).
+</ResponseField>
+
+<ResponseField name="createdAt" type="string (ISO 8601)">
+  Timestamp when the collection was created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string (ISO 8601)">
+  Timestamp when the collection was last modified.
+</ResponseField>
+
+## Notes
+
+- The root collection is created lazily on the first call to `GET /:projectId/api/v7/collections/root`.
+- The root collection cannot be renamed or deleted.
+- Sub-collections can be nested to any depth.
+- Entities are linked to collections via a junction table — the same entity can be saved in multiple collections.

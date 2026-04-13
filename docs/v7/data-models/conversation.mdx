@@ -1,0 +1,50 @@
+---
+title: "Conversation"
+description: "The shape of a conversation object returned by the Chat API and SDK"
+---
+
+A `Conversation` represents a messaging thread between two or more participants. Replyke supports three conversation types: **direct** (1:1 DMs), **group** (multi-member chat), and **space** (a single shared chat channel attached to a Space).
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique conversation identifier (UUID). |
+| `projectId` | `string` | The project this conversation belongs to. |
+| `type` | `"direct" \| "group" \| "space"` | Conversation type. |
+| `name` | `string \| null` | Display name. Always `null` for direct conversations. |
+| `description` | `string \| null` | Optional description. Used for group and space conversations. |
+| `spaceId` | `string \| null` | The Space this conversation belongs to. Set only when `type` is `"space"`. |
+| `createdById` | `string \| null` | ID of the user who created the conversation. `null` for auto-created space conversations. |
+| `avatarFileId` | `string \| null` | ID of the uploaded avatar file for this conversation. |
+| `avatarFile` | `File \| undefined` | Populated avatar file object, if `avatarFileId` is set. |
+| `lastMessageAt` | `Date \| null` | Timestamp of the most recent message. Used for conversation list sorting. `null` if no messages have been sent. |
+| `postingPermission` | `"members" \| "admins" \| null` | Who can post in the conversation. Only set for `space` conversations. `null` for direct and group conversations. |
+| `metadata` | `Record<string, any>` | Custom key-value data. Limited to 1 MB. |
+| `memberCount` | `number` | Total number of active members. |
+| `currentMember` | `ConversationMember \| undefined` | The requesting user's own membership row. Included in API responses when applicable. |
+| `createdAt` | `Date` | Timestamp when the conversation was created. |
+| `updatedAt` | `Date` | Timestamp of the last update. |
+
+## ConversationPreview
+
+When listing conversations (e.g. in an inbox), the API returns `ConversationPreview` objects, which extend `Conversation` with two additional fields:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `unreadCount` | `number` | Number of messages sent after the current user's `lastReadAt`. |
+| `lastMessage` | `ChatMessage \| null` | The most recent message in the conversation, truncated to 100 characters. `null` if no messages have been sent. |
+
+## Conversation Types
+
+| Type | Description |
+|------|-------------|
+| `direct` | A private 1:1 DM between two users. Only one direct conversation can exist per user pair per project. |
+| `group` | A multi-member chat created by a user. Members can have `admin` or `member` roles. |
+| `space` | The shared chat channel for a Space. Exactly one space conversation exists per Space. Created automatically when the Space is created. |
+
+## Related
+
+- [ConversationMember](/data-models/conversation-member) — member rows linked to this conversation
+- [ChatMessage](/data-models/chat-message) — messages that belong to this conversation
+- [Space](/data-models/space) — the parent Space for `type: "space"` conversations

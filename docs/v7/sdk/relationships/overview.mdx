@@ -1,0 +1,45 @@
+---
+title: "Overview"
+description: "Add follows and connections to your app with Replyke's social graph hooks"
+---
+
+Replyke provides two distinct social relationship systems: **Follows** (one-directional) and **Connections** (mutual/bidirectional). You can use one or both depending on the social model your app needs.
+
+## Follows
+
+Follows are one-directional. A user can follow another user without requiring approval or reciprocation — similar to Twitter or Instagram's follow model.
+
+## Connections
+
+Connections are bidirectional and require mutual acceptance — similar to LinkedIn. One user sends a request; the other must accept before a connection is established. Connections go through several states: `none`, `pending-sent`, `pending-received`, `connected`, `declined-sent`, `declined-received`.
+
+## Choosing Between Follows and Connections
+
+| | Follows | Connections |
+|---|---------|-------------|
+| **Direction** | One-way | Mutual |
+| **Approval required** | No | Yes |
+| **Use case** | Content feeds, creator audiences | Professional networks, friend systems |
+| **State** | Following / not following | None → Pending → Connected / Declined |
+
+## In This Section
+
+<CardGroup cols={2}>
+  <Card title="useFollowManager" href="/sdk/relationships/use-follow-manager">
+    High-level hook for toggling follow state on a profile
+  </Card>
+  <Card title="useConnectionManager" href="/sdk/relationships/use-connection-manager">
+    High-level hook that manages the full connection lifecycle
+  </Card>
+</CardGroup>
+
+## Hooks
+
+<CardGroup cols={2}>
+  <Card title="useFollowUser (+ more)" href="/hooks/follows/use-follow-user">
+    All individual follow hooks for custom UIs
+  </Card>
+  <Card title="useRequestConnection (+ more)" href="/hooks/connections/use-request-connection">
+    All individual connection hooks for custom UIs
+  </Card>
+</CardGroup>

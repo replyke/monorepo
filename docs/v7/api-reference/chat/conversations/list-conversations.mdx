@@ -1,0 +1,56 @@
+---
+title: "List Conversations"
+api: "GET /:projectId/api/v7/conversations"
+description: "Get the current user's conversations, ordered by most recent activity"
+---
+
+Returns a cursor-paginated list of `ConversationPreview` objects for the authenticated user. Only active memberships are included. Results are ordered by `lastMessageAt` descending (conversations with no messages appear last, ordered by `createdAt`).
+
+## Query Parameters
+
+<ParamField query="types" type="string">
+  Comma-separated list of conversation types to include. Valid values: `direct`, `group`, `space`. If omitted, all types are returned. Example: `types=direct,group`
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  The `lastMessageAt` timestamp of the last item in the previous page. Used for cursor pagination. Omit for the first page.
+</ParamField>
+
+<ParamField query="cursorCreatedAt" type="string">
+  The `createdAt` timestamp of the last item in the previous page. Required together with `cursor` when paginating.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Number of conversations to return per page. Defaults to `20`. Maximum `50`.
+</ParamField>
+
+## Response
+
+<ResponseField name="conversations" type="ConversationPreview[]">
+  Array of conversation preview objects. Each item is a [Conversation](/data-models/conversation) extended with the following fields:
+
+  <Expandable title="ConversationPreview fields">
+    <ResponseField name="unreadCount" type="number">
+      Number of unread messages in this conversation for the current user.
+    </ResponseField>
+    <ResponseField name="memberCount" type="number">
+      Number of active members.
+    </ResponseField>
+    <ResponseField name="lastMessageId" type="string | null">
+      ID of the most recent message. `null` if no messages exist.
+    </ResponseField>
+    <ResponseField name="lastMessagePreview" type="string | null">
+      Content of the most recent message, truncated to 100 characters. `null` if no messages exist.
+    </ResponseField>
+    <ResponseField name="lastMessageCreatedAt" type="string | null">
+      ISO timestamp of the most recent message. `null` if no messages exist.
+    </ResponseField>
+    <ResponseField name="lastMessageUserId" type="string | null">
+      ID of the user who sent the most recent message. `null` if no messages exist.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  Whether more conversations exist beyond this page.
+</ResponseField>

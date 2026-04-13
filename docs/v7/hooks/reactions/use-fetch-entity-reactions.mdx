@@ -1,0 +1,71 @@
+---
+title: "Fetch entity reactions"
+description: "Fetch a paginated list of users who reacted to an entity"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchEntityReactions` returns a function that fetches individual reaction records for an entity. Use this to show "who reacted" lists, optionally filtered by a specific reaction type.
+
+## Usage Example
+
+```tsx
+import { useFetchEntityReactions } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function WhoUpvoted({ entityId }: { entityId: string }) {
+  const fetchReactions = useFetchEntityReactions();
+  const [reactions, setReactions] = useState([]);
+
+  useEffect(() => {
+    fetchReactions({ entityId, page: 1, reactionType: "upvote" }).then(
+      (res) => setReactions(res.data)
+    );
+  }, [entityId]);
+
+  return (
+    <ul>
+      {reactions.map((r) => <li key={r.id}>{r.user?.username}</li>)}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="entityId" type="string" required>
+  The entity to fetch reactions for.
+</ParamField>
+
+<ParamField path="page" type="number" required>
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Results per page. Default: `20`.
+</ParamField>
+
+<ParamField path="reactionType" type="ReactionType">
+  Filter to a specific reaction type.
+</ParamField>
+
+<ParamField path="sortDir" type='"asc" | "desc"'>
+  Sort direction by creation date. Default: `"desc"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="data" type="Reaction[]">
+  Array of reaction records. Each includes `id`, `userId`, `reactionType`, `targetId`, `targetType`, `createdAt`. The `user` field is populated when user data is available.
+</ResponseField>
+
+<ResponseField name="pagination" type="PaginationMetadata">
+  Pagination metadata for the result set.
+
+  - `page` — current page number
+  - `pageSize` — number of results returned
+  - `totalItems` — total number of reactions matching the query
+  - `totalPages` — total number of pages
+  - `hasMore` — whether additional pages are available
+</ResponseField>

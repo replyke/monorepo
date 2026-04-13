@@ -1,0 +1,40 @@
+---
+title: "Fetch space by short ID"
+description: "Fetch a single space by its short identifier"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchSpaceByShortId` returns a callable function that fetches a space using its `shortId`. The `shortId` is a compact, URL-safe identifier generated automatically when a space is created.
+
+## Usage Example
+
+```tsx
+import { useFetchSpaceByShortId } from "@replyke/react-js";
+
+function SpacePage({ shortId }: { shortId: string }) {
+  const fetchSpace = useFetchSpaceByShortId();
+
+  const handleFetch = async () => {
+    const space = await fetchSpace({ shortId });
+    console.log(space.name);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="shortId" type="string" required>
+  The short identifier of the space.
+</ParamField>
+
+<ParamField path="include" type='"files" | string[]'>
+  Optional. Pass `"files"` to include avatar and banner file objects.
+</ParamField>
+
+## Returns
+
+Returns a [SpaceDetailed](/data-models/space) object.
+
+For most use cases, prefer [`SpaceProvider shortId`](/sdk/spaces/provider-and-hook) prop over calling this hook directly.

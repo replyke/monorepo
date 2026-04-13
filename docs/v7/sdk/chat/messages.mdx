@@ -1,0 +1,179 @@
+---
+title: "Messages"
+description: "Send, load, edit, delete, and react to messages in a conversation"
+---
+
+This guide covers working with messages inside a conversation: loading the message history, sending new messages, editing and deleting messages, and toggling emoji reactions.
+
+## Loading Messages
+
+`useChatMessages` fetches paginated messages for a conversation. Messages are stored in Redux and kept in sync by the `ChatProvider` socket.
+
+```tsx
+import { useChatMessages } from "@replyke/react-js";
+
+function MessageList({ conversationId }: { conversationId: string }) {
+  const { messages, loading, hasMore, loadOlder } = useChatMessages({
+    conversationId,
+  });
+
+  return (
+    <div>
+      {hasMore && (
+        <button onClick={loadOlder} disabled={loading}>
+          Load older messages
+        </button>
+      )}
+      {messages.map((msg) => (
+        <div key={msg.id}>
+          <strong>{msg.user?.name}</strong>: {msg.content}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+Messages are sorted oldest-first in the returned array. `loadOlder` fetches messages older than the oldest currently loaded.
+
+To include attached files in the response, pass `includeFiles: true`:
+
+```tsx
+const { messages } = useChatMessages({ conversationId, includeFiles: true });
+```
+
+See [`useChatMessages`](/hooks/chat/messages/use-chat-messages).
+
+## Sending Messages
+
+`useSendMessage` returns an async function that sends a message and performs an optimistic insert — the message appears immediately in the UI with a temporary ID, then the temporary entry is replaced by the server-confirmed message.
+
+```tsx
+import { useSendMessage } from "@replyke/react-js";
+
+function MessageInput({ conversationId }: { conversationId: string }) {
+  const send = useSendMessage({ conversationId });
+  const [text, setText] = useState("");
+
+  const handleSend = async () => {
+    if (!text.trim()) return;
+    await send({ content: text });
+    setText("");
+  };
+
+  return (
+    <div>
+      <input value={text} onChange={(e) => setText(e.target.value)} />
+      <button onClick={handleSend}>Send</button>
+    </div>
+  );
+}
+```
+
+### Message Content Options
+
+`useSendMessage` accepts a rich set of parameters:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `content` | `string` | Plain text content |
+| `gif` | `GifData` | GIF attachment |
+| `mentions` | `Mention[]` | User mentions embedded in the message |
+| `metadata` | `Record<string, any>` | Arbitrary key-value data |
+| `quotedMessageId` | `string \| null` | ID of the message being quoted/replied to |
+| `parentMessageId` | `string \| null` | ID of the parent message (for thread replies) |
+| `files` | `File[]` | File attachments (triggers multipart upload) |
+
+### Sending with Files
+
+When `files` is provided, the hook automatically switches to a multipart form upload:
+
+```tsx
+const handleSendWithFile = async (file: File) => {
+  await send({
+    content: "Check this out",
+    files: [file],
+  });
+};
+```
+
+See [`useSendMessage`](/hooks/chat/messages/use-send-message).
+
+## Editing Messages
+
+`useEditMessage` returns a function that takes `conversationId`, `messageId`, and updated content fields. The Redux store is updated immediately on success.
+
+```tsx
+import { useEditMessage } from "@replyke/react-js";
+
+function EditableMessage({ conversationId, messageId }) {
+  const edit = useEditMessage();
+
+  const handleEdit = async (newContent: string) => {
+    await edit({ conversationId, messageId, content: newContent });
+  };
+
+  // ...
+}
+```
+
+See [`useEditMessage`](/hooks/chat/messages/use-edit-message).
+
+## Deleting Messages
+
+`useDeleteMessage` performs a soft delete. The message is removed from the local Redux store immediately; on the server, it is soft-deleted (content cleared, `userDeletedAt` set).
+
+```tsx
+import { useDeleteMessage } from "@replyke/react-js";
+
+function MessageActions({ conversationId, messageId }) {
+  const deleteMsg = useDeleteMessage();
+
+  return (
+    <button onClick={() => deleteMsg({ conversationId, messageId })}>
+      Delete
+    </button>
+  );
+}
+```
+
+See [`useDeleteMessage`](/hooks/chat/messages/use-delete-message).
+
+## Reactions
+
+`useToggleReaction` adds or removes an emoji reaction on a message. The response includes updated `reactionCounts` and `userReactions`:
+
+```tsx
+import { useToggleReaction } from "@replyke/react-js";
+
+function ReactionBar({ conversationId, messageId, reactionCounts, userReactions }) {
+  const toggle = useToggleReaction();
+
+  return (
+    <div>
+      {["👍", "❤️", "😂"].map((emoji) => (
+        <button
+          key={emoji}
+          onClick={() => toggle({ conversationId, messageId, emoji })}
+          style={{ fontWeight: userReactions.includes(emoji) ? "bold" : "normal" }}
+        >
+          {emoji} {reactionCounts[emoji] ?? 0}
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+See [`useToggleReaction`](/hooks/chat/messages/use-toggle-reaction).
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Real-time" icon="bolt" href="/sdk/chat/real-time">
+    Typing indicators, unread counts, and read receipts
+  </Card>
+  <Card title="Threads" icon="code-branch" href="/sdk/chat/threads">
+    Threaded replies on messages
+  </Card>
+</CardGroup>

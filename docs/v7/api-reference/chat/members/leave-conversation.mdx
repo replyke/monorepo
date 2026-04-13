@@ -1,0 +1,46 @@
+---
+title: "Leave Conversation"
+api: "DELETE /:projectId/api/v7/conversations/:conversationId/leave"
+description: "Leave a group or space conversation"
+---
+
+Removes the current user from a conversation. Direct conversations (`type: "direct"`) cannot be left.
+
+For group conversations, if the caller is the last `admin`, they must promote another member before leaving. The caller is evicted from the real-time room immediately.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation to leave.
+</ParamField>
+
+## Response
+
+```json
+{ "message": "Left conversation." }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Conversation not found.", "code": "chat/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Cannot Leave DM — 400 Bad Request">
+    ```json
+    { "error": "Direct conversations cannot be left.", "code": "chat/cannot-leave-dm" }
+    ```
+  </Accordion>
+  <Accordion title="Not a Member — 400 Bad Request">
+    ```json
+    { "error": "You are not an active member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Last Admin — 400 Bad Request">
+    ```json
+    { "error": "You are the last admin. Promote another member before leaving.", "code": "chat/last-admin" }
+    ```
+  </Accordion>
+</AccordionGroup>

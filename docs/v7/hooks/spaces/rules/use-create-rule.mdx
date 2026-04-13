@@ -1,0 +1,42 @@
+---
+title: "Create rule"
+description: "Create a new community rule for a space"
+icon: "plug"
+---
+
+## Overview
+
+`useCreateRule` returns a callable function for creating a new community rule. Only space admins can create rules.
+
+## Usage Example
+
+```tsx
+import { useCreateRule } from "@replyke/react-js";
+
+function AddRuleForm({ spaceId }: { spaceId: string }) {
+  const createRule = useCreateRule();
+
+  const handleSubmit = async (title: string, description: string) => {
+    const rule = await createRule({ spaceId, title, description });
+    console.log("Created rule:", rule.id);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  Short rule title.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Optional detailed description for the rule.
+</ParamField>
+
+## Returns
+
+The created Rule object with all fields including the assigned `order` position.

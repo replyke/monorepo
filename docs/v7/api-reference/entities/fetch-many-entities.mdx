@@ -1,0 +1,156 @@
+---
+title: "Fetch Many Entities"
+api: "GET /:projectId/api/v7/entities"
+description: "Get a paginated, filtered list of entities"
+---
+
+Returns a paginated list of entities for the project. Supports rich filtering by source, space, user, keywords, metadata, title, content, location, and time. Excludes drafts — use [Fetch Drafts](/api-reference/entities/fetch-drafts) for those.
+
+## Query Parameters
+
+### Pagination
+
+<ParamField query="page" type="number" default="1">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField query="limit" type="number" default="10">
+  Number of entities per page. Maximum `100`.
+</ParamField>
+
+### Sorting
+
+<ParamField query="sortBy" type="string" default="new">
+  Sort algorithm. One of:
+  - `new` — chronological (newest first)
+  - `top` — by reaction count (use `sortByReaction` to specify which type)
+  - `hot` — by computed engagement score (decays over time)
+  - `controversial` — high total votes with close up/down split
+  - `metadata.<property>` — sort by a metadata field (e.g. `metadata.memberCount`)
+</ParamField>
+
+<ParamField query="sortDir" type="string" default="DESC">
+  Sort direction. `ASC` or `DESC`.
+</ParamField>
+
+<ParamField query="sortType" type="string" default="auto">
+  When using `sortBy=metadata.*`, the type of the metadata field. One of `auto`, `numeric`, `text`, `boolean`, `timestamp`. `auto` infers the type at query time.
+</ParamField>
+
+<ParamField query="sortByReaction" type="string" default="upvote">
+  When `sortBy=top`, which reaction type to rank by. One of `upvote`, `downvote`, `like`, `love`, `wow`, `sad`, `angry`, `funny`.
+</ParamField>
+
+### Filtering
+
+<ParamField query="timeFrame" type="string">
+  Restrict to entities created within the last period. One of `hour`, `day`, `week`, `month`, `year`.
+</ParamField>
+
+<ParamField query="sourceId" type="string">
+  Filter by `sourceId`. Pass `"null"` to return entities with no `sourceId`.
+</ParamField>
+
+<ParamField query="spaceId" type="string">
+  Filter by space ID.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  Filter by the author's user ID. When this matches the authenticated user's ID, moderation-removed entities are also included (author can see their own removed posts).
+</ParamField>
+
+<ParamField query="followedOnly" type="string">
+  When `"true"`, only returns entities from users the authenticated user follows. Requires authentication.
+</ParamField>
+
+<ParamField query="keywordsFilters" type="object">
+  Filter by keywords. Pass as a JSON string or bracket-notation query params:
+  ```json
+  { "includes": ["react", "typescript"], "doesNotInclude": ["vue"] }
+  ```
+</ParamField>
+
+<ParamField query="titleFilters" type="object">
+  Filter by title content:
+  ```json
+  {
+    "hasTitle": "true",
+    "includes": "tutorial",
+    "doesNotInclude": "beginner"
+  }
+  ```
+  - `hasTitle`: `"true"` or `"false"` — filter for presence/absence of a title
+  - `includes`: substring(s) to match (case-insensitive)
+  - `doesNotInclude`: substring(s) to exclude
+</ParamField>
+
+<ParamField query="contentFilters" type="object">
+  Filter by content text. Same structure as `titleFilters` (`hasContent`, `includes`, `doesNotInclude`).
+</ParamField>
+
+<ParamField query="attachmentsFilters" type="object">
+  Filter by attachment presence:
+  ```json
+  { "hasAttachments": "true" }
+  ```
+</ParamField>
+
+<ParamField query="locationFilters" type="object">
+  Filter to entities within a radius of a point:
+  ```json
+  { "latitude": "40.7128", "longitude": "-74.0060", "radius": "5000" }
+  ```
+  `radius` is in meters.
+</ParamField>
+
+<ParamField query="metadataFilters" type="object">
+  Filter by metadata values. Supports complex conditions:
+  ```json
+  {
+    "includes": { "status": "published" },
+    "includesAny": [{ "type": "video" }, { "type": "image" }],
+    "doesNotInclude": { "hidden": true },
+    "exists": ["category"],
+    "doesNotExist": ["archivedAt"]
+  }
+  ```
+  - `includes` — all key/value pairs must match (AND)
+  - `includesAny` — at least one object must match (OR)
+  - `doesNotInclude` — none of these key/value pairs may match
+  - `exists` — keys that must be present
+  - `doesNotExist` — keys that must be absent
+</ParamField>
+
+### Optional Associations
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include in each entity:
+  - `user` — the author's user profile
+  - `space` — the space the entity belongs to
+  - `topComment` — the highest-voted comment
+  - `saved` — whether the authenticated user has saved this entity
+  - `files` — uploaded file/image attachments
+</ParamField>
+
+## Response
+
+Returns a paginated response object:
+
+```json
+{
+  "data": [ ...Entity[] ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 42,
+    "totalPages": 5,
+    "hasMore": true
+  }
+}
+```
+
+Each item in `data` is an [Entity](/data-models/entity) object. File URLs are signed and ready to use.
+
+<Note>
+  Viewing scores (`hot` sort) are updated asynchronously after each fetch. Scores use a configurable half-life that can be set per project in your project settings.
+</Note>

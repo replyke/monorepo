@@ -1,0 +1,42 @@
+---
+title: "Fetch comment by foreign ID"
+description: "Fetch a single comment by its foreign ID"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchCommentByForeignId` returns a function that fetches a comment using the foreign ID from your own system. Useful when you've stored your own identifier on a comment and need to retrieve it later.
+
+## Usage Example
+
+```tsx
+import { useFetchCommentByForeignId } from "@replyke/react-js";
+
+function MyComment({ myCommentId }: { myCommentId: string }) {
+  const fetchComment = useFetchCommentByForeignId();
+
+  const load = async () => {
+    const { comment } = await fetchComment({ foreignId: myCommentId });
+    console.log(comment);
+  };
+
+  return <button onClick={load}>Load</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="foreignId" type="string" required>
+  The foreign ID to look up.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="comment" type="Comment">
+  The fetched comment. See [Comment data model](/data-models/comment).
+</ResponseField>

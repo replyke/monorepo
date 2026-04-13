@@ -1,0 +1,46 @@
+---
+title: "Update comment"
+description: "Update a comment's text content or metadata"
+icon: "plug"
+---
+
+## Overview
+
+`useUpdateComment` returns a function that updates an existing comment. At least one of `content` or `metadata` must be provided.
+
+## Usage Example
+
+```tsx
+import { useUpdateComment } from "@replyke/react-js";
+
+function EditComment({ commentId }: { commentId: string }) {
+  const updateComment = useUpdateComment();
+
+  const save = async (newContent: string) => {
+    const updated = await updateComment({ commentId, content: newContent });
+    console.log("Updated:", updated.id);
+  };
+
+  return <button onClick={() => save("Edited content")}>Save</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="commentId" type="string" required>
+  The ID of the comment to update.
+</ParamField>
+
+<ParamField path="content" type="string">
+  New text content. Must be at least 1 character.
+</ParamField>
+
+<ParamField path="metadata" type="Record<string, any>">
+  Replacement metadata object.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Comment" type="Comment">
+  The updated comment. See [Comment data model](/data-models/comment).
+</ResponseField>

@@ -1,0 +1,35 @@
+---
+title: "Fetch Conversation"
+api: "GET /:projectId/api/v7/conversations/:conversationId"
+description: "Fetch a single conversation by ID"
+---
+
+Returns a [Conversation](/data-models/conversation) object with the caller's membership row and active member count included.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation to fetch.
+</ParamField>
+
+## Response
+
+Returns a [Conversation](/data-models/conversation) with two additional fields:
+
+<ResponseField name="currentMember" type="ConversationMember | null">
+  The calling user's membership row for this conversation. `null` if the user has no membership record.
+</ResponseField>
+
+<ResponseField name="memberCount" type="number">
+  Number of currently active members.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Conversation not found.", "code": "chat/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

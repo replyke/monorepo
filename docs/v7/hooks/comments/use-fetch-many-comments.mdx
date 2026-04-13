@@ -1,0 +1,77 @@
+---
+title: "Fetch many comments"
+description: "Fetch a paginated list of comments with filters"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchManyComments` returns a function that fetches a paginated list of comments. This is the underlying fetch function used by `useEntityComments` and `useReplies`. Use it directly when you need a custom comment list outside of those hooks.
+
+## Usage Example
+
+```tsx
+import { useFetchManyComments } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function UserComments({ userId }: { userId: string }) {
+  const fetchComments = useFetchManyComments();
+  const [comments, setComments] = useState([]);
+
+  useEffect(() => {
+    fetchComments({ userId, page: 1, limit: 10 }).then((res) =>
+      setComments(res.data)
+    );
+  }, [userId]);
+
+  return (
+    <ul>
+      {comments.map((c) => <li key={c.id}>{c.content}</li>)}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="page" type="number" required>
+  Page number (1-indexed). Must be greater than 0.
+</ParamField>
+
+<ParamField path="entityId" type="string">
+  Filter to comments on a specific entity.
+</ParamField>
+
+<ParamField path="userId" type="string">
+  Filter to comments by a specific user.
+</ParamField>
+
+<ParamField path="parentId" type="string">
+  Filter to replies of a specific parent comment.
+</ParamField>
+
+<ParamField path="sortBy" type="string">
+  Sort order: `"top"`, `"new"`, or `"controversial"`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Results per page. Must be greater than 0.
+</ParamField>
+
+<ParamField path="sourceId" type="string">
+  Filter to comments within a specific source.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="data" type="Comment[]">
+  Comments for the current page.
+</ResponseField>
+
+<ResponseField name="pagination.hasMore" type="boolean">
+  Whether there are more pages to load.
+</ResponseField>

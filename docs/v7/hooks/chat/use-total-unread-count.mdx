@@ -1,0 +1,41 @@
+---
+title: "Use total unread count"
+description: "Get the total number of unread messages across all conversations"
+icon: "cube"
+---
+
+## Overview
+
+Returns the total count of unread messages across all of the current user's conversations. This value is fetched from the server on `ChatProvider` mount and kept in sync via socket events as new messages arrive.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useTotalUnreadCount } from "@replyke/react-js";
+
+function ChatNavItem() {
+  const unread = useTotalUnreadCount();
+
+  return (
+    <div className="relative">
+      <ChatIcon />
+      {unread > 0 && (
+        <span className="badge">{unread > 99 ? "99+" : unread}</span>
+      )}
+    </div>
+  );
+}
+```
+
+## Returns
+
+<ResponseField name="number" type="number">
+  Total unread message count. Returns `0` before the first fetch completes.
+</ResponseField>
+
+## Notes
+
+- This count is accurate before the conversation list is ever loaded — useful for showing a badge in navigation without requiring the user to visit the chat screen first.
+- For integration guidance, see [Chat: Real-time](/sdk/chat/real-time).

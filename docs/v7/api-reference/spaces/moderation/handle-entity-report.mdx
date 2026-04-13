@@ -1,0 +1,99 @@
+---
+title: "Handle Entity Report"
+api: "PATCH /:projectId/api/v7/spaces/:spaceId/reports/entity/:reportId"
+description: "Resolve an entity report within a space"
+---
+
+Resolves a filed report against an entity in a space. Requires the caller to be a moderator or admin of that space.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="reportId" type="string" required>
+  UUID of the entity report to resolve.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="entityId" type="string" required>
+  UUID of the reported entity. Used when performing `remove-entity`.
+</ParamField>
+
+<ParamField body="actions" type="string[]" required>
+  One or more actions to take. Must contain at least one value. Available actions:
+  - `"remove-entity"` — marks the entity as removed via moderation
+  - `"ban-user"` — bans the target user from the space (requires `userId` and `reason`)
+  - `"dismiss"` — dismisses the report without action (requires `summary`; cannot be combined with other actions)
+</ParamField>
+
+<ParamField body="summary" type="string">
+  Summary of the action taken. Required when using `dismiss` or any non-dismiss action.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  UUID of the user to ban. Required when `ban-user` is included in `actions`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Reason for the ban. Required when `ban-user` is included in `actions`.
+</ParamField>
+
+## Response
+
+Returns `201 Created`:
+
+```json
+{ "message": "Report handled successfully", "code": "report/handled" }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Report Not Found — 404">
+    ```json
+    { "error": "Report not found", "code": "report/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Report Not in Space — 404">
+    ```json
+    { "error": "Report does not belong to this space", "code": "report/not-found-in-space" }
+    ```
+  </Accordion>
+  <Accordion title="Entity Not Found — 404">
+    ```json
+    { "error": "Entity not found", "code": "report/entity-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Entity Not in Space — 404">
+    ```json
+    { "error": "Entity does not belong to this space", "code": "report/entity-not-in-space" }
+    ```
+  </Accordion>
+  <Accordion title="User Not Found — 404">
+    ```json
+    { "error": "User not found in this project", "code": "report/user-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="User Not a Member — 404">
+    ```json
+    { "error": "User is not a member of this space", "code": "space/member-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Action Combination — 400">
+    ```json
+    { "error": "Cannot combine 'dismiss' with other actions", "code": "report/invalid-actions" }
+    ```
+  </Accordion>
+  <Accordion title="Missing Required Fields — 400">
+    ```json
+    { "error": "Summary is required for dismissing a report", "code": "report/missing-fields" }
+    ```
+    Also returned when `ban-user` is used without `userId` or `reason`:
+    ```json
+    { "error": "userId and reason are required for banning a user", "code": "report/missing-fields" }
+    ```
+  </Accordion>
+</AccordionGroup>

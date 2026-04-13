@@ -1,0 +1,90 @@
+---
+title: "Upload file"
+description: "Upload a generic file (document, video, or other) without server-side processing"
+icon: "plug"
+---
+
+## Overview
+
+Uploads a file to Replyke storage without any server-side processing. The raw file is stored and a proxy URL is returned. Use this for PDFs, videos, Office documents, or any file type where you don't need variant generation.
+
+For images that need resizing or format conversion, use [`useUploadImage`](/hooks/storage/use-upload-image) instead.
+
+<Note>Requires an authenticated user. The hook uses the private axios instance and will throw if no session is active.</Note>
+
+## Usage Example
+
+```tsx
+import { useUploadFile } from "@replyke/react-js";
+
+function DocumentUploader({ entityId }: { entityId: string }) {
+  const uploadFile = useUploadFile();
+
+  const handleFile = async (file: File) => {
+    const result = await uploadFile(file, ["documents", entityId], {
+      entityId,
+      metadata: { label: "Attachment" },
+    });
+
+    console.log(result.publicPath); // Use this URL to reference the file
+  };
+
+  return <input type="file" onChange={e => e.target.files && handleFile(e.target.files[0])} />;
+}
+```
+
+## Parameters
+
+`uploadFile(file, pathParts, options?)` accepts three arguments:
+
+<ParamField path="file" type="BrowserFile | RNFile" required>
+  The file to upload. In the browser, pass a standard `File` object. In React Native, pass `{ uri, name, type? }`.
+</ParamField>
+
+<ParamField path="pathParts" type="string[]" required>
+  Storage path segments. The file is stored under the joined path, with a UUID sub-folder appended automatically for uniqueness. For example, `["documents", "user-123"]` stores the file at `documents/user-123/<uuid>/<filename>`.
+</ParamField>
+
+<ParamField path="options" type="UploadFileOptions">
+  Optional associations and metadata.
+</ParamField>
+
+### Options
+
+<ParamField body="entityId" type="string">
+  Associates the file with an entity. The file is deleted when the entity is deleted.
+</ParamField>
+
+<ParamField body="commentId" type="string">
+  Associates the file with a comment. The file is deleted when the comment is deleted.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Associates the file with a space.
+</ParamField>
+
+<ParamField body="position" type="number">
+  Display order when a record has multiple attachments. Defaults to `0`.
+</ParamField>
+
+<ParamField body="metadata" type="Record<string, any>">
+  Custom key-value data stored alongside the file record.
+</ParamField>
+
+## Returns
+
+The hook returns the `uploadFile` function directly (no state wrappers). The function returns a `Promise<UploadResponse>`:
+
+```ts
+{
+  fileId: string;
+  type: "image" | "video" | "document" | "other"; // Inferred from MIME type
+  relativePath: string;    // Internal storage path
+  publicPath: string;      // Proxy URL for client access
+  size: number;            // Bytes
+  mimeType: string;
+  createdAt: string;       // ISO 8601
+}
+```
+
+<Note>The `type` field is inferred automatically from the file's MIME type. PDFs and Office documents become `"document"`, video files become `"video"`, images become `"image"`, and everything else becomes `"other"`.</Note>

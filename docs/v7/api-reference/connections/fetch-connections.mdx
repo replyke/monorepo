@@ -1,0 +1,62 @@
+---
+title: "Fetch Connections"
+api: "GET /:projectId/api/v7/connections"
+description: "Get a paginated list of the authenticated user's accepted connections"
+---
+
+Returns a paginated list of accepted connections for the authenticated user. Each entry includes the connected user's public profile. Unlike the [user-scoped endpoint](/api-reference/users/connections/get-connections), this route always returns data for the current authenticated user.
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number for pagination. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Number of results per page. Defaults to `20`. Max `100`.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200` with a paginated response:
+
+<ResponseField name="data" type="array">
+  Array of connection entries.
+  <Expandable title="item properties">
+    <ResponseField name="id" type="string">
+      Connection record ID.
+    </ResponseField>
+    <ResponseField name="connectedUser" type="object">
+      Public profile of the connected user (the other party). Sensitive fields are excluded.
+    </ResponseField>
+    <ResponseField name="connectedAt" type="string">
+      ISO timestamp of when the connection was accepted.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata.
+  <Expandable title="properties">
+    <ResponseField name="page" type="number">
+      Current page number.
+    </ResponseField>
+    <ResponseField name="pageSize" type="number">
+      Number of items per page.
+    </ResponseField>
+    <ResponseField name="totalItems" type="number">
+      Total number of accepted connections.
+    </ResponseField>
+    <ResponseField name="totalPages" type="number">
+      Total number of pages.
+    </ResponseField>
+    <ResponseField name="hasMore" type="boolean">
+      Whether there are more pages after the current one.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## See Also
+
+- [`useFetchConnections` hook](/hooks/connections/use-fetch-connections)
+- [Get Connections (by user ID)](/api-reference/users/connections/get-connections)

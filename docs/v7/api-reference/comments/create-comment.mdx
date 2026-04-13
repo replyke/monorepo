@@ -1,0 +1,94 @@
+---
+title: "Create Comment"
+api: "POST /:projectId/api/v7/comments"
+description: "Create a new comment or reply on an entity"
+---
+
+Creates a new comment on an entity, or a reply to an existing comment. The comment is attributed to the authenticated user. Notifications are sent to the entity owner, parent comment author (for replies), and mentioned users.
+
+**Authentication required.**
+
+## Body Parameters
+
+<ParamField body="entityId" type="string" required>
+  The UUID of the entity this comment belongs to.
+</ParamField>
+
+<ParamField body="content" type="string">
+  The text content of the comment. At least one of `content`, `gif`, or `attachments` must be provided.
+</ParamField>
+
+<ParamField body="gif" type="object">
+  A GIF to attach to the comment. At least one of `content`, `gif`, or `attachments` must be provided.
+
+  ```json
+  {
+    "id": "gif-id",
+    "altText": "laughing cat",
+    "gifUrl": "https://media.giphy.com/...",
+    "gifPreviewUrl": "https://media.giphy.com/...",
+    "url": "https://giphy.com/...",
+    "aspectRatio": "16:9"
+  }
+  ```
+</ParamField>
+
+<ParamField body="attachments" type="object[]">
+  An array of generic attachment objects. At least one of `content`, `gif`, or `attachments` must be provided.
+</ParamField>
+
+<ParamField body="parentId" type="string">
+  The UUID of the parent comment. When provided, this comment is treated as a reply to that comment. The parent comment's author receives a reply notification.
+</ParamField>
+
+<ParamField body="referencedCommentId" type="string">
+  The UUID of a comment being quoted or referenced. Used for quote-replies.
+</ParamField>
+
+<ParamField body="foreignId" type="string">
+  Your application's identifier for this comment.
+</ParamField>
+
+<ParamField body="mentions" type="object[]">
+  Users or spaces mentioned in the comment. Each mentioned user receives an in-app notification.
+  - `{ type: "user", id: string, username: string, foreignId?: string }`
+  - `{ type: "space", id: string, slug: string }`
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  A free-form JSON object for any custom data your application needs alongside the comment.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Attribute the comment to a specific user. **Service or master key only.** Useful for backfilling comments from external systems.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601 datetime to backfill a creation timestamp. **Service or master key only.**
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601 datetime for `updatedAt`. Requires `createdAt`. Must be ≥ `createdAt`. **Service or master key only.**
+</ParamField>
+
+## Response
+
+Returns `201 Created` with the new [Comment](/data-models/comment) object, populated with the author's user profile.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Entity Not Found — 404">
+    ```json
+    { "error": "Entity not found", "code": "comment/entity-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Missing User — 400">
+    ```json
+    { "error": "Missing user ID", "code": "comment/missing-user-id" }
+    ```
+  </Accordion>
+  <Accordion title="No Content — 400">
+    Returned when none of `content`, `gif`, or `attachments` is provided.
+  </Accordion>
+</AccordionGroup>

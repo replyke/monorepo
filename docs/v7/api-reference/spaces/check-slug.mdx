@@ -1,0 +1,21 @@
+---
+title: "Check Slug Availability"
+api: "GET /:projectId/api/v7/spaces/check-slug"
+description: "Check whether a space slug is available in the project"
+---
+
+Checks if a slug is available for use in the current project. Useful for real-time validation in space creation forms.
+
+## Query Parameters
+
+<ParamField query="slug" type="string" required>
+  The slug to check. Must match the slug pattern (letters, numbers, hyphens, underscores).
+</ParamField>
+
+## Response
+
+<ResponseField name="available" type="boolean">
+  `true` if the slug is not in use.
+</ResponseField>
+
+See also: [useCheckSlugAvailability](/hooks/spaces/use-check-slug-availability)

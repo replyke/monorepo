@@ -1,0 +1,38 @@
+---
+title: "Publish draft"
+description: "Publish a draft entity, making it publicly visible"
+icon: "plug"
+---
+
+## Overview
+
+`usePublishDraft` returns a function that publishes a draft entity. After publishing, `entity.isDraft` becomes `false` and the entity is visible to other users.
+
+## Usage Example
+
+```tsx
+import { usePublishDraft } from "@replyke/react-js";
+
+function PublishButton({ entityId }: { entityId: string }) {
+  const publishDraft = usePublishDraft();
+
+  const handlePublish = async () => {
+    const entity = await publishDraft({ entityId });
+    console.log("Published, isDraft:", entity.isDraft); // false
+  };
+
+  return <button onClick={handlePublish}>Publish</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="entityId" type="string" required>
+  The ID of the draft entity to publish.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Entity" type="Entity">
+  The published entity with `isDraft: false`. See [Entity data model](/data-models/entity).
+</ResponseField>

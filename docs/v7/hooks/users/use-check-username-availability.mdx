@@ -1,0 +1,49 @@
+---
+title: "Check username availability"
+description: "Check whether a username is available before setting it"
+icon: "plug"
+---
+
+## Overview
+
+`useCheckUsernameAvailability` returns a function that checks whether a given username is available in the project. Use this to validate a username in real time before calling `updateUser`.
+
+## Usage Example
+
+```tsx
+import { useCheckUsernameAvailability } from "@replyke/react-js";
+import { useState } from "react";
+
+function UsernameInput() {
+  const checkAvailability = useCheckUsernameAvailability();
+  const [available, setAvailable] = useState<boolean | null>(null);
+
+  const handleChange = async (username: string) => {
+    if (username.length < 3) return;
+    const result = await checkAvailability({ username });
+    setAvailable(result.available);
+  };
+
+  return (
+    <div>
+      <input onChange={(e) => handleChange(e.target.value)} />
+      {available === true && <span>Available</span>}
+      {available === false && <span>Taken</span>}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="username" type="string" required>
+  The username to check.
+</ParamField>
+
+## Returns
+
+<ResponseField name="available" type="boolean">
+  `true` if the username is available, `false` if it is already taken.
+</ResponseField>

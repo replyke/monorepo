@@ -1,0 +1,19 @@
+---
+title: "Fetch Following Count"
+api: "GET /:projectId/api/v7/follows/following-count"
+description: "Get the number of users the authenticated user follows"
+---
+
+Returns the total number of users that the authenticated user is following.
+
+## Response
+
+On success, returns HTTP `200`:
+
+<ResponseField name="count" type="number">
+  Total number of users the authenticated user follows.
+</ResponseField>
+
+## See Also
+
+- [`useFetchFollowingCount` hook](/hooks/follows/use-fetch-following-count)

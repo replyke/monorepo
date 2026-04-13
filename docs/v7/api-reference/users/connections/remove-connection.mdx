@@ -1,0 +1,71 @@
+---
+title: "Remove Connection"
+api: "DELETE /:projectId/api/v7/users/:userId/connection"
+description: "Remove, withdraw, or decline a connection by user ID"
+---
+
+Removes the connection relationship between the authenticated user and the specified user. The behavior depends on the current connection state:
+
+- **Pending (sent by current user)** — withdraws the request (record is deleted).
+- **Pending (sent by other user)** — declines the request (status updated to `"declined"`).
+- **Accepted** — disconnects both users (record is deleted).
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Replyke user ID (UUID) of the other user.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200`.
+
+**When withdrawn or disconnected:**
+
+<ResponseField name="message" type="string">
+  Human-readable description of the action taken.
+</ResponseField>
+
+<ResponseField name="action" type="string">
+  `"withdraw"` or `"disconnect"`.
+</ResponseField>
+
+**When declined:**
+
+<ResponseField name="id" type="string">
+  Connection record ID.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  `"declined"`.
+</ResponseField>
+
+<ResponseField name="respondedAt" type="string">
+  ISO timestamp of when the request was declined.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Self-Disconnect — 400">
+    ```json
+    {
+      "error": "Cannot disconnect from yourself",
+      "code": "connection/self-disconnect"
+    }
+    ```
+  </Accordion>
+  <Accordion title="No Connection Found — 404">
+    ```json
+    {
+      "error": "No connection found between these users that can be removed.",
+      "code": "connection/not-found"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useRemoveConnectionByUserId` hook](/hooks/connections/use-remove-connection-by-user-id)
+- [Remove Connection by ID](/api-reference/connections/remove-connection) — remove by connection ID instead

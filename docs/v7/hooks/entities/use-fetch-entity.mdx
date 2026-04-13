@@ -1,0 +1,42 @@
+---
+title: "Fetch entity"
+description: "Fetch a single entity by its Replyke entity ID"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchEntity` returns a function that fetches a single entity by its Replyke entity ID. Use this for on-demand fetches outside of `EntityProvider`.
+
+## Usage Example
+
+```tsx
+import { useFetchEntity } from "@replyke/react-js";
+
+function EntityLoader({ entityId }: { entityId: string }) {
+  const fetchEntity = useFetchEntity();
+
+  const load = async () => {
+    const entity = await fetchEntity({ entityId, include: ["user", "topComment"] });
+    console.log(entity);
+  };
+
+  return <button onClick={load}>Load Entity</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="entityId" type="string" required>
+  The Replyke entity ID to fetch.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Optional. Populate related fields. Accepted values: `"user"`, `"space"`, `"topComment"`, `"saved"`, `"files"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Entity" type="Entity">
+  The fetched entity. See [Entity data model](/data-models/entity).
+</ResponseField>

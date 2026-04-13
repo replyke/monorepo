@@ -1,0 +1,44 @@
+---
+title: "Fetch entity by short ID"
+description: "Fetch a single entity by its auto-generated short ID"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchEntityByShortId` returns a function that fetches an entity by its `shortId` — the auto-generated short identifier that Replyke assigns to every entity. Short IDs are useful for building readable sharing URLs.
+
+## Usage Example
+
+```tsx
+import { useFetchEntityByShortId } from "@replyke/react-js";
+import { useParams } from "react-router-dom";
+
+function SharePage() {
+  const { shortId } = useParams<{ shortId: string }>();
+  const fetchEntity = useFetchEntityByShortId();
+
+  const load = async () => {
+    const entity = await fetchEntity({ shortId });
+    console.log(entity);
+  };
+
+  return <button onClick={load}>Load Shared Entity</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="shortId" type="string" required>
+  The short ID to look up. This is the value from `entity.shortId`.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Optional. Populate related fields. Accepted values: `"user"`, `"space"`, `"topComment"`, `"saved"`, `"files"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Entity" type="Entity">
+  The fetched entity. See [Entity data model](/data-models/entity).
+</ResponseField>

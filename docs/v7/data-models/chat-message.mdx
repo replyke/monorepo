@@ -1,0 +1,96 @@
+---
+title: "ChatMessage"
+description: "The shape of a chat message object returned by the Chat API and SDK"
+---
+
+A `ChatMessage` represents a single message in a conversation. Messages support text content, GIF attachments, file attachments, @mentions, emoji reactions, threading (replies to a parent message), and quoting.
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique message identifier (UUID). |
+| `localId` | `string \| undefined` | Locally-generated UUID echoed by the server. Never stored in the database. Used for optimistic deduplication — matching a temporary local entry to the confirmed server response. |
+| `projectId` | `string` | The project this message belongs to. |
+| `conversationId` | `string` | ID of the conversation this message is in. |
+| `userId` | `string \| null` | ID of the user who sent the message. `null` if the sender's account has since been deleted. |
+| `user` | `User \| null` | The sender's user profile. `null` when `userId` is `null` (account deleted). |
+| `content` | `string \| null` | Text content of the message. `null` for GIF-only or file-only messages. |
+| `gif` | `GifData \| null` | GIF attachment data. `null` if no GIF was attached. |
+| `mentions` | `Mention[]` | Array of @mentions embedded in the message. |
+| `files` | `File[] \| undefined` | File attachments. Only populated when the hook is called with `includeFiles: true`. Omitted by default to keep payloads small. |
+| `metadata` | `Record<string, any>` | Custom key-value data. Limited to 10 KB. |
+| `parentMessageId` | `string \| null` | ID of the parent message if this is a thread reply. Thread replies are excluded from the main conversation stream. |
+| `parentMessage` | `ChatMessage \| null \| undefined` | The parent message for thread replies. |
+| `quotedMessageId` | `string \| null` | ID of a message being quoted. The message remains in the main stream but renders an inline preview of the quoted content. |
+| `quotedMessage` | `ChatMessage \| null \| undefined` | The quoted message, populated one level deep. |
+| `threadReplyCount` | `number` | Number of replies in this message's thread. Incremented on reply creation; never decremented. |
+| `reactionCounts` | `Record<string, number>` | Emoji reaction counts, keyed by emoji. Computed server-side (e.g. `{ "👍": 3, "❤️": 1 }`). |
+| `userReactions` | `string[]` | Emojis the requesting user has reacted with on this message. |
+| `editedAt` | `Date \| null` | Timestamp when the message was last edited. `null` if never edited. |
+| `userDeletedAt` | `Date \| null` | Timestamp when the sender deleted the message. Deleted messages are soft-deleted — the row is kept as a `[Message deleted]` placeholder with content cleared. |
+| `moderationStatus` | `"approved" \| "removed" \| null` | Moderation status. `"removed"` messages are excluded from default queries. |
+| `moderatedAt` | `Date \| null` | Timestamp when moderation action was taken. |
+| `moderatedById` | `string \| null` | ID of the moderator (user or client). |
+| `moderatedByType` | `"client" \| "user" \| null` | Whether the moderator was a client (dashboard/API key) or a user. |
+| `moderationReason` | `string \| null` | Optional reason recorded with the moderation action. |
+| `createdAt` | `Date` | Timestamp when the message was sent. |
+| `updatedAt` | `Date` | Timestamp of the last update to this record. |
+
+## Client-only Fields
+
+These fields are never sent by the server. They exist only in the SDK's local state.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `sendFailed` | `boolean \| undefined` | Set to `true` by the SDK when a send request fails. Used to render a failed-send indicator on the optimistic message entry. |
+
+## Nested Types
+
+### GifData
+
+The `gif` field uses this shape when a GIF is attached:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | GIF provider ID. |
+| `url` | `string` | Landing page URL for the GIF. |
+| `gifUrl` | `string` | Direct URL to the animated GIF. |
+| `gifPreviewUrl` | `string` | URL to a static preview image. |
+| `altText` | `string \| undefined` | Accessibility description. |
+| `aspectRatio` | `number` | Width / height ratio for layout purposes. |
+
+### Mention
+
+Each entry in the `mentions` array is one of:
+
+**UserMention**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | `"user"` | Discriminant. |
+| `id` | `string` | Replyke user ID. |
+| `foreignId` | `string \| null \| undefined` | Your app's user ID, if set. |
+| `username` | `string` | The @username at time of mention. |
+
+**SpaceMention**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | `"space"` | Discriminant. |
+| `id` | `string` | Space ID. |
+| `slug` | `string` | The space's slug at time of mention. |
+
+## Soft Deletion
+
+When a user deletes their own message, the row is retained as a placeholder. `userDeletedAt` is set and the content, GIF, mentions, and metadata are cleared by the server. This preserves thread structure — a deleted parent message still anchors its thread replies.
+
+<Note>
+  Moderator-removed messages (`moderationStatus: "removed"`) are excluded from all default API responses. They are not returned to clients.
+</Note>
+
+## Related
+
+- [Conversation](/data-models/conversation) — the conversation this message belongs to
+- [ConversationMember](/data-models/conversation-member) — membership records that track read state
+- [File](/data-models/file) — file attachments linked to a message

@@ -1,0 +1,95 @@
+---
+title: "Introduction"
+description: "Replyke is infrastructure for user-powered applications — auth, social graph, content, chat, community spaces, and more, pre-built and ready to integrate."
+icon: "house"
+---
+
+Most applications today are user-powered. Users create content, react to each other, follow people they care about, join communities, and send messages. Building this infrastructure from scratch — the database tables, the authorization rules, the real-time connections, the moderation tools — takes months and produces code you'll maintain forever.
+
+Replyke is that infrastructure. It provides the complete set of social primitives that user-powered applications are built on, pre-configured and ready to integrate via a React/React Native SDK or a direct REST API.
+
+## What's Included
+
+Replyke ships with every building block a user-powered application needs:
+
+<CardGroup cols={3}>
+  <Card title="Auth & Identity" icon="key">
+    Built-in email/password auth, OAuth (Google, GitHub, and more), external JWT integration for bringing your own auth system, and multi-account support.
+  </Card>
+  <Card title="Entities" icon="file-lines">
+    The core content unit — posts, articles, listings, anything your users create. Comes with votes, reactions, view tracking, file attachments, drafts, and publishing workflows.
+  </Card>
+  <Card title="Comments" icon="comments">
+    Threaded discussions on any entity. Nested replies, votes, emoji reactions, GIF support, @mentions, and moderation built in.
+  </Card>
+  <Card title="Spaces" icon="layer-group">
+    Hierarchical community spaces with membership, role-based permissions, moderation tools, rules, space-level chat, and a digest/newsletter system.
+  </Card>
+  <Card title="Chat" icon="message">
+    Real-time 1:1 and group conversations with message reactions, threaded replies, read state, typing indicators, and moderation.
+  </Card>
+  <Card title="Social Graph" icon="users">
+    Unidirectional follows and bidirectional connection requests (friend-style). Full follower/following counts, status checks, and bulk queries.
+  </Card>
+  <Card title="Collections" icon="bookmark">
+    User-owned bookmarking and folder system for saving entities. Sub-collections, entity management, and saved-state checks.
+  </Card>
+  <Card title="App Notifications" icon="bell">
+    In-app notification system for users. Delivered via webhook to your server for push bridging, email relay, or any downstream action.
+  </Card>
+  <Card title="Semantic Search & AI" icon="magnifying-glass">
+    Automatic content embedding for entities, comments, messages, users, and spaces. Enables semantic search across all content types and an AI-powered ask endpoint that synthesizes answers from your data.
+  </Card>
+  <Card title="Storage" icon="hard-drive">
+    File and image uploads with server-side processing. Used for entity attachments, user avatars, banner images, and chat attachments.
+  </Card>
+  <Card title="Moderation" icon="shield">
+    Report flows for entities, comments, and chat messages. Space-level moderation actions, ban management, and report resolution tools.
+  </Card>
+  <Card title="Reactions" icon="face-smile">
+    Emoji reactions on entities and comments. Six reaction types out of the box (like, love, wow, sad, angry, funny), with counts and per-user state.
+  </Card>
+</CardGroup>
+
+## How It Works
+
+Every Replyke project gets a hosted API endpoint. Your application talks to that endpoint — either through the React/React Native SDK (which handles tokens, state, and real-time automatically) or directly via the REST API.
+
+All data is scoped to your project. Users, entities, conversations, and spaces exist only within your project's namespace. You can have multiple projects — a staging environment, separate apps, or white-labeled products — each fully isolated.
+
+<Note>
+  Replyke uses a project-scoped architecture. All API paths include a `projectId`. Your project ID is available in the dashboard.
+</Note>
+
+## Auth Flexibility
+
+Replyke does not force you into one authentication model. You choose how users are identified:
+
+- **Built-in auth** — Replyke manages the full user identity: email/password sign-up, password reset, OAuth providers. No external auth system needed.
+- **External auth** — Your backend issues a signed JWT, and Replyke automatically creates or matches a user from it. Keep your existing auth stack and add Replyke alongside it.
+- **OAuth** — Sign in with Google, GitHub, or other configured providers. Supports linking multiple OAuth identities to a single account.
+
+See [Authentication](/authentication) for a full conceptual overview.
+
+## Get Started
+
+<CardGroup cols={2}>
+  <Card title="SDK Quick Start" icon="rocket" href="/sdk/getting-started">
+    Install `@replyke/react-js` or `@replyke/react-native` and get your first feature running in minutes.
+  </Card>
+  <Card title="Integration Options" icon="plug" href="/integration-options">
+    Learn about the SDK, raw REST API, and Redux integration options — and choose the right path for your project.
+  </Card>
+  <Card title="Authentication" icon="lock" href="/authentication">
+    Built-in, external, and OAuth auth models explained. Understand how user identity flows through Replyke.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/getting-started">
+    Complete REST API documentation — every endpoint, every field.
+  </Card>
+  <Card title="Data Models" icon="table" href="/data-models/user">
+    TypeScript interfaces for every object your app works with: users, entities, comments, conversations, and more.
+  </Card>
+  <Card title="UI Components" icon="puzzle-piece" href="/components/overview">
+    Pre-built, fully customizable comment sections and notification UI installed directly into your project via CLI.
+  </Card>
+</CardGroup>

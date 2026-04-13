@@ -1,0 +1,67 @@
+---
+title: "Send Verification Email"
+api: "POST /:projectId/api/v7/auth/send-verification-email"
+description: "Send an email verification token or link to the authenticated user"
+---
+
+Sends a verification email to the authenticated user's registered email address. The token or link expires after **5 minutes**.
+
+Requires a valid user access token. Returns immediately with `{ success: true }` if the user is already verified.
+
+## Body Parameters
+
+All parameters are optional.
+
+<ParamField body="mode" type='"code" | "link"' default='"code"'>
+  Delivery mode.
+
+  - `"code"` — The email contains a short token the user types into your app. Call the [Verify Email](/api-reference/auth/verify-email) endpoint to complete verification.
+  - `"link"` — The email contains a clickable button. When clicked, the server verifies the token and redirects the user (or renders a hosted confirmation page).
+</ParamField>
+
+<ParamField body="tokenFormat" type='"hex" | "numeric" | "alpha" | "alphanumeric"' default='"hex"'>
+  Character set used to generate the token.
+
+  | Value | Example | Notes |
+  |-------|---------|-------|
+  | `"hex"` | `a3f9c2...` | 64-character hex string. `tokenLength` is ignored. |
+  | `"numeric"` | `048291` | Digits only (0–9). Good for OTP-style inputs. |
+  | `"alpha"` | `GXRTPK` | Uppercase letters only (A–Z). |
+  | `"alphanumeric"` | `B4KR9Z` | Uppercase letters and digits. |
+</ParamField>
+
+<ParamField body="tokenLength" type="number" default="6">
+  Length of the generated token. Must be an integer between `4` and `12`. Ignored when `tokenFormat` is `"hex"`.
+</ParamField>
+
+<ParamField body="redirectUrl" type="string">
+  A URL to redirect the user to after they click the verification link. Only used when `mode` is `"link"`.
+
+  On success the query parameter `?verified=true` is appended. On failure, `?verified=false&error=invalid-or-expired-token` is appended instead.
+
+  If omitted, the server renders a hosted success/error page.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` when the request is processed without a server error (including when the user is already verified).
+</ResponseField>
+
+## Error Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `auth/not-password-user` | 400 | The authenticated user does not have an email/password account. |
+
+<Note>
+  Each call generates a new token. A previous unused token remains valid in
+  Redis until it either expires or the new one is consumed first.
+</Note>
+
+## See Also
+
+- [`useSendVerificationEmail` hook](/hooks/auth/use-send-verification-email)
+- [Verify Email endpoint](/api-reference/auth/verify-email)
+- [Verify Email Link endpoint](/api-reference/auth/verify-email-link)
+- [Built-in Auth guide](/sdk/authentication/built-in)

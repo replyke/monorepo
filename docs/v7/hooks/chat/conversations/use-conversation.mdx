@@ -1,0 +1,68 @@
+---
+title: "Use conversation"
+description: "Fetch, update, and delete a single conversation"
+icon: "cube"
+---
+
+## Overview
+
+Fetches the full details of a single conversation by ID and provides `update` and `deleteConversation` actions. The conversation is loaded once on mount if it is not already in Redux state, and kept in sync by `conversation:updated` socket events.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useConversation } from "@replyke/react-js";
+
+function ConversationHeader({ conversationId }: { conversationId: string }) {
+  const { conversation, loading, update, deleteConversation } = useConversation({
+    conversationId,
+  });
+
+  if (loading || !conversation) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h2>{conversation.name ?? "Direct Message"}</h2>
+      <button onClick={() => update({ name: "Renamed Group" })}>Rename</button>
+      <button onClick={deleteConversation}>Delete</button>
+    </div>
+  );
+}
+```
+
+## Props
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation to fetch and manage.
+</ParamField>
+
+## Returns
+
+<ResponseField name="conversation" type="Conversation | null">
+  The full [Conversation](/data-models/conversation) object, or `null` while loading or if not found.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while the initial fetch is in progress.
+</ResponseField>
+
+<ResponseField name="update" type="(params: { name?: string; description?: string; avatarFileId?: string | null; postingPermission?: 'members' | 'admins' }) => Promise<Conversation | undefined>">
+  Updates the conversation. Dispatches the updated conversation to Redux on success. `conversationId` is already bound from the hook props and should not be passed here.
+
+  | Field | Type | Description |
+  |-------|------|-------------|
+  | `name` | `string` | New conversation name |
+  | `description` | `string` | New description |
+  | `avatarFileId` | `string \| null` | File ID for the avatar image |
+  | `postingPermission` | `'members' \| 'admins'` | Who can post (space chats only) |
+</ResponseField>
+
+<ResponseField name="deleteConversation" type="() => Promise<void>">
+  Deletes the conversation. Does not update local Redux state — the caller is responsible for navigating away or removing the conversation from local lists.
+</ResponseField>
+
+## Notes
+
+- For integration guidance, see [Chat: Conversations](/sdk/chat/conversations).

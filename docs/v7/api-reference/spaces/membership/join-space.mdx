@@ -1,0 +1,52 @@
+---
+title: "Join Space"
+api: "POST /:projectId/api/v7/spaces/:spaceId/join"
+description: "Join a space or submit a membership request"
+---
+
+Joins a space. If the space has `requireJoinApproval: true`, the membership is created with `status: "pending"` until approved. Otherwise it is immediately `active`.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space to join.
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="membership" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">Membership record UUID.</ResponseField>
+    <ResponseField name="spaceId" type="string">Space UUID.</ResponseField>
+    <ResponseField name="userId" type="string">User UUID.</ResponseField>
+    <ResponseField name="role" type="string">`"member"`</ResponseField>
+    <ResponseField name="status" type="string">`"pending"` or `"active"`</ResponseField>
+    <ResponseField name="joinedAt" type="Date">Creation timestamp.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Space Not Found — 404">
+    ```json
+    { "error": "Space not found.", "code": "space/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Banned — 403">
+    ```json
+    { "error": "You are banned from this space.", "code": "space/banned" }
+    ```
+  </Accordion>
+  <Accordion title="Already a Member — 409">
+    ```json
+    { "error": "You are already a member of this space.", "code": "space/already-member" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useJoinSpace](/hooks/spaces/use-join-space)

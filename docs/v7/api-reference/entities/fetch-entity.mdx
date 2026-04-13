@@ -1,0 +1,39 @@
+---
+title: "Fetch Entity"
+api: "GET /:projectId/api/v7/entities/:entityId"
+description: "Get a single entity by its Replyke ID"
+---
+
+Returns a single entity by its Replyke UUID. Always returns the entity regardless of moderation status, so the client can display the appropriate moderation state. Drafts are only returned to their author (or with a service/master key).
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  The UUID of the entity to fetch.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include:
+  - `user` — the author's user profile
+  - `space` — the space the entity belongs to
+  - `topComment` — the highest-voted comment
+  - `saved` — whether the authenticated user has saved this entity (requires auth)
+  - `files` — uploaded file/image attachments
+</ParamField>
+
+## Response
+
+Returns an [Entity](/data-models/entity) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Entity not found", "code": "entity/not-found" }
+    ```
+    Also returned for draft entities when the requester is not the author.
+  </Accordion>
+</AccordionGroup>

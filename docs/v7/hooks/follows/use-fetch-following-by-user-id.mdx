@@ -1,0 +1,80 @@
+---
+title: "Fetch following by user ID"
+description: "Fetch the following list for any user by their ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that fetches the paginated list of users that a given user follows, identified by `userId`. This is a public endpoint — authentication is not required.
+
+For fetching your own following list, see `useFetchFollowing`.
+
+## Usage Example
+
+```tsx
+import { useFetchFollowingByUserId } from "@replyke/react-js";
+
+function UserFollowing({ userId }: { userId: string }) {
+  const fetchFollowingByUserId = useFetchFollowingByUserId();
+  const [following, setFollowing] = useState([]);
+
+  useEffect(() => {
+    fetchFollowingByUserId({ userId, page: 1 }).then((res) => {
+      setFollowing(res.data);
+    });
+  }, [userId]);
+
+  return (
+    <ul>
+      {following.map(({ followId, user }) => (
+        <li key={followId}>{user.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user whose following list to fetch.
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number to fetch. Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Number of results per page. Defaults to `20`.
+</ParamField>
+
+## Returns
+
+Returns a `PaginatedResponse` containing an array of following entries:
+
+<ResponseField name="data" type="FollowingWithFollowInfo[]">
+  Array of following entries.
+  <Expandable title="FollowingWithFollowInfo properties">
+    <ResponseField name="followId" type="string">
+      ID of the follow record.
+    </ResponseField>
+    <ResponseField name="user" type="User">
+      The followed user's profile. See [User data model](/data-models/user).
+    </ResponseField>
+    <ResponseField name="followedAt" type="string">
+      ISO timestamp of when the follow was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata including `currentPage`, `totalPages`, `totalCount`, `hasNextPage`, and `hasPreviousPage`.
+</ResponseField>
+
+## Related
+
+- [useFetchFollowing](/hooks/follows/use-fetch-following) — fetch the current user's own following list
+- [useFetchFollowingCountByUserId](/hooks/follows/use-fetch-following-count-by-user-id) — get following count for a user

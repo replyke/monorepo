@@ -1,0 +1,35 @@
+---
+title: "Fetch Space"
+api: "GET /:projectId/api/v7/spaces/:spaceId"
+description: "Get a single space by its UUID"
+---
+
+Fetches a space by UUID. Returns full space details including membership permissions for the authenticated user, parent space, and child space previews.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="include" type="string">
+  Optional. Pass `"files"` to include avatar and banner file objects.
+</ParamField>
+
+## Response
+
+Returns a [SpaceDetailed](/data-models/space) object including `memberPermissions`, `parentSpace`, and `childSpaces`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Space not found.", "code": "space/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchSpace](/hooks/spaces/use-fetch-space)

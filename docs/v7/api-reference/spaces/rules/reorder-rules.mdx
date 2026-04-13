@@ -1,0 +1,36 @@
+---
+title: "Reorder Rules"
+api: "PATCH /:projectId/api/v7/spaces/:spaceId/rules/reorder"
+description: "Reorder the community rules for a space"
+---
+
+Sets the display order of all rules for a space by providing a new ordered array of rule IDs. Only space admins can reorder rules.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="ruleIds" type="string[]" required>
+  Ordered array of all rule UUIDs in the desired display order.
+</ParamField>
+
+## Response
+
+Returns the full array of all rules for the space in the new order (same shape as [List Rules](/api-reference/spaces/rules/list-rules)).
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Rule IDs — 400">
+    One or more provided IDs do not exist in this space.
+    ```json
+    { "error": "Some rule IDs were not found in this space.", "code": "rule/invalid-ids", "missingIds": ["..."] }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useReorderRules](/hooks/spaces/rules/use-reorder-rules)

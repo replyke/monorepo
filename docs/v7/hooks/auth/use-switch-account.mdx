@@ -1,0 +1,87 @@
+---
+title: "Switch account"
+description: "Switch the active user account"
+icon: "plug"
+---
+
+## Overview
+
+`useSwitchAccount` switches the active session to a different stored account. It clears the current auth state, sets the target account as active, and fetches a fresh access token using the stored refresh token.
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useAccounts, useSwitchAccount } from "@replyke/react-js";
+
+function AccountSwitcher() {
+  const { accounts, activeAccount } = useAccounts();
+  const { switchAccount, isSwitching, error } = useSwitchAccount();
+
+  return (
+    <ul>
+      {accounts.map((account) => (
+        <li key={account.id}>
+          {account.name ?? account.email}
+          {account.id !== activeAccount?.id && (
+            <button
+              onClick={() => switchAccount({ userId: account.id })}
+              disabled={isSwitching}
+            >
+              Switch
+            </button>
+          )}
+        </li>
+      ))}
+      {error && <p>{error}</p>}
+    </ul>
+  );
+}
+```
+
+```tsx React Native
+import { useSwitchAccount } from "@replyke/react-native";
+
+function SwitchButton({ userId }: { userId: string }) {
+  const { switchAccount, isSwitching } = useSwitchAccount();
+
+  return (
+    <Button
+      title="Switch"
+      onPress={() => switchAccount({ userId })}
+      disabled={isSwitching}
+    />
+  );
+}
+```
+</CodeGroup>
+
+## Parameters
+
+The hook returns a `switchAccount` function that accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the account to switch to. Must be present in the stored accounts map.
+</ParamField>
+
+## Returns
+
+<ResponseField name="switchAccount" type="function">
+  Async function that switches the active session. Calling it with the ID of
+  the already-active account is a no-op. Throws synchronously if the account is
+  not found or no `projectId` is available. Runtime errors (e.g. token refresh
+  failure) are caught and surfaced via the `error` field instead of throwing.
+</ResponseField>
+
+<ResponseField name="isSwitching" type="boolean">
+  `true` while the switch is in progress (clearing state and fetching a new
+  access token).
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the switch failed, or `null` if no error occurred.
+</ResponseField>
+
+## Integration Guide
+
+For multi-account integration guidance, see [Multi-Account](/sdk/authentication/multi-account).

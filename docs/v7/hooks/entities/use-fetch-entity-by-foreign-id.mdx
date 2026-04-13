@@ -1,0 +1,49 @@
+---
+title: "Fetch entity by foreign ID"
+description: "Fetch a single entity by its foreign ID"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchEntityByForeignId` returns a function that fetches an entity using the foreign ID from your system. Optionally auto-creates the entity if it does not yet exist.
+
+## Usage Example
+
+```tsx
+import { useFetchEntityByForeignId } from "@replyke/react-js";
+
+function ArticleSocial({ articleId }: { articleId: string }) {
+  const fetchEntity = useFetchEntityByForeignId();
+
+  const load = async () => {
+    const entity = await fetchEntity({
+      foreignId: articleId,
+      createIfNotFound: true,
+    });
+    console.log(entity);
+  };
+
+  return <button onClick={load}>Load</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="foreignId" type="string" required>
+  The foreign ID to look up. This is the identifier from your own system.
+</ParamField>
+
+<ParamField path="createIfNotFound" type="boolean">
+  If `true`, automatically creates a new entity with this foreign ID when one does not exist.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Optional. Populate related fields. Accepted values: `"user"`, `"space"`, `"topComment"`, `"saved"`, `"files"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Entity" type="Entity">
+  The fetched (or newly created) entity. See [Entity data model](/data-models/entity).
+</ResponseField>

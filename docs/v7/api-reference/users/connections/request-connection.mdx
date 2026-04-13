@@ -1,0 +1,85 @@
+---
+title: "Request Connection"
+api: "POST /:projectId/api/v7/users/:userId/connection"
+description: "Send a connection request to a user"
+---
+
+Sends a connection request from the authenticated user to the specified user. An optional message can be included. A notification is sent to the receiving user.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Replyke user ID (UUID) of the user to send a connection request to.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="message" type="string">
+  Optional message to include with the connection request.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `201` with the created connection record:
+
+<ResponseField name="id" type="string">
+  Unique connection record ID (UUID).
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Always `"pending"` for a new request.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO timestamp of when the request was sent.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Self-Request — 400">
+    ```json
+    {
+      "error": "A user cannot send a connection request to themselves.",
+      "code": "connection/self-request"
+    }
+    ```
+  </Accordion>
+  <Accordion title="User Not Found — 404">
+    ```json
+    {
+      "error": "One or both users involved in the connection do not exist.",
+      "code": "connection/user-not-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Already Pending — 409">
+    ```json
+    {
+      "error": "A connection request is already pending between these users.",
+      "code": "connection/request-pending"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Already Connected — 409">
+    ```json
+    {
+      "error": "Users are already connected.",
+      "code": "connection/already-connected"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Request Previously Declined — 409">
+    ```json
+    {
+      "error": "Connection request was declined. Only the receiver can initiate a new request.",
+      "code": "connection/request-declined"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useRequestConnection` hook](/hooks/connections/use-request-connection)
+- [Connection data model](/data-models/connection)

@@ -1,0 +1,94 @@
+---
+title: "Handle space entity report"
+description: "Action an entity report as a space moderator"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that allows a space moderator to take action on an entity report. Available actions are: remove the entity from the space, ban the reporting target's author, or dismiss the report.
+
+Multiple actions can be combined in a single call (e.g., remove the entity and ban the user simultaneously).
+
+<Note>Requires the authenticated user to have `admin` or `moderator` role in the target space.</Note>
+
+## Usage Example
+
+```tsx
+import { useHandleSpaceEntityReport } from "@replyke/react-js";
+
+function EntityReportActions({ report }) {
+  const handleSpaceEntityReport = useHandleSpaceEntityReport();
+
+  const removeAndBan = async () => {
+    await handleSpaceEntityReport({
+      spaceId: report.spaceId,
+      reportId: report.id,
+      entityId: report.targetId,
+      actions: ["remove-entity", "ban-user"],
+      summary: "Removed spam content and banned user from space",
+      userId: report.target?.userId,
+    });
+  };
+
+  const dismiss = async () => {
+    await handleSpaceEntityReport({
+      spaceId: report.spaceId,
+      reportId: report.id,
+      entityId: report.targetId,
+      actions: ["dismiss"],
+      summary: "Content reviewed — no violation found",
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={removeAndBan}>Remove & Ban</button>
+      <button onClick={dismiss}>Dismiss</button>
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField body="spaceId" type="string" required>
+  The ID of the space the report belongs to.
+</ParamField>
+
+<ParamField body="reportId" type="string" required>
+  The ID of the report to action.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The ID of the reported entity.
+</ParamField>
+
+<ParamField body="actions" type="Array<'remove-entity' | 'ban-user' | 'dismiss'>" required>
+  One or more actions to take. Multiple actions are applied together.
+
+  - `remove-entity` — Removes the entity from the space.
+  - `ban-user` — Bans the entity's author from the space (requires `userId`).
+  - `dismiss` — Marks the report as dismissed without taking action on the content.
+</ParamField>
+
+<ParamField body="summary" type="string" required>
+  A moderator note describing the action taken. Stored on the report record.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The ID of the user to ban. Required when `ban-user` is included in `actions`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  The reason for banning, if applicable.
+</ParamField>
+
+## Returns
+
+Returns `Promise<{ message: string; code: string }>`.
+
+## Notes
+
+- This hook actions reports at the **space level** (space moderation). For platform-level entity moderation, see [`useModerateSpaceEntity`](/hooks/spaces/use-moderate-space-entity).
+- To fetch the list of pending reports, use [`useFetchModeratedReports`](/hooks/reports/use-fetch-moderated-reports).

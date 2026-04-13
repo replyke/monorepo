@@ -1,0 +1,86 @@
+---
+title: "Fetch OAuth identities"
+description: "List and manage OAuth identities linked to the current user"
+icon: "plug"
+---
+
+<Note>This hook requires the user to be authenticated.</Note>
+
+## Overview
+
+`useOAuthIdentities` fetches the list of OAuth identities linked to the current user's account and provides a function to unlink them. Use it to build a connected accounts settings page.
+
+## Usage Example
+
+```tsx
+import { useEffect } from "react";
+import { useOAuthIdentities } from "@replyke/react-js";
+
+function LinkedIdentities() {
+  const { identities, fetchIdentities, unlinkIdentity, isLoading, error } =
+    useOAuthIdentities();
+
+  useEffect(() => {
+    fetchIdentities();
+  }, []);
+
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
+
+  return (
+    <ul>
+      {identities.map((identity) => (
+        <li key={identity.id}>
+          {identity.provider} — {identity.email ?? identity.name ?? "Unknown"}
+          <button onClick={() => unlinkIdentity({ identityId: identity.id })}>Unlink</button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Returns
+
+<ResponseField name="identities" type="OAuthIdentity[]">
+  Array of OAuth identities linked to the current user. Initially empty; call
+  `fetchIdentities` to populate.
+</ResponseField>
+
+<ResponseField name="fetchIdentities" type="function">
+  Async function that fetches the identities list from the server and updates
+  local state. Returns `void`.
+</ResponseField>
+
+<ResponseField name="unlinkIdentity" type="function">
+  Async function that unlinks a specific identity. Accepts `{ identityId: string }`.
+  On success, removes the identity from the local `identities` array. Fails
+  if it would be the last identity and the user has no password set.
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  `true` while a fetch or unlink request is in progress.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message from the most recent failed operation, or `null` if no error.
+</ResponseField>
+
+## OAuthIdentity Type
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique identity ID (UUID) |
+| `provider` | `string` | OAuth provider name (e.g., `"google"`, `"github"`) |
+| `providerAccountId` | `string` | The user's ID at the provider |
+| `email` | `string \| null` | Email returned by the provider |
+| `name` | `string \| null` | Name returned by the provider |
+| `avatar` | `string \| null` | Avatar URL returned by the provider |
+| `isVerified` | `boolean` | Whether the provider marked the email as verified |
+| `createdAt` | `string` | ISO timestamp of when the identity was linked |
+
+## See Also
+
+- [OAuth integration guide](/sdk/authentication/oauth)
+- [List Identities API reference](/api-reference/oauth/list-identities)
+- [Unlink Identity API reference](/api-reference/oauth/unlink-identity)

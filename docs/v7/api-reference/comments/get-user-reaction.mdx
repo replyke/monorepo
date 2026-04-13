@@ -1,0 +1,27 @@
+---
+title: "Get User Reaction"
+api: "GET /:projectId/api/v7/comments/:commentId/reactions/me"
+description: "Get the authenticated user's reaction on a comment"
+---
+
+Returns the authenticated user's current reaction on the specified comment, or `null` if they have not reacted.
+
+**Authentication required.**
+
+## Path Parameters
+
+<ParamField path="commentId" type="string" required>
+  The UUID of the comment.
+</ParamField>
+
+## Response
+
+```json
+{ "reactionType": "like" }
+```
+
+or, if the user has no reaction:
+
+```json
+{ "reactionType": null }
+```

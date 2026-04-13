@@ -1,0 +1,43 @@
+---
+title: "Remove member"
+description: "Remove (ban) a member from a space"
+icon: "plug"
+---
+
+## Overview
+
+`useRemoveMember` returns a callable function for removing a member from a space by setting their status to `"banned"`. Requires the caller to be a moderator or admin. Only admins can remove other admins.
+
+## Usage Example
+
+```tsx
+import { useRemoveMember } from "@replyke/react-js";
+
+function MemberActions({ spaceId, memberId }: { spaceId: string; memberId: string }) {
+  const removeMember = useRemoveMember();
+
+  return (
+    <button onClick={() => removeMember({ spaceId, memberId })}>
+      Ban Member
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="memberId" type="string" required>
+  UUID of the membership record to ban.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+See also: [`useUnbanMember`](/hooks/spaces/use-unban-member) to reverse a ban.

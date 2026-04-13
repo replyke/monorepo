@@ -1,0 +1,51 @@
+---
+title: "Overview"
+description: "Real-time 1:1 and group messaging with reactions, threading, and typing indicators"
+---
+
+Replyke Chat lets you embed full-featured messaging directly into your application. It supports direct (1:1) conversations, group conversations, and per-space chat channels. All conversations are real-time, backed by Socket.io, with read receipts, typing indicators, reaction support, and threaded replies.
+
+## In This Section
+
+<CardGroup cols={2}>
+  <Card title="Setup" href="/sdk/chat/setup">
+    Add `ChatProvider` to your component tree to initialize the socket connection
+  </Card>
+  <Card title="Conversations" href="/sdk/chat/conversations">
+    Create direct and group conversations, list conversations, manage members
+  </Card>
+  <Card title="Messages" href="/sdk/chat/messages">
+    Send, edit, delete, and react to messages with optimistic UI updates
+  </Card>
+  <Card title="Real-time" href="/sdk/chat/real-time">
+    Socket events, typing indicators, unread counts, and read receipts
+  </Card>
+  <Card title="Threads" href="/sdk/chat/threads">
+    Threaded replies to messages for focused side-conversations
+  </Card>
+</CardGroup>
+
+## Architecture
+
+Chat is built around a two-level provider hierarchy:
+
+```
+ChatProvider          — one per app; owns the socket connection
+  └── Your UI         — conversation list, conversation views, etc.
+```
+
+`ChatProvider` establishes the Socket.io connection and maintains global state (unread counts, message store). Individual components then use the hooks directly — there is no second-level context required for basic usage.
+
+For space chat, use `useFetchSpaceConversation` to retrieve the conversation associated with a space, then interact with it using the same hooks used for any other conversation.
+
+## Conversation Types
+
+| Type | Description |
+|------|-------------|
+| `direct` | 1:1 conversation between two users |
+| `group` | Multi-user conversation created explicitly |
+| `space` | Conversation automatically tied to a Space |
+
+## Next Steps
+
+Start with [Chat Setup](/sdk/chat/setup) to add `ChatProvider` to your app.

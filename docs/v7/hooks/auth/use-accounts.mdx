@@ -1,0 +1,69 @@
+---
+title: "Use accounts"
+description: "List all accounts linked in the current app instance"
+icon: "cube"
+---
+
+## Overview
+
+`useAccounts` returns the list of all stored accounts and the currently active account. Use it to render an account switcher or display the signed-in user's identity.
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useAccounts } from "@replyke/react-js";
+
+function AccountSummaryBar() {
+  const { accounts, activeAccount, accountCount } = useAccounts();
+
+  return (
+    <div>
+      <p>Signed in as: {activeAccount?.name ?? activeAccount?.email ?? "Guest"}</p>
+      <p>Total accounts: {accountCount}</p>
+      <ul>
+        {accounts.map((account) => (
+          <li key={account.id}>{account.name ?? account.email}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+```tsx React Native
+import { useAccounts } from "@replyke/react-native";
+
+function ActiveAccountLabel() {
+  const { activeAccount } = useAccounts();
+  return <Text>{activeAccount?.name ?? "Not signed in"}</Text>;
+}
+```
+</CodeGroup>
+
+## Returns
+
+<ResponseField name="accounts" type="AccountSummary[]">
+  Array of all stored accounts, derived from the accounts map in Redux state.
+</ResponseField>
+
+<ResponseField name="activeAccount" type="AccountSummary | null">
+  The account currently marked as active, or `null` if no session is active.
+</ResponseField>
+
+<ResponseField name="accountCount" type="number">
+  Total number of stored accounts.
+</ResponseField>
+
+## AccountSummary Type
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | User ID |
+| `name` | `string \| null` | Display name |
+| `email` | `string \| null` | Email address |
+| `avatar` | `string \| null` | Avatar URL |
+
+## Integration Guide
+
+For multi-account integration guidance, see [Multi-Account](/sdk/authentication/multi-account).

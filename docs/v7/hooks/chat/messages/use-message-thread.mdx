@@ -1,0 +1,86 @@
+---
+title: "Use message thread"
+description: "Load replies and send new replies in a message thread"
+icon: "cube"
+---
+
+## Overview
+
+A convenience hook that wraps `useChatMessages` and `useSendMessage` for a specific message thread. Returns the thread's replies and a `sendReply` function that automatically sets `parentMessageId`.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useMessageThread } from "@replyke/react-js";
+
+function ThreadPanel({
+  conversationId,
+  messageId,
+}: {
+  conversationId: string;
+  messageId: string;
+}) {
+  const { replies, loading, hasMore, loadMore, sendReply } = useMessageThread({
+    conversationId,
+    messageId,
+  });
+  const [text, setText] = useState("");
+
+  const handleReply = async () => {
+    if (!text.trim()) return;
+    await sendReply({ content: text });
+    setText("");
+  };
+
+  return (
+    <div>
+      {replies.map((reply) => (
+        <div key={reply.id}>
+          <strong>{reply.user?.name}</strong>: {reply.content}
+        </div>
+      ))}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+      <input value={text} onChange={(e) => setText(e.target.value)} />
+      <button onClick={handleReply}>Reply</button>
+    </div>
+  );
+}
+```
+
+## Props
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation that contains the thread.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The ID of the parent message whose thread to load.
+</ParamField>
+
+## Returns
+
+<ResponseField name="replies" type="ChatMessage[]">
+  Thread replies in ascending order (oldest first). See [ChatMessage](/data-models/chat-message).
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a fetch is in progress.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if there are more replies to load.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => Promise<void>">
+  Fetches more replies (newer than the newest loaded). No-ops if `loading` is `true` or `hasMore` is `false`.
+</ResponseField>
+
+<ResponseField name="sendReply" type="(params: Omit<SendMessageParams, 'parentMessageId'>) => Promise<ChatMessage>">
+  Sends a reply to this thread. Accepts the same parameters as `useSendMessage` except `parentMessageId` (set automatically). Returns the confirmed [ChatMessage](/data-models/chat-message).
+</ResponseField>
+
+## Notes
+
+- For integration guidance, see [Chat: Threads](/sdk/chat/threads).

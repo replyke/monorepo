@@ -1,0 +1,64 @@
+---
+title: "Overview"
+description: "Threaded comment sections using CommentSectionProvider and useCommentSection"
+---
+
+Comments in Replyke are threaded discussions attached to entities. They support replies (nested or flat), reactions, GIF attachments, user mentions, space mentions, sorting, and pagination.
+
+<Tip>
+**Don't want to build your own comment UI from scratch?** Replyke ships ready-made comment components — fully featured, themeable, and installed directly into your codebase via the CLI as editable source code. Skip straight to the [Components section](/components/overview) to get up and running in minutes.
+</Tip>
+
+## The Provider Pattern
+
+The comment system uses a `CommentSectionProvider` + `useCommentSection` pair. Wrap your comment UI with `CommentSectionProvider` to load comments for an entity, then access all comment state and actions from any descendant with `useCommentSection`.
+
+```tsx
+import { CommentSectionProvider } from "@replyke/react-js";
+
+function ArticlePage({ articleId }: { articleId: string }) {
+  return (
+    <CommentSectionProvider foreignId={articleId} createIfNotFound>
+      <CommentList />
+      <CommentInput />
+    </CommentSectionProvider>
+  );
+}
+```
+
+## What the Provider Manages
+
+- **Loading comments** — fetches the first page on mount and provides `loadMore` for pagination
+- **Comment tree** — maintains a `entityCommentsTree` with comments and their replies organized as a map
+- **New comments** — tracks freshly submitted comments separately from paginated ones
+- **Highlighted comment** — fetches and highlights a specific comment (e.g., from a deep link)
+- **Reply state** — tracks which comment is being replied to and shows/hides the reply banner
+- **CRUD actions** — `createComment`, `updateComment`, `deleteComment` with optimistic updates
+- **Sort** — `sortBy` and `setSortBy` for switching between `"top"`, `"new"`, and `"controversial"`
+
+## In This Section
+
+<CardGroup cols={2}>
+  <Card title="Comment Section" href="/sdk/comments/comment-section">
+    Full guide to CommentSectionProvider props and the useCommentSection hook values.
+  </Card>
+</CardGroup>
+
+## Pre-Built Comment Components
+
+If you'd rather not wire up your own comment UI, Replyke provides two production-ready comment components installed via the CLI directly into your project as editable source code.
+
+<CardGroup cols={2}>
+  <Card title="Threaded Comments" href="/components/components/threaded/overview">
+    A classic threaded comment section with nested replies, reactions, and sorting. Ideal for blogs, docs, and long-form content.
+  </Card>
+  <Card title="Social Comments" href="/components/components/social/overview">
+    A flat social-style comment feed with inline replies and a familiar social media feel. Great for feeds, posts, and community content.
+  </Card>
+</CardGroup>
+
+Both components are built on top of `CommentSectionProvider` and `useCommentSection` — the same primitives documented here — so you can customize them as deeply as needed after installation.
+
+## Comment Data Model
+
+See the [Comment data model](/data-models/comment) for the full field reference.

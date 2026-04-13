@@ -1,0 +1,46 @@
+---
+title: "Use project"
+description: "Access the current project ID and configuration from context"
+icon: "cube"
+---
+
+## Overview
+
+`useProject` returns the project context values set by the nearest `ReplykeProvider`. Use it to read the active `projectId` and the project's configuration (such as enabled integrations) from anywhere inside the provider tree.
+
+## Usage Example
+
+```tsx
+import { useProject } from "@replyke/react-js";
+
+function IntegrationStatus() {
+  const { projectId, project } = useProject();
+
+  if (!project) return <p>Loading project...</p>;
+
+  return (
+    <div>
+      <p>Project ID: {projectId}</p>
+      <p>Integrations: {project.integrations.map((i) => i.name).join(", ")}</p>
+    </div>
+  );
+}
+```
+
+## Returns
+
+<ResponseField name="projectId" type="string | undefined">
+  The project ID passed to the enclosing `ReplykeProvider`.
+</ResponseField>
+
+<ResponseField name="project" type="object | null | undefined">
+  Lean project data fetched from the API, or `null` while loading. Contains:
+
+  - `id` — the project's UUID.
+  - `integrations` — array of integrations enabled for this project. Each entry has:
+    - `id` — integration ID
+    - `projectId` — parent project ID
+    - `name` — integration name
+    - `data` — integration-specific configuration
+    - `createdAt` — creation timestamp
+</ResponseField>

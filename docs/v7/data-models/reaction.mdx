@@ -1,0 +1,62 @@
+---
+title: "Reaction"
+description: "ReactionType, ReactionCounts, and the Reaction record interface"
+---
+
+Replyke v7 uses an 8-type reaction system that replaces the legacy upvote/downvote arrays. Reactions can be applied to both entities and comments. Each reaction type has a defined effect on the target owner's reputation score.
+
+## ReactionType
+
+The set of valid reaction values:
+
+| Value | Reputation Effect | Description |
+|-------|------------------|-------------|
+| `"upvote"` | +1 | Positive endorsement |
+| `"downvote"` | −1 | Negative endorsement |
+| `"like"` | +1 | Generic like |
+| `"love"` | +2 | Strong positive reaction |
+| `"wow"` | +1 | Surprise or amazement |
+| `"sad"` | 0 | Empathetic reaction |
+| `"angry"` | 0 | Negative emotional reaction |
+| `"funny"` | +1 | Humor reaction |
+
+## ReactionCounts
+
+Every entity and comment includes a `reactionCounts` object with the current count for each reaction type:
+
+```ts
+{
+  upvote: number;
+  downvote: number;
+  like: number;
+  love: number;
+  wow: number;
+  sad: number;
+  angry: number;
+  funny: number;
+}
+```
+
+## Reaction Record
+
+When fetching the list of users who reacted to an entity or comment, each item in the result is a `Reaction` record:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique reaction identifier (UUID). |
+| `projectId` | `string` | The project this reaction belongs to. |
+| `targetType` | `"entity" \| "comment"` | Whether the reaction targets an entity or a comment. |
+| `targetId` | `string` | The ID of the entity or comment that was reacted to. |
+| `userId` | `string` | The ID of the user who reacted. |
+| `reactionType` | `ReactionType` | Which of the 8 reaction types was used. |
+| `createdAt` | `string` | ISO timestamp when the reaction was created. |
+| `updatedAt` | `string` | ISO timestamp when the reaction was last updated. |
+| `user` | `User` | The user who reacted. Populated in fetch-reactions responses. |
+
+## See Also
+
+- [Entity](/data-models/entity)
+- [Comment](/data-models/comment)
+- [useReactionToggle hook](/hooks/reactions/use-reaction-toggle)
+- [Fetch Entity Reactions](/api-reference/entities/fetch-reactions)
+- [Fetch Comment Reactions](/api-reference/comments/fetch-reactions)

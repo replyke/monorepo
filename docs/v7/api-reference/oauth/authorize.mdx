@@ -1,0 +1,72 @@
+---
+title: "Authorize OAuth"
+api: "POST /:projectId/api/v7/oauth/authorize"
+description: "Initiate an OAuth sign-in or sign-up flow"
+---
+
+Initiates an OAuth 2.0 authorization flow for unauthenticated users (sign-in or sign-up). Returns a provider authorization URL that the client should redirect to. After the user authenticates with the provider, they are redirected back to the `redirectAfterAuth` URL with tokens in the URL fragment.
+
+<Note>
+  The OAuth provider must be configured and enabled in the Replyke dashboard
+  before this endpoint can be used. The `redirectAfterAuth` URL must be in
+  the provider's allowed redirect URI list.
+</Note>
+
+## Body Parameters
+
+<ParamField body="provider" type="string" required>
+  The OAuth provider to use. Must be one of: `"google"`, `"github"`, `"apple"`,
+  `"facebook"`.
+</ParamField>
+
+<ParamField body="redirectAfterAuth" type="string" required>
+  The URL to redirect the user to after authentication. Must be a valid URL
+  and must be present in the provider's configured allowed redirect URIs.
+</ParamField>
+
+## Response
+
+<ResponseField name="authorizationUrl" type="string">
+  The provider's authorization URL. Redirect the user's browser to this URL
+  to begin the OAuth flow.
+</ResponseField>
+
+## Callback
+
+After the user authorizes with the provider, they are redirected to `redirectAfterAuth` with one of:
+
+**On success** — Tokens in the URL fragment:
+```
+https://yourapp.com/callback#accessToken=...&refreshToken=...
+```
+
+**On error** — Error details in query parameters:
+```
+https://yourapp.com/callback?error=access_denied&error_description=...
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Provider Not Configured — 400">
+    ```json
+    {
+      "error": "OAuth provider 'google' is not configured or not enabled for this project",
+      "code": "oauth/provider-not-configured"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Redirect URI — 400">
+    ```json
+    {
+      "error": "redirectAfterAuth is not in the allowed redirect URIs for this project",
+      "code": "oauth/invalid-redirect-uri"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [OAuth integration guide](/sdk/authentication/oauth)
+- [Link OAuth Provider](/api-reference/oauth/link)

@@ -1,0 +1,139 @@
+---
+title: "Fetch many entities"
+description: "Fetch a paginated, filtered, and sorted list of entities"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchManyEntities` returns a function that fetches a paginated list of entities with full filtering and sorting support. This is the low-level hook underlying `EntityListProvider`. For continuous-scroll or load-more list UIs, use [`useEntityList`](/hooks/entity-lists/use-entity-list) instead, which wraps this hook with built-in pagination state.
+
+## Usage Example
+
+```tsx
+import { useFetchManyEntities } from "@replyke/react-js";
+import { useEffect, useState } from "react";
+
+function EntityFeed() {
+  const fetchEntities = useFetchManyEntities();
+  const [entities, setEntities] = useState([]);
+
+  useEffect(() => {
+    fetchEntities({
+      page: 1,
+      limit: 20,
+      sortBy: "score",
+      spaceId: "space_abc",
+      include: ["user"],
+    }).then((res) => setEntities(res.data));
+  }, []);
+
+  return (
+    <ul>
+      {entities.map((e) => (
+        <li key={e.id}>{e.title}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Results per page. Defaults to server default.
+</ParamField>
+
+<ParamField path="sortBy" type="string">
+  Field to sort by. Options: `"new"`, `"top"`, `"hot"`, `"controversial"`, or `"metadata.<property>"` to sort by a metadata field.
+</ParamField>
+
+<ParamField path="sortByReaction" type="string">
+  Sort by a specific reaction type count. Use with `sortBy: "reaction"`.
+</ParamField>
+
+<ParamField path="sortDir" type="string">
+  Sort direction: `"asc"` or `"desc"`.
+</ParamField>
+
+<ParamField path="sortType" type="string">
+  Sort algorithm type. Options: `"auto"`, `"numeric"`, `"text"`, `"boolean"`, `"timestamp"`. Used when sorting by a metadata field.
+</ParamField>
+
+<ParamField path="timeFrame" type="string">
+  Filter entities to a time window. Options: `"day"`, `"week"`, `"month"`, `"year"`.
+</ParamField>
+
+<ParamField path="sourceId" type="string">
+  Filter to entities associated with a specific source ID.
+</ParamField>
+
+<ParamField path="spaceId" type="string">
+  Filter to entities in a specific space.
+</ParamField>
+
+<ParamField path="userId" type="string">
+  Filter to entities created by a specific user.
+</ParamField>
+
+<ParamField path="followedOnly" type="boolean">
+  If `true`, return only entities from users the authenticated user follows.
+</ParamField>
+
+<ParamField path="keywordsFilters" type="object">
+  Filter by keywords. See [Entity List Filters](/sdk/entity-lists/filters) for the full filter schema.
+</ParamField>
+
+<ParamField path="titleFilters" type="object">
+  Filter by title content. See [Entity List Filters](/sdk/entity-lists/filters).
+</ParamField>
+
+<ParamField path="contentFilters" type="object">
+  Filter by body content. See [Entity List Filters](/sdk/entity-lists/filters).
+</ParamField>
+
+<ParamField path="attachmentsFilters" type="object">
+  Filter by attachments data. See [Entity List Filters](/sdk/entity-lists/filters).
+</ParamField>
+
+<ParamField path="locationFilters" type="object">
+  Filter by geographic proximity. See [Entity List Filters](/sdk/entity-lists/filters).
+</ParamField>
+
+<ParamField path="metadataFilters" type="object">
+  Filter by metadata fields. See [Entity List Filters](/sdk/entity-lists/filters).
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Populate related fields. Accepted values: `"user"`, `"space"`, `"topComment"`, `"saved"`, `"files"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="data" type="Entity[]">
+  Array of entities for the current page.
+</ResponseField>
+
+<ResponseField name="pagination.page" type="number">
+  Current page number.
+</ResponseField>
+
+<ResponseField name="pagination.pageSize" type="number">
+  Number of results per page.
+</ResponseField>
+
+<ResponseField name="pagination.totalPages" type="number">
+  Total number of pages matching the filters.
+</ResponseField>
+
+<ResponseField name="pagination.totalItems" type="number">
+  Total count of entities matching the filters (across all pages).
+</ResponseField>
+
+<ResponseField name="pagination.hasMore" type="boolean">
+  `true` if there are additional pages available.
+</ResponseField>

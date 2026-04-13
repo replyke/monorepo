@@ -1,0 +1,44 @@
+---
+title: "Get Space Conversation"
+api: "GET /:projectId/api/v7/spaces/:spaceId/conversation"
+description: "Get or create the chat conversation for a space"
+---
+
+Returns the chat conversation associated with a space. If no conversation exists yet, one is created automatically. Requires authentication. The caller must have a space membership record that is not `"banned"` (pending members are allowed).
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+## Response
+
+Returns a [Conversation](/data-models/conversation) object with two additional fields:
+
+<ResponseField name="currentMember" type="object | null">
+  The caller's `ConversationMember` record for this conversation. Created or re-activated on first call.
+</ResponseField>
+
+<ResponseField name="memberCount" type="number">
+  Number of currently active members in the conversation.
+</ResponseField>
+
+<Note>Each space has at most one associated conversation. This endpoint is idempotent — calling it multiple times returns the same conversation.</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not a Member — 403">
+    ```json
+    { "error": "You are not a member of this space.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Banned — 403">
+    ```json
+    { "error": "You are banned from this space.", "code": "chat/banned" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchSpaceConversation hook](/hooks/chat/conversations/use-fetch-space-conversation)

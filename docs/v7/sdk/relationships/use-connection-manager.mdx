@@ -1,0 +1,129 @@
+---
+title: "useConnectionManager"
+description: "High-level hook for managing the full connection lifecycle with a single user"
+---
+
+`useConnectionManager` is the recommended way to implement connection UIs. It loads the connection status with a specific user on mount and exposes named actions for every state transition: send, accept, decline, withdraw, and disconnect.
+
+## Usage Example
+
+```tsx
+import { useConnectionManager } from "@replyke/react-js";
+
+function ConnectionButton({ userId }: { userId: string }) {
+  const {
+    connectionStatus,
+    isLoading,
+    sendConnectionRequest,
+    acceptConnectionRequest,
+    declineConnectionRequest,
+    withdrawConnectionRequest,
+    disconnectUser,
+  } = useConnectionManager({ userId });
+
+  if (isLoading) return <button disabled>Loading...</button>;
+
+  switch (connectionStatus) {
+    case "none":
+      return <button onClick={() => sendConnectionRequest()}>Connect</button>;
+    case "pending-sent":
+      return <button onClick={withdrawConnectionRequest}>Withdraw Request</button>;
+    case "pending-received":
+      return (
+        <>
+          <button onClick={acceptConnectionRequest}>Accept</button>
+          <button onClick={declineConnectionRequest}>Decline</button>
+        </>
+      );
+    case "connected":
+      return <button onClick={disconnectUser}>Disconnect</button>;
+    case "declined-sent":
+      return <span>Request Declined</span>;
+    case "declined-received":
+      return <button onClick={() => sendConnectionRequest()}>Connect Again</button>;
+  }
+}
+```
+
+## Parameters
+
+<ParamField path="userId" type="string" required>
+  The ID of the user whose connection relationship to manage.
+</ParamField>
+
+## Returns
+
+<ResponseField name="connectionStatus" type="ConnectionStatus">
+  The current relationship state. One of: `"none"` | `"pending-sent"` | `"pending-received"` | `"connected"` | `"declined-sent"` | `"declined-received"`.
+</ResponseField>
+
+<ResponseField name="connectionId" type="string | null">
+  The ID of the active connection record, if one exists.
+</ResponseField>
+
+<ResponseField name="connectionData" type="object">
+  Additional metadata about the connection.
+  <Expandable title="properties">
+    <ResponseField name="connectionId" type="string | null">
+      ID of the connection record.
+    </ResponseField>
+    <ResponseField name="connectedAt" type="string | undefined">
+      ISO timestamp when the connection was established.
+    </ResponseField>
+    <ResponseField name="requestedAt" type="string | undefined">
+      ISO timestamp when the request was originally sent.
+    </ResponseField>
+    <ResponseField name="respondedAt" type="string | undefined">
+      ISO timestamp when the request was responded to (accept or decline).
+    </ResponseField>
+    <ResponseField name="createdAt" type="string | undefined">
+      ISO timestamp when the connection record was created.
+    </ResponseField>
+    <ResponseField name="type" type='"sent" | "received" | undefined'>
+      Direction of the pending or declined request from the current user's perspective.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  `true` while the initial status is being fetched.
+</ResponseField>
+
+<ResponseField name="sendConnectionRequest" type="(message?: string) => Promise<void>">
+  Sends a connection request to the target user. Accepts an optional message string. Only active when status is `"none"` or `"declined-received"`.
+</ResponseField>
+
+<ResponseField name="acceptConnectionRequest" type="() => Promise<void>">
+  Accepts an incoming connection request. Only active when status is `"pending-received"`.
+</ResponseField>
+
+<ResponseField name="declineConnectionRequest" type="() => Promise<void>">
+  Declines an incoming connection request. Only active when status is `"pending-received"`.
+</ResponseField>
+
+<ResponseField name="withdrawConnectionRequest" type="() => Promise<void>">
+  Withdraws a pending outgoing request. Only active when status is `"pending-sent"`.
+</ResponseField>
+
+<ResponseField name="disconnectUser" type="() => Promise<void>">
+  Removes an established connection. Only active when status is `"connected"`.
+</ResponseField>
+
+<ResponseField name="removeConnectionSmart" type="() => Promise<void>">
+  Removes the connection regardless of current state (withdraw, decline, or disconnect) by user ID. Useful as a generic "remove" action when the exact state doesn't matter.
+</ResponseField>
+
+<ResponseField name="refreshConnectionStatus" type="() => Promise<void>">
+  Re-fetches the connection status from the server.
+</ResponseField>
+
+<Note>
+  The current user must be signed in. The hook performs no action if `userId` matches the authenticated user's own ID.
+</Note>
+
+## Related
+
+- [useRequestConnection](/hooks/connections/use-request-connection)
+- [useAcceptConnection](/hooks/connections/use-accept-connection)
+- [useDeclineConnection](/hooks/connections/use-decline-connection)
+- [useFetchConnectionStatus](/hooks/connections/use-fetch-connection-status)

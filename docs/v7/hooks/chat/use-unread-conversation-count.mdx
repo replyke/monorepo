@@ -1,0 +1,39 @@
+---
+title: "Use unread conversation count"
+description: "Get the number of conversations with at least one unread message"
+icon: "cube"
+---
+
+## Overview
+
+Returns the number of conversations that have at least one unread message. This value is fetched from the server on `ChatProvider` mount and kept in sync via socket events.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useUnreadConversationCount } from "@replyke/react-js";
+
+function InboxBadge() {
+  const count = useUnreadConversationCount();
+
+  return (
+    <div>
+      Inbox {count > 0 && <span>({count})</span>}
+    </div>
+  );
+}
+```
+
+## Returns
+
+<ResponseField name="number" type="number">
+  Number of conversations with at least one unread message. Returns `0` before the first fetch completes.
+</ResponseField>
+
+## Notes
+
+- When a new message arrives from a conversation not yet loaded in the conversation list (e.g. paginated out), this count may not be incremented for that edge case. It re-syncs on the next `ChatProvider` mount.
+- To get the total number of unread messages (not conversations), use [`useTotalUnreadCount`](/hooks/chat/use-total-unread-count).
+- For integration guidance, see [Chat: Real-time](/sdk/chat/real-time).

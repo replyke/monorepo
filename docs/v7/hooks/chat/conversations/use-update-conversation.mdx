@@ -1,0 +1,66 @@
+---
+title: "Use update conversation"
+description: "Update a conversation's details"
+icon: "plug"
+---
+
+## Overview
+
+Returns an async function that updates a conversation's details via the API. This is a low-level hook — it makes the PATCH request and returns the updated conversation without touching Redux state. Use it when you need direct control over when and how state is updated.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useUpdateConversation } from "@replyke/react-js";
+
+function RenameButton({ conversationId }: { conversationId: string }) {
+  const updateConversation = useUpdateConversation();
+
+  const handleRename = async () => {
+    const updated = await updateConversation({
+      conversationId,
+      name: "New Name",
+    });
+    console.log(updated);
+  };
+
+  return <button onClick={handleRename}>Rename</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation to update.
+</ParamField>
+
+<ParamField body="name" type="string">
+  New conversation name.
+</ParamField>
+
+<ParamField body="description" type="string">
+  New conversation description.
+</ParamField>
+
+<ParamField body="avatarFileId" type="string | null">
+  File ID for the avatar image. Pass `null` to remove the current avatar.
+</ParamField>
+
+<ParamField body="postingPermission" type="'members' | 'admins'">
+  Who can post messages. Only applicable to space conversations.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Conversation" type="Conversation">
+  The updated [Conversation](/data-models/conversation) object.
+</ResponseField>
+
+## Notes
+
+- This hook does not update Redux state. If you want the result reflected in the UI, dispatch `setConversation` manually or use [`useConversation`](/hooks/chat/conversations/use-conversation) which handles this automatically.
+- For integration guidance, see [Chat: Conversations](/sdk/chat/conversations).

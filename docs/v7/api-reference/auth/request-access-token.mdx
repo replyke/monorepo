@@ -1,0 +1,116 @@
+---
+title: "Request Access Token"
+api: "POST /:projectId/api/v7/auth/request-new-access-token"
+description: "Obtain a new access token using a refresh token"
+---
+
+Exchanges a valid refresh token for a new access token and a new refresh token. This endpoint implements **refresh token rotation**: every successful call revokes the current refresh token and issues a replacement. Reusing a revoked refresh token is detected as a potential replay attack and results in the entire token family being invalidated.
+
+## Body Parameters
+
+<ParamField body="refreshToken" type="string">
+  The refresh token JWT. If omitted or `null`, the server returns `200` with
+  `{ user: null, accessToken: null }` — indicating no active session. The
+  `success` and `refreshToken` fields are absent in this case.
+</ParamField>
+
+## Response
+
+When a valid refresh token is provided, the response is:
+
+<ResponseField name="success" type="boolean">
+  `true` when a valid refresh token was provided and a new session was issued.
+  This field is absent when no refresh token was submitted.
+</ResponseField>
+
+<ResponseField name="accessToken" type="string | null">
+  New short-lived JWT access token. Expires in 30 minutes. `null` if no refresh
+  token was provided.
+</ResponseField>
+
+<ResponseField name="refreshToken" type="string">
+  New long-lived JWT refresh token (rotated). Expires in 30 days. This field is
+  absent when no refresh token was provided.
+</ResponseField>
+
+<ResponseField name="user" type="object | null">
+  The authenticated user's full profile, or `null` if no refresh token was
+  provided.
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">Unique user ID (UUID).</ResponseField>
+    <ResponseField name="foreignId" type="string | null">External user ID, if set.</ResponseField>
+    <ResponseField name="role" type="string">User role.</ResponseField>
+    <ResponseField name="email" type="string | null">Email address.</ResponseField>
+    <ResponseField name="name" type="string | null">Display name.</ResponseField>
+    <ResponseField name="username" type="string | null">Username.</ResponseField>
+    <ResponseField name="avatar" type="string | null">Avatar URL.</ResponseField>
+    <ResponseField name="bio" type="string | null">Bio text.</ResponseField>
+    <ResponseField name="metadata" type="object | null">Public custom data.</ResponseField>
+    <ResponseField name="reputation" type="number | null">Reputation score.</ResponseField>
+    <ResponseField name="isVerified" type="boolean | null">Whether the user is verified.</ResponseField>
+    <ResponseField name="isActive" type="boolean | null">Whether the account is active.</ResponseField>
+    <ResponseField name="lastActive" type="string | null">ISO timestamp of last activity.</ResponseField>
+    <ResponseField name="suspensions" type="array">Active suspensions on the account.</ResponseField>
+    <ResponseField name="avatarFile" type="object | null">Processed avatar file with variants.</ResponseField>
+    <ResponseField name="bannerFile" type="object | null">Processed banner file with variants.</ResponseField>
+    <ResponseField name="authMethods" type="string[]">List of auth methods.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO timestamp of account creation.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Token Rotation and Reuse Detection
+
+Each call to this endpoint revokes the submitted refresh token and issues a new one. If the same refresh token is submitted again after being revoked:
+
+- **Within 30 seconds of revocation** (grace period): The server returns the successor token to handle concurrent requests gracefully.
+- **After 30 seconds**: The entire token family is destroyed and the user must sign in again.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Project Mismatch — 403">
+    ```json
+    {
+      "error": "Refresh token does not match this project.",
+      "code": "auth/refresh-token-project-mismatch"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Token Not Recognized — 403">
+    ```json
+    {
+      "error": "Refresh token not recognized.",
+      "code": "auth/refresh-token-mismatch"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Token Reuse Detected — 401">
+    ```json
+    {
+      "error": "Token reuse detected. All sessions in this family have been revoked.",
+      "code": "auth/token-reuse-detected"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Token Expired or Malformed — 403">
+    ```json
+    {
+      "error": "Refresh token is expired or malformed.",
+      "code": "auth/refresh-token-malformed"
+    }
+    ```
+  </Accordion>
+  <Accordion title="User Not Found — 403">
+    ```json
+    {
+      "error": "User not found.",
+      "code": "auth/no-user-found"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useAuth` hook](/hooks/auth/use-auth) — `requestNewAccessToken`
+- [Authentication overview](/sdk/authentication/overview)

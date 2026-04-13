@@ -1,0 +1,37 @@
+---
+title: "Fetch Digest Config"
+api: "GET /:projectId/api/v7/spaces/:spaceId/digest-config"
+description: "Get the digest/newsletter configuration for a space"
+---
+
+Returns the current digest configuration for a space. Only accessible to space admins.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+## Response
+
+<ResponseField name="digestEnabled" type="boolean">
+  Whether digest delivery is currently enabled.
+</ResponseField>
+
+<ResponseField name="digestWebhookUrl" type="string | null">
+  The configured delivery URL.
+</ResponseField>
+
+<ResponseField name="digestWebhookSecret" type="string | null">
+  The configured signing secret, or `null` if not set.
+</ResponseField>
+
+<ResponseField name="digestScheduleHour" type="number | null">
+  UTC hour (0–23) of delivery.
+</ResponseField>
+
+<ResponseField name="digestTimezone" type="string | null">
+  IANA timezone string.
+</ResponseField>
+
+See also: [useFetchDigestConfig](/hooks/spaces/use-fetch-digest-config)

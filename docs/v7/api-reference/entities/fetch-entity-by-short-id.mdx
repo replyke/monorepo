@@ -1,0 +1,36 @@
+---
+title: "Fetch Entity by Short ID"
+api: "GET /:projectId/api/v7/entities/by-short-id"
+description: "Get an entity by its short ID"
+---
+
+Returns a single entity matching the given `shortId`. Short IDs are compact, URL-friendly identifiers automatically assigned to each entity. They are useful for building shareable deep links.
+
+## Query Parameters
+
+<ParamField query="shortId" type="string" required>
+  The short ID of the entity to fetch.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include:
+  - `user` — the author's user profile
+  - `space` — the space the entity belongs to
+  - `topComment` — the highest-voted comment
+  - `saved` — whether the authenticated user has saved this entity
+  - `files` — uploaded file/image attachments
+</ParamField>
+
+## Response
+
+Returns an [Entity](/data-models/entity) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Entity not found", "code": "entity/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

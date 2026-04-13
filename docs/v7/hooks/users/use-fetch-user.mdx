@@ -1,0 +1,46 @@
+---
+title: "Fetch user"
+description: "Fetch a user's public profile by their Replyke user ID"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchUser` returns a function that fetches a user's public profile by their Replyke user ID. Use this when you have the user's `id` and need to load their profile on demand.
+
+## Usage Example
+
+```tsx
+import { useFetchUser } from "@replyke/react-js";
+import { useState } from "react";
+
+function UserCard({ userId }: { userId: string }) {
+  const fetchUser = useFetchUser();
+  const [user, setUser] = useState(null);
+
+  const load = async () => {
+    const result = await fetchUser({ userId });
+    setUser(result);
+  };
+
+  return <button onClick={load}>Load Profile</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The Replyke user ID to fetch.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Optional. Pass `"files"` to populate `avatarFile` and `bannerFile` with full `File` objects.
+</ParamField>
+
+## Returns
+
+<ResponseField name="User" type="User">
+  The user's public profile. See [User data model](/data-models/user).
+</ResponseField>

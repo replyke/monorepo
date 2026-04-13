@@ -1,0 +1,62 @@
+---
+title: "Fetch Following"
+api: "GET /:projectId/api/v7/follows/following"
+description: "Get a paginated list of users the authenticated user follows"
+---
+
+Returns a paginated list of users that the authenticated user is following. Unlike the [user-scoped endpoint](/api-reference/users/follows/get-following), this route always returns data for the current authenticated user.
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number for pagination. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Number of results per page. Defaults to `20`. Max `100`.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200` with a paginated response:
+
+<ResponseField name="data" type="array">
+  Array of follow entries.
+  <Expandable title="item properties">
+    <ResponseField name="followId" type="string">
+      ID of the follow record.
+    </ResponseField>
+    <ResponseField name="user" type="object">
+      Public profile of the followed user. Sensitive fields (email, hash, secureMetadata, etc.) are excluded.
+    </ResponseField>
+    <ResponseField name="followedAt" type="string">
+      ISO timestamp of when the follow was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata.
+  <Expandable title="properties">
+    <ResponseField name="page" type="number">
+      Current page number.
+    </ResponseField>
+    <ResponseField name="pageSize" type="number">
+      Number of items per page.
+    </ResponseField>
+    <ResponseField name="totalItems" type="number">
+      Total number of users being followed.
+    </ResponseField>
+    <ResponseField name="totalPages" type="number">
+      Total number of pages.
+    </ResponseField>
+    <ResponseField name="hasMore" type="boolean">
+      Whether there are more pages after the current one.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## See Also
+
+- [`useFetchFollowing` hook](/hooks/follows/use-fetch-following)
+- [Get Following (by user ID)](/api-reference/users/follows/get-following)

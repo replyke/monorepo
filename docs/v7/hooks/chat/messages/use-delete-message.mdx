@@ -1,0 +1,54 @@
+---
+title: "Delete message"
+description: "Soft-delete a chat message"
+icon: "plug"
+---
+
+## Overview
+
+Returns an async function that soft-deletes a message. The message is removed from the local Redux store immediately. On the server, the message's content is cleared and `userDeletedAt` is set — the record is retained for threading consistency.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useDeleteMessage } from "@replyke/react-js";
+
+function MessageActions({
+  conversationId,
+  messageId,
+}: {
+  conversationId: string;
+  messageId: string;
+}) {
+  const deleteMsg = useDeleteMessage();
+
+  return (
+    <button onClick={() => deleteMsg({ conversationId, messageId })}>
+      Delete
+    </button>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation that contains the message.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The ID of the message to delete.
+</ParamField>
+
+## Returns
+
+`Promise<void>`
+
+## Notes
+
+- Other participants see the deletion in real-time via the `message:deleted` socket event, which is handled automatically by `ChatProvider`. Their local copy of the message will have `userDeletedAt` set and `content: null`.
+- For integration guidance, see [Chat: Messages](/sdk/chat/messages).

@@ -1,0 +1,146 @@
+---
+title: "Real-time Features"
+description: "Typing indicators, unread counts, and marking conversations as read"
+---
+
+`ChatProvider` handles all real-time communication automatically. This guide explains what happens behind the scenes and which hooks you use to expose real-time state in your UI.
+
+## How Real-time Works
+
+`ChatProvider` opens a single Socket.io connection for the authenticated user. All components using chat hooks share this one connection. The provider listens for server events and updates Redux state, so any component reading from the hooks will re-render with up-to-date data.
+
+### Socket Events Handled Automatically
+
+| Event | What the SDK does |
+|-------|------------------|
+| `message:created` | Appends message to the conversation's store; increments unread count if the conversation is not currently active |
+| `message:updated` | Updates the message's content in the store |
+| `message:deleted` | Marks the message as soft-deleted in the store |
+| `message:removed` | Sets `moderationStatus: "removed"` on the message |
+| `message:reaction` | Updates `reactionCounts` and `userReactions` on the message |
+| `thread:reply_count` | Updates `threadReplyCount` on the parent message |
+| `typing:start` | Adds the user to the typing list for that conversation |
+| `typing:stop` | Removes the user from the typing list |
+| `conversation:updated` | Merges the updated conversation fields into the store |
+
+## Connection State
+
+Use `useChatSocket` to read whether the socket is connected:
+
+```tsx
+import { useChatSocket } from "@replyke/react-js";
+
+function ConnectionStatus() {
+  const { connected } = useChatSocket();
+  return <span>{connected ? "Connected" : "Reconnecting..."}</span>;
+}
+```
+
+See [`useChatSocket`](/hooks/chat/use-chat-socket).
+
+## Unread Counts
+
+`ChatProvider` fetches unread counts on mount and keeps them in sync via socket events.
+
+```tsx
+import { useTotalUnreadCount, useUnreadConversationCount } from "@replyke/react-js";
+
+function ChatBadge() {
+  const total = useTotalUnreadCount();
+  const withUnread = useUnreadConversationCount();
+
+  return (
+    <div>
+      <span>{total} unread messages</span>
+      <span>{withUnread} conversations with unread messages</span>
+    </div>
+  );
+}
+```
+
+- [`useTotalUnreadCount`](/hooks/chat/use-total-unread-count) — sum of all unread messages
+- [`useUnreadConversationCount`](/hooks/chat/use-unread-conversation-count) — number of conversations that have at least one unread message
+
+<Note>
+  When a new message arrives from a conversation not yet loaded in the conversation list (e.g. paginated out), only `useTotalUnreadCount` is bumped. `useUnreadConversationCount` re-syncs on the next `ChatProvider` mount.
+</Note>
+
+## Read Receipts
+
+Mark a conversation as read by calling `useMarkConversationAsRead`. This clears the unread count in Redux immediately (optimistic) and sends the mark-as-read request to the server.
+
+```tsx
+import { useMarkConversationAsRead } from "@replyke/react-js";
+
+function ConversationView({ conversationId, messages }) {
+  const mark = useMarkConversationAsRead({ conversationId });
+
+  // Mark as read when the latest message becomes visible
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage) {
+      mark({ messageId: lastMessage.id });
+    }
+  }, [messages]);
+}
+```
+
+See [`useMarkConversationAsRead`](/hooks/chat/use-mark-conversation-as-read).
+
+## Typing Indicators
+
+`useTypingIndicator` manages both sending typing events to other users and receiving typing events from them.
+
+```tsx
+import { useTypingIndicator } from "@replyke/react-js";
+
+function MessageInput({ conversationId }) {
+  const { typingUsers, startTyping, stopTyping } = useTypingIndicator({
+    conversationId,
+  });
+
+  return (
+    <div>
+      {typingUsers.length > 0 && (
+        <p>{typingUsers.length} person(s) typing...</p>
+      )}
+      <input
+        onChange={() => startTyping()}
+        onBlur={stopTyping}
+      />
+    </div>
+  );
+}
+```
+
+### Sender Protocol
+
+- Call `startTyping()` on each keystroke. The hook throttles the emit to every 2 seconds internally — you do not need to debounce.
+- Call `stopTyping()` when the user sends the message, clears the input, or blurs the field.
+- The hook emits `typing:stop` automatically on unmount if the user was typing.
+
+### Receiver Side
+
+`typingUsers` is an array of user IDs currently typing in this conversation. The current user is excluded. Each typing user is auto-removed after 5 seconds of inactivity (no keep-alive event from the server).
+
+See [`useTypingIndicator`](/hooks/chat/use-typing-indicator).
+
+## Reporting Messages
+
+Users can report messages for moderation review:
+
+```tsx
+import { useReportMessage } from "@replyke/react-js";
+
+function MessageMenu({ conversationId, messageId }) {
+  const report = useReportMessage();
+
+  return (
+    <button onClick={() => report({ conversationId, messageId, reason: "spam" })}>
+      Report
+    </button>
+  );
+}
+```
+
+See [`useReportMessage`](/hooks/chat/use-report-message).

@@ -1,0 +1,85 @@
+---
+title: "Space"
+description: "The shape of a Space object returned by the Spaces API and SDK"
+---
+
+A Space is a community container — a named area where users can post entities, discuss in threads, and interact under configurable membership and permission rules. Spaces support hierarchical nesting, customizable read/post permissions, avatar and banner images, and an optional digest/newsletter webhook.
+
+The API returns three space shapes depending on context:
+
+- **`Space`** — the standard shape, returned when fetching a list of spaces.
+- **`SpaceDetailed`** — returned when fetching a single space by ID, shortId, or slug. A superset of `Space` with added permission and hierarchy context.
+- **`SpacePreview`** — a minimal snapshot, never returned as a standalone response. Only appears embedded inside `SpaceDetailed` as the shape of `parentSpace` and each item in `childSpaces[]`.
+
+## Space
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique space identifier (UUID). |
+| `shortId` | `string` | Short human-readable ID for the space (URL-safe, generated automatically). |
+| `projectId` | `string` | The project this space belongs to. |
+| `slug` | `string \| null` | Optional URL-friendly slug. Unique per project when set. |
+| `name` | `string` | Display name of the space (3–100 characters). |
+| `description` | `string \| null` | Optional description (up to 1,000 characters). |
+| `userId` | `string` | ID of the space creator/owner. |
+| `avatarFileId` | `string \| null` | ID of the space's avatar image file. |
+| `avatarFile` | `File \| undefined` | Populated avatar file object. Only present when `include: "files"` is requested. |
+| `bannerFileId` | `string \| null` | ID of the space's banner image file. |
+| `bannerFile` | `File \| undefined` | Populated banner file object. Only present when `include: "files"` is requested. |
+| `readingPermission` | `"anyone" \| "members"` | Who can read content in the space. |
+| `postingPermission` | `"anyone" \| "members" \| "admins"` | Who can post content in the space. |
+| `requireJoinApproval` | `boolean` | Whether joining requires moderator/admin approval. When `true`, new joins enter `pending` status. |
+| `parentSpaceId` | `string \| null` | ID of the parent space, if this is a sub-space. |
+| `depth` | `number` | Nesting depth (0 for root spaces, incremented for each sub-level). Maximum depth is 10. |
+| `metadata` | `Record<string, any>` | Arbitrary key-value data attached to the space. Up to 1 MB. |
+| `isMember` | `boolean \| undefined` | Whether the authenticated user is a member of this space. Only present when the user is signed in. |
+| `membersCount` | `number` | Computed count of active members. |
+| `childSpacesCount` | `number` | Computed count of direct child spaces. |
+| `createdAt` | `Date` | Timestamp when the space was created. |
+| `updatedAt` | `Date` | Timestamp when the space was last updated. |
+
+## SpaceDetailed
+
+Returned when fetching a single space by ID, shortId, or slug. Includes all `Space` fields plus the following:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `memberPermissions` | `SpaceMemberPermissions \| null` | The authenticated user's resolved permissions in this space. `null` if the user is not a member. |
+| `parentSpace` | `SpacePreview \| null` | Preview of the parent space. `null` for root-level spaces. |
+| `childSpaces` | `SpacePreview[]` | Preview of up to 10 immediate child spaces. |
+
+## SpacePreview
+
+A minimal space shape used only as an embedded reference — never returned directly by any endpoint. Appears as `SpaceDetailed.parentSpace` (the space one level up) and inside `SpaceDetailed.childSpaces[]` (spaces one level down).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Space UUID. |
+| `shortId` | `string` | Short identifier. |
+| `name` | `string` | Display name. |
+| `slug` | `string \| null` | URL slug. |
+| `avatarFileId` | `string \| null` | Avatar file ID. |
+| `readingPermission` | `"anyone" \| "members" \| undefined` | Reading permission level. |
+| `parentSpaceId` | `string \| null \| undefined` | Parent space reference. |
+| `depth` | `number \| undefined` | Nesting depth. |
+
+## SpaceMemberPermissions
+
+Included in `SpaceDetailed.memberPermissions` for authenticated users who are members.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `isAdmin` | `boolean` | Whether the user is an admin of this space. |
+| `isModerator` | `boolean` | Whether the user is a moderator of this space. |
+| `isMember` | `boolean` | Whether the user has an active membership. |
+| `status` | `"pending" \| "active" \| "banned" \| null` | The user's membership status. |
+| `canPost` | `boolean` | Whether the user can post entities in this space. |
+| `canModerate` | `boolean` | Whether the user can perform moderation actions. |
+| `canRead` | `boolean` | Whether the user can read content in this space. |
+
+## Related
+
+- [Space Member data model](/data-models/space-member)
+- [useSpace hook](/hooks/spaces/use-space)
+- [Create Space API](/api-reference/spaces/create-space)
+- [Fetch Space API](/api-reference/spaces/fetch-space)

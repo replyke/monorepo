@@ -1,0 +1,75 @@
+---
+title: "Create comment"
+description: "Create a new comment or reply on an entity"
+icon: "plug"
+---
+
+## Overview
+
+`useCreateComment` returns a function that creates a new comment. Use it directly for low-level comment creation. Inside a `CommentSectionProvider`, prefer `createComment` from `useCommentSection` — it adds optimistic UI and manages the comment tree automatically.
+
+<Note>Requires an authenticated user.</Note>
+
+## Usage Example
+
+```tsx
+import { useCreateComment } from "@replyke/react-js";
+
+function PostComment({ entityId }: { entityId: string }) {
+  const createComment = useCreateComment();
+
+  const handleSubmit = async (text: string) => {
+    const comment = await createComment({
+      entityId,
+      content: text,
+    });
+    console.log("Created:", comment.id);
+  };
+
+  return <button onClick={() => handleSubmit("Hello!")}>Comment</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="entityId" type="string" required>
+  The entity to comment on.
+</ParamField>
+
+<ParamField path="content" type="string">
+  Text content of the comment. Required if `gif` is not provided.
+</ParamField>
+
+<ParamField path="gif" type="GifData">
+  GIF attachment. Required if `content` is not provided.
+</ParamField>
+
+<ParamField path="parentCommentId" type="string">
+  ID of the parent comment for replies.
+</ParamField>
+
+<ParamField path="foreignId" type="string">
+  Your own ID to associate with this comment.
+</ParamField>
+
+<ParamField path="referencedCommentId" type="string">
+  ID of a comment being referenced/quoted in this comment.
+</ParamField>
+
+<ParamField path="mentions" type="Mention[]">
+  Users or spaces mentioned in the comment content.
+</ParamField>
+
+<ParamField path="attachments" type="Record<string, any>[]">
+  Arbitrary attachment metadata.
+</ParamField>
+
+<ParamField path="metadata" type="Record<string, any>">
+  Arbitrary project-specific data.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Comment" type="Comment">
+  The newly created comment. See [Comment data model](/data-models/comment).
+</ResponseField>

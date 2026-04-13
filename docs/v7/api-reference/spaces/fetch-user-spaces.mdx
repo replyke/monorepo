@@ -1,0 +1,48 @@
+---
+title: "Fetch User Spaces"
+api: "GET /:projectId/api/v7/spaces/user-spaces"
+description: "Get spaces the authenticated user is a member of"
+---
+
+Returns a paginated list of spaces where the authenticated user has an active membership, along with their membership details for each space.
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page. Max `100`.
+</ParamField>
+
+<ParamField query="role" type="string">
+  Filter by role. Single value (`"admin"`, `"moderator"`, `"member"`) or comma-separated list (e.g. `"admin,moderator"`).
+</ParamField>
+
+<ParamField query="include" type="string">
+  Optional comma-separated includes. Pass `"files"` to include avatar and banner file objects on each space.
+</ParamField>
+
+<ParamField query="all" type="string">
+  Pass `"true"` to return all memberships without pagination. When used, the response omits the `pagination` field.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="UserSpaceItem[]">
+  Each item contains a `space` and a `membership` object.
+
+  <Expandable title="membership properties">
+    <ResponseField name="membershipId" type="string">Membership record UUID.</ResponseField>
+    <ResponseField name="role" type="string">`"admin"`, `"moderator"`, or `"member"`.</ResponseField>
+    <ResponseField name="status" type="string">`"active"` (only active memberships are returned).</ResponseField>
+    <ResponseField name="joinedAt" type="Date">When the membership was created.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Standard pagination metadata.
+</ResponseField>
+
+See also: [useFetchUserSpaces](/hooks/spaces/use-fetch-user-spaces)

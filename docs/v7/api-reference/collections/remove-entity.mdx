@@ -1,0 +1,47 @@
+---
+title: "Remove Entity from Collection"
+api: "DELETE /:projectId/api/v7/collections/:collectionId/entities/:entityId"
+description: "Remove a saved entity from a collection"
+---
+
+Removes an entity from the specified collection. This operation is idempotent — if the entity is not in the collection, it still returns success.
+
+## Path Parameters
+
+<ParamField path="collectionId" type="string" required>
+  The ID of the collection.
+</ParamField>
+
+<ParamField path="entityId" type="string" required>
+  The ID of the entity to remove.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Always `true` on success.
+</ResponseField>
+
+<ResponseField name="collection" type="object">
+  Updated collection metadata.
+
+  <Expandable>
+    <ResponseField name="id" type="string">Collection ID.</ResponseField>
+    <ResponseField name="entityCount" type="number">New entity count after the removal.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Collection Not Found — 404">
+    ```json
+    { "error": "Collection not found", "code": "collection/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Internal server error.", "code": "collection/server-error" }
+    ```
+  </Accordion>
+</AccordionGroup>

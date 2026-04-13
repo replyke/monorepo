@@ -1,0 +1,57 @@
+---
+title: "Mark Notification as Read"
+api: "PATCH /:projectId/api/v7/app-notifications/:notificationId/mark-as-read"
+description: "Mark a single notification as read by its ID"
+---
+
+Marks a specific notification as read. The notification must belong to the authenticated user — users cannot mark another user's notifications as read.
+
+<Note>
+  This endpoint requires an authenticated user. Include a valid `Authorization: Bearer <accessToken>` header.
+</Note>
+
+## Path Parameters
+
+<ParamField path="notificationId" type="string" required>
+  The UUID of the notification to mark as read.
+</ParamField>
+
+## Response
+
+Returns HTTP `200` on success with no response body.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Notification Not Found — 404">
+    ```json
+    {
+      "error": "Notification not found",
+      "code": "app-notification/not-found"
+    }
+    ```
+    Returned when the notification does not exist or does not belong to the authenticated user.
+  </Accordion>
+  <Accordion title="Invalid Params — 400">
+    ```json
+    {
+      "error": "...",
+      "code": "app-notification/invalid-params"
+    }
+    ```
+    Returned when `notificationId` is not a valid UUID.
+  </Accordion>
+  <Accordion title="Unauthorized — 401">
+    ```json
+    {
+      "error": "Unauthorized",
+      "code": "auth/unauthorized"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Mark All Notifications as Read](/api-reference/app-notifications/mark-all-as-read)
+- [`useAppNotifications` hook](/hooks/app-notifications/use-app-notifications)

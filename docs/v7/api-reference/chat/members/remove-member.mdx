@@ -1,0 +1,50 @@
+---
+title: "Remove Member"
+api: "DELETE /:projectId/api/v7/conversations/:conversationId/members/:userId"
+description: "Remove a user from a group conversation"
+---
+
+Removes an active member from a group conversation. The caller must be an active `admin`. Only group conversations support member removal.
+
+The removed user's membership row is soft-deactivated (`isActive: false`, `leftAt` set to now). They are evicted from the real-time room immediately.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  The ID of the user to remove.
+</ParamField>
+
+## Response
+
+```json
+{ "message": "Member removed." }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Conversation not found.", "code": "chat/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Type — 400 Bad Request">
+    ```json
+    { "error": "Members can only be removed from group conversations.", "code": "chat/invalid-type" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "Only group admins can remove members.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Member Not Found — 404">
+    ```json
+    { "error": "Member not found in this conversation.", "code": "chat/member-not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

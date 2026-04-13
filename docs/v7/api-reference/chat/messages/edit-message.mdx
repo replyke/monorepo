@@ -1,0 +1,78 @@
+---
+title: "Edit Message"
+api: "PATCH /:projectId/api/v7/conversations/:conversationId/messages/:messageId"
+description: "Edit the content of a message"
+---
+
+Updates the content, GIF, mentions, or metadata of an existing message. Only the message author can edit their own messages. Deleted or moderator-removed messages cannot be edited.
+
+If no fields actually changed, the endpoint returns the current message without updating `editedAt`.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+<ParamField path="messageId" type="string" required>
+  The ID of the message to edit.
+</ParamField>
+
+## Body Parameters
+
+All fields are optional. Only provided fields are updated.
+
+<ParamField body="content" type="string">
+  New text content. After editing, the message must still have at least one of: content, GIF, or an attached file.
+</ParamField>
+
+<ParamField body="gif" type="string">
+  Updated GIF URL. Set to `null` to remove the GIF.
+</ParamField>
+
+<ParamField body="mentions" type="array">
+  Updated array of [Mention](/data-models/chat-message#mention) objects.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Updated metadata.
+</ParamField>
+
+## Response
+
+Returns the updated [ChatMessage](/data-models/chat-message), with `editedAt` set to the current time.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Forbidden — 403 (not a member)">
+    ```json
+    { "error": "You are not a member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Message not found.", "code": "chat/message-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden — 403 (not the author)">
+    ```json
+    { "error": "Only the message author can edit this message.", "code": "chat/forbidden" }
+    ```
+  </Accordion>
+  <Accordion title="Message Deleted — 400 Bad Request">
+    ```json
+    { "error": "Deleted messages cannot be edited.", "code": "chat/message-deleted" }
+    ```
+  </Accordion>
+  <Accordion title="Message Removed — 400 Bad Request">
+    ```json
+    { "error": "Removed messages cannot be edited.", "code": "chat/message-removed" }
+    ```
+  </Accordion>
+  <Accordion title="Empty Result — 400 Bad Request">
+    ```json
+    { "error": "Edited message must have at least content, a GIF, or a file.", "code": "chat/empty-message" }
+    ```
+  </Accordion>
+</AccordionGroup>

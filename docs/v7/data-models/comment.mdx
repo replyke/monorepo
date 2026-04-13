@@ -1,0 +1,69 @@
+---
+title: "Comment"
+description: "The Comment interface shape returned by the API and SDK"
+---
+
+A comment represents a user-authored response to an entity. Comments support nested replies, reactions, GIF attachments, user mentions, and moderation.
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique comment identifier (UUID). |
+| `foreignId` | `string \| null` | Your system's ID for this comment, if applicable. |
+| `projectId` | `string` | The project this comment belongs to. |
+| `entityId` | `string` | The entity this comment belongs to. |
+| `entity` | `Entity` | Populated when `include` contains `"entity"` or `"space"`. |
+| `userId` | `string` | The ID of the user who posted this comment. |
+| `user` | `User` | The comment author. Populated when `include` contains `"user"`. |
+| `parentId` | `string \| null` | ID of the parent comment if this is a reply. `null` for top-level comments. |
+| `parentComment` | `Comment` | The parent comment object. Populated when `include` contains `"parent"`. |
+| `content` | `string \| null` | Text content of the comment. |
+| `gif` | `GifData \| null` | Attached GIF, if any. |
+| `mentions` | `Mention[]` | Array of user mentions embedded in the comment. |
+| `upvotes` | `string[]` | Legacy v6 field — array of user IDs that upvoted. Use `reactionCounts` in v7. |
+| `downvotes` | `string[]` | Legacy v6 field — array of user IDs that downvoted. Use `reactionCounts` in v7. |
+| `reactionCounts` | `ReactionCounts` | Counts for all 8 reaction types. See [Reaction](/data-models/reaction). |
+| `userReaction` | `ReactionType \| null` | The current user's reaction, populated when authenticated. |
+| `repliesCount` | `number` | Number of direct replies to this comment. |
+| `metadata` | `Record<string, any>` | Custom key-value data (max 10 KB). |
+| `moderationStatus` | `"approved" \| "removed" \| null` | Space moderation status. |
+| `moderatedAt` | `Date \| null` | When the moderation action was taken. |
+| `moderatedById` | `string \| null` | ID of the moderator. |
+| `moderatedByType` | `"client" \| "user" \| null` | Whether a client (admin) or user performed moderation. |
+| `moderationReason` | `string \| null` | Reason provided for moderation. |
+| `userDeletedAt` | `Date \| null` | Set when a user soft-deletes their own comment. Content is replaced with a placeholder but the comment record remains (Reddit-style behavior). |
+| `createdAt` | `Date` | When the comment was created. |
+| `updatedAt` | `Date` | When the comment was last updated. |
+| `deletedAt` | `Date \| null` | Hard-delete timestamp. `null` for active comments. |
+
+## Nested Types
+
+### GifData
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | GIF provider identifier. |
+| `url` | `string` | URL to the GIF page or canonical source. |
+| `gifUrl` | `string` | Direct URL to the animated GIF file. |
+| `gifPreviewUrl` | `string` | URL to a lower-quality preview of the GIF. |
+| `altText` | `string \| undefined` | Accessible description of the GIF. |
+| `aspectRatio` | `number` | Width-to-height ratio for rendering. |
+
+## Includes
+
+Pass an `include` array to populate optional fields:
+
+| Include value | Populates |
+|--------------|-----------|
+| `"user"` | `user` — the comment author |
+| `"entity"` | `entity` — the parent entity |
+| `"space"` | `entity` with its associated space populated |
+| `"parent"` | `parentComment` — the parent comment, for replies |
+
+## See Also
+
+- [Reaction](/data-models/reaction)
+- [Entity](/data-models/entity)
+- [Fetch Many Comments](/api-reference/comments/fetch-many-comments)
+- [useEntityComments hook](/hooks/comments/use-entity-comments)

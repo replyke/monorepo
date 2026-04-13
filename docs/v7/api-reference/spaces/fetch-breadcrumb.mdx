@@ -1,0 +1,25 @@
+---
+title: "Fetch Space Breadcrumb"
+api: "GET /:projectId/api/v7/spaces/:spaceId/breadcrumb"
+description: "Get the ancestor chain of a space for breadcrumb navigation"
+---
+
+Returns an ordered list of spaces from the root ancestor down to and including the specified space itself, suitable for breadcrumb navigation.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space whose ancestors to fetch.
+</ParamField>
+
+## Response
+
+<ResponseField name="breadcrumb" type="SpacePreview[]">
+  Ordered array of ancestor [SpacePreview](/data-models/space) objects from the root down to the space itself. For a root-level space this array contains only that space. Each item includes: `id`, `shortId`, `name`, `slug`, `avatarFileId`, `parentSpaceId`, `depth`.
+</ResponseField>
+
+<ResponseField name="depth" type="number">
+  Nesting depth of the requested space. `0` for root-level spaces.
+</ResponseField>
+
+See also: [useFetchSpaceBreadcrumb](/hooks/spaces/use-fetch-space-breadcrumb)

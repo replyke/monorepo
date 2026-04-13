@@ -1,0 +1,60 @@
+---
+title: "Search Content"
+api: "POST /:projectId/api/v7/search/content"
+description: "Semantic search over entities, comments, and messages"
+---
+
+Performs vector-similarity search over project content (entities, comments, and chat messages) using AI embeddings. Returns the most semantically relevant results for the given query.
+
+**Requires a paid plan with semantic search enabled.**
+
+## Body Parameters
+
+<ParamField body="query" type="string" required>
+  The natural language search query.
+</ParamField>
+
+<ParamField body="sourceTypes" type="string[]" default='["entity", "comment", "message"]'>
+  Content types to search. Any combination of `entity`, `comment`, `message`.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Restrict search to a specific space.
+</ParamField>
+
+<ParamField body="conversationId" type="string">
+  Restrict message search to a specific conversation.
+</ParamField>
+
+<ParamField body="limit" type="number" default="20">
+  Maximum number of results to return. Maximum `50`.
+</ParamField>
+
+## Response
+
+Returns an array of result objects ordered by similarity (highest first):
+
+```json
+[
+  {
+    "sourceType": "entity",
+    "similarity": 0.87,
+    "record": { ...Entity | Comment | ChatMessage... }
+  }
+]
+```
+
+Each result includes:
+- `sourceType` — one of `"entity"`, `"comment"`, or `"message"`, indicating which type of record was matched.
+- `similarity` — cosine similarity score between the query and the matched content.
+- `record` — the fully populated entity, comment, or chat message object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Plan Required — 403">
+    ```json
+    { "error": "Semantic search requires a paid plan", "code": "project/plan-required" }
+    ```
+  </Accordion>
+</AccordionGroup>

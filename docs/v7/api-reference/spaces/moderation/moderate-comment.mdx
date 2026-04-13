@@ -1,0 +1,39 @@
+---
+title: "Moderate Comment"
+api: "PATCH /:projectId/api/v7/spaces/:spaceId/comments/:commentId/moderation"
+description: "Approve or remove a comment within a space"
+---
+
+Takes a direct moderation action on a comment in a space. Requires the caller to be a moderator or admin.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="commentId" type="string" required>
+  UUID of the comment to moderate.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="action" type="string" required>
+  The moderation action: `"approve"` or `"remove"`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason for the moderation action. Up to 1,000 characters.
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="moderationStatus" type="string">
+  The resulting status: `"approved"` or `"removed"`.
+</ResponseField>
+
+See also: [useModerateSpaceComment](/hooks/spaces/use-moderate-space-comment)

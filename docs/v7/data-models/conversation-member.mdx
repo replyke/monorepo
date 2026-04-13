@@ -1,0 +1,42 @@
+---
+title: "ConversationMember"
+description: "The shape of a conversation membership record returned by the Chat API and SDK"
+---
+
+A `ConversationMember` records one user's participation in a conversation. A user has exactly one membership row per conversation. The row persists even after a user leaves — `isActive` tracks whether they are currently a participant.
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique membership identifier (UUID). |
+| `projectId` | `string` | The project this membership belongs to. |
+| `conversationId` | `string` | ID of the conversation. |
+| `userId` | `string` | ID of the member user. |
+| `user` | `User \| undefined` | The member's user profile. Included when listing members. |
+| `role` | `"admin" \| "member" \| null` | Member role within the conversation. `null` for direct and space conversations — space conversations derive roles from `SpaceMember`. Only `group` conversations use this field. |
+| `lastReadAt` | `Date \| null` | Timestamp of the user's last read event. Used to compute `unreadCount` on `ConversationPreview`. `null` if the user has never read the conversation. |
+| `mutedUntil` | `Date \| null` | Reserved for future mute functionality. Not used in v7. |
+| `isActive` | `boolean` | Whether the user is currently an active participant. `false` if they left voluntarily or were removed. |
+| `leftAt` | `Date \| null` | Timestamp when the user left the conversation. `null` if still active. |
+| `createdAt` | `Date` | Timestamp when the membership was created (i.e. when the user joined). |
+| `updatedAt` | `Date` | Timestamp of the last update to this record. |
+
+## Roles
+
+Roles only apply to `group` conversations.
+
+| Role | Description |
+|------|-------------|
+| `"admin"` | Can add/remove members, update the conversation, and delete the conversation. |
+| `"member"` | Can send messages and leave the conversation. |
+| `null` | Used for `direct` and `space` conversation members (role is derived from context). |
+
+<Note>
+  For space conversations, posting permissions are controlled by the conversation's `postingPermission` field and the user's `SpaceMember` role — not by `ConversationMember.role`.
+</Note>
+
+## Related
+
+- [Conversation](/data-models/conversation) — the conversation this membership belongs to
+- [ChatMessage](/data-models/chat-message) — messages in the conversation

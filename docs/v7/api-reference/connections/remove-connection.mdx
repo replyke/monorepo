@@ -1,0 +1,52 @@
+---
+title: "Remove Connection"
+api: "DELETE /:projectId/api/v7/connections/:connectionId"
+description: "Withdraw a pending request or disconnect an accepted connection by connection ID"
+---
+
+Removes a connection record by its ID. The behavior depends on the connection's current status:
+
+- **Pending** — only the requester can withdraw the request (record is deleted).
+- **Accepted** — either connected user can disconnect (record is deleted).
+
+Use [Remove Connection (by user ID)](/api-reference/users/connections/remove-connection) if you only have the other user's ID.
+
+## Path Parameters
+
+<ParamField path="connectionId" type="string" required>
+  The ID (UUID) of the connection record to remove.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200`:
+
+<ResponseField name="message" type="string">
+  Human-readable description: `"Connection request withdrawn successfully."` or `"Connection removed successfully."`.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    {
+      "error": "Connection not found or cannot be withdrawn.",
+      "code": "connection/not-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    {
+      "error": "Only the requester can withdraw a pending connection request.",
+      "code": "connection/unauthorized"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useRemoveConnection` hook](/hooks/connections/use-remove-connection)
+- [Remove Connection (by user ID)](/api-reference/users/connections/remove-connection)

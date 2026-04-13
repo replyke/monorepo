@@ -1,0 +1,45 @@
+---
+title: "Unban Member"
+api: "PATCH /:projectId/api/v7/spaces/:spaceId/members/:memberId/unban"
+description: "Unban a previously banned member"
+---
+
+Sets a banned member's status back to `"active"`. Requires the caller to be a moderator or admin. Moderators can only unban regular members, not other moderators or admins.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="memberId" type="string" required>
+  UUID of the membership record to unban.
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="membership" type="object">
+  The updated membership record with `status: "active"`.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Banned membership not found.", "code": "space/membership-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Insufficient Permissions — 403">
+    Moderators attempting to unban another moderator or admin.
+    ```json
+    { "error": "Moderators can only unban regular members.", "code": "space/insufficient-permissions" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useUnbanMember](/hooks/spaces/use-unban-member)

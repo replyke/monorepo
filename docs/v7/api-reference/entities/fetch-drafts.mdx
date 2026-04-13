@@ -1,0 +1,63 @@
+---
+title: "Fetch Drafts"
+api: "GET /:projectId/api/v7/entities/drafts"
+description: "Get the authenticated user's draft entities"
+---
+
+Returns a paginated list of draft entities belonging to the authenticated user. Drafts are invisible to all other users and excluded from all other entity list endpoints until published.
+
+**Authentication required.**
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField query="limit" type="number" default="10">
+  Number of drafts per page. Maximum `100`.
+</ParamField>
+
+<ParamField query="sourceId" type="string">
+  Filter drafts by `sourceId`. Pass `"null"` to return drafts with no `sourceId`.
+</ParamField>
+
+<ParamField query="spaceId" type="string">
+  Filter drafts by space ID.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include:
+  - `user` — the author's user profile
+  - `space` — the space the entity belongs to
+  - `files` — uploaded file/image attachments
+
+  <Note>`topComment` and `saved` are not supported for drafts.</Note>
+</ParamField>
+
+## Response
+
+Returns a paginated response:
+
+```json
+{
+  "data": [ ...Entity[] ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 3,
+    "totalPages": 1,
+    "hasMore": false
+  }
+}
+```
+
+Each item is an [Entity](/data-models/entity) with `isDraft: true`. Results are ordered by most recently updated.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 401">
+    Returned when no user is authenticated.
+  </Accordion>
+</AccordionGroup>

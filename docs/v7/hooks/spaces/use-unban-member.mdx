@@ -1,0 +1,41 @@
+---
+title: "Unban member"
+description: "Unban a previously banned member from a space"
+icon: "plug"
+---
+
+## Overview
+
+`useUnbanMember` returns a callable function for unbanning a member. Sets their membership status from `"banned"` back to `"active"`. Requires the caller to be a moderator or admin.
+
+## Usage Example
+
+```tsx
+import { useUnbanMember } from "@replyke/react-js";
+
+function BannedMemberRow({ spaceId, memberId }: { spaceId: string; memberId: string }) {
+  const unban = useUnbanMember();
+
+  return (
+    <button onClick={() => unban({ spaceId, memberId })}>
+      Unban
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="memberId" type="string" required>
+  UUID of the membership record to unban.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>

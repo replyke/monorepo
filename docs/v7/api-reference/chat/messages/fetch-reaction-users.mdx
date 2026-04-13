@@ -1,0 +1,73 @@
+---
+title: "Fetch Reaction Users"
+api: "GET /:projectId/api/v7/conversations/:conversationId/messages/:messageId/reactions"
+description: "List users who reacted to a message with a specific emoji"
+---
+
+Returns a paginated list of users who reacted with a given emoji on a message. Useful for rendering a "who reacted" popover. The caller must be a member of the conversation.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+<ParamField path="messageId" type="string" required>
+  The ID of the message.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="emoji" type="string" required>
+  The emoji to filter by.
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number (1-based). Defaults to 1.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Number of reactions per page. Defaults to 50. Max 100.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="array">
+  Array of reaction entries, ordered by `createdAt` ascending.
+
+  <Expandable title="properties">
+    <ResponseField name="user" type="object">
+      User who reacted. Includes `id`, `name`, `username`, `avatar`.
+    </ResponseField>
+    <ResponseField name="emoji" type="string">
+      The emoji for this reaction.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      Timestamp when the reaction was added.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  <Expandable title="properties">
+    <ResponseField name="page" type="number">Current page.</ResponseField>
+    <ResponseField name="limit" type="number">Items per page.</ResponseField>
+    <ResponseField name="total" type="number">Total number of reactions for this emoji.</ResponseField>
+    <ResponseField name="hasMore" type="boolean">Whether more pages exist.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "You are not a member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Message not found.", "code": "chat/message-not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

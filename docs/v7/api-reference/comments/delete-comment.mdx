@@ -1,0 +1,41 @@
+---
+title: "Delete Comment"
+api: "DELETE /:projectId/api/v7/comments/:commentId"
+description: "Delete a comment"
+---
+
+Deletes a comment. Only the comment's author, or a request with a service or master key, can delete a comment.
+
+**Authentication required.**
+
+All deletes are soft-deletes: the comment's content, gif, mentions, and attachments are cleared and `userDeletedAt` is set. The record is preserved as a stripped placeholder in thread view to maintain the reply tree structure (Reddit-style).
+
+## Path Parameters
+
+<ParamField path="commentId" type="string" required>
+  The UUID of the comment to delete.
+</ParamField>
+
+## Response
+
+Returns `204 No Content` on success.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Comment not found", "code": "comment/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Already Deleted — 404">
+    ```json
+    { "error": "Comment already deleted", "code": "comment/already-deleted" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "You do not have permission to delete this comment.", "code": "comment/not-authorized" }
+    ```
+  </Accordion>
+</AccordionGroup>

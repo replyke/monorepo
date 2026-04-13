@@ -1,0 +1,54 @@
+---
+title: "Add Entity to Collection"
+api: "POST /:projectId/api/v7/collections/:collectionId/entities"
+description: "Save an entity into a collection"
+---
+
+Saves an entity into the specified collection. This operation is idempotent — if the entity is already in the collection, it returns success without creating a duplicate.
+
+## Path Parameters
+
+<ParamField path="collectionId" type="string" required>
+  The ID of the collection to save the entity into.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="entityId" type="string" required>
+  The ID of the entity to save.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Always `true` on success.
+</ResponseField>
+
+<ResponseField name="collection" type="object">
+  Updated collection metadata.
+
+  <Expandable>
+    <ResponseField name="id" type="string">Collection ID.</ResponseField>
+    <ResponseField name="entityCount" type="number">New entity count after the save.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Collection Not Found — 404">
+    ```json
+    { "error": "Collection not found", "code": "collection/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Entity Not Found — 404">
+    ```json
+    { "error": "Entity not found", "code": "entity/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Internal server error.", "code": "collection/server-error" }
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,81 @@
+---
+title: "Use chat messages"
+description: "Load and paginate messages for a conversation or thread"
+icon: "cube"
+---
+
+## Overview
+
+Fetches messages for a conversation with cursor-based pagination. Can be used for the main message stream or for a specific thread (by passing `parentId`). Messages are stored in Redux and kept in sync by `ChatProvider` socket events.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useChatMessages } from "@replyke/react-js";
+
+function MessageList({ conversationId }: { conversationId: string }) {
+  const { messages, loading, hasMore, loadOlder } = useChatMessages({
+    conversationId,
+  });
+
+  return (
+    <div>
+      {hasMore && (
+        <button onClick={loadOlder} disabled={loading}>
+          Load older messages
+        </button>
+      )}
+      {messages.map((msg) => (
+        <div key={msg.id}>
+          <strong>{msg.user?.name ?? "Deleted user"}</strong>: {msg.content}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Props
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation to load messages for.
+</ParamField>
+
+<ParamField body="parentId" type="string | null">
+  When provided, loads thread replies for this parent message ID instead of the main stream. Replies are sorted ascending (oldest first); `loadOlder` fetches newer replies.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Number of messages per page. Defaults to `50`.
+</ParamField>
+
+<ParamField body="includeFiles" type="boolean">
+  When `true`, the server populates the `files` field on each message. Omitted by default to keep payloads small.
+</ParamField>
+
+## Returns
+
+<ResponseField name="messages" type="ChatMessage[]">
+  The loaded messages in ascending order (oldest first). See [ChatMessage](/data-models/chat-message).
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a fetch is in progress.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if there are more messages to load.
+</ResponseField>
+
+<ResponseField name="loadOlder" type="() => Promise<void>">
+  For the main stream: fetches messages older than the oldest currently loaded.
+  For threads: fetches replies newer than the newest currently loaded.
+  No-ops if `loading` is `true` or `hasMore` is `false`.
+</ResponseField>
+
+## Notes
+
+- New messages that arrive via the socket (`message:created`) are appended to the store automatically — no manual refetch needed.
+- For integration guidance, see [Chat: Messages](/sdk/chat/messages).

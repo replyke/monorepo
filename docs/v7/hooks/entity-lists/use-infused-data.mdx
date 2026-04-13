@@ -1,0 +1,29 @@
+---
+title: "Use infused data"
+description: "Merge an array of Replyke entities with data fetched from your own backend"
+icon: "cube"
+---
+
+## Overview
+
+`useInfusedData` takes an array of entities and an optional `infuseData` function, and returns an array of those entities merged with external data under an `infusion` key. Results are cached by `foreignId` per hook instance.
+
+This hook is used internally by `useEntityList` when you pass `infuseData`. Use it directly only if you need to infuse a custom entity array that isn't managed by `useEntityList`.
+
+See [Infusing Data](/sdk/entity-lists/infuse-data) for a full guide.
+
+## Props
+
+<ParamField path="entities" type="Entity[]" required>
+  The entities to infuse.
+</ParamField>
+
+<ParamField path="infuseData" type="(foreignId: string) => Promise<Record<string, any> | null>">
+  Called once per unique `foreignId`. Return `null` if the external record is not found.
+</ParamField>
+
+## Returns
+
+`(Entity & { infusion: Record<string, any> })[]`
+
+Each item in the returned array is the original entity with an added `infusion` property containing the data returned by `infuseData`. Entities without a `foreignId` (or where `infuseData` returns `null`) have `infusion: {}`.

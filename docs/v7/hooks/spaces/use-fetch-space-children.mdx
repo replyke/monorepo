@@ -1,0 +1,50 @@
+---
+title: "Fetch space children"
+description: "Fetch direct child spaces of a parent space"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchSpaceChildren` returns a callable function that fetches the immediate child spaces of a given space. Results are paginated.
+
+## Usage Example
+
+```tsx
+import { useFetchSpaceChildren } from "@replyke/react-js";
+
+function ChildSpaceList({ spaceId }: { spaceId: string }) {
+  const fetchChildren = useFetchSpaceChildren();
+
+  const loadChildren = async () => {
+    const result = await fetchChildren({ spaceId, page: 1, limit: 20 });
+    // result.data: Space[]
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the parent space.
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number. Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Number of results per page.
+</ParamField>
+
+## Returns
+
+<ResponseField name="data" type="Space[]">
+  Array of [Space](/data-models/space) objects representing the child spaces.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Standard pagination metadata.
+</ResponseField>
+
+<Tip>The `useSpace` hook also includes a `childSpaces` field with up to 10 previews of children, useful for navigation breadcrumbs without a separate fetch.</Tip>

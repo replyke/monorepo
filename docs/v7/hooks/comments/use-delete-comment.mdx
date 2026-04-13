@@ -1,0 +1,33 @@
+---
+title: "Delete comment"
+description: "Delete a comment"
+icon: "plug"
+---
+
+## Overview
+
+`useDeleteComment` returns a function that deletes a comment. When used inside a `CommentSectionProvider`, prefer `deleteComment` from `useCommentSection` — it handles the Reddit-style soft-delete UI automatically.
+
+## Usage Example
+
+```tsx
+import { useDeleteComment } from "@replyke/react-js";
+
+function DeleteButton({ commentId }: { commentId: string }) {
+  const deleteComment = useDeleteComment();
+
+  return (
+    <button onClick={() => deleteComment({ commentId })}>Delete</button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="commentId" type="string" required>
+  The ID of the comment to delete.
+</ParamField>
+
+## Returns
+
+`Promise<void>` — resolves when the comment is deleted.

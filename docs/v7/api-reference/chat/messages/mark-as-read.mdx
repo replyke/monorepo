@@ -1,0 +1,37 @@
+---
+title: "Mark as Read"
+api: "POST /:projectId/api/v7/conversations/:conversationId/read"
+description: "Advance the current user's read cursor to a given message"
+---
+
+Updates the current user's `lastReadAt` timestamp on their conversation membership to the `createdAt` of the specified message. This reduces the unread count for the conversation.
+
+The operation is monotonic — `lastReadAt` is never moved backward. If the provided message is older than the current `lastReadAt`, the call is a no-op.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="messageId" type="string" required>
+  The ID of the message to mark as read. The user's `lastReadAt` will be set to this message's `createdAt`.
+</ParamField>
+
+## Response
+
+```json
+{ "message": "Marked as read." }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "You are not an active member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+</AccordionGroup>

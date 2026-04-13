@@ -1,0 +1,73 @@
+---
+title: "Update space"
+description: "Update a space's settings, name, description, or images"
+icon: "plug"
+---
+
+## Overview
+
+`useUpdateSpace` returns a callable function for updating a space. Only space admins can update a space. Supports updating avatar and banner images.
+
+<Note>When using `SpaceProvider`, prefer calling `updateSpace` from `useSpace` — it handles state updates automatically.</Note>
+
+## Usage Example
+
+```tsx
+import { useUpdateSpace } from "@replyke/react-js";
+
+function SpaceSettings({ spaceId }: { spaceId: string }) {
+  const updateSpace = useUpdateSpace();
+
+  const handleSave = async (name: string, description: string) => {
+    const updated = await updateSpace({
+      spaceId,
+      update: { name, description },
+    });
+    console.log("Updated:", updated.name);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space to update.
+</ParamField>
+
+<ParamField path="update" type="object" required>
+  Fields to update. All fields are optional.
+
+  <Expandable title="update fields">
+    <ParamField path="name" type="string">
+      New display name (3–100 characters).
+    </ParamField>
+    <ParamField path="slug" type="string | null">
+      New URL slug. Pass `null` to remove.
+    </ParamField>
+    <ParamField path="description" type="string | null">
+      New description. Pass `null` to remove.
+    </ParamField>
+    <ParamField path="readingPermission" type='"anyone" | "members"'>
+      Updated reading permission.
+    </ParamField>
+    <ParamField path="postingPermission" type='"anyone" | "members" | "admins"'>
+      Updated posting permission.
+    </ParamField>
+    <ParamField path="requireJoinApproval" type="boolean">
+      Updated join approval requirement.
+    </ParamField>
+    <ParamField path="metadata" type="Record<string, any>">
+      Updated metadata.
+    </ParamField>
+    <ParamField path="avatar" type="{ file: File | Blob; options: UploadImageOptions }">
+      New avatar image to upload.
+    </ParamField>
+    <ParamField path="banner" type="{ file: File | Blob; options: UploadImageOptions }">
+      New banner image to upload.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+Returns the updated [SpaceDetailed](/data-models/space) object.

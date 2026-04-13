@@ -1,0 +1,80 @@
+---
+title: "Ask Content"
+api: "POST /:projectId/api/v7/search/ask"
+description: "AI-powered Q&A grounded in your project's content"
+---
+
+Answers a natural language question using content from your project as context. The endpoint first performs semantic retrieval to find relevant content, then sends the context to an LLM to generate a grounded answer. Responds via **Server-Sent Events (SSE)** for streaming output.
+
+**Requires a paid plan with semantic search enabled.**
+
+## Body Parameters
+
+<ParamField body="query" type="string" required>
+  The question to answer. Typos and ambiguous phrasing are handled gracefully.
+</ParamField>
+
+<ParamField body="sourceTypes" type="string[]" default='["entity", "comment", "message"]'>
+  Content types to use as context. Any combination of `entity`, `comment`, `message`.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Restrict the context lookup to a specific space.
+</ParamField>
+
+<ParamField body="conversationId" type="string">
+  Restrict message context lookup to a specific conversation.
+</ParamField>
+
+<ParamField body="limit" type="number" default="20">
+  Maximum number of content chunks to retrieve for context. Maximum `50`.
+</ParamField>
+
+## Response
+
+The response is a **Server-Sent Events** stream with `Content-Type: text/event-stream`. Three event types are emitted:
+
+**`token`** — streamed LLM answer tokens:
+```
+event: token
+data: {"content": "Based on"}
+
+event: token
+data: {"content": " the discussion..."}
+```
+
+**`sources`** — the content records used as context, sent after the answer is complete:
+```
+event: sources
+data: [{"sourceType": "entity", "similarity": 0.87, "record": {...}}, ...]
+```
+
+Each source object follows the same shape as the [Search Content](/api-reference/search/search-content) response — `sourceType`, `similarity`, and a fully populated `record`. An empty array is sent when no relevant context was found.
+
+**`done`** — signals the stream is finished:
+```
+event: done
+data: {}
+```
+
+<Note>
+  If no relevant content is found above the similarity threshold, the LLM response is skipped and the answer event immediately says "I couldn't find any relevant content to answer your question."
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Plan Required — 403">
+    ```json
+    { "error": "Semantic search requires a paid plan", "code": "project/plan-required" }
+    ```
+    Only returned when headers have not yet been sent (i.e., before streaming starts).
+  </Accordion>
+  <Accordion title="Error Event (during stream)">
+    If an error occurs after streaming starts:
+    ```
+    event: error
+    data: {"error": "Internal server error"}
+    ```
+  </Accordion>
+</AccordionGroup>

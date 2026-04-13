@@ -1,0 +1,135 @@
+---
+title: "Fetch User by Foreign ID"
+api: "GET /:projectId/api/v7/users/by-foreign-id"
+description: "Look up a user by your own system's external user ID"
+---
+
+Finds a user within the project by their `foreignId` — the external identifier you provided when creating or syncing the user. Optionally creates the user if not found (requires service or master token).
+
+## Query Parameters
+
+<ParamField query="foreignId" type="string" required>
+  The external identifier from your system.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include. Pass `"files"` to include
+  the processed `avatarFile` and `bannerFile` objects.
+</ParamField>
+
+<ParamField query="createIfNotFound" type="string">
+  Set to `"true"` to create the user if they do not exist. Requires a service
+  or master token. Returns `201` on creation, `200` on an existing user.
+</ParamField>
+
+<ParamField query="name" type="string">
+  Display name to set when creating the user (`createIfNotFound` only).
+</ParamField>
+
+<ParamField query="username" type="string">
+  Username to assign when creating the user (`createIfNotFound` only).
+</ParamField>
+
+<ParamField query="avatar" type="string">
+  Avatar URL to set when creating the user (`createIfNotFound` only).
+</ParamField>
+
+<ParamField query="bio" type="string">
+  Bio text to set when creating the user (`createIfNotFound` only).
+</ParamField>
+
+<ParamField query="metadata" type="string">
+  JSON-encoded public metadata to set when creating the user
+  (`createIfNotFound` only).
+</ParamField>
+
+<ParamField query="secureMetadata" type="string">
+  JSON-encoded private metadata to set when creating the user
+  (`createIfNotFound` only).
+</ParamField>
+
+## Response
+
+Returns HTTP `200` (found) or `201` (created) with the user object:
+
+<ResponseField name="id" type="string">
+  Unique user ID (UUID).
+</ResponseField>
+
+<ResponseField name="foreignId" type="string | null">
+  The foreign ID you provided.
+</ResponseField>
+
+<ResponseField name="projectId" type="string">
+  Project this user belongs to.
+</ResponseField>
+
+<ResponseField name="name" type="string | null">
+  Display name.
+</ResponseField>
+
+<ResponseField name="username" type="string | null">
+  Unique username within the project.
+</ResponseField>
+
+<ResponseField name="avatar" type="string | null">
+  Avatar image URL.
+</ResponseField>
+
+<ResponseField name="bio" type="string | null">
+  Short bio text.
+</ResponseField>
+
+<ResponseField name="metadata" type="object | null">
+  Public custom key-value data.
+</ResponseField>
+
+<ResponseField name="reputation" type="number">
+  Reputation score.
+</ResponseField>
+
+<ResponseField name="avatarFile" type="object | null">
+  Processed avatar image with variants. Only present when `include=files` is
+  requested.
+</ResponseField>
+
+<ResponseField name="bannerFile" type="object | null">
+  Processed banner image with variants. Only present when `include=files` is
+  requested.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO timestamp of account creation.
+</ResponseField>
+
+<Note>
+  `createIfNotFound=true` is only permitted with a **service** or **master**
+  token. Client tokens receive a 404 if the user does not exist.
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="User Not Found — 404">
+    ```json
+    {
+      "error": "User not found",
+      "code": "user/not-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Query — 400">
+    ```json
+    {
+      "error": "...",
+      "code": "user/invalid-query"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useFetchUserByForeignId` hook](/hooks/users/use-fetch-user-by-foreign-id)
+- [External auth guide](/sdk/authentication/external)
+- [User data model](/data-models/user)

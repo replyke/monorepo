@@ -1,0 +1,99 @@
+---
+title: "Fetch User by Username"
+api: "GET /:projectId/api/v7/users/by-username"
+description: "Look up a user by their username"
+---
+
+Finds a user within the project by their `username`. Optionally includes file associations for avatar and banner images.
+
+## Query Parameters
+
+<ParamField query="username" type="string" required>
+  The username to look up. Lookup is exact-match and case-sensitive to the
+  stored value (usernames are lowercased on write).
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include. Pass `"files"` to include
+  the processed `avatarFile` and `bannerFile` objects.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200` with the user object:
+
+<ResponseField name="id" type="string">
+  Unique user ID (UUID).
+</ResponseField>
+
+<ResponseField name="foreignId" type="string | null">
+  External identifier from your system.
+</ResponseField>
+
+<ResponseField name="projectId" type="string">
+  Project this user belongs to.
+</ResponseField>
+
+<ResponseField name="name" type="string | null">
+  Display name.
+</ResponseField>
+
+<ResponseField name="username" type="string | null">
+  The user's username.
+</ResponseField>
+
+<ResponseField name="avatar" type="string | null">
+  Avatar image URL.
+</ResponseField>
+
+<ResponseField name="bio" type="string | null">
+  Short bio text.
+</ResponseField>
+
+<ResponseField name="metadata" type="object | null">
+  Public custom key-value data.
+</ResponseField>
+
+<ResponseField name="reputation" type="number">
+  Reputation score.
+</ResponseField>
+
+<ResponseField name="avatarFile" type="object | null">
+  Processed avatar image with variants. Only present when `include=files` is
+  requested.
+</ResponseField>
+
+<ResponseField name="bannerFile" type="object | null">
+  Processed banner image with variants. Only present when `include=files` is
+  requested.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO timestamp of account creation.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="User Not Found — 404">
+    ```json
+    {
+      "error": "User not found",
+      "code": "user/not-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Query — 400">
+    ```json
+    {
+      "error": "...",
+      "code": "user/invalid-query"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useFetchUserByUsername` hook](/hooks/users/use-fetch-user-by-username)
+- [User data model](/data-models/user)

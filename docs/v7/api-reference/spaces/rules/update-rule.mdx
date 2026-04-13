@@ -1,0 +1,33 @@
+---
+title: "Update Rule"
+api: "PATCH /:projectId/api/v7/spaces/:spaceId/rules/:ruleId"
+description: "Update an existing community rule"
+---
+
+Updates a rule's title or description. Only space admins can update rules.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="ruleId" type="string" required>
+  UUID of the rule to update.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="title" type="string">
+  Updated title.
+</ParamField>
+
+<ParamField body="description" type="string | null">
+  Updated description. Pass `null` to clear.
+</ParamField>
+
+## Response
+
+The updated Rule object.
+
+See also: [useUpdateRule](/hooks/spaces/rules/use-update-rule)

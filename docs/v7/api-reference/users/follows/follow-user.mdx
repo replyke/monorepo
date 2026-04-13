@@ -1,0 +1,67 @@
+---
+title: "Follow User"
+api: "POST /:projectId/api/v7/users/:userId/follow"
+description: "Follow a user by their ID"
+---
+
+Creates a follow relationship from the authenticated user to the specified user. A notification is sent to the followed user.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Replyke user ID (UUID) of the user to follow.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `201` with the created follow record:
+
+<ResponseField name="id" type="string">
+  Unique follow record ID (UUID).
+</ResponseField>
+
+<ResponseField name="followerId" type="string">
+  ID of the user who followed (the authenticated user).
+</ResponseField>
+
+<ResponseField name="followedId" type="string">
+  ID of the user being followed.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO timestamp of when the follow was created.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Self-Follow — 400">
+    ```json
+    {
+      "error": "A user cannot follow themselves.",
+      "code": "follow/self-follow"
+    }
+    ```
+  </Accordion>
+  <Accordion title="User Not Found — 404">
+    ```json
+    {
+      "error": "One or both users involved in the follow do not exist.",
+      "code": "follow/user-not-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Already Following — 409">
+    ```json
+    {
+      "error": "Follow relationship already exists.",
+      "code": "follow/already-exists"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useFollowManager` hook](/hooks/follows/use-follow-manager)
+- [Follow data model](/data-models/follow)

@@ -1,0 +1,74 @@
+---
+title: "Use user actions"
+description: "Low-level actions for managing authenticated user state"
+icon: "cube"
+---
+
+## Overview
+
+`useUserActions` is a low-level hook that provides direct access to the Redux actions and API mutations for the current user. In most cases you should use [`useUser`](/hooks/user/use-user) instead, which wraps `useUserActions` and provides a higher-level interface.
+
+Use `useUserActions` directly when you need to manually set or clear user state — for example, in a custom authentication flow.
+
+## Usage Example
+
+```tsx
+import { useUserActions } from "@replyke/react-js";
+
+function CustomAuth() {
+  const { setUser, clearUser } = useUserActions();
+
+  const handleExternalLogin = async (token: string) => {
+    const userData = await myAuthService.login(token);
+    setUser(userData); // Sync the authenticated user into Replyke state
+  };
+
+  const handleLogout = () => {
+    clearUser();
+  };
+
+  return (
+    <>
+      <button onClick={() => handleExternalLogin("token")}>Login</button>
+      <button onClick={handleLogout}>Logout</button>
+    </>
+  );
+}
+```
+
+## Return Values
+
+<ResponseField name="setUser" type="(user: AuthUser | null) => void">
+  Manually sets the current user in Redux state. Validates that the user object has an `id` before setting — partial or empty objects are silently ignored.
+</ResponseField>
+
+<ResponseField name="clearUser" type="() => void">
+  Clears the current user from Redux state and resets any error.
+</ResponseField>
+
+<ResponseField name="updateUser" type="(params: { projectId: string; userId: string; update: UpdateUserParams; currentUser?: AuthUser }) => Promise<AuthUser>">
+  Calls the update user API and manages loading and error state. Applies optimistic updates for non-file fields. Reverts to `currentUser` if the request fails.
+
+  <Expandable title="params">
+    <ResponseField name="projectId" type="string" required>
+      The project ID.
+    </ResponseField>
+    <ResponseField name="userId" type="string" required>
+      The authenticated user's ID.
+    </ResponseField>
+    <ResponseField name="update" type="UpdateUserParams" required>
+      Fields to update. See [`useUser`](/hooks/user/use-user) for the full `UpdateUserParams` reference.
+    </ResponseField>
+    <ResponseField name="currentUser" type="AuthUser">
+      The current user snapshot used to revert state on failure.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="clearError" type="() => void">
+  Clears any error stored in the user slice.
+</ResponseField>
+
+<Note>
+  Prefer [`useUser`](/hooks/user/use-user) for typical profile management. `useUserActions` is intended for cases where you need direct control over user state, such as custom authentication integrations.
+</Note>

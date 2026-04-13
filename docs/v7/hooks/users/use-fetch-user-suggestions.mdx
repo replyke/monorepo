@@ -1,0 +1,49 @@
+---
+title: "Fetch user suggestions"
+description: "Search for users by a query string"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchUserSuggestions` returns a function that searches for users by a query string. This is the underlying hook used by [`useUserMentions`](/hooks/users/use-user-mentions) for `@mention` autocomplete, but it can also be used for any user search or autocomplete UI.
+
+<Note>This hook uses an authenticated request. The user must be signed in.</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchUserSuggestions } from "@replyke/react-js";
+import { useState } from "react";
+
+function UserSearch() {
+  const fetchSuggestions = useFetchUserSuggestions();
+  const [results, setResults] = useState([]);
+
+  const handleSearch = async (query: string) => {
+    const users = await fetchSuggestions({ query });
+    setResults(users);
+  };
+
+  return (
+    <input
+      onChange={(e) => handleSearch(e.target.value)}
+      placeholder="Search users..."
+    />
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="query" type="string" required>
+  The search string. Matched against usernames and names.
+</ParamField>
+
+## Returns
+
+<ResponseField name="User[]" type="array">
+  An array of matching users' public profiles. See [User data model](/data-models/user).
+</ResponseField>

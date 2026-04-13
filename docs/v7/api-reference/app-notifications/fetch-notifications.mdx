@@ -1,0 +1,95 @@
+---
+title: "Fetch Notifications"
+api: "GET /:projectId/api/v7/app-notifications"
+description: "Get a paginated list of app notifications for the authenticated user"
+---
+
+Returns a paginated list of app notifications for the currently authenticated user, ordered newest first. Notifications are scoped to the calling user — a user cannot read another user's notifications.
+
+<Note>
+  This endpoint requires an authenticated user. Include a valid `Authorization: Bearer <accessToken>` header.
+</Note>
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField query="limit" type="number" default="5">
+  Number of results per page. Maximum `50`.
+</ParamField>
+
+## Response
+
+Returns a paginated envelope containing an array of notification objects.
+
+<ResponseField name="data" type="array">
+  List of app notification objects.
+  <Expandable title="AppNotification properties">
+    <ResponseField name="id" type="string">
+      Unique notification ID (UUID).
+    </ResponseField>
+    <ResponseField name="projectId" type="string">
+      ID of the project this notification belongs to.
+    </ResponseField>
+    <ResponseField name="userId" type="string">
+      ID of the user this notification belongs to.
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      Notification type string (e.g., `"new-follower"`, `"comment-reply"`). Defined by your webhook integration.
+    </ResponseField>
+    <ResponseField name="action" type="string">
+      Deep-link action string used by the client to route the user when the notification is tapped.
+    </ResponseField>
+    <ResponseField name="isRead" type="boolean">
+      Whether the user has marked this notification as read.
+    </ResponseField>
+    <ResponseField name="metadata" type="object">
+      Arbitrary key-value data attached to the notification. Contents depend on the notification type.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp when the notification was created.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp when the notification was last updated.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata.
+  <Expandable title="properties">
+    <ResponseField name="page" type="number">Current page number.</ResponseField>
+    <ResponseField name="pageSize" type="number">Number of results per page.</ResponseField>
+    <ResponseField name="totalPages" type="number">Total number of pages.</ResponseField>
+    <ResponseField name="totalItems" type="number">Total number of notifications.</ResponseField>
+    <ResponseField name="hasMore" type="boolean">Whether more pages exist after this one.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 401">
+    ```json
+    {
+      "error": "Unauthorized",
+      "code": "auth/unauthorized"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Query — 400">
+    ```json
+    {
+      "error": "...",
+      "code": "app-notification/invalid-query"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useAppNotifications` hook](/hooks/app-notifications/use-app-notifications)
+- [App Notifications overview](/sdk/app-notifications/overview)

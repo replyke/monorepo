@@ -1,0 +1,86 @@
+---
+title: "Use entity reactions"
+description: "Stateful, paginated list of reactions on an entity"
+icon: "cube"
+---
+
+## Overview
+
+`useFetchEntityReactionsWrapper` is a stateful wrapper around [`useFetchEntityReactions`](/hooks/reactions/use-fetch-entity-reactions) that manages pagination and reaction list state for you. Use it to build "who reacted" UIs — for example, a modal showing all users who upvoted a post, with infinite scroll.
+
+By default the hook does not fetch on mount. Set `autoFetch: true` to start fetching immediately, or call `refetch()` manually when you're ready (e.g., when a modal opens).
+
+## Usage Example
+
+```tsx
+import { useFetchEntityReactionsWrapper } from "@replyke/react-js";
+
+function WhoReacted({ entityId }: { entityId: string }) {
+  const { reactions, loading, hasMore, loadMore, refetch } =
+    useFetchEntityReactionsWrapper({
+      entityId,
+      reactionType: "upvote",
+      limit: 20,
+      autoFetch: true,
+    });
+
+  return (
+    <div>
+      <ul>
+        {reactions.map((r) => (
+          <li key={r.id}>{r.user?.username}</li>
+        ))}
+      </ul>
+      {hasMore && (
+        <button onClick={loadMore} disabled={loading}>
+          Load more
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField body="entityId" type="string" required>
+  The entity to fetch reactions for.
+</ParamField>
+
+<ParamField body="limit" type="number" optional>
+  Number of reactions per page. Default: `20`.
+</ParamField>
+
+<ParamField body="reactionType" type="ReactionType" optional>
+  Filter to a specific reaction type. When omitted, all reaction types are returned.
+</ParamField>
+
+<ParamField body="sortDir" type='"asc" | "desc"' optional>
+  Sort direction by creation date. Default: `"desc"`.
+</ParamField>
+
+<ParamField body="autoFetch" type="boolean" optional>
+  If `true`, fetch automatically on mount. Default: `false`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="reactions" type="Reaction[]">
+  The current list of fetched reactions. Appended to on each `loadMore` call.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while fetching the initial page or loading more.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional pages are available.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Load the next page of reactions. Appends to the existing list.
+</ResponseField>
+
+<ResponseField name="refetch" type="() => void">
+  Reset and re-fetch from page 1.
+</ResponseField>

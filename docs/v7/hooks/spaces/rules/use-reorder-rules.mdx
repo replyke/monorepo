@@ -1,0 +1,42 @@
+---
+title: "Reorder rules"
+description: "Reorder the community rules for a space"
+icon: "plug"
+---
+
+## Overview
+
+`useReorderRules` returns a callable function for reordering a space's rules by providing a new ordered array of rule IDs. Only space admins can reorder rules.
+
+## Usage Example
+
+```tsx
+import { useReorderRules } from "@replyke/react-js";
+
+function RulesDragList({ spaceId, rules }: { spaceId: string; rules: Rule[] }) {
+  const reorderRules = useReorderRules();
+
+  const handleDragEnd = async (newOrder: Rule[]) => {
+    await reorderRules({
+      spaceId,
+      ruleIds: newOrder.map((r) => r.id),
+    });
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="ruleIds" type="string[]" required>
+  Ordered array of all rule UUIDs in the desired display order.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Rule[]" type="Rule[]">
+  The full list of rules in their new order. Rules are subsequently returned in this order by `useFetchManyRules`.
+</ResponseField>

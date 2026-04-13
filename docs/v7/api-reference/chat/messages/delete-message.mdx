@@ -1,0 +1,54 @@
+---
+title: "Delete Message"
+api: "DELETE /:projectId/api/v7/conversations/:conversationId/messages/:messageId"
+description: "Delete or moderate a chat message"
+---
+
+Deletes a message. The behavior differs based on who is deleting:
+
+- **Author self-delete**: The message is soft-deleted. The row is retained as a `[Message deleted]` placeholder — content, GIF, mentions, and metadata are cleared, and `userDeletedAt` is set. File attachments are deleted from storage.
+- **Group admin moderation delete**: The message is marked `moderationStatus: "removed"` and excluded from all future queries. Content is not cleared; the record is retained for moderation audit purposes.
+
+The caller must be either the message author or a group `admin`.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+<ParamField path="messageId" type="string" required>
+  The ID of the message to delete.
+</ParamField>
+
+## Response
+
+For author self-delete:
+```json
+{ "message": "Message deleted.", "userDeletedAt": "2025-01-15T10:30:00.000Z" }
+```
+
+For admin moderation:
+```json
+{ "message": "Message removed by admin." }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Forbidden — 403 (not a member)">
+    ```json
+    { "error": "You are not a member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Message not found.", "code": "chat/message-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden — 403 (no permission)">
+    ```json
+    { "error": "You do not have permission to delete this message.", "code": "chat/forbidden" }
+    ```
+  </Accordion>
+</AccordionGroup>

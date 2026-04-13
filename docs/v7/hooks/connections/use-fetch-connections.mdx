@@ -1,0 +1,76 @@
+---
+title: "Fetch connections"
+description: "Fetch the current user's accepted connections with pagination"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that fetches the paginated list of accepted connections for the currently authenticated user. Each entry includes the connected user's profile and timestamps.
+
+For fetching another user's connections, see `useFetchConnectionsByUserId`.
+
+## Usage Example
+
+```tsx
+import { useFetchConnections } from "@replyke/react-js";
+
+function ConnectionsList() {
+  const fetchConnections = useFetchConnections();
+  const [connections, setConnections] = useState([]);
+
+  useEffect(() => {
+    fetchConnections({ page: 1, limit: 20 }).then((res) => {
+      setConnections(res.data);
+    });
+  }, []);
+
+  return (
+    <ul>
+      {connections.map(({ id, connectedUser }) => (
+        <li key={id}>{connectedUser.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="page" type="number">
+  Page number to fetch. Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Number of results per page. Defaults to `20`.
+</ParamField>
+
+## Returns
+
+Returns a `PaginatedResponse` containing an array of established connections:
+
+<ResponseField name="data" type="EstablishedConnection[]">
+  Array of accepted connection entries.
+  <Expandable title="EstablishedConnection properties">
+    <ResponseField name="id" type="string">
+      ID of the connection record.
+    </ResponseField>
+    <ResponseField name="connectedUser" type="User">
+      The other user's profile. See [User data model](/data-models/user).
+    </ResponseField>
+    <ResponseField name="connectedAt" type="string">
+      ISO timestamp when the connection was established.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata including `page`, `pageSize`, `totalPages`, `totalItems`, and `hasMore`.
+</ResponseField>
+
+## Related
+
+- [useFetchConnectionsByUserId](/hooks/connections/use-fetch-connections-by-user-id) — fetch another user's connections
+- [useFetchConnectionsCount](/hooks/connections/use-fetch-connections-count) — get total connection count

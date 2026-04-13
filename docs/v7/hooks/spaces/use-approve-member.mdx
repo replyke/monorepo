@@ -1,0 +1,45 @@
+---
+title: "Approve member"
+description: "Approve a pending membership request"
+icon: "plug"
+---
+
+## Overview
+
+`useApproveMember` returns a callable function for approving a pending join request. Sets the membership status from `"pending"` to `"active"`. Requires the caller to be a moderator or admin.
+
+## Usage Example
+
+```tsx
+import { useApproveMember } from "@replyke/react-js";
+
+function PendingMemberRow({ spaceId, memberId }: { spaceId: string; memberId: string }) {
+  const approve = useApproveMember();
+
+  return (
+    <button onClick={() => approve({ spaceId, memberId })}>
+      Approve
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="memberId" type="string" required>
+  UUID of the membership record to approve.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="membership" type="object">
+  Updated membership with `id`, `status: "active"`, and `joinedAt`.
+</ResponseField>

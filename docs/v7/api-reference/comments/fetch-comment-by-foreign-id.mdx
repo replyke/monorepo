@@ -1,0 +1,39 @@
+---
+title: "Fetch Comment by Foreign ID"
+api: "GET /:projectId/api/v7/comments/by-foreign-id"
+description: "Get a comment by its foreign ID"
+---
+
+Returns a single comment matching the given `foreignId` within the project. Useful for looking up comments using your own application's identifiers.
+
+## Query Parameters
+
+<ParamField query="foreignId" type="string" required>
+  The foreign ID to look up.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include. Valid values: `user`, `entity`, `space`, `parent`.
+</ParamField>
+
+## Response
+
+Returns a `200 OK` with the following shape:
+
+```json
+{
+  "comment": { ...Comment }
+}
+```
+
+The `comment` field is a [Comment](/data-models/comment) object. If the comment has been removed (user-deleted or moderation-removed) and the viewer is not the author, identifying fields (`userId`, `user`, `content`, `gif`, `mentions`, `attachments`) are nulled out as a Reddit-style placeholder.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Comment not found", "code": "comment/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

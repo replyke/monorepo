@@ -1,0 +1,90 @@
+---
+title: "Create Space"
+api: "POST /:projectId/api/v7/spaces"
+description: "Create a new community space"
+---
+
+Creates a new space. The authenticated user is automatically added as an admin. Supports optional avatar and banner image upload via multipart form data.
+
+## Body Parameters
+
+<ParamField body="name" type="string">
+  Display name for the space. Must be 3–100 characters.
+</ParamField>
+
+<ParamField body="slug" type="string">
+  Optional URL slug. Must be unique per project. Supports Unicode letters, numbers, hyphens, and underscores.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description. Up to 1,000 characters.
+</ParamField>
+
+<ParamField body="readingPermission" type="string">
+  Who can read content: `"anyone"` or `"members"`. Defaults to `"anyone"`.
+</ParamField>
+
+<ParamField body="postingPermission" type="string">
+  Who can post entities: `"anyone"`, `"members"`, or `"admins"`. Defaults to `"members"`.
+</ParamField>
+
+<ParamField body="requireJoinApproval" type="boolean">
+  Whether new joins require approval. Defaults to `true`.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional arbitrary key-value data. Up to 1 MB.
+</ParamField>
+
+<ParamField body="parentSpaceId" type="string">
+  Optional UUID of a parent space. The caller must be an admin of the parent space.
+</ParamField>
+
+<ParamField body="avatarFile" type="file">
+  Optional avatar image. Multipart form field. Requires `avatarFile.options` when provided.
+</ParamField>
+
+<ParamField body="bannerFile" type="file">
+  Optional banner image. Multipart form field. Requires `bannerFile.options` when provided.
+</ParamField>
+
+## Response
+
+Returns the created [Space](/data-models/space) object with `membersCount`, `childSpacesCount`, and optional file associations.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Auth Required — 401">
+    ```json
+    { "error": "Authentication required to create a space.", "code": "space/auth-required" }
+    ```
+  </Accordion>
+  <Accordion title="Slug Taken — 409">
+    ```json
+    { "error": "A space with this slug already exists.", "code": "space/slug-taken" }
+    ```
+  </Accordion>
+  <Accordion title="Parent Not Found — 404">
+    ```json
+    { "error": "Parent space not found.", "code": "space/parent-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Parent Admin Required — 403">
+    ```json
+    { "error": "Only admins of the parent space can create child spaces.", "code": "space/parent-admin-required" }
+    ```
+  </Accordion>
+  <Accordion title="Max Depth Exceeded — 400">
+    ```json
+    { "error": "Maximum nesting depth (10) exceeded.", "code": "space/max-depth-exceeded" }
+    ```
+  </Accordion>
+  <Accordion title="File Too Large — 413">
+    ```json
+    { "code": "space/file-too-large", "message": "Avatar image exceeds 50MB limit." }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useCreateSpace](/hooks/spaces/use-create-space)

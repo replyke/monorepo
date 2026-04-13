@@ -1,0 +1,72 @@
+---
+title: "User"
+description: "The User, AuthUser, and UserFull interface shapes returned by the API and SDK"
+---
+
+Replyke exposes two user type variants depending on context: `User` (public profile) and `AuthUser` (the authenticated user's own data). All SDK hooks and API endpoints return one of these two types.
+
+## User
+
+The `User` type is returned when fetching another user's public profile. Sensitive and internal fields are excluded.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique user identifier (UUID). |
+| `foreignId` | `string \| null` | Your system's user ID if this user was created via external auth. |
+| `projectId` | `string` | The project this user belongs to. |
+| `role` | `"admin" \| "moderator" \| "visitor"` | The user's role within the project. |
+| `name` | `string \| null` | Display name. |
+| `username` | `string \| null` | Unique username handle. |
+| `avatar` | `string \| null` | Avatar image URL. |
+| `avatarFileId` | `string \| null` | ID of the managed avatar file record. |
+| `bannerFileId` | `string \| null` | ID of the managed banner file record. |
+| `avatarFile` | `File \| null` | Populated avatar file object when `include` contains `"files"`. |
+| `bannerFile` | `File \| null` | Populated banner file object when `include` contains `"files"`. |
+| `bio` | `string \| null` | Short biography (max 300 characters). |
+| `birthdate` | `Date \| null` | User's date of birth. |
+| `location` | `GeoPoint \| null` | GeoJSON point representing the user's location. |
+| `metadata` | `Record<string, any>` | Custom key-value data for your project (max 10 KB). |
+| `reputation` | `number` | Automatically computed reputation score based on activity. |
+| `createdAt` | `Date` | Timestamp when the account was created. |
+
+### GeoPoint
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | `"Point"` | GeoJSON geometry type. Always `"Point"`. |
+| `coordinates` | `[number, number]` | Longitude and latitude, in that order. |
+
+## AuthUser
+
+The `AuthUser` type is returned to the currently authenticated user about themselves. It extends `User` with additional fields not visible to others.
+
+All `User` fields above are included, plus:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `email` | `string \| null` | The user's email address. |
+| `isVerified` | `boolean` | Whether the user's email address has been verified. |
+| `isActive` | `boolean` | Whether the account is currently active. |
+| `lastActive` | `Date` | Timestamp of the user's last activity. |
+| `updatedAt` | `Date` | Timestamp when the account was last modified. |
+| `authMethods` | `string[]` | Authentication methods linked to this account (e.g. `["password", "google"]`). |
+| `suspensions` | `Suspension[]` | Array of active or past suspensions. |
+
+### Suspension
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `reason` | `string \| null` | The reason provided for the suspension. |
+| `startDate` | `Date` | When the suspension began. |
+| `endDate` | `Date \| null` | When the suspension ends, or `null` for indefinite. |
+
+## Includes
+
+Some endpoints accept an `include` parameter that populates additional fields. Pass `"files"` to populate `avatarFile` and `bannerFile` with [File](/data-models/file) objects.
+
+## See Also
+
+- [Fetch User](/api-reference/users/fetch-user)
+- [Update User](/api-reference/users/update-user)
+- [useUser hook](/hooks/user/use-user)
+- [useFetchUser hook](/hooks/users/use-fetch-user)

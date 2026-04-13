@@ -1,0 +1,90 @@
+---
+title: "Use conversation members"
+description: "Fetch and manage the members of a conversation"
+icon: "cube"
+---
+
+## Overview
+
+Fetches the member list for a conversation on mount and provides actions to add members, remove members, change roles, and leave the conversation. Also exposes `upsertMember` and `removeMemberLocally` for real-time socket-driven updates.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useConversationMembers } from "@replyke/react-js";
+
+function MemberList({ conversationId }: { conversationId: string }) {
+  const {
+    members,
+    loading,
+    addMember,
+    removeMember,
+    changeRole,
+    leave,
+  } = useConversationMembers({ conversationId });
+
+  if (loading) return <div>Loading members...</div>;
+
+  return (
+    <ul>
+      {members.map((m) => (
+        <li key={m.userId}>
+          {m.user?.name} — {m.role}
+          <button onClick={() => removeMember({ userId: m.userId })}>Remove</button>
+          <button onClick={() => changeRole({ userId: m.userId, role: "admin" })}>
+            Make Admin
+          </button>
+        </li>
+      ))}
+      <button onClick={leave}>Leave conversation</button>
+    </ul>
+  );
+}
+```
+
+## Props
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation whose members to fetch.
+</ParamField>
+
+## Returns
+
+<ResponseField name="members" type="ConversationMember[]">
+  The current member list. See [ConversationMember](/data-models/conversation-member).
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while the initial fetch is in progress.
+</ResponseField>
+
+<ResponseField name="addMember" type="({ userId: string }) => Promise<void>">
+  Adds a user to the conversation. Updates the local member list on success.
+</ResponseField>
+
+<ResponseField name="removeMember" type="({ userId: string }) => Promise<void>">
+  Removes a user from the conversation. Updates the local member list on success.
+</ResponseField>
+
+<ResponseField name="leave" type="() => Promise<void>">
+  Removes the current user from the conversation.
+</ResponseField>
+
+<ResponseField name="changeRole" type="({ userId: string; role: 'admin' | 'member' }) => Promise<void>">
+  Updates a member's role. Updates the local member list on success.
+</ResponseField>
+
+<ResponseField name="upsertMember" type="(member: ConversationMember) => void">
+  Inserts or replaces a member in the local list by `userId`. Intended for use with real-time socket event handlers.
+</ResponseField>
+
+<ResponseField name="removeMemberLocally" type="({ userId: string }) => void">
+  Removes a member from the local list by `userId` without making an API call. Intended for use with real-time socket event handlers.
+</ResponseField>
+
+## Notes
+
+- The member list is fetched with a limit of 100. For very large conversations, consider lazy-loading or paginating members separately.
+- For integration guidance, see [Chat: Conversations](/sdk/chat/conversations).

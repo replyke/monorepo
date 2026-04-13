@@ -1,0 +1,52 @@
+---
+title: "Add Member"
+api: "POST /:projectId/api/v7/conversations/:conversationId/members"
+description: "Add a user to a group conversation"
+---
+
+Adds a user to a group conversation. Only group conversations support explicit member management — this endpoint returns a 400 for direct and space conversations.
+
+The caller must be an active `admin` of the conversation. The target user must belong to the same project.
+
+If the user was previously a member who left or was removed, they are re-activated (their `isActive` is set back to `true` and `lastReadAt` is reset to now).
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string" required>
+  The ID of the user to add. Must belong to the same project.
+</ParamField>
+
+## Response
+
+Returns the [ConversationMember](/data-models/conversation-member) record for the added user.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Conversation not found.", "code": "chat/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Type — 400 Bad Request">
+    ```json
+    { "error": "Members can only be added to group conversations.", "code": "chat/invalid-type" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "Only group admins can add members.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Member — 400 Bad Request">
+    ```json
+    { "error": "Target user does not belong to this project.", "code": "chat/invalid-member" }
+    ```
+  </Accordion>
+</AccordionGroup>

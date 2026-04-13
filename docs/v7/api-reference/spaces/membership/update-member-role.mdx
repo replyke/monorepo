@@ -1,0 +1,35 @@
+---
+title: "Update Member Role"
+api: "PATCH /:projectId/api/v7/spaces/:spaceId/members/:memberId/role"
+description: "Update a member's role within a space"
+---
+
+Changes a member's role. Only space admins can perform this action.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="memberId" type="string" required>
+  UUID of the membership record to update.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="role" type="string" required>
+  New role: `"admin"`, `"moderator"`, or `"member"`.
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="membership" type="object">
+  Updated membership with `id`, `role`, `status`, `joinedAt`, and `userId`.
+</ResponseField>
+
+See also: [useUpdateMemberRole](/hooks/spaces/use-update-member-role)

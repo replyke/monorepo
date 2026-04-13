@@ -1,0 +1,144 @@
+---
+title: "Fetching Entities"
+description: "Loading, paginating, sorting, and managing entities in a list"
+---
+
+`useEntityList` is the main hook for building entity feeds. Each list is identified by a `listId`, allowing multiple independent lists on the same page.
+
+## Basic Setup
+
+```tsx
+import { useEntityList } from "@replyke/react-js";
+import { useEffect } from "react";
+
+function Feed() {
+  const { entities, loading, hasMore, fetchEntities, loadMore } = useEntityList({
+    listId: "main-feed",
+  });
+
+  useEffect(() => {
+    fetchEntities(
+      {},                         // filters (empty = no filters)
+      { sortBy: "hot" },          // sort config
+      { limit: 20, include: ["user"] } // list config
+    );
+  }, []);
+
+  return (
+    <>
+      {loading && <p>Loading...</p>}
+      {entities.map((entity) => (
+        <div key={entity.id}>{entity.title}</div>
+      ))}
+      {hasMore && (
+        <button onClick={loadMore} disabled={loading}>
+          Load more
+        </button>
+      )}
+    </>
+  );
+}
+```
+
+## `fetchEntities` Signature
+
+```ts
+fetchEntities(
+  filters: Partial<EntityListFilters>,
+  sort?: Partial<EntityListSort>,
+  config?: EntityListConfig,
+  options?: EntityListFetchOptions
+) => void
+```
+
+### Filters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `timeFrame` | `"day" \| "week" \| "month" \| "year"` | Filter by age |
+| `userId` | `string` | Filter to a specific user's entities |
+| `followedOnly` | `boolean` | Only show entities from users the current user follows |
+| `keywordsFilters` | `KeywordsFilters` | Filter by keywords |
+| `titleFilters` | `TitleFilters` | Filter by title content |
+| `contentFilters` | `ContentFilters` | Filter by body content |
+| `attachmentsFilters` | `AttachmentsFilters` | Filter by attachments data |
+| `locationFilters` | `LocationFilters` | Filter by geographic proximity |
+| `metadataFilters` | `MetadataFilters` | Filter by metadata fields |
+
+### Sort config
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `sortBy` | `"hot" \| "top" \| "new" \| "controversial" \| "metadata.field"` | Sort algorithm |
+| `sortByReaction` | `"upvote" \| "downvote" \| "like" \| "love" \| "wow" \| "sad" \| "angry" \| "funny"` | Used when `sortBy` is `"top"` |
+| `sortDir` | `"asc" \| "desc"` | Sort direction |
+| `sortType` | `"auto" \| "numeric" \| "text" \| "boolean" \| "timestamp"` | Type hint for metadata sorts |
+
+### List config
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `limit` | `number` | Results per page. Default: `10` |
+| `sourceId` | `string` | Filter to a specific source section |
+| `spaceId` | `string` | Filter to a specific space |
+| `include` | `string \| string[]` | Populate related data: `"user"`, `"space"`, `"topComment"`, `"saved"`, `"files"` |
+
+### Fetch options
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `fetchImmediately` | `boolean` | Skip debounce and fetch right away |
+| `clearImmediately` | `boolean` | Clear the current list before fetching |
+| `resetFilters` | `boolean` | Reset all filters to defaults before applying new ones |
+| `resetSort` | `boolean` | Reset sort to defaults before applying new sort |
+
+## Infinite Scroll
+
+Call `loadMore()` to append the next page. The hook tracks pagination state internally.
+
+```tsx
+<button onClick={loadMore} disabled={loading || !hasMore}>
+  Load More
+</button>
+```
+
+`hasMore` reflects the value returned by the server, based on the total item count.
+
+## Creating Entities Within a List
+
+`createEntity` creates an entity and automatically inserts it into the list:
+
+```tsx
+const { createEntity } = useEntityList({ listId: "my-feed" });
+
+await createEntity({
+  title: "New Post",
+  content: "Hello!",
+  insertPosition: "first", // "first" or "last"
+});
+```
+
+## Deleting Entities From a List
+
+`deleteEntity` removes an entity from both the server and the local list state:
+
+```tsx
+const { deleteEntity } = useEntityList({ listId: "my-feed" });
+
+await deleteEntity({ entityId: "ent_abc123" });
+```
+
+## Sorting by Metadata
+
+You can sort by any metadata field using the `metadata.fieldName` syntax:
+
+```tsx
+fetchEntities(
+  {},
+  { sortBy: "metadata.price", sortType: "numeric", sortDir: "asc" }
+);
+```
+
+<Note>
+  Metadata field names must contain only alphanumeric characters and underscores.
+</Note>

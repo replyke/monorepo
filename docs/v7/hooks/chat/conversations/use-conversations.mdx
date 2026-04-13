@@ -1,0 +1,76 @@
+---
+title: "Use conversations"
+description: "Fetch a paginated list of the current user's conversations"
+icon: "cube"
+---
+
+## Overview
+
+Fetches the authenticated user's conversation list with cursor-based pagination. Conversations are sorted by most recent activity. The hook also exposes a `createGroup` function to create new group conversations.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useConversations } from "@replyke/react-js";
+
+function ConversationList() {
+  const { conversations, loading, hasMore, loadMore, refresh } =
+    useConversations({ types: ["direct", "group"] });
+
+  return (
+    <div>
+      {conversations.map((convo) => (
+        <div key={convo.id}>
+          <strong>{convo.name ?? "Direct Message"}</strong>
+          {convo.unreadCount > 0 && <span>{convo.unreadCount} unread</span>}
+        </div>
+      ))}
+      {hasMore && (
+        <button onClick={loadMore} disabled={loading}>
+          Load more
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Props
+
+<ParamField body="types" type="('direct' | 'group' | 'space')[]">
+  Filter conversations by type. If omitted, all types are returned.
+</ParamField>
+
+## Returns
+
+<ResponseField name="conversations" type="ConversationPreview[]">
+  The loaded conversations sorted by most recent activity. Each item is a [Conversation](/data-models/conversation) extended with `unreadCount` and a truncated `lastMessage`.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a fetch is in progress.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if there are more conversations to load.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => Promise<void>">
+  Fetches the next page of conversations and appends them to the list. No-ops if `loading` is `true` or `hasMore` is `false`.
+</ResponseField>
+
+<ResponseField name="refresh" type="() => Promise<void>">
+  Resets the cursor and re-fetches the conversation list from the beginning.
+</ResponseField>
+
+<ResponseField name="createGroup" type="(params: { name?: string; metadata?: Record<string, unknown> }) => Promise<ConversationPreview>">
+  Creates a new group conversation and prepends it to the loaded list. Resolves to the created `ConversationPreview`.
+</ResponseField>
+
+## Notes
+
+- The initial fetch runs on mount. Re-runs automatically when the authenticated project changes.
+- New messages received via socket update the `lastMessage` and `lastMessageAt` of the relevant conversation in the list automatically — no manual refresh needed.
+- For integration guidance, see [Chat: Conversations](/sdk/chat/conversations).

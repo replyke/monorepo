@@ -1,0 +1,31 @@
+---
+title: "Delete Collection"
+api: "DELETE /:projectId/api/v7/collections/:collectionId"
+description: "Delete a sub-collection"
+---
+
+Deletes a sub-collection and all its contents (cascade). The root collection cannot be deleted.
+
+Returns `204 No Content` on success.
+
+## Path Parameters
+
+<ParamField path="collectionId" type="string" required>
+  The ID of the collection to delete.
+</ParamField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Collection Not Found — 404">
+    Returned when the collection doesn't exist, doesn't belong to the authenticated user, or is the root collection (which cannot be deleted).
+    ```json
+    { "error": "Collection not found", "code": "collection/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Server error", "code": "collection/server-error" }
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,71 @@
+---
+title: "Fetch Many Comments"
+api: "GET /:projectId/api/v7/comments"
+description: "Get a paginated, sorted list of comments"
+---
+
+Returns a paginated list of comments. Used for both top-level comment threads (filter by `entityId`) and reply threads (filter by `parentId`). Also used for user profile comment history (filter by `userId`).
+
+Deleted comments in thread view appear as stripped placeholders to preserve tree structure (Reddit-style). Authors viewing their own comments always see full data.
+
+## Query Parameters
+
+<ParamField query="entityId" type="string">
+  Filter comments by entity. Returns all comments (top-level and replies) for this entity.
+</ParamField>
+
+<ParamField query="parentId" type="string">
+  Filter to replies of a specific comment. Used to fetch a reply thread.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  Filter to comments by a specific user. When this matches the authenticated user's ID, soft-deleted comments are included with full data.
+</ParamField>
+
+<ParamField query="sourceId" type="string">
+  Filter by the `sourceId` of the entity. Only effective when `include` contains `entity`.
+</ParamField>
+
+<ParamField query="sortBy" type="string" default="new">
+  Sort order. One of:
+  - `new` — newest first
+  - `old` — oldest first
+  - `top` — by net upvotes (upvotes minus downvotes)
+  - `controversial` — high total votes with a close up/down split
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField query="limit" type="number" default="10">
+  Number of comments per page. Maximum `100`.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include. Valid values: `user`, `entity`, `space`.
+
+  <Note>
+    Requesting `space` automatically includes `entity` as well, since space membership is resolved via the entity.
+    Requesting `user` also includes the user's avatar and banner file URLs.
+  </Note>
+</ParamField>
+
+## Response
+
+Returns a paginated response:
+
+```json
+{
+  "data": [ ...Comment[] ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 54,
+    "totalPages": 6,
+    "hasMore": true
+  }
+}
+```
+
+Each item is a [Comment](/data-models/comment). In thread view (no `userId` filter), removed comments appear as stripped placeholders: `userId`, `user`, `content`, `gif`, `mentions`, and `attachments` are nulled out. Structural fields such as `id`, `parentId`, `entityId`, `reactionCounts`, `repliesCount`, `createdAt`, `updatedAt`, `metadata`, and `foreignId` are retained so the tree can be rendered. This applies to both user-deleted comments (always stripped) and moderation-removed comments (stripped for non-authors; the author sees full data).

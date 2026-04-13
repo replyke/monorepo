@@ -1,0 +1,71 @@
+---
+title: "Use typing indicator"
+description: "Send and receive typing indicator events in a conversation"
+icon: "cube"
+---
+
+## Overview
+
+Manages the typing indicator for a conversation. Returns the list of user IDs currently typing (for rendering a "Someone is typing..." indicator) and `startTyping`/`stopTyping` functions that emit the appropriate socket events.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useTypingIndicator } from "@replyke/react-js";
+
+function MessageInput({ conversationId }: { conversationId: string }) {
+  const { typingUsers, startTyping, stopTyping } = useTypingIndicator({
+    conversationId,
+  });
+  const [text, setText] = useState("");
+
+  return (
+    <div>
+      {typingUsers.length > 0 && (
+        <p className="text-sm text-gray-500">
+          {typingUsers.length === 1
+            ? "Someone is typing..."
+            : `${typingUsers.length} people are typing...`}
+        </p>
+      )}
+      <input
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          startTyping();
+        }}
+        onBlur={stopTyping}
+      />
+    </div>
+  );
+}
+```
+
+## Props
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation to track typing state for.
+</ParamField>
+
+## Returns
+
+<ResponseField name="typingUsers" type="string[]">
+  Array of user IDs currently typing in this conversation. The current user is always excluded.
+</ResponseField>
+
+<ResponseField name="startTyping" type="() => void">
+  Emits a `typing:start` event to the server. Throttled internally — safe to call on every keystroke. Re-emits the keep-alive every 2 seconds while typing continues.
+</ResponseField>
+
+<ResponseField name="stopTyping" type="() => void">
+  Emits a `typing:stop` event to the server and cancels the keep-alive interval. Call on message send, input clear, or blur.
+</ResponseField>
+
+## Notes
+
+- `startTyping()` is idempotent while already typing — calling it repeatedly does not emit duplicate events; only the keep-alive timer re-emits every 2 seconds.
+- On unmount, if the user was typing, `typing:stop` is emitted automatically to prevent a stale indicator on recipients' screens.
+- Each typing user is auto-removed from `typingUsers` after 5 seconds of no keep-alive (handled by `ChatProvider`).
+- For integration guidance, see [Chat: Real-time](/sdk/chat/real-time).

@@ -1,0 +1,89 @@
+---
+title: "Verify email"
+description: "Verify the authenticated user's email address using a token from a verification email"
+icon: "plug"
+---
+
+## Overview
+
+`useVerifyEmail` returns a function that submits a verification token to the server. Used with `mode: "code"` from `useSendVerificationEmail`. On success, `user.isVerified` is updated immediately in the local Redux store.
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useVerifyEmail } from "@replyke/react-js";
+import { useState } from "react";
+
+function VerifyCodeForm() {
+  const verifyEmail = useVerifyEmail();
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await verifyEmail({ token: code });
+      // user.isVerified is now true locally
+    } catch (err: any) {
+      setError(err.response?.data?.error ?? "Verification failed.");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {error && <p>{error}</p>}
+      <input
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        placeholder="Enter verification code"
+      />
+      <button type="submit">Verify</button>
+    </form>
+  );
+}
+```
+
+```tsx React Native
+import { useVerifyEmail } from "@replyke/react-native";
+
+function VerifyCodeScreen({ code }: { code: string }) {
+  const verifyEmail = useVerifyEmail();
+
+  return (
+    <Button
+      title="Verify"
+      onPress={() => verifyEmail({ token: code })}
+    />
+  );
+}
+```
+</CodeGroup>
+
+## Parameters
+
+The returned function accepts:
+
+<ParamField path="token" type="string" required>
+  The verification token entered by the user. Must match the token from the most recent verification email exactly.
+</ParamField>
+
+## Returns
+
+The hook returns an async function. That function resolves to:
+
+<ResponseField name="success" type="boolean">
+  `true` when verification succeeded.
+</ResponseField>
+
+<Note>
+  On success, `user.isVerified` is optimistically set to `true` in the local
+  Redux store immediately — no need to refetch the user.
+</Note>
+
+## See Also
+
+- [`useSendVerificationEmail`](/hooks/auth/use-send-verification-email)
+- [Verify Email API reference](/api-reference/auth/verify-email)
+- [Built-in Auth guide](/sdk/authentication/built-in)

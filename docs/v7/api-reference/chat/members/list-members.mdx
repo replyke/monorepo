@@ -1,0 +1,53 @@
+---
+title: "List Members"
+api: "GET /:projectId/api/v7/conversations/:conversationId/members"
+description: "List the active members of a conversation"
+---
+
+Returns a paginated list of active [ConversationMember](/data-models/conversation-member) objects, each with the member's user profile included. The caller must be a member (any status) to access this endpoint.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number (1-based). Defaults to 1.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Number of members per page. Defaults to 50. Maximum 100.
+</ParamField>
+
+<ParamField query="role" type="string">
+  Filter by role. Accepted values: `admin`, `member`. If omitted, all roles are returned.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="ConversationMember[]">
+  Array of active membership records. Each includes a `user` field with `id`, `name`, `username`, `avatar`, and `metadata`.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  <Expandable title="properties">
+    <ResponseField name="page" type="number">Current page number.</ResponseField>
+    <ResponseField name="pageSize" type="number">Items per page.</ResponseField>
+    <ResponseField name="totalPages" type="number">Total number of pages.</ResponseField>
+    <ResponseField name="totalItems" type="number">Total number of active members.</ResponseField>
+    <ResponseField name="hasMore" type="boolean">Whether more pages exist.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "You are not a member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+</AccordionGroup>

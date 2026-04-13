@@ -1,0 +1,39 @@
+---
+title: "Leave space"
+description: "Leave a space"
+icon: "plug"
+---
+
+## Overview
+
+`useLeaveSpace` returns a callable function for leaving a space. The user's membership record is removed.
+
+<Note>When using `SpaceProvider`, call `leaveSpace` from `useSpace` — it handles optimistic state updates automatically.</Note>
+
+## Usage Example
+
+```tsx
+import { useLeaveSpace } from "@replyke/react-js";
+
+function LeaveButton({ spaceId }: { spaceId: string }) {
+  const leaveSpace = useLeaveSpace();
+
+  const handleLeave = async () => {
+    await leaveSpace({ spaceId });
+  };
+
+  return <button onClick={handleLeave}>Leave</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space to leave.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>

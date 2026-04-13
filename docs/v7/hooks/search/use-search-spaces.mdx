@@ -1,0 +1,74 @@
+---
+title: "Search spaces"
+description: "Semantic search for spaces by natural language query"
+icon: "plug"
+---
+
+## Overview
+
+Returns state and a `search` function for finding spaces by natural language query. Matches against space name, description, and other text fields using vector similarity.
+
+For integration guidance, see [Semantic Search](/sdk/search/semantic-search).
+
+## Usage Example
+
+```tsx
+import { useSearchSpaces } from "@replyke/react-js";
+
+function SpaceSearch() {
+  const { results, loading, search } = useSearchSpaces();
+
+  return (
+    <div>
+      <button onClick={() => search({ query: "photography communities", limit: 10 })}>
+        Search
+      </button>
+      {results.map((r) => (
+        <div key={r.record.id}>{r.record.name} — {r.similarity.toFixed(3)}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+Call `search` with:
+
+<ParamField path="query" type="string" required>
+  The natural language query string.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+## Returns
+
+<ResponseField name="results" type="SpaceSearchResult[]">
+  Ranked space results.
+  <Expandable title="SpaceSearchResult properties">
+    <ResponseField name="similarity" type="number">
+      Cosine similarity score (0–1).
+    </ResponseField>
+    <ResponseField name="record" type="Space">
+      The matched space. See [Space data model](/data-models/space).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a search is in progress.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the last search failed.
+</ResponseField>
+
+<ResponseField name="search" type="(props) => Promise<void>">
+  Executes the search and updates `results`.
+</ResponseField>
+
+<ResponseField name="reset" type="() => void">
+  Clears `results` and `error`.
+</ResponseField>

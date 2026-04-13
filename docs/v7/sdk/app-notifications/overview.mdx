@@ -1,0 +1,56 @@
+---
+title: "Overview"
+description: "In-app notification records triggered by user interactions and system events"
+---
+
+App Notifications are persistent, database-backed records delivered to users when activity happens in your app — new comments, replies, mentions, reactions, follows, connection requests, and more. They are distinct from push notifications; they live in the Replyke database and are surfaced through the SDK.
+
+## How It Works
+
+Replyke automatically creates notification records when relevant events occur (e.g., someone comments on an entity, someone follows a user). Your app polls or fetches those records and displays them in a notification feed. When push delivery is also needed, a webhook fires at the same time so your backend can forward the event to FCM or APNs.
+
+## In This Section
+
+<CardGroup cols={2}>
+  <Card title="Hook" href="/sdk/app-notifications/hook">
+    How to use `useAppNotifications` — fetch notifications, unread count, and mark as read
+  </Card>
+  <Card title="Notification Templates" href="/sdk/app-notifications/notification-templates">
+    Customize the display text for each notification type
+  </Card>
+  <Card title="Webhook Integration" href="/sdk/app-notifications/webhook-integration">
+    Forward notifications to push services via webhook
+  </Card>
+</CardGroup>
+
+## Hooks
+
+<CardGroup cols={1}>
+  <Card title="useAppNotifications" href="/hooks/app-notifications/use-app-notifications">
+    Full API reference for `useAppNotifications`
+  </Card>
+</CardGroup>
+
+## Notification Types
+
+Replyke generates notifications for the following events:
+
+| Type | Trigger |
+|------|---------|
+| `entity-comment` | Someone comments on your entity |
+| `comment-reply` | Someone replies to your comment |
+| `entity-mention` | You are mentioned in an entity |
+| `comment-mention` | You are mentioned in a comment |
+| `entity-upvote` | Someone upvotes your entity |
+| `comment-upvote` | Someone upvotes your comment |
+| `entity-reaction` | Someone reacts to your entity |
+| `comment-reaction` | Someone reacts to your comment |
+| `entity-reaction-milestone-specific` | Your entity reaches a milestone for a specific reaction type |
+| `entity-reaction-milestone-total` | Your entity reaches a total reaction milestone |
+| `comment-reaction-milestone-specific` | Your comment reaches a milestone for a specific reaction type |
+| `comment-reaction-milestone-total` | Your comment reaches a total reaction milestone |
+| `new-follow` | Someone follows you |
+| `connection-request` | Someone sends you a connection request |
+| `connection-accepted` | Someone accepts your connection request |
+| `space-membership-approved` | A moderator approves your pending space membership request |
+| `system` | A custom message sent from the dashboard |

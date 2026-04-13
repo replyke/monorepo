@@ -1,0 +1,59 @@
+---
+title: "Overview"
+description: "Paginated, filtered, sorted feeds of entities with infinite scroll support"
+---
+
+Entity Lists is the system for building feeds, search results, and any paginated collection of entities. It handles pagination state, sorting, filtering, and infinite scroll through a Redux-backed architecture.
+
+## The Core Hook
+
+The primary entry point is `useEntityList`. You call it with a unique `listId` — this is how multiple independent lists can exist on the same page without conflicting state.
+
+```tsx
+import { useEntityList } from "@replyke/react-js";
+
+function Feed() {
+  const { entities, loading, hasMore, fetchEntities, loadMore } = useEntityList({
+    listId: "main-feed",
+  });
+
+  useEffect(() => {
+    fetchEntities({}, { sortBy: "hot" }, { limit: 20 });
+  }, []);
+
+  return (
+    <div>
+      {entities.map((entity) => <EntityCard key={entity.id} entity={entity} />)}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+    </div>
+  );
+}
+```
+
+## In This Section
+
+<CardGroup cols={2}>
+  <Card title="Fetching Entities" href="/sdk/entity-lists/fetch-entities">
+    How to call `fetchEntities`, paginate with `loadMore`, and create or delete entities within a list.
+  </Card>
+  <Card title="Infusing Data" href="/sdk/entity-lists/infuse-data">
+    Merge Replyke entities with data from your own system using the `infuseData` callback.
+  </Card>
+  <Card title="Filters" href="/sdk/entity-lists/filters">
+    Complete reference for keywords, title, content, metadata, attachments, and location filters.
+  </Card>
+</CardGroup>
+
+## Hooks
+
+<CardGroup cols={2}>
+  <Card title="useEntityList" href="/hooks/entity-lists/use-entity-list">
+    Main hook for consuming and managing a paginated entity list.
+  </Card>
+  <Card title="useEntityListActions" href="/hooks/entity-lists/use-entity-list-actions">
+    Low-level actions hook for fetch, create, and delete operations.
+  </Card>
+  <Card title="useInfusedData" href="/hooks/entity-lists/use-infused-data">
+    Merges entity arrays with data from your own backend.
+  </Card>
+</CardGroup>

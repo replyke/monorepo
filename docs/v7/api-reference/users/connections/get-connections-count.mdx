@@ -1,0 +1,25 @@
+---
+title: "Get Connections Count"
+api: "GET /:projectId/api/v7/users/:userId/connections-count"
+description: "Get the number of accepted connections for a user"
+---
+
+Returns the total number of accepted connections for the specified user. This endpoint is public — no authentication required.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Replyke user ID (UUID) of the user whose connection count to retrieve.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200`:
+
+<ResponseField name="count" type="number">
+  Total number of accepted connections for this user.
+</ResponseField>
+
+## See Also
+
+- [`useFetchConnectionsCountByUserId` hook](/hooks/connections/use-fetch-connections-count-by-user-id)

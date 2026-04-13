@@ -1,0 +1,84 @@
+---
+title: "Send message"
+description: "Send a message to a conversation with optimistic updates"
+icon: "plug"
+---
+
+## Overview
+
+Returns an async function that sends a message to a conversation. An optimistic entry is inserted into Redux immediately — with a temporary ID — and replaced by the server-confirmed message on success. If the request fails, the optimistic message is flagged with `sendFailed: true`.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useSendMessage } from "@replyke/react-js";
+
+function MessageInput({ conversationId }: { conversationId: string }) {
+  const send = useSendMessage({ conversationId });
+  const [text, setText] = useState("");
+
+  const handleSend = async () => {
+    if (!text.trim()) return;
+    await send({ content: text });
+    setText("");
+  };
+
+  return (
+    <div>
+      <input value={text} onChange={(e) => setText(e.target.value)} />
+      <button onClick={handleSend}>Send</button>
+    </div>
+  );
+}
+```
+
+## Props
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation to send the message to.
+</ParamField>
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField body="content" type="string">
+  Plain text content of the message.
+</ParamField>
+
+<ParamField body="gif" type="GifData">
+  GIF attachment data.
+</ParamField>
+
+<ParamField body="mentions" type="Mention[]">
+  User mentions to embed in the message.
+</ParamField>
+
+<ParamField body="metadata" type="Record<string, any>">
+  Arbitrary key-value data attached to the message.
+</ParamField>
+
+<ParamField body="quotedMessageId" type="string | null">
+  ID of the message being quoted. Populates `quotedMessage` on the stored message.
+</ParamField>
+
+<ParamField body="parentMessageId" type="string | null">
+  ID of the parent message when sending a thread reply.
+</ParamField>
+
+<ParamField body="files" type="File[]">
+  File attachments. When provided, the request is sent as `multipart/form-data`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="ChatMessage" type="ChatMessage">
+  The server-confirmed [ChatMessage](/data-models/chat-message) object.
+</ResponseField>
+
+## Notes
+
+- At least one of `content`, `gif`, `files`, or non-empty `metadata` should be provided for a meaningful message.
+- For integration guidance, see [Chat: Messages](/sdk/chat/messages).

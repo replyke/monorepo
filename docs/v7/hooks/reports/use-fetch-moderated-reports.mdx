@@ -1,0 +1,98 @@
+---
+title: "Fetch moderated reports"
+description: "Fetch content reports for spaces the current user moderates"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function to fetch content reports (entities and comments) from spaces where the current user has an `admin` or `moderator` role.
+
+If `spaceId` is provided, returns reports for that specific space (the user must moderate it). If omitted, returns reports aggregated from **all** spaces the user moderates.
+
+<Note>Requires an authenticated user with `admin` or `moderator` role in at least one space.</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchModeratedReports } from "@replyke/react-js";
+import { useEffect, useState } from "react";
+
+function ModerationQueue({ spaceId }: { spaceId: string }) {
+  const fetchModeratedReports = useFetchModeratedReports();
+  const [reports, setReports] = useState([]);
+
+  useEffect(() => {
+    fetchModeratedReports({ spaceId, status: "pending", page: 1, limit: 20 })
+      .then(res => setReports(res.data));
+  }, [spaceId]);
+
+  return (
+    <ul>
+      {reports.map(r => (
+        <li key={r.id}>{r.targetType}: {r.reporterCount} reports</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+<ParamField body="spaceId" type="string">
+  Filter reports to a specific space. If omitted, returns reports from all spaces the user moderates.
+</ParamField>
+
+<ParamField body="targetType" type='"comment" | "entity"'>
+  Filter by target type.
+</ParamField>
+
+<ParamField body="status" type='"pending" | "on-hold" | "escalated" | "dismissed" | "actioned"'>
+  Filter by report status.
+</ParamField>
+
+<ParamField body="sortBy" type='"new" | "old"'>
+  Sort order. Defaults to `"new"` (newest first).
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number for pagination. Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Items per page. Defaults to `20`.
+</ParamField>
+
+## Returns
+
+Returns `Promise<PaginatedResponse<Report>>`:
+
+```ts
+{
+  data: Report[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    totalItems: number;
+    hasMore: boolean;
+  };
+}
+```
+
+### Report object
+
+<ResponseField name="id" type="string">UUID of the report record.</ResponseField>
+<ResponseField name="projectId" type="string">Project the report belongs to.</ResponseField>
+<ResponseField name="spaceId" type="string | null">Space the reported content belongs to.</ResponseField>
+<ResponseField name="targetId" type="string">ID of the reported entity or comment.</ResponseField>
+<ResponseField name="targetType" type='"comment" | "entity"'>Type of the reported content.</ResponseField>
+<ResponseField name="reporterCount" type="number">Total number of users who have reported this target.</ResponseField>
+<ResponseField name="userReports" type="array">Individual user report entries. Each includes `id`, `userId`, `reason`, `details`, and `createdAt`.</ResponseField>
+<ResponseField name="status" type="string">Current moderation status: `pending`, `on-hold`, `escalated`, `dismissed`, or `actioned`.</ResponseField>
+<ResponseField name="actionTaken" type="string | null">Free-text description of action taken, if any.</ResponseField>
+<ResponseField name="target" type="Entity | Comment | null">The reported content record (includes the author user object). Populated even if the content was soft-deleted.</ResponseField>
+<ResponseField name="space" type="Space | null">The space the reported content belongs to.</ResponseField>
+<ResponseField name="createdAt" type="Date">When the first report for this target was submitted.</ResponseField>
+<ResponseField name="updatedAt" type="Date">When the report record was last updated.</ResponseField>
+<ResponseField name="deletedAt" type="Date | null">Soft-delete timestamp. `null` if the report has not been deleted.</ResponseField>

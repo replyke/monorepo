@@ -1,0 +1,49 @@
+---
+title: "Check Username Availability"
+api: "GET /:projectId/api/v7/users/check-username"
+description: "Check whether a username is already taken in this project"
+---
+
+Checks whether the specified username is already in use within the project. Returns a simple availability flag. Use this before prompting users to set a username to give instant feedback.
+
+## Query Parameters
+
+<ParamField query="username" type="string" required>
+  The username to check. Lookup is exact-match against the stored (lowercased)
+  value.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200` with:
+
+<ResponseField name="available" type="boolean">
+  `true` if the username is not yet taken; `false` if it is already in use.
+</ResponseField>
+
+**Example — available:**
+```json
+{ "available": true }
+```
+
+**Example — taken:**
+```json
+{ "available": false }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Query — 400">
+    ```json
+    {
+      "error": "...",
+      "code": "username/invalid-query"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useCheckUsernameAvailability` hook](/hooks/users/use-check-username-availability)

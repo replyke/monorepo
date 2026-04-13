@@ -1,0 +1,54 @@
+---
+title: "Overview"
+description: "Upload, retrieve, and manage files and images in Replyke"
+---
+
+## Overview
+
+Replyke's storage system lets you upload files and images on behalf of authenticated users. Uploaded assets are stored in managed cloud storage and served through a proxy URL so direct storage credentials are never exposed to the client.
+
+Files can be optionally associated with an entity, comment, or space, enabling cascade deletion when the parent object is removed.
+
+## Upload Modes
+
+Replyke provides two hooks for uploading assets:
+
+- **Image upload** — server-side processing with automatic variant generation (resizing, format conversion, EXIF stripping). Returns named variants for responsive display.
+- **File upload** — generic upload for documents, videos, and other files. No server-side processing — the file is stored as-is and a proxy URL is returned.
+
+## Image Processing Modes
+
+When uploading images, you choose a **processing mode** that defines how variants are generated:
+
+| Mode | Description |
+|------|-------------|
+| `exact-dimensions` | Each variant has an explicit `{ width, height }`. Use for fixed-size crops. |
+| `aspect-ratio-width-based` | All variants share an aspect ratio; you specify widths. Heights are computed. |
+| `aspect-ratio-height-based` | All variants share an aspect ratio; you specify heights. Widths are computed. |
+| `original-aspect` | Preserves the source aspect ratio; you specify the longest-edge size for each variant. |
+| `multi-aspect-ratio` | Multiple aspect ratios combined with explicit sizes. |
+
+## File Size Limits
+
+| Upload type | Limit |
+|-------------|-------|
+| Image upload | 50 MB |
+| Generic file upload | 50 MB |
+
+## Hooks
+
+<CardGroup cols={2}>
+  <Card title="useUploadImage" href="/hooks/storage/use-upload-image">
+    Upload and process an image with automatic variant generation.
+  </Card>
+  <Card title="useUploadFile" href="/hooks/storage/use-upload-file">
+    Upload a generic file and receive a proxy URL.
+  </Card>
+</CardGroup>
+
+## API Reference
+
+- [Upload Image](/api-reference/storage/upload-image) — `POST /:projectId/api/v7/storage/images`
+- [Upload File](/api-reference/storage/upload-file) — `POST /:projectId/api/v7/storage`
+- [Fetch File](/api-reference/storage/fetch-file) — `GET /:projectId/api/v7/storage/:fileId`
+- [Delete File](/api-reference/storage/delete-file) — `DELETE /:projectId/api/v7/storage/:fileId`

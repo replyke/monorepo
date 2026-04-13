@@ -1,0 +1,43 @@
+---
+title: "Delete Space"
+api: "DELETE /:projectId/api/v7/spaces/:spaceId"
+description: "Delete a space and all its associated data"
+---
+
+Permanently deletes a space. All entities, members, child spaces, rules, and reports belonging to the space are also deleted. Only the space's **creator** (the original owner) can perform this action.
+
+<Warning>This operation is irreversible. All associated data including child spaces will be permanently deleted.</Warning>
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space to delete.
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Confirmation message: `"Space deleted successfully."`
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Space not found.", "code": "space/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Deletion Disabled — 403">
+    ```json
+    { "error": "Space deletion is disabled for this project.", "code": "space/deletion-disabled" }
+    ```
+  </Accordion>
+  <Accordion title="Creator Required — 403">
+    ```json
+    { "error": "Only the space creator can delete the space.", "code": "space/creator-required" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useDeleteSpace](/hooks/spaces/use-delete-space)

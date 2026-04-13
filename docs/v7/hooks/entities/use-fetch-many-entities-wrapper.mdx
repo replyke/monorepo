@@ -1,0 +1,173 @@
+---
+title: "Use entities"
+description: "Stateful, paginated entity feed with sorting and filtering"
+icon: "cube"
+---
+
+## Overview
+
+`useFetchManyEntitiesWrapper` is a stateful wrapper around [`useFetchManyEntities`](/hooks/entities/use-fetch-many-entities) that manages pagination, sorting, and list state for you. Use it when you need a custom entity feed outside of `EntityListProvider` — for example, a user profile feed, a filtered search results page, or any custom list with infinite scroll.
+
+All filters and sort options mirror those of `useFetchManyEntities`. Changing any sort option automatically resets the list and re-fetches from page 1.
+
+## Usage Example
+
+```tsx
+import { useFetchManyEntitiesWrapper } from "@replyke/react-js";
+
+function UserFeed({ userId }: { userId: string }) {
+  const {
+    entities,
+    loading,
+    hasMore,
+    sortBy,
+    setSortBy,
+    loadMore,
+  } = useFetchManyEntitiesWrapper({
+    userId,
+    limit: 15,
+    defaultSortBy: "new",
+    include: ["user"],
+  });
+
+  return (
+    <div>
+      <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+        <option value="new">Newest</option>
+        <option value="top">Top</option>
+        <option value="hot">Hot</option>
+      </select>
+      <ul>
+        {entities.map((entity) => (
+          <li key={entity.id}>{entity.title}</li>
+        ))}
+      </ul>
+      {hasMore && (
+        <button onClick={loadMore} disabled={loading}>
+          Load more
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField body="limit" type="number" optional>
+  Number of entities per page. Default: `10`.
+</ParamField>
+
+<ParamField body="userId" type="string | null" optional>
+  Filter to entities created by a specific user.
+</ParamField>
+
+<ParamField body="sourceId" type="string | null" optional>
+  Filter to entities associated with a specific source ID.
+</ParamField>
+
+<ParamField body="spaceId" type="string | null" optional>
+  Filter to entities in a specific space.
+</ParamField>
+
+<ParamField body="followedOnly" type="boolean" optional>
+  If `true`, return only entities from users the authenticated user follows.
+</ParamField>
+
+<ParamField body="include" type="EntityIncludeParam" optional>
+  Populate related fields. Accepted values: `"user"`, `"space"`, `"topComment"`, `"saved"`, `"files"`.
+</ParamField>
+
+<ParamField body="defaultSortBy" type="EntityListSortByOptions" optional>
+  Initial sort field. Default: `"new"`.
+</ParamField>
+
+<ParamField body="defaultSortByReaction" type="SortByReaction" optional>
+  Initial reaction type to sort by when `sortBy` is reaction-based. Default: `"upvote"`.
+</ParamField>
+
+<ParamField body="defaultSortDir" type='"asc" | "desc"' optional>
+  Initial sort direction. Default: `"desc"`.
+</ParamField>
+
+<ParamField body="defaultSortType" type="SortType" optional>
+  Initial sort algorithm. Options: `"auto"`, `"numeric"`, `"text"`, `"boolean"`, `"timestamp"`. Used when sorting by a metadata field. Default: `"auto"`.
+</ParamField>
+
+<ParamField body="timeFrame" type="TimeFrame | null" optional>
+  Filter entities to a time window. Options: `"day"`, `"week"`, `"month"`, `"year"`.
+</ParamField>
+
+<ParamField body="keywordsFilters" type="KeywordsFilters | null" optional>
+  Filter by keywords. See [Entity List Filters](/sdk/entity-lists/filters).
+</ParamField>
+
+<ParamField body="titleFilters" type="TitleFilters | null" optional>
+  Filter by title content. See [Entity List Filters](/sdk/entity-lists/filters).
+</ParamField>
+
+<ParamField body="contentFilters" type="ContentFilters | null" optional>
+  Filter by body content. See [Entity List Filters](/sdk/entity-lists/filters).
+</ParamField>
+
+<ParamField body="attachmentsFilters" type="AttachmentsFilters | null" optional>
+  Filter by attachments data. See [Entity List Filters](/sdk/entity-lists/filters).
+</ParamField>
+
+<ParamField body="locationFilters" type="LocationFilters | null" optional>
+  Filter by geographic proximity. See [Entity List Filters](/sdk/entity-lists/filters).
+</ParamField>
+
+<ParamField body="metadataFilters" type="MetadataFilters | null" optional>
+  Filter by metadata fields. See [Entity List Filters](/sdk/entity-lists/filters).
+</ParamField>
+
+## Returns
+
+<ResponseField name="entities" type="Entity[]">
+  The current list of fetched entities. Appended to on each `loadMore` call.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while fetching the initial page or loading more.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional pages are available.
+</ResponseField>
+
+<ResponseField name="sortBy" type="EntityListSortByOptions">
+  Current sort field.
+</ResponseField>
+
+<ResponseField name="sortByReaction" type="SortByReaction">
+  Current reaction type used for reaction-based sorting.
+</ResponseField>
+
+<ResponseField name="sortDir" type='"asc" | "desc"'>
+  Current sort direction.
+</ResponseField>
+
+<ResponseField name="sortType" type="SortType">
+  Current sort algorithm.
+</ResponseField>
+
+<ResponseField name="setSortBy" type="(sortBy: EntityListSortByOptions) => void">
+  Change the sort field. Resets the list and re-fetches from page 1.
+</ResponseField>
+
+<ResponseField name="setSortByReaction" type="(sortByReaction: SortByReaction) => void">
+  Change the reaction type for reaction-based sorting. Resets and re-fetches.
+</ResponseField>
+
+<ResponseField name="setSortDir" type="(sortDir: 'asc' | 'desc') => void">
+  Change the sort direction. Resets the list and re-fetches from page 1.
+</ResponseField>
+
+<ResponseField name="setSortType" type="(sortType: SortType) => void">
+  Change the sort algorithm. Resets the list and re-fetches from page 1.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Load the next page of entities. Appends to the existing list.
+</ResponseField>

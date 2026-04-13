@@ -1,0 +1,91 @@
+---
+title: "Sign In"
+api: "POST /:projectId/api/v7/auth/sign-in"
+description: "Authenticate a user with email and password"
+---
+
+Authenticates an existing user by email and password. Returns an access token, refresh token, and the user's profile.
+
+## Body Parameters
+
+<ParamField body="email" type="string" required>
+  User's registered email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User's password.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` on successful authentication.
+</ResponseField>
+
+<ResponseField name="accessToken" type="string">
+  Short-lived JWT access token. Expires in 30 minutes.
+</ResponseField>
+
+<ResponseField name="refreshToken" type="string">
+  Long-lived JWT refresh token. Expires in 30 days. Use it to request a new
+  access token when the current one expires.
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  The authenticated user's profile.
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">Unique user ID (UUID).</ResponseField>
+    <ResponseField name="foreignId" type="string | null">External user ID, if set.</ResponseField>
+    <ResponseField name="role" type="string">User role.</ResponseField>
+    <ResponseField name="email" type="string | null">Email address.</ResponseField>
+    <ResponseField name="name" type="string | null">Display name.</ResponseField>
+    <ResponseField name="username" type="string | null">Username.</ResponseField>
+    <ResponseField name="avatar" type="string | null">Avatar URL.</ResponseField>
+    <ResponseField name="bio" type="string | null">Bio text.</ResponseField>
+    <ResponseField name="metadata" type="object | null">Public custom data.</ResponseField>
+    <ResponseField name="reputation" type="number | null">Reputation score.</ResponseField>
+    <ResponseField name="isVerified" type="boolean | null">Whether the user is verified.</ResponseField>
+    <ResponseField name="isActive" type="boolean | null">Whether the account is active.</ResponseField>
+    <ResponseField name="lastActive" type="string | null">ISO timestamp of last activity.</ResponseField>
+    <ResponseField name="suspensions" type="array">Active suspensions on the account.</ResponseField>
+    <ResponseField name="avatarFile" type="object | null">Processed avatar file with variants.</ResponseField>
+    <ResponseField name="bannerFile" type="object | null">Processed banner file with variants.</ResponseField>
+    <ResponseField name="authMethods" type="string[]">List of auth methods (e.g., `["password", "google"]`).</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO timestamp of account creation.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="User Not Found — 403">
+    ```json
+    {
+      "error": "User not found.",
+      "code": "auth/no-user-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Credentials — 403">
+    ```json
+    {
+      "error": "Invalid credentials.",
+      "code": "auth/invalid-credentials"
+    }
+    ```
+    Returned when the user exists but has no password set (e.g., OAuth-only account).
+  </Accordion>
+  <Accordion title="Wrong Password — 401">
+    ```json
+    {
+      "error": "Incorrect password.",
+      "code": "auth/wrong-password"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useAuth` hook](/hooks/auth/use-auth) — `signInWithEmailAndPassword`
+- [Built-in Auth guide](/sdk/authentication/built-in)

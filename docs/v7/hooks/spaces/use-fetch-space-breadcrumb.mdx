@@ -1,0 +1,38 @@
+---
+title: "Fetch space breadcrumb"
+description: "Fetch the ancestor chain of a space for breadcrumb navigation"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchSpaceBreadcrumb` returns a callable function that fetches the ordered list of ancestor spaces from root to the direct parent of the given space. Useful for breadcrumb navigation in hierarchical space structures.
+
+## Usage Example
+
+```tsx
+import { useFetchSpaceBreadcrumb } from "@replyke/react-js";
+
+function Breadcrumbs({ spaceId }: { spaceId: string }) {
+  const fetchBreadcrumb = useFetchSpaceBreadcrumb();
+
+  const loadBreadcrumb = async () => {
+    const result = await fetchBreadcrumb({ spaceId });
+    // result.breadcrumb: SpacePreview[]  (root → ... → parent)
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space to fetch the breadcrumb for.
+</ParamField>
+
+## Returns
+
+<ResponseField name="breadcrumb" type="SpacePreview[]">
+  Ordered array of [SpacePreview](/data-models/space) objects from the root space to the direct parent. Empty for root-level spaces.
+</ResponseField>
+
+<Tip>The `useSpace` hook automatically fetches and exposes the `breadcrumb` field — you only need this hook when fetching breadcrumbs outside of a `SpaceProvider`.</Tip>

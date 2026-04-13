@@ -1,0 +1,27 @@
+---
+title: "Get User Reaction"
+api: "GET /:projectId/api/v7/entities/:entityId/reactions/me"
+description: "Get the authenticated user's reaction on an entity"
+---
+
+Returns the authenticated user's current reaction on the specified entity, or `null` if they have not reacted.
+
+**Authentication required.**
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  The UUID of the entity.
+</ParamField>
+
+## Response
+
+```json
+{ "reactionType": "like" }
+```
+
+or, if the user has no reaction:
+
+```json
+{ "reactionType": null }
+```

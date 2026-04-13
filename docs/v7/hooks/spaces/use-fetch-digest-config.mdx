@@ -1,0 +1,54 @@
+---
+title: "Fetch digest config"
+description: "Fetch the digest/newsletter configuration for a space"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchDigestConfig` returns a callable function for fetching a space's digest configuration. Only space admins can access this endpoint.
+
+## Usage Example
+
+```tsx
+import { useFetchDigestConfig } from "@replyke/react-js";
+
+function DigestSettings({ spaceId }: { spaceId: string }) {
+  const fetchDigestConfig = useFetchDigestConfig();
+
+  const loadConfig = async () => {
+    const config = await fetchDigestConfig({ spaceId });
+    console.log(config.digestEnabled, config.digestScheduleHour);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+## Returns
+
+<ResponseField name="digestEnabled" type="boolean">
+  Whether digest delivery is enabled for this space.
+</ResponseField>
+
+<ResponseField name="digestWebhookUrl" type="string | null">
+  The URL digest payloads are sent to.
+</ResponseField>
+
+<ResponseField name="digestWebhookSecret" type="string | null">
+  Masked as `"••••••••"` when a secret is configured. Never returned in plain text.
+</ResponseField>
+
+<ResponseField name="digestScheduleHour" type="number | null">
+  UTC hour (0–23) when the digest is delivered.
+</ResponseField>
+
+<ResponseField name="digestTimezone" type="string | null">
+  IANA timezone for interpreting the schedule hour.
+</ResponseField>
+
+For integration guidance, see [Digest & Newsletter](/sdk/spaces/digest-newsletter).

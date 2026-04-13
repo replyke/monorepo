@@ -1,0 +1,40 @@
+---
+title: "Fetch space by slug"
+description: "Fetch a single space by its URL slug"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchSpaceBySlug` returns a callable function that fetches a space using its `slug`. Slugs are optional, unique per project, and must match the pattern `^[\p{L}\p{N}]+(?:[-_][\p{L}\p{N}]+)*$` (letters, numbers, hyphens, underscores, supports Unicode).
+
+## Usage Example
+
+```tsx
+import { useFetchSpaceBySlug } from "@replyke/react-js";
+
+function SpacePage({ slug }: { slug: string }) {
+  const fetchSpace = useFetchSpaceBySlug();
+
+  const handleFetch = async () => {
+    const space = await fetchSpace({ slug });
+    console.log(space.name);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="slug" type="string" required>
+  The URL slug of the space.
+</ParamField>
+
+<ParamField path="include" type='"files" | string[]'>
+  Optional. Pass `"files"` to include avatar and banner file objects.
+</ParamField>
+
+## Returns
+
+Returns a [SpaceDetailed](/data-models/space) object.
+
+For most use cases, prefer [`SpaceProvider slug`](/sdk/spaces/provider-and-hook) prop over calling this hook directly.

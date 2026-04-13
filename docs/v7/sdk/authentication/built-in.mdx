@@ -1,0 +1,291 @@
+---
+title: "Built-in Auth"
+description: "Email/password sign-up, sign-in, and sign-out flows"
+---
+
+Replyke's built-in authentication lets you register and sign in users with an email address and password without building your own auth backend. The SDK's `useAuth` hook exposes all the actions you need.
+
+## Sign Up
+
+Call `signUpWithEmailAndPassword` with at minimum an `email` and `password`. Additional profile fields are optional.
+
+```tsx
+import { useAuth } from "@replyke/react-js";
+
+function SignUpForm() {
+  const { signUpWithEmailAndPassword } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    try {
+      await signUpWithEmailAndPassword({
+        email: form.email.value,
+        password: form.password.value,
+        name: form.name.value,
+      });
+      // User is now signed in
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="name" placeholder="Name" />
+      <input name="email" type="email" placeholder="Email" />
+      <input name="password" type="password" placeholder="Password" />
+      <button type="submit">Sign Up</button>
+    </form>
+  );
+}
+```
+
+### Optional Profile Fields
+
+You can pass additional profile data at registration time:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | `string` | Display name |
+| `username` | `string` | Unique username within the project |
+| `avatar` | `string` | URL of avatar image |
+| `bio` | `string` | Short bio text |
+| `location` | `{ latitude: number; longitude: number }` | Geographic location |
+| `birthdate` | `Date` | Date of birth |
+| `metadata` | `Record<string, any>` | Public custom data |
+| `secureMetadata` | `Record<string, any>` | Private custom data (not returned to other users) |
+| `avatarFile` | `File \| Blob` | Upload an avatar image directly |
+| `bannerFile` | `File \| Blob` | Upload a profile banner image |
+
+<Note>
+  If you supply both `avatar` (URL) and `avatarFile` (file upload), the file
+  takes precedence and the URL is ignored.
+</Note>
+
+## Sign In
+
+```tsx
+import { useAuth } from "@replyke/react-js";
+
+function SignInForm() {
+  const { signInWithEmailAndPassword } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    try {
+      await signInWithEmailAndPassword({
+        email: form.email.value,
+        password: form.password.value,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="email" type="email" placeholder="Email" />
+      <input name="password" type="password" placeholder="Password" />
+      <button type="submit">Sign In</button>
+    </form>
+  );
+}
+```
+
+## Sign Out
+
+`signOut` revokes the current session's entire token family on the server and clears local auth state.
+
+```tsx
+import { useAuth } from "@replyke/react-js";
+
+function SignOutButton() {
+  const { signOut } = useAuth();
+
+  return <button onClick={() => signOut()}>Sign Out</button>;
+}
+```
+
+## Change Password
+
+Users who signed up with email/password can change their password while authenticated. The current password must be provided for verification.
+
+```tsx
+import { useAuth } from "@replyke/react-js";
+
+function ChangePasswordForm() {
+  const { changePassword } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    try {
+      await changePassword({
+        password: form.current.value,
+        newPassword: form.next.value,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="current" type="password" placeholder="Current password" />
+      <input name="next" type="password" placeholder="New password" />
+      <button type="submit">Change Password</button>
+    </form>
+  );
+}
+```
+
+## Password Reset
+
+Users who forget their password can request a reset email. Replyke sends a link to the registered email address. The link expires after 1 hour.
+
+```tsx
+import { useRequestPasswordReset } from "@replyke/react-js";
+
+function ForgotPasswordForm() {
+  const requestPasswordReset = useRequestPasswordReset();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const result = await requestPasswordReset({ email: form.email.value });
+    console.log(result.message);
+    // Always returns a success message to prevent email enumeration
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="email" type="email" placeholder="Email" />
+      <button type="submit">Send Reset Link</button>
+    </form>
+  );
+}
+```
+
+<Note>
+  The API always responds with a success message regardless of whether the email
+  address is registered, to prevent user enumeration.
+</Note>
+
+## Auth State
+
+Check whether the SDK has finished initializing and whether a user is currently signed in:
+
+```tsx
+import { useAuth } from "@replyke/react-js";
+
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { initialized, accessToken } = useAuth();
+
+  if (!initialized) return <p>Loading...</p>;
+  if (!accessToken) return <p>Please sign in.</p>;
+
+  return <>{children}</>;
+}
+```
+
+## Email Verification
+
+After sign-up, you can prompt users to verify their email address. Replyke sends a short-lived token (5 minutes) via email. There are two delivery modes: a **code** the user types back into your app, or a **link** they click to verify automatically.
+
+### Send a verification email
+
+```tsx
+import { useSendVerificationEmail } from "@replyke/react-js";
+
+function VerifyEmailPrompt() {
+  const sendVerificationEmail = useSendVerificationEmail();
+
+  return (
+    <button onClick={() => sendVerificationEmail()}>
+      Send verification email
+    </button>
+  );
+}
+```
+
+By default this sends a hex token. You can customise the token format and delivery mode:
+
+```tsx
+// 6-digit numeric code — easy for users to type
+await sendVerificationEmail({ tokenFormat: "numeric", tokenLength: 6 });
+
+// Clickable link — verifies automatically when opened
+await sendVerificationEmail({
+  mode: "link",
+  redirectUrl: "https://yourapp.com/email-verified",
+});
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `mode` | `"code" \| "link"` | `"code"` | Whether to send a code to enter, or a link to click |
+| `tokenFormat` | `"hex" \| "numeric" \| "alpha" \| "alphanumeric"` | `"hex"` | Character set for the token |
+| `tokenLength` | `number` (4–12) | `6` | Length of the token (ignored for `"hex"`) |
+| `redirectUrl` | `string` | — | Where to redirect after link verification (only used with `mode: "link"`) |
+
+### Verify with a code
+
+When using `mode: "code"`, collect the token from the user and call `useVerifyEmail`:
+
+```tsx
+import { useVerifyEmail } from "@replyke/react-js";
+
+function VerifyCodeForm() {
+  const verifyEmail = useVerifyEmail();
+  const [code, setCode] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await verifyEmail({ token: code });
+      // user.isVerified is now true in the local Redux store
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        placeholder="Enter code"
+      />
+      <button type="submit">Verify</button>
+    </form>
+  );
+}
+```
+
+On success, `user.isVerified` is updated immediately in the local Redux store — no refetch needed.
+
+### Link mode
+
+When using `mode: "link"`, the email contains a button the user clicks. The server verifies the token and either:
+- Redirects to the `redirectUrl` you provided with `?verified=true` appended, or
+- Renders a hosted success page if no `redirectUrl` was given.
+
+The `user.isVerified` field will be `true` the next time the user's session is loaded (e.g. on next sign-in or token refresh). There is no SDK callback for link-mode verification since it happens outside the app's JS context.
+
+<Note>
+  The verification token is valid for 5 minutes and can only be used once.
+  Calling `sendVerificationEmail` while a previous token is still valid will
+  generate a new token — the old one remains valid until it expires or the new
+  one is used.
+</Note>
+
+## See Also
+
+- [`useAuth` hook reference](/hooks/auth/use-auth)
+- [`useRequestPasswordReset` hook reference](/hooks/auth/use-request-password-reset)
+- [`useSendVerificationEmail` hook reference](/hooks/auth/use-send-verification-email)
+- [`useVerifyEmail` hook reference](/hooks/auth/use-verify-email)
+- [Sign Up API reference](/api-reference/auth/sign-up)
+- [Sign In API reference](/api-reference/auth/sign-in)

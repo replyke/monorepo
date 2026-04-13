@@ -1,0 +1,80 @@
+---
+title: "Edit message"
+description: "Edit the content of an existing chat message"
+icon: "plug"
+---
+
+## Overview
+
+Returns an async function that patches an existing message's content. The updated message is dispatched to Redux on success. The `editedAt` field is set by the server and reflects the time of the most recent edit.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useEditMessage } from "@replyke/react-js";
+
+function EditMessageForm({
+  conversationId,
+  messageId,
+  currentContent,
+}: {
+  conversationId: string;
+  messageId: string;
+  currentContent: string;
+}) {
+  const edit = useEditMessage();
+  const [text, setText] = useState(currentContent);
+
+  const handleSave = async () => {
+    await edit({ conversationId, messageId, content: text });
+  };
+
+  return (
+    <div>
+      <input value={text} onChange={(e) => setText(e.target.value)} />
+      <button onClick={handleSave}>Save</button>
+    </div>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation that contains the message.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The ID of the message to edit.
+</ParamField>
+
+<ParamField body="content" type="string">
+  New text content.
+</ParamField>
+
+<ParamField body="gif" type="GifData | null">
+  New or cleared GIF attachment.
+</ParamField>
+
+<ParamField body="mentions" type="Mention[]">
+  Updated mentions list.
+</ParamField>
+
+<ParamField body="metadata" type="Record<string, any>">
+  Updated metadata.
+</ParamField>
+
+## Returns
+
+<ResponseField name="ChatMessage" type="ChatMessage">
+  The updated [ChatMessage](/data-models/chat-message) returned by the server.
+</ResponseField>
+
+## Notes
+
+- Other participants see the update in real-time via the `message:updated` socket event, which is handled automatically by `ChatProvider`.
+- For integration guidance, see [Chat: Messages](/sdk/chat/messages).

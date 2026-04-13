@@ -1,0 +1,50 @@
+---
+title: "Delete Conversation"
+api: "DELETE /:projectId/api/v7/conversations/:conversationId"
+description: "Delete a group or space conversation and all its messages"
+---
+
+Permanently deletes a conversation and all associated messages, members, reactions, and file attachments. This action is irreversible.
+
+Direct conversations (`type: "direct"`) cannot be deleted.
+
+**Authorization:**
+- `group` conversations: caller must be an active `admin` member.
+- `space` conversations: caller must have `admin` role in the parent Space.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation to delete.
+</ParamField>
+
+## Response
+
+```json
+{ "message": "Conversation deleted." }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Conversation not found.", "code": "chat/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Cannot Delete DM — 400 Bad Request">
+    ```json
+    { "error": "Direct conversations cannot be deleted.", "code": "chat/cannot-delete-dm" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (group) — 403">
+    ```json
+    { "error": "Only group admins can delete this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (space) — 403">
+    ```json
+    { "error": "Only space admins can delete the space conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,155 @@
+---
+title: "Create Entity"
+api: "POST /:projectId/api/v7/entities"
+description: "Create a new entity, with optional file upload support"
+---
+
+Creates a new entity in your project. Supports optional file uploads via `multipart/form-data`. When no files are attached, use `application/json`. The entity is attributed to the authenticated user unless `excludeUserId` is set.
+
+## Body Parameters
+
+<ParamField body="foreignId" type="string">
+  Your application's identifier for this entity (URL, slug, database ID, etc.). Used to fetch or create entities without knowing the Replyke ID.
+</ParamField>
+
+<ParamField body="sourceId" type="string">
+  Groups entities by source. Use a topic ID or page ID to scope feeds to a specific context.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  The ID of the space this entity belongs to. The space must exist in the same project.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Attribute the entity to a specific user. Must match the authenticated user ID unless the request uses a service or master key.
+</ParamField>
+
+<ParamField body="title" type="string">
+  A title or headline for the entity.
+</ParamField>
+
+<ParamField body="content" type="string">
+  The main body text of the entity.
+</ParamField>
+
+<ParamField body="attachments" type="object[]">
+  An array of generic attachment objects. Each item is a free-form JSON object — structure is defined by your application.
+</ParamField>
+
+<ParamField body="keywords" type="string[]">
+  Tags or keywords associated with this entity. Used for keyword-based filtering in the list endpoint.
+</ParamField>
+
+<ParamField body="mentions" type="object[]">
+  Users or spaces mentioned in this entity. Each object is a discriminated union:
+  - `{ type: "user", id: string, username: string, foreignId?: string }`
+  - `{ type: "space", id: string, slug: string }`
+
+  Mentioned users receive an in-app notification.
+</ParamField>
+
+<ParamField body="location" type="object">
+  Geographic coordinates for this entity. Enables proximity-based filtering.
+
+  ```json
+  { "latitude": 40.7128, "longitude": -74.0060 }
+  ```
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  A free-form JSON object for any custom data your application needs alongside the entity. Supports rich filtering via `metadataFilters` in the list endpoint.
+</ParamField>
+
+<ParamField body="isDraft" type="boolean">
+  When `true`, the entity is saved as a draft and excluded from public feeds. Publish it later via the [Publish Entity](/api-reference/entities/publish-entity) endpoint.
+</ParamField>
+
+<ParamField body="excludeUserId" type="boolean">
+  When `true`, the entity is created without user attribution even if a user is authenticated.
+</ParamField>
+
+<ParamField body="requireUser" type="boolean">
+  When `true`, returns `401` if no user is authenticated.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601 datetime to backfill a creation timestamp. **Service or master key only.**
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601 datetime for `updatedAt`. Requires `createdAt` to also be set. Must be ≥ `createdAt`. **Service or master key only.**
+</ParamField>
+
+### File Uploads (multipart/form-data)
+
+When uploading files, send the request as `multipart/form-data`. All JSON fields above are sent as form fields.
+
+<ParamField body="images.files" type="file[]">
+  Image files to attach. Maximum 10 images, 50 MB each. Must be valid images. Requires `images.options`.
+</ParamField>
+
+<ParamField body="images.options" type="string">
+  Stringified JSON describing how to process uploaded images. Must include a `mode` field:
+  - `"exact-dimensions"` — resize to specific pixel dimensions per variant
+  - `"aspect-ratio-width-based"` — resize by width maintaining aspect ratio
+  - `"aspect-ratio-height-based"` — resize by height maintaining aspect ratio
+  - `"original-aspect"` — preserve original ratio, resize by max dimension
+  - `"multi-aspect-ratio"` — generate crops at multiple aspect ratios
+
+  Optional fields: `quality` (1–100), `format` (`webp`, `jpeg`, `png`, `original`), `stripExif` (boolean), `pathParts` (string[]).
+</ParamField>
+
+<ParamField body="files.files" type="file[]">
+  Generic files to attach. Maximum 10 files, 50 MB each.
+</ParamField>
+
+<ParamField body="files.options" type="string">
+  Stringified JSON for file options. Optional `pathParts` (string[]) customizes the storage path.
+</ParamField>
+
+## Response
+
+Returns the created [Entity](/data-models/entity) object. When files are uploaded, the entity includes a `files` array with signed URLs for each attachment.
+
+<Note>
+  Draft entities are invisible to all users until published. Use [Fetch Drafts](/api-reference/entities/fetch-drafts) to list an author's unpublished drafts.
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="User Required — 401">
+    ```json
+    { "error": "Authentication required to create this entity.", "code": "entity/user-required" }
+    ```
+  </Accordion>
+  <Accordion title="Unauthorized User ID — 403">
+    ```json
+    { "error": "User is not authorized to create this entity.", "code": "entity/unauthorized" }
+    ```
+  </Accordion>
+  <Accordion title="Space Not Found — 404">
+    ```json
+    { "error": "Space not found", "code": "entity/space-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Timestamp — 400">
+    ```json
+    { "error": "Cannot set updatedAt without also setting createdAt.", "code": "entity/invalid-timestamp" }
+    ```
+    Also returned when `updatedAt` is earlier than `createdAt`:
+    ```json
+    { "error": "updatedAt must be the same or after createdAt.", "code": "entity/invalid-timestamp" }
+    ```
+  </Accordion>
+  <Accordion title="File Too Large — 413">
+    ```json
+    { "code": "entity/file-too-large", "message": "Image \"photo.jpg\" exceeds 50MB limit." }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Image — 422">
+    ```json
+    { "code": "entity/invalid-image", "message": "File \"doc.txt\" is not a valid image: ..." }
+    ```
+  </Accordion>
+</AccordionGroup>

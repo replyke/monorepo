@@ -1,0 +1,74 @@
+---
+title: "Search users"
+description: "Semantic search for users by natural language query"
+icon: "plug"
+---
+
+## Overview
+
+Returns state and a `search` function for finding users by natural language query. Matches against user profile text (name, username, bio, etc.) using vector similarity.
+
+For integration guidance, see [Semantic Search](/sdk/search/semantic-search).
+
+## Usage Example
+
+```tsx
+import { useSearchUsers } from "@replyke/react-js";
+
+function UserSearch() {
+  const { results, loading, search } = useSearchUsers();
+
+  return (
+    <div>
+      <button onClick={() => search({ query: "frontend developers", limit: 10 })}>
+        Search
+      </button>
+      {results.map((r) => (
+        <div key={r.record.id}>{r.record.name} — {r.similarity.toFixed(3)}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+Call `search` with:
+
+<ParamField path="query" type="string" required>
+  The natural language query string.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+## Returns
+
+<ResponseField name="results" type="UserSearchResult[]">
+  Ranked user results.
+  <Expandable title="UserSearchResult properties">
+    <ResponseField name="similarity" type="number">
+      Cosine similarity score (0–1).
+    </ResponseField>
+    <ResponseField name="record" type="User">
+      The matched user profile. See [User data model](/data-models/user).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a search is in progress.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the last search failed.
+</ResponseField>
+
+<ResponseField name="search" type="(props) => Promise<void>">
+  Executes the search and updates `results`.
+</ResponseField>
+
+<ResponseField name="reset" type="() => void">
+  Clears `results` and `error`.
+</ResponseField>

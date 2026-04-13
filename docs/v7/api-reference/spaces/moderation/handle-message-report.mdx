@@ -1,0 +1,85 @@
+---
+title: "Handle Message Report"
+api: "PATCH /:projectId/api/v7/spaces/:spaceId/chat/reports/:reportId"
+description: "Resolve a reported chat message within a space"
+---
+
+Resolves a filed report against a chat message in a space's integrated conversation. Requires the caller to be a moderator or admin of that space.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="reportId" type="string" required>
+  UUID of the chat message report to resolve.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="actions" type="string[]" required>
+  One or more actions to take. Must contain at least one value. Available actions:
+  - `"remove-message"` — marks the message as removed via moderation (requires `messageId`)
+  - `"ban-user"` — bans the target user from the space (requires `userId` and `reason`)
+  - `"dismiss"` — dismisses the report without action (cannot be combined with other actions)
+</ParamField>
+
+<ParamField body="messageId" type="string">
+  UUID of the message to remove. Required when `remove-message` is included in `actions`.
+</ParamField>
+
+<ParamField body="summary" type="string">
+  Optional summary of the action taken. Stored as `actionTaken` on the report record.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  UUID of the user to ban. Required when `ban-user` is included in `actions`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Reason for the ban. Required when `ban-user` is included in `actions`.
+</ParamField>
+
+## Response
+
+Returns `200 OK`:
+
+```json
+{ "message": "Report handled successfully.", "code": "report/handled" }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Report Not Found — 404">
+    ```json
+    { "error": "Report not found.", "code": "report/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Report Not in Space — 404">
+    ```json
+    { "error": "Report does not belong to this space.", "code": "report/not-found-in-space" }
+    ```
+  </Accordion>
+  <Accordion title="Message Not Found — 404">
+    ```json
+    { "error": "Message not found.", "code": "chat/message-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="User Not Found — 404">
+    ```json
+    { "error": "User not found.", "code": "report/user-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="User Not a Member — 404">
+    ```json
+    { "error": "User is not a member of this space.", "code": "space/member-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Action Combination — 400">
+    ```json
+    { "error": "Cannot combine 'dismiss' with other actions.", "code": "report/invalid-actions" }
+    ```
+  </Accordion>
+</AccordionGroup>

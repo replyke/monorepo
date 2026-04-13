@@ -1,0 +1,64 @@
+---
+title: "Sign Testing JWT"
+api: "POST /:projectId/api/v7/crypto/sign-testing-jwt"
+description: "Generate a signed RS256 JWT for development and testing"
+---
+
+Signs a short-lived JWT (5 minutes) using your project's RSA private key. Use this during development to generate tokens for testing [external auth](/sdk/authentication/external) without needing to implement JWT signing in your test environment.
+
+<Warning>
+  Never use this endpoint in production. It requires your RSA private key in the request body, which must be kept secret. Use it only in local development or CI environments.
+</Warning>
+
+## Body Parameters
+
+<ParamField body="privateKey" type="string" required>
+  Your RSA private key encoded as a Base64 string. This is the private key associated with the public key configured in your project's external auth settings.
+</ParamField>
+
+<ParamField body="payload" type="object" required>
+  The JWT payload. Must include at least an `id` field (the user's ID in your system). All fields are included in the `userData` claim.
+
+  ```json
+  {
+    "id": "user-123",
+    "email": "alice@example.com",
+    "name": "Alice"
+  }
+  ```
+</ParamField>
+
+<ParamField body="projectId" type="string">
+  The project ID. Can be provided in the body or as a URL path parameter (`:projectId`). The body value takes precedence if both are provided.
+</ParamField>
+
+## Response
+
+Returns the signed JWT as a plain text string (not JSON):
+
+```
+eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+The JWT is signed with `RS256`, expires in 5 minutes, and includes:
+- `sub` — the user's `id` from the payload
+- `iss` — the project ID
+- `aud` — `"replyke.com"`
+- `userData` — the full payload object
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Parameters — 400">
+    ```
+    Missing params in request body
+    ```
+    Returned when `projectId`, `privateKey`, or `payload` is missing.
+  </Accordion>
+  <Accordion title="Missing User ID — 400">
+    ```json
+    { "error": "Missing user id in payload.", "code": "crypto/missing-params" }
+    ```
+    Returned when the `payload` object does not include an `id` field.
+  </Accordion>
+</AccordionGroup>

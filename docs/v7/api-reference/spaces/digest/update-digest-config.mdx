@@ -1,0 +1,77 @@
+---
+title: "Update Digest Config"
+api: "PATCH /:projectId/api/v7/spaces/:spaceId/digest-config"
+description: "Update the digest/newsletter configuration for a space"
+---
+
+Updates the digest configuration for a space. Only space admins can perform this action. All fields are optional.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="digestEnabled" type="boolean">
+  Enable or disable digest delivery.
+</ParamField>
+
+<ParamField body="digestWebhookUrl" type="string | null">
+  URL to send digest payloads to. Pass `null` to clear.
+</ParamField>
+
+<ParamField body="digestWebhookSecret" type="string | null">
+  Webhook signing secret. Pass `null` to clear.
+</ParamField>
+
+<ParamField body="digestScheduleHour" type="number">
+  UTC hour (0–23) for delivery. Pass `null` to clear.
+</ParamField>
+
+<ParamField body="digestTimezone" type="string">
+  IANA timezone string. Pass `null` to clear.
+</ParamField>
+
+## Response
+
+Returns the updated digest configuration:
+
+<ResponseField name="digestEnabled" type="boolean">
+  Whether digest delivery is currently enabled.
+</ResponseField>
+
+<ResponseField name="digestWebhookUrl" type="string | null">
+  The configured delivery URL.
+</ResponseField>
+
+<ResponseField name="digestWebhookSecret" type="string | null">
+  Masked as `"••••••••"` when a secret is configured. Never returned in plain text.
+</ResponseField>
+
+<ResponseField name="digestScheduleHour" type="number | null">
+  UTC hour (0–23) of delivery.
+</ResponseField>
+
+<ResponseField name="digestTimezone" type="string | null">
+  IANA timezone string.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Plan Required — 403">
+    ```json
+    { "error": "Space digests are only available on Pro and Growth plans." }
+    ```
+  </Accordion>
+  <Accordion title="Validation Error — 400">
+    When `digestEnabled` is being set to `true` but one or more of `digestWebhookUrl`, `digestWebhookSecret`, `digestScheduleHour`, or `digestTimezone` are missing.
+    ```json
+    { "error": "All digest config fields (digestWebhookUrl, digestWebhookSecret, digestScheduleHour, digestTimezone) must be set when enabling digest." }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useUpdateDigestConfig](/hooks/spaces/use-update-digest-config)

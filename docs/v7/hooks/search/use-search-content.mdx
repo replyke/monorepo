@@ -1,0 +1,89 @@
+---
+title: "Search content"
+description: "Semantic search over entities, comments, and messages"
+icon: "plug"
+---
+
+## Overview
+
+Returns state and a `search` function for executing natural language searches over project content. Supports filtering by content type and scoping by space or conversation.
+
+For integration guidance, see [Semantic Search](/sdk/search/semantic-search).
+
+## Usage Example
+
+```tsx
+import { useSearchContent } from "@replyke/react-js";
+
+function Search() {
+  const { results, loading, search, reset } = useSearchContent();
+
+  return (
+    <div>
+      <button onClick={() => search({ query: "onboarding tips", sourceTypes: ["entity"] })}>
+        Search
+      </button>
+      {results.map((r) => (
+        <div key={r.record.id}>{r.sourceType} — {r.similarity.toFixed(3)}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+This hook returns an object. Call `search` with:
+
+<ParamField path="query" type="string" required>
+  The natural language query string.
+</ParamField>
+
+<ParamField path="sourceTypes" type='("entity" | "comment" | "message")[]'>
+  Limit results to specific content types. Omit to search all types.
+</ParamField>
+
+<ParamField path="spaceId" type="string">
+  Scope results to a specific space.
+</ParamField>
+
+<ParamField path="conversationId" type="string">
+  Scope results to a specific conversation.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+## Returns
+
+<ResponseField name="results" type="ContentSearchResult[]">
+  Ranked search results.
+  <Expandable title="ContentSearchResult properties">
+    <ResponseField name="sourceType" type='"entity" | "comment" | "message"'>
+      The type of the matched record.
+    </ResponseField>
+    <ResponseField name="similarity" type="number">
+      Cosine similarity score (0–1).
+    </ResponseField>
+    <ResponseField name="record" type="Entity | Comment | ChatMessage">
+      The full matched record.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a search request is in progress.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the last search failed, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="search" type="(props: UseSearchContentProps) => Promise<void>">
+  Executes the search and updates `results`.
+</ResponseField>
+
+<ResponseField name="reset" type="() => void">
+  Clears `results` and `error`.
+</ResponseField>

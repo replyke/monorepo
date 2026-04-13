@@ -1,0 +1,83 @@
+---
+title: "Get URL Metadata"
+api: "GET /:projectId/api/v7/utils/get-metadata"
+description: "Fetch Open Graph and social metadata for any URL"
+---
+
+Fetches Open Graph, Twitter Card, and other structured metadata for a given URL. Results are cached in Redis for 24 hours to avoid repeated fetches. Useful for building link previews in comments or entity editors.
+
+Requires an authenticated user.
+
+**Rate limit**: 30 requests per 5 minutes.
+
+## Query Parameters
+
+<ParamField query="url" type="string" required>
+  The URL to fetch metadata for. Must be a valid HTTP/HTTPS URL.
+</ParamField>
+
+## Response
+
+```json
+{
+  "title": "Example Page Title",
+  "description": "A brief description of the page.",
+  "siteName": "Example Site",
+  "url": "https://example.com/page",
+  "type": "article",
+  "locale": "en_US",
+  "charset": "utf-8",
+  "favicon": "https://example.com/favicon.ico",
+  "images": [
+    {
+      "url": "https://example.com/og-image.jpg",
+      "width": 1200,
+      "height": 630,
+      "type": "image/jpeg",
+      "alt": null
+    }
+  ],
+  "videos": [],
+  "audio": [],
+  "twitter": {
+    "card": "summary_large_image",
+    "site": "@example",
+    "creator": null,
+    "title": "...",
+    "description": "...",
+    "images": [],
+    "players": []
+  },
+  "article": {
+    "publishedTime": "2025-01-01T00:00:00Z",
+    "modifiedTime": null,
+    "expirationTime": null,
+    "author": null,
+    "section": null,
+    "tag": null
+  },
+  "appLinks": { "ios": null, "android": null, "web": null },
+  "book": null,
+  "music": null,
+  "profile": null,
+  "jsonLd": null,
+  "requestUrl": "https://example.com/page",
+  "success": true
+}
+```
+
+All fields are nullable — the response always has the same shape regardless of which tags the target URL exposes.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Extraction Failed — 422">
+    ```json
+    {
+      "error": "Failed to extract metadata from the provided URL",
+      "code": "utils/metadata-extraction-failed"
+    }
+    ```
+    Returned when the URL is reachable but no metadata could be extracted.
+  </Accordion>
+</AccordionGroup>

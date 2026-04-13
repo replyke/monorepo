@@ -1,0 +1,29 @@
+---
+title: "Create Rule"
+api: "POST /:projectId/api/v7/spaces/:spaceId/rules"
+description: "Create a new community rule for a space"
+---
+
+Creates a community rule. Only space admins can create rules. The new rule is appended to the end of the existing rule list.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="title" type="string" required>
+  Short rule title.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional detailed description.
+</ParamField>
+
+## Response
+
+The created Rule object with all fields including the assigned `order` value.
+
+See also: [useCreateRule](/hooks/spaces/rules/use-create-rule)

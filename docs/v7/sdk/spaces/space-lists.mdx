@@ -1,0 +1,140 @@
+---
+title: "Space Lists"
+description: "Browse, search, and paginate spaces with filtering and sorting"
+---
+
+The `useSpaceList` hook provides a Redux-backed, paginated list of spaces with support for filtering, sorting, and search. It is designed for discovery pages, community browsers, and admin dashboards.
+
+## Basic Usage
+
+```tsx
+import { useSpaceList } from "@replyke/react-js";
+import { useEffect } from "react";
+
+function SpaceDirectory() {
+  const {
+    spaces,
+    loading,
+    hasMore,
+    fetchSpaces,
+    loadMore,
+  } = useSpaceList({ listId: "directory" });
+
+  useEffect(() => {
+    fetchSpaces({ sortBy: "newest" });
+  }, []);
+
+  return (
+    <div>
+      {spaces.map((space) => (
+        <div key={space.id}>{space.name}</div>
+      ))}
+      {hasMore && (
+        <button onClick={loadMore} disabled={loading}>
+          Load more
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Filtering and Sorting
+
+```tsx
+// Search by name
+fetchSpaces({ sortBy: "newest", searchName: "gaming" });
+
+// Search across all fields (name, slug, description)
+fetchSpaces({ sortBy: "newest", searchAny: "design" });
+
+// Filter to spaces the current user is a member of
+fetchSpaces({ sortBy: "newest", memberOf: true });
+
+// Fetch only child spaces of a parent
+fetchSpaces({ sortBy: "newest", parentSpaceId: "parent-space-id" });
+
+// Fetch top-level spaces only
+fetchSpaces({ sortBy: "newest", parentSpaceId: null });
+```
+
+### Sort Options
+
+| Value | Description |
+|-------|-------------|
+| `"newest"` | Most recently created first |
+| `"oldest"` | Oldest first |
+| `"most_members"` | Most members first |
+| `"least_members"` | Fewest members first |
+
+## Creating and Deleting from a List
+
+`useSpaceList` also exposes create and delete operations that automatically update the list state:
+
+```tsx
+const { createSpace, deleteSpace } = useSpaceList({ listId: "my-list" });
+
+// Create a new space and insert it into the list
+const newSpace = await createSpace({
+  name: "New Community",
+  readingPermission: "anyone",
+  postingPermission: "members",
+  requireJoinApproval: true,
+  insertPosition: "first", // or "last"
+});
+
+// Delete a space and remove it from the list
+await deleteSpace({ spaceId: "space-id" });
+```
+
+## Multiple Independent Lists
+
+Each `useSpaceList` call uses a `listId` to maintain independent Redux state. You can have multiple lists on the same page without interference:
+
+```tsx
+const allSpaces = useSpaceList({ listId: "all" });
+const mySpaces = useSpaceList({ listId: "my-spaces" });
+
+// Both lists are independent
+allSpaces.fetchSpaces({ sortBy: "newest" });
+mySpaces.fetchSpaces({ sortBy: "newest", memberOf: true });
+```
+
+## Return Values
+
+<ResponseField name="spaces" type="Space[]">
+  The current page of loaded spaces.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while fetching.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if there are more pages to load.
+</ResponseField>
+
+<ResponseField name="fetchSpaces" type="function">
+  Trigger a new fetch with the given filters and configuration. Resets to page 1.
+</ResponseField>
+
+<ResponseField name="loadMore" type="function">
+  Fetch the next page of results and append to the current list.
+</ResponseField>
+
+<ResponseField name="createSpace" type="function">
+  Create a new space and insert it into the list.
+</ResponseField>
+
+<ResponseField name="deleteSpace" type="function">
+  Delete a space and remove it from the list.
+</ResponseField>
+
+## Hook Reference
+
+| Hook | Description |
+|------|-------------|
+| [`useSpaceList`](/hooks/space-lists/use-space-list) | Main hook for paginated space lists |
+| [`useSpaceListActions`](/hooks/space-lists/use-space-list-actions) | Low-level list actions (used internally by `useSpaceList`) |
+| [`useFetchManySpaces`](/hooks/spaces/use-fetch-many-spaces) | One-off fetch of multiple spaces |
+| [`useFetchUserSpaces`](/hooks/spaces/use-fetch-user-spaces) | Fetch spaces the current user is a member of |

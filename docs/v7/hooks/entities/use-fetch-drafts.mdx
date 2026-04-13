@@ -1,0 +1,83 @@
+---
+title: "Fetch drafts"
+description: "Fetch the authenticated user's draft entities"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchDrafts` returns a function that retrieves the authenticated user's unpublished draft entities in a paginated response.
+
+<Note>Requires an authenticated user. Only the user's own drafts are returned.</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchDrafts } from "@replyke/react-js";
+import { useEffect, useState } from "react";
+
+function DraftsList() {
+  const fetchDrafts = useFetchDrafts();
+  const [drafts, setDrafts] = useState([]);
+
+  useEffect(() => {
+    fetchDrafts({ page: 1, limit: 10 }).then((res) => setDrafts(res.data));
+  }, []);
+
+  return (
+    <ul>
+      {drafts.map((d) => (
+        <li key={d.id}>{d.title || "Untitled"}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Results per page.
+</ParamField>
+
+<ParamField path="sourceId" type="string">
+  Filter drafts by source ID.
+</ParamField>
+
+<ParamField path="spaceId" type="string">
+  Filter drafts by space.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Populate related fields. Accepted values: `"user"`, `"space"`, `"topComment"`, `"saved"`, `"files"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="data" type="Entity[]">
+  Array of draft entities for the current page.
+</ResponseField>
+
+<ResponseField name="pagination.page" type="number">
+  Current page number.
+</ResponseField>
+
+<ResponseField name="pagination.pageSize" type="number">
+  Number of results per page.
+</ResponseField>
+
+<ResponseField name="pagination.totalPages" type="number">
+  Total number of pages.
+</ResponseField>
+
+<ResponseField name="pagination.totalItems" type="number">
+  Total count of the user's drafts.
+</ResponseField>
+
+<ResponseField name="pagination.hasMore" type="boolean">
+  `true` if there are additional pages available.
+</ResponseField>

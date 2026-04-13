@@ -1,0 +1,47 @@
+---
+title: "Use follow manager"
+description: "Manage follow state between two users in a single hook"
+icon: "cube"
+---
+
+## Overview
+
+Combines follow status fetching and toggle actions into a single hook. On mount, loads whether the current user follows `userId`, then provides a `toggleFollow` function to follow or unfollow in one call.
+
+For integration guidance, see [Relationships — useFollowManager](/sdk/relationships/use-follow-manager).
+
+## Usage Example
+
+```tsx
+import { useFollowManager } from "@replyke/react-js";
+
+function FollowButton({ userId }: { userId: string }) {
+  const { isFollowing, isLoading, toggleFollow } = useFollowManager({ userId });
+
+  return (
+    <button onClick={toggleFollow} disabled={isLoading || isFollowing === null}>
+      {isFollowing ? "Unfollow" : "Follow"}
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="userId" type="string" required>
+  The ID of the target user.
+</ParamField>
+
+## Returns
+
+<ResponseField name="isFollowing" type="boolean | null">
+  `true` if following, `false` if not, `null` while the initial status is loading.
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  `true` while the initial status check is in progress.
+</ResponseField>
+
+<ResponseField name="toggleFollow" type="() => Promise<void>">
+  Follows the user if not currently following; unfollows if currently following. No-ops while loading or if `userId` is the current user's own ID.
+</ResponseField>

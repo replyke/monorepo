@@ -1,0 +1,131 @@
+---
+title: "Use auth"
+description: "Access auth state and perform sign-up, sign-in, sign-out, and token management"
+icon: "cube"
+---
+
+## Overview
+
+`useAuth` is the primary authentication hook. It returns current token state and functions for all built-in auth operations: sign-up, sign-in, sign-out, password change, and manual token refresh.
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useAuth } from "@replyke/react-js";
+
+function SignInForm() {
+  const { initialized, accessToken, signInWithEmailAndPassword, signOut } = useAuth();
+
+  if (!initialized) return <p>Loading...</p>;
+  if (accessToken) return <button onClick={signOut}>Sign Out</button>;
+
+  return (
+    <button
+      onClick={() =>
+        signInWithEmailAndPassword({
+          email: "user@example.com",
+          password: "password123",
+        })
+      }
+    >
+      Sign In
+    </button>
+  );
+}
+```
+
+```tsx React Native
+import { useAuth } from "@replyke/react-native";
+
+function SignInButton() {
+  const { initialized, accessToken, signInWithEmailAndPassword } = useAuth();
+
+  if (!initialized) return null;
+  if (accessToken) return null;
+
+  return (
+    <Button
+      title="Sign In"
+      onPress={() =>
+        signInWithEmailAndPassword({
+          email: "user@example.com",
+          password: "password123",
+        })
+      }
+    />
+  );
+}
+```
+</CodeGroup>
+
+## Returns
+
+`useAuth` returns an object with the following fields:
+
+<ResponseField name="initialized" type="boolean">
+  `true` once the SDK has attempted to restore a session from the stored refresh
+  token. Always check this before rendering auth-dependent UI.
+</ResponseField>
+
+<ResponseField name="accessToken" type="string | null">
+  The current JWT access token, or `null` if no user is signed in. Expires every
+  30 minutes; the SDK refreshes it automatically.
+</ResponseField>
+
+<ResponseField name="refreshToken" type="string | null">
+  The current JWT refresh token, or `null` if no user is signed in.
+</ResponseField>
+
+<ResponseField name="setRefreshToken" type="function">
+  Manually set a refresh token in Redux state. Useful when integrating external
+  auth flows that hand tokens directly to the SDK.
+</ResponseField>
+
+<ResponseField name="signUpWithEmailAndPassword" type="function">
+  Create a new account and sign in. Accepts a `SignUpWithEmailAndPasswordProps`
+  object. Throws if registration fails.
+
+  **Parameters:**
+  - `email` (required) — User's email address
+  - `password` (required) — Password
+  - `name` (optional) — Display name
+  - `username` (optional) — Unique username
+  - `avatar` (optional) — Avatar URL
+  - `bio` (optional) — Bio text
+  - `location` (optional) — `{ latitude, longitude }`
+  - `birthdate` (optional) — Date of birth
+  - `metadata` (optional) — Public custom fields
+  - `secureMetadata` (optional) — Private custom fields
+  - `avatarFile` (optional) — Avatar image file to upload
+  - `avatarOptions` (optional) — Image processing options for the avatar
+  - `bannerFile` (optional) — Banner image file to upload
+  - `bannerOptions` (optional) — Image processing options for the banner
+</ResponseField>
+
+<ResponseField name="signInWithEmailAndPassword" type="function">
+  Sign in with an existing account. Accepts `{ email: string; password: string }`.
+  Throws if credentials are invalid.
+</ResponseField>
+
+<ResponseField name="signOut" type="function">
+  Sign out the current account. Sends a sign-out request to the server to revoke
+  the refresh token family, then clears local auth state. Throws on error.
+</ResponseField>
+
+<ResponseField name="changePassword" type="function">
+  Change the password for the currently authenticated user. Accepts
+  `{ password: string; newPassword: string }`. The current password must be
+  correct. Throws if verification fails.
+</ResponseField>
+
+<ResponseField name="requestNewAccessToken" type="function">
+  Manually trigger an access token refresh using the stored refresh token.
+  Returns the new access token string, or `undefined` if the refresh fails.
+  The SDK handles refresh automatically in most cases; use this only when
+  you need to force a refresh.
+</ResponseField>
+
+## Integration Guide
+
+For full integration guidance, see [Built-in Auth](/sdk/authentication/built-in).

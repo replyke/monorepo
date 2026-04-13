@@ -1,0 +1,86 @@
+---
+title: "Remove account"
+description: "Remove a linked account from the current app instance"
+icon: "plug"
+---
+
+## Overview
+
+`useRemoveAccount` signs out and removes a specific account from the stored accounts map. It sends a best-effort sign-out request to the server to revoke the account's refresh token family before removing local state.
+
+If the removed account is the currently active one, the SDK automatically switches to the next available account. If no other accounts remain, the SDK resets to the unauthenticated state.
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useAccounts, useRemoveAccount } from "@replyke/react-js";
+
+function AccountList() {
+  const { accounts } = useAccounts();
+  const { removeAccount, isRemoving, error } = useRemoveAccount();
+
+  return (
+    <ul>
+      {accounts.map((account) => (
+        <li key={account.id}>
+          {account.name ?? account.email}
+          <button
+            onClick={() => removeAccount({ userId: account.id })}
+            disabled={isRemoving}
+          >
+            Remove
+          </button>
+        </li>
+      ))}
+      {error && <p>{error}</p>}
+    </ul>
+  );
+}
+```
+
+```tsx React Native
+import { useAccounts, useRemoveAccount } from "@replyke/react-native";
+
+function AccountItem({ userId }: { userId: string }) {
+  const { removeAccount, isRemoving } = useRemoveAccount();
+
+  return (
+    <Button
+      title="Remove"
+      onPress={() => removeAccount({ userId })}
+      disabled={isRemoving}
+    />
+  );
+}
+```
+</CodeGroup>
+
+## Parameters
+
+The hook returns a `removeAccount` function that accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the account to remove.
+</ParamField>
+
+## Returns
+
+<ResponseField name="removeAccount" type="function">
+  Async function that removes the specified account. Throws synchronously if
+  `userId` is not found in the accounts map or if no `projectId` is available.
+  Runtime errors during removal are caught and surfaced via the `error` field
+  instead of throwing.
+</ResponseField>
+
+<ResponseField name="isRemoving" type="boolean">
+  `true` while the removal is in progress.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the removal failed, or `null` if no error occurred.
+</ResponseField>
+
+## Integration Guide
+
+For multi-account integration guidance, see [Multi-Account](/sdk/authentication/multi-account).

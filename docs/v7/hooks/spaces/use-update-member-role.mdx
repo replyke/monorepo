@@ -1,0 +1,51 @@
+---
+title: "Update member role"
+description: "Update a member's role within a space"
+icon: "plug"
+---
+
+## Overview
+
+`useUpdateMemberRole` returns a callable function for changing a space member's role. Only admins can update roles.
+
+## Usage Example
+
+```tsx
+import { useUpdateMemberRole } from "@replyke/react-js";
+
+function RoleSelector({ spaceId, memberId }: { spaceId: string; memberId: string }) {
+  const updateRole = useUpdateMemberRole();
+
+  return (
+    <select onChange={(e) => updateRole({ spaceId, memberId, role: e.target.value as any })}>
+      <option value="member">Member</option>
+      <option value="moderator">Moderator</option>
+      <option value="admin">Admin</option>
+    </select>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="memberId" type="string" required>
+  UUID of the membership record to update.
+</ParamField>
+
+<ParamField path="role" type='"admin" | "moderator" | "member"' required>
+  The new role to assign.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="membership" type="object">
+  Updated membership with `id`, `role`, `status`, `joinedAt`, and `userId`.
+</ResponseField>

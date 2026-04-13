@@ -1,0 +1,54 @@
+---
+title: "useFollowManager"
+description: "High-level hook for managing follow state with a single user"
+---
+
+`useFollowManager` is a convenience hook for building follow/unfollow buttons on a user profile. It automatically loads the current follow status on mount and exposes a `toggleFollow` function that handles both following and unfollowing.
+
+## Usage Example
+
+```tsx
+import { useFollowManager } from "@replyke/react-js";
+
+function FollowButton({ userId }: { userId: string }) {
+  const { isFollowing, isLoading, toggleFollow } = useFollowManager({ userId });
+
+  if (isLoading) return <button disabled>...</button>;
+
+  return (
+    <button onClick={toggleFollow}>
+      {isFollowing ? "Unfollow" : "Follow"}
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="userId" type="string" required>
+  The ID of the user to follow or unfollow. The hook will not run if this equals the current user's ID.
+</ParamField>
+
+## Returns
+
+<ResponseField name="isFollowing" type="boolean | null">
+  Whether the current user is following the target user. `null` while the initial status check is in progress.
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  `true` while the initial follow status is being fetched.
+</ResponseField>
+
+<ResponseField name="toggleFollow" type="() => Promise<void>">
+  Follows the user if not currently following, or unfollows if currently following. No-ops if loading or if `userId` equals the current user's ID.
+</ResponseField>
+
+<Note>
+  The current user must be signed in for this hook to function. The hook performs no action if the `userId` matches the authenticated user's own ID.
+</Note>
+
+## Related
+
+- [useFollowUser](/hooks/follows/use-follow-user)
+- [useUnfollowUserByUserId](/hooks/follows/use-unfollow-user-by-user-id)
+- [useFetchFollowStatus](/hooks/follows/use-fetch-follow-status)

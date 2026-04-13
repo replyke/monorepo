@@ -1,0 +1,42 @@
+---
+title: "Unfollow by user ID"
+description: "Unfollow a user by their user ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that unfollows a target user by their user ID. The current user must be authenticated. This is the simpler alternative to `useUnfollowByFollowId` when you don't have the follow record ID.
+
+## Usage Example
+
+```tsx
+import { useUnfollowUserByUserId } from "@replyke/react-js";
+
+function UnfollowButton({ userId }: { userId: string }) {
+  const unfollowUserByUserId = useUnfollowUserByUserId();
+
+  return (
+    <button onClick={() => unfollowUserByUserId({ userId })}>
+      Unfollow
+    </button>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user to unfollow. Cannot be the current user's own ID.
+</ParamField>
+
+## Returns
+
+The function returns `Promise<void>`.
+
+## Related
+
+- [useFollowUser](/hooks/follows/use-follow-user) — follow a user
+- [useUnfollowByFollowId](/hooks/follows/use-unfollow-by-follow-id) — unfollow by follow record ID

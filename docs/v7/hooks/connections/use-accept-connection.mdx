@@ -1,0 +1,52 @@
+---
+title: "Accept connection"
+description: "Accept a pending connection request by connection ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that accepts a pending incoming connection request. The current user must be authenticated and must be the recipient of the request.
+
+## Usage Example
+
+```tsx
+import { useAcceptConnection } from "@replyke/react-js";
+
+function PendingRequest({ connectionId }: { connectionId: string }) {
+  const acceptConnection = useAcceptConnection();
+
+  return (
+    <button onClick={() => acceptConnection({ connectionId })}>
+      Accept
+    </button>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="connectionId" type="string" required>
+  The ID of the connection record to accept.
+</ParamField>
+
+## Returns
+
+<ResponseField name="id" type="string">
+  The connection record ID.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The updated status, e.g. `"connected"`.
+</ResponseField>
+
+<ResponseField name="respondedAt" type="string | undefined">
+  ISO timestamp when the request was accepted.
+</ResponseField>
+
+## Related
+
+- [useDeclineConnection](/hooks/connections/use-decline-connection) — decline instead of accept
+- [useFetchReceivedPendingConnections](/hooks/connections/use-fetch-received-pending-connections) — list pending requests to accept

@@ -1,0 +1,26 @@
+---
+title: "Get Followers Count"
+api: "GET /:projectId/api/v7/users/:userId/followers-count"
+description: "Get the number of followers for a specific user"
+---
+
+Returns the total number of users following the specified user. This endpoint is public — no authentication required.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Replyke user ID (UUID) of the user whose follower count to retrieve.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200`:
+
+<ResponseField name="count" type="number">
+  Total number of users following this user.
+</ResponseField>
+
+## See Also
+
+- [`useFetchFollowersCount` hook](/hooks/follows/use-fetch-followers-count)
+- [`useFetchFollowersCountByUserId` hook](/hooks/follows/use-fetch-followers-count-by-user-id)

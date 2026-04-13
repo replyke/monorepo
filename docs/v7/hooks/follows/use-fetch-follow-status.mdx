@@ -1,0 +1,51 @@
+---
+title: "Fetch follow status"
+description: "Check whether the current user follows a specific user"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that checks whether the current authenticated user follows a given `userId`. Returns a status object including the follow ID and timestamp if following.
+
+## Usage Example
+
+```tsx
+import { useFetchFollowStatus } from "@replyke/react-js";
+
+function ProfilePage({ userId }: { userId: string }) {
+  const fetchFollowStatus = useFetchFollowStatus();
+
+  useEffect(() => {
+    fetchFollowStatus({ userId }).then((status) => {
+      console.log(status.isFollowing, status.followId);
+    });
+  }, [userId]);
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user to check. Cannot be the current user's own ID.
+</ParamField>
+
+## Returns
+
+<ResponseField name="isFollowing" type="boolean">
+  Whether the current user is following the target user.
+</ResponseField>
+
+<ResponseField name="followId" type="string | undefined">
+  The ID of the follow record. Present when `isFollowing` is `true`.
+</ResponseField>
+
+<ResponseField name="followedAt" type="string | undefined">
+  ISO timestamp of when the follow was created. Present when `isFollowing` is `true`.
+</ResponseField>
+
+## Related
+
+- [useFollowManager](/hooks/follows/use-follow-manager) — loads this status automatically on mount

@@ -1,0 +1,143 @@
+---
+title: "Multi-Account"
+description: "Managing multiple user accounts in a single app instance"
+---
+
+Replyke supports up to **5 simultaneously stored accounts** in a single app instance. Users can add new accounts, switch between them, and remove individual accounts without losing session data for the others.
+
+## Architecture
+
+Each signed-in account is stored in the Redux `accounts` map, keyed by user ID. The map persists to `localStorage` (web) or platform-specific secure storage (React Native). The `activeAccountId` field tracks which account is currently active.
+
+When the user switches accounts, the SDK restores the stored refresh token for the target account and fetches a new access token automatically.
+
+## Hooks
+
+| Hook | Purpose |
+|------|---------|
+| `useAccounts` | Read the list of accounts and the active account |
+| `useAddAccount` | Clear current auth state to allow signing into a new account |
+| `useSwitchAccount` | Switch the active session to a different stored account |
+| `useRemoveAccount` | Sign out and remove one account from the stored list |
+| `useSignOutAll` | Sign out all accounts simultaneously |
+
+## Reading Account State
+
+```tsx
+import { useAccounts } from "@replyke/react-js";
+
+function AccountList() {
+  const { accounts, activeAccount, accountCount } = useAccounts();
+
+  return (
+    <div>
+      <p>Active: {activeAccount?.name ?? "None"}</p>
+      <p>Total accounts: {accountCount}</p>
+      <ul>
+        {accounts.map((account) => (
+          <li key={account.id}>{account.name ?? account.email}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+Each account entry in `accounts` is an `AccountSummary` containing `id`, `name`, `email`, and `avatar`.
+
+## Adding a New Account
+
+Calling `addAccount` clears the current auth state, which causes the app to display the sign-in UI. The previously stored accounts remain in the accounts map and are not affected. After the user signs in to the new account, it is added to the map automatically.
+
+```tsx
+import { useAddAccount } from "@replyke/react-js";
+
+function AddAccountButton() {
+  const { addAccount, canAddAccount } = useAddAccount();
+
+  return (
+    <button onClick={addAccount} disabled={!canAddAccount}>
+      Add Account
+    </button>
+  );
+}
+```
+
+`canAddAccount` is `false` when the maximum of 5 accounts is already stored.
+
+## Switching Accounts
+
+```tsx
+import { useAccounts, useSwitchAccount } from "@replyke/react-js";
+
+function AccountSwitcher() {
+  const { accounts, activeAccount } = useAccounts();
+  const { switchAccount, isSwitching, error } = useSwitchAccount();
+
+  return (
+    <ul>
+      {accounts.map((account) => (
+        <li key={account.id}>
+          {account.name}
+          {account.id !== activeAccount?.id && (
+            <button
+              onClick={() => switchAccount({ userId: account.id })}
+              disabled={isSwitching}
+            >
+              Switch
+            </button>
+          )}
+        </li>
+      ))}
+      {error && <p>{error}</p>}
+    </ul>
+  );
+}
+```
+
+Switching is asynchronous. The SDK revokes the current access token, sets the target account as active, and fetches a fresh access token using the stored refresh token.
+
+## Removing an Account
+
+```tsx
+import { useAccounts, useRemoveAccount } from "@replyke/react-js";
+
+function RemoveAccountButton({ userId }: { userId: string }) {
+  const { removeAccount, isRemoving, error } = useRemoveAccount();
+
+  return (
+    <>
+      <button onClick={() => removeAccount({ userId })} disabled={isRemoving}>
+        Remove Account
+      </button>
+      {error && <p>{error}</p>}
+    </>
+  );
+}
+```
+
+When the removed account is the currently active one, the SDK automatically switches to the next available account. If no other accounts remain, the SDK resets to the unauthenticated state.
+
+Removing an account also sends a best-effort sign-out request to the server to revoke the refresh token family.
+
+## Signing Out All Accounts
+
+```tsx
+import { useSignOutAll } from "@replyke/react-js";
+
+function SignOutAllButton() {
+  const { signOutAll } = useSignOutAll();
+
+  return <button onClick={signOutAll}>Sign Out All Accounts</button>;
+}
+```
+
+`signOutAll` sends a sign-out request for every stored account's refresh token (best-effort) and clears all local auth state.
+
+## See Also
+
+- [`useAccounts` hook reference](/hooks/auth/use-accounts)
+- [`useAddAccount` hook reference](/hooks/auth/use-add-account)
+- [`useSwitchAccount` hook reference](/hooks/auth/use-switch-account)
+- [`useRemoveAccount` hook reference](/hooks/auth/use-remove-account)
+- [`useSignOutAll` hook reference](/hooks/auth/use-sign-out-all)

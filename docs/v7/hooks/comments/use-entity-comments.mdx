@@ -1,0 +1,94 @@
+---
+title: "Use entity comments"
+description: "Manage a paginated, sorted comment tree for an entity"
+icon: "cube"
+---
+
+## Overview
+
+`useEntityComments` is a lower-level hook that fetches and manages a paginated comment tree for a given entity ID. It is used internally by `CommentSectionProvider`. Use it directly when you need comment tree management without the full provider.
+
+<Note>
+  For most use cases, use `CommentSectionProvider` + `useCommentSection` instead. See [Comment Section](/sdk/comments/comment-section).
+</Note>
+
+## Usage Example
+
+```tsx
+import { useEntityComments } from "@replyke/react-js";
+
+function CommentTree({ entityId }: { entityId: string }) {
+  const { comments, loading, hasMore, loadMore } = useEntityComments({ entityId });
+
+  return (
+    <>
+      {comments.map((c) => <div key={c.id}>{c.content}</div>)}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+    </>
+  );
+}
+```
+
+## Props
+
+<ParamField path="entityId" type="string | null | undefined" required>
+  The entity ID to fetch comments for.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Comments per page. Default: `10`.
+</ParamField>
+
+<ParamField path="defaultSortBy" type="string">
+  Initial sort: `"top"`, `"new"`, or `"controversial"`. Default: `"new"`.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`.
+</ParamField>
+
+## Return Values
+
+<ResponseField name="entityCommentsTree" type="EntityCommentsTree">
+  Flat map of all comments and their replies, keyed by comment ID.
+</ResponseField>
+
+<ResponseField name="comments" type="Comment[]">
+  Paginated root-level comments (not newly added ones).
+</ResponseField>
+
+<ResponseField name="newComments" type="Comment[]">
+  Newly added root comments from this session, sorted newest-first.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` during fetches.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` when more pages are available.
+</ResponseField>
+
+<ResponseField name="sortBy" type="CommentsSortByOptions | null">
+  Current sort order.
+</ResponseField>
+
+<ResponseField name="setSortBy" type="(newSortBy: CommentsSortByOptions) => void">
+  Changes sort order and resets to page 1.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Loads the next page.
+</ResponseField>
+
+<ResponseField name="addCommentsToTree" type="(comments?: Comment[], newlyAdded?: boolean) => void">
+  Inserts comments into the tree. Pass `newlyAdded: true` for freshly submitted comments.
+</ResponseField>
+
+<ResponseField name="removeCommentFromTree" type="({ commentId }) => void">
+  Removes a comment from the tree.
+</ResponseField>
+
+<ResponseField name="markCommentAsDeleted" type="({ commentId }) => void">
+  Marks a comment as deleted (Reddit-style placeholder) without removing it from the tree.
+</ResponseField>

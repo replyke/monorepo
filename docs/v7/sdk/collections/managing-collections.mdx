@@ -1,0 +1,144 @@
+---
+title: "Managing Collections"
+description: "Navigating, creating, and managing the collection hierarchy"
+---
+
+## Overview
+
+The `useCollections` hook gives you a navigable view of the user's collection tree. It automatically fetches the root collection on mount and loads sub-collections as you navigate deeper.
+
+## Setting Up
+
+`useCollections` requires a logged-in user. It reads the user and project context from the nearest `ReplykeProvider`.
+
+```tsx
+import { useCollections } from "@replyke/react-js";
+
+function CollectionsPanel() {
+  const {
+    currentCollection,
+    subCollections,
+    loading,
+    openCollection,
+    goBack,
+    goToRoot,
+    createCollection,
+    updateCollection,
+    deleteCollection,
+    addToCollection,
+    removeFromCollection,
+  } = useCollections();
+
+  if (loading) return <p>Loading...</p>;
+  if (!currentCollection) return null;
+
+  return (
+    <div>
+      <h2>{currentCollection.name}</h2>
+      <ul>
+        {subCollections.map((col) => (
+          <li key={col.id} onClick={() => openCollection(col)}>
+            {col.name} ({col.entityCount} items)
+          </li>
+        ))}
+      </ul>
+      {currentCollection.parentId && (
+        <button onClick={goBack}>Back</button>
+      )}
+    </div>
+  );
+}
+```
+
+## Navigating the Tree
+
+The hook maintains a navigation stack. Calling `openCollection` pushes a collection onto the stack and fetches its sub-collections. `goBack` pops the stack; `goToRoot` resets to the root.
+
+```tsx
+// Navigate into a sub-collection
+openCollection(subCollection);
+
+// Go up one level
+goBack();
+
+// Jump back to the root
+goToRoot();
+```
+
+## Creating Sub-collections
+
+`createCollection` creates a new sub-collection inside the current collection.
+
+```tsx
+await createCollection({ collectionName: "To Read" });
+```
+
+<Note>You cannot create a collection at the root of `useCollections` — there is no concept of "creating inside root" vs "creating inside a sub-collection" from the hook's perspective. The current collection is always the parent.</Note>
+
+## Renaming a Collection
+
+```tsx
+await updateCollection({
+  collectionId: collection.id,
+  update: { name: "New Name" },
+});
+```
+
+The root collection cannot be renamed.
+
+## Deleting a Collection
+
+```tsx
+await deleteCollection({ collection });
+```
+
+The root collection cannot be deleted. When a collection is deleted, the navigation state automatically moves back to the parent.
+
+## Saving and Removing Entities
+
+`addToCollection` saves an entity into the current collection. `removeFromCollection` removes it.
+
+```tsx
+// Save entity to the currently viewed collection
+await addToCollection({ entityId: entity.id });
+
+// Remove entity from the currently viewed collection
+await removeFromCollection({ entityId: entity.id });
+```
+
+## Checking If an Entity Is Saved
+
+`isEntitySaved` queries whether a specific entity is saved anywhere in the user's collections. Optionally pass a `collectionId` to check a specific folder.
+
+```tsx
+const result = await isEntitySaved(entity.id);
+// result.saved — true if saved in any collection
+// result.collections — list of { id, name } for each collection containing it
+
+const specificResult = await isEntitySaved(entity.id, collection.id);
+// specificResult.inSpecificCollection — true if in that specific collection
+```
+
+## Displaying Collection Entities
+
+Use [useCollectionEntitiesWrapper](/hooks/collections/use-collection-entities-wrapper) to fetch the paginated list of entities saved in a collection.
+
+```tsx
+import { useCollectionEntitiesWrapper } from "@replyke/react-js";
+
+function CollectionFeed({ collectionId }) {
+  const { entities, loading, hasMore, loadMore } = useCollectionEntitiesWrapper({
+    collectionId,
+    defaultSortBy: "added",
+  });
+
+  return (
+    <ul>
+      {entities.map((entity) => (
+        <li key={entity.id}>{entity.title}</li>
+      ))}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+    </ul>
+  );
+}
+```

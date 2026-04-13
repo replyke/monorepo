@@ -1,0 +1,33 @@
+---
+title: "Create Direct Conversation"
+api: "POST /:projectId/api/v7/conversations/direct"
+description: "Get or create a 1:1 direct conversation with another user"
+---
+
+Returns an existing DM between the caller and the target user, or creates one if it does not yet exist. Only one direct conversation can exist per user pair per project — this endpoint is idempotent.
+
+Returns `201` when a new conversation was created, `200` when an existing one was found.
+
+## Body Parameters
+
+<ParamField body="userId" type="string" required>
+  The ID of the user to start a direct conversation with. Must belong to the same project.
+</ParamField>
+
+## Response
+
+Returns a [Conversation](/data-models/conversation) object with `type: "direct"`.
+
+<Note>
+  Direct conversations cannot be updated or deleted, and members cannot leave them. They persist as long as either user's account exists.
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Member — 400 Bad Request">
+    ```json
+    { "error": "Target user does not belong to this project.", "code": "chat/invalid-member" }
+    ```
+  </Accordion>
+</AccordionGroup>

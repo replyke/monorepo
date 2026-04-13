@@ -1,0 +1,211 @@
+---
+title: "Comment Section"
+description: "CommentSectionProvider setup and the useCommentSection hook reference"
+---
+
+`CommentSectionProvider` loads and manages all comment state for a given entity. Descendant components access this state through `useCommentSection`.
+
+## Setting Up CommentSectionProvider
+
+Identify the target entity with one of four mutually exclusive props:
+
+```tsx
+import { CommentSectionProvider } from "@replyke/react-js";
+
+// By foreign ID (most common — links to your own content)
+<CommentSectionProvider foreignId="your-article-id" createIfNotFound>
+  <CommentList />
+</CommentSectionProvider>
+
+// By Replyke entity ID
+<CommentSectionProvider entityId="ent_abc123">
+  <CommentList />
+</CommentSectionProvider>
+
+// By short ID
+<CommentSectionProvider shortId="x7k2m">
+  <CommentList />
+</CommentSectionProvider>
+
+// By passing the entity object directly (no fetch needed)
+<CommentSectionProvider entity={myEntity}>
+  <CommentList />
+</CommentSectionProvider>
+```
+
+## Provider Props Reference
+
+<ParamField path="entityId" type="string">
+  Replyke entity ID. Mutually exclusive with `foreignId`, `shortId`, and `entity`.
+</ParamField>
+
+<ParamField path="foreignId" type="string">
+  Your system's ID for the entity.
+</ParamField>
+
+<ParamField path="shortId" type="string">
+  Auto-generated short ID.
+</ParamField>
+
+<ParamField path="entity" type="Entity">
+  A pre-fetched entity object. Skips the entity fetch.
+</ParamField>
+
+<ParamField path="createIfNotFound" type="boolean">
+  Only valid with `foreignId`. Auto-creates the entity if it doesn't exist yet.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Comments per page. Default: `15`.
+</ParamField>
+
+<ParamField path="defaultSortBy" type="string">
+  Initial sort order: `"top"` (default), `"new"`, or `"controversial"`.
+</ParamField>
+
+<ParamField path="highlightedCommentId" type="string">
+  If provided, fetches this comment and its parent and injects it into the tree. Useful for deep-linking to a specific comment.
+</ParamField>
+
+<ParamField path="callbacks" type="Record<string, function>">
+  Optional callback functions for handling UI interactions:
+  - `loginRequiredCallback()` — called when a non-authenticated user tries to comment
+  - `usernameRequiredCallback()` — called when the user has no username set
+  - `commentTooShortCallback()` — called when the submitted comment is too short
+</ParamField>
+
+<ParamField path="mentionTriggers" type="{ user?: string; space?: string }">
+  Override the trigger characters for mentions. Defaults: `{ user: "@", space: "#" }`.
+</ParamField>
+
+## Accessing State with `useCommentSection`
+
+```tsx
+import { useCommentSection } from "@replyke/react-js";
+
+function CommentList() {
+  const {
+    comments,
+    newComments,
+    loading,
+    hasMore,
+    loadMore,
+    sortBy,
+    setSortBy,
+    createComment,
+  } = useCommentSection();
+
+  return (
+    <>
+      <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+        <option value="top">Top</option>
+        <option value="new">New</option>
+      </select>
+      {loading && <p>Loading...</p>}
+      {[...newComments, ...comments].map((c) => (
+        <CommentItem key={c.id} comment={c} />
+      ))}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+    </>
+  );
+}
+```
+
+## `useCommentSection` Return Values
+
+<ResponseField name="entity" type="Entity | null | undefined">
+  The entity these comments belong to.
+</ResponseField>
+
+<ResponseField name="comments" type="Comment[]">
+  Paginated root-level comments (not newly submitted ones).
+</ResponseField>
+
+<ResponseField name="newComments" type="Comment[]">
+  Comments submitted in this session. Displayed separately from paginated results, sorted newest-first.
+</ResponseField>
+
+<ResponseField name="entityCommentsTree" type="EntityCommentsTree">
+  The full comment tree as a flat map keyed by comment ID. Used for building threaded reply UIs.
+</ResponseField>
+
+<ResponseField name="highlightedComment" type="{ comment: Comment; parentComment: Comment | null } | null">
+  The highlighted comment (and its parent, if any) when `highlightedCommentId` is set.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while the initial comment load is in progress.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` when more pages are available.
+</ResponseField>
+
+<ResponseField name="submittingComment" type="boolean">
+  `true` while a `createComment` call is in flight.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Loads the next page of comments.
+</ResponseField>
+
+<ResponseField name="sortBy" type="CommentsSortByOptions | null">
+  Current sort: `"top"`, `"new"`, or `"controversial"`.
+</ResponseField>
+
+<ResponseField name="setSortBy" type="(newSortBy: CommentsSortByOptions) => void">
+  Changes the sort order and resets to page 1.
+</ResponseField>
+
+<ResponseField name="createComment" type="(props) => Promise<Comment | undefined>">
+  Submits a new comment. Applies an optimistic placeholder immediately. Accepts:
+  - `parentId` — reply to a specific comment ID
+  - `content` — text content
+  - `gif` — GIF data object
+  - `mentions` — array of `Mention` objects
+  - `autoReaction` — automatically react with this reaction type after creating (e.g. `"upvote"`)
+</ResponseField>
+
+<ResponseField name="updateComment" type="(props: { commentId: string; content: string }) => Promise<void>">
+  Updates a comment's text content.
+</ResponseField>
+
+<ResponseField name="deleteComment" type="(props: { commentId: string }) => Promise<void>">
+  Marks a comment as deleted (Reddit-style placeholder). The comment remains in the tree with its content hidden.
+</ResponseField>
+
+<ResponseField name="selectedComment" type="Comment | null">
+  Currently selected/focused comment. Managed via `setSelectedComment`.
+</ResponseField>
+
+<ResponseField name="setSelectedComment" type="(comment: Comment | null) => void">
+  Set or clear the selected comment.
+</ResponseField>
+
+<ResponseField name="repliedToComment" type="Partial<Comment> | null">
+  The comment currently being replied to.
+</ResponseField>
+
+<ResponseField name="setRepliedToComment" type="(comment: Comment | null) => void">
+  Set the comment to reply to.
+</ResponseField>
+
+<ResponseField name="showReplyBanner" type="boolean">
+  Whether to show a reply indicator UI banner.
+</ResponseField>
+
+<ResponseField name="setShowReplyBanner" type="({ newState }: { newState: boolean }) => void">
+  Show or hide the reply banner.
+</ResponseField>
+
+<ResponseField name="pushMention" type="User | null">
+  A user to auto-insert as a mention in the next comment. Set by `handleShallowReply`.
+</ResponseField>
+
+<ResponseField name="handleDeepReply" type="(comment: Comment) => void">
+  Sets the reply target for a deep reply (reply appears nested under the parent comment).
+</ResponseField>
+
+<ResponseField name="handleShallowReply" type="(comment: Comment) => void">
+  Sets the reply target for a shallow reply (reply appears at root level with an `@mention`).
+</ResponseField>

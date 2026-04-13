@@ -1,0 +1,124 @@
+---
+title: "Use space"
+description: "Access space data, permissions, and operations from SpaceProvider context"
+icon: "cube"
+---
+
+## Overview
+
+`useSpace` returns the current space state and all operations from the nearest `SpaceProvider`. It is the primary way to interact with a space in your component tree.
+
+<Note>This hook must be used inside a `SpaceProvider`.</Note>
+
+## Usage Example
+
+```tsx
+import { useSpace } from "@replyke/react-js";
+
+function SpaceHeader() {
+  const {
+    space,
+    isMember,
+    isAdmin,
+    canPost,
+    isPending,
+    joinSpace,
+    leaveSpace,
+    loading,
+  } = useSpace();
+
+  if (loading) return <p>Loading...</p>;
+  if (!space) return <p>Space not found.</p>;
+
+  return (
+    <div>
+      <h1>{space.name}</h1>
+      {!isMember && !isPending && (
+        <button onClick={joinSpace}>Join</button>
+      )}
+      {isPending && <p>Awaiting approval...</p>}
+      {isMember && <button onClick={leaveSpace}>Leave</button>}
+    </div>
+  );
+}
+```
+
+## Returns
+
+<ResponseField name="space" type="SpaceDetailed | null | undefined">
+  The loaded space. `undefined` while loading, `null` if not found.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while fetching the space.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the fetch failed.
+</ResponseField>
+
+<ResponseField name="isMember" type="boolean">
+  `true` if the current user has an active membership.
+</ResponseField>
+
+<ResponseField name="isAdmin" type="boolean">
+  `true` if the current user is a space admin.
+</ResponseField>
+
+<ResponseField name="isModerator" type="boolean">
+  `true` if the current user is a space moderator.
+</ResponseField>
+
+<ResponseField name="canPost" type="boolean">
+  `true` if the current user can post entities in this space.
+</ResponseField>
+
+<ResponseField name="canModerate" type="boolean">
+  `true` if the current user can perform moderation actions.
+</ResponseField>
+
+<ResponseField name="membershipStatus" type='"pending" | "active" | "banned" | null'>
+  Raw membership status. `null` if not a member.
+</ResponseField>
+
+<ResponseField name="isPending" type="boolean">
+  `true` if the user's join request is awaiting approval.
+</ResponseField>
+
+<ResponseField name="isBanned" type="boolean">
+  `true` if the user is banned from this space.
+</ResponseField>
+
+<ResponseField name="breadcrumb" type="SpacePreview[]">
+  Ancestor spaces from root to direct parent. Empty for root spaces.
+</ResponseField>
+
+<ResponseField name="parentSpace" type="SpacePreview | null">
+  Preview of the parent space. `null` for root spaces.
+</ResponseField>
+
+<ResponseField name="childSpaces" type="SpacePreview[]">
+  Previews of direct child spaces (up to 10).
+</ResponseField>
+
+<ResponseField name="joinSpace" type="() => Promise<void>">
+  Join the space. Creates a `pending` membership when approval is required.
+</ResponseField>
+
+<ResponseField name="leaveSpace" type="() => Promise<void>">
+  Leave the space.
+</ResponseField>
+
+<ResponseField name="updateSpace" type="(props: { update }) => Promise<SpaceDetailed | undefined>">
+  Update space settings (admin only).
+</ResponseField>
+
+<ResponseField name="deleteSpace" type="() => Promise<void>">
+  Delete the space (admin only).
+</ResponseField>
+
+<ResponseField name="setSpace" type="React.Dispatch">
+  Directly update the space state for optimistic UI updates.
+</ResponseField>
+
+For integration guidance, see [SpaceProvider & useSpace](/sdk/spaces/provider-and-hook).

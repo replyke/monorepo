@@ -1,0 +1,37 @@
+---
+title: "Moderate Message"
+api: "PATCH /:projectId/api/v7/spaces/:spaceId/chat/messages/:messageId/moderation"
+description: "Approve or remove a chat message within a space"
+---
+
+Takes a direct moderation action on a chat message in a space's integrated conversation. Requires the caller to be a moderator or admin of the space.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="messageId" type="string" required>
+  UUID of the chat message to moderate.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="moderationStatus" type="string" required>
+  The moderation action. Only `"removed"` is supported — chat messages cannot be approved via this endpoint.
+</ParamField>
+
+<ParamField body="moderationReason" type="string">
+  Optional reason for the removal. Up to 1,000 characters.
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="moderationStatus" type="string">
+  The resulting status: `"removed"`.
+</ResponseField>

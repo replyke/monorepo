@@ -1,0 +1,49 @@
+---
+title: "Add Entity Reaction"
+api: "POST /:projectId/api/v7/entities/:entityId/reactions"
+description: "Add or update a reaction on an entity"
+---
+
+Adds a reaction of the specified type to an entity. If the user already has a reaction on this entity, it is replaced with the new type. The entity's `reactionCounts` map is updated accordingly.
+
+**Authentication required.**
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  The UUID of the entity to react to.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="reactionType" type="string" required>
+  The type of reaction to add. One of: `upvote`, `downvote`, `like`, `love`, `wow`, `sad`, `angry`, `funny`.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Override which user the reaction is attributed to. **Service or master key only.** Useful for backfilling reactions from an external system.
+</ParamField>
+
+## Response
+
+Returns the updated [Entity](/data-models/entity) object with the new `reactionCounts` map.
+
+<Note>
+  The entity owner receives an in-app notification when someone reacts to their entity. Milestone notifications are also sent at reaction count thresholds (e.g., 10, 50, 100 reactions).
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing User — 400">
+    ```json
+    { "error": "Missing user ID", "code": "entity/missing-user-id" }
+    ```
+    Returned when no user is authenticated and no `userId` override is provided.
+  </Accordion>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Entity not found.", "code": "entity/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

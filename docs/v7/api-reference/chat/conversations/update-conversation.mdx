@@ -1,0 +1,71 @@
+---
+title: "Update Conversation"
+api: "PATCH /:projectId/api/v7/conversations/:conversationId"
+description: "Update a group or space conversation's name, description, avatar, or posting permissions"
+---
+
+Updates one or more fields on a conversation. Only `group` and `space` conversations can be updated — direct conversations return a 400.
+
+**Authorization:**
+- `group` conversations: caller must be an active `admin` member.
+- `space` conversations: caller must have `admin` or `moderator` role in the parent Space.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation to update.
+</ParamField>
+
+## Body Parameters
+
+All fields are optional. Only provided fields are updated.
+
+<ParamField body="name" type="string">
+  New display name for the conversation. Maximum 200 characters.
+</ParamField>
+
+<ParamField body="description" type="string">
+  New description. Maximum 1000 characters.
+</ParamField>
+
+<ParamField body="avatarFileId" type="string | null">
+  ID of an uploaded [File](/data-models/file) to use as the conversation avatar. Pass `null` to remove the current avatar. If a previous avatar exists, it is deleted from storage automatically.
+</ParamField>
+
+<ParamField body="postingPermission" type="string">
+  Who can post messages. Only valid for `space` conversations. Accepted values: `"members"` (any active member), `"admins"` (only space admins and moderators).
+</ParamField>
+
+## Response
+
+Returns the updated [Conversation](/data-models/conversation) object, with `avatarFile` populated if set.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Conversation not found.", "code": "chat/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Cannot Update DM — 400 Bad Request">
+    ```json
+    { "error": "Direct conversations cannot be updated.", "code": "chat/cannot-update-dm" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Field — 400 Bad Request">
+    ```json
+    { "error": "'postingPermission' can only be set on space conversations.", "code": "chat/invalid-field" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (group) — 403">
+    ```json
+    { "error": "Only group admins can update this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (space) — 403">
+    ```json
+    { "error": "Only space admins and moderators can update the space conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+</AccordionGroup>

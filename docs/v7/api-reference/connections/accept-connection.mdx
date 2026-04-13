@@ -1,0 +1,55 @@
+---
+title: "Accept Connection"
+api: "PATCH /:projectId/api/v7/connections/:connectionId/accept"
+description: "Accept a pending connection request"
+---
+
+Accepts a pending connection request. Only the receiver of the original request can accept it. A notification is sent to the original requester.
+
+## Path Parameters
+
+<ParamField path="connectionId" type="string" required>
+  The ID (UUID) of the pending connection record to accept.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200`:
+
+<ResponseField name="id" type="string">
+  Connection record ID.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  `"accepted"`.
+</ResponseField>
+
+<ResponseField name="respondedAt" type="string">
+  ISO timestamp of when the connection was accepted.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    {
+      "error": "Pending connection request not found.",
+      "code": "connection/not-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    {
+      "error": "Only the receiver can accept a connection request.",
+      "code": "connection/unauthorized"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useAcceptConnection` hook](/hooks/connections/use-accept-connection)
+- [Decline Connection](/api-reference/connections/decline-connection)

@@ -1,0 +1,76 @@
+---
+title: "Toggle reaction"
+description: "Add or remove an emoji reaction on a chat message"
+icon: "plug"
+---
+
+## Overview
+
+Returns an async function that toggles an emoji reaction on a message. If the current user has not reacted with this emoji, it adds the reaction. If they have, it removes it. The `reactionCounts` and `userReactions` on the message in Redux are updated after the server confirms the toggle.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useToggleReaction } from "@replyke/react-js";
+
+function ReactionPicker({
+  conversationId,
+  messageId,
+  reactionCounts,
+  userReactions,
+}: {
+  conversationId: string;
+  messageId: string;
+  reactionCounts: Record<string, number>;
+  userReactions: string[];
+}) {
+  const toggle = useToggleReaction();
+
+  return (
+    <div>
+      {["👍", "❤️", "😂", "😮"].map((emoji) => (
+        <button
+          key={emoji}
+          onClick={() => toggle({ conversationId, messageId, emoji })}
+          style={{ fontWeight: userReactions.includes(emoji) ? "bold" : "normal" }}
+        >
+          {emoji} {reactionCounts[emoji] ?? 0}
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation that contains the message.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The ID of the message to react to.
+</ParamField>
+
+<ParamField body="emoji" type="string" required>
+  The emoji to toggle (e.g. `"👍"`, `"❤️"`).
+</ParamField>
+
+## Returns
+
+<ResponseField name="reactionCounts" type="Record<string, number>">
+  Updated map of emoji to total count for this message.
+</ResponseField>
+
+<ResponseField name="userReactions" type="string[]">
+  Updated list of emojis the current user has reacted with on this message.
+</ResponseField>
+
+## Notes
+
+- Other participants see the reaction update in real-time via the `message:reaction` socket event, handled automatically by `ChatProvider`.
+- For integration guidance, see [Chat: Messages](/sdk/chat/messages).

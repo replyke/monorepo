@@ -1,0 +1,60 @@
+---
+title: "Space Member"
+description: "The shape of a SpaceMember object returned by the Spaces membership API"
+---
+
+A SpaceMember record represents a user's membership in a specific space. It tracks their role (admin, moderator, or member), membership status (pending, active, banned, or rejected), and join timestamp.
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique membership record identifier (UUID). |
+| `projectId` | `string` | The project this membership belongs to. |
+| `spaceId` | `string` | ID of the space this membership is for. |
+| `userId` | `string` | ID of the user who is a member. |
+| `role` | `"admin" \| "moderator" \| "member"` | The user's role in the space. |
+| `status` | `"pending" \| "active" \| "banned" \| "rejected"` | The user's membership status. |
+| `joinedAt` | `Date` | Timestamp when the membership was created. |
+| `createdAt` | `Date` | Record creation timestamp. |
+
+## Membership Statuses
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Join request submitted but awaiting moderator/admin approval. Only applies when the space has `requireJoinApproval: true`. |
+| `active` | Full membership granted — user can read and post according to space permissions. |
+| `banned` | User has been banned from the space. Banned users cannot access or post. |
+| `rejected` | Join request was declined by a moderator or admin. |
+
+## Roles
+
+| Role | Description |
+|------|-------------|
+| `admin` | Full control: can update/delete the space, manage all members and roles, create rules, and moderate all content. |
+| `moderator` | Can approve/decline/ban members, moderate content and reports, but cannot change space settings or manage admin accounts. |
+| `member` | Regular participant. Can read and post according to the space's `postingPermission` setting. |
+
+## SpaceMemberWithUser
+
+Returned by the list members and list team endpoints. Includes embedded public user details.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `membershipId` | `string` | The membership record ID. |
+| `role` | `"admin" \| "moderator" \| "member"` | Member's role. |
+| `status` | `"pending" \| "active" \| "banned" \| "rejected"` | Member's status. |
+| `joinedAt` | `Date` | When the user joined. |
+| `user.id` | `string` | User UUID. |
+| `user.username` | `string` | Username. |
+| `user.displayName` | `string` | Display name. |
+| `user.avatar` | `string` | Avatar URL. |
+| `user.metadata` | `object` | Public metadata. |
+
+<Note>Sensitive user fields (email, password hash, `secureMetadata`) are excluded from `SpaceMemberWithUser` responses.</Note>
+
+## Related
+
+- [Space data model](/data-models/space)
+- [List Members API](/api-reference/spaces/membership/list-members)
+- [useSpace hook](/hooks/spaces/use-space)

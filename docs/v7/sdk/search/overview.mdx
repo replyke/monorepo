@@ -1,0 +1,46 @@
+---
+title: "Overview"
+description: "Semantic search and AI-powered Q&A over your project content"
+---
+
+Replyke's Search & AI features use vector embeddings to power natural language search and question answering across all content in your project — entities, comments, chat messages, users, and spaces.
+
+<Note>
+  Semantic search and AI features require embeddings to be enabled for your project. Configure this in the Replyke dashboard under **Settings → Semantic Search / AI**.
+</Note>
+
+## Search
+
+Search returns the most semantically similar records to a given query. Results include a `similarity` score alongside the matched record.
+
+## AI Q&A
+
+`useAskContent` lets users ask natural language questions and receive synthesized answers generated from your project's content. The response streams token by token via SSE (Server-Sent Events) and includes source citations.
+
+## In This Section
+
+<CardGroup cols={2}>
+  <Card title="Semantic Search" href="/sdk/search/semantic-search">
+    Search entities, comments, messages, users, and spaces by natural language query
+  </Card>
+  <Card title="Ask" href="/sdk/search/ask">
+    Ask a question and stream a generated answer with source links
+  </Card>
+</CardGroup>
+
+## Hooks
+
+<CardGroup cols={2}>
+  <Card title="useSearchContent" href="/hooks/search/use-search-content">
+    Search entities, comments, and messages by natural language
+  </Card>
+  <Card title="useSearchUsers" href="/hooks/search/use-search-users">
+    Find users by name, bio, or other profile text
+  </Card>
+  <Card title="useSearchSpaces" href="/hooks/search/use-search-spaces">
+    Find spaces by name, description, or topic
+  </Card>
+  <Card title="useAskContent" href="/hooks/search/use-ask-content">
+    Ask a question and receive a streamed, cited answer
+  </Card>
+</CardGroup>

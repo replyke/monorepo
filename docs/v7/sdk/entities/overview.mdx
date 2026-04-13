@@ -1,0 +1,63 @@
+---
+title: "Overview"
+description: "The core content unit in Replyke — posts, articles, products, listings, and anything else your app centers around"
+---
+
+An **entity** is the fundamental content unit in Replyke. It represents whatever your app centers around — a blog post, a product listing, a forum thread, a photo, or any other item that users react to, comment on, collect or vote on.
+
+Entities can be:
+- Created from scratch in Replyke or linked to existing items in your system via a `foreignId`
+- Organized into [Spaces](/sdk/spaces/overview) for community-based content
+- Published immediately or saved as **drafts** for later publishing
+- Enriched with file attachments, images, keywords, mentions, location, and custom metadata
+
+## How Entities Work
+
+The standard pattern for working with a single entity is via the `EntityProvider` + `useEntity` pair. Wrap a component tree with `EntityProvider` to load and provide entity state, then access that state from any child component using `useEntity`.
+
+For browsing lists of entities, use `EntityListProvider` + `useEntityList`. See [Entity Lists](/sdk/entity-lists/overview).
+
+## In This Section
+
+<CardGroup cols={2}>
+  <Card title="EntityProvider & useEntity" href="/sdk/entities/provider-and-hook">
+    Load a single entity by ID, foreign ID, or short ID. Access its state and perform updates and deletes from any child component.
+  </Card>
+  <Card title="Drafts & Publishing" href="/sdk/entities/drafts-and-publishing">
+    Create entities as drafts, list the current user's drafts, and publish them when ready.
+  </Card>
+</CardGroup>
+
+## Hooks
+
+<CardGroup cols={2}>
+  <Card title="useCreateEntity" href="/hooks/entities/use-create-entity">
+    Create a new entity with optional file and image uploads.
+  </Card>
+  <Card title="useUpdateEntity" href="/hooks/entities/use-update-entity">
+    Update an entity's title, content, keywords, attachments, or metadata.
+  </Card>
+  <Card title="useDeleteEntity" href="/hooks/entities/use-delete-entity">
+    Delete an entity.
+  </Card>
+</CardGroup>
+
+## The `include` Parameter
+
+All fetch hooks accept an optional `include` parameter that populates related data:
+
+| Value | What it adds |
+|-------|-------------|
+| `"user"` | The entity author's `User` object |
+| `"space"` | The associated `Space` object |
+| `"topComment"` | The top-voted comment on this entity |
+| `"saved"` | `isSaved: boolean` for the current authenticated user |
+| `"files"` | System-managed `File` objects attached to this entity |
+
+```tsx
+const entity = await fetchEntity({ entityId, include: ["user", "topComment"] });
+```
+
+## Entity Data Model
+
+See the [Entity data model](/data-models/entity) for the complete field reference.

@@ -1,0 +1,97 @@
+---
+title: "Rules"
+description: "Create and manage community rules visible to all space members"
+---
+
+Spaces can define community rules — titled and optionally described guidelines that are publicly visible to all users. Rules are ordered and can be reordered by admins. They are read-only for regular members.
+
+## Fetching Rules
+
+Rules are publicly readable without authentication:
+
+```tsx
+import { useFetchManyRules, useFetchRule } from "@replyke/react-js";
+
+// Fetch all rules for a space
+const fetchRules = useFetchManyRules();
+const { data: rules, count } = await fetchRules({ spaceId });
+
+// Fetch a single rule by ID
+const fetchRule = useFetchRule();
+const rule = await fetchRule({ spaceId, ruleId });
+```
+
+## Creating Rules
+
+Only space admins can create rules:
+
+```tsx
+import { useCreateRule } from "@replyke/react-js";
+
+const createRule = useCreateRule();
+const newRule = await createRule({
+  spaceId,
+  title: "Be respectful",
+  description: "Treat all members with kindness and respect.",
+});
+```
+
+## Updating and Deleting Rules
+
+```tsx
+import { useUpdateRule, useDeleteRule } from "@replyke/react-js";
+
+const updateRule = useUpdateRule();
+const deleteRule = useDeleteRule();
+
+await updateRule({
+  spaceId,
+  ruleId,
+  title: "Updated Title",
+  description: "Updated description text.",
+});
+
+await deleteRule({ spaceId, ruleId });
+```
+
+## Reordering Rules
+
+Admins can reorder rules by providing a new ordered array of rule IDs:
+
+```tsx
+import { useReorderRules } from "@replyke/react-js";
+
+const reorderRules = useReorderRules();
+await reorderRules({
+  spaceId,
+  ruleIds: ["rule-id-1", "rule-id-3", "rule-id-2"],
+});
+```
+
+The `order` field on each rule reflects its position in the list. Rules are typically displayed in ascending order.
+
+## Rule Data Shape
+
+Each rule returned by the API has the following fields:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique rule identifier. |
+| `spaceId` | `string` | The space this rule belongs to. |
+| `title` | `string` | Short rule title. |
+| `description` | `string \| null` | Optional detailed description. |
+| `order` | `number` | Sort position within the space's rule list. |
+| `lastApprovedBy` | `string \| null` | ID of the admin who last approved this rule. |
+| `createdAt` | `Date` | Creation timestamp. |
+| `updatedAt` | `Date` | Last update timestamp. |
+
+## Hook Reference
+
+| Hook | Description |
+|------|-------------|
+| [`useFetchManyRules`](/hooks/spaces/rules/use-fetch-many-rules) | Fetch all rules for a space |
+| [`useFetchRule`](/hooks/spaces/rules/use-fetch-rule) | Fetch a single rule |
+| [`useCreateRule`](/hooks/spaces/rules/use-create-rule) | Create a new rule (admin only) |
+| [`useUpdateRule`](/hooks/spaces/rules/use-update-rule) | Update a rule (admin only) |
+| [`useDeleteRule`](/hooks/spaces/rules/use-delete-rule) | Delete a rule (admin only) |
+| [`useReorderRules`](/hooks/spaces/rules/use-reorder-rules) | Reorder rules (admin only) |

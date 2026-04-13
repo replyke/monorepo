@@ -1,0 +1,123 @@
+---
+title: "Use space mentions"
+description: "Get space mention suggestions for autocomplete in text editors"
+icon: "cube"
+---
+
+## Overview
+
+`useSpaceMentions` provides autocomplete suggestion logic for `#space-slug` style mentions in text inputs. It tracks cursor position, detects mention triggers, and fetches matching spaces using debounced search.
+
+<Note>Spaces must have a `slug` set to be mentionable. This hook uses the `#` trigger by default.</Note>
+
+## Usage Example
+
+```tsx
+import { useSpaceMentions } from "@replyke/react-js";
+
+function PostEditor() {
+  const [content, setContent] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    isSpaceMentionActive,
+    loading,
+    spaceMentionSuggestions,
+    handleSpaceMentionClick,
+    mentions,
+  } = useSpaceMentions({
+    content,
+    setContent,
+    cursorPosition,
+    isSelectionActive: false,
+    focus: () => inputRef.current?.focus(),
+  });
+
+  return (
+    <div>
+      <input
+        ref={inputRef}
+        value={content}
+        onChange={(e) => {
+          setContent(e.target.value);
+          setCursorPosition(e.target.selectionStart ?? 0);
+        }}
+      />
+      {isSpaceMentionActive && !loading && (
+        <ul>
+          {spaceMentionSuggestions.map((space) => (
+            <li key={space.id} onClick={() => handleSpaceMentionClick(space)}>
+              #{space.slug}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="content" type="string" required>
+  The current text content of the editor.
+</ParamField>
+
+<ParamField path="setContent" type="(value: string) => void" required>
+  Setter to update the content when a mention is selected.
+</ParamField>
+
+<ParamField path="focus" type="() => void" required>
+  Function to re-focus the editor after a mention is selected.
+</ParamField>
+
+<ParamField path="cursorPosition" type="number" required>
+  Current cursor position in the text.
+</ParamField>
+
+<ParamField path="isSelectionActive" type="boolean" required>
+  Whether text is currently selected. Disables mention detection during selection.
+</ParamField>
+
+<ParamField path="trigger" type="string">
+  Character that triggers mention detection. Defaults to `"#"`.
+</ParamField>
+
+<ParamField path="minChars" type="number">
+  Minimum characters after the trigger before search fires. Defaults to `3`.
+</ParamField>
+
+<ParamField path="debounceDelay" type="number">
+  Milliseconds to wait after the last keystroke before fetching. Defaults to `1000`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="isSpaceMentionActive" type="boolean">
+  Whether the mention autocomplete is currently active.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  Whether suggestions are being fetched.
+</ResponseField>
+
+<ResponseField name="spaceMentionSuggestions" type="Space[]">
+  Matching spaces to display as suggestions.
+</ResponseField>
+
+<ResponseField name="handleSpaceMentionClick" type="(space: Space) => void">
+  Call this when a suggestion is selected. Replaces the trigger text with the space slug.
+</ResponseField>
+
+<ResponseField name="mentions" type="Mention[]">
+  Accumulated list of all selected mentions (id, slug, type: "space").
+</ResponseField>
+
+<ResponseField name="addSpaceMention" type="(space: Space) => void">
+  Manually add a space to the mentions list.
+</ResponseField>
+
+<ResponseField name="resetSpaceMentions" type="() => void">
+  Clear all mention state.
+</ResponseField>

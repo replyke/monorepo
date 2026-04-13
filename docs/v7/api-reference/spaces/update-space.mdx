@@ -1,0 +1,68 @@
+---
+title: "Update Space"
+api: "PATCH /:projectId/api/v7/spaces/:spaceId"
+description: "Update a space's settings, name, description, or images"
+---
+
+Updates a space. Only the space's admin can update it. Supports multipart form data for avatar/banner image uploads.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space to update.
+</ParamField>
+
+## Body Parameters
+
+All fields are optional. Only provided fields are updated.
+
+<ParamField body="name" type="string">
+  Updated display name. 3–100 characters.
+</ParamField>
+
+<ParamField body="slug" type="string">
+  Updated URL slug. Pass empty to clear.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Updated description.
+</ParamField>
+
+<ParamField body="readingPermission" type="string">
+  `"anyone"` or `"members"`.
+</ParamField>
+
+<ParamField body="postingPermission" type="string">
+  `"anyone"`, `"members"`, or `"admins"`.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Updated metadata object.
+</ParamField>
+
+<ParamField body="avatarFile" type="file">
+  New avatar image. Requires `avatarFile.options` when provided.
+</ParamField>
+
+<ParamField body="bannerFile" type="file">
+  New banner image. Requires `bannerFile.options` when provided.
+</ParamField>
+
+## Response
+
+Returns the updated [SpaceDetailed](/data-models/space) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Space not found.", "code": "space/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden — 403">
+    Caller is not an admin of the space.
+  </Accordion>
+</AccordionGroup>
+
+See also: [useUpdateSpace](/hooks/spaces/use-update-space)

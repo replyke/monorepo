@@ -1,0 +1,53 @@
+---
+title: "User Profiles"
+description: "Fetch and search public profiles of other users in your project"
+---
+
+User Profiles covers fetching and searching for other users' public profiles. This is distinct from [Current User](/sdk/current-user/overview), which covers the authenticated user's own data.
+
+All hooks in this section return `User` objects — the public-facing profile type. Unlike `AuthUser`, `User` omits private fields such as `email`, `secureMetadata`, `isVerified`, `isActive`, and `lastActive`.
+
+## Hooks
+
+<CardGroup cols={2}>
+  <Card title="useFetchUser" href="/hooks/users/use-fetch-user">
+    Fetch a user's public profile by their Replyke user ID.
+  </Card>
+  <Card title="useFetchUserByForeignId" href="/hooks/users/use-fetch-user-by-foreign-id">
+    Fetch a user's public profile by their foreign ID (from your own system).
+  </Card>
+  <Card title="useFetchUserByUsername" href="/hooks/users/use-fetch-user-by-username">
+    Fetch a user's public profile by their username.
+  </Card>
+  <Card title="useFetchUserSuggestions" href="/hooks/users/use-fetch-user-suggestions">
+    Search for users by a query string. Useful for autocomplete and user lookup.
+  </Card>
+  <Card title="useCheckUsernameAvailability" href="/hooks/users/use-check-username-availability">
+    Check whether a username is available before setting it.
+  </Card>
+  <Card title="useUserMentions" href="/hooks/users/use-user-mentions">
+    Full mention flow: detects `@` triggers, fetches suggestions, inserts the username into content, and tracks mentioned users.
+  </Card>
+</CardGroup>
+
+## The `include` Parameter
+
+Several hooks accept an optional `include` parameter. Passing `"files"` (or `["files"]`) instructs the server to populate the user's `avatarFile` and `bannerFile` fields with full `File` objects instead of returning only the IDs.
+
+```tsx
+const user = await fetchUser({ userId, include: "files" });
+// user.avatarFile is now populated
+```
+
+## User vs AuthUser
+
+| Field | `User` (public) | `AuthUser` (self only) |
+|-------|:-:|:-:|
+| `id`, `name`, `username`, `avatar`, `bio` | ✓ | ✓ |
+| `email` | — | ✓ |
+| `secureMetadata` | — | ✓ |
+| `authMethods` | — | ✓ |
+| `suspensions` | — | ✓ |
+| `isVerified`, `isActive`, `lastActive` | — | ✓ |
+
+See the [User data model](/data-models/user) for the complete field reference.

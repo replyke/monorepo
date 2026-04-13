@@ -1,0 +1,105 @@
+---
+title: "Send verification email"
+description: "Send an email verification token or link to the authenticated user"
+icon: "plug"
+---
+
+## Overview
+
+`useSendVerificationEmail` returns a function that sends a verification email to the currently authenticated user. The token expires after 5 minutes. Calling it on an already-verified user is a no-op (returns `{ success: true }` without sending).
+
+## Usage Example
+
+<CodeGroup>
+```tsx React — numeric code
+import { useSendVerificationEmail } from "@replyke/react-js";
+
+function VerifyEmailPrompt() {
+  const sendVerificationEmail = useSendVerificationEmail();
+
+  return (
+    <button
+      onClick={() =>
+        sendVerificationEmail({ tokenFormat: "numeric", tokenLength: 6 })
+      }
+    >
+      Send verification code
+    </button>
+  );
+}
+```
+
+```tsx React — clickable link
+import { useSendVerificationEmail } from "@replyke/react-js";
+
+function VerifyEmailPrompt() {
+  const sendVerificationEmail = useSendVerificationEmail();
+
+  return (
+    <button
+      onClick={() =>
+        sendVerificationEmail({
+          mode: "link",
+          redirectUrl: "https://yourapp.com/email-verified",
+        })
+      }
+    >
+      Send verification link
+    </button>
+  );
+}
+```
+
+```tsx React Native
+import { useSendVerificationEmail } from "@replyke/react-native";
+
+function VerifyEmailPrompt() {
+  const sendVerificationEmail = useSendVerificationEmail();
+
+  return (
+    <Button
+      title="Send code"
+      onPress={() =>
+        sendVerificationEmail({ tokenFormat: "numeric", tokenLength: 6 })
+      }
+    />
+  );
+}
+```
+</CodeGroup>
+
+## Parameters
+
+The returned function accepts an optional props object:
+
+<ParamField path="mode" type='"code" | "link"' default='"code"'>
+  How the token is delivered.
+  - `"code"` — user receives a token to type into your app
+  - `"link"` — user receives a clickable button that verifies automatically
+</ParamField>
+
+<ParamField path="tokenFormat" type='"hex" | "numeric" | "alpha" | "alphanumeric"' default='"hex"'>
+  Character set for the token. `"numeric"` is recommended for OTP-style flows; `"hex"` for maximum entropy.
+</ParamField>
+
+<ParamField path="tokenLength" type="number" default="6">
+  Length of the generated token (4–12). Ignored when `tokenFormat` is `"hex"`.
+</ParamField>
+
+<ParamField path="redirectUrl" type="string">
+  URL to redirect to after link verification. Only used with `mode: "link"`. Receives `?verified=true` or `?verified=false&error=...` as query params.
+</ParamField>
+
+## Returns
+
+The hook returns an async function. That function resolves to:
+
+<ResponseField name="success" type="boolean">
+  `true` when the request completes without a server error.
+</ResponseField>
+
+## See Also
+
+- [`useVerifyEmail`](/hooks/auth/use-verify-email)
+- [Send Verification Email API reference](/api-reference/auth/send-verification-email)
+- [Built-in Auth guide](/sdk/authentication/built-in)

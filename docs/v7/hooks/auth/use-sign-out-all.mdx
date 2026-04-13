@@ -1,0 +1,54 @@
+---
+title: "Sign out all"
+description: "Sign out of all linked accounts at once"
+icon: "plug"
+---
+
+## Overview
+
+`useSignOutAll` signs out every stored account simultaneously. It sends a sign-out request for each account's refresh token (best-effort — failures are logged but do not block the operation), then clears all local auth state.
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useSignOutAll } from "@replyke/react-js";
+
+function SignOutAllButton() {
+  const { signOutAll } = useSignOutAll();
+
+  const handleClick = async () => {
+    try {
+      await signOutAll();
+    } catch (err) {
+      console.error("Sign out failed:", err);
+    }
+  };
+
+  return <button onClick={handleClick}>Sign Out All Accounts</button>;
+}
+```
+
+```tsx React Native
+import { useSignOutAll } from "@replyke/react-native";
+
+function SignOutAllButton() {
+  const { signOutAll } = useSignOutAll();
+
+  return <Button title="Sign Out All" onPress={signOutAll} />;
+}
+```
+</CodeGroup>
+
+## Returns
+
+<ResponseField name="signOutAll" type="function">
+  Async function that signs out all accounts. Sends a server-side sign-out
+  request for each stored refresh token, clears the accounts map, resets auth
+  state, and resets the API cache. Throws if the operation fails at the
+  Redux thunk level.
+</ResponseField>
+
+## Integration Guide
+
+For multi-account integration guidance, see [Multi-Account](/sdk/authentication/multi-account).

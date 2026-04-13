@@ -1,0 +1,107 @@
+---
+title: "Use collections"
+description: "Navigate the user's collection hierarchy and manage saved entities"
+icon: "cube"
+---
+
+## Overview
+
+`useCollections` is the primary hook for working with a user's collection library. It automatically fetches the root collection on mount, loads sub-collections as you navigate deeper, and exposes actions for creating, updating, deleting, and saving entities.
+
+<Note>Requires an authenticated user. The hook reads user and project context from the nearest `ReplykeProvider`.</Note>
+
+## Usage Example
+
+```tsx
+import { useCollections } from "@replyke/react-js";
+
+function CollectionsPanel() {
+  const {
+    currentCollection,
+    subCollections,
+    loading,
+    openCollection,
+    goBack,
+    createCollection,
+    addToCollection,
+  } = useCollections();
+
+  if (loading) return <p>Loading...</p>;
+  if (!currentCollection) return null;
+
+  return (
+    <div>
+      <h2>{currentCollection.name}</h2>
+      <ul>
+        {subCollections.map((col) => (
+          <li key={col.id} onClick={() => openCollection(col)}>
+            {col.name}
+          </li>
+        ))}
+      </ul>
+      <button onClick={() => createCollection({ collectionName: "New Folder" })}>
+        Add folder
+      </button>
+      {currentCollection.parentId && (
+        <button onClick={goBack}>Back</button>
+      )}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+This hook accepts no required parameters. Pass an empty object or nothing.
+
+## Returns
+
+<ResponseField name="currentCollection" type="Collection | null">
+  The collection currently being viewed. Starts as the root collection on mount.
+</ResponseField>
+
+<ResponseField name="subCollections" type="Collection[]">
+  Direct child collections of `currentCollection`. Loaded automatically when `currentCollection` changes.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while fetching the root collection or sub-collections.
+</ResponseField>
+
+<ResponseField name="openCollection" type="(collection: Collection) => void">
+  Navigate into a sub-collection. Pushes to the internal navigation stack and fetches its children.
+</ResponseField>
+
+<ResponseField name="goBack" type="() => void">
+  Navigate to the previous collection in the stack.
+</ResponseField>
+
+<ResponseField name="goToRoot" type="() => void">
+  Jump directly back to the root collection.
+</ResponseField>
+
+<ResponseField name="isEntitySaved" type="(entityId: string, collectionId?: string) => Promise<{ saved: boolean; inSpecificCollection?: boolean; collections: Array<{ id: string; name: string }> }>">
+  Check whether an entity is saved in any collection. If `collectionId` is provided, also returns `inSpecificCollection` indicating whether it is in that specific folder.
+</ResponseField>
+
+<ResponseField name="createCollection" type="({ collectionName }: CreateCollectionProps) => Promise<void>">
+  Create a new sub-collection inside the current collection.
+</ResponseField>
+
+<ResponseField name="updateCollection" type="({ collectionId, update }: UpdateCollectionProps) => Promise<void>">
+  Rename a collection. `update` accepts `{ name: string }`. The root collection cannot be renamed.
+</ResponseField>
+
+<ResponseField name="deleteCollection" type="({ collection }: DeleteCollectionProps) => Promise<void>">
+  Delete a collection. The root collection cannot be deleted. Navigation automatically moves to the parent after deletion.
+</ResponseField>
+
+<ResponseField name="addToCollection" type="({ entityId }: AddToCollectionProps) => Promise<void>">
+  Save an entity into the current collection.
+</ResponseField>
+
+<ResponseField name="removeFromCollection" type="({ entityId }: RemoveFromCollectionProps) => Promise<void>">
+  Remove an entity from the current collection.
+</ResponseField>
+
+For a full integration guide, see [Managing Collections](/sdk/collections/managing-collections).

@@ -1,0 +1,51 @@
+---
+title: "Add reaction"
+description: "Add a reaction to an entity or comment"
+icon: "plug"
+---
+
+## Overview
+
+`useAddReaction` is a low-level hook that adds a reaction to an entity or comment. For most use cases, use [`useReactionToggle`](/hooks/reactions/use-reaction-toggle) instead — it handles toggling, optimistic updates, and state management automatically.
+
+<Note>Requires an authenticated user.</Note>
+
+## Usage Example
+
+```tsx
+import { useAddReaction } from "@replyke/react-js";
+
+function UpvoteButton({ entityId }: { entityId: string }) {
+  const addReaction = useAddReaction();
+
+  const handleUpvote = async () => {
+    await addReaction({
+      targetType: "entity",
+      targetId: entityId,
+      reactionType: "upvote",
+    });
+  };
+
+  return <button onClick={handleUpvote}>Upvote</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="targetType" type='"entity" | "comment"' required>
+  The type of the reaction target.
+</ParamField>
+
+<ParamField path="targetId" type="string" required>
+  The ID of the entity or comment.
+</ParamField>
+
+<ParamField path="reactionType" type="ReactionType" required>
+  The reaction to add: `"upvote"`, `"downvote"`, `"like"`, `"love"`, `"wow"`, `"sad"`, `"angry"`, or `"funny"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Entity | Comment" type="Entity | Comment">
+  The updated entity or comment with new `reactionCounts` and `userReaction`.
+</ResponseField>

@@ -1,0 +1,43 @@
+---
+title: "List Space Members"
+api: "GET /:projectId/api/v7/spaces/:spaceId/members"
+description: "Get a paginated list of members in a space"
+---
+
+Returns a paginated list of space members with embedded user details.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status: `"pending"`, `"active"`, `"banned"`, or `"rejected"`.
+</ParamField>
+
+<ParamField query="role" type="string">
+  Filter by role: `"admin"`, `"moderator"`, or `"member"`.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="SpaceMemberWithUser[]">
+  Array of [SpaceMemberWithUser](/data-models/space-member) objects.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Standard pagination metadata.
+</ResponseField>
+
+See also: [useFetchSpaceMembers](/hooks/spaces/use-fetch-space-members)

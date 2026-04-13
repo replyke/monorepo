@@ -1,0 +1,45 @@
+---
+title: "Fetch space"
+description: "Fetch a single space by its UUID"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchSpace` returns a callable function that fetches a single space by its UUID. The response includes full space details, hierarchy info, and the current user's membership permissions.
+
+## Usage Example
+
+```tsx
+import { useFetchSpace } from "@replyke/react-js";
+import { useEffect, useState } from "react";
+
+function SpacePage({ spaceId }: { spaceId: string }) {
+  const fetchSpace = useFetchSpace();
+  const [space, setSpace] = useState(null);
+
+  useEffect(() => {
+    fetchSpace({ spaceId }).then(setSpace);
+  }, [spaceId]);
+
+  return space ? <h1>{space.name}</h1> : <p>Loading...</p>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space to fetch.
+</ParamField>
+
+<ParamField path="include" type='"files" | string[]'>
+  Optional. Pass `"files"` to include avatar and banner file objects in the response.
+</ParamField>
+
+## Returns
+
+Returns a [SpaceDetailed](/data-models/space) object, which includes `memberPermissions`, `parentSpace`, and `childSpaces` in addition to all base space fields.
+
+For most use cases, prefer [`SpaceProvider`](/sdk/spaces/provider-and-hook) over calling this hook directly.

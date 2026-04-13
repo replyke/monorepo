@@ -1,0 +1,35 @@
+---
+title: "Fetch Space Children"
+api: "GET /:projectId/api/v7/spaces/:spaceId/children"
+description: "Get the direct child spaces of a parent space"
+---
+
+Returns a paginated list of child spaces for a given parent space.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the parent space.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="Space[]">
+  Array of child [Space](/data-models/space) objects.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Standard pagination metadata.
+</ResponseField>
+
+See also: [useFetchSpaceChildren](/hooks/spaces/use-fetch-space-children)

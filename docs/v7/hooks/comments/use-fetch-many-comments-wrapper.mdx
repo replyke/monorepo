@@ -1,0 +1,109 @@
+---
+title: "Use comments"
+description: "Stateful, paginated comment list with sorting"
+icon: "cube"
+---
+
+## Overview
+
+`useFetchManyCommentsWrapper` is a stateful wrapper around [`useFetchManyComments`](/hooks/comments/use-fetch-many-comments) that manages pagination, sort state, and the comment list for you. Use it when you need a custom paginated comment list outside of `CommentSectionProvider` — for example, a user profile page showing all comments a user has made, or a custom thread viewer.
+
+Changing `sortBy` resets the list and re-fetches from page 1. At least one of `entityId`, `userId`, or `parentId` must be provided — the hook will not fetch otherwise.
+
+## Usage Example
+
+```tsx
+import { useFetchManyCommentsWrapper } from "@replyke/react-js";
+
+function UserComments({ userId }: { userId: string }) {
+  const {
+    comments,
+    loading,
+    hasMore,
+    sortBy,
+    setSortBy,
+    loadMore,
+  } = useFetchManyCommentsWrapper({
+    userId,
+    limit: 10,
+    defaultSortBy: "new",
+    include: ["entity"],
+  });
+
+  return (
+    <div>
+      <select value={sortBy ?? ""} onChange={(e) => setSortBy(e.target.value as any)}>
+        <option value="new">Newest</option>
+        <option value="top">Top</option>
+        <option value="controversial">Controversial</option>
+      </select>
+      <ul>
+        {comments.map((comment) => (
+          <li key={comment.id}>{comment.content}</li>
+        ))}
+      </ul>
+      {hasMore && (
+        <button onClick={loadMore} disabled={loading}>
+          Load more
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField body="entityId" type="string | null" optional>
+  Filter to comments on a specific entity.
+</ParamField>
+
+<ParamField body="userId" type="string | null" optional>
+  Filter to comments by a specific user.
+</ParamField>
+
+<ParamField body="parentId" type="string | null" optional>
+  Filter to replies of a specific parent comment.
+</ParamField>
+
+<ParamField body="sourceId" type="string | null" optional>
+  Filter to comments within a specific source.
+</ParamField>
+
+<ParamField body="limit" type="number" optional>
+  Number of comments per page. Default: `10`.
+</ParamField>
+
+<ParamField body="defaultSortBy" type='"new" | "top" | "controversial"' optional>
+  Initial sort order. Default: `"new"`.
+</ParamField>
+
+<ParamField body="include" type="CommentIncludeParam" optional>
+  Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="comments" type="Comment[]">
+  The current list of fetched comments. Appended to on each `loadMore` call.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while fetching the initial page or loading more.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if additional pages are available.
+</ResponseField>
+
+<ResponseField name="sortBy" type="CommentsSortByOptions | null">
+  Current sort order.
+</ResponseField>
+
+<ResponseField name="setSortBy" type="(sortBy: CommentsSortByOptions) => void">
+  Change the sort order. Resets the comment list and re-fetches from page 1.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Load the next page of comments. Appends to the existing list.
+</ResponseField>

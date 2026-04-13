@@ -1,0 +1,228 @@
+---
+title: "Update User"
+api: "PATCH /:projectId/api/v7/users/:userId"
+description: "Update a user's profile fields, including avatar and banner images"
+---
+
+Updates one or more profile fields for the specified user. The requesting user must own the account, or use a service or master token to update any user.
+
+Supports direct image uploads for the avatar and banner via `multipart/form-data`. Uploaded images are processed, stored in Supabase, and the old files are automatically cleaned up after a successful update.
+
+<Note>
+  Send `application/json` for text-only updates. Use `multipart/form-data`
+  when uploading image files.
+</Note>
+
+## Authentication
+
+Requires a valid user auth token. The authenticated user must match `:userId`, or the request must carry a service/master token.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Replyke user ID (UUID) to update.
+</ParamField>
+
+## Body Parameters
+
+All fields are optional. Only the fields provided are updated.
+
+<ParamField body="name" type="string">
+  Display name.
+</ParamField>
+
+<ParamField body="username" type="string">
+  New username. Automatically lowercased and sanitized. Returns 409 if already
+  taken by another user.
+</ParamField>
+
+<ParamField body="avatar" type="string">
+  URL of the user's avatar image. Ignored if `avatarFile` is also provided.
+</ParamField>
+
+<ParamField body="bio" type="string">
+  Short bio text.
+</ParamField>
+
+<ParamField body="birthdate" type="string">
+  ISO 8601 datetime string for the user's date of birth (e.g. `"1990-06-15T00:00:00.000Z"`).
+</ParamField>
+
+<ParamField body="location" type="object">
+  Geographic location stored as a PostGIS point.
+  <Expandable title="properties">
+    <ParamField body="latitude" type="number" required>
+      Latitude between -90 and 90.
+    </ParamField>
+    <ParamField body="longitude" type="number" required>
+      Longitude between -180 and 180.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Public custom key-value data. Replaces the existing value.
+</ParamField>
+
+<ParamField body="secureMetadata" type="object">
+  Private custom key-value data. Not returned to other users. Replaces the
+  existing value.
+</ParamField>
+
+<ParamField body="avatarFile" type="file">
+  Avatar image file (multipart). Maximum 50 MB. Must be a valid image.
+  Requires `avatarFile.options` to be present in the same request.
+</ParamField>
+
+<ParamField body="bannerFile" type="file">
+  Banner image file (multipart). Maximum 50 MB. Must be a valid image.
+  Requires `bannerFile.options` to be present in the same request.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200` with the updated user's authenticated profile:
+
+<ResponseField name="id" type="string">
+  Unique user ID (UUID).
+</ResponseField>
+
+<ResponseField name="foreignId" type="string | null">
+  External identifier from your system.
+</ResponseField>
+
+<ResponseField name="role" type="string">
+  User role (e.g., `"visitor"`).
+</ResponseField>
+
+<ResponseField name="email" type="string | null">
+  User's email address.
+</ResponseField>
+
+<ResponseField name="name" type="string | null">
+  Updated display name.
+</ResponseField>
+
+<ResponseField name="username" type="string | null">
+  Updated username.
+</ResponseField>
+
+<ResponseField name="avatar" type="string | null">
+  Avatar URL.
+</ResponseField>
+
+<ResponseField name="bio" type="string | null">
+  Bio text.
+</ResponseField>
+
+<ResponseField name="metadata" type="object | null">
+  Public custom key-value data.
+</ResponseField>
+
+<ResponseField name="reputation" type="number | null">
+  Reputation score.
+</ResponseField>
+
+<ResponseField name="isVerified" type="boolean | null">
+  Whether the user's email has been verified.
+</ResponseField>
+
+<ResponseField name="isActive" type="boolean | null">
+  Whether the user account is active.
+</ResponseField>
+
+<ResponseField name="lastActive" type="string | null">
+  ISO timestamp of the user's last activity.
+</ResponseField>
+
+<ResponseField name="suspensions" type="array">
+  Active suspensions on the account.
+</ResponseField>
+
+<ResponseField name="avatarFile" type="object | null">
+  Processed avatar image with variants.
+</ResponseField>
+
+<ResponseField name="bannerFile" type="object | null">
+  Processed banner image with variants.
+</ResponseField>
+
+<ResponseField name="authMethods" type="string[]">
+  Active auth methods (e.g., `["password", "google"]`).
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO timestamp of account creation.
+</ResponseField>
+
+<Note>
+  When `name`, `username`, or `bio` changes, the user's semantic search
+  embedding is automatically updated asynchronously.
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Authorized — 403">
+    ```json
+    {
+      "error": "Not authorized to update this user.",
+      "code": "user/not-authorized"
+    }
+    ```
+  </Accordion>
+  <Accordion title="User Not Found — 404">
+    ```json
+    {
+      "error": "User not found",
+      "code": "user/not-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="File Too Large — 413">
+    ```json
+    {
+      "message": "Avatar image exceeds 50MB limit.",
+      "code": "user/file-too-large"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Image — 422">
+    ```json
+    {
+      "message": "Avatar file is not a valid image: ...",
+      "code": "user/invalid-image"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Missing Image Options — 400">
+    ```json
+    {
+      "message": "Image options are required when uploading an avatar. Must include mode property.",
+      "code": "user/missing-image-options"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Validation Failed — 400">
+    ```json
+    {
+      "error": "User validation failed",
+      "code": "user/validation-failed"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Params — 400">
+    ```json
+    {
+      "error": "...",
+      "code": "user/invalid-params"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useUserActions` hook](/hooks/user/use-user-actions) — `updateUser`
+- [Storage: Upload Image](/api-reference/storage/upload-image)
+- [User data model](/data-models/user)

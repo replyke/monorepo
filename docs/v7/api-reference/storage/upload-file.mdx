@@ -1,0 +1,72 @@
+---
+title: "Upload File"
+api: "POST /:projectId/api/v7/storage"
+description: "Upload a generic file without server-side processing"
+---
+
+Uploads a file directly to storage without processing. Suitable for PDFs, videos, Office documents, and other non-image assets. The file type is inferred automatically from the MIME type.
+
+This endpoint accepts `multipart/form-data`. Requires an authenticated user.
+
+**Rate limit**: 10 requests per 5 minutes.
+
+## Body Parameters
+
+<ParamField body="file" type="file" required>
+  The file to upload. Maximum 50 MB.
+</ParamField>
+
+<ParamField body="pathParts" type="array" required>
+  JSON-encoded array of path segments. The file is stored under the joined path with a UUID sub-folder appended. Example: `["documents", "user-123"]` → `documents/user-123/<uuid>/<filename>`.
+</ParamField>
+
+<ParamField body="entityId" type="string">
+  Associates the file with an entity for cascade deletion.
+</ParamField>
+
+<ParamField body="commentId" type="string">
+  Associates the file with a comment for cascade deletion.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Associates the file with a space.
+</ParamField>
+
+<ParamField body="position" type="number">
+  Display order when a record has multiple attachments. Defaults to `0`.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Custom key-value data stored alongside the file record.
+</ParamField>
+
+## Response
+
+```json
+{
+  "fileId": "uuid",
+  "type": "document",
+  "relativePath": "documents/user-123/uuid/report.pdf",
+  "publicPath": "/internal/files/documents/user-123/uuid/report.pdf",
+  "size": 102400,
+  "mimeType": "application/pdf",
+  "createdAt": "2025-01-01T00:00:00.000Z"
+}
+```
+
+The `type` field is one of: `image`, `video`, `document`, `other`. It is inferred from the MIME type.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="No File — 400 Bad Request">
+    ```json
+    { "error": "No file provided", "code": "storage/no-file" }
+    ```
+  </Accordion>
+  <Accordion title="File Too Large — 413">
+    ```json
+    { "error": "File size exceeds the allowed limit of 50MB", "code": "storage/file-too-large" }
+    ```
+  </Accordion>
+</AccordionGroup>

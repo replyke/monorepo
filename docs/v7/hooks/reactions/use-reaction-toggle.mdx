@@ -1,0 +1,79 @@
+---
+title: "Toggle reaction"
+description: "Manage reaction state with optimistic updates and toggle behavior"
+icon: "plug"
+---
+
+## Overview
+
+`useReactionToggle` is the recommended hook for reaction UIs. It manages the current reaction and reaction counts locally with optimistic updates, handles toggling (selecting the same reaction removes it), and reverts on error.
+
+It works for both entities and comments via the `targetType` prop.
+
+## Usage Example
+
+```tsx
+import { useReactionToggle } from "@replyke/react-js";
+
+function ReactionBar({ entity }) {
+  const { currentReaction, reactionCounts, toggleReaction, loading } = useReactionToggle({
+    targetType: "entity",
+    targetId: entity.id,
+    initialReaction: entity.userReaction,
+    initialReactionCounts: entity.reactionCounts,
+  });
+
+  const reactions = ["upvote", "like", "love", "wow", "funny"] as const;
+
+  return (
+    <div>
+      {reactions.map((type) => (
+        <button
+          key={type}
+          onClick={() => toggleReaction({ reactionType: type })}
+          disabled={loading}
+          style={{ fontWeight: currentReaction === type ? "bold" : "normal" }}
+        >
+          {type} ({reactionCounts[type] ?? 0})
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+## Props
+
+<ParamField path="targetType" type='"entity" | "comment"' required>
+  Whether the reaction target is an entity or a comment.
+</ParamField>
+
+<ParamField path="targetId" type="string | undefined" required>
+  The ID of the entity or comment.
+</ParamField>
+
+<ParamField path="initialReaction" type="ReactionType | null">
+  The authenticated user's current reaction, if any. Sourced from `entity.userReaction` or `comment.userReaction`.
+</ParamField>
+
+<ParamField path="initialReactionCounts" type="ReactionCounts | null">
+  The current reaction counts object. Sourced from `entity.reactionCounts` or `comment.reactionCounts`.
+</ParamField>
+
+## Return Values
+
+<ResponseField name="currentReaction" type="ReactionType | null">
+  The authenticated user's current reaction. Updates optimistically on `toggleReaction`.
+</ResponseField>
+
+<ResponseField name="reactionCounts" type="Partial<ReactionCounts>">
+  The current reaction counts. Updated optimistically and corrected from server response.
+</ResponseField>
+
+<ResponseField name="toggleReaction" type="(props: { reactionType: ReactionType }) => Promise<Entity | Comment | null>">
+  Toggles the given reaction. If the user already has this reaction, it is removed. If a different reaction is active, it is replaced. Returns the updated entity or comment from the server, or `null` on error.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a toggle request is in flight. Prevents concurrent reactions.
+</ResponseField>

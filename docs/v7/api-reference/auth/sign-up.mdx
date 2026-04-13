@@ -1,0 +1,184 @@
+---
+title: "Sign Up"
+api: "POST /:projectId/api/v7/auth/sign-up"
+description: "Create a new user account with email and password"
+---
+
+Registers a new user within the specified project. On success, returns an access token, refresh token, and the created user object. The endpoint also accepts optional profile data and image file uploads for the avatar and banner.
+
+<Note>
+  This endpoint accepts `multipart/form-data` when uploading avatar or banner
+  images. Send `application/json` for text-only registration.
+</Note>
+
+## Body Parameters
+
+<ParamField body="email" type="string" required>
+  User's email address. Must be a valid email format. Automatically lowercased.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User's password.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name.
+</ParamField>
+
+<ParamField body="username" type="string">
+  Unique username within the project. Automatically lowercased. Fails with 409
+  if already taken.
+</ParamField>
+
+<ParamField body="avatar" type="string">
+  URL of the user's avatar image. Ignored if `avatarFile` is also provided.
+</ParamField>
+
+<ParamField body="bio" type="string">
+  Short bio text.
+</ParamField>
+
+<ParamField body="location" type="object">
+  Geographic location.
+  <Expandable title="properties">
+    <ParamField body="latitude" type="number" required>
+      Latitude between -90 and 90.
+    </ParamField>
+    <ParamField body="longitude" type="number" required>
+      Longitude between -180 and 180.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="birthdate" type="string">
+  ISO 8601 datetime string representing the user's date of birth.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Public custom key-value data attached to the user.
+</ParamField>
+
+<ParamField body="secureMetadata" type="object">
+  Private custom key-value data. Not returned to other users.
+</ParamField>
+
+<ParamField body="avatarFile" type="file">
+  Avatar image file (multipart). Maximum 50 MB. Must be a valid image format.
+  Requires `avatarFile.options` to also be present.
+</ParamField>
+
+<ParamField body="bannerFile" type="file">
+  Banner image file (multipart). Maximum 50 MB. Must be a valid image format.
+  Requires `bannerFile.options` to also be present.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `201` with:
+
+<ResponseField name="success" type="boolean">
+  `true` on successful registration.
+</ResponseField>
+
+<ResponseField name="accessToken" type="string">
+  Short-lived JWT access token. Expires in 30 minutes.
+</ResponseField>
+
+<ResponseField name="refreshToken" type="string">
+  Long-lived JWT refresh token. Expires in 30 days.
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  The created user's profile.
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">Unique user ID (UUID).</ResponseField>
+    <ResponseField name="foreignId" type="string | null">External user ID, if set.</ResponseField>
+    <ResponseField name="role" type="string">User role (e.g., `"visitor"`).</ResponseField>
+    <ResponseField name="email" type="string | null">User's email address.</ResponseField>
+    <ResponseField name="name" type="string | null">Display name.</ResponseField>
+    <ResponseField name="username" type="string | null">Username.</ResponseField>
+    <ResponseField name="avatar" type="string | null">Avatar URL.</ResponseField>
+    <ResponseField name="bio" type="string | null">Bio text.</ResponseField>
+    <ResponseField name="metadata" type="object | null">Public custom data.</ResponseField>
+    <ResponseField name="reputation" type="number | null">Reputation score.</ResponseField>
+    <ResponseField name="isVerified" type="boolean | null">Whether the user is verified.</ResponseField>
+    <ResponseField name="isActive" type="boolean | null">Whether the account is active.</ResponseField>
+    <ResponseField name="lastActive" type="string | null">ISO timestamp of last activity.</ResponseField>
+    <ResponseField name="suspensions" type="array">Active suspensions on the account.</ResponseField>
+    <ResponseField name="avatarFile" type="object | null">Processed avatar file with variants.</ResponseField>
+    <ResponseField name="bannerFile" type="object | null">Processed banner file with variants.</ResponseField>
+    <ResponseField name="authMethods" type="string[]">List of auth methods (e.g., `["password"]`).</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO timestamp of account creation.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Email Already In Use — 409">
+    ```json
+    {
+      "error": "Email already in use",
+      "field": "email",
+      "code": "DUPLICATE_EMAIL"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Username Already Taken — 409">
+    ```json
+    {
+      "error": "Username already taken",
+      "field": "username",
+      "code": "DUPLICATE_USERNAME"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    {
+      "error": "...",
+      "code": "auth/invalid-body"
+    }
+    ```
+  </Accordion>
+  <Accordion title="File Too Large — 413">
+    ```json
+    {
+      "error": "Avatar image exceeds 50MB limit.",
+      "code": "auth/file-too-large"
+    }
+    ```
+    Also returned with `"Banner image exceeds 50MB limit."` for the banner file.
+  </Accordion>
+  <Accordion title="Invalid Image — 422">
+    ```json
+    {
+      "error": "Avatar file is not a valid image: ...",
+      "code": "auth/invalid-image"
+    }
+    ```
+    Returned when the uploaded file cannot be parsed as an image. Also returned for the banner file with `"Banner file is not a valid image: ..."`.
+  </Accordion>
+  <Accordion title="Missing Image Options — 400">
+    ```json
+    {
+      "error": "Image options are required when uploading an avatar. Must include mode property.",
+      "code": "auth/missing-image-options"
+    }
+    ```
+    Returned when `avatarFile` or `bannerFile` is uploaded without the corresponding `.options` field.
+  </Accordion>
+  <Accordion title="Validation Failed — 400">
+    ```json
+    {
+      "error": "User validation failed",
+      "code": "auth/validation-failed"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useAuth` hook](/hooks/auth/use-auth) — `signUpWithEmailAndPassword`
+- [Built-in Auth guide](/sdk/authentication/built-in)

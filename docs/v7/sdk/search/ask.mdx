@@ -1,0 +1,117 @@
+---
+title: "Ask Content"
+description: "AI-powered question answering over your project's embedded content"
+---
+
+`useAskContent` lets users ask natural language questions and receive AI-generated answers grounded in your project's actual content. The answer streams token by token via SSE, and once streaming completes, a list of source records is provided.
+
+## Usage Example
+
+```tsx
+import { useAskContent } from "@replyke/react-js";
+
+function AskBox() {
+  const { answer, sources, streaming, loading, error, ask, reset } = useAskContent();
+
+  const handleAsk = () => {
+    ask({
+      query: "What are the most common questions about billing?",
+      sourceTypes: ["entity", "comment"],
+      limit: 5,
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={handleAsk} disabled={loading || streaming}>Ask</button>
+      <button onClick={reset}>Clear</button>
+
+      {loading && <p>Thinking...</p>}
+      {answer && <p>{answer}{streaming && "▋"}</p>}
+
+      {sources.length > 0 && (
+        <ul>
+          {sources.map((s) => (
+            <li key={s.record.id}>
+              [{s.sourceType}] {s.record.id}
+            </li>
+          ))}
+        </ul>
+      )}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+    </div>
+  );
+}
+```
+
+## Parameters (`ask` function)
+
+<ParamField path="query" type="string" required>
+  The natural language question to answer.
+</ParamField>
+
+<ParamField path="sourceTypes" type='("entity" | "comment" | "message")[]'>
+  Limit the content types searched for context. Defaults to all types.
+</ParamField>
+
+<ParamField path="spaceId" type="string">
+  Scope the context lookup to a specific space.
+</ParamField>
+
+<ParamField path="conversationId" type="string">
+  Scope the context lookup to a specific conversation.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of source records to retrieve and use as context.
+</ParamField>
+
+## Returns
+
+<ResponseField name="answer" type="string">
+  The AI-generated answer. Grows incrementally as tokens arrive during streaming.
+</ResponseField>
+
+<ResponseField name="sources" type="ContentSearchResult[]">
+  The source records that were used as context for the answer. Populated after streaming completes.
+  <Expandable title="ContentSearchResult properties">
+    <ResponseField name="sourceType" type='"entity" | "comment" | "message"'>
+      The type of the source record.
+    </ResponseField>
+    <ResponseField name="similarity" type="number">
+      Cosine similarity score (0–1) for this source.
+    </ResponseField>
+    <ResponseField name="record" type="Entity | Comment | ChatMessage">
+      The full source record.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="streaming" type="boolean">
+  `true` while the SSE stream is open and tokens are arriving.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` from when `ask()` is called until the first token arrives (or an error occurs).
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the request failed.
+</ResponseField>
+
+<ResponseField name="ask" type="(props) => void">
+  Initiates the AI question. Cancels any in-flight stream before starting a new one.
+</ResponseField>
+
+<ResponseField name="reset" type="() => void">
+  Aborts any in-flight stream and clears all state.
+</ResponseField>
+
+<Note>
+  `useAskContent` uses the Fetch API with `ReadableStream` for SSE. In React Native, install `react-native-fetch-api`, `web-streams-polyfill`, and `react-native-polyfill-globals`, then call `polyfillGlobals()` at app startup.
+</Note>
+
+## Related
+
+- [useSearchContent](/hooks/search/use-search-content) — non-AI semantic search
+- [Search & AI overview](/sdk/search/overview)

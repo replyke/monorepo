@@ -1,0 +1,41 @@
+---
+title: "Use chat socket"
+description: "Access the underlying Socket.io connection state for chat"
+icon: "cube"
+---
+
+## Overview
+
+Returns the shared Socket.io socket instance and its connection state from `ChatProvider`. Most applications will only need the `connected` flag for displaying connection status UI. Direct socket access is available for advanced use cases.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useChatSocket } from "@replyke/react-js";
+
+function ConnectionStatus() {
+  const { connected } = useChatSocket();
+
+  return (
+    <span className={connected ? "text-green-500" : "text-gray-400"}>
+      {connected ? "Online" : "Connecting..."}
+    </span>
+  );
+}
+```
+
+## Returns
+
+<ResponseField name="socket" type="Socket | null">
+  The underlying Socket.io socket instance. `null` when no user is authenticated or before the connection is established. For most use cases, prefer the higher-level chat hooks over accessing the socket directly.
+</ResponseField>
+
+<ResponseField name="connected" type="boolean">
+  `true` when the socket is connected and ready to receive events.
+</ResponseField>
+
+## Notes
+
+- For integration guidance, see [Chat: Real-time](/sdk/chat/real-time).

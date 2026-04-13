@@ -1,0 +1,234 @@
+---
+title: "Webhooks"
+description: "How Replyke calls your server — event notifications, validation hooks, and signature verification."
+icon: "webhook"
+---
+
+Replyke can call your server when things happen in your project. There are two webhook systems:
+
+- **Project webhooks** — broadcast and validation events for the project as a whole, configured once in the project dashboard.
+- **Space digest webhooks** — a separate per-space delivery system that sends a daily activity digest to a URL you configure on each space individually.
+
+Both use HTTP POST with HMAC-SHA256 signatures, but they are configured and behave independently.
+
+---
+
+## Configuration
+
+Webhooks are configured per project in the dashboard. You need to set:
+
+- **Webhook URL** — the endpoint on your server that Replyke will call
+- **Webhook secret** — a shared secret used to sign outgoing requests and verify incoming responses
+- **Subscribed events** — the specific event types you want to receive (you only get called for events you opt into)
+
+---
+
+## Event Types
+
+### Broadcast Events (Non-blocking)
+
+These fire after an operation completes. Your server is notified but the original operation is not affected by your response.
+
+| Event | Fires when |
+|-------|-----------|
+| `user.created.complete` | A new user has been created |
+| `user.updated.complete` | A user's profile has been updated |
+| `entity.created.complete` | A new entity has been created |
+| `entity.updated.complete` | An entity has been updated |
+| `comment.created.complete` | A new comment has been created |
+| `comment.updated.complete` | A comment has been updated |
+| `space.created.complete` | A new space has been created |
+| `space.updated.complete` | A space has been updated |
+| `message.created.complete` | A new chat message has been sent |
+| `notification.created` | An app notification was created for a user |
+
+The `notification.created` event is the primary mechanism for bridging Replyke's in-app notification system to push notifications, email, or any other delivery channel your app uses.
+
+### Validation Events (Blocking)
+
+These fire before an operation is committed. Replyke waits for your response. If you respond with `{ "valid": true }`, the operation proceeds. Any other response (or no response) causes the operation to be rejected.
+
+| Event | Fires when |
+|-------|-----------|
+| `user.created` | A new user is about to be created |
+| `user.updated` | A user profile is about to be updated |
+| `entity.created` | A new entity is about to be created |
+| `entity.updated` | An entity is about to be updated |
+| `comment.created` | A new comment is about to be created |
+| `comment.updated` | A comment is about to be updated |
+| `space.created` | A new space is about to be created |
+| `space.updated` | A space is about to be updated |
+| `message.created` | A chat message is about to be sent |
+
+<Note>
+  If no webhook is configured for your project, or if an event type is not in your subscribed list, all validation webhooks pass automatically — your server does not need to be present for your project to function.
+</Note>
+
+<Warning>
+  Validation webhooks are synchronous. A slow or unavailable webhook endpoint will block the operation and cause it to fail. Ensure your webhook handler is fast and reliable.
+</Warning>
+
+---
+
+## Payload Format
+
+All webhook deliveries use the same envelope:
+
+```json
+{
+  "type": "notification.created",
+  "projectId": "your-project-id",
+  "stage": "complete",
+  "data": { ... }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `type` | The event type string (see tables above) |
+| `projectId` | Your Replyke project ID |
+| `stage` | Lifecycle stage of the event |
+| `data` | The event payload — the created/updated object or notification data |
+
+---
+
+## Signature Verification
+
+Every webhook request includes two headers that allow you to verify the request came from Replyke and has not been tampered with.
+
+| Header | Value |
+|--------|-------|
+| `X-Signature` | HMAC-SHA256 hex digest of `{timestamp}.{JSON.stringify(payload)}` |
+| `X-Timestamp` | Unix timestamp in milliseconds |
+
+To verify on your server:
+
+<Steps>
+  <Step title="Read the headers">
+    Extract `X-Signature` and `X-Timestamp` from the incoming request.
+  </Step>
+  <Step title="Recompute the expected signature">
+    Compute: `HMAC-SHA256(webhookSecret, "{timestamp}.{JSON.stringify(body)}")` as a hex string, where `timestamp` is the value from `X-Timestamp` and `body` is the raw JSON body.
+  </Step>
+  <Step title="Compare using a constant-time comparison">
+    Compare the expected signature to the received `X-Signature`. Use a constant-time comparison function to prevent timing attacks.
+  </Step>
+  <Step title="Reject if the signatures do not match">
+    Return a non-2xx response. Do not process the request.
+  </Step>
+</Steps>
+
+```ts
+import crypto from "crypto";
+
+function verifyWebhookSignature(
+  body: unknown,
+  receivedSignature: string,
+  timestamp: string,
+  secret: string
+): boolean {
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(`${timestamp}.${JSON.stringify(body)}`)
+    .digest("hex");
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expected, "hex"),
+    Buffer.from(receivedSignature, "hex")
+  );
+}
+```
+
+---
+
+## Responding to Validation Events
+
+For validation webhooks, your server must respond with a signed JSON body indicating whether the operation should proceed.
+
+**To allow the operation:**
+
+```json
+{ "valid": true }
+```
+
+**To reject the operation:**
+
+```json
+{ "valid": false, "message": "Reason for rejection" }
+```
+
+Your response must include an `X-Response-Signature` header:
+
+```
+X-Response-Signature: HMAC-SHA256(webhookSecret, JSON.stringify(responseBody))
+```
+
+```ts
+function signWebhookResponse(body: unknown, secret: string): string {
+  return crypto
+    .createHmac("sha256", secret)
+    .update(JSON.stringify(body))
+    .digest("hex");
+}
+
+// In your handler:
+const responseBody = { valid: true };
+res.setHeader("X-Response-Signature", signWebhookResponse(responseBody, webhookSecret));
+res.json(responseBody);
+```
+
+<Warning>
+  If the response signature is missing or invalid, Replyke treats the validation as failed and rejects the operation — even if the body contained `{ "valid": true }`.
+</Warning>
+
+---
+
+## Common Use Cases
+
+### Push Notification Bridge
+
+Subscribe to `notification.created`. When your webhook receives it, forward the notification to your push provider (FCM, APNs, Expo, OneSignal, etc.) for the target user.
+
+The `data` field contains the notification parameters including the recipient user ID, notification type, and any associated entity or comment.
+
+### Content Moderation Gate
+
+Subscribe to `comment.created` or `entity.created` (validation events). In your handler, check the content against a blocklist or moderation API. Return `{ "valid": false }` to reject content that fails your rules before it is ever stored.
+
+### Audit Logging
+
+Subscribe to broadcast complete events (`user.created.complete`, `entity.created.complete`, etc.) to maintain an external audit log or pipe activity into an analytics system or data warehouse.
+
+---
+
+## Space Digest Webhooks
+
+The space digest system is separate from project webhooks. Each space can be configured with its own digest webhook URL and secret, independent of the project-level webhook settings.
+
+When the digest is enabled for a space, Replyke sends a daily summary of the past 24 hours of activity to that space's digest webhook URL. The cron runs hourly and delivers the digest at the configured schedule hour in the space's timezone.
+
+The digest payload uses the `space.digest` event type:
+
+```json
+{
+  "type": "space.digest",
+  "projectId": "your-project-id",
+  "spaceId": "the-space-id",
+  "data": { ... }
+}
+```
+
+The `data` object contains the assembled digest — new entities, new members, and summary counts for the period.
+
+**Configuration** is per space (not per project). Each space has:
+- `digestEnabled` — whether the digest is active
+- `digestWebhookUrl` — where to POST the digest
+- `digestWebhookSecret` — used for HMAC-SHA256 signing (same mechanism as project webhooks)
+- `digestScheduleHour` — the hour of day to send (0–23)
+- `digestTimezone` — the timezone for the schedule
+
+<Note>
+  Space digests are available on Pro and Growth plans only. If there is no new activity in the 24-hour window, the digest is skipped for that day.
+</Note>
+
+The digest webhook is the hook point for forwarding summaries to an email provider, Slack, or any other notification channel for space members.

@@ -1,0 +1,59 @@
+---
+title: "Toggle Message Reaction"
+api: "POST /:projectId/api/v7/conversations/:conversationId/messages/:messageId/reactions"
+description: "Add or remove an emoji reaction on a chat message"
+---
+
+Toggles an emoji reaction on a message. If the current user has not yet reacted with this emoji, the reaction is added. If they already have, it is removed. The caller must be an active member.
+
+The `emoji` must be exactly one grapheme cluster (a single visible character, including multi-codepoint emoji like `👨‍👩‍👧`).
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+<ParamField path="messageId" type="string" required>
+  The ID of the message to react to.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="emoji" type="string" required>
+  The emoji to toggle. Must be exactly one grapheme cluster.
+</ParamField>
+
+## Response
+
+<ResponseField name="reactionCounts" type="Record<string, number>">
+  Updated emoji reaction counts for this message (e.g. `{ "👍": 3, "❤️": 1 }`).
+</ResponseField>
+
+<ResponseField name="userReactions" type="string[]">
+  The current user's full set of reactions on this message after the toggle.
+</ResponseField>
+
+<ResponseField name="delta" type="number">
+  `1` if a reaction was added, `-1` if removed.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Emoji — 400 Bad Request">
+    ```json
+    { "error": "Emoji must be exactly one grapheme cluster.", "code": "chat/invalid-emoji" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "You are not a member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Message not found.", "code": "chat/message-not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

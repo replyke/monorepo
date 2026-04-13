@@ -1,0 +1,47 @@
+---
+title: "Fetch user by username"
+description: "Fetch a user's public profile by their username"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchUserByUsername` returns a function that fetches a user's public profile by their username. Use this for public profile pages where the URL contains a username slug.
+
+## Usage Example
+
+```tsx
+import { useFetchUserByUsername } from "@replyke/react-js";
+import { useEffect, useState } from "react";
+import { User } from "@replyke/core";
+
+function ProfilePage({ username }: { username: string }) {
+  const fetchUser = useFetchUserByUsername();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    fetchUser({ username }).then(setUser);
+  }, [username]);
+
+  if (!user) return null;
+  return <p>{user.name}</p>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="username" type="string" required>
+  The username to look up.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Optional. Pass `"files"` to populate `avatarFile` and `bannerFile` with full `File` objects.
+</ParamField>
+
+## Returns
+
+<ResponseField name="User" type="User">
+  The user's public profile. See [User data model](/data-models/user).
+</ResponseField>

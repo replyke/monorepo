@@ -1,0 +1,63 @@
+---
+title: "Add account"
+description: "Link a new user account to the current app instance"
+icon: "plug"
+---
+
+## Overview
+
+`useAddAccount` returns an `addAccount` function that clears the active auth state, allowing the user to sign into a new account. Previously stored accounts are not removed — they remain in the accounts map and can be restored with `useSwitchAccount`.
+
+After the user completes sign-in, the new account is added to the accounts map automatically.
+
+<Note>
+  A maximum of 5 accounts can be stored simultaneously. `canAddAccount` is
+  `false` when the limit is reached.
+</Note>
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useAddAccount } from "@replyke/react-js";
+
+function AddAccountButton() {
+  const { addAccount, canAddAccount } = useAddAccount();
+
+  return (
+    <button onClick={addAccount} disabled={!canAddAccount}>
+      Add Account
+    </button>
+  );
+}
+```
+
+```tsx React Native
+import { useAddAccount } from "@replyke/react-native";
+
+function AddAccountButton() {
+  const { addAccount, canAddAccount } = useAddAccount();
+
+  return (
+    <Button title="Add Account" onPress={addAccount} disabled={!canAddAccount} />
+  );
+}
+```
+</CodeGroup>
+
+## Returns
+
+<ResponseField name="addAccount" type="function">
+  Clears the current access token, refresh token, and user state from Redux.
+  The existing accounts map is preserved. After calling this function, the app
+  should display sign-in UI for the new account.
+</ResponseField>
+
+<ResponseField name="canAddAccount" type="boolean">
+  `true` if fewer than 5 accounts are currently stored. `false` when the
+  maximum is reached.
+</ResponseField>
+
+## Integration Guide
+
+For multi-account integration guidance, see [Multi-Account](/sdk/authentication/multi-account).

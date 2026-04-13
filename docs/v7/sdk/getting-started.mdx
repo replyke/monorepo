@@ -1,0 +1,129 @@
+---
+title: "Getting Started"
+description: "Install the Replyke SDK and add ReplykeProvider to your app"
+---
+
+Replyke's SDK is distributed through the `@replyke` family of packages. The React web package (`@replyke/react-js`) is the starting point for most projects.
+
+## Installation
+
+<CodeGroup>
+  ```bash npm
+  npm install @replyke/react-js
+  ```
+
+  ```bash yarn
+  yarn add @replyke/react-js
+  ```
+
+  ```bash pnpm
+  pnpm add @replyke/react-js
+  ```
+</CodeGroup>
+
+For React Native or Expo projects, install the platform-specific package instead:
+
+<CodeGroup>
+  ```bash React Native
+  npm install @replyke/react-native
+  ```
+
+  ```bash Expo
+  npm install @replyke/expo
+  ```
+</CodeGroup>
+
+## Wrap Your App with ReplykeProvider
+
+`ReplykeProvider` is the root provider that must wrap your entire application (or the portion of it that uses Replyke features). It initializes the Redux store, bootstraps auth state, and makes the `projectId` available to all child hooks and components.
+
+```tsx
+import { ReplykeProvider } from "@replyke/react-js";
+
+function App() {
+  return (
+    <ReplykeProvider projectId="your-project-id">
+      {/* your app */}
+    </ReplykeProvider>
+  );
+}
+```
+
+### Props
+
+<ParamField body="projectId" type="string" required>
+  Your Replyke project ID. Found in the Replyke dashboard under project settings.
+</ParamField>
+
+<ParamField body="signedToken" type="string | null">
+  A signed JWT from your own auth system, used for external authentication mode. Pass `null` or omit when not using external auth. See [External Auth](/sdk/authentication/external).
+</ParamField>
+
+## Choosing an Authentication Mode
+
+After wrapping with `ReplykeProvider`, users are unauthenticated by default. You can authenticate them using any combination of:
+
+<CardGroup cols={2}>
+  <Card title="Built-in Auth" icon="lock" href="/sdk/authentication/built-in">
+    Sign up and sign in with email and password. Replyke manages credentials and sessions.
+  </Card>
+  <Card title="External Auth" icon="code" href="/sdk/authentication/external">
+    Pass a signed JWT from your own auth system via the `signedToken` prop.
+  </Card>
+  <Card title="OAuth" icon="key" href="/sdk/authentication/oauth">
+    Let users sign in with Google, GitHub, Apple, or Facebook.
+  </Card>
+  <Card title="Multi-Account" icon="users" href="/sdk/authentication/multi-account">
+    Support multiple simultaneous signed-in accounts with account switching.
+  </Card>
+</CardGroup>
+
+## Checking Auth State
+
+Use the `useAuth` hook for auth actions and `useUser` to access the current user anywhere inside `ReplykeProvider`:
+
+```tsx
+import { useAuth, useUser } from "@replyke/react-js";
+
+function Header() {
+  const { initialized, signOut } = useAuth();
+  const { user } = useUser();
+
+  if (!initialized) return <p>Loading...</p>;
+  if (!user) return <p>Not signed in.</p>;
+
+  return (
+    <div>
+      <p>Signed in as {user.username}</p>
+      <button onClick={() => signOut()}>Sign out</button>
+    </div>
+  );
+}
+```
+
+<Note>
+  `initialized` is `false` until the SDK has attempted to restore a session from storage. Always check `initialized` before rendering auth-dependent UI to avoid flash-of-unauthenticated-content.
+</Note>
+
+## Redux Store
+
+`ReplykeProvider` automatically creates and manages an isolated Redux store. You do not need to configure Redux to use Replyke.
+
+If your application already has its own Redux store, we strongly recommend using `ReplykeIntegrationProvider` instead — running two separate Redux stores in the same app is a common source of subtle bugs. See [Redux Integration](/sdk/redux-integration) for setup details.
+
+## What's Next
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/sdk/authentication/overview">
+    Configure how users sign in to your application
+  </Card>
+  <Card title="Entities" icon="file" href="/sdk/entities/overview">
+    Attach social features to your app's content
+  </Card>
+  <Card title="Spaces" icon="users" href="/sdk/spaces/overview">
+    Build community spaces with membership and moderation
+  </Card>
+  <Card title="Chat" icon="comments" href="/sdk/chat/overview">
+    Add real-time 1:1 and group conversations
+  </Card>
+</CardGroup>

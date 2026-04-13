@@ -1,0 +1,46 @@
+---
+title: "Remove connection"
+description: "Remove a connection or withdraw a pending request by connection ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that deletes a connection record by its `connectionId`. This works for both withdrawing a pending sent request and disconnecting an established connection. The current user must be authenticated.
+
+If you don't have the connection ID, use `useRemoveConnectionByUserId` instead.
+
+## Usage Example
+
+```tsx
+import { useRemoveConnection } from "@replyke/react-js";
+
+function DisconnectButton({ connectionId }: { connectionId: string }) {
+  const removeConnection = useRemoveConnection();
+
+  return (
+    <button onClick={() => removeConnection({ connectionId })}>
+      Disconnect
+    </button>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="connectionId" type="string" required>
+  The ID of the connection record to remove.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  A confirmation message.
+</ResponseField>
+
+## Related
+
+- [useRemoveConnectionByUserId](/hooks/connections/use-remove-connection-by-user-id) — remove by user ID instead
+- [useFetchConnections](/hooks/connections/use-fetch-connections) — returns `id` on each connection entry

@@ -1,0 +1,210 @@
+---
+title: "Filters"
+description: "Complete filter reference for entity list queries"
+---
+
+Filters are passed as the first argument to `fetchEntities`. They narrow down which entities are returned without affecting the sort order.
+
+```tsx
+fetchEntities(
+  {
+    followedOnly: true,
+    keywordsFilters: { includes: ["react"] },
+    metadataFilters: { includes: { category: "tutorial" } },
+  },
+  { sortBy: "new" }
+);
+```
+
+---
+
+## `timeFrame`
+
+Limits results to entities created within a recent window.
+
+| Value | Description |
+|-------|-------------|
+| `"day"` | Last 24 hours |
+| `"week"` | Last 7 days |
+| `"month"` | Last 30 days |
+| `"year"` | Last 365 days |
+
+```tsx
+fetchEntities({ timeFrame: "week" }, { sortBy: "top" });
+```
+
+---
+
+## `userId`
+
+Filters to entities created by a specific user.
+
+```tsx
+fetchEntities({ userId: "user_abc123" }, { sortBy: "new" });
+```
+
+---
+
+## `followedOnly`
+
+When `true`, returns only entities from users the authenticated user follows.
+
+```tsx
+fetchEntities({ followedOnly: true }, { sortBy: "hot" });
+```
+
+---
+
+## `keywordsFilters`
+
+Filters by the entity's `keywords` array.
+
+```ts
+interface KeywordsFilters {
+  includes?: string[];       // Entity must include ALL of these keywords
+  doesNotInclude?: string[]; // Entity must not include ANY of these keywords
+}
+```
+
+```tsx
+// Entities tagged with both "react" and "typescript"
+fetchEntities({ keywordsFilters: { includes: ["react", "typescript"] } }, { sortBy: "new" });
+
+// Exclude entities tagged "archived"
+fetchEntities({ keywordsFilters: { doesNotInclude: ["archived"] } }, { sortBy: "hot" });
+```
+
+---
+
+## `titleFilters`
+
+Filters by the entity's `title` field.
+
+```ts
+interface TitleFilters {
+  hasTitle?: boolean;                // Only entities that have (or don't have) a title
+  includes?: string | string[];      // Title must contain this text (case-insensitive)
+  doesNotInclude?: string | string[]; // Title must not contain this text
+}
+```
+
+```tsx
+fetchEntities({ titleFilters: { includes: "product launch" } }, { sortBy: "new" });
+```
+
+---
+
+## `contentFilters`
+
+Filters by the entity's `content` field.
+
+```ts
+interface ContentFilters {
+  hasContent?: boolean;
+  includes?: string | string[];
+  doesNotInclude?: string | string[];
+}
+```
+
+---
+
+## `attachmentsFilters`
+
+Filters by whether the entity has attachments.
+
+```ts
+interface AttachmentsFilters {
+  hasAttachments?: boolean;
+}
+```
+
+```tsx
+// Only entities with attachments
+fetchEntities({ attachmentsFilters: { hasAttachments: true } }, { sortBy: "new" });
+```
+
+---
+
+## `locationFilters`
+
+Filters to entities within a geographic radius.
+
+```ts
+interface LocationFilters {
+  latitude: number;
+  longitude: number;
+  radius: number;  // in meters
+}
+```
+
+```tsx
+fetchEntities(
+  {
+    locationFilters: {
+      latitude: 37.7749,
+      longitude: -122.4194,
+      radius: 10000, // 10 km
+    },
+  },
+  { sortBy: "new" }
+);
+```
+
+---
+
+## `metadataFilters`
+
+Filters by fields inside the entity's `metadata` object.
+
+```ts
+interface MetadataFilters {
+  includes?: Record<string, unknown>;        // All key-value pairs must match exactly
+  includesAny?: Record<string, unknown>[];   // At least one object in the array must match
+  doesNotInclude?: Record<string, unknown>;  // None of these key-value pairs may match
+  exists?: string[];                         // These metadata keys must exist
+  doesNotExist?: string[];                   // These metadata keys must not exist
+}
+```
+
+```tsx
+// Only "tutorial" category entities
+fetchEntities(
+  { metadataFilters: { includes: { category: "tutorial" } } },
+  { sortBy: "hot" }
+);
+
+// Entities that have a "price" metadata key
+fetchEntities(
+  { metadataFilters: { exists: ["price"] } },
+  { sortBy: "new" }
+);
+
+// Entities in either "news" or "announcements" category
+fetchEntities(
+  {
+    metadataFilters: {
+      includesAny: [{ category: "news" }, { category: "announcements" }],
+    },
+  },
+  { sortBy: "hot" }
+);
+```
+
+---
+
+## Combining Filters
+
+All filters can be combined. An entity must satisfy all specified conditions.
+
+```tsx
+fetchEntities(
+  {
+    timeFrame: "week",
+    keywordsFilters: { includes: ["design"] },
+    metadataFilters: { includes: { status: "published" } },
+    attachmentsFilters: { hasAttachments: true },
+  },
+  { sortBy: "top" },
+  { limit: 20, include: ["user"] }
+);
+```

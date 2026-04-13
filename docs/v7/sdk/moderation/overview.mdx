@@ -1,0 +1,100 @@
+---
+title: "Overview"
+description: "Content reporting and moderation tools at the project and space level"
+---
+
+## Overview
+
+Replyke provides a two-tier moderation system:
+
+1. **Project-level moderation** — Users with project-level admin permissions can moderate any content across the entire project, regardless of which space it belongs to. This is typically used by the platform owner or trust-and-safety team.
+
+2. **Space-level moderation** — Users with `admin` or `moderator` roles within a specific space can moderate content in that space only. Their capabilities are scoped to their space — they cannot view or act on reports from other spaces.
+
+Both tiers share the same reporting flow. The difference is in who can act on reports and what scope they have access to.
+
+## Reporting Flow
+
+<Steps>
+  <Step title="User submits a report">
+    Call [`useCreateReport`](/hooks/reports/use-create-report) with the target ID and a reason key. If the target has already been reported, the user's report is appended to the existing report record.
+  </Step>
+  <Step title="Report is associated with a space">
+    The server automatically determines which space the reported content belongs to. Reports with no space (content outside a space) are visible only to project-level moderators.
+  </Step>
+  <Step title="Moderator reviews pending reports">
+    A moderator fetches pending reports with [`useFetchModeratedReports`](/hooks/reports/use-fetch-moderated-reports):
+    - **Project-level moderators** see all reports across the entire project.
+    - **Space-level moderators** see only reports for content within their space.
+  </Step>
+  <Step title="Moderator takes action">
+    Use [`useHandleSpaceEntityReport`](/hooks/reports/use-handle-space-entity-report) or [`useHandleSpaceCommentReport`](/hooks/reports/use-handle-space-comment-report) to remove content, ban the author, or dismiss the report. Space-level moderators can only act on content within their space.
+  </Step>
+</Steps>
+
+## Moderation Tiers
+
+### Project-Level Moderation
+
+Project-level moderation is handled through the **Replyke Dashboard** — no code integration is required. Platform owners and trust-and-safety teams can log into the dashboard to review and act on reports across the entire project.
+
+- Managed entirely from the Replyke Dashboard
+- Access to all reports, regardless of space
+- Can remove any entity or comment in the project
+- Can ban any user from any space
+- Suitable for platform-wide policy enforcement
+
+### Space-Level Moderation
+
+Space-level moderation must be **integrated in your application**. Users with an `admin` or `moderator` role within a specific space can be given a moderation UI inside your app using the hooks below. Their capabilities are scoped to that space — they cannot view or act on reports from other spaces.
+
+- Built into your app using the provided hooks
+- Can only view reports for content within their space
+- Can remove entities and comments within their space
+- Can ban users from their space only
+- Cannot access reports or take action in other spaces
+
+## Report Reasons
+
+| Key | Label |
+|-----|-------|
+| `spam` | It's spam |
+| `inappropriateContent` | Contains inappropriate content |
+| `harassment` | It's harassment or bullying |
+| `misinformation` | Spreads false information |
+| `hateSpeech` | Contains hate speech or symbols |
+| `violence` | Promotes violence or dangerous behavior |
+| `illegalActivity` | Promotes illegal activity |
+| `selfHarm` | Promotes self-harm or suicide |
+| `other` | Other |
+
+Import reason keys from `@replyke/core`:
+
+```ts
+import { reportReasons } from "@replyke/core";
+// { spam: "It's spam", inappropriateContent: "Contains inappropriate content", ... }
+```
+
+## Hooks
+
+The hooks below are used for **space-level moderation** integrated in your app. Project-level moderation does not require any hooks — it is handled through the Replyke Dashboard.
+
+<CardGroup cols={2}>
+  <Card title="useCreateReport" href="/hooks/reports/use-create-report">
+    Submit a report against an entity or comment.
+  </Card>
+  <Card title="useFetchModeratedReports" href="/hooks/reports/use-fetch-moderated-reports">
+    Fetch pending reports for spaces the current user moderates.
+  </Card>
+  <Card title="useHandleSpaceEntityReport" href="/hooks/reports/use-handle-space-entity-report">
+    Action an entity report as a space moderator.
+  </Card>
+  <Card title="useHandleSpaceCommentReport" href="/hooks/reports/use-handle-space-comment-report">
+    Action a comment report as a space moderator.
+  </Card>
+</CardGroup>
+
+## Related
+
+- [Space Moderation](/sdk/spaces/moderation) — Direct moderation of entities and comments within a space (without the reporting flow)
+- [Space Rules](/sdk/spaces/rules) — Define community rules that appear alongside moderation decisions

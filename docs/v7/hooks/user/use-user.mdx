@@ -1,0 +1,123 @@
+---
+title: "Use user"
+description: "Access and update the authenticated user's own profile"
+icon: "cube"
+---
+
+## Overview
+
+`useUser` is the primary hook for interacting with the currently authenticated user's profile. It provides the user's full data (as an `AuthUser`), loading and error states, and an `updateUser` action.
+
+Updates are applied optimistically — the UI reflects changes immediately, and reverts automatically if the server request fails.
+
+## Usage Example
+
+```tsx
+import { useUser } from "@replyke/react-js";
+
+function ProfileEditor() {
+  const { user, updating, updateUser } = useUser();
+
+  const handleSave = async () => {
+    await updateUser({ name: "Jane Doe", bio: "Building cool things." });
+  };
+
+  if (!user) return null;
+
+  return (
+    <div>
+      <p>{user.name}</p>
+      <button onClick={handleSave} disabled={updating}>
+        Save
+      </button>
+    </div>
+  );
+}
+```
+
+### Uploading an Avatar
+
+```tsx
+import { useUser } from "@replyke/react-js";
+
+function AvatarUpload({ file }: { file: File }) {
+  const { updateUser } = useUser();
+
+  const handleUpload = async () => {
+    await updateUser({
+      avatar: {
+        file,
+        options: { width: 200, height: 200, fit: "cover" },
+      },
+    });
+  };
+
+  return <button onClick={handleUpload}>Upload Avatar</button>;
+}
+```
+
+## Return Values
+
+<ResponseField name="user" type="AuthUser | null">
+  The authenticated user's full profile. Returns `null` while loading or when no user is authenticated. See [User data model](/data-models/user).
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while the user's profile is being fetched for the first time.
+</ResponseField>
+
+<ResponseField name="updating" type="boolean">
+  `true` while an `updateUser` call is in progress.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if an `updateUser` call fails. `null` when there is no error.
+</ResponseField>
+
+<ResponseField name="updateUser" type="(update: UpdateUserParams) => Promise<AuthUser>">
+  Updates the authenticated user's profile. Applies optimistic updates immediately and reverts on failure.
+
+  <Expandable title="UpdateUserParams fields">
+    <ResponseField name="name" type="string | null">
+      Display name. Pass `null` to clear.
+    </ResponseField>
+    <ResponseField name="username" type="string | null">
+      Unique username. Pass `null` to clear. Must be available.
+    </ResponseField>
+    <ResponseField name="bio" type="string">
+      Short biography. Limited to 300 characters.
+    </ResponseField>
+    <ResponseField name="birthdate" type="Date | null">
+      Date of birth. Pass `null` to clear.
+    </ResponseField>
+    <ResponseField name="avatar" type="string | null | { file: File | Blob; options: UploadImageOptions }">
+      Avatar image. Pass a URL string, a file object with upload options, or `null` to remove.
+    </ResponseField>
+    <ResponseField name="banner" type="{ file: File | Blob; options: UploadImageOptions }">
+      Banner image. File upload only.
+    </ResponseField>
+    <ResponseField name="location" type="{ latitude: number; longitude: number } | null">
+      User's geographic location. Pass `null` to clear.
+    </ResponseField>
+    <ResponseField name="metadata" type="Record<string, any>">
+      Arbitrary project-specific data. Limited to 10 KB. Visible to other users (embedded in entity and comment data).
+    </ResponseField>
+    <ResponseField name="secureMetadata" type="Record<string, any>">
+      Private custom fields excluded from all client-facing responses, including the authenticated user's own profile. Stored server-side only — use it for data you need to persist but never expose to any client.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="clearError" type="() => void">
+  Clears the current error state.
+</ResponseField>
+
+## Optimistic Updates
+
+`updateUser` applies changes to local state before the server responds. This makes the UI feel instant. Fields that cannot be optimistically applied (file uploads, location) wait for the server response.
+
+If the server returns an error, the hook automatically reverts the user state to its pre-update value.
+
+<Note>
+  File uploads (avatar as a `File`/`Blob`, and banner) are not applied optimistically because the final URL is unknown until the upload completes.
+</Note>

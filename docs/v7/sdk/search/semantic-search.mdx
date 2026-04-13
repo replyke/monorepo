@@ -1,0 +1,190 @@
+---
+title: "Semantic Search"
+description: "Search content, users, and spaces with natural language queries"
+---
+
+Replyke provides three semantic search hooks — one for content (entities, comments, messages), one for users, and one for spaces. All three return results ranked by semantic similarity to the query.
+
+## useSearchContent
+
+Search across entities, comments, and chat messages. You can filter by `sourceTypes` to target only specific content types, or scope results to a specific space or conversation.
+
+```tsx
+import { useSearchContent } from "@replyke/react-js";
+
+function ContentSearch() {
+  const { results, loading, search, reset } = useSearchContent();
+
+  const handleSearch = async () => {
+    await search({
+      query: "posts about TypeScript best practices",
+      sourceTypes: ["entity"],
+      limit: 10,
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={handleSearch}>Search</button>
+      {results.map((r) => (
+        <div key={r.record.id}>
+          [{r.sourceType}] {r.record.id} — similarity: {r.similarity.toFixed(2)}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Parameters (`search` function)
+
+<ParamField path="query" type="string" required>
+  The natural language search query.
+</ParamField>
+
+<ParamField path="sourceTypes" type='("entity" | "comment" | "message")[]'>
+  Limit results to specific content types. Defaults to all types.
+</ParamField>
+
+<ParamField path="spaceId" type="string">
+  Scope results to a specific space.
+</ParamField>
+
+<ParamField path="conversationId" type="string">
+  Scope results to a specific conversation (for messages).
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+### Returns
+
+<ResponseField name="results" type="ContentSearchResult[]">
+  Ranked results.
+  <Expandable title="ContentSearchResult properties">
+    <ResponseField name="sourceType" type='"entity" | "comment" | "message"'>
+      The type of the matched record.
+    </ResponseField>
+    <ResponseField name="similarity" type="number">
+      Cosine similarity score (0–1). Higher is more similar.
+    </ResponseField>
+    <ResponseField name="record" type="Entity | Comment | ChatMessage">
+      The full matched record.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a search is in progress.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the search failed.
+</ResponseField>
+
+<ResponseField name="search" type="(props) => Promise<void>">
+  Executes the search and updates `results`.
+</ResponseField>
+
+<ResponseField name="reset" type="() => void">
+  Clears results and error state.
+</ResponseField>
+
+---
+
+## useSearchUsers
+
+Search for users by natural language query — matches against name, username, bio, and other profile text.
+
+```tsx
+import { useSearchUsers } from "@replyke/react-js";
+
+function UserSearch() {
+  const { results, search } = useSearchUsers();
+
+  return (
+    <button onClick={() => search({ query: "designers in Berlin", limit: 5 })}>
+      Search Users
+    </button>
+  );
+}
+```
+
+### Parameters (`search` function)
+
+<ParamField path="query" type="string" required>
+  The natural language search query.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+### Returns
+
+<ResponseField name="results" type="UserSearchResult[]">
+  Ranked user results.
+  <Expandable title="UserSearchResult properties">
+    <ResponseField name="similarity" type="number">
+      Cosine similarity score (0–1).
+    </ResponseField>
+    <ResponseField name="record" type="User">
+      The matched user profile. See [User data model](/data-models/user).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="loading" type="boolean" />
+<ResponseField name="error" type="string | null" />
+<ResponseField name="search" type="(props) => Promise<void>" />
+<ResponseField name="reset" type="() => void" />
+
+---
+
+## useSearchSpaces
+
+Search for spaces by name, description, or topic.
+
+```tsx
+import { useSearchSpaces } from "@replyke/react-js";
+
+function SpaceSearch() {
+  const { results, search } = useSearchSpaces();
+
+  return (
+    <button onClick={() => search({ query: "open source communities", limit: 5 })}>
+      Find Spaces
+    </button>
+  );
+}
+```
+
+### Parameters (`search` function)
+
+<ParamField path="query" type="string" required>
+  The natural language search query.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+### Returns
+
+<ResponseField name="results" type="SpaceSearchResult[]">
+  Ranked space results.
+  <Expandable title="SpaceSearchResult properties">
+    <ResponseField name="similarity" type="number">
+      Cosine similarity score (0–1).
+    </ResponseField>
+    <ResponseField name="record" type="Space">
+      The matched space. See [Space data model](/data-models/space).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="loading" type="boolean" />
+<ResponseField name="error" type="string | null" />
+<ResponseField name="search" type="(props) => Promise<void>" />
+<ResponseField name="reset" type="() => void" />

@@ -1,0 +1,94 @@
+---
+title: "Fetch connection status"
+description: "Check the connection status between the current user and another user"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that fetches the full connection status between the current authenticated user and a target user. Returns a discriminated union based on the current state: `"none"`, `"pending"`, `"connected"`, or `"declined"`.
+
+`useConnectionManager` calls this automatically on mount. Use this hook directly when you need one-off status checks without managing state.
+
+## Usage Example
+
+```tsx
+import { useFetchConnectionStatus } from "@replyke/react-js";
+
+function ProfilePage({ userId }: { userId: string }) {
+  const fetchConnectionStatus = useFetchConnectionStatus();
+
+  useEffect(() => {
+    fetchConnectionStatus({ userId }).then((status) => {
+      console.log(status.status); // "none" | "pending" | "connected" | "declined"
+    });
+  }, [userId]);
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user to check. Cannot be the current user's own ID.
+</ParamField>
+
+## Returns
+
+Returns a `ConnectionStatusResponse` — a discriminated union based on `status`:
+
+**When `status === "none"`:**
+
+<ResponseField name="status" type='"none"'>
+  No connection exists.
+</ResponseField>
+
+**When `status === "pending"`:**
+
+<ResponseField name="status" type='"pending"'>
+  A connection request is pending.
+</ResponseField>
+<ResponseField name="type" type='"sent" | "received"'>
+  Direction from the current user's perspective.
+</ResponseField>
+<ResponseField name="connectionId" type="string">
+  The connection record ID.
+</ResponseField>
+<ResponseField name="createdAt" type="string">
+  ISO timestamp when the request was created.
+</ResponseField>
+
+**When `status === "connected"`:**
+
+<ResponseField name="status" type='"connected"'>
+  Connection is established.
+</ResponseField>
+<ResponseField name="connectionId" type="string">
+  The connection record ID.
+</ResponseField>
+<ResponseField name="connectedAt" type="string">
+  ISO timestamp when the connection was established.
+</ResponseField>
+<ResponseField name="requestedAt" type="string">
+  ISO timestamp when the request was originally sent.
+</ResponseField>
+
+**When `status === "declined"`:**
+
+<ResponseField name="status" type='"declined"'>
+  A connection request was declined.
+</ResponseField>
+<ResponseField name="type" type='"sent" | "received"'>
+  Direction of the original request.
+</ResponseField>
+<ResponseField name="connectionId" type="string">
+  The connection record ID.
+</ResponseField>
+<ResponseField name="respondedAt" type="string">
+  ISO timestamp when the request was declined.
+</ResponseField>
+
+## Related
+
+- [useConnectionManager](/hooks/connections/use-connection-manager) — loads this status automatically

@@ -1,0 +1,33 @@
+---
+title: "Fetch Space by Slug"
+api: "GET /:projectId/api/v7/spaces/by-slug"
+description: "Get a single space by its URL slug"
+---
+
+Fetches a space using its `slug`. Slugs are optional and unique per project.
+
+## Query Parameters
+
+<ParamField query="slug" type="string" required>
+  The URL slug of the space.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Optional. Pass `"files"` to include file objects.
+</ParamField>
+
+## Response
+
+Returns a [SpaceDetailed](/data-models/space) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Space not found.", "code": "space/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchSpaceBySlug](/hooks/spaces/use-fetch-space-by-slug)

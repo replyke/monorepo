@@ -1,0 +1,58 @@
+---
+title: "Fetch space members"
+description: "Fetch a paginated list of members in a space"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchSpaceMembers` returns a callable function that fetches the member list for a space. Each result includes embedded public user data. Results are paginated and can be filtered by role or status.
+
+## Usage Example
+
+```tsx
+import { useFetchSpaceMembers } from "@replyke/react-js";
+
+function MemberList({ spaceId }: { spaceId: string }) {
+  const fetchMembers = useFetchSpaceMembers();
+
+  const loadMembers = async () => {
+    const result = await fetchMembers({ spaceId, page: 1, limit: 20 });
+    result.data.forEach(({ user, role, status }) => {
+      console.log(user.displayName, role, status);
+    });
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number. Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Number of members per page.
+</ParamField>
+
+<ParamField path="status" type="string">
+  Filter by membership status: `"pending"`, `"active"`, `"banned"`, or `"rejected"`.
+</ParamField>
+
+<ParamField path="role" type="string">
+  Filter by role: `"admin"`, `"moderator"`, or `"member"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="data" type="SpaceMemberWithUser[]">
+  Array of [SpaceMemberWithUser](/data-models/space-member) objects including embedded user details.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Standard pagination metadata.
+</ResponseField>

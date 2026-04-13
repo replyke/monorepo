@@ -1,0 +1,69 @@
+---
+title: "Update entity"
+description: "Update an existing entity's content fields"
+icon: "plug"
+---
+
+## Overview
+
+`useUpdateEntity` returns a function that updates an entity's content fields. After a successful update, the entity state inside the nearest `EntityProvider` is automatically synced with the new data.
+
+## Usage Example
+
+```tsx
+import { useUpdateEntity } from "@replyke/react-js";
+
+function EditPost({ entityId }: { entityId: string }) {
+  const updateEntity = useUpdateEntity();
+
+  const handleSave = async (newContent: string) => {
+    const updated = await updateEntity({
+      entityId,
+      update: { content: newContent },
+    });
+    console.log("Updated:", updated.id);
+  };
+
+  return <button onClick={() => handleSave("Revised content")}>Save</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="entityId" type="string" required>
+  The ID of the entity to update.
+</ParamField>
+
+<ParamField path="update.title" type="string | null">
+  New title. Pass `null` to clear.
+</ParamField>
+
+<ParamField path="update.content" type="string | null">
+  New content body. Pass `null` to clear.
+</ParamField>
+
+<ParamField path="update.attachments" type="Record<string, any>[]">
+  Replacement attachments array.
+</ParamField>
+
+<ParamField path="update.keywords" type="string[]">
+  Replacement keywords array.
+</ParamField>
+
+<ParamField path="update.location" type="{ latitude: number; longitude: number }">
+  New geographic location.
+</ParamField>
+
+<ParamField path="update.metadata" type="Record<string, any>">
+  Replacement metadata object.
+</ParamField>
+
+<ParamField path="update.mentions" type="Mention[]">
+  Updated mentions array.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Entity" type="Entity">
+  The updated entity. See [Entity data model](/data-models/entity).
+</ResponseField>

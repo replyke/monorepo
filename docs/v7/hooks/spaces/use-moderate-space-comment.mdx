@@ -1,0 +1,50 @@
+---
+title: "Moderate space comment"
+description: "Approve or remove a comment within a space"
+icon: "plug"
+---
+
+## Overview
+
+`useModerateSpaceComment` returns a callable function for taking moderation action on a comment in a space. Requires the caller to be a moderator or admin.
+
+## Usage Example
+
+```tsx
+import { useModerateSpaceComment } from "@replyke/react-js";
+
+function CommentModerationActions({ spaceId, commentId }: { spaceId: string; commentId: string }) {
+  const moderate = useModerateSpaceComment();
+
+  return (
+    <div>
+      <button onClick={() => moderate({ spaceId, commentId, action: "approve" })}>
+        Approve
+      </button>
+      <button onClick={() => moderate({ spaceId, commentId, action: "remove" })}>
+        Remove
+      </button>
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space containing the comment.
+</ParamField>
+
+<ParamField path="commentId" type="string" required>
+  UUID of the comment to moderate.
+</ParamField>
+
+<ParamField path="action" type='"approve" | "remove"' required>
+  The moderation action to take.
+</ParamField>
+
+## Returns
+
+A confirmation response from the server.
+
+For integration guidance, see [Moderation](/sdk/spaces/moderation).

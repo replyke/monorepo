@@ -1,0 +1,78 @@
+---
+title: "Fetch Moderated Reports"
+api: "GET /:projectId/api/v7/reports/moderated"
+description: "Get content reports for spaces the authenticated user can moderate"
+---
+
+Returns a paginated list of reports for spaces where the authenticated user has the `admin` or `moderator` role. If `spaceId` is omitted, reports from all spaces the user moderates are returned.
+
+**Authentication required.** Must be a space admin or moderator.
+
+## Query Parameters
+
+<ParamField query="spaceId" type="string">
+  Filter to a specific space. The user must be an admin or moderator of that space. When omitted, reports from all moderated spaces are returned.
+</ParamField>
+
+<ParamField query="targetType" type="string">
+  Filter by content type. One of: `entity`, `comment`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by report status. One of: `pending`, `on-hold`, `escalated`, `dismissed`, `actioned`.
+</ParamField>
+
+<ParamField query="sortBy" type="string" default="new">
+  Sort order. One of: `new` (newest first), `old` (oldest first).
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField query="limit" type="number" default="20">
+  Number of reports per page.
+</ParamField>
+
+## Response
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "targetId": "uuid",
+      "targetType": "comment",
+      "spaceId": "uuid",
+      "status": "pending",
+      "reporterCount": 3,
+      "target": { ...Comment object... },
+      "space": { ...Space object... },
+      "userReports": [
+        { "userId": "uuid", "reason": "spam", "details": "..." }
+      ],
+      "createdAt": "2025-01-01T00:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "totalPages": 2,
+    "totalItems": 35,
+    "hasMore": true
+  }
+}
+```
+
+Each report includes the full reported content (`target`), the space it belongs to, and all individual user reports (`userReports`).
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "Moderator access required for this space", "code": "report/forbidden" }
+    ```
+    Returned when `spaceId` is provided but the user is not a moderator of that space.
+  </Accordion>
+</AccordionGroup>

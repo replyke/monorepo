@@ -1,0 +1,38 @@
+---
+title: "Create Sub-Collection"
+api: "POST /:projectId/api/v7/collections/:collectionId/sub-collections"
+description: "Create a new sub-collection inside an existing collection"
+---
+
+Creates a new named sub-collection under the specified parent collection. Returns `400` if the parent collection does not exist.
+
+## Path Parameters
+
+<ParamField path="collectionId" type="string" required>
+  The ID of the parent collection. Use the root collection's ID to create a top-level folder.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="collectionName" type="string" required>
+  The name for the new collection.
+</ParamField>
+
+## Response
+
+Returns the newly created [Collection](/data-models/collection) object with `status 201`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Parent — 400 Bad Request">
+    ```json
+    { "error": "Invalid parent collection ID for sub-collection", "code": "collection/invalid-parent" }
+    ```
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Server error", "code": "collection/server-error" }
+    ```
+  </Accordion>
+</AccordionGroup>

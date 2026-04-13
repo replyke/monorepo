@@ -1,0 +1,44 @@
+---
+title: "Delete Entity"
+api: "DELETE /:projectId/api/v7/entities/:entityId"
+description: "Delete an entity"
+---
+
+Deletes an entity and its associated data. Only the entity's author, or a request with a service or master key, can delete an entity.
+
+**Authentication required.**
+
+Deletion behavior depends on your project's `entityDeletion` settings:
+- **Hard delete** (default): The entity and all its files are permanently removed.
+- **Soft delete**: The entity is marked as deleted but retained in the database. File preservation is configurable separately.
+
+## Path Parameters
+
+<ParamField path="entityId" type="string" required>
+  The UUID of the entity to delete.
+</ParamField>
+
+## Response
+
+Returns `204 No Content` on success.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Entity not found.", "code": "entity/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Already Deleted — 404">
+    ```json
+    { "error": "Entity not found or already deleted.", "code": "entity/delete-failed" }
+    ```
+    Returned when the entity record exists but could not be deleted (e.g., it was already soft-deleted).
+  </Accordion>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    { "error": "Not authorized to delete this entity.", "code": "entity/not-authorized" }
+    ```
+  </Accordion>
+</AccordionGroup>

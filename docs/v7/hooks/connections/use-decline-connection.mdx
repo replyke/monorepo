@@ -1,0 +1,52 @@
+---
+title: "Decline connection"
+description: "Decline a pending connection request by connection ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that declines a pending incoming connection request. After declining, the connection status from the current user's perspective becomes `"declined-received"`. The current user must be authenticated and must be the recipient.
+
+## Usage Example
+
+```tsx
+import { useDeclineConnection } from "@replyke/react-js";
+
+function PendingRequest({ connectionId }: { connectionId: string }) {
+  const declineConnection = useDeclineConnection();
+
+  return (
+    <button onClick={() => declineConnection({ connectionId })}>
+      Decline
+    </button>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="connectionId" type="string" required>
+  The ID of the connection record to decline.
+</ParamField>
+
+## Returns
+
+<ResponseField name="id" type="string">
+  The connection record ID.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The updated status, e.g. `"declined"`.
+</ResponseField>
+
+<ResponseField name="respondedAt" type="string | undefined">
+  ISO timestamp when the request was declined.
+</ResponseField>
+
+## Related
+
+- [useAcceptConnection](/hooks/connections/use-accept-connection) — accept instead of decline
+- [useFetchReceivedPendingConnections](/hooks/connections/use-fetch-received-pending-connections) — list pending requests

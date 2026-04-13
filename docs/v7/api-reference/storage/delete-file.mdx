@@ -1,0 +1,43 @@
+---
+title: "Delete File"
+api: "DELETE /:projectId/api/v7/storage/:fileId"
+description: "Delete a file and all its variants from storage"
+---
+
+Deletes a file record and removes all associated storage objects. For image files, all generated variants are also deleted.
+
+Requires an authenticated user.
+
+**Rate limit**: 50 requests per 5 minutes.
+
+## Path Parameters
+
+<ParamField path="fileId" type="string" required>
+  The UUID of the file to delete.
+</ParamField>
+
+## Response
+
+```json
+{
+  "message": "File deleted successfully",
+  "fileId": "uuid",
+  "deletedPaths": [
+    "images/abc123/original.webp",
+    "images/abc123/thumbnail_original.webp",
+    "images/abc123/medium_original.webp"
+  ]
+}
+```
+
+`deletedPaths` lists all storage paths that were removed, including the original file and any image variants.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "File not found", "code": "storage/file-not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

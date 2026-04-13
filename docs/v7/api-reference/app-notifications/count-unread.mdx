@@ -1,0 +1,37 @@
+---
+title: "Count Unread Notifications"
+api: "GET /:projectId/api/v7/app-notifications/count"
+description: "Get the number of unread app notifications for the authenticated user"
+---
+
+Returns a single integer representing the total number of unread app notifications for the currently authenticated user. Use this to populate notification badge counts in your UI.
+
+<Note>
+  This endpoint requires an authenticated user. Include a valid `Authorization: Bearer <accessToken>` header.
+</Note>
+
+## Response
+
+Returns HTTP `200` with a plain integer (not a JSON object):
+
+```json
+7
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 401">
+    ```json
+    {
+      "error": "Unauthorized",
+      "code": "auth/unauthorized"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useAppNotifications` hook](/hooks/app-notifications/use-app-notifications) — exposes `unreadCount` directly
+- [Fetch Notifications](/api-reference/app-notifications/fetch-notifications)

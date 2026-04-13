@@ -1,0 +1,60 @@
+---
+title: "Mark conversation as read"
+description: "Mark messages in a conversation as read up to a given message"
+icon: "plug"
+---
+
+## Overview
+
+Returns an async function that marks a conversation as read up to a specific message. The unread count for the conversation is cleared in Redux immediately (optimistic update). The server is then notified to advance the user's `lastReadAt` timestamp.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useMarkConversationAsRead } from "@replyke/react-js";
+import { useEffect } from "react";
+
+function ConversationView({
+  conversationId,
+  messages,
+}: {
+  conversationId: string;
+  messages: { id: string }[];
+}) {
+  const mark = useMarkConversationAsRead({ conversationId });
+
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage) {
+      mark({ messageId: lastMessage.id });
+    }
+  }, [messages]);
+
+  // ...
+}
+```
+
+## Props
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation to mark as read.
+</ParamField>
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField body="messageId" type="string" required>
+  The ID of the message to mark as read up to. The server sets `lastReadAt` to this message's `createdAt`.
+</ParamField>
+
+## Returns
+
+`Promise<void>`
+
+## Notes
+
+- The failure to mark as read on the server (e.g. network error) is non-critical. The local Redux count is already cleared and will re-sync on the next `ChatProvider` mount.
+- For integration guidance, see [Chat: Real-time](/sdk/chat/real-time).

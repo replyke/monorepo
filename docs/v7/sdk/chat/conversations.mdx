@@ -1,0 +1,172 @@
+---
+title: "Conversations"
+description: "Create, list, and manage direct and group conversations"
+---
+
+This guide covers how to work with conversations: listing the user's conversations, creating new ones, fetching a single conversation, and managing members.
+
+## Listing Conversations
+
+`useConversations` fetches the authenticated user's conversation list with cursor-based pagination. The list is sorted by most recent activity.
+
+```tsx
+import { useConversations } from "@replyke/react-js";
+
+function ConversationList() {
+  const { conversations, loading, hasMore, loadMore } = useConversations();
+
+  return (
+    <div>
+      {conversations.map((convo) => (
+        <div key={convo.id}>
+          <strong>{convo.name ?? "Direct Message"}</strong>
+          <span>{convo.unreadCount > 0 ? `${convo.unreadCount} unread` : ""}</span>
+        </div>
+      ))}
+      {hasMore && (
+        <button onClick={loadMore} disabled={loading}>
+          Load more
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+To filter by conversation type, pass a `types` array:
+
+```tsx
+// Only show direct and group conversations (no space chats)
+const { conversations } = useConversations({ types: ["direct", "group"] });
+```
+
+Each item in the list is a `ConversationPreview` — a `Conversation` extended with `unreadCount` and a truncated `lastMessage`.
+
+See [`useConversations`](/hooks/chat/conversations/use-conversations) for the full API.
+
+## Creating a Direct Conversation
+
+Use `useCreateDirectConversation` to start a 1:1 conversation with another user. If a direct conversation between the two users already exists, the server returns the existing one.
+
+```tsx
+import { useCreateDirectConversation } from "@replyke/react-js";
+
+function StartChat({ userId }: { userId: string }) {
+  const createDirect = useCreateDirectConversation();
+
+  const handleClick = async () => {
+    const conversation = await createDirect({ userId });
+    // Navigate to the conversation view
+  };
+
+  return <button onClick={handleClick}>Send a message</button>;
+}
+```
+
+See [`useCreateDirectConversation`](/hooks/chat/conversations/use-create-direct-conversation).
+
+## Creating a Group Conversation
+
+Group conversations are created via `useConversations`, which exposes a `createGroup` function:
+
+```tsx
+import { useConversations } from "@replyke/react-js";
+
+function NewGroupButton() {
+  const { createGroup } = useConversations();
+
+  const handleCreate = async () => {
+    const conversation = await createGroup({
+      name: "Project Team",
+      metadata: { color: "#4f46e5" },
+    });
+    // Navigate to the new group
+  };
+
+  return <button onClick={handleCreate}>New Group</button>;
+}
+```
+
+After creation, the new conversation is prepended to the conversation list in Redux state.
+
+## Accessing a Single Conversation
+
+`useConversation` fetches full details for one conversation and provides `update` and `deleteConversation` actions:
+
+```tsx
+import { useConversation } from "@replyke/react-js";
+
+function ConversationHeader({ conversationId }: { conversationId: string }) {
+  const { conversation, loading, update } = useConversation({ conversationId });
+
+  if (loading || !conversation) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h2>{conversation.name ?? "Direct Message"}</h2>
+      <button onClick={() => update({ name: "New Name" })}>Rename</button>
+    </div>
+  );
+}
+```
+
+The conversation is fetched once on mount if not already in Redux state. Real-time `conversation:updated` socket events keep it current automatically.
+
+See [`useConversation`](/hooks/chat/conversations/use-conversation).
+
+## Managing Members
+
+`useConversationMembers` loads the member list and exposes add, remove, leave, and role-change actions:
+
+```tsx
+import { useConversationMembers } from "@replyke/react-js";
+
+function MemberList({ conversationId }: { conversationId: string }) {
+  const { members, addMember, removeMember, changeRole, leave } =
+    useConversationMembers({ conversationId });
+
+  return (
+    <ul>
+      {members.map((member) => (
+        <li key={member.userId}>
+          {member.user?.name} — {member.role}
+          <button onClick={() => removeMember({ userId: member.userId })}>
+            Remove
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+See [`useConversationMembers`](/hooks/chat/conversations/use-conversation-members).
+
+## Space Conversations
+
+Every Space has a single associated conversation. Use `useFetchSpaceConversation` to retrieve it:
+
+```tsx
+import { useFetchSpaceConversation } from "@replyke/react-js";
+
+function SpaceChat({ spaceId }: { spaceId: string }) {
+  const { conversation, loading } = useFetchSpaceConversation({ spaceId });
+
+  if (!conversation) return null;
+
+  // Use conversation.id with message hooks
+}
+```
+
+See [`useFetchSpaceConversation`](/hooks/chat/conversations/use-fetch-space-conversation).
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Messages" icon="message" href="/sdk/chat/messages">
+    Send and receive messages in a conversation
+  </Card>
+  <Card title="Real-time" icon="bolt" href="/sdk/chat/real-time">
+    Typing indicators, unread counts, read receipts
+  </Card>
+</CardGroup>

@@ -1,0 +1,89 @@
+---
+title: "Ask content"
+description: "Ask a natural language question and stream a generated answer from project content"
+icon: "plug"
+---
+
+## Overview
+
+Streams an AI-generated answer to a natural language question, grounded in your project's content. Uses SSE (Server-Sent Events) to deliver tokens incrementally. Returns source citations once the stream completes.
+
+For integration guidance, see [Ask Content](/sdk/search/ask).
+
+## Usage Example
+
+```tsx
+import { useAskContent } from "@replyke/react-js";
+
+function AskUI() {
+  const { answer, sources, streaming, loading, error, ask, reset } = useAskContent();
+
+  return (
+    <div>
+      <button onClick={() => ask({ query: "How do I reset my password?" })} disabled={loading || streaming}>
+        Ask
+      </button>
+      {answer && <p>{answer}{streaming && " ▋"}</p>}
+      {sources.map((s) => <div key={s.record.id}>[{s.sourceType}] {s.record.id}</div>)}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+Call `ask` with:
+
+<ParamField path="query" type="string" required>
+  The natural language question.
+</ParamField>
+
+<ParamField path="sourceTypes" type='("entity" | "comment" | "message")[]'>
+  Limit the content types searched for context.
+</ParamField>
+
+<ParamField path="spaceId" type="string">
+  Scope context lookup to a specific space.
+</ParamField>
+
+<ParamField path="conversationId" type="string">
+  Scope context lookup to a specific conversation.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of source records to use as context.
+</ParamField>
+
+## Returns
+
+<ResponseField name="answer" type="string">
+  The AI-generated answer. Grows token by token while `streaming` is `true`.
+</ResponseField>
+
+<ResponseField name="sources" type="ContentSearchResult[]">
+  Source records used as context. Populated after streaming ends.
+</ResponseField>
+
+<ResponseField name="streaming" type="boolean">
+  `true` while the SSE stream is open and tokens are arriving.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` from `ask()` call until the first token arrives.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the request failed.
+</ResponseField>
+
+<ResponseField name="ask" type="(props) => void">
+  Starts a new question. Aborts any in-flight stream first.
+</ResponseField>
+
+<ResponseField name="reset" type="() => void">
+  Aborts in-flight stream and clears all state.
+</ResponseField>
+
+<Note>
+  In React Native, SSE streaming requires polyfills. Install `react-native-fetch-api`, `web-streams-polyfill`, and `react-native-polyfill-globals`, then call `polyfillGlobals()` at app startup before using this hook.
+</Note>

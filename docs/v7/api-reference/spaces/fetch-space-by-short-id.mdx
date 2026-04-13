@@ -1,0 +1,33 @@
+---
+title: "Fetch Space by Short ID"
+api: "GET /:projectId/api/v7/spaces/by-short-id"
+description: "Get a single space by its short identifier"
+---
+
+Fetches a space using its `shortId`. Returns the same `SpaceDetailed` shape as the UUID fetch endpoint.
+
+## Query Parameters
+
+<ParamField query="shortId" type="string" required>
+  The short identifier of the space.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Optional. Pass `"files"` to include file objects.
+</ParamField>
+
+## Response
+
+Returns a [SpaceDetailed](/data-models/space) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Space not found.", "code": "space/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchSpaceByShortId](/hooks/spaces/use-fetch-space-by-short-id)

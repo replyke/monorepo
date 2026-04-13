@@ -1,0 +1,36 @@
+---
+title: "Delete entity"
+description: "Delete an entity"
+icon: "plug"
+---
+
+## Overview
+
+`useDeleteEntity` returns a function that deletes an entity. If called from inside an `EntityProvider`, the provider's entity state is set to `undefined` after deletion.
+
+## Usage Example
+
+```tsx
+import { useDeleteEntity } from "@replyke/react-js";
+
+function DeleteButton({ entityId }: { entityId: string }) {
+  const deleteEntity = useDeleteEntity();
+
+  const handleDelete = async () => {
+    await deleteEntity({ entityId });
+    console.log("Deleted");
+  };
+
+  return <button onClick={handleDelete}>Delete</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="entityId" type="string" required>
+  The ID of the entity to delete.
+</ParamField>
+
+## Returns
+
+`Promise<void>` — resolves when the entity is deleted.

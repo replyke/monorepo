@@ -1,0 +1,27 @@
+---
+title: "List Rules"
+api: "GET /:projectId/api/v7/spaces/:spaceId/rules"
+description: "Get all community rules for a space"
+---
+
+Returns all community rules for a space, ordered by their `order` field. This endpoint is publicly accessible — no authentication is required.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="Rule[]">
+  Array of rule objects ordered by `order` ascending.
+</ResponseField>
+
+<ResponseField name="count" type="number">
+  Total number of rules.
+</ResponseField>
+
+Each rule has: `id`, `spaceId`, `projectId`, `title`, `description`, `order`, `lastApprovedBy`, `createdAt`, `updatedAt`.
+
+See also: [useFetchManyRules](/hooks/spaces/rules/use-fetch-many-rules)

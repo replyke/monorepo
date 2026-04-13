@@ -1,0 +1,41 @@
+---
+title: "Fetch connections count"
+description: "Get the total number of accepted connections for the current user"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that fetches the total count of accepted connections for the currently authenticated user.
+
+## Usage Example
+
+```tsx
+import { useFetchConnectionsCount } from "@replyke/react-js";
+
+function ConnectionCount() {
+  const fetchConnectionsCount = useFetchConnectionsCount();
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchConnectionsCount().then((res) => setCount(res.count));
+  }, []);
+
+  return <span>{count ?? "..."} connections</span>;
+}
+```
+
+## Parameters
+
+The hook returns a function that takes no parameters.
+
+## Returns
+
+<ResponseField name="count" type="number">
+  Total number of accepted connections for the current user.
+</ResponseField>
+
+## Related
+
+- [useFetchConnectionsCountByUserId](/hooks/connections/use-fetch-connections-count-by-user-id) — get count for any user
+- [useFetchConnections](/hooks/connections/use-fetch-connections) — fetch the full list

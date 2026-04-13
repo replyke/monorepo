@@ -1,0 +1,45 @@
+---
+title: "Fetch followers count by user ID"
+description: "Get the total follower count for any user by their ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that fetches the total follower count of any user, identified by `userId`. This is a public endpoint — authentication is not required.
+
+## Usage Example
+
+```tsx
+import { useFetchFollowersCountByUserId } from "@replyke/react-js";
+
+function UserStats({ userId }: { userId: string }) {
+  const fetchFollowersCountByUserId = useFetchFollowersCountByUserId();
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchFollowersCountByUserId({ userId }).then((res) => setCount(res.count));
+  }, [userId]);
+
+  return <span>{count ?? "..."} followers</span>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user whose follower count to fetch.
+</ParamField>
+
+## Returns
+
+<ResponseField name="count" type="number">
+  Total number of followers for the specified user.
+</ResponseField>
+
+## Related
+
+- [useFetchFollowersCount](/hooks/follows/use-fetch-followers-count) — get count for the current user
+- [useFetchFollowersByUserId](/hooks/follows/use-fetch-followers-by-user-id) — fetch the full list

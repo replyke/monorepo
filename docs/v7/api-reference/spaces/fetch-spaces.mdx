@@ -1,0 +1,67 @@
+---
+title: "Fetch Spaces"
+api: "GET /:projectId/api/v7/spaces"
+description: "Get a paginated list of spaces with filtering and sorting"
+---
+
+Fetches a paginated list of spaces. Supports filtering by search query, membership, and parent space. Authentication is optional — if provided, member-only spaces the user belongs to are included.
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page.
+</ParamField>
+
+<ParamField query="sortBy" type="string">
+  Sort order: `"alphabetical"`, `"newest"`, or `"members"`. Defaults to `"members"`.
+</ParamField>
+
+<ParamField query="searchSlug" type="string">
+  Filter by slug substring.
+</ParamField>
+
+<ParamField query="searchName" type="string">
+  Filter by name substring.
+</ParamField>
+
+<ParamField query="searchDescription" type="string">
+  Filter by description substring.
+</ParamField>
+
+<ParamField query="searchAny" type="string">
+  Search across name, slug, and description simultaneously.
+</ParamField>
+
+<ParamField query="memberOf" type="boolean">
+  When `true`, returns only spaces where the authenticated user is an active member.
+</ParamField>
+
+<ParamField query="parentSpaceId" type="string">
+  Filter to child spaces of a specific parent. Pass `"null"` for root-level spaces only.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Optional comma-separated includes. Pass `"files"` to include avatar file objects.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="Space[]">
+  Array of [Space](/data-models/space) objects.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  <Expandable title="properties">
+    <ResponseField name="page" type="number">Current page.</ResponseField>
+    <ResponseField name="pageSize" type="number">Results per page.</ResponseField>
+    <ResponseField name="totalPages" type="number">Total number of pages.</ResponseField>
+    <ResponseField name="totalItems" type="number">Total matching spaces.</ResponseField>
+    <ResponseField name="hasMore" type="boolean">Whether more pages exist.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+See also: [useFetchManySpaces](/hooks/spaces/use-fetch-many-spaces)

@@ -1,0 +1,124 @@
+---
+title: "Verify External User"
+api: "POST /:projectId/api/v7/auth/verify-external-user"
+description: "Verify or create a user from an external auth system JWT"
+---
+
+Accepts a JWT signed by your own auth system and returns Replyke tokens. If the user does not exist in the project, they are created. If they do exist, their profile is updated with any changed fields from the JWT payload.
+
+The JWT must be signed with the RSA private key corresponding to the public key configured in your Replyke project settings.
+
+## Body Parameters
+
+<ParamField body="userJwt" type="string" required>
+  A JWT signed with your project's RSA private key (RS256 algorithm). The
+  payload must include `sub` (external user ID) and `iss` (your Replyke project
+  ID). The `userData` claim may contain optional profile fields.
+</ParamField>
+
+## JWT Payload Structure
+
+The `userJwt` must contain:
+
+| Claim | Required | Description |
+|-------|----------|-------------|
+| `sub` | Yes | External user ID. Stored as `foreignId` on the Replyke user. |
+| `iss` | Yes | Your Replyke project ID. Must match the request project. |
+| `userData` | No | Object with optional profile fields (see below). |
+
+### `userData` fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `email` | `string` | Email address |
+| `name` | `string` | Display name |
+| `username` | `string` | Username |
+| `avatar` | `string` | Avatar URL |
+| `bio` | `string` | Bio text |
+| `location` | object | `{ latitude, longitude }` |
+| `birthdate` | `string` | ISO 8601 date |
+| `metadata` | object | Public custom data |
+| `secureMetadata` | object | Private custom data |
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` on success.
+</ResponseField>
+
+<ResponseField name="accessToken" type="string">
+  Short-lived JWT access token. Expires in 30 minutes.
+</ResponseField>
+
+<ResponseField name="refreshToken" type="string">
+  Long-lived JWT refresh token. Expires in 30 days.
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  The verified or created user's profile.
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">Unique user ID (UUID).</ResponseField>
+    <ResponseField name="foreignId" type="string | null">External user ID (the `sub` claim).</ResponseField>
+    <ResponseField name="role" type="string">User role.</ResponseField>
+    <ResponseField name="email" type="string | null">Email address.</ResponseField>
+    <ResponseField name="name" type="string | null">Display name.</ResponseField>
+    <ResponseField name="username" type="string | null">Username.</ResponseField>
+    <ResponseField name="avatar" type="string | null">Avatar URL.</ResponseField>
+    <ResponseField name="bio" type="string | null">Bio text.</ResponseField>
+    <ResponseField name="metadata" type="object | null">Public custom data.</ResponseField>
+    <ResponseField name="reputation" type="number | null">Reputation score.</ResponseField>
+    <ResponseField name="isVerified" type="boolean | null">Whether the user is verified.</ResponseField>
+    <ResponseField name="isActive" type="boolean | null">Whether the account is active.</ResponseField>
+    <ResponseField name="lastActive" type="string | null">ISO timestamp of last activity.</ResponseField>
+    <ResponseField name="suspensions" type="array">Active suspensions on the account.</ResponseField>
+    <ResponseField name="avatarFile" type="object | null">Processed avatar file with variants.</ResponseField>
+    <ResponseField name="bannerFile" type="object | null">Processed banner file with variants.</ResponseField>
+    <ResponseField name="authMethods" type="string[]">List of auth methods (includes `"external"`).</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO timestamp of account creation.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing JWT Keys — 403">
+    ```json
+    {
+      "error": "Missing JWT keys",
+      "code": "auth/missing-keys"
+    }
+    ```
+    The project does not have a public key configured.
+  </Accordion>
+  <Accordion title="Invalid Token — 403">
+    ```json
+    {
+      "error": "Invalid token",
+      "code": "auth/invalid-token"
+    }
+    ```
+    The JWT signature is invalid or the token is expired.
+  </Accordion>
+  <Accordion title="Project ID Mismatch — 403">
+    ```json
+    {
+      "error": "Project ID mismatch",
+      "code": "auth/project-mismatch"
+    }
+    ```
+    The `iss` claim in the JWT does not match the request project ID.
+  </Accordion>
+  <Accordion title="Username Already Taken — 409">
+    ```json
+    {
+      "error": "Username already taken",
+      "field": "username",
+      "code": "DUPLICATE_USERNAME"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [External Auth guide](/sdk/authentication/external)

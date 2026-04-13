@@ -1,0 +1,19 @@
+---
+title: "Get Unread Count"
+api: "GET /:projectId/api/v7/conversations/unread-count"
+description: "Get the total unread message count and unread conversation count for the current user"
+---
+
+Returns two aggregate counts across all of the current user's active conversations: the total number of unread messages and the number of conversations that have at least one unread message.
+
+Thread replies are excluded from unread counts. Only main-stream messages are counted.
+
+## Response
+
+<ResponseField name="totalUnread" type="number">
+  Total number of unread messages across all conversations.
+</ResponseField>
+
+<ResponseField name="unreadConversationCount" type="number">
+  Number of conversations with at least one unread message.
+</ResponseField>

@@ -1,0 +1,192 @@
+---
+title: "Upload image"
+description: "Upload an image with server-side processing and named variant generation"
+icon: "plug"
+---
+
+## Overview
+
+Uploads an image to Replyke storage. The server processes the image using Sharp, generates named variants according to the specified mode, and returns an [`Image`](/data-models/file) object with proxy URLs for all variants.
+
+Works in both browser and React Native environments. Provides upload progress tracking.
+
+<Note>Requires an authenticated user. The hook uses the private axios instance and will throw if no session is active.</Note>
+
+## Usage Example
+
+```tsx
+import { useUploadImage } from "@replyke/react-js";
+
+function AvatarUploader() {
+  const { uploadImage, uploading, progress } = useUploadImage();
+
+  const handleFile = async (file: File) => {
+    const image = await uploadImage(file, {
+      mode: "exact-dimensions",
+      dimensions: {
+        avatar: { width: 200, height: 200 },
+        thumbnail: { width: 64, height: 64 },
+      },
+      format: "webp",
+      quality: 85,
+    });
+
+    console.log(image.original.publicPath);
+    console.log(image.variants.avatar.publicPath);
+  };
+
+  return (
+    <div>
+      <input type="file" accept="image/*" onChange={e => e.target.files && handleFile(e.target.files[0])} />
+      {uploading && <p>Uploading... {progress}%</p>}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+`uploadImage(file, options)` accepts two arguments:
+
+<ParamField path="file" type="BrowserFile | RNFile" required>
+  The image to upload. In the browser, pass a standard `File` object. In React Native, pass `{ uri, name, type? }`.
+</ParamField>
+
+<ParamField path="options" type="UploadImageOptions" required>
+  Processing configuration. Must include a `mode` field. See [Processing Modes](#processing-modes) below.
+</ParamField>
+
+### Common Options (all modes)
+
+<ParamField body="quality" type="number">
+  JPEG/WebP quality, 1–100. Defaults to `85`.
+</ParamField>
+
+<ParamField body="format" type='"webp" | "jpeg" | "png" | "original"'>
+  Output format for all variants. Defaults to `"webp"`.
+</ParamField>
+
+<ParamField body="stripExif" type="boolean">
+  Whether to remove EXIF metadata from the output. Defaults to `true`.
+</ParamField>
+
+<ParamField body="pathParts" type="string[]">
+  Storage path segments. The file is stored under the joined path. Defaults to `["images", <fileId>]`.
+</ParamField>
+
+<ParamField body="entityId" type="string">
+  Associates the file with an entity for cascade deletion.
+</ParamField>
+
+<ParamField body="commentId" type="string">
+  Associates the file with a comment for cascade deletion.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Associates the file with a space for cascade deletion.
+</ParamField>
+
+<ParamField body="onProgress" type="(progress: number) => void">
+  Called with upload percentage (0–100) during the multipart upload.
+</ParamField>
+
+## Processing Modes
+
+### `exact-dimensions`
+
+Each variant has an explicit pixel width and height.
+
+```ts
+{
+  mode: "exact-dimensions",
+  dimensions: {
+    thumbnail: { width: 64, height: 64 },
+    card:      { width: 400, height: 300 },
+  },
+  fit?: "cover" | "contain" | "inside" | "outside", // default: "cover"
+}
+```
+
+### `aspect-ratio-width-based`
+
+All variants share a fixed aspect ratio. You specify widths; heights are computed.
+
+```ts
+{
+  mode: "aspect-ratio-width-based",
+  aspectRatio: { width: 16, height: 9 },
+  widths: { small: 320, medium: 640, large: 1280 },
+  fit?: "cover" | "contain" | "inside" | "outside",
+}
+```
+
+### `aspect-ratio-height-based`
+
+All variants share a fixed aspect ratio. You specify heights; widths are computed.
+
+```ts
+{
+  mode: "aspect-ratio-height-based",
+  aspectRatio: { width: 1, height: 1 },
+  heights: { small: 100, medium: 200 },
+  fit?: "cover" | "contain" | "inside" | "outside",
+}
+```
+
+### `original-aspect`
+
+Preserves the original image's aspect ratio. You specify the longest-edge size for each variant.
+
+```ts
+{
+  mode: "original-aspect",
+  sizes: { thumbnail: 100, medium: 400, full: 1200 },
+  fit?: "inside" | "outside",
+}
+```
+
+### `multi-aspect-ratio`
+
+Generates variants across multiple aspect ratios with explicit sizes.
+
+```ts
+{
+  mode: "multi-aspect-ratio",
+  aspectRatios: [{ width: 1, height: 1 }, { width: 16, height: 9 }],
+  sizes: { small: 200, large: 800 },
+  fit?: "cover" | "contain" | "inside" | "outside",
+}
+```
+
+## Returns
+
+<ResponseField name="uploadImage" type="(file, options) => Promise<Image>">
+  Async function that performs the upload and returns an [`Image`](/data-models/file) object on success.
+</ResponseField>
+
+<ResponseField name="uploading" type="boolean">
+  `true` while the upload is in progress.
+</ResponseField>
+
+<ResponseField name="progress" type="number">
+  Upload percentage (0–100). Resets to `0` when the upload finishes.
+</ResponseField>
+
+## Return Value Shape (`Image`)
+
+```ts
+{
+  fileId: string;
+  imageId: string;         // Same as fileId
+  status: "completed" | "failed";
+  original: ImageVariant;  // { path, publicPath, width, height, size, format }
+  variants: Record<string, ImageVariant>;
+  metadata: {
+    originalFormat: string;
+    originalSize: number;
+    exifStripped: boolean;
+    processingTime: number; // ms
+  };
+  createdAt: string;       // ISO 8601
+}
+```

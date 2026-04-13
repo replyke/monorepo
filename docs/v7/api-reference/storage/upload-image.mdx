@@ -1,0 +1,128 @@
+---
+title: "Upload Image"
+api: "POST /:projectId/api/v7/storage/images"
+description: "Upload an image with server-side processing and named variant generation"
+---
+
+Uploads an image, processes it with Sharp, and stores the original plus all requested variants. Returns proxy URLs for all variants immediately.
+
+This endpoint accepts `multipart/form-data`. Requires an authenticated user.
+
+**Rate limit**: 20 requests per 5 minutes.
+
+## Body Parameters
+
+<ParamField body="file" type="file" required>
+  The image file to upload. Must be a valid image format recognized by Sharp (JPEG, PNG, WebP, AVIF, TIFF, GIF, SVG). Maximum 50 MB.
+</ParamField>
+
+<ParamField body="mode" type="string" required>
+  Processing mode. One of: `exact-dimensions`, `aspect-ratio-width-based`, `aspect-ratio-height-based`, `original-aspect`, `multi-aspect-ratio`.
+</ParamField>
+
+<ParamField body="dimensions" type="object">
+  Required for `exact-dimensions` mode. An object mapping variant names to `{ width, height }` pairs.
+
+  ```json
+  { "thumbnail": { "width": 64, "height": 64 }, "card": { "width": 400, "height": 300 } }
+  ```
+</ParamField>
+
+<ParamField body="aspectRatio" type="object">
+  Required for `aspect-ratio-width-based` and `aspect-ratio-height-based` modes. `{ width, height }` ratio.
+</ParamField>
+
+<ParamField body="widths" type="object">
+  Required for `aspect-ratio-width-based` mode. An object mapping variant names to pixel widths.
+</ParamField>
+
+<ParamField body="heights" type="object">
+  Required for `aspect-ratio-height-based` mode. An object mapping variant names to pixel heights.
+</ParamField>
+
+<ParamField body="sizes" type="object">
+  Required for `original-aspect` and `multi-aspect-ratio` modes. An object mapping variant names to longest-edge pixel sizes.
+</ParamField>
+
+<ParamField body="aspectRatios" type="array">
+  Required for `multi-aspect-ratio` mode. Array of `{ width, height }` aspect ratio objects.
+</ParamField>
+
+<ParamField body="fit" type="string">
+  Sharp fit strategy. Defaults to `cover`. Valid values depend on the mode:
+  - `exact-dimensions`, `aspect-ratio-width-based`, `aspect-ratio-height-based`, `multi-aspect-ratio`: `cover`, `contain`, `inside`, or `outside`
+  - `original-aspect`: `inside` or `outside` only (`cover`/`contain` are not valid for this mode)
+</ParamField>
+
+<ParamField body="quality" type="number">
+  Output quality (1–100). Applies to JPEG and WebP. Defaults to `85`.
+</ParamField>
+
+<ParamField body="format" type="string">
+  Output format: `webp`, `jpeg`, `png`, or `original`. Defaults to `webp`.
+</ParamField>
+
+<ParamField body="stripExif" type="boolean">
+  Remove EXIF metadata from output. Defaults to `true`.
+</ParamField>
+
+<ParamField body="pathParts" type="array">
+  Storage path segments as a JSON-encoded array. Defaults to `["images", "<fileId>"]`.
+</ParamField>
+
+<ParamField body="entityId" type="string">
+  Associates the file with an entity for cascade deletion.
+</ParamField>
+
+<ParamField body="commentId" type="string">
+  Associates the file with a comment for cascade deletion.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Associates the file with a space.
+</ParamField>
+
+## Response
+
+```json
+{
+  "fileId": "uuid",
+  "type": "image",
+  "originalPath": "/internal/files/...",
+  "originalSize": 204800,
+  "originalWidth": 1920,
+  "originalHeight": 1080,
+  "variants": {
+    "thumbnail": {
+      "publicPath": "/internal/files/...",
+      "width": 64,
+      "height": 64,
+      "size": 3200,
+      "format": "webp"
+    }
+  },
+  "format": "webp",
+  "quality": 85,
+  "createdAt": "2025-01-01T00:00:00.000Z"
+}
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="No File — 400 Bad Request">
+    ```json
+    { "error": "No file provided", "code": "storage/no-file" }
+    ```
+  </Accordion>
+  <Accordion title="File Too Large — 413">
+    ```json
+    { "error": "File size exceeds the allowed limit of 50MB", "code": "storage/file-too-large" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Image — 422">
+    ```json
+    { "error": "Invalid image file", "code": "storage/invalid-image" }
+    ```
+  </Accordion>
+</AccordionGroup>

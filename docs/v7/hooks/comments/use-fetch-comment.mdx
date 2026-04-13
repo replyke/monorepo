@@ -1,0 +1,45 @@
+---
+title: "Fetch comment"
+description: "Fetch a single comment by its ID"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchComment` returns a function that fetches a single comment by ID. The response wraps the comment in a `{ comment }` object to allow future expansion of the response shape.
+
+## Usage Example
+
+```tsx
+import { useFetchComment } from "@replyke/react-js";
+
+function DeepLinkComment({ commentId }: { commentId: string }) {
+  const fetchComment = useFetchComment();
+
+  const load = async () => {
+    const { comment } = await fetchComment({
+      commentId,
+      include: ["user", "parent"],
+    });
+    console.log(comment);
+  };
+
+  return <button onClick={load}>Load Comment</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="commentId" type="string" required>
+  The ID of the comment to fetch.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="comment" type="Comment">
+  The fetched comment. When `"parent"` is included, `comment.parentComment` is populated. See [Comment data model](/data-models/comment).
+</ResponseField>

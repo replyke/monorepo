@@ -1,0 +1,54 @@
+---
+title: "Update Member Role"
+api: "PATCH /:projectId/api/v7/conversations/:conversationId/members/:userId/role"
+description: "Change a member's role in a group conversation"
+---
+
+Updates the role of an active member in a group conversation. Only group conversations have roles — this endpoint returns a 400 for direct and space conversations.
+
+The caller must be an active `admin`.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  The ID of the member whose role is being changed.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="role" type="string" required>
+  The new role. Accepted values: `"admin"`, `"member"`.
+</ParamField>
+
+## Response
+
+Returns the updated [ConversationMember](/data-models/conversation-member) record.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Conversation not found.", "code": "chat/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Type — 400 Bad Request">
+    ```json
+    { "error": "Roles can only be changed in group conversations.", "code": "chat/invalid-type" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "Only group admins can change member roles.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Member Not Found — 404">
+    ```json
+    { "error": "Member not found in this conversation.", "code": "chat/member-not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

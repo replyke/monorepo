@@ -1,0 +1,67 @@
+---
+title: "Report message"
+description: "Report a chat message for moderation review"
+icon: "plug"
+---
+
+## Overview
+
+Returns an async function that submits a moderation report for a chat message. The report is visible to space moderators and admins in the dashboard.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useReportMessage } from "@replyke/react-js";
+
+function MessageContextMenu({
+  conversationId,
+  messageId,
+}: {
+  conversationId: string;
+  messageId: string;
+}) {
+  const report = useReportMessage();
+
+  const handleReport = async () => {
+    await report({
+      conversationId,
+      messageId,
+      reason: "spam",
+      details: "This message is advertising unrelated products.",
+    });
+    alert("Report submitted.");
+  };
+
+  return <button onClick={handleReport}>Report message</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation that contains the message.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The ID of the message to report.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  A short reason for the report (e.g. `"spam"`, `"harassment"`).
+</ParamField>
+
+<ParamField body="details" type="string">
+  Additional context or description of the issue.
+</ParamField>
+
+## Returns
+
+`Promise<void>`
+
+## Notes
+
+- For integration guidance, see [Chat: Messages](/sdk/chat/messages).

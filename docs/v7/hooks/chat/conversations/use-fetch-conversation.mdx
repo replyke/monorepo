@@ -1,0 +1,47 @@
+---
+title: "Use fetch conversation"
+description: "Fetch a single conversation by ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns an async function that fetches the full details of a single conversation by ID. This is a low-level hook — it makes the API call and returns the result without touching Redux state. Use it when you need to fetch a conversation on demand rather than on mount.
+
+<Note>Requires `ChatProvider` in the component tree.</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchConversation } from "@replyke/react-js";
+
+function ConversationLoader({ conversationId }: { conversationId: string }) {
+  const fetchConversation = useFetchConversation();
+
+  const handleRefresh = async () => {
+    const conversation = await fetchConversation({ conversationId });
+    console.log(conversation);
+  };
+
+  return <button onClick={handleRefresh}>Refresh</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation to fetch.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Conversation" type="Conversation">
+  The fetched [Conversation](/data-models/conversation) object.
+</ResponseField>
+
+## Notes
+
+- This hook does not update Redux state. If you want the result stored and reactive, dispatch `setConversation` manually or use [`useConversation`](/hooks/chat/conversations/use-conversation) instead.
+- For integration guidance, see [Chat: Conversations](/sdk/chat/conversations).

@@ -1,0 +1,110 @@
+---
+title: "Getting Started"
+description: "Base URL, projectId scoping, request format, pagination, and error codes"
+---
+
+The Replyke REST API is a project-scoped HTTP API. All endpoints follow the same base structure and share common conventions for authentication, pagination, and error reporting.
+
+## Base URL
+
+All API requests are made to:
+
+```
+https://api.replyke.com/v7/:projectId
+```
+
+Replace `:projectId` with the UUID of your Replyke project, which you can find in the [Replyke dashboard](https://dash.replyke.com).
+
+So every endpoint takes the form:
+
+```
+https://api.replyke.com/v7/:projectId/<endpoint>
+```
+
+## Request Format
+
+Most endpoints accept `application/json`. Endpoints that support file uploads accept `multipart/form-data`. The `Content-Type` header should be set accordingly.
+
+```http
+POST /v7/:projectId/auth/sign-in
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "secret"
+}
+```
+
+## Authentication
+
+Protected endpoints require a `Bearer` token in the `Authorization` header:
+
+```http
+GET /v7/:projectId/app-notifications
+Authorization: Bearer <accessToken>
+```
+
+See [Authentication](/api-reference/authentication) for full details on obtaining and refreshing tokens.
+
+## Pagination
+
+Endpoints that return lists use cursor-free offset pagination. Pass `page` and `limit` as query parameters:
+
+| Parameter | Default | Max | Description |
+|-----------|---------|-----|-------------|
+| `page` | `1` | — | Page number (1-indexed) |
+| `limit` | varies | varies | Results per page (endpoint-specific) |
+
+Paginated responses always return the same envelope:
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "totalPages": 5,
+    "totalItems": 97,
+    "hasMore": true
+  }
+}
+```
+
+## Error Format
+
+All error responses follow a consistent structure:
+
+```json
+{
+  "error": "Human-readable error message.",
+  "code": "feature/error-slug"
+}
+```
+
+Some errors include an additional `field` key (e.g., validation errors on a specific input field):
+
+```json
+{
+  "error": "Username already taken",
+  "field": "username",
+  "code": "DUPLICATE_USERNAME"
+}
+```
+
+### Common HTTP Status Codes
+
+| Status | Meaning |
+|--------|---------|
+| `200` | Success |
+| `201` | Resource created |
+| `400` | Bad request — invalid input or missing required fields |
+| `401` | Unauthorized — missing or expired token |
+| `403` | Forbidden — valid token but insufficient permissions |
+| `404` | Not found |
+| `409` | Conflict — duplicate resource (e.g., email already in use) |
+| `429` | Rate limit exceeded |
+| `500` | Internal server error |
+
+## Rate Limiting
+
+Each endpoint has its own rate limit, applied per project and per IP. When a limit is exceeded, the API returns `429 Too Many Requests`. Limits are noted per endpoint in this reference.

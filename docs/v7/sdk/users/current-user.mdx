@@ -1,0 +1,36 @@
+---
+title: "Current User"
+description: "Reading and updating the authenticated user's own profile"
+---
+
+The Current User section covers everything related to the authenticated user's own data — reading their profile state and updating it. This is distinct from [User Profiles](/sdk/user-profiles/overview), which covers fetching other users' public profiles.
+
+## Hooks
+
+<CardGroup cols={2}>
+  <Card title="useUser" href="/hooks/user/use-user">
+    Access the authenticated user's full profile state, including loading and error states. Provides an `updateUser` action for modifying profile data.
+  </Card>
+</CardGroup>
+
+## What the Current User Can Do
+
+The authenticated user can update their own profile fields:
+
+- **Name** — display name shown across the platform
+- **Username** — unique handle (subject to availability)
+- **Avatar** — profile picture, uploaded as a file or set as a URL
+- **Banner** — profile banner image (file upload only)
+- **Bio** — short biography, up to 300 characters
+- **Birthdate** — optional date of birth
+- **Location** — optional geographic location (latitude/longitude)
+- **Metadata** — arbitrary JSON data for project-specific user properties
+- **Secure Metadata** — same as metadata but excluded from other users' views
+
+## User State
+
+The `useUser` hook returns an `AuthUser` object which contains the complete profile of the authenticated user, including fields that are not exposed in public profiles. See the [User data model](/data-models/user) for the full field reference.
+
+<Note>
+  The `AuthUser` type includes `authMethods` (e.g., `["password", "google"]`) and `suspensions` — fields only available for the authenticated user's own profile.
+</Note>

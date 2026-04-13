@@ -1,0 +1,88 @@
+---
+title: "Entity"
+description: "The Entity interface shape returned by the API and SDK"
+---
+
+An entity is the core content unit in Replyke — it can represent a post, article, product listing, video, or any other piece of content in your application. Entities support reactions, comments, votes, file attachments, geo-location, and more.
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique entity identifier (UUID). |
+| `foreignId` | `string \| null` | Your system's content ID, if this entity maps to existing data. Can also be a static identifier like `"about-page"`. |
+| `shortId` | `string` | Auto-generated short identifier, useful for sharing links. |
+| `projectId` | `string` | The project this entity belongs to. |
+| `sourceId` | `string \| null` | Groups entities by content type within a project. Useful when one project hosts multiple distinct categories of content (e.g. `"user-post"` vs `"blog-post"`), allowing you to filter and separate them without creating separate projects. |
+| `spaceId` | `string \| null` | The space this entity belongs to, if any. |
+| `space` | `Space \| null` | Populated space object when `include` contains `"space"`. |
+| `userId` | `string \| null` | ID of the user this entity is associated with. `null` if the entity is not associated with any user. |
+| `user` | `User \| null` | The author. Populated when `include` contains `"user"`. |
+| `title` | `string \| null` | Optional title. |
+| `content` | `string \| null` | Optional text content. |
+| `mentions` | `Mention[]` | Array of user mentions embedded in the content. |
+| `attachments` | `Record<string, any>[]` | Flexible array of media/attachment metadata objects. |
+| `files` | `File[]` | System-managed file associations. Populated when `include` contains `"files"`. |
+| `keywords` | `string[]` | Tags used for filtering and discovery. |
+| `upvotes` | `string[]` | Legacy v6 field — array of user IDs that upvoted. Use `reactionCounts` instead. |
+| `downvotes` | `string[]` | Legacy v6 field — array of user IDs that downvoted. Use `reactionCounts` instead. |
+| `reactionCounts` | `ReactionCounts` | Counts for all 8 reaction types. See [Reaction](/data-models/reaction). |
+| `userReaction` | `ReactionType \| null` | The current user's reaction. Only present when the user is authenticated and has reacted to this entity. |
+| `repliesCount` | `number` | Total number of comments and replies on this entity. |
+| `views` | `number` | View count. Auto-incremented on every fetch. Can also be incremented manually via the service-key-only `PATCH /entities/:entityId/increment-views` endpoint. |
+| `score` | `number` | Computed "hotness" score based on engagement activity. |
+| `scoreUpdatedAt` | `Date` | When the score was last recalculated. |
+| `location` | `GeoPoint \| null` | Optional geo-location stored as a GeoJSON point. |
+| `metadata` | `Record<string, any>` | Custom key-value data (max 10 KB). |
+| `topComment` | `TopComment \| null` | The highest-voted comment. Populated when `include` contains `"topComment"`. |
+| `isSaved` | `boolean` | Whether the current user has saved this entity to a collection. Populated when `include` contains `"saved"`. |
+| `isDraft` | `boolean \| null` | Whether this entity is in draft state. |
+| `moderationStatus` | `"approved" \| "removed" \| null` | Current space moderation status. |
+| `moderatedAt` | `Date \| null` | When the moderation action was taken. |
+| `moderatedById` | `string \| null` | ID of the moderator who took the action. |
+| `moderatedByType` | `"client" \| "user" \| null` | Whether a client (admin) or user performed moderation. |
+| `moderationReason` | `string \| null` | Reason provided for moderation. |
+| `createdAt` | `Date` | When the entity was created. |
+| `updatedAt` | `Date` | When the entity was last updated. |
+| `deletedAt` | `Date \| null` | Soft-delete timestamp. `null` for active entities. |
+
+## Nested Types
+
+### TopComment
+
+Included when the entity has at least one comment.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Comment identifier. |
+| `user` | `User` | The comment author. |
+| `upvotesCount` | `number` | Number of upvotes on this comment. |
+| `content` | `string` | Comment text content. |
+| `createdAt` | `string` | ISO timestamp string. |
+
+### GeoPoint
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | `"Point"` | GeoJSON geometry type. Always `"Point"`. |
+| `coordinates` | `[number, number]` | Longitude and latitude, in that order. |
+
+## Includes
+
+Pass an `include` array to populate optional fields:
+
+| Include value | Populates |
+|--------------|-----------|
+| `"user"` | `user` — the entity author |
+| `"space"` | `space` — the associated space |
+| `"topComment"` | `topComment` — top-voted comment |
+| `"saved"` | `isSaved` — whether current user saved this entity |
+| `"files"` | `files` — managed file records |
+
+## See Also
+
+- [Reaction](/data-models/reaction)
+- [File](/data-models/file)
+- [Space](/data-models/space)
+- [Fetch Entity](/api-reference/entities/fetch-entity)
+- [useEntity hook](/hooks/entities/use-entity)

@@ -1,0 +1,74 @@
+---
+title: "Infusing Data"
+description: "Merging Replyke entity data with data from your own backend"
+---
+
+**Data infusion** lets you merge Replyke entity data with records from your own system at the point of display. This is useful when your entities are linked to content in your own database (via `foreignId`) and you want to render a combined view without duplicating data in Replyke.
+
+## How It Works
+
+Pass an `infuseData` function to `useEntityList`. For each entity that has a `foreignId`, the hook calls your function with that `foreignId` and merges the result into the entity under an `infusion` key.
+
+Results are cached by `foreignId` — each external record is only fetched once per list instance.
+
+## Usage Example
+
+```tsx
+import { useEntityList } from "@replyke/react-js";
+import { useEffect } from "react";
+
+async function fetchProductDetails(productId: string) {
+  const res = await fetch(`/api/products/${productId}`);
+  if (!res.ok) return null;
+  return res.json(); // { price, stock, category, ... }
+}
+
+function ProductFeed() {
+  const { infusedEntities, fetchEntities, hasMore, loadMore } = useEntityList({
+    listId: "products",
+    infuseData: fetchProductDetails,
+  });
+
+  useEffect(() => {
+    fetchEntities({}, { sortBy: "new" }, { limit: 20 });
+  }, []);
+
+  return (
+    <ul>
+      {infusedEntities.map((entity) => (
+        <li key={entity.id}>
+          <strong>{entity.title}</strong>
+          {/* infusion fields from your own backend */}
+          <span>${entity.infusion.price}</span>
+          <span>{entity.infusion.stock} in stock</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## `infuseData` Signature
+
+```ts
+infuseData: (foreignId: string) => Promise<Record<string, any> | null>
+```
+
+- Called once per unique `foreignId` in the current list
+- Return `null` if the record is not found — the entity will still be included with an empty `infusion: {}` object
+- Errors thrown inside `infuseData` are caught and logged; the entity is included with empty infusion data
+
+## `infusedEntities` vs `entities`
+
+`useEntityList` returns two arrays:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `entities` | `Entity[]` | Raw entities from Replyke |
+| `infusedEntities` | `(Entity & { infusion: Record<string, any> })[]` | Entities merged with your external data |
+
+Use `infusedEntities` when rendering — it always has the same length as `entities` and contains an `infusion` object on each item (empty if no `foreignId` or if `infuseData` returned `null`).
+
+<Note>
+  If `infuseData` is not passed to `useEntityList`, `infusedEntities` will be an empty array. Always use `entities` when you do not need infusion.
+</Note>

@@ -1,0 +1,65 @@
+---
+title: "Digest & Newsletter"
+description: "Configure periodic content summaries delivered to a webhook endpoint"
+---
+
+Spaces can be configured to send a digest — a summary of recent content — to a webhook endpoint on a scheduled basis. This enables newsletter-style integrations where space activity is delivered to an external system (email platform, Slack, CMS, etc.).
+
+## How It Works
+
+The digest system is configured per space by admins. When enabled, Replyke periodically sends a webhook payload to the configured URL containing recent space activity. The exact delivery format and payload structure are determined by the webhook handler on your server.
+
+## Fetching Digest Config
+
+Only space admins can fetch the digest configuration:
+
+```tsx
+import { useFetchDigestConfig } from "@replyke/react-js";
+
+const fetchDigestConfig = useFetchDigestConfig();
+const config = await fetchDigestConfig({ spaceId });
+
+// config: {
+//   digestEnabled: boolean,
+//   digestWebhookUrl: string | null,
+//   digestWebhookSecret: string | null,  // Masked as "••••••••" when set
+//   digestScheduleHour: number | null,   // 0-23 (UTC hour of delivery)
+//   digestTimezone: string | null,
+// }
+```
+
+<Note>The `digestWebhookSecret` is masked in the response when a secret is set. It is never returned in plain text.</Note>
+
+## Updating Digest Config
+
+```tsx
+import { useUpdateDigestConfig } from "@replyke/react-js";
+
+const updateDigestConfig = useUpdateDigestConfig();
+
+await updateDigestConfig({
+  spaceId,
+  digestEnabled: true,
+  digestWebhookUrl: "https://your-server.com/hooks/digest",
+  digestWebhookSecret: "your-secret-token",
+  digestScheduleHour: 9,    // 9 AM
+  digestTimezone: "America/New_York",
+});
+```
+
+### Configuration Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `digestEnabled` | `boolean` | Enable or disable digest delivery. |
+| `digestWebhookUrl` | `string \| null` | URL to POST the digest payload to. |
+| `digestWebhookSecret` | `string \| null` | Secret for verifying webhook authenticity. Pass `null` to clear. |
+| `digestScheduleHour` | `number \| null` | UTC hour (0–23) when the digest is sent. |
+| `digestTimezone` | `string \| null` | IANA timezone string for schedule interpretation (e.g., `"America/New_York"`). |
+
+## Hook Reference
+
+| Hook | Description |
+|------|-------------|
+| [`useFetchDigestConfig`](/hooks/spaces/use-fetch-digest-config) | Fetch the digest configuration for a space |
+| [`useUpdateDigestConfig`](/hooks/spaces/use-update-digest-config) | Update the digest configuration |

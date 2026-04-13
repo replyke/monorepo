@@ -1,0 +1,33 @@
+---
+title: "Fetch Rule"
+api: "GET /:projectId/api/v7/spaces/:spaceId/rules/:ruleId"
+description: "Get a single community rule by its ID"
+---
+
+Fetches a single rule by ID. Publicly accessible.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="ruleId" type="string" required>
+  UUID of the rule.
+</ParamField>
+
+## Response
+
+A single Rule object with all fields.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Rule not found.", "code": "rule/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchRule](/hooks/spaces/rules/use-fetch-rule)

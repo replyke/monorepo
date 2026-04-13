@@ -1,0 +1,40 @@
+---
+title: "Overview"
+description: "Personal hierarchical bookmark system for saving entities"
+---
+
+## What Are Collections?
+
+Collections are a personal bookmarking system built into Replyke. Each authenticated user has a private library of named folders — called collections — where they can save entities for later reference.
+
+Collections are hierarchical: every user starts with a root collection and can create unlimited sub-collections nested inside it or inside each other.
+
+<Note>Collections are private. They belong to and are only visible to the user who created them.</Note>
+
+## How It Works
+
+1. **Root collection** — automatically created the first time a user accesses their collections. Acts as the top-level folder and cannot be renamed or deleted.
+2. **Sub-collections** — folders created inside the root or inside other sub-collections. Can be renamed and deleted.
+3. **Entities** — saved into the current collection. The same entity can appear in multiple collections.
+
+## Hooks
+
+<CardGroup cols={2}>
+  <Card title="useCollections" href="/hooks/collections/use-collections">
+    Navigate the collection hierarchy and perform CRUD operations on the current collection context.
+  </Card>
+  <Card title="useCollectionsActions" href="/hooks/collections/use-collections-actions">
+    Lower-level actions for fetching, creating, updating, and deleting collections.
+  </Card>
+  <Card title="useCollectionEntitiesWrapper" href="/hooks/collections/use-collection-entities-wrapper">
+    Fetch paginated entities saved in a specific collection with sort and load-more support.
+  </Card>
+</CardGroup>
+
+<Note>
+  To check whether a specific entity is saved in any of the user's collections, see [useIsEntitySaved](/hooks/entities/use-is-entity-saved) in the entities section.
+</Note>
+
+## Data Model
+
+See [Collection](/data-models/collection) for the full field reference.

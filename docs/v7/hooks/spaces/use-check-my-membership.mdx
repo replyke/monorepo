@@ -1,0 +1,52 @@
+---
+title: "Check my membership"
+description: "Check the current user's membership status in a space"
+icon: "plug"
+---
+
+## Overview
+
+`useCheckMyMembership` returns a callable function that checks the authenticated user's membership in a specific space without loading the full space object.
+
+## Usage Example
+
+```tsx
+import { useCheckMyMembership } from "@replyke/react-js";
+
+function MembershipBadge({ spaceId }: { spaceId: string }) {
+  const checkMembership = useCheckMyMembership();
+
+  const handleCheck = async () => {
+    const result = await checkMembership({ spaceId });
+    console.log(result.isMember, result.role, result.status);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space to check membership for.
+</ParamField>
+
+## Returns
+
+<ResponseField name="isMember" type="boolean">
+  Whether the user has an active membership.
+</ResponseField>
+
+<ResponseField name="role" type='"admin" | "moderator" | "member" | null'>
+  The user's role. `null` if not a member.
+</ResponseField>
+
+<ResponseField name="status" type='"pending" | "active" | "banned" | "rejected" | null'>
+  The user's membership status. `null` if no membership record exists.
+</ResponseField>
+
+<ResponseField name="joinedAt" type="Date | null">
+  When the membership was created. `null` if not a member.
+</ResponseField>
+
+<ResponseField name="permissions" type="object">
+  Resolved permissions: `canPost`, `canModerate`, `canRead`, `isAdmin`, `isModerator`.
+</ResponseField>

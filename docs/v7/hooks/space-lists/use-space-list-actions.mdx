@@ -1,0 +1,45 @@
+---
+title: "Use space list actions"
+description: "Low-level actions for fetching, creating, and deleting spaces in a list"
+icon: "cube"
+---
+
+## Overview
+
+`useSpaceListActions` provides the low-level fetch, create, and delete operations used internally by `useSpaceList`. In most cases you should use [`useSpaceList`](/hooks/space-lists/use-space-list) directly, which wraps these actions with Redux state management.
+
+Use this hook only when you need direct control over fetching without the Redux list state layer.
+
+## Usage Example
+
+```tsx
+import { useSpaceListActions } from "@replyke/react-js";
+
+function CustomSpaceLoader({ listId }: { listId: string }) {
+  const actions = useSpaceListActions();
+
+  const loadSpaces = async () => {
+    await actions.fetchSpaces(listId, {
+      page: 1,
+      sortBy: "newest",
+      limit: 20,
+    });
+  };
+}
+```
+
+## Methods
+
+<ResponseField name="fetchSpaces" type="(listId: string, params: FetchParams) => Promise<Space[] | null>">
+  Fetch spaces for the given list. Updates Redux state with the results.
+</ResponseField>
+
+<ResponseField name="createSpace" type="(listId: string, props: CreateSpaceProps) => Promise<Space | undefined>">
+  Create a space and insert it into the given list's state.
+</ResponseField>
+
+<ResponseField name="deleteSpace" type="(listId: string, props: { spaceId: string }) => Promise<void>">
+  Delete a space and remove it from the given list's state.
+</ResponseField>
+
+<Tip>Prefer `useSpaceList` for most use cases — it handles pagination state, debouncing, and load-more automatically.</Tip>

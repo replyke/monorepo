@@ -1,0 +1,34 @@
+---
+title: "Use comment section"
+description: "Access comment section state and actions from CommentSectionProvider"
+icon: "cube"
+---
+
+## Overview
+
+`useCommentSection` reads from the nearest `CommentSectionProvider` and returns the full comment section state and actions. It does not fetch data itself — all data loading is managed by the provider.
+
+<Note>
+  `useCommentSection` must be used inside a `CommentSectionProvider`. See [Comment Section](/sdk/comments/comment-section) for setup and the full return value reference.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useCommentSection } from "@replyke/react-js";
+
+function CommentList() {
+  const { comments, newComments, loading, hasMore, loadMore } = useCommentSection();
+
+  return (
+    <>
+      {[...newComments, ...comments].map((comment) => (
+        <div key={comment.id}>{comment.content}</div>
+      ))}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+    </>
+  );
+}
+```
+
+See [Comment Section](/sdk/comments/comment-section) for the complete return value reference.

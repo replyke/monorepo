@@ -1,0 +1,89 @@
+---
+title: "Update digest config"
+description: "Update the digest/newsletter configuration for a space"
+icon: "plug"
+---
+
+## Overview
+
+`useUpdateDigestConfig` returns a callable function for updating a space's digest configuration. Only space admins can update this. All fields are optional — only provided fields are updated.
+
+## Usage Example
+
+```tsx
+import { useUpdateDigestConfig } from "@replyke/react-js";
+
+function DigestSettings({ spaceId }: { spaceId: string }) {
+  const updateDigestConfig = useUpdateDigestConfig();
+
+  const handleSave = async () => {
+    await updateDigestConfig({
+      spaceId,
+      update: {
+        digestEnabled: true,
+        digestWebhookUrl: "https://your-server.com/hooks/digest",
+        digestScheduleHour: 8,
+        digestTimezone: "Europe/London",
+      },
+    });
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="update" type="object" required>
+  Object containing the digest config fields to update. All fields are optional — only provided fields are changed.
+
+  <Expandable title="update fields">
+    <ParamField path="update.digestEnabled" type="boolean">
+      Enable or disable digest delivery.
+    </ParamField>
+
+    <ParamField path="update.digestWebhookUrl" type="string | null">
+      URL to POST digest payloads to. Pass `null` to clear.
+    </ParamField>
+
+    <ParamField path="update.digestWebhookSecret" type="string | null">
+      Secret for verifying webhook authenticity. Pass `null` to clear.
+    </ParamField>
+
+    <ParamField path="update.digestScheduleHour" type="number | null">
+      UTC hour (0–23) for delivery. Pass `null` to clear.
+    </ParamField>
+
+    <ParamField path="update.digestTimezone" type="string | null">
+      IANA timezone string. Pass `null` to clear.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+The updated digest configuration object.
+
+<ResponseField name="digestEnabled" type="boolean">
+  Whether digest delivery is enabled.
+</ResponseField>
+
+<ResponseField name="digestWebhookUrl" type="string | null">
+  URL digests are POSTed to, or `null` if not set.
+</ResponseField>
+
+<ResponseField name="digestWebhookSecret" type="string | null">
+  Masked secret (`"••••••••"`) when set, or `null` if not configured.
+</ResponseField>
+
+<ResponseField name="digestScheduleHour" type="number | null">
+  UTC hour (0–23) for digest delivery, or `null` if not set.
+</ResponseField>
+
+<ResponseField name="digestTimezone" type="string | null">
+  IANA timezone string, or `null` if not set.
+</ResponseField>
+
+For integration guidance, see [Digest & Newsletter](/sdk/spaces/digest-newsletter).

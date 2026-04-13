@@ -1,0 +1,44 @@
+---
+title: "Create Group Conversation"
+api: "POST /:projectId/api/v7/conversations"
+description: "Create a new multi-member group conversation"
+---
+
+Creates a group conversation. The caller is automatically added as an `admin`. All provided `memberIds` are validated to belong to the project and added as `member`.
+
+## Body Parameters
+
+<ParamField body="type" type="string" required>
+  Must be `"group"`.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name of the conversation. Maximum 200 characters. Optional.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description for the conversation. Maximum 1000 characters.
+</ParamField>
+
+<ParamField body="memberIds" type="string[]">
+  Array of user IDs to add to the conversation. Defaults to `[]`. The caller's own ID is ignored if included — they are always added as admin. All IDs must belong to the same project.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Custom key-value data to attach to the conversation. Optional.
+</ParamField>
+
+## Response
+
+Returns the created [Conversation](/data-models/conversation) object with HTTP `201`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Member — 400 Bad Request">
+    ```json
+    { "error": "User 'abc' does not belong to this project.", "code": "chat/invalid-member" }
+    ```
+    One or more provided user IDs do not exist in this project.
+  </Accordion>
+</AccordionGroup>

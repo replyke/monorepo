@@ -1,0 +1,73 @@
+---
+title: "Use space permissions"
+description: "Compute resolved permissions for a user in a space"
+icon: "cube"
+---
+
+## Overview
+
+`useSpacePermissions` is a utility hook that computes derived permission flags from a user's raw membership permissions and the space's permission settings. It is used internally by `useSpaceData` and exposed for cases where you need to compute permissions outside of a `SpaceProvider`.
+
+<Tip>In most cases, you should use `useSpace` instead — it exposes `isMember`, `isAdmin`, `canPost`, etc. directly. Use `useSpacePermissions` only when working outside a SpaceProvider context.</Tip>
+
+## Usage Example
+
+```tsx
+import { useSpacePermissions } from "@replyke/core";
+
+const permissions = useSpacePermissions({
+  memberPermissions: space.memberPermissions,
+  postingPermission: space.postingPermission,
+  readingPermission: space.readingPermission,
+});
+
+console.log(permissions.canPost, permissions.isAdmin);
+```
+
+## Parameters
+
+<ParamField path="memberPermissions" type="SpaceMemberPermissions | null | undefined" required>
+  The raw membership permissions object from the space. `null` or `undefined` if the user is not a member.
+</ParamField>
+
+<ParamField path="postingPermission" type='"anyone" | "members" | "admins"' required>
+  The space's posting permission setting.
+</ParamField>
+
+<ParamField path="readingPermission" type='"anyone" | "members"'>
+  The space's reading permission setting. Defaults to `"anyone"`.
+</ParamField>
+
+## Returns
+
+<ResponseField name="isMember" type="boolean">
+  Whether the user is an active member.
+</ResponseField>
+
+<ResponseField name="isAdmin" type="boolean">
+  Whether the user is an admin.
+</ResponseField>
+
+<ResponseField name="isModerator" type="boolean">
+  Whether the user is a moderator.
+</ResponseField>
+
+<ResponseField name="canPost" type="boolean">
+  Whether the user can post, given the space's posting permission and their membership status.
+</ResponseField>
+
+<ResponseField name="canModerate" type="boolean">
+  Whether the user can moderate content.
+</ResponseField>
+
+<ResponseField name="canRead" type="boolean">
+  Whether the user can read content, given the space's reading permission.
+</ResponseField>
+
+<ResponseField name="isPending" type="boolean">
+  Whether the user has a pending membership.
+</ResponseField>
+
+<ResponseField name="isBanned" type="boolean">
+  Whether the user is banned.
+</ResponseField>

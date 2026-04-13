@@ -1,0 +1,39 @@
+---
+title: "Add Comment Reaction"
+api: "POST /:projectId/api/v7/comments/:commentId/reactions"
+description: "Add or update a reaction on a comment"
+---
+
+Adds a reaction of the specified type to a comment. If the user already has a reaction on this comment, it is replaced with the new type. The comment's `reactionCounts` map is updated accordingly.
+
+**Authentication required.**
+
+## Path Parameters
+
+<ParamField path="commentId" type="string" required>
+  The UUID of the comment to react to.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="reactionType" type="string" required>
+  The type of reaction to add. One of: `upvote`, `downvote`, `like`, `love`, `wow`, `sad`, `angry`, `funny`.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Override which user the reaction is attributed to. **Service or master key only.**
+</ParamField>
+
+## Response
+
+Returns the updated [Comment](/data-models/comment) object with the new `reactionCounts` map.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Comment not found.", "code": "comment/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

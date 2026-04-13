@@ -1,0 +1,42 @@
+---
+title: "Unfollow by follow ID"
+description: "Remove a follow relationship using the follow record ID"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that removes a follow by its `followId`. Use this when you have the follow ID available (e.g., from a followers list response). If you only have the user ID, use `useUnfollowUserByUserId` instead.
+
+## Usage Example
+
+```tsx
+import { useUnfollowByFollowId } from "@replyke/react-js";
+
+function RemoveFollowerButton({ followId }: { followId: string }) {
+  const unfollowByFollowId = useUnfollowByFollowId();
+
+  return (
+    <button onClick={() => unfollowByFollowId({ followId })}>
+      Remove
+    </button>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="followId" type="string" required>
+  The ID of the follow record to delete.
+</ParamField>
+
+## Returns
+
+The function returns `Promise<void>`.
+
+## Related
+
+- [useUnfollowUserByUserId](/hooks/follows/use-unfollow-user-by-user-id) — unfollow by user ID instead
+- [useFetchFollowers](/hooks/follows/use-fetch-followers) — returns `followId` in each follower entry

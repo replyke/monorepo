@@ -1,0 +1,53 @@
+---
+title: "List OAuth Identities"
+api: "GET /:projectId/api/v7/oauth/identities"
+description: "List all OAuth identities linked to the current user"
+---
+
+Returns all OAuth identities linked to the authenticated user's account, ordered by creation date. Use this to display connected accounts on a settings page.
+
+Requires a valid access token.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer {accessToken}` — a valid access token for the authenticated user.
+</ParamField>
+
+## Response
+
+<ResponseField name="identities" type="OAuthIdentity[]">
+  Array of linked identities, ordered oldest first.
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      Unique identity ID (UUID).
+    </ResponseField>
+    <ResponseField name="provider" type="string">
+      OAuth provider name (e.g., `"google"`, `"github"`, `"external"`).
+    </ResponseField>
+    <ResponseField name="providerAccountId" type="string">
+      The user's account ID at the provider.
+    </ResponseField>
+    <ResponseField name="email" type="string | null">
+      Email address returned by the provider.
+    </ResponseField>
+    <ResponseField name="name" type="string | null">
+      Name returned by the provider.
+    </ResponseField>
+    <ResponseField name="avatar" type="string | null">
+      Avatar URL returned by the provider.
+    </ResponseField>
+    <ResponseField name="isVerified" type="boolean">
+      Whether the provider marked the email as verified.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO timestamp of when the identity was linked.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## See Also
+
+- [`useOAuthIdentities` hook](/hooks/auth/use-oauth-identities)
+- [Unlink Identity](/api-reference/oauth/unlink-identity)
+- [OAuth integration guide](/sdk/authentication/oauth)
