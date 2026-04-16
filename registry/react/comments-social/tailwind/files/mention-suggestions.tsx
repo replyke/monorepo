@@ -1,6 +1,5 @@
 import { User } from "@replyke/react-js";
 import { UserAvatar, UserMentionSkeleton } from "@replyke/ui-core-react-js";
-import useUIState from "../hooks/use-ui-state";
 
 function MentionSuggestions({
   isMentionActive,

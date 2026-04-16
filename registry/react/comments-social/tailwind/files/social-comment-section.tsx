@@ -54,13 +54,11 @@
  */
 import React from "react";
 import { Entity } from "@replyke/react-js";
-import { cn } from "@/lib/utils";
 import useSocialComments from "../hooks/use-social-comments";
 import { SortByButton } from "./sort-by-button";
 import CommentsFeed from "./comments-feed/comments-feed";
 import NewCommentForm from "./new-comment-form";
 import { deepEqual, warnPropChanges } from "../utils/prop-comparison";
-import useUIState from "../hooks/use-ui-state";
 
 interface SocialCommentSectionProps {
   entity?: Entity | undefined | null;

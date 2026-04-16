@@ -22,10 +22,8 @@ import {
   useTextareaCursorIndicator,
 } from "@replyke/ui-core-react-js";
 
-import { cn } from "@/lib/utils";
 import ReplyBanner from "./reply-banner";
 import MentionSuggestions from "./mention-suggestions";
-import useUIState from "../hooks/use-ui-state";
 
 function NewCommentForm() {
   const { user } = useUser();
