@@ -1,0 +1,20 @@
+import { ReplykeHttpClient } from "../../core/client";
+import { SpaceMembersResponse } from "../../interfaces/SpaceMember";
+
+export interface FetchSpaceMembersProps {
+  spaceId: string;
+  page?: number;
+  limit?: number;
+}
+
+export async function fetchSpaceMembers(
+  client: ReplykeHttpClient,
+  data: FetchSpaceMembersProps
+): Promise<SpaceMembersResponse> {
+  const { spaceId, ...params } = data;
+  const response = await client.projectInstance.get<SpaceMembersResponse>(
+    `/spaces/${spaceId}/members`,
+    { params }
+  );
+  return response.data;
+}

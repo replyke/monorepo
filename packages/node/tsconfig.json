@@ -3,10 +3,11 @@
     "target": "esnext",
     "module": "esnext",
     "declaration": true,
+    "rootDir": "./src",
     "outDir": "dist",
     "strict": true,
     "esModuleInterop": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },

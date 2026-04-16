@@ -1,0 +1,159 @@
+import { PaginatedResponse } from "./IPaginatedResponse";
+import { File } from "./File";
+
+export type ReadingPermission = "anyone" | "members";
+export type PostingPermission = "anyone" | "members" | "admins";
+
+export type SpaceMemberRole = "admin" | "moderator" | "member";
+export type SpaceMemberStatus = "pending" | "active" | "banned" | "rejected";
+
+export interface SpaceMemberPermissions {
+  isAdmin: boolean;
+  isModerator: boolean;
+  isMember: boolean;
+  status: "pending" | "active" | "banned" | null;
+  canPost: boolean;
+  canModerate: boolean;
+  canRead: boolean;
+}
+
+export interface SpacePreview {
+  id: string;
+  shortId: string;
+  name: string;
+  slug: string | null;
+  avatarFileId: string | null;
+  readingPermission?: ReadingPermission;
+  parentSpaceId?: string | null;
+  depth?: number;
+  avatarFile?: File;
+}
+
+export interface Space {
+  id: string;
+  projectId: string;
+  shortId: string;
+  slug: string | null;
+  name: string;
+  description: string | null;
+  avatarFileId: string | null;
+  bannerFileId: string | null;
+  userId: string;
+  readingPermission: ReadingPermission;
+  postingPermission: PostingPermission;
+  requireJoinApproval: boolean;
+  parentSpaceId: string | null;
+  depth: number;
+  metadata: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+  membersCount: number;
+  childSpacesCount: number;
+  isMember?: boolean; // Only present when user is authenticated
+  avatarFile?: File;
+  bannerFile?: File;
+}
+
+// Returned from single-space fetch endpoints — extends Space with extra context
+export interface SpaceDetailed extends Space {
+  memberPermissions: SpaceMemberPermissions | null;
+  parentSpace: SpacePreview | null;
+  childSpaces: SpacePreview[];
+}
+
+export interface UserSpaceItem {
+  space: Space;
+  membership: {
+    membershipId: string;
+    role: SpaceMemberRole;
+    status: SpaceMemberStatus;
+    joinedAt: Date;
+  };
+}
+
+export type UserSpacesResponse = PaginatedResponse<UserSpaceItem>;
+
+export interface JoinSpaceResponse {
+  message: string;
+  membership: {
+    id: string;
+    spaceId: string;
+    userId: string;
+    role: "member";
+    status: "pending" | "active";
+    joinedAt: Date;
+  };
+}
+
+export interface LeaveSpaceResponse {
+  message: string;
+}
+
+export interface UpdateMemberRoleResponse {
+  message: string;
+  membership: {
+    id: string;
+    role: SpaceMemberRole;
+    status: string;
+    joinedAt: Date;
+    userId: string;
+  };
+}
+
+export interface ApproveMemberResponse {
+  message: string;
+  membership: {
+    id: string;
+    status: "active";
+    joinedAt: Date;
+  };
+}
+
+export interface DeclineMemberResponse {
+  message: string;
+  membership: {
+    id: string;
+    status: "rejected";
+  };
+}
+
+export interface CheckMyMembershipResponse {
+  isMember: boolean;
+  role: "admin" | "moderator" | "member" | null;
+  status: "pending" | "active" | "banned" | "rejected" | null;
+  joinedAt: Date | null;
+  permissions: {
+    canPost: boolean;
+    canModerate: boolean;
+    canRead: boolean;
+    isAdmin: boolean;
+    isModerator: boolean;
+  };
+}
+
+export interface DeleteSpaceResponse {
+  message: string;
+  deletedSpace: {
+    id: string;
+    name: string;
+  };
+  counts: {
+    entities: number;
+    members: number;
+    childSpaces: number;
+  };
+}
+
+export interface DigestConfig {
+  digestEnabled: boolean;
+  digestWebhookUrl: string | null;
+  digestWebhookSecret: string | null; // Masked as "••••••••" when set
+  digestScheduleHour: number | null;
+  digestTimezone: string | null;
+}
+
+export interface SpaceBreadcrumb {
+  breadcrumb: SpacePreview[];
+  depth: number;
+}

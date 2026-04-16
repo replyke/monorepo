@@ -6,20 +6,16 @@ type AppNotificationType =
   | "comment-mention"
   | "entity-upvote"
   | "comment-upvote"
+  | "entity-reaction"
+  | "comment-reaction"
+  | "entity-reaction-milestone-specific"
+  | "entity-reaction-milestone-total"
+  | "comment-reaction-milestone-specific"
+  | "comment-reaction-milestone-total"
   | "new-follow"
   | "connection-request"
-  | "connection-accepted";
-// | "followRequest"
-// | "followRequestAccepted"
-// | "friendRequest"
-// | "friendRequestAccepted"
-// | "postShare"
-// | "eventInvite"
-// | "groupInvite"
-// | "groupJoinRequest"
-// | "groupJoinRequestApproved"
-// | "system"
-// | "custom";
+  | "connection-accepted"
+  | "space-membership-approved";
 
 interface BaseAppNotification {
   id: string; // Unique identifier (UUID)
@@ -159,6 +155,119 @@ export interface CommentUpvoteNotification extends BaseAppNotification {
   };
 }
 
+export interface EntityReactionNotification extends BaseAppNotification {
+  type: "entity-reaction";
+  action: "open-entity";
+  metadata: {
+    entityId: string;
+    entityShortId: string;
+    entityTitle: string | null | undefined;
+    entityContent: string | null | undefined;
+    reactionType: string;
+    initiatorId: string;
+    initiatorName: string | null | undefined;
+    initiatorUsername: string | null | undefined;
+    initiatorAvatar: string | null | undefined;
+  };
+}
+
+export interface CommentReactionNotification extends BaseAppNotification {
+  type: "comment-reaction";
+  action: "open-comment";
+  metadata: {
+    entityId: string;
+    entityShortId: string;
+    entityTitle: string | null | undefined;
+    entityContent: string | null | undefined;
+    commentId: string;
+    commentContent: string | null | undefined;
+    reactionType: string;
+    initiatorId: string;
+    initiatorName: string | null | undefined;
+    initiatorUsername: string | null | undefined;
+    initiatorAvatar: string | null | undefined;
+  };
+}
+
+interface MilestoneUser {
+  id: string;
+  name: string | null | undefined;
+  username: string | null | undefined;
+  avatar: string | null | undefined;
+}
+
+export interface EntityReactionMilestoneSpecificNotification extends BaseAppNotification {
+  type: "entity-reaction-milestone-specific";
+  action: "open-entity";
+  metadata: {
+    entityId: string;
+    entityShortId: string;
+    entityTitle: string | null | undefined;
+    entityContent: string | null | undefined;
+    reactionType: string;
+    milestoneCount: number;
+    lastThreeUsers: MilestoneUser[];
+  };
+}
+
+export interface EntityReactionMilestoneTotalNotification extends BaseAppNotification {
+  type: "entity-reaction-milestone-total";
+  action: "open-entity";
+  metadata: {
+    entityId: string;
+    entityShortId: string;
+    entityTitle: string | null | undefined;
+    entityContent: string | null | undefined;
+    milestoneCount: number;
+    reactionCounts: Record<string, number>;
+    lastThreeUsers: MilestoneUser[];
+  };
+}
+
+export interface CommentReactionMilestoneSpecificNotification extends BaseAppNotification {
+  type: "comment-reaction-milestone-specific";
+  action: "open-comment";
+  metadata: {
+    entityId: string;
+    entityShortId: string;
+    entityTitle: string | null | undefined;
+    entityContent: string | null | undefined;
+    commentId: string;
+    commentContent: string | null | undefined;
+    reactionType: string;
+    milestoneCount: number;
+    lastThreeUsers: MilestoneUser[];
+  };
+}
+
+export interface CommentReactionMilestoneTotalNotification extends BaseAppNotification {
+  type: "comment-reaction-milestone-total";
+  action: "open-comment";
+  metadata: {
+    entityId: string;
+    entityShortId: string;
+    entityTitle: string | null | undefined;
+    entityContent: string | null | undefined;
+    commentId: string;
+    commentContent: string | null | undefined;
+    milestoneCount: number;
+    reactionCounts: Record<string, number>;
+    lastThreeUsers: MilestoneUser[];
+  };
+}
+
+export interface SpaceMembershipApprovedNotification extends BaseAppNotification {
+  type: "space-membership-approved";
+  action: "open-space";
+  metadata: {
+    spaceId: string;
+    spaceName: string;
+    spaceShortId: string;
+    spaceSlug: string | null | undefined;
+    spaceAvatar: string | null | undefined;
+  };
+}
+
 export interface NewFollowNotification extends BaseAppNotification {
   type: "new-follow";
   action: "open-profile";
@@ -275,7 +384,6 @@ export interface ConnectionAcceptedNotification extends BaseAppNotification {
 //   metadata: Record<string, any>; // Flexible metadata for custom notifications
 // }
 
-// Unified Notification Type
 export type UnifiedAppNotification =
   | SystemNotification
   | EntityCommentNotification
@@ -284,38 +392,16 @@ export type UnifiedAppNotification =
   | CommentMentionNotification
   | EntityUpvoteNotification
   | CommentUpvoteNotification
+  | EntityReactionNotification
+  | CommentReactionNotification
+  | EntityReactionMilestoneSpecificNotification
+  | EntityReactionMilestoneTotalNotification
+  | CommentReactionMilestoneSpecificNotification
+  | CommentReactionMilestoneTotalNotification
   | NewFollowNotification
   | ConnectionRequestNotification
-  | ConnectionAcceptedNotification;
-// | LikeNotification
-// | ReplyNotification
-// | MentionNotification
-// | TagNotification
-// | FollowRequestNotification
-// | FollowRequestAcceptedNotification
-// | FriendRequestNotification
-// | FriendRequestAcceptedNotification
-// | PostShareNotification
-// | EventInviteNotification
-// | GroupInviteNotification
-// | GroupJoinRequestNotification
-// | GroupJoinRequestApprovedNotification
-// | SystemNotification
-// | CustomNotification;
-
-export type NotificationTemplate = { title?: string; content?: string };
-
-export type NotificationTemplates = {
-  entityComment: NotificationTemplate;
-  commentReply: NotificationTemplate;
-  entityMention: NotificationTemplate;
-  commentMention: NotificationTemplate;
-  entityUpvote: NotificationTemplate;
-  commentUpvote: NotificationTemplate;
-  newFollow: NotificationTemplate;
-  connectionRequest: NotificationTemplate;
-  connectionAccepted: NotificationTemplate;
-};
+  | ConnectionAcceptedNotification
+  | SpaceMembershipApprovedNotification;
 
 export type PotentiallyPopulatedUnifiedAppNotification =
   UnifiedAppNotification & {

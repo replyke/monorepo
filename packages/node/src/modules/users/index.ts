@@ -1,4 +1,18 @@
-import { fetchUserById } from "./fetchUserById";
-import { fetchUserByForeignId } from "./fetchUserByForeignId";
-
-export { fetchUserById, fetchUserByForeignId };
+export { fetchUserById } from "./fetchUserById";
+export { fetchUserByForeignId } from "./fetchUserByForeignId";
+export { fetchUserByUsername } from "./fetchUserByUsername";
+export { fetchUserSuggestions } from "./fetchUserSuggestions";
+export { checkUsernameAvailability } from "./checkUsernameAvailability";
+export { updateUser } from "./updateUser";
+export { createFollow } from "./createFollow";
+export { deleteFollow } from "./deleteFollow";
+export { fetchFollowStatus } from "./fetchFollowStatus";
+export { fetchFollowersByUserId } from "./fetchFollowersByUserId";
+export { fetchFollowersCountByUserId } from "./fetchFollowersCountByUserId";
+export { fetchFollowingByUserId } from "./fetchFollowingByUserId";
+export { fetchFollowingCountByUserId } from "./fetchFollowingCountByUserId";
+export { requestConnection } from "./requestConnection";
+export { fetchConnectionStatus } from "./fetchConnectionStatus";
+export { removeConnectionByUserId } from "./removeConnectionByUserId";
+export { fetchConnectionsByUserId } from "./fetchConnectionsByUserId";
+export { fetchConnectionsCountByUserId } from "./fetchConnectionsCountByUserId";

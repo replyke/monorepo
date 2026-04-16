@@ -10,7 +10,6 @@ export interface EstablishedConnection {
   id: string;
   connectedUser: User;
   connectedAt: string;
-  requestedAt: string;
 }
 
 export interface PendingConnection extends Connection {

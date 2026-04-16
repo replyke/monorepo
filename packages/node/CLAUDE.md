@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is the **@replyke/node** package - the official Node.js SDK for Replyke. It's designed for server-side Node.js environments where React is not available or needed, such as server actions, backend APIs, scheduled jobs, webhooks, and CLI tools.
 
 **Package Name**: @replyke/node
-**Version**: 6.0.0-beta.0
+**Version**: 7.0.0
 **Type**: Node.js SDK library (published to npm)
 
 ## Development Commands
@@ -295,14 +295,14 @@ Essentially any Node.js environment where you need to interact with Replyke's so
 
 - **TypeScript**: Strict mode enabled
 - **Dependencies**: Only axios for HTTP requests
-- **API Version**: Uses v5 API endpoints
+- **API Version**: Uses v7 API endpoints
 - **Authentication**: Bearer token with project ID header
 - **Error Handling**: Axios error responses
 - **Type Safety**: Full TypeScript support with exported interfaces
 
 ## Important Notes
 
-- This SDK is currently in **beta** (v6.0.0-beta.0)
+- This SDK is on **v7** (v7.0.0)
 - Requires valid project ID and API key from Replyke dashboard
 - Credentials are verified on initialization
 - All API calls are project-scoped

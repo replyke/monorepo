@@ -1,6 +1,7 @@
 import { Entity } from "./Entity";
 import { Mention } from "./Mention";
 import { User } from "./User";
+import { ReactionCounts, ReactionType } from "./Reaction";
 
 export interface GifData {
   id: string;
@@ -12,23 +13,32 @@ export interface GifData {
 }
 
 export interface Comment {
-  id: string; // Sequelize auto-generates this
-  projectId: string; // Required
+  id: string;
+  projectId: string;
   foreignId: string | null;
-  entityId: string; // Required
-  entity?: Entity; // We might request to include the entity when fetching comments
+  entityId: string;
+  entity?: Entity; // Populated when include contains "entity" or "space"
   userId: string;
-  user: User;
-  parentId: string | null; // Optional parent comment (if it's a reply)
-  content: string | null; // Required
+  user?: User; // Populated when include contains "user"
+  parentId: string | null;
+  parentComment?: Comment; // Populated when include contains "parent"
+  content: string | null;
   gif: GifData | null;
   mentions: Mention[];
-  upvotes: string[]; // Array of user IDs
-  downvotes: string[]; // Array of user IDs
-  repliesCount: number; // Count of replies
-  metadata: Record<string, any>; // JSON object that could contain any other data about the comment which is relevant. Limited to 10KB size.
-  createdAt: Date; // Timestamp for creation
-  updatedAt: Date; // Timestamp for updating
-  deletedAt: Date | null; // Timestamp for updating
-  parentDeletedAt: Date | null; // Timestamp for updating
+  upvotes: string[];   // Legacy v6 — v7 uses reactionCounts
+  downvotes: string[]; // Legacy v6 — v7 uses reactionCounts
+  reactionCounts: ReactionCounts;
+  userReaction?: ReactionType | null; // Present when authenticated
+  repliesCount: number;
+  metadata: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+  parentDeletedAt: Date | null; // Legacy v6
+  userDeletedAt: Date | null;   // v7 user-initiated deletion (Reddit-style placeholder)
+  moderationStatus: "approved" | "removed" | null;
+  moderatedAt: Date | null;
+  moderatedById: string | null;
+  moderatedByType: "client" | "user" | null;
+  moderationReason: string | null;
 }

@@ -1,0 +1,35 @@
+import { GifData } from "./Comment";
+import { File } from "./File";
+import { Mention } from "./Mention";
+import { User } from "./User";
+
+export interface ChatMessage {
+  id: string;
+  projectId: string;
+  conversationId: string;
+  userId: string | null; // null when the sender's account has been deleted
+  content: string | null;
+  gif: GifData | null;
+  mentions: Mention[];
+  files?: File[]; // Opt-in only — omitted by default
+  metadata: Record<string, any>;
+  parentMessageId: string | null;
+  quotedMessageId: string | null;
+  threadReplyCount: number;
+  reactionCounts: Record<string, number>; // emoji → count
+  userReactions: string[];               // emojis the requesting user reacted with
+  editedAt: Date | null;
+  userDeletedAt: Date | null;
+  moderationStatus: "approved" | "removed" | null;
+  moderatedAt: Date | null;
+  moderatedById: string | null;
+  moderatedByType: "client" | "user" | null;
+  moderationReason: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Populated fields
+  user: User | null;
+  quotedMessage?: ChatMessage | null;
+  parentMessage?: ChatMessage | null;
+}
