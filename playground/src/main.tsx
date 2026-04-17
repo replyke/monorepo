@@ -11,7 +11,7 @@ const PRIVATE_KEY = import.meta.env.VITE_PRIVATE_KEY as string | undefined;
 
 if (!PROJECT_ID) {
   throw new Error(
-    "VITE_PROJECT_ID is not set. Copy .env.example to .env and fill in your values."
+    "VITE_PROJECT_ID is not set. Copy .env.example to .env and fill in your values.",
   );
 }
 
@@ -30,7 +30,7 @@ function ReplykeWrapper({ children }: { children: React.ReactNode }) {
     signTestingJwt({
       projectId: PROJECT_ID,
       privateKey: PRIVATE_KEY,
-      payload: {
+      userData: {
         id: user.username,
         username: user.username,
       },
@@ -38,7 +38,7 @@ function ReplykeWrapper({ children }: { children: React.ReactNode }) {
   }, [user, signTestingJwt]);
 
   return (
-    <ReplykeProvider projectId={PROJECT_ID} signedToken={token ?? null}>
+    <ReplykeProvider projectId={PROJECT_ID} signedToken={token}>
       {children}
     </ReplykeProvider>
   );
@@ -51,5 +51,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <App />
       </ReplykeWrapper>
     </AuthProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

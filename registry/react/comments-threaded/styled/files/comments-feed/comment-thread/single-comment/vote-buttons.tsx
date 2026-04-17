@@ -2,62 +2,40 @@ import {
   useCommentSection,
   useUser,
   Comment as CommentType,
-  useCommentVotes,
+  useReactionToggle,
 } from "@replyke/react-js";
 import useUIState from "../../../../hooks/use-ui-state";
 
 interface VoteButtonsProps {
   comment: CommentType;
-  setComment: React.Dispatch<React.SetStateAction<CommentType>>;
   size?: "small" | "normal";
 }
 
 function VoteButtons({
   comment,
-  setComment,
   size = "small",
 }: VoteButtonsProps) {
   const { theme } = useUIState();
   const { user } = useUser();
   const { callbacks } = useCommentSection();
 
-  const {
-    upvoteComment,
-    downvoteComment,
-    removeCommentUpvote,
-    removeCommentDownvote,
-  } = useCommentVotes({
-    comment,
-    setComment,
+  const { currentReaction, reactionCounts, toggleReaction } = useReactionToggle({
+    targetType: "comment",
+    targetId: comment.id,
+    initialReaction: comment.userReaction,
+    initialReactionCounts: comment.reactionCounts,
   });
 
-  const upvotes = comment.upvotes?.length || 0;
-  const downvotes = comment.downvotes?.length || 0;
-  const netScore = upvotes - downvotes;
+  const netScore = (reactionCounts.upvote || 0) - (reactionCounts.downvote || 0);
 
-  // Check if user has voted on this comment
-  const userUpvotedComment = !!(user && comment.upvotes.includes(user.id));
-  const userDownvotedComment = !!(user && comment.downvotes.includes(user.id));
-  const userVote: "up" | "down" | null = userUpvotedComment
+  const userVote: "up" | "down" | null = currentReaction === "upvote"
     ? "up"
-    : userDownvotedComment
+    : currentReaction === "downvote"
     ? "down"
     : null;
 
   const handleVote = (voteType: "up" | "down") => {
-    if (voteType === "up") {
-      if (userUpvotedComment) {
-        removeCommentUpvote?.();
-      } else {
-        upvoteComment?.();
-      }
-    } else {
-      if (userDownvotedComment) {
-        removeCommentDownvote?.();
-      } else {
-        downvoteComment?.();
-      }
-    }
+    toggleReaction({ reactionType: voteType === "up" ? "upvote" : "downvote" });
   };
 
   // 🎨 CUSTOMIZATION: Vote button styling (Default: 12px for small, 16px for normal)

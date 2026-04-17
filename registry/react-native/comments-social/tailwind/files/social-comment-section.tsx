@@ -43,7 +43,7 @@
  */
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { Entity } from "@replyke/core";
+import { Entity } from "@replyke/react-native";
 import useSocialComments from "../hooks/use-social-comments";
 import { deepEqual, warnPropChanges } from "../utils/prop-comparison";
 import useUIState from "../hooks/use-ui-state";

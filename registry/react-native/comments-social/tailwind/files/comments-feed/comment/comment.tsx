@@ -9,12 +9,11 @@ import {
 } from "react-native";
 import {
   Comment as CommentType,
-  useCommentVotes,
+  useReactionToggle,
   useCommentSection,
   useUser,
   getUserName,
-  handleError,
-} from "@replyke/core";
+} from "@replyke/react-native";
 import {
   UserAvatar,
   FromNow,
@@ -47,10 +46,12 @@ const Comment = React.memo(
     const heartIconEmptyColor = theme === 'dark' ? '#9CA3AF' : '#8E8E8E';
     const heartIconFullColor = theme === 'dark' ? '#F87171' : '#DC2626';
 
-    const [comment, setComment] = useState(commentFromSection);
-    const { upvoteComment, removeCommentUpvote } = useCommentVotes({
-      comment,
-      setComment,
+    const [comment] = useState(commentFromSection);
+    const { currentReaction, reactionCounts, toggleReaction } = useReactionToggle({
+      targetType: "comment",
+      targetId: comment.id,
+      initialReaction: comment.userReaction,
+      initialReactionCounts: comment.reactionCounts,
     });
 
     const handleUpvoteComment = () => {
@@ -64,11 +65,7 @@ const Comment = React.memo(
         return;
       }
 
-      try {
-        upvoteComment();
-      } catch (err) {
-        handleError(err, "Failed to upvote comment");
-      }
+      toggleReaction({ reactionType: "like" });
     };
 
     const handleRemoveCommentUpvote = () => {
@@ -77,14 +74,10 @@ const Comment = React.memo(
         return;
       }
 
-      try {
-        removeCommentUpvote();
-      } catch (err) {
-        handleError(err, "Failed to upvote comment");
-      }
+      toggleReaction({ reactionType: "like" });
     };
 
-    const userUpvotedComment = !!(user && comment.upvotes.includes(user.id));
+    const userUpvotedComment = currentReaction === "like";
     const isOwner = comment.userId === user?.id;
 
     const imageStyle = {
@@ -237,7 +230,7 @@ const Comment = React.memo(
                   theme === 'dark' ? 'text-gray-400' : 'text-neutral-500'
                 }`}
               >
-                {comment.upvotes.length}
+                {reactionCounts.like || 0}
               </Text>
             </View>
           </View>

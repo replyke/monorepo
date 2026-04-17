@@ -133,12 +133,12 @@ function SocialCommentSectionInner({
           key={priority}
           priority={priority}
           activeView={
-            <div className="bg-black dark:bg-gray-800 px-2 py-1 rounded-md text-white dark:text-gray-50 text-xs">
+            <div className="bg-black px-2 py-1 rounded-md text-white text-xs">
               {label}
             </div>
           }
           nonActiveView={
-            <div className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded-md text-xs">
+            <div className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded-md text-gray-900 dark:text-gray-50 text-xs">
               {label}
             </div>
           }
@@ -151,7 +151,7 @@ function SocialCommentSectionInner({
     <div className="h-full flex flex-col">
       {sortOptions.length > 0 && (
         <div
-          className="flex px-6 py-3 items-center gap-1 justify-end"
+          className="flex px-6 py-3 items-center gap-1 justify-end bg-white dark:bg-gray-800"
         >
           {renderSortButtons()}
         </div>

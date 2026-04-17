@@ -1,5 +1,5 @@
 import { TouchableOpacity, Text, View } from "react-native";
-import { useUser, Comment as CommentType } from "@replyke/core";
+import { useUser, Comment as CommentType } from "@replyke/react-native";
 import useUIState from "../../../hooks/use-ui-state";
 
 interface ActionMenuProps {

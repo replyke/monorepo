@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import { useCommentSection, getUserName } from "@replyke/core";
+import { useCommentSection, getUserName } from "@replyke/react-native";
 import useUIState from "../../hooks/use-ui-state";
 
 const ReplyBanner = () => {

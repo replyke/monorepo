@@ -1,5 +1,5 @@
 import React, { createContext, useState, useRef, useMemo, useCallback } from "react";
-import { Comment as CommentType } from "@replyke/core";
+import { Comment as CommentType } from "@replyke/react-native";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 

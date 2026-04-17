@@ -38,17 +38,28 @@ function NewReplyForm({
       return;
     }
 
+    const tempContent = replyContent.trim();
+
+    // Clear optimistically before the API call
+    setReplyContent("");
+    setShowReplyForm(false);
     setIsSubmitting(true);
+
     try {
-      await createComment?.({
-        content: replyContent.trim(),
+      const result = await createComment?.({
+        content: tempContent,
         parentId: comment.id,
         mentions: [],
       });
-      setReplyContent("");
-      setShowReplyForm(false);
+      if (result === undefined) {
+        // SDK handled the failure and removed the optimistic comment; restore form
+        setReplyContent(tempContent);
+        setShowReplyForm(true);
+      }
     } catch (error) {
       console.error("Error creating reply:", error);
+      setReplyContent(tempContent);
+      setShowReplyForm(true);
     } finally {
       setIsSubmitting(false);
     }

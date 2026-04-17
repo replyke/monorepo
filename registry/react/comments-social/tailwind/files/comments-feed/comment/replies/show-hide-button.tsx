@@ -68,8 +68,8 @@ const ShowHideButton = ({
         if (action.includes("hide")) setAreRepliesVisible(false);
         if (action.includes("load-more")) setPage((p) => p + 1);
       }}
-      style={resetButton}
-      className="pt-2 pl-14 pr-4 flex items-center gap-3"
+      style={{ ...resetButton, paddingTop: 8, paddingLeft: 56, paddingRight: 16 }}
+      className="flex items-center gap-3"
     >
       {/* Button line */}
       <div

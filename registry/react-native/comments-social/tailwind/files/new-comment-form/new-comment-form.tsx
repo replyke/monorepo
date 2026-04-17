@@ -19,9 +19,9 @@ import {
   handleError,
   useUser,
   useCommentSection,
-  useMentions,
+  useUserMentions,
   useProject,
-} from "@replyke/core";
+} from "@replyke/react-native";
 import {
   UserAvatar,
   useTextInputCursorIndicator,
@@ -73,7 +73,7 @@ function NewCommentForm({
     mentions,
     addMention,
     resetMentions,
-  } = useMentions({
+  } = useUserMentions({
     content,
     setContent,
     focus: () => textAreaRef.current?.focus(),
@@ -82,18 +82,35 @@ function NewCommentForm({
   });
 
   const handleCreateComment = useCallback(async () => {
+    if (!user) {
+      callbacks?.loginRequiredCallback?.();
+      return;
+    }
+
+    if (!user.username && callbacks?.usernameRequiredCallback) {
+      callbacks.usernameRequiredCallback();
+      return;
+    }
+
     const tempContent = content;
+    const tempMentions = mentions;
+
+    // Clear optimistically before the API call
+    setContent("");
+    resetMentions();
+    Keyboard.dismiss();
 
     try {
-      setContent("");
-      Keyboard.dismiss();
-      await createComment!({ content, mentions });
-      resetMentions();
+      const result = await createComment!({ content: tempContent, mentions: tempMentions });
+      if (result === undefined) {
+        // SDK handled the failure and removed the optimistic comment; restore form
+        setContent(tempContent);
+      }
     } catch (err) {
       setContent(tempContent);
       handleError(err, "Creating comment failed: ");
     }
-  }, [createComment, mentions, resetMentions, callbacks, user]);
+  }, [createComment, content, mentions, resetMentions, callbacks, user]);
 
   const handleCreateGif = useCallback(
     async (gif: {

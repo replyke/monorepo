@@ -1,5 +1,5 @@
 import { View, ActivityIndicator } from "react-native";
-import { useCommentSection } from "@replyke/core";
+import { useCommentSection } from "@replyke/react-native";
 import useUIState from "../../hooks/use-ui-state";
 
 const CommentsFooterComponent = () => {

@@ -3,7 +3,7 @@ import {
   CommentsSortByOptions,
   CommentSectionProvider,
   Entity,
-} from "@replyke/core";
+} from "@replyke/react-native";
 import { UIStateProvider } from "../context/ui-state-context";
 
 import CommentsFeed from "../files/comments-feed/comments-feed";

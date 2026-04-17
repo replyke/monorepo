@@ -8,7 +8,7 @@ import {
 import {
   useCommentSection,
   handleError,
-  useMentions,
+  useUserMentions,
   useUser,
   useProject,
 } from "@replyke/react-js";
@@ -53,7 +53,7 @@ function NewCommentForm() {
     mentions,
     addMention,
     resetMentions,
-  } = useMentions({
+  } = useUserMentions({
     content: textAreaRef.current?.value || "",
     setContent: (value: string) => {
       if (textAreaRef.current) textAreaRef.current.value = value;
@@ -79,14 +79,23 @@ function NewCommentForm() {
     if (!textArea) throw new Error("Can not find textarea");
 
     const tempContent = textArea.value;
+    const tempMentions = mentions;
+
+    // Clear optimistically before the API call
     textArea.value = "";
+    setContent("");
+    resetMentions();
 
     try {
-      await createComment!({ content: tempContent, mentions });
-      resetMentions();
+      const result = await createComment!({ content: tempContent, mentions: tempMentions });
+      if (result === undefined) {
+        // SDK handled the failure and removed the optimistic comment; restore textarea
+        textArea.value = tempContent;
+        setContent(tempContent);
+      }
     } catch (err) {
       textArea.value = tempContent;
-
+      setContent(tempContent);
       handleError(err, "Creating comment failed: ");
     }
   }, [createComment, mentions, resetMentions, callbacks, user]);

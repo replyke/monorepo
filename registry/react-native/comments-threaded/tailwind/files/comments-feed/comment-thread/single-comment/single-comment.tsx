@@ -5,7 +5,7 @@ import {
   getUserName,
   useCommentSection,
   useUser,
-} from "@replyke/core";
+} from "@replyke/react-native";
 import {
   parseContentWithMentions,
   UserAvatar,
@@ -41,7 +41,7 @@ function SingleComment({
   const { user } = useUser();
   const { callbacks, highlightedComment } = useCommentSection();
   const { theme } = useUIState();
-  const [comment, setComment] = useState(commentFromSection);
+  const [comment] = useState(commentFromSection);
   const [showReplyForm, setShowReplyForm] = useState(false);
 
   // Dynamically get the correct Image component
@@ -220,7 +220,6 @@ function SingleComment({
                   <View>
                     <VoteButtons
                       comment={comment}
-                      setComment={setComment}
                       size="small"
                     />
                   </View>

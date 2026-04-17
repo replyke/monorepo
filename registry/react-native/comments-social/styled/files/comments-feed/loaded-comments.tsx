@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import { FlatList } from "react-native";
-import { Comment as CommentType, useCommentSection } from "@replyke/core";
+import { Comment as CommentType, useCommentSection } from "@replyke/react-native";
 import { Comment } from "./comment";
 import CommentsFooterComponent from "./comments-footer-component";
 

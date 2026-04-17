@@ -1,6 +1,6 @@
 import React, { ReactNode, useMemo } from "react";
 import { View } from "react-native";
-import { useCommentSection } from "@replyke/core";
+import { useCommentSection } from "@replyke/react-native";
 import LoadedComments from "./loaded-comments";
 import FetchingCommentsSkeletons from "./fetching-comments-skeletons";
 import NoCommentsPlaceHolder from "./no-comments-placeholder";

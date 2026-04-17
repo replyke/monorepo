@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, FlatList } from "react-native";
-import { User, useCommentSection } from "@replyke/core";
+import { User, useCommentSection } from "@replyke/react-native";
 import { UserAvatar, UserMentionSkeleton } from "@replyke/ui-core-react-native";
 import useUIState from "../../hooks/use-ui-state";
 

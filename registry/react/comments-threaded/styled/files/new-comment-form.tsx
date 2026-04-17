@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from "react";
 import {
   useCommentSection,
   useUser,
-  useMentions,
+  useUserMentions,
   useProject,
   handleError,
 } from "@replyke/react-js";
@@ -40,7 +40,7 @@ function NewCommentForm() {
     mentions,
     addMention,
     resetMentions,
-  } = useMentions({
+  } = useUserMentions({
     content: textAreaRef.current?.value || "",
     setContent: (value: string) => {
       if (textAreaRef.current) {
@@ -55,6 +55,7 @@ function NewCommentForm() {
 
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {
+      console.log("Before");
       e?.preventDefault();
 
       const textArea = textAreaRef.current;
@@ -76,15 +77,27 @@ function NewCommentForm() {
     }
 
       const tempContent = textArea.value.trim();
+      const tempMentions = mentions;
+
+      console.log("Before 2");
+      // Clear optimistically before the API call
+      textArea.value = "";
+      setContent("");
+      resetMentions();
+      console.log("After");
       setIsSubmitting(true);
 
       try {
-        await createComment?.({ content: tempContent, mentions });
-        textArea.value = "";
-        setContent("");
-        resetMentions();
+        const result = await createComment?.({ content: tempContent, mentions: tempMentions });
+        if (result === undefined) {
+          // SDK handled the failure and removed the optimistic comment; restore textarea
+          textArea.value = tempContent;
+          setContent(tempContent);
+        }
       } catch (error) {
         console.error("Error creating comment:", error);
+        textArea.value = tempContent;
+        setContent(tempContent);
       } finally {
         setIsSubmitting(false);
       }

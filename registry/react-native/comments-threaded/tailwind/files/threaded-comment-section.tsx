@@ -45,7 +45,7 @@
  */
 import React from "react";
 import { View, ScrollView } from "react-native";
-import { Entity } from "@replyke/core";
+import { Entity } from "@replyke/react-native";
 import useThreadedComments from "../hooks/use-threaded-comments";
 import { deepEqual, warnPropChanges } from "../utils/prop-comparison";
 import useUIState from "../hooks/use-ui-state";

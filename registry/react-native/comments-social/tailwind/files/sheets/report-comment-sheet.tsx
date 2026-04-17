@@ -7,7 +7,7 @@ import {
   useUser,
   useCommentSection,
   useCreateReport,
-} from "@replyke/core";
+} from "@replyke/react-native";
 import { FlagIcon, CustomButton } from "@replyke/ui-core-react-native";
 
 import BottomSheet, {

@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import {
   Comment as CommentType,
-  useCommentVotes,
+  useReactionToggle,
   getUserName,
   useUser,
   useCommentSection,
-  handleError,
 } from "@replyke/react-js";
 
 import {
@@ -45,16 +44,17 @@ const Comment = React.memo(
 
     const [hovered, setHovered] = useState(false); // State to track hover
 
-    const [comment, setComment] = useState(commentFromSection);
-    const { upvoteComment, removeCommentUpvote } = useCommentVotes({
-      comment,
-      setComment,
+    const [comment] = useState(commentFromSection);
+    const { currentReaction, reactionCounts, toggleReaction } = useReactionToggle({
+      targetType: "comment",
+      targetId: comment.id,
+      initialReaction: comment.userReaction,
+      initialReactionCounts: comment.reactionCounts,
     });
 
     const handleUpvoteComment = () => {
       if (!user) {
-        
-          callbacks?.loginRequiredCallback?.();
+        callbacks?.loginRequiredCallback?.();
         return;
       }
 
@@ -63,28 +63,19 @@ const Comment = React.memo(
         return;
       }
 
-      try {
-        upvoteComment();
-      } catch (err) {
-        handleError(err, "Failed to upvote comment");
-      }
+      toggleReaction({ reactionType: "like" });
     };
 
     const handleRemoveCommentUpvote = () => {
       if (!user) {
-        
-          callbacks?.loginRequiredCallback?.();
+        callbacks?.loginRequiredCallback?.();
         return;
       }
 
-      try {
-        removeCommentUpvote();
-      } catch (err) {
-        handleError(err, "Failed to upvote comment");
-      }
+      toggleReaction({ reactionType: "like" });
     };
 
-    const userUpvotedComment = !!(user && comment.upvotes.includes(user.id));
+    const userUpvotedComment = currentReaction === "like";
 
     return (
       <div
@@ -287,7 +278,7 @@ const Comment = React.memo(
                   fontWeight: 400,
                 }}
               >
-                {comment.upvotes.length}
+                {reactionCounts.like || 0}
               </div>
             </div>
           </div>

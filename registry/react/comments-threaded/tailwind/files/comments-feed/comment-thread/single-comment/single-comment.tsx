@@ -38,7 +38,7 @@ function SingleComment({
 }: SingleCommentProps) {
   const { user } = useUser();
   const { callbacks, highlightedComment } = useCommentSection();
-  const [comment, setComment] = useState(commentFromSection);
+  const [comment] = useState(commentFromSection);
   const [showReplyForm, setShowReplyForm] = useState(false);
 
   const maxDepth = 6; // Limit visual nesting depth
@@ -194,7 +194,6 @@ function SingleComment({
                   <div className="flex-shrink-0">
                     <VoteButtons
                       comment={comment}
-                      setComment={setComment}
                       size="small"
                     />
                   </div>

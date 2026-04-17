@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { TouchableOpacity } from "react-native";
-import { CommentsSortByOptions, useCommentSection } from "@replyke/core";
+import { CommentsSortByOptions, useCommentSection } from "@replyke/react-native";
 
 function SortByButton({
   priority,

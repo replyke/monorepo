@@ -113,10 +113,10 @@ function SocialCommentSectionInner({
   const buttonStyles = {
     active: {
       // 🎨 CUSTOMIZATION: Sort button active styles
-      backgroundColor: theme === 'dark' ? '#1F2937' : 'black',
+      backgroundColor: 'black',
       padding: "4px 8px",
       borderRadius: "6px",
-      color: theme === 'dark' ? '#F9FAFB' : 'white',
+      color: 'white',
       fontSize: "12px",
     },
     inactive: {
@@ -124,6 +124,7 @@ function SocialCommentSectionInner({
       backgroundColor: theme === 'dark' ? '#4B5563' : '#e5e7eb',
       padding: "4px 8px",
       borderRadius: "6px",
+      color: theme === 'dark' ? '#F9FAFB' : '#000000',
       fontSize: "12px",
     },
   };
@@ -165,6 +166,7 @@ function SocialCommentSectionInner({
             alignItems: "center",
             gap: "4px",
             justifyContent: "flex-end",
+            backgroundColor: theme === 'dark' ? "#1F2937" : "white",
           }}
         >
           {renderSortButtons()}

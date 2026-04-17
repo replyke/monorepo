@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { Comment as CommentType, useCommentSection } from "@replyke/core";
+import { Comment as CommentType, useCommentSection } from "@replyke/react-native";
 import CommentThread from "./comment-thread";
 
 function LoadedComments({ data }: { data: CommentType[] }) {
