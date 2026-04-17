@@ -54,7 +54,7 @@ function NotificationControl({
   notificationTemplates?: AppNotification.NotificationTemplates;
   onViewAllNotifications?: () => void;
   onNotificationClick: (
-    notification: AppNotification.PotentiallyPopulatedUnifiedAppNotification
+    notification: AppNotification.PotentiallyPopulatedUnifiedAppNotification,
   ) => void;
   triggerComponent: React.ComponentType<{ unreadCount: number }>;
 }) {
@@ -129,7 +129,7 @@ function NotificationControl({
     const viewportWidth = window.innerWidth;
     const dropdownWidth = Math.min(
       400,
-      viewportWidth <= 768 ? viewportWidth - 32 : 400
+      viewportWidth <= 768 ? viewportWidth - 32 : 400,
     );
     const padding = 16;
 
@@ -183,7 +183,7 @@ function NotificationControl({
         const maxLeft = viewportWidth - dropdownWidth - padding;
         const idealLeft = Math.max(
           padding,
-          Math.min(maxLeft, triggerRight - dropdownWidth)
+          Math.min(maxLeft, triggerRight - dropdownWidth),
         );
 
         return {
@@ -207,11 +207,11 @@ function NotificationControl({
   };
 
   const handleMarkAsRead = (notificationId: string) => {
-    markNotificationAsRead(notificationId);
+    markNotificationAsRead({ notificationId });
   };
 
   const handleNotificationClick = (
-    notification: AppNotification.UnifiedAppNotification
+    notification: AppNotification.UnifiedAppNotification,
   ) => {
     if (!notification.isRead) {
       handleMarkAsRead(notification.id);
@@ -256,7 +256,7 @@ function NotificationControl({
           }}
           className={cn(
             "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700",
-            "rounded-[10px] shadow-lg z-[60] p-0"
+            "rounded-[10px] shadow-lg z-[60] p-0",
           )}
         >
           {/* Header */}
@@ -276,7 +276,7 @@ function NotificationControl({
                 className={cn(
                   "bg-transparent border-none p-1 text-xs text-gray-600 dark:text-gray-400",
                   "cursor-pointer rounded flex items-center transition-colors",
-                  "hover:text-gray-900 dark:hover:text-gray-100"
+                  "hover:text-gray-900 dark:hover:text-gray-100",
                 )}
               >
                 <CheckCheck className="w-3 h-3 mr-1" />
@@ -312,7 +312,7 @@ function NotificationControl({
                     className={cn(
                       "w-full bg-transparent border-none p-2 text-xs text-gray-600 dark:text-gray-400",
                       "cursor-pointer rounded transition-colors",
-                      "hover:text-gray-900 dark:hover:text-gray-100"
+                      "hover:text-gray-900 dark:hover:text-gray-100",
                     )}
                   >
                     View all notifications

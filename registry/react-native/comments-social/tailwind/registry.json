@@ -9,7 +9,7 @@
   "dependencies": [
     "@replyke/react-native@^7.0.0",
     "@replyke/ui-core-react-native@^7.0.0",
-    "@gorhom/bottom-sheet@^4.0.0",
+    "@gorhom/bottom-sheet@^5.0.0",
     "nativewind@^4.0.0"
   ],
   "files": [

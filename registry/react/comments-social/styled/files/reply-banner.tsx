@@ -56,7 +56,7 @@ function ReplyBanner() {
         <button
           onClick={() => {
             setRepliedToComment!(null);
-            setShowReplyBanner!(false);
+            setShowReplyBanner!({ newState: false });
           }}
           style={{ ...resetButton, fontSize: 16 }}
         >

@@ -129,6 +129,11 @@ const getIconConfig = (isDark = false) => {
       color: { light: "#16a34a", dark: "#22c55e" },
       backgroundColor: { light: "#dcfce7", dark: "rgba(34, 197, 94, 0.15)" },
     },
+    "space-membership-approved": {
+      Icon: UserPlus,
+      color: { light: "#16a34a", dark: "#22c55e" },
+      backgroundColor: { light: "#dcfce7", dark: "rgba(34, 197, 94, 0.15)" },
+    },
   };
 
   // Convert to theme-specific format

@@ -199,7 +199,7 @@ function SocialCommentSection({
   children,
 }: SocialCommentSectionProps) {
   const { CommentSectionProvider } = useSocialComments({
-    entity,
+    entity: entity ?? undefined,
     entityId,
     foreignId,
     shortId,

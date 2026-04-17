@@ -37,7 +37,7 @@ const ReplyBanner = () => {
         <TouchableOpacity
           onPress={() => {
             setRepliedToComment?.(null);
-            setShowReplyBanner?.(false);
+            setShowReplyBanner?.({ newState: false });
           }}
         >
           <Text

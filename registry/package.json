@@ -4,12 +4,12 @@
   "private": true,
   "description": "Component registry for Replyke CLI - development dependencies only",
   "devDependencies": {
-    "@gorhom/bottom-sheet": "^4.0.0",
-    "@replyke/expo": "7.0.0-beta.110",
-    "@replyke/react-js": "7.0.0-beta.110",
-    "@replyke/react-native": "7.0.0-beta.110",
-    "@replyke/ui-core-react-js": "7.0.0-beta.0",
-    "@replyke/ui-core-react-native": "7.0.0-beta.0",
+    "@gorhom/bottom-sheet": "^5.2.9",
+    "@replyke/expo": "^7.0.0",
+    "@replyke/react-js": "^7.0.0",
+    "@replyke/react-native": "^7.0.0",
+    "@replyke/ui-core-react-js": "7.0.0",
+    "@replyke/ui-core-react-native": "7.0.0",
     "@types/react": "^19.2.14",
     "@types/react-native": "^0.73.0",
     "@types/styled-components": "^5.1.36",
@@ -21,7 +21,7 @@
     "react-native": "^0.85.1",
     "styled-components": "^6.4.0",
     "tailwind-merge": "^3.5.0",
-    "tailwindcss": "^4.2.2",
+    "tailwindcss": "^3.4.0",
     "typescript": "^6.0.3"
   }
 }

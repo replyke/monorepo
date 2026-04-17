@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import {
   Comment as CommentType,
+  UserMention,
   useReactionToggle,
   useCommentSection,
   useUser,
@@ -153,18 +154,18 @@ const Comment = React.memo(
           <View style={[styles.commentHeader, { gap: horizontalItemsGap }]}>
             <Pressable
               onPress={() => {
-                if (comment.user.id === user?.id) {
+                if (comment.user?.id === user?.id) {
                   callbacks?.currentUserClickCallback?.();
                 } else {
                   callbacks?.otherUserClickCallback?.(
-                    comment.user.id,
-                    comment.user.foreignId
+                    comment.user?.id ?? "",
+                    comment.user?.foreignId
                   );
                 }
               }}
             >
               <UserAvatar
-                user={comment.user}
+                user={comment.user ?? {}}
                 borderRadius={authorAvatarSize}
                 size={authorAvatarSize}
               />
@@ -173,12 +174,12 @@ const Comment = React.memo(
               <View style={styles.commentMeta}>
                 <Pressable
                   onPress={() => {
-                    if (comment.user.id === user?.id) {
+                    if (comment.user?.id === user?.id) {
                       callbacks?.currentUserClickCallback?.();
                     } else {
                       callbacks?.otherUserClickCallback?.(
-                        comment.user.id,
-                        comment.user.foreignId
+                        comment.user?.id ?? "",
+                        comment.user?.foreignId
                       );
                     }
                   }}
@@ -193,7 +194,7 @@ const Comment = React.memo(
                       },
                     ]}
                   >
-                    {getUserName(comment.user, "username")}
+                    {getUserName(comment.user ?? {}, "username")}
                   </Text>
                 </Pressable>
                 <FromNow
@@ -215,7 +216,9 @@ const Comment = React.memo(
                 >
                   {parseContentWithMentions(
                     comment.content,
-                    comment.mentions,
+                    comment.mentions
+                      ?.filter((m): m is UserMention => 'username' in m)
+                      .map((m) => ({ id: m.id, foreignId: m.foreignId ?? undefined, username: m.username })),
                     user?.id,
                     callbacks?.currentUserClickCallback,
                     callbacks?.otherUserClickCallback

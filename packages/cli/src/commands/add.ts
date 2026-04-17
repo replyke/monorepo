@@ -33,6 +33,15 @@ export async function add(componentName: string) {
       process.exit(1);
     }
 
+    // Expo projects use @replyke/expo instead of @replyke/react-native
+    if (config.platform === 'expo') {
+      registry.dependencies = registry.dependencies.map((dep) =>
+        dep.startsWith('@replyke/react-native')
+          ? dep.replace('@replyke/react-native', '@replyke/expo')
+          : dep
+      );
+    }
+
     spinner.text = "Downloading files...";
 
     // Download and install each file

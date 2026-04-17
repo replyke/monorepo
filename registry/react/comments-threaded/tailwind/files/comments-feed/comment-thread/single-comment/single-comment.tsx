@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   Comment as CommentType,
+  UserMention,
   getUserName,
   useCommentSection,
   useUser,
@@ -77,15 +78,15 @@ function SingleComment({
             <div
               className="relative z-10 cursor-pointer"
               onClick={() => {
-                if (user?.id === comment.user.id) {
+                if (user?.id === comment.user?.id) {
                   callbacks?.currentUserClickCallback?.();
                 } else {
-                  callbacks?.otherUserClickCallback?.(comment.user.id, comment.user.foreignId);
+                  callbacks?.otherUserClickCallback?.(comment.user?.id ?? "", comment.user?.foreignId);
                 }
               }}
             >
               <UserAvatar
-                user={comment.user}
+                user={comment.user ?? {}}
                 // 🎨 CUSTOMIZATION: Avatar styling (Default: 24px)
                 borderRadius={24}
                 size={24}
@@ -119,14 +120,14 @@ function SingleComment({
                   className="font-medium text-xs text-gray-700 dark:text-gray-300 cursor-pointer hover:underline"
                   // 🎨 CUSTOMIZATION: Author name styling
                   onClick={() => {
-                    if (user?.id === comment.user.id) {
+                    if (user?.id === comment.user?.id) {
                       callbacks?.currentUserClickCallback?.();
                     } else {
-                      callbacks?.otherUserClickCallback?.(comment.user.id, comment.user.foreignId);
+                      callbacks?.otherUserClickCallback?.(comment.user?.id ?? "", comment.user?.foreignId);
                     }
                   }}
                 >
-                  {getUserName(comment.user)}
+                  {getUserName(comment.user ?? {})}
                 </span>
                 <span className="text-gray-500 dark:text-gray-400">•</span>
                 <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
@@ -154,7 +155,9 @@ function SingleComment({
                   >
                     {parseContentWithMentions(
                       comment.content,
-                      comment.mentions,
+                      comment.mentions
+                        ?.filter((m): m is UserMention => 'username' in m)
+                        .map((m) => ({ id: m.id, foreignId: m.foreignId ?? undefined, username: m.username })),
                       user?.id,
                       callbacks?.currentUserClickCallback,
                       callbacks?.otherUserClickCallback

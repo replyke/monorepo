@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   Comment as CommentType,
+  UserMention,
   useReactionToggle,
   getUserName,
   useUser,
@@ -98,19 +99,19 @@ const Comment = React.memo(
           >
             <div
               onClick={() => {
-                if (comment.user.id === user?.id) {
+                if (comment.user?.id === user?.id) {
                   callbacks?.currentUserClickCallback?.();
                 } else {
                   callbacks?.otherUserClickCallback?.(
-                    comment.user.id,
-                    comment.user.foreignId
+                    comment.user?.id ?? "",
+                    comment.user?.foreignId
                   );
                 }
               }}
             >
               {/* 🎨 CUSTOMIZATION: Avatar size (Default: 32px) */}
               <UserAvatar
-                user={comment.user}
+                user={comment.user ?? {}}
                 borderRadius={32}
                 size={32}
               />
@@ -123,19 +124,19 @@ const Comment = React.memo(
               >
                 <div
                   onClick={() => {
-                    if (comment.user.id === user?.id) {
+                    if (comment.user?.id === user?.id) {
                       callbacks?.currentUserClickCallback?.();
                     } else {
                       callbacks?.otherUserClickCallback?.(
-                        comment.user.id,
-                        comment.user.foreignId
+                        comment.user?.id ?? "",
+                        comment.user?.foreignId
                       );
                     }
                   }}
                   style={resetP}
                   className="font-bold text-[13px] text-gray-900 dark:text-gray-50"
                 >
-                  {getUserName(comment.user, "username")}
+                  {getUserName(comment.user ?? {}, "username")}
                 </div>
                 {/* 🎨 CUSTOMIZATION: Timestamp typography */}
                 <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -155,7 +156,9 @@ const Comment = React.memo(
                 >
                   {parseContentWithMentions(
                     comment.content,
-                    comment.mentions,
+                    comment.mentions
+                      ?.filter((m): m is UserMention => 'username' in m)
+                      .map((m) => ({ id: m.id, foreignId: m.foreignId ?? undefined, username: m.username })),
                     user?.id,
                     callbacks?.currentUserClickCallback,
                     callbacks?.otherUserClickCallback

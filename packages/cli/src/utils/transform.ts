@@ -15,6 +15,14 @@ export function transformImports(content: string, config: ReplykeConfig): string
   // For now, keep imports as-is since they use relative paths
   // In the future, we can add more sophisticated transformations
 
+  // Expo projects use @replyke/expo instead of @replyke/react-native
+  if (config.platform === 'expo') {
+    transformed = transformed.replace(
+      /from\s+["']@replyke\/react-native["']/g,
+      'from "@replyke/expo"'
+    );
+  }
+
   // Optionally transform based on user's alias configuration
   if (config.aliases['@/components']) {
     // Keep relative imports as-is for now

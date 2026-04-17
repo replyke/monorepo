@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import {
   Comment as CommentType,
+  UserMention,
   getUserName,
   useCommentSection,
   useUser,
@@ -105,15 +106,15 @@ function SingleComment({
             <Pressable
               className="relative z-10"
               onPress={() => {
-                if (user?.id === comment.user.id) {
+                if (user?.id === comment.user?.id) {
                   callbacks?.currentUserClickCallback?.();
                 } else {
-                  callbacks?.otherUserClickCallback?.(comment.user.id, comment.user.foreignId);
+                  callbacks?.otherUserClickCallback?.(comment.user?.id ?? "", comment.user?.foreignId);
                 }
               }}
             >
               <UserAvatar
-                user={comment.user}
+                user={comment.user ?? {}}
                 borderRadius={24}
                 size={24}
               />
@@ -140,10 +141,10 @@ function SingleComment({
               <View className="flex-row items-center gap-2">
                 <Pressable
                   onPress={() => {
-                    if (user?.id === comment.user.id) {
+                    if (user?.id === comment.user?.id) {
                       callbacks?.currentUserClickCallback?.();
                     } else {
-                      callbacks?.otherUserClickCallback?.(comment.user.id, comment.user.foreignId);
+                      callbacks?.otherUserClickCallback?.(comment.user?.id ?? "", comment.user?.foreignId);
                     }
                   }}
                 >
@@ -152,7 +153,7 @@ function SingleComment({
                       theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
                     }`}
                   >
-                    {getUserName(comment.user)}
+                    {getUserName(comment.user ?? {})}
                   </Text>
                 </Pressable>
                 <Text
@@ -198,7 +199,9 @@ function SingleComment({
                   >
                     {parseContentWithMentions(
                       comment.content,
-                      comment.mentions,
+                      comment.mentions
+                        ?.filter((m): m is UserMention => 'username' in m)
+                        .map((m) => ({ id: m.id, foreignId: m.foreignId ?? undefined, username: m.username })),
                       user?.id,
                       callbacks?.currentUserClickCallback,
                       callbacks?.otherUserClickCallback

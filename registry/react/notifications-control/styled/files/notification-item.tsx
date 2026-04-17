@@ -208,7 +208,7 @@ function NotificationItem({
         src={
           notification.type === "system"
             ? null
-            : notification.metadata.initiatorAvatar
+            : (notification.metadata as any).initiatorAvatar ?? null
         }
         name={"initiatorName"}
         isDarkTheme={isDarkTheme}

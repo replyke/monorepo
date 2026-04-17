@@ -51,7 +51,7 @@ function ReportContent({ resetView }: { resetView: () => void }) {
   return (
     <div className="p-6 w-full">
       <div className="flex items-center gap-4">
-        <FlagIcon size={24} className="text-gray-900 dark:text-gray-50" />
+        <FlagIcon size={24} />
         <span className="text-2xl text-gray-900 dark:text-gray-50">Submit a report</span>
       </div>
       <p className="mt-6 text-gray-900 dark:text-gray-200">

@@ -37,10 +37,13 @@ export async function fetchRegistry(
   config: ReplykeConfig
 ): Promise<Registry | null> {
   try {
+    // Expo projects share the react-native registry
+    const registryPlatform = config.platform === 'expo' ? 'react-native' : config.platform;
+
     // Construct registry path
     const registryPath = path.join(
       LOCAL_REGISTRY_PATH,
-      config.platform,
+      registryPlatform,
       componentName,
       config.style,
       'registry.json'
@@ -54,7 +57,7 @@ export async function fetchRegistry(
     }
 
     // Fetch from GitHub (for production/npx usage)
-    const url = `https://raw.githubusercontent.com/replyke/cli/main/registry/${config.platform}/${componentName}/${config.style}/registry.json`;
+    const url = `https://raw.githubusercontent.com/replyke/cli/main/registry/${registryPlatform}/${componentName}/${config.style}/registry.json`;
 
     try {
       const response = await fetch(url);

@@ -150,6 +150,11 @@ const getIconConfig = (): Record<
     colorClass: "text-green-600 dark:text-green-400",
     bgClass: "bg-green-100 dark:bg-green-500/15",
   },
+  "space-membership-approved": {
+    Icon: UserPlus,
+    colorClass: "text-green-600 dark:text-green-400",
+    bgClass: "bg-green-100 dark:bg-green-500/15",
+  },
 });
 
 function NotificationIcon({ type, reactionType, className }: NotificationIconProps) {

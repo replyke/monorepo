@@ -169,7 +169,7 @@ function NotificationControl({
   };
 
   const handleMarkAsRead = (notificationId: string) => {
-    markNotificationAsRead(notificationId);
+    markNotificationAsRead({ notificationId });
   };
 
   const handleNotificationClick = (

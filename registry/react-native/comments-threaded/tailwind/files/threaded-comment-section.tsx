@@ -143,7 +143,7 @@ function ThreadedCommentSection({
   children,
 }: ThreadedCommentSectionProps) {
   const { CommentSectionProvider } = useThreadedComments({
-    entity,
+    entity: entity ?? undefined,
     entityId,
     foreignId,
     shortId,
