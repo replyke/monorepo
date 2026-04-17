@@ -1,8 +1,132 @@
 ---
 title: "Social Comments Overview"
-description: "Overview of the social comments component"
+description: "Instagram-style social comment system"
+icon: "heart"
 ---
 
-# Social Comments Overview
+# Social Comments
 
-*Coming soon*
+Instagram-style social comment system with hearts/likes, single-level nesting, and clean minimal design.
+
+---
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Simple Nesting" icon="layer-group">
+    Maximum 2 levels: comments and replies. Clean, easy-to-follow conversations.
+  </Card>
+
+  <Card title="Heart/Like System" icon="heart">
+    Positive-only engagement. No downvotes — just likes.
+  </Card>
+
+  <Card title="Sorting Options" icon="arrow-down-wide-short">
+    Top/New/Old sorting built-in. Users can switch on the fly.
+  </Card>
+
+  <Card title="Minimal Design" icon="sparkles">
+    Clean, uncluttered interface perfect for mobile and visual content.
+  </Card>
+
+  <Card title="@ Mentions" icon="at">
+    Tag other users with autocomplete suggestions.
+  </Card>
+
+  <Card title="Real-Time Updates" icon="bolt">
+    Automatic updates when new comments arrive.
+  </Card>
+</CardGroup>
+
+---
+
+## Use Cases
+
+**Perfect for:**
+- Social media platforms
+- Photo/video sharing apps
+- Content creator platforms
+- Mobile-first experiences
+- Quick social interactions
+- Brand engagement
+
+**Not ideal for:**
+- Deep technical discussions (use [Threaded Comments](/v7/components/components/threaded/overview) instead)
+- Platforms that need voting/scoring
+- Content requiring complex threading
+
+---
+
+## Platform Support
+
+| Platform | Status |
+|----------|--------|
+| React (Web) | ✅ Fully supported |
+| React Native | ✅ Fully supported |
+| Expo | ✅ Fully supported |
+
+---
+
+## Styling Variants
+
+<Tabs>
+  <Tab title="Tailwind CSS">
+    Uses Tailwind utility classes. Requires Tailwind CSS (or NativeWind for React Native) installed.
+
+    Best for projects using Tailwind or design system integration.
+  </Tab>
+
+  <Tab title="Inline Styles">
+    Uses inline `style={{}}` objects with conditional dark mode logic. No external dependencies.
+
+    Best for projects without Tailwind, or where explicit styling is preferred.
+  </Tab>
+</Tabs>
+
+Choose your preference during `npx @replyke/cli init`.
+
+---
+
+## Required Dependencies
+
+**React (Web):**
+```json
+{
+  "dependencies": {
+    "@replyke/react-js": "^7.0.0",
+    "@replyke/ui-core-react-js": "^7.0.0"
+  }
+}
+```
+
+**React Native / Expo:**
+```json
+{
+  "dependencies": {
+    "@replyke/react-native": "^7.0.0",
+    "@replyke/ui-core-react-native": "^7.0.0"
+  }
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/v7/components/components/social/installation">
+    Add social comments to your project
+  </Card>
+
+  <Card title="Props & API" icon="sliders" href="/v7/components/components/social/props-api">
+    Learn about available props
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/v7/components/components/social/file-structure">
+    Understand file organization
+  </Card>
+
+  <Card title="Features" icon="star" href="/v7/components/components/social/features">
+    Explore all features
+  </Card>
+</CardGroup>

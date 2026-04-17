@@ -1,8 +1,208 @@
 ---
 title: "Features"
-description: "Features of the threaded comments component"
+description: "Explore all threaded comments features"
+icon: "star"
 ---
 
-# Features
+# Threaded Comments Features
 
-*Coming soon*
+Comprehensive feature overview for Reddit-style threaded comments.
+
+---
+
+## Core Features
+
+### Unlimited Nesting
+
+Comments can be nested infinitely deep. Users can reply to any comment, creating branching conversation threads.
+
+```
+Comment 1
+  └─ Reply to Comment 1
+      └─ Reply to Reply
+          └─ Reply to Reply to Reply
+              └─ And so on...
+```
+
+Visual indicators: indentation, threading lines connecting replies to parents, and clear depth distinction.
+
+---
+
+### Upvote/Downvote System
+
+Reddit-style voting with visible vote scores.
+
+- Upvote (▲) and downvote (▼) buttons
+- Net score display (upvotes − downvotes)
+- Visual feedback on current vote state
+- One vote per user per comment
+- Change or remove vote at any time
+- Can't vote on your own comments
+
+---
+
+### Visual Threading
+
+Clear visual hierarchy with indentation and connection lines.
+
+- Each reply level indented by 16px (customizable)
+- Threading lines show parent-child relationships
+- Collapsible threads to hide long chains
+
+Edit `indentation-threading-lines.tsx` to adjust spacing, colors, or line styles.
+
+---
+
+### Collapsible Threads
+
+Users can collapse/expand entire comment chains.
+
+- Click `[-]` to collapse a comment and all its replies
+- Click `[+]` to expand
+- Collapsed state shows reply count
+- Useful for navigating long discussions
+
+---
+
+### @ Mentions
+
+Tag other users with `@username`.
+
+- Autocomplete suggestions as you type
+- Clickable mentions link to user profiles (via `otherUserClickCallback`)
+- Mentioned users receive notifications (if enabled)
+- Works in both comments and replies
+
+---
+
+### Highlighted Comments
+
+Deep-link to specific comments with visual highlighting.
+
+```tsx
+<ThreadedCommentSection
+  foreignId="post_123"
+  highlightedCommentId="comment_abc"
+/>
+```
+
+The component:
+1. Scrolls to the highlighted comment
+2. Applies a highlight background color
+3. Fades the highlight after a few seconds
+
+**Use cases:** Notification links, URL params like `?commentId=abc123`.
+
+---
+
+### Edit & Delete
+
+Comment authors can edit or delete their own comments.
+
+**Edit:** Click "Edit" from the action menu, modify text inline, save or cancel. An "edited" indicator is shown.
+
+**Delete:** Click "Delete" from the action menu, confirm. Soft delete — the comment shows `[deleted]` to preserve thread structure.
+
+---
+
+### Reporting & Moderation
+
+Built-in reporting for inappropriate content.
+
+**Users:** Click "Report" → select reason → submit.
+
+**Admins:** Reports appear in the [Replyke Dashboard](https://dash.replyke.com) for review. Full moderation toolkit including comment deletion and user banning.
+
+---
+
+### Loading States
+
+Skeleton loaders while fetching comments. Realistic skeleton UI mimics comment structure and prevents layout shift.
+
+**File:** `fetching-comments-skeletons.tsx`
+
+---
+
+### Empty States
+
+Friendly placeholder when no comments exist yet.
+
+**Default message:** "No comments yet. Be the first to comment!"
+
+Customize `no-comments-placeholder.tsx` to change messaging or add illustrations.
+
+---
+
+### Real-Time Updates
+
+Comments automatically update when other users post. No configuration needed — powered by `@replyke/react-js` subscriptions.
+
+---
+
+### Dark Mode Support
+
+**Inline Styles Variant:**
+```tsx
+<ThreadedCommentSection
+  foreignId="post_123"
+  theme={isDark ? 'dark' : 'light'}
+/>
+```
+
+**Tailwind Variant:**
+```tsx
+<html className={isDark ? 'dark' : ''}>
+  <ThreadedCommentSection foreignId="post_123" />
+</html>
+```
+
+All colors adapt automatically.
+
+---
+
+### GIF Support (Optional)
+
+Enable a GIF picker in comment forms via the [Replyke Dashboard](https://dash.replyke.com). Add a Giphy API key and GIF search appears automatically — no code changes needed.
+
+---
+
+## Feature Matrix
+
+| Feature | Included | Customizable |
+|---------|:--------:|:------------:|
+| Unlimited nesting | ✅ | ✅ (max depth can be limited) |
+| Upvote/downvote | ✅ | ✅ (can remove, change icons) |
+| Threading lines | ✅ | ✅ (colors, spacing) |
+| Collapsible threads | ✅ | ✅ (behavior, icons) |
+| @ Mentions | ✅ | ✅ (autocomplete styling) |
+| Highlighted comments | ✅ | ✅ (highlight color, duration) |
+| Edit comments | ✅ | ✅ (can disable, add confirmation) |
+| Delete comments | ✅ | ✅ (can add confirmation dialog) |
+| Reporting | ✅ | ✅ (report reasons, modal styling) |
+| Loading states | ✅ | ✅ (skeleton design) |
+| Empty states | ✅ | ✅ (messaging, design) |
+| Real-time updates | ✅ | ❌ (handled by core SDK) |
+| Dark mode | ✅ | ✅ (all colors customizable) |
+| GIF support | ✅ | ❌ (enabled in dashboard) |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Customization" icon="paintbrush" href="/v7/components/customization/overview">
+    Learn how to customize features
+  </Card>
+
+  <Card title="Props & API" icon="sliders" href="/v7/components/components/threaded/props-api">
+    Component props reference
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/v7/components/components/threaded/file-structure">
+    Understand file organization
+  </Card>
+
+  <Card title="Installation" icon="download" href="/v7/components/components/threaded/installation">
+    Installation guide
+  </Card>
+</CardGroup>

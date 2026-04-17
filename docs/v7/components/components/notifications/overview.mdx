@@ -1,8 +1,129 @@
 ---
 title: "Notification Control Overview"
-description: "Overview of the notification control component"
+description: "Dropdown notification bell control for real-time app notifications"
+icon: "bell"
 ---
 
-# Notification Control Overview
+# Notification Control
 
-*Coming soon*
+A dropdown notification control component for displaying real-time application notifications. Think GitHub, LinkedIn, or Facebook's notification bell — shows an unread count and displays a notification list when clicked.
+
+---
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Real-Time Updates" icon="bolt">
+    Automatic real-time updates when new notifications arrive.
+  </Card>
+
+  <Card title="Smart Positioning" icon="location-arrow">
+    Dropdown automatically positions itself to stay within viewport bounds. Never overflows screen edges.
+  </Card>
+
+  <Card title="Infinite Scroll" icon="arrows-down-to-line">
+    Load more notifications on demand. Starts with 10, loads more as needed.
+  </Card>
+
+  <Card title="Mark as Read" icon="check">
+    Click to mark individual notifications as read, or use "Mark all read" for bulk actions.
+  </Card>
+
+  <Card title="Unread Badge" icon="circle-dot">
+    Shows unread count on the trigger component. Updates automatically in real-time.
+  </Card>
+
+  <Card title="Theme Support" icon="palette">
+    Full light/dark/auto mode support with both inline styles and Tailwind variants.
+  </Card>
+</CardGroup>
+
+---
+
+## What It's NOT
+
+<Warning>
+This is **not** a full-page notifications center or inbox. It's a dropdown control component designed for navigation bars and headers.
+
+For a full notifications page, use the `useAppNotifications` hook from `@replyke/react-js` to build a custom interface.
+</Warning>
+
+---
+
+## Use Cases
+
+**Perfect for:**
+- Navigation bar notification bells
+- Header dropdown notifications
+- Real-time notification alerts
+- Social media style notification systems
+- SaaS dashboard notifications
+
+**File Complexity:** Only **5 files** — much simpler than comment components.
+
+---
+
+## Notification Types Supported
+
+| Type | Icon | Trigger |
+|------|------|---------|
+| `system` | Wrench | System announcements |
+| `entity-comment` | MessageCircle | New comment on entity |
+| `comment-reply` | MessageSquare | Reply to your comment |
+| `entity-mention` | @ | Mentioned in entity |
+| `comment-mention` | @ | Mentioned in comment |
+| `entity-upvote` | Heart | Upvote on entity |
+| `comment-upvote` | Heart | Upvote on comment |
+| `new-follow` | UserPlus | New follower |
+| `connection-accepted` | UserPlus | Connection accepted |
+| `connection-request` | UserPlus | Connection request |
+
+Icons are from **lucide-react**.
+
+---
+
+## Platform Support
+
+| Platform | Status |
+|----------|--------|
+| React (Web) | ✅ Fully supported |
+| React Native | ❌ Not available |
+| Expo | ❌ Not available |
+
+---
+
+## Required Dependencies
+
+```json
+{
+  "dependencies": {
+    "@replyke/react-js": "^7.0.0",
+    "framer-motion": "^12.0.0",
+    "lucide-react": "^1.0.0"
+  }
+}
+```
+
+The CLI checks for these and offers to install them automatically.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/v7/components/components/notifications/installation">
+    Add notification control to your project
+  </Card>
+
+  <Card title="Props & API" icon="sliders" href="/v7/components/components/notifications/props-api">
+    Learn about component props
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/v7/components/components/notifications/customization">
+    Customize colors, layout, and behavior
+  </Card>
+
+  <Card title="Integration Examples" icon="code" href="/v7/components/components/notifications/integration-examples">
+    See real-world integration examples
+  </Card>
+</CardGroup>

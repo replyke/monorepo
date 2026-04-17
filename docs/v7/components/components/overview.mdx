@@ -1,8 +1,189 @@
 ---
 title: "Component Types"
-description: "Overview of available Replyke components"
+description: "Choose the right comment style for your application"
+icon: "layer-group"
 ---
 
-# Component Types
+# Choosing Your Comment Style
 
-*Coming soon*
+Replyke offers three ready-to-install components, each optimized for different use cases and user experiences.
+
+---
+
+## Available Components
+
+<CardGroup cols={3}>
+  <Card title="Threaded Comments" icon="comments" href="/v7/components/components/threaded/overview">
+    **Reddit-style threaded discussions**
+
+    - Unlimited nesting depth
+    - Upvote/downvote with scores
+    - Visual threading lines
+    - Collapsible threads
+    - Focus on structured discussions
+
+    **Package:** `comments-threaded`
+  </Card>
+
+  <Card title="Social Comments" icon="heart" href="/v7/components/components/social/overview">
+    **Instagram-style social comments**
+
+    - Single-level nesting (max 2 levels)
+    - Heart/like system (no dislikes)
+    - Top/New/Old sorting
+    - Clean, minimal design
+    - Quick social interactions
+
+    **Package:** `comments-social`
+  </Card>
+
+  <Card title="Notification Control" icon="bell" href="/v7/components/components/notifications/overview">
+    **Dropdown notification bell**
+
+    - Real-time notification updates
+    - Smart viewport positioning
+    - Mark as read functionality
+    - Infinite scroll
+    - Lightweight (5 files)
+
+    **Package:** `notifications-control`
+  </Card>
+</CardGroup>
+
+---
+
+## Comparison
+
+| Feature | Threaded Comments | Social Comments |
+|---------|-------------------|-----------------|
+| **Nesting** | Unlimited depth | 2 levels (comments + replies) |
+| **Voting** | Upvote/downvote with score | Heart/like only |
+| **Visual Style** | Threading lines, indentation | Flat, minimal design |
+| **Sorting** | Best/Top (by votes) | Top/New/Old |
+| **Collapsing** | ✅ Collapsible threads | ❌ No collapsing |
+| **Best For** | Forums, discussions, technical content | Social media, quick interactions |
+
+---
+
+## Platform Support
+
+| Platform | Threaded Comments | Social Comments | Notification Control |
+|----------|:-----------------:|:---------------:|:--------------------:|
+| **React (Web)** | ✅ | ✅ | ✅ |
+| **React Native** | ✅ | ✅ | ❌ |
+| **Expo** | ✅ | ✅ | ❌ |
+
+---
+
+## When to Use Threaded Comments
+
+Choose **Threaded Comments** when you need:
+
+<AccordionGroup>
+  <Accordion title="Deep Discussions" icon="messages">
+    Forums, technical discussions, and detailed conversations benefit from unlimited nesting. Users can reply to specific points deep in a thread.
+
+    **Example use cases:** Developer forums, blog posts, Q&A platforms, community discussions
+  </Accordion>
+
+  <Accordion title="Vote-Based Ranking" icon="arrow-up">
+    Upvotes and downvotes help surface quality content and hide low-quality contributions. Scores provide social proof.
+
+    **Example use cases:** Reddit-style communities, news sites, user-generated content platforms
+  </Accordion>
+
+  <Accordion title="Visual Hierarchy" icon="sitemap">
+    Threading lines and indentation make it easy to follow complex conversation flows and see which comments are responding to what.
+
+    **Example use cases:** Long discussions, debates, multi-topic threads
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## When to Use Social Comments
+
+Choose **Social Comments** when you need:
+
+<AccordionGroup>
+  <Accordion title="Quick Interactions" icon="bolt">
+    Simple, fast commenting without deep nesting. Perfect for social media-style engagement.
+
+    **Example use cases:** Photo/video platforms, social apps, short-form content, mobile-first experiences
+  </Accordion>
+
+  <Accordion title="Positive-Only Engagement" icon="heart">
+    Hearts/likes promote positive interactions without the negativity of downvotes.
+
+    **Example use cases:** Creator platforms, brand engagement, positive communities
+  </Accordion>
+
+  <Accordion title="Clean, Minimal Design" icon="sparkles">
+    Flat, uncluttered interface that doesn't distract from content.
+
+    **Example use cases:** Mobile apps, visual content platforms, minimalist designs
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Can I Use Both?
+
+Yes. Install both in the same project and use whichever fits each context:
+
+```bash
+npx @replyke/cli add comments-threaded
+npx @replyke/cli add comments-social
+```
+
+```tsx
+// Blog posts — threaded
+import { ThreadedCommentSection } from './components/comments-threaded';
+
+function BlogPost({ post }) {
+  return (
+    <>
+      <Article content={post.content} />
+      <ThreadedCommentSection entityId={post.id} />
+    </>
+  );
+}
+
+// Photos — social
+import { SocialCommentSection } from './components/comments-social';
+
+function PhotoPost({ photo }) {
+  return (
+    <>
+      <Image src={photo.url} />
+      <SocialCommentSection entityId={photo.id} />
+    </>
+  );
+}
+```
+
+<Info>
+Both components install into separate directories and won't conflict with each other.
+</Info>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Threaded Comments" icon="comments" href="/v7/components/components/threaded/overview">
+    Reddit-style threaded comments
+  </Card>
+
+  <Card title="Social Comments" icon="heart" href="/v7/components/components/social/overview">
+    Instagram-style social comments
+  </Card>
+
+  <Card title="Notification Control" icon="bell" href="/v7/components/components/notifications/overview">
+    Dropdown notification bell
+  </Card>
+
+  <Card title="Quick Start" icon="rocket" href="/v7/components/installation/quick-start">
+    Get started in under 5 minutes
+  </Card>
+</CardGroup>

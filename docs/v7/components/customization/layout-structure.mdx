@@ -1,8 +1,193 @@
 ---
 title: "Layout & Structure"
-description: "Customizing layout and structure"
+description: "Modify component layout and structure"
+icon: "table-columns"
 ---
 
 # Layout & Structure
 
-*Coming soon*
+Rearrange, add, or remove UI elements directly in the source files.
+
+---
+
+## Adding Elements
+
+### Add Custom Header
+
+```tsx
+// File: threaded-comment-section.tsx
+
+return (
+  <div>
+    {/* Custom header */}
+    <div className="flex justify-between items-center mb-4">
+      <h2>Discussion ({totalComments} comments)</h2>
+      <button onClick={sortBy}>Sort</button>
+    </div>
+
+    <NewCommentForm />
+    <CommentsFeed />
+  </div>
+);
+```
+
+### Add Custom Footer
+
+```tsx
+return (
+  <div>
+    <NewCommentForm />
+    <CommentsFeed />
+
+    {/* Custom footer */}
+    <footer className="text-center text-gray-500 mt-4 text-sm">
+      Powered by Replyke
+    </footer>
+  </div>
+);
+```
+
+### Add a Banner Between Form and Feed
+
+```tsx
+return (
+  <div>
+    <NewCommentForm />
+
+    {/* Custom banner */}
+    <div className="bg-blue-50 dark:bg-blue-950 rounded p-3 my-3 text-sm text-blue-700 dark:text-blue-300">
+      Be respectful. See our community guidelines.
+    </div>
+
+    <CommentsFeed />
+  </div>
+);
+```
+
+---
+
+## Removing Elements
+
+### Remove Vote Buttons
+
+```tsx
+// File: single-comment.tsx
+
+return (
+  <div>
+    <AuthorInfo />
+    <CommentBody />
+    {/* <VoteButtons /> */}
+    <ReplyButton />
+  </div>
+);
+```
+
+### Remove Reply Functionality
+
+```tsx
+return (
+  <div>
+    <AuthorInfo />
+    <CommentBody />
+    <VoteButtons />
+    {/* <ReplyButton /> */}
+  </div>
+);
+```
+
+### Remove Moderation Options
+
+Delete or comment out the action menu trigger in `single-comment.tsx`:
+
+```tsx
+{/* <ActionMenu comment={comment} /> */}
+```
+
+---
+
+## Rearranging Elements
+
+### Move Vote Buttons Above Comment Body
+
+```tsx
+// Before
+<AuthorInfo />
+<CommentBody />
+<VoteButtons />
+
+// After
+<AuthorInfo />
+<VoteButtons />  {/* Moved up */}
+<CommentBody />
+```
+
+### Move Sort Controls
+
+Move `<SortByButton />` to the top of the section instead of inline with the feed.
+
+---
+
+## Modifying Spacing
+
+**Inline Styles:**
+```tsx
+<div style={{ padding: '24px', gap: '16px' }}>  {/* Increased from 12px */}
+```
+
+**Tailwind:**
+```tsx
+<div className="p-6 gap-4">  {/* p-4 → p-6 */}
+```
+
+---
+
+## Component Hierarchy
+
+Understanding the component tree helps you know which file to edit:
+
+**Threaded Comments:**
+```
+ThreadedCommentSection        ← threaded-comment-section.tsx
+  ├── NewCommentForm           ← new-comment-form.tsx
+  └── CommentsFeed             ← comments-feed.tsx
+        └── CommentThread      ← comment-thread.tsx
+              └── SingleComment ← single-comment.tsx
+                    ├── AuthorInfo
+                    ├── CommentBody
+                    ├── VoteButtons   ← vote-buttons.tsx
+                    └── ReplyButton
+```
+
+**Social Comments:**
+```
+SocialCommentSection          ← social-comment-section.tsx
+  ├── SortByButton             ← sort-by-button.tsx
+  ├── NewCommentForm           ← new-comment-form.tsx
+  └── CommentsFeed             ← comments-feed.tsx
+        └── Comment            ← comment.tsx
+              ├── HeartButton  ← heart-button.tsx
+              └── Replies      ← replies.tsx
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Adding Features" icon="plus" href="/v7/components/customization/adding-features">
+    Add custom functionality
+  </Card>
+
+  <Card title="Colors & Theming" icon="palette" href="/v7/components/customization/colors-theming">
+    Customize colors
+  </Card>
+
+  <Card title="Advanced" icon="star" href="/v7/components/customization/advanced">
+    Advanced customization techniques
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/v7/components/components/threaded/file-structure">
+    Threaded comments file organization
+  </Card>
+</CardGroup>

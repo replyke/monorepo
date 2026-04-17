@@ -1,8 +1,154 @@
 ---
-title: "File Structure"
-description: "File structure of the social comments component"
+title: "Social Comments File Structure"
+description: "File organization for social comments"
+icon: "folder-tree"
 ---
 
-# File Structure
+# Social Comments File Structure
 
-*Coming soon*
+Approximately 23 files organized for simplicity and clarity.
+
+---
+
+## Directory Tree
+
+```
+src/components/comments-social/
+├── index.ts                              # Barrel export (entry point)
+├── components/
+│   ├── social-comment-section.tsx        # Main component
+│   ├── new-comment-form.tsx              # Comment/reply input
+│   ├── reply-banner.tsx                  # Shows who you're replying to
+│   ├── mention-suggestions.tsx           # @ mention autocomplete
+│   ├── sort-by-button.tsx               # Top/New/Old sort control
+│   ├── comments-feed/
+│   │   ├── comments-feed.tsx             # Feed container
+│   │   ├── loaded-comments.tsx           # Comment list
+│   │   ├── fetching-comments-skeletons.tsx
+│   │   ├── no-comments-placeholder.tsx
+│   │   └── comment/
+│   │       ├── comment.tsx              # Individual comment + replies
+│   │       ├── heart-button.tsx         # Like button with count
+│   │       └── replies.tsx              # Reply list
+│   └── modals/
+│       ├── report-comment-modal/
+│       │   ├── report-comment-modal.tsx
+│       │   ├── modal-background.tsx
+│       │   └── report-modal-content.tsx
+│       └── delete-comment-modal/
+│           └── delete-comment-modal.tsx
+├── hooks/
+│   ├── use-social-comments.tsx           # Main comment logic and callbacks
+│   └── use-ui-state.tsx                  # UI state (modals, active reply)
+├── utils/
+│   └── prop-comparison.ts               # Memoization helpers
+└── context/
+    └── ui-state-context.tsx             # Provides UI state to components
+```
+
+---
+
+## Key Files
+
+### `social-comment-section.tsx` — Main Component
+
+The entry component. Edit this to modify the overall layout, add headers or footers, or change how the component is structured.
+
+---
+
+### `new-comment-form.tsx` — Comment Input
+
+Handles both top-level comment input and reply input (reused for both). Edit to:
+- Customize placeholder text
+- Change submit button styles
+- Add character limits
+
+---
+
+### `heart-button.tsx` — Like Button
+
+The heart icon and like count. Edit to:
+- Change the heart icon color or style
+- Modify the like count display
+- Add animations on like
+
+---
+
+### `sort-by-button.tsx` — Sort Control
+
+The Top/New/Old sort switcher. Edit to:
+- Rename sort options
+- Remove sort options you don't need
+- Change button styles
+
+---
+
+### `use-social-comments.tsx` — Main Hook
+
+Contains all comment logic and the key behavioral callbacks you'll want to customize:
+
+- `loginRequiredCallback` — Called when an unauthenticated user tries to comment
+- `usernameRequiredCallback` — Called when a user without a username tries to comment
+- `currentUserClickCallback` — Called when a user clicks their own profile
+- `otherUserClickCallback(userId, foreignId)` — Called when a user clicks another user's profile
+
+---
+
+## Key Differences from Threaded Comments
+
+| Threaded | Social |
+|---------|--------|
+| `vote-buttons.tsx` | `heart-button.tsx` |
+| Threading lines + indentation | Flat design |
+| Unlimited nesting | Max 2 levels |
+| No sort button | `sort-by-button.tsx` |
+| Complex thread collapse | Simple reply expansion |
+
+---
+
+## Common Customizations
+
+### Change Heart Color
+
+```tsx
+// Edit: components/social/comments-feed/comment/heart-button.tsx
+<span style={{ color: '#EC4899' }}>  {/* Pink heart */}
+  ❤️
+</span>
+```
+
+### Modify Sort Options
+
+```tsx
+// Edit: components/social/social-comment-section.tsx
+const sortOptions = ['top', 'new'];  // Remove 'old' option
+```
+
+### Customize Empty State
+
+```tsx
+// Edit: components/social/comments-feed/no-comments-placeholder.tsx
+<p>No comments yet. Be the first! 🎉</p>
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Features" icon="star" href="/v7/components/components/social/features">
+    Feature overview
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/v7/components/customization/overview">
+    Customize colors, layout, and functionality
+  </Card>
+
+  <Card title="Props & API" icon="sliders" href="/v7/components/components/social/props-api">
+    Props reference
+  </Card>
+
+  <Card title="Installation" icon="download" href="/v7/components/components/social/installation">
+    Installation guide
+  </Card>
+</CardGroup>

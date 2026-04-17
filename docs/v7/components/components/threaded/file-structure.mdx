@@ -1,8 +1,210 @@
 ---
 title: "File Structure"
-description: "File structure of the threaded comments component"
+description: "Understanding the threaded comments file organization"
+icon: "folder-tree"
 ---
 
 # File Structure
 
-*Coming soon*
+When you install threaded comments, approximately 25 TypeScript/TSX files are copied into your project in a clear, navigable structure.
+
+---
+
+## Directory Tree
+
+```
+src/components/comments-threaded/
+├── index.ts                              # Barrel export (entry point)
+├── components/                           # UI components (~20 files)
+│   ├── threaded-comment-section.tsx     # Main component
+│   ├── new-comment-form.tsx             # Top-level comment form
+│   ├── mention-suggestions.tsx          # @ mention autocomplete
+│   ├── comments-feed/
+│   │   ├── comments-feed.tsx            # Feed container
+│   │   ├── loaded-comments.tsx          # Renders comment list
+│   │   ├── fetching-comments-skeletons.tsx
+│   │   ├── no-comments-placeholder.tsx
+│   │   └── comment-thread/
+│   │       ├── comment-thread.tsx       # Thread with replies
+│   │       ├── comment-replies.tsx      # Reply list
+│   │       ├── action-menu.tsx          # Edit/delete/report menu
+│   │       ├── new-reply-form.tsx       # Reply form
+│   │       └── single-comment/
+│   │           ├── single-comment.tsx   # Individual comment
+│   │           ├── vote-buttons.tsx     # Upvote/downvote
+│   │           ├── reply-button-and-info.tsx
+│   │           ├── toggle-replies-visibility.tsx
+│   │           └── indentation-threading-lines.tsx
+│   └── modals/
+│       ├── comment-menu-modal/          # Report modal (3 files)
+│       │   ├── comment-menu-modal.tsx
+│       │   ├── modal-background.tsx
+│       │   └── report-modal-content.tsx
+│       └── comment-menu-modal-owner/    # Owner actions
+│           └── comment-menu-modal-owner.tsx
+├── hooks/
+│   ├── use-threaded-comments.tsx        # Main comment logic
+│   └── use-ui-state.tsx                 # UI state management
+├── utils/
+│   └── prop-comparison.ts               # Memoization helpers
+└── context/
+    └── ui-state-context.tsx             # Modal & theme context
+```
+
+---
+
+## Key Files
+
+### `index.ts` — Entry Point
+
+Barrel export for clean imports:
+
+```tsx
+export { default as ThreadedCommentSection } from './components/threaded-comment-section';
+```
+
+This lets you write:
+```tsx
+import { ThreadedCommentSection } from './components/comments-threaded';
+```
+
+---
+
+### `threaded-comment-section.tsx` — Main Component
+
+The entry component that orchestrates everything. Edit this to:
+- Add custom headers or footers
+- Modify the overall layout
+- Change the component structure
+
+---
+
+### `new-comment-form.tsx` — Comment Input
+
+The textarea and submit button for top-level comments. Edit this to:
+- Customize placeholder text
+- Change button styles
+- Add character counters
+
+---
+
+### `single-comment.tsx` — Individual Comment
+
+The core comment display component. Edit this to:
+- Change author name styling
+- Modify comment body layout
+- Add custom badges or labels
+
+---
+
+### `vote-buttons.tsx` — Voting UI
+
+Upvote and downvote buttons with score display. Edit this to:
+- Change button colors
+- Modify vote count formatting
+- Change icon styles
+
+---
+
+### `use-threaded-comments.tsx` — Main Hook
+
+Contains all comment data logic and callbacks. This is where you customize behavior like:
+- `loginRequiredCallback` — Called when an unauthenticated user tries to comment
+- `usernameRequiredCallback` — Called when a user without a username tries to comment
+- `otherUserClickCallback` — Called when a user clicks on another user's name/avatar
+
+---
+
+## Common Customizations
+
+### Change Colors
+
+**Inline Styles Variant:** Look for the color palette guide at the top of component files:
+
+```tsx
+/**
+ * COLOR PALETTE
+ * - #3B82F6 → Primary blue (votes, links)
+ * - #EF4444 → Red (downvotes, delete)
+ * - #111827 → #F9FAFB (text)
+ * - #FFFFFF → #1F2937 (backgrounds)
+ */
+```
+
+Find and replace hex codes throughout the file.
+
+**Tailwind Variant:** Change utility classes directly:
+
+```tsx
+// Before
+<button className="bg-blue-600 hover:bg-blue-700">
+// After
+<button className="bg-purple-600 hover:bg-purple-700">
+```
+
+---
+
+### Modify Layout
+
+Open `threaded-comment-section.tsx` and rearrange JSX:
+
+```tsx
+return (
+  <div>
+    <h2>Discussion ({totalComments} comments)</h2>
+    <NewCommentForm />
+    <CommentsFeed />
+  </div>
+);
+```
+
+---
+
+### Remove Features
+
+Don't want vote buttons? Remove them from `single-comment.tsx`:
+
+```tsx
+return (
+  <div>
+    <AuthorInfo />
+    <CommentBody />
+    {/* <VoteButtons /> */}
+    <ReplyButton />
+  </div>
+);
+```
+
+---
+
+## File Responsibilities
+
+| Directory | Purpose |
+|-----------|---------|
+| `/components/` | All UI/JSX components |
+| `/hooks/` | React hooks for state and logic |
+| `/utils/` | Helper functions |
+| `/context/` | React context providers |
+| `/modals/` | Modal dialogs (report, actions) |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Props & API" icon="sliders" href="/v7/components/components/threaded/props-api">
+    Component props reference
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/v7/components/customization/overview">
+    Customize colors, layout, functionality
+  </Card>
+
+  <Card title="Features" icon="star" href="/v7/components/components/threaded/features">
+    Explore all features
+  </Card>
+
+  <Card title="Installation" icon="download" href="/v7/components/components/threaded/installation">
+    Installation guide
+  </Card>
+</CardGroup>

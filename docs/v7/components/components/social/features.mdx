@@ -1,8 +1,163 @@
 ---
-title: "Features"
-description: "Features of the social comments component"
+title: "Social Comments Features"
+description: "Feature overview for social comments"
+icon: "star"
 ---
 
-# Features
+# Social Comments Features
 
-*Coming soon*
+Instagram-style comment system features.
+
+---
+
+## Core Features
+
+### Single-Level Nesting
+
+Maximum 2 levels: comments and replies. Keeps conversations simple and easy to follow.
+
+```
+Comment 1
+  └─ Reply to Comment 1
+  └─ Another reply
+
+Comment 2
+  └─ Reply to Comment 2
+```
+
+---
+
+### Heart/Like System
+
+Positive-only engagement with heart icons.
+
+- Heart button with like count display
+- One like per user per comment
+- Unlike at any time
+- No downvotes — positive community focus
+
+---
+
+### Sorting
+
+Built-in Top/New/Old sorting that users can switch on the fly.
+
+- **Top** — Most liked comments first
+- **New** — Newest comments first
+- **Old** — Oldest comments first
+
+---
+
+### @ Mentions
+
+Tag users with `@username`.
+
+- Autocomplete suggestions as you type
+- Clickable mentions link to user profiles (via `otherUserClickCallback`)
+- Mentioned users receive notifications (if enabled)
+- Works in both comments and replies
+
+---
+
+### Edit & Delete
+
+Comment authors can edit or delete their own comments.
+
+- **Edit:** Inline text editing, shows "edited" indicator
+- **Delete:** Confirmation modal, soft delete preserves thread structure
+
+---
+
+### Reporting
+
+Built-in reporting for inappropriate content.
+
+- Click "Report" from the action menu
+- Select a reason and submit
+- Reports appear in the [Replyke Dashboard](https://dash.replyke.com) for admin review
+
+---
+
+### Loading States
+
+Skeleton loaders while fetching comments — prevents layout shift and provides visual feedback.
+
+---
+
+### Empty States
+
+Friendly placeholder when no comments exist. Customize `no-comments-placeholder.tsx` to change messaging or add illustrations.
+
+---
+
+### Real-Time Updates
+
+Comments automatically update when other users post. No configuration required — powered by `@replyke/react-js` subscriptions.
+
+---
+
+### Dark Mode
+
+Full dark mode support.
+
+**Inline Styles Variant:**
+```tsx
+<SocialCommentSection
+  foreignId="photo_123"
+  theme={isDark ? 'dark' : 'light'}
+/>
+```
+
+**Tailwind Variant:**
+```tsx
+<html className={isDark ? 'dark' : ''}>
+  <SocialCommentSection foreignId="photo_123" />
+</html>
+```
+
+---
+
+### GIF Support (Optional)
+
+Enable a GIF picker via the [Replyke Dashboard](https://dash.replyke.com). Add a Giphy API key and GIF search appears in comment forms automatically — no code changes needed.
+
+---
+
+## Feature Matrix
+
+| Feature | Included | Customizable |
+|---------|:--------:|:------------:|
+| Single-level nesting | ✅ | ✅ |
+| Heart/like system | ✅ | ✅ (icon, color, animation) |
+| Sorting (Top/New/Old) | ✅ | ✅ (remove options, rename) |
+| @ Mentions | ✅ | ✅ (autocomplete styling) |
+| Edit comments | ✅ | ✅ |
+| Delete comments | ✅ | ✅ (confirmation UI) |
+| Reporting | ✅ | ✅ (reasons, modal styling) |
+| Loading states | ✅ | ✅ (skeleton design) |
+| Empty states | ✅ | ✅ (messaging, design) |
+| Real-time updates | ✅ | ❌ (handled by core SDK) |
+| Dark mode | ✅ | ✅ |
+| GIF support | ✅ | ❌ (enabled in dashboard) |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Props & API" icon="sliders" href="/v7/components/components/social/props-api">
+    Props reference
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/v7/components/customization/overview">
+    Customize components
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/v7/components/components/social/file-structure">
+    File organization
+  </Card>
+
+  <Card title="Installation" icon="download" href="/v7/components/components/social/installation">
+    Installation guide
+  </Card>
+</CardGroup>

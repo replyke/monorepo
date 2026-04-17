@@ -1,8 +1,154 @@
 ---
 title: "Styling Variants"
-description: "Using styling variants"
+description: "Inline styles vs Tailwind CSS"
+icon: "wand-magic-sparkles"
 ---
 
 # Styling Variants
 
-*Coming soon*
+Understanding inline styles vs Tailwind CSS variants and when to use each.
+
+---
+
+## Comparison
+
+| Aspect | Inline Styles | Tailwind CSS |
+|--------|:-------------:|:------------:|
+| **Dependencies** | None | Requires Tailwind CSS |
+| **Dark Mode** | `theme` prop | `dark:` prefix |
+| **Customization** | Change hex codes | Change classes or config |
+| **Code verbosity** | More verbose | Concise |
+| **Learning curve** | Easier | Tailwind knowledge needed |
+| **React Native** | ✅ Supported | ✅ (NativeWind) |
+
+---
+
+## Inline Styles
+
+```tsx
+<div style={{
+  backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+  padding: '16px',
+  borderRadius: '8px',
+  border: `1px solid ${theme === 'dark' ? '#374151' : '#E5E7EB'}`
+}}>
+  <span style={{
+    color: theme === 'dark' ? '#F9FAFB' : '#111827',
+    fontWeight: 600,
+  }}>
+    Username
+  </span>
+</div>
+```
+
+**Pros:**
+- No additional dependencies
+- Works everywhere (web and React Native)
+- Explicit, self-contained styling
+- Direct control over every value
+
+**Cons:**
+- More verbose code
+- Manual dark mode logic in every component
+- Repeated color values across files
+
+**Best for:**
+- Projects without Tailwind
+- React Native / Expo apps
+- Developers who prefer explicit styles
+
+---
+
+## Tailwind CSS
+
+```tsx
+<div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+  <span className="text-gray-900 dark:text-gray-50 font-semibold">
+    Username
+  </span>
+</div>
+```
+
+**Pros:**
+- Concise, readable code
+- Automatic dark mode with `dark:` prefix
+- Integrates with design systems
+- Smaller bundle with purging
+
+**Cons:**
+- Requires Tailwind CSS installed
+- Learning curve if unfamiliar
+- Less explicit (need to know what classes do)
+
+**Best for:**
+- Projects already using Tailwind
+- Web-only React apps
+- Developers who prefer utility-first CSS
+
+---
+
+## Choosing a Variant
+
+Choose during `npx @replyke/cli init`:
+
+```
+? Which styling approach do you prefer?
+❯ Tailwind CSS
+  Inline Styles
+```
+
+**If you're unsure:** choose Inline Styles. It works everywhere with no setup.
+
+---
+
+## Switching Variants
+
+To switch after installation, delete the component and reinstall with the new style:
+
+```bash
+# 1. Delete installed component
+rm -rf src/components/comments-threaded
+
+# 2. Update replyke.json
+# Change "style": "tailwind" to "style": "styled" (or vice versa)
+
+# 3. Re-install
+npx @replyke/cli add comments-threaded
+```
+
+<Warning>
+This replaces your component files. Back up any customizations before switching.
+</Warning>
+
+---
+
+## React Native Styling
+
+For React Native and Expo:
+
+- **Inline Styles** → Standard React Native `StyleSheet` / `style` prop approach
+- **Tailwind** → Uses [NativeWind](https://www.nativewind.dev/) (`className` prop)
+
+NativeWind must be installed and configured for the Tailwind variant to work on React Native.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Colors & Theming" icon="palette" href="/v7/components/customization/colors-theming">
+    Customize colors
+  </Card>
+
+  <Card title="Layout & Structure" icon="table-columns" href="/v7/components/customization/layout-structure">
+    Modify layout
+  </Card>
+
+  <Card title="Adding Features" icon="plus" href="/v7/components/customization/adding-features">
+    Add custom functionality
+  </Card>
+
+  <Card title="Advanced" icon="star" href="/v7/components/customization/advanced">
+    Advanced techniques
+  </Card>
+</CardGroup>

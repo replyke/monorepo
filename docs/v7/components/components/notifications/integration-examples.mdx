@@ -1,8 +1,307 @@
 ---
 title: "Integration Examples"
-description: "Examples of integrating the notification control component"
+description: "Real-world notification control integration examples"
+icon: "code"
 ---
 
 # Integration Examples
 
-*Coming soon*
+Real-world examples of integrating `NotificationControl` into different applications.
+
+---
+
+## Next.js App Router
+
+```tsx
+// app/components/Header.tsx
+'use client';
+
+import NotificationControl from '@/components/notifications-control';
+import { Bell } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+export default function Header() {
+  const router = useRouter();
+
+  const BellIcon = ({ unreadCount }: { unreadCount: number }) => (
+    <button className="relative p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+      <Bell className="w-6 h-6" />
+      {unreadCount > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          {unreadCount}
+        </span>
+      )}
+    </button>
+  );
+
+  return (
+    <header className="border-b">
+      <nav className="container mx-auto px-4 py-3 flex justify-between items-center">
+        <h1>My App</h1>
+
+        <NotificationControl
+          triggerComponent={BellIcon}
+          onNotificationClick={(notif) => router.push(`/notifications/${notif.id}`)}
+          onViewAllNotifications={() => router.push('/notifications')}
+        />
+      </nav>
+    </header>
+  );
+}
+```
+
+---
+
+## React Router (SPA)
+
+```tsx
+import NotificationControl from './components/notifications-control';
+import { Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+export default function Navigation() {
+  const navigate = useNavigate();
+
+  const handleNotificationClick = (notification: any) => {
+    switch (notification.type) {
+      case 'comment-reply':
+        navigate(`/posts/${notification.metadata.entityId}#comment-${notification.metadata.commentId}`);
+        break;
+      case 'entity-mention':
+        navigate(`/entities/${notification.metadata.entityId}`);
+        break;
+      case 'new-follow':
+        navigate(`/profile/${notification.metadata.followerId}`);
+        break;
+      default:
+        navigate('/notifications');
+    }
+  };
+
+  const BellIcon = ({ unreadCount }: { unreadCount: number }) => (
+    <button className="relative">
+      <Bell className="w-6 h-6" />
+      {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
+    </button>
+  );
+
+  return (
+    <nav>
+      <NotificationControl
+        triggerComponent={BellIcon}
+        onNotificationClick={handleNotificationClick}
+        onViewAllNotifications={() => navigate('/notifications')}
+      />
+    </nav>
+  );
+}
+```
+
+---
+
+## Social Media App
+
+```tsx
+function SocialHeader() {
+  return (
+    <header>
+      <NotificationControl
+        triggerComponent={BellWithBadge}
+        notificationTemplates={{
+          'comment-reply': true,
+          'comment-mention': true,
+          'entity-upvote': true,
+          'new-follow': true,
+          'connection-accepted': true,
+        }}
+        onNotificationClick={(notif) => {
+          if (notif.type === 'new-follow') {
+            navigate(`/profile/${notif.metadata.followerId}`);
+          } else if (notif.type === 'comment-reply') {
+            navigate(`/post/${notif.metadata.entityId}`);
+          }
+        }}
+      />
+    </header>
+  );
+}
+```
+
+---
+
+## SaaS Dashboard (System Notifications Only)
+
+```tsx
+function DashboardHeader() {
+  return (
+    <header>
+      <NotificationControl
+        triggerComponent={SystemBell}
+        notificationTemplates={{
+          'system': true,
+        }}
+        onNotificationClick={(notif) => {
+          if (notif.metadata.buttonData) {
+            window.location.href = notif.metadata.buttonData.url;
+          }
+        }}
+      />
+    </header>
+  );
+}
+```
+
+---
+
+## With Theme Toggle
+
+```tsx
+import { useState, useEffect } from 'react';
+import NotificationControl from './components/notifications-control';
+import { Bell, Moon, Sun } from 'lucide-react';
+
+function Header() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }, []);
+
+  return (
+    <header className={isDark ? 'dark' : ''}>
+      <nav>
+        <button onClick={() => setIsDark(!isDark)}>
+          {isDark ? <Sun /> : <Moon />}
+        </button>
+
+        <NotificationControl
+          triggerComponent={BellIcon}
+          onNotificationClick={handleClick}
+          theme={isDark ? 'dark' : 'light'}
+        />
+      </nav>
+    </header>
+  );
+}
+```
+
+---
+
+## With Analytics Tracking
+
+```tsx
+import { analytics } from '@/lib/analytics';
+
+<NotificationControl
+  triggerComponent={BellIcon}
+  onNotificationClick={(notif) => {
+    analytics.track('Notification Clicked', {
+      notificationId: notif.id,
+      notificationType: notif.type,
+      isRead: notif.isRead,
+    });
+    handleNavigation(notif);
+  }}
+/>
+```
+
+---
+
+## Accessible Implementation
+
+```tsx
+const AccessibleBell = ({ unreadCount }: { unreadCount: number }) => (
+  <button
+    aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+    aria-haspopup="true"
+    className="relative"
+  >
+    <Bell className="w-6 h-6" />
+    {unreadCount > 0 && (
+      <span aria-label={`${unreadCount} unread notifications`} className="badge">
+        {unreadCount}
+      </span>
+    )}
+  </button>
+);
+```
+
+---
+
+## Complete Working Example
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+import { ReplykeProvider } from '@replyke/react-js';
+import NotificationControl from './components/notifications-control';
+import { Bell } from 'lucide-react';
+
+export default function App() {
+  const [isDark, setIsDark] = useState(false);
+
+  const BellTrigger = ({ unreadCount }: { unreadCount: number }) => (
+    <button className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+      <Bell className="w-6 h-6" />
+      {unreadCount > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+          {unreadCount}
+        </span>
+      )}
+    </button>
+  );
+
+  return (
+    <ReplykeProvider projectId="your-project-id" signedToken={token}>
+      <div className={isDark ? 'dark' : ''}>
+        <header className="bg-white dark:bg-gray-900 border-b">
+          <nav className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <h1>My App</h1>
+
+            <div className="flex items-center gap-4">
+              <button onClick={() => setIsDark(!isDark)}>
+                {isDark ? '☀️' : '🌙'}
+              </button>
+
+              <NotificationControl
+                triggerComponent={BellTrigger}
+                onNotificationClick={(notification) => {
+                  console.log('Notification clicked:', notification);
+                }}
+                onViewAllNotifications={() => {
+                  window.location.href = '/notifications';
+                }}
+              />
+            </div>
+          </nav>
+        </header>
+
+        <main>{/* Your app content */}</main>
+      </div>
+    </ReplykeProvider>
+  );
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Props & API" icon="sliders" href="/v7/components/components/notifications/props-api">
+    Component props reference
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/v7/components/components/notifications/customization">
+    Customize appearance
+  </Card>
+
+  <Card title="Installation" icon="download" href="/v7/components/components/notifications/installation">
+    Installation guide
+  </Card>
+
+  <Card title="Overview" icon="bell" href="/v7/components/components/notifications/overview">
+    Back to overview
+  </Card>
+</CardGroup>

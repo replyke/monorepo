@@ -1,8 +1,242 @@
 ---
-title: "Props API"
-description: "Props and configuration for the social comments component"
+title: "Social Comments Props"
+description: "SocialCommentSection props and API"
+icon: "sliders"
 ---
 
-# Props API
+# Social Comments Props
 
-*Coming soon*
+The `SocialCommentSection` component follows the same **minimal props philosophy** as all Replyke components. It works with just `entityId` and offers optional props for specific needs.
+
+---
+
+## Component Import
+
+```tsx
+import { SocialCommentSection } from './components/comments-social';
+```
+
+---
+
+## Props Interface
+
+```tsx
+interface SocialCommentSectionProps {
+  // Entity identification (provide ONE of these)
+  entity?: Entity | undefined | null;
+  entityId?: string | undefined | null;
+  foreignId?: string | undefined | null;
+  shortId?: string | undefined | null;
+
+  // Optional features
+  isVisible?: boolean;
+  highlightedCommentId?: string | undefined | null;
+  theme?: 'light' | 'dark';   // Only for inline styles variant
+  children?: React.ReactNode;
+}
+```
+
+---
+
+## Entity Identification
+
+**Provide one of these** to identify which entity the comments belong to:
+
+### `entity`
+**Type:** `Entity | undefined | null`
+
+A complete Entity object. Use when you already have it from `useFetchEntity` or similar hooks.
+
+### `entityId`
+**Type:** `string | undefined | null`
+
+The internal Replyke ID for the entity.
+
+### `foreignId`
+**Type:** `string | undefined | null`
+
+Your external/custom ID for the entity. The component finds or creates the Replyke entity automatically. This is the most common option.
+
+### `shortId`
+**Type:** `string | undefined | null`
+
+A short, human-readable identifier if you've set one on the entity.
+
+<Note>
+**You only need ONE of these props.** Use whichever fits your data model best.
+</Note>
+
+---
+
+## Optional Props
+
+### `isVisible`
+
+**Type:** `boolean` — **Default:** `true`
+
+Controls whether the comment section is visible. Useful when rendering inside a modal, drawer, or bottom sheet.
+
+```tsx
+<SocialCommentSection
+  entityId="photo_123"
+  isVisible={showComments}
+/>
+```
+
+---
+
+### `highlightedCommentId`
+
+**Type:** `string | undefined | null`
+
+ID of a specific comment to highlight on load. The component scrolls to it and applies a highlight that fades after a few seconds.
+
+```tsx
+<SocialCommentSection
+  entityId="photo_123"
+  highlightedCommentId="comment_456"
+/>
+```
+
+---
+
+### `theme`
+
+**Type:** `'light' | 'dark'` — **Default:** `'light'`
+
+**Only for the inline styles variant.** Sets the color theme for the component.
+
+<Tabs>
+  <Tab title="Inline Styles Variant">
+    ```tsx
+    <SocialCommentSection
+      foreignId="photo_123"
+      theme={isDark ? 'dark' : 'light'}
+    />
+    ```
+  </Tab>
+
+  <Tab title="Tailwind Variant">
+    Ignores this prop. Use Tailwind's dark mode system instead:
+
+    ```tsx
+    <html className={isDark ? 'dark' : ''}>
+      <SocialCommentSection foreignId="photo_123" />
+    </html>
+    ```
+
+    Requires `darkMode: 'class'` in `tailwind.config.js`.
+  </Tab>
+</Tabs>
+
+---
+
+### `children`
+
+**Type:** `React.ReactNode`
+
+Optional content rendered within the comment section.
+
+```tsx
+<SocialCommentSection entityId="photo_123">
+  <div className="text-center text-gray-400 text-sm my-2">
+    Share your thoughts!
+  </div>
+</SocialCommentSection>
+```
+
+---
+
+## Usage Examples
+
+### Minimal
+
+```tsx
+<SocialCommentSection foreignId="photo_123" />
+```
+
+---
+
+### With Dark Mode (Inline Styles)
+
+```tsx
+function PhotoPost({ photo }) {
+  const [isDark, setIsDark] = useState(false);
+
+  return (
+    <>
+      <img src={photo.url} />
+      <SocialCommentSection
+        foreignId={photo.id}
+        theme={isDark ? 'dark' : 'light'}
+      />
+    </>
+  );
+}
+```
+
+---
+
+### With Highlighted Comment
+
+```tsx
+import { useSearchParams } from 'react-router-dom';
+
+function PhotoPost({ photo }) {
+  const [searchParams] = useSearchParams();
+
+  return (
+    <SocialCommentSection
+      foreignId={photo.id}
+      highlightedCommentId={searchParams.get('commentId')}
+    />
+  );
+}
+```
+
+---
+
+### In a React Native Bottom Sheet
+
+```tsx
+import BottomSheet from '@gorhom/bottom-sheet';
+
+function PhotoScreen({ photo }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <PhotoView photo={photo} onCommentPress={() => setIsOpen(true)} />
+
+      <BottomSheet isOpen={isOpen}>
+        <SocialCommentSection
+          foreignId={photo.id}
+          isVisible={isOpen}
+        />
+      </BottomSheet>
+    </>
+  );
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="File Structure" icon="folder-tree" href="/v7/components/components/social/file-structure">
+    Component organization
+  </Card>
+
+  <Card title="Features" icon="star" href="/v7/components/components/social/features">
+    Feature overview
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/v7/components/customization/overview">
+    Customize the component
+  </Card>
+
+  <Card title="Installation" icon="download" href="/v7/components/components/social/installation">
+    Installation guide
+  </Card>
+</CardGroup>

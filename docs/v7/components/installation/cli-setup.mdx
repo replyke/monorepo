@@ -1,8 +1,207 @@
 ---
 title: "CLI Setup"
-description: "Installing the Replyke CLI"
+description: "Install and configure the Replyke CLI"
+icon: "terminal"
 ---
 
-# CLI Setup
+# Installing the Replyke CLI
 
-*Coming soon*
+The Replyke CLI copies fully customizable comment components directly into your project as editable source code. You can use it with `npx` (no installation required) or install it globally.
+
+---
+
+## Prerequisites
+
+<Steps>
+  <Step title="Node.js 18+">
+    ```bash
+    node --version
+    # Should output v18.x.x or higher
+    ```
+  </Step>
+
+  <Step title="A React, React Native, or Expo project">
+    Supported platforms:
+    - React (Web) ✅
+    - React Native ✅
+    - Expo ✅
+  </Step>
+
+  <Step title="A Replyke project">
+    Create a project in the [Replyke Dashboard](https://dash.replyke.com) if you haven't already.
+  </Step>
+</Steps>
+
+---
+
+## Using npx (Recommended)
+
+No installation required — `npx` always uses the latest version:
+
+```bash
+npx @replyke/cli init
+```
+
+---
+
+## Global Installation (Optional)
+
+```bash
+npm install -g @replyke/cli
+```
+
+Then use without `npx`:
+
+```bash
+replyke init
+replyke add comments-threaded
+```
+
+<Note>
+The rest of this documentation uses `npx @replyke/cli` to stay version-agnostic, but `replyke` works identically when installed globally.
+</Note>
+
+---
+
+## Initializing Your Project
+
+Run the init command from your project root:
+
+```bash
+cd your-react-app
+npx @replyke/cli init
+```
+
+### Interactive Prompts
+
+<AccordionGroup>
+  <Accordion title="Platform Selection" icon="layer-group">
+    **Question:** "Which platform are you using?"
+
+    **Options:** React (Web) · React Native · Expo
+
+    Determines which component variants and dependencies are used.
+  </Accordion>
+
+  <Accordion title="Styling Preference" icon="palette">
+    **Question:** "Which styling approach do you prefer?"
+
+    **Options:**
+    - **Tailwind CSS** — Uses utility classes (`bg-white dark:bg-gray-800`)
+    - **Inline Styles** — Uses style objects (`style={{ backgroundColor: '...' }}`)
+
+    Choose **Tailwind** if your project already uses Tailwind CSS. Otherwise choose **Inline Styles**.
+  </Accordion>
+
+  <Accordion title="Component Path" icon="folder">
+    **Question:** "Where should components be installed?"
+
+    **Default:** `src/components`
+
+    The directory where CLI components will be copied. You can use any path.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## What Happens During Init
+
+1. **Detects your project type** from `package.json`
+2. **Creates `replyke.json`** in your project root
+3. **Checks for required peer dependencies** and offers to install missing ones
+
+---
+
+## The replyke.json File
+
+After initialization, a `replyke.json` file is created in your project root:
+
+```json
+{
+  "platform": "react",
+  "style": "tailwind",
+  "typescript": true,
+  "paths": {
+    "components": "src/components"
+  },
+  "aliases": {
+    "@/components": "./src/components"
+  }
+}
+```
+
+See [Configuration](/v7/components/installation/configuration) for a full reference.
+
+---
+
+## Installing Dependencies
+
+The CLI checks for required peer dependencies and prompts to install them if missing.
+
+**React (Web):**
+```bash
+npm install @replyke/react-js
+```
+
+**React Native:**
+```bash
+npm install @replyke/react-native
+```
+
+**Expo:**
+```bash
+npm install @replyke/expo
+```
+
+<Warning>
+These packages are **required**. Components use them for data fetching, authentication, real-time updates, and core functionality.
+</Warning>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Error: Node version too old" icon="triangle-exclamation">
+    ```
+    Error: The Replyke CLI requires Node.js 18 or higher
+    ```
+    Upgrade Node.js to v18 or higher.
+  </Accordion>
+
+  <Accordion title="Error: No package.json found" icon="folder-xmark">
+    Run the command from your project root directory where `package.json` is located.
+  </Accordion>
+
+  <Accordion title="CLI hangs or doesn't respond" icon="hourglass">
+    1. Press `Ctrl+C` to cancel
+    2. Clear npx cache: `npx clear-npx-cache`
+    3. Try again: `npx @replyke/cli init`
+  </Accordion>
+
+  <Accordion title="Want to change configuration" icon="gear">
+    Delete `replyke.json` and run `npx @replyke/cli init` again, or manually edit the file and re-run `add` commands.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/v7/components/installation/quick-start">
+    Add your first component in under 5 minutes
+  </Card>
+
+  <Card title="Configuration Reference" icon="file-code" href="/v7/components/installation/configuration">
+    Understand every option in replyke.json
+  </Card>
+
+  <Card title="Threaded Comments" icon="comments" href="/v7/components/components/threaded/installation">
+    Add Reddit-style threaded comments
+  </Card>
+
+  <Card title="Social Comments" icon="heart" href="/v7/components/components/social/installation">
+    Add Instagram-style social comments
+  </Card>
+</CardGroup>

@@ -1,8 +1,168 @@
 ---
-title: "Installation"
-description: "Installing the social comments component"
+title: "Installing Social Comments"
+description: "Add Instagram-style social comments to your project"
+icon: "download"
 ---
 
-# Installation
+# Installing Social Comments
 
-*Coming soon*
+Add Instagram-style social comments to your project with a single command.
+
+---
+
+## Prerequisites
+
+<Steps>
+  <Step title="Initialize CLI">
+    ```bash
+    npx @replyke/cli init
+    ```
+    Creates your `replyke.json` configuration file. Select your platform and styling preference.
+  </Step>
+
+  <Step title="Install Dependencies">
+    **React (Web):**
+    ```bash
+    npm install @replyke/react-js @replyke/ui-core-react-js
+    ```
+
+    **React Native:**
+    ```bash
+    npm install @replyke/react-native @replyke/ui-core-react-native
+    ```
+
+    **Expo:**
+    ```bash
+    npm install @replyke/expo @replyke/ui-core-react-native
+    ```
+  </Step>
+</Steps>
+
+See the [CLI Setup Guide](/v7/components/installation/cli-setup) for details.
+
+---
+
+## Installation Command
+
+```bash
+npx @replyke/cli add comments-social
+```
+
+---
+
+## What Gets Installed
+
+The CLI copies approximately 23 files into your project:
+
+```
+src/components/comments-social/
+├── index.ts                              # Barrel export (entry point)
+├── components/                           # UI components (~18 files)
+│   ├── social-comment-section.tsx        # Main component
+│   ├── new-comment-form.tsx              # Comment input form
+│   ├── reply-banner.tsx                  # Reply indicator
+│   ├── mention-suggestions.tsx           # @ mention autocomplete
+│   ├── sort-by-button.tsx               # Top/New/Old sorting
+│   ├── comments-feed/
+│   │   ├── comments-feed.tsx             # Feed container
+│   │   ├── loaded-comments.tsx           # Comment list
+│   │   ├── fetching-comments-skeletons.tsx
+│   │   ├── no-comments-placeholder.tsx
+│   │   └── comment/
+│   │       ├── comment.tsx              # Individual comment
+│   │       ├── heart-button.tsx         # Like button
+│   │       └── replies.tsx
+│   └── modals/
+│       ├── report-comment-modal/        # Report modal
+│       └── delete-comment-modal/        # Delete confirmation
+├── hooks/
+│   ├── use-social-comments.tsx          # Main comment logic
+│   └── use-ui-state.tsx                 # UI state management
+├── utils/
+│   └── prop-comparison.ts
+└── context/
+    └── ui-state-context.tsx
+```
+
+---
+
+## Using the Component
+
+```tsx
+import { SocialCommentSection } from './components/comments-social';
+
+function Post({ post }) {
+  return (
+    <div>
+      <img src={post.image} alt={post.caption} />
+      <p>{post.caption}</p>
+      <SocialCommentSection entityId={post.id} />
+    </div>
+  );
+}
+```
+
+<Info>
+Make sure your app is wrapped with `<ReplykeProvider>`. See the [Quick Start Guide](/v7/components/installation/quick-start) for setup details.
+</Info>
+
+---
+
+## Platform Support
+
+| Platform | Tailwind | Inline Styles |
+|----------|:--------:|:-------------:|
+| React (Web) | ✅ | ✅ |
+| React Native | ✅ | ✅ |
+| Expo | ✅ | ✅ |
+
+---
+
+## Switching Styling Variants
+
+<Steps>
+  <Step title="Delete Current Components">
+    ```bash
+    rm -rf src/components/comments-social
+    ```
+  </Step>
+
+  <Step title="Update Configuration">
+    Edit `replyke.json`:
+    ```json
+    { "style": "styled" }
+    ```
+  </Step>
+
+  <Step title="Re-install">
+    ```bash
+    npx @replyke/cli add comments-social
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+This replaces your component files. Back up any customizations first.
+</Warning>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Props & API" icon="sliders" href="/v7/components/components/social/props-api">
+    Learn about available props
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/v7/components/customization/overview">
+    Customize the component
+  </Card>
+
+  <Card title="Features" icon="star" href="/v7/components/components/social/features">
+    Explore all features
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/v7/components/components/social/file-structure">
+    Understand file organization
+  </Card>
+</CardGroup>

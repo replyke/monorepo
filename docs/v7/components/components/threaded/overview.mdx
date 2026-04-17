@@ -1,8 +1,160 @@
 ---
 title: "Threaded Comments Overview"
-description: "Overview of the threaded comments component"
+description: "Reddit-style threaded comment system with unlimited nesting"
+icon: "comments"
 ---
 
-# Threaded Comments Overview
+# Threaded Comments
 
-*Coming soon*
+Reddit-style threaded comment system with unlimited nesting depth, upvote/downvote functionality, and visual threading lines.
+
+---
+
+## Overview
+
+Threaded comments are perfect for forums, technical discussions, and any platform where users need deep, structured conversations with clear visual hierarchy.
+
+---
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Unlimited Nesting" icon="sitemap">
+    Comments can be nested infinitely deep. Users can reply to any comment, creating branching conversation threads.
+  </Card>
+
+  <Card title="Upvote/Downvote System" icon="arrow-up-arrow-down">
+    Reddit-style voting with visible scores. Helps surface quality content and provides social proof.
+  </Card>
+
+  <Card title="Visual Threading" icon="diagram-project">
+    Clear indentation and connection lines show comment hierarchy. Easy to follow complex conversations.
+  </Card>
+
+  <Card title="Collapsible Threads" icon="compress">
+    Users can collapse entire comment chains to navigate long discussions more easily.
+  </Card>
+
+  <Card title="@ Mentions" icon="at">
+    Tag other users with `@username`. Clickable mentions with autocomplete suggestions.
+  </Card>
+
+  <Card title="Highlighted Comments" icon="highlighter">
+    Deep-link to specific comments. Useful when directing users from notifications.
+  </Card>
+
+  <Card title="Edit & Delete" icon="pen-to-square">
+    Comment authors can edit or delete their own comments. Full moderation support.
+  </Card>
+
+  <Card title="Reporting & Moderation" icon="flag">
+    Built-in reporting system. Admin dashboard for managing reports and banning users.
+  </Card>
+</CardGroup>
+
+---
+
+## Use Cases
+
+**Perfect for:**
+- Developer forums and Q&A sites
+- Technical blog posts
+- News sites with discussion sections
+- Community forums
+- Reddit-style platforms
+- Long-form content with detailed discussions
+
+**Not ideal for:**
+- Quick social media interactions (use [Social Comments](/v7/components/components/social/overview) instead)
+- Mobile-first, minimal designs
+- Platforms that want positive-only engagement (no downvotes)
+
+---
+
+## Platform Support
+
+| Platform | Status |
+|----------|--------|
+| React (Web) | ✅ Fully supported |
+| React Native | ✅ Fully supported |
+| Expo | ✅ Fully supported |
+
+---
+
+## Styling Variants
+
+<Tabs>
+  <Tab title="Tailwind CSS">
+    Uses Tailwind utility classes. Requires Tailwind CSS installed.
+
+    ```tsx
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+    ```
+
+    Best for projects using Tailwind or NativeWind.
+  </Tab>
+
+  <Tab title="Inline Styles">
+    Uses inline `style={{}}` objects with conditional dark mode logic.
+
+    ```tsx
+    <div style={{
+      backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+      padding: '16px',
+      borderRadius: '8px'
+    }}>
+    ```
+
+    Best for projects without Tailwind, or where explicit styling is preferred.
+  </Tab>
+</Tabs>
+
+Choose your preference during `npx @replyke/cli init`.
+
+---
+
+## Required Dependencies
+
+**React (Web):**
+```json
+{
+  "dependencies": {
+    "@replyke/react-js": "^7.0.0",
+    "@replyke/ui-core-react-js": "^7.0.0"
+  }
+}
+```
+
+**React Native / Expo:**
+```json
+{
+  "dependencies": {
+    "@replyke/react-native": "^7.0.0",
+    "@replyke/ui-core-react-native": "^7.0.0"
+  }
+}
+```
+
+The CLI checks for these and prompts to install them if missing.
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/v7/components/components/threaded/installation">
+    Add threaded comments to your project
+  </Card>
+
+  <Card title="Props & API" icon="sliders" href="/v7/components/components/threaded/props-api">
+    Learn about available props and options
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/v7/components/components/threaded/file-structure">
+    Understand the component file organization
+  </Card>
+
+  <Card title="Features" icon="star" href="/v7/components/components/threaded/features">
+    Explore all features in detail
+  </Card>
+</CardGroup>

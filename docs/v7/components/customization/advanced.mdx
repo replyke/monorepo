@@ -1,8 +1,268 @@
 ---
 title: "Advanced Customization"
-description: "Advanced customization techniques"
+description: "Advanced techniques for customizing Replyke components"
+icon: "star"
 ---
 
 # Advanced Customization
 
-*Coming soon*
+Deeper customizations involving hooks, context, utilities, and integration with your own systems.
+
+---
+
+## Modifying Hooks
+
+The `/hooks/` directory contains the core logic for each component. This is where you customize behavior at a deeper level than editing JSX.
+
+### Change Default Sort Order
+
+```tsx
+// File: hooks/use-threaded-comments.tsx
+
+const [sortBy, setSortBy] = useState<'top' | 'new' | 'old'>('new');  // Changed from 'top'
+```
+
+### Change Comments Per Page
+
+```tsx
+const { data } = useComments({
+  entityId,
+  pageSize: 20,  // Default is 10
+});
+```
+
+### Customize Reply Depth Limit
+
+```tsx
+// File: comment-thread.tsx
+
+const MAX_DEPTH = 3;  // Only allow 3 levels of nesting
+
+{depth < MAX_DEPTH && (
+  <NewReplyForm parentId={comment.id} />
+)}
+```
+
+---
+
+## User Interaction Callbacks
+
+Both comment hooks expose behavioral callbacks you can customize in the hook file:
+
+```tsx
+// File: hooks/use-threaded-comments.tsx (or use-social-comments.tsx)
+
+// Called when unauthenticated user tries to comment
+const loginRequiredCallback = () => {
+  router.push('/login?returnTo=' + window.location.pathname);
+};
+
+// Called when user without a username tries to comment
+const usernameRequiredCallback = () => {
+  router.push('/settings/profile?setup=username');
+};
+
+// Called when clicking your own profile
+const currentUserClickCallback = () => {
+  router.push('/profile');
+};
+
+// Called when clicking another user's name/avatar
+const otherUserClickCallback = (userId: string, foreignId?: string) => {
+  router.push(`/users/${foreignId || userId}`);
+};
+```
+
+---
+
+## Customizing Context
+
+The `ui-state-context.tsx` provides shared state across all sub-components. Add custom state here to make it accessible throughout the component tree:
+
+```tsx
+// File: context/ui-state-context.tsx
+
+interface UIState {
+  // Existing state
+  activeReplyId: string | null;
+  reportModalOpen: boolean;
+
+  // Add your custom state
+  highlightedUserId: string | null;
+  isCompact: boolean;
+}
+
+const UIStateContext = createContext<UIState>({
+  activeReplyId: null,
+  reportModalOpen: false,
+  highlightedUserId: null,
+  isCompact: false,
+});
+```
+
+---
+
+## Adding Utility Functions
+
+Create new files in the `/utils/` directory for shared logic:
+
+```tsx
+// File: utils/analytics.ts
+
+export const trackCommentEvent = (event: string, data: Record<string, unknown>) => {
+  window.analytics?.track(event, {
+    ...data,
+    source: 'comments-component',
+    timestamp: new Date().toISOString(),
+  });
+};
+```
+
+Then import and use it in any component:
+
+```tsx
+import { trackCommentEvent } from '../utils/analytics';
+
+const handleVote = () => {
+  trackCommentEvent('Comment Voted', { commentId, direction: 'up' });
+  // existing vote logic
+};
+```
+
+---
+
+## Replacing Sub-Components
+
+For major UI changes, replace a sub-component with your own implementation:
+
+```tsx
+// File: comment-thread.tsx
+
+// Instead of the built-in VoteButtons:
+// import VoteButtons from './single-comment/vote-buttons';
+
+// Use your own:
+import CustomVoteButtons from '@/components/ui/vote-buttons';
+
+return (
+  <div>
+    <AuthorInfo />
+    <CommentBody />
+    <CustomVoteButtons
+      commentId={comment.id}
+      upvotes={comment.upvotes}
+      downvotes={comment.downvotes}
+    />
+  </div>
+);
+```
+
+---
+
+## Integrating with External Systems
+
+### Connecting to Your Auth System
+
+```tsx
+// File: hooks/use-threaded-comments.tsx
+
+import { useAuth } from '@/context/auth-context';
+
+const { user, isAuthenticated } = useAuth();
+
+const loginRequiredCallback = () => {
+  openLoginModal();  // Your app's modal
+};
+```
+
+### Connecting to Your User System
+
+```tsx
+const otherUserClickCallback = (userId: string, foreignId?: string) => {
+  // foreignId is your system's user ID if set during auth
+  const profileUrl = foreignId
+    ? `/users/${foreignId}`
+    : `/users/replyke/${userId}`;
+
+  router.push(profileUrl);
+};
+```
+
+### Connecting to Your Notification System
+
+Wire the `highlightedCommentId` prop to deep-link from your notifications:
+
+```tsx
+// In your notification handler
+const handleNotificationClick = (notification) => {
+  if (notification.type === 'comment-reply') {
+    router.push(`/posts/${notification.metadata.entityId}?commentId=${notification.metadata.commentId}`);
+  }
+};
+
+// In your post page
+const [searchParams] = useSearchParams();
+
+<ThreadedCommentSection
+  foreignId={post.id}
+  highlightedCommentId={searchParams.get('commentId')}
+/>
+```
+
+---
+
+## Performance Optimization
+
+### Memoize the Component
+
+Wrap the component if its parent re-renders frequently:
+
+```tsx
+import { memo } from 'react';
+import { ThreadedCommentSection } from './components/comments-threaded';
+
+const MemoizedComments = memo(ThreadedCommentSection);
+```
+
+The installed `utils/prop-comparison.ts` already handles deep equality checks for entity props to prevent unnecessary re-renders.
+
+### Lazy Load on Scroll
+
+```tsx
+import { useInView } from 'react-intersection-observer';
+
+function BlogPost({ post }) {
+  const { ref, inView } = useInView({ triggerOnce: true });
+
+  return (
+    <div>
+      <article>{post.content}</article>
+      <div ref={ref}>
+        {inView && <ThreadedCommentSection foreignId={post.id} />}
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Customization Overview" icon="paintbrush" href="/v7/components/customization/overview">
+    Customization introduction
+  </Card>
+
+  <Card title="Colors & Theming" icon="palette" href="/v7/components/customization/colors-theming">
+    Customize colors and dark mode
+  </Card>
+
+  <Card title="Adding Features" icon="plus" href="/v7/components/customization/adding-features">
+    Common feature additions
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/v7/components/components/threaded/file-structure">
+    Understand component organization
+  </Card>
+</CardGroup>

@@ -1,8 +1,221 @@
 ---
-title: "Installation"
-description: "Installing the notification control component"
+title: "Installing Notification Control"
+description: "Add notification dropdown to your project"
+icon: "download"
 ---
 
-# Installation
+# Installing Notification Control
 
-*Coming soon*
+Add a notification dropdown control to your navigation bar with a single command.
+
+---
+
+## Prerequisites
+
+<Steps>
+  <Step title="Initialize CLI">
+    ```bash
+    npx @replyke/cli init
+    ```
+    Creates your `replyke.json`. Select `react` as platform (notifications are web-only).
+  </Step>
+
+  <Step title="Install Dependencies">
+    ```bash
+    npm install @replyke/react-js framer-motion lucide-react
+    ```
+  </Step>
+</Steps>
+
+See the [CLI Setup Guide](/v7/components/installation/cli-setup) for details.
+
+---
+
+## Installation Command
+
+```bash
+npx @replyke/cli add notifications-control
+```
+
+---
+
+## What Gets Installed
+
+Only **5 files** — much simpler than comment components:
+
+```
+src/components/notifications-control/
+├── index.ts                              # Barrel export (entry point)
+├── components/
+│   ├── notification-control.tsx          # Main dropdown control
+│   ├── notification-list.tsx             # List with infinite scroll
+│   ├── notification-item.tsx             # Individual notification row
+│   └── notification-icon.tsx            # Type-based icon display
+└── utils/
+    └── notification-utils.ts             # Time formatting, text truncation
+```
+
+---
+
+## Basic Usage
+
+```tsx
+import NotificationControl from './components/notifications-control';
+import { Bell } from 'lucide-react';
+
+function Header() {
+  const BellTrigger = ({ unreadCount }: { unreadCount: number }) => (
+    <button className="relative p-2 hover:bg-gray-100 rounded-full">
+      <Bell className="w-6 h-6" />
+      {unreadCount > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          {unreadCount}
+        </span>
+      )}
+    </button>
+  );
+
+  return (
+    <nav>
+      <NotificationControl
+        triggerComponent={BellTrigger}
+        onNotificationClick={(notification) => {
+          console.log('Clicked:', notification);
+        }}
+      />
+    </nav>
+  );
+}
+```
+
+<Info>
+Make sure your app is wrapped with `<ReplykeProvider>`. See the [Quick Start Guide](/v7/components/installation/quick-start) for details.
+</Info>
+
+---
+
+## Complete Example
+
+```tsx
+import { ReplykeProvider } from '@replyke/react-js';
+import NotificationControl from './components/notifications-control';
+import { Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+function App() {
+  return (
+    <ReplykeProvider projectId="your-project-id" signedToken={token}>
+      <Header />
+      <main>{/* Your app */}</main>
+    </ReplykeProvider>
+  );
+}
+
+function Header() {
+  const navigate = useNavigate();
+
+  const BellIcon = ({ unreadCount }: { unreadCount: number }) => (
+    <button className="relative p-2 hover:bg-gray-100 rounded-full">
+      <Bell className="w-6 h-6" />
+      {unreadCount > 0 && (
+        <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          {unreadCount}
+        </span>
+      )}
+    </button>
+  );
+
+  return (
+    <header>
+      <nav className="container mx-auto px-4 py-3 flex justify-between items-center">
+        <h1>My App</h1>
+
+        <NotificationControl
+          triggerComponent={BellIcon}
+          onNotificationClick={(notification) => {
+            if (notification.type === 'comment-reply') {
+              navigate(`/posts/${notification.metadata.entityId}`);
+            } else if (notification.type === 'new-follow') {
+              navigate(`/users/${notification.metadata.followerId}`);
+            }
+          }}
+          onViewAllNotifications={() => navigate('/notifications')}
+        />
+      </nav>
+    </header>
+  );
+}
+```
+
+---
+
+## Switching Styling Variants
+
+<Steps>
+  <Step title="Delete Current Component">
+    ```bash
+    rm -rf src/components/notifications-control
+    ```
+  </Step>
+
+  <Step title="Update Configuration">
+    ```json
+    { "style": "styled" }
+    ```
+  </Step>
+
+  <Step title="Re-install">
+    ```bash
+    npx @replyke/cli add notifications-control
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Import errors" icon="file-import">
+    ```tsx
+    // paths.components = "src/components"
+    import NotificationControl from './components/notifications-control';
+    ```
+  </Accordion>
+
+  <Accordion title="Icons not showing" icon="image">
+    ```bash
+    npm install lucide-react
+    ```
+  </Accordion>
+
+  <Accordion title="Dropdown appears off-screen" icon="location-arrow">
+    Check parent container CSS — containers with `overflow: hidden` can clip the dropdown. Set `overflow: visible` on any clipping ancestor.
+  </Accordion>
+
+  <Accordion title="Unread count not updating" icon="circle-dot">
+    Ensure `<ReplykeProvider>` wraps the component and `signedToken` is set correctly.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Props & API" icon="sliders" href="/v7/components/components/notifications/props-api">
+    Learn about component props
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/v7/components/components/notifications/customization">
+    Customize colors and layout
+  </Card>
+
+  <Card title="Integration Examples" icon="code" href="/v7/components/components/notifications/integration-examples">
+    See real-world examples
+  </Card>
+
+  <Card title="Overview" icon="bell" href="/v7/components/components/notifications/overview">
+    Back to overview
+  </Card>
+</CardGroup>
