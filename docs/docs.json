@@ -11,467 +11,7 @@
   "navigation": {
     "versions": [
       {
-        "version": "6.0.0",
-        "tabs": [
-          {
-            "tab": "Overview",
-            "groups": [
-              {
-                "group": "Getting Started",
-                "pages": [
-                  "v6/index",
-                  "v6/integration-options",
-                  "v6/authentication",
-                  "v6/security",
-                  "v6/mcp-server"
-                ]
-              },
-              {
-                "group": "SDKs",
-                "pages": ["v6/nodejs-sdk", "v6/js-sdk"]
-              }
-            ]
-          },
-
-          {
-            "tab": "SDK Reference",
-            "groups": [
-              {
-                "group": "React & React Native",
-                "pages": ["v6/sdk/getting-started"]
-              },
-              {
-                "group": "Authentication",
-                "pages": [
-                  "v6/sdk/authentication/overview",
-                  "v6/sdk/authentication/built-in",
-                  "v6/sdk/authentication/external"
-                ]
-              },
-              {
-                "group": "Users",
-                "pages": ["v6/sdk/users/use-user-hook"]
-              },
-              {
-                "group": "Relationships",
-                "pages": [
-                  "v6/sdk/relationships/overview",
-                  "v6/sdk/relationships/use-follow-manager",
-                  "v6/sdk/relationships/use-connection-manager"
-                ]
-              },
-              {
-                "group": "Entities",
-                "pages": [
-                  "v6/sdk/entities/overview",
-                  "v6/sdk/entities/provider-and-hook"
-                ]
-              },
-              {
-                "group": "Entity Lists",
-                "pages": [
-                  "v6/sdk/entity-lists/overview",
-                  "v6/sdk/entity-lists/fetch-entities",
-                  "v6/sdk/entity-lists/infuse-data",
-                  "v6/sdk/entity-lists/filters/title-filters",
-                  "v6/sdk/entity-lists/filters/content-filters",
-                  "v6/sdk/entity-lists/filters/keywords-filters",
-                  "v6/sdk/entity-lists/filters/attachments-filters",
-                  "v6/sdk/entity-lists/filters/location-filters",
-                  "v6/sdk/entity-lists/filters/metadata-filters"
-                ]
-              },
-              {
-                "group": "Lists",
-                "pages": [
-                  "v6/sdk/lists/overview",
-                  "v6/sdk/lists/hook",
-                  "v6/sdk/lists/use-is-entity-saved"
-                ]
-              },
-              {
-                "group": "App Notifications",
-                "pages": [
-                  "v6/sdk/app-notifications/overview",
-                  "v6/sdk/app-notifications/hook",
-                  "v6/sdk/app-notifications/notification-templates",
-                  "v6/sdk/app-notifications/webhook-integration"
-                ]
-              },
-              {
-                "group": "Moderation",
-                "pages": ["v6/sdk/moderation"]
-              }
-            ]
-          },
-          {
-            "tab": "Components",
-            "groups": [
-              {
-                "group": "Overview",
-                "pages": ["v6/components/overview"]
-              },
-              {
-                "group": "Installation",
-                "pages": [
-                  "v6/components/installation/cli-setup",
-                  "v6/components/installation/configuration",
-                  "v6/components/installation/quick-start"
-                ]
-              },
-              {
-                "group": "Component Types",
-                "pages": ["v6/components/components/overview"]
-              },
-              {
-                "group": "Threaded Comments",
-                "pages": [
-                  "v6/components/components/threaded/overview",
-                  "v6/components/components/threaded/installation",
-                  "v6/components/components/threaded/props-api",
-                  "v6/components/components/threaded/file-structure",
-                  "v6/components/components/threaded/features"
-                ]
-              },
-              {
-                "group": "Social Comments",
-                "pages": [
-                  "v6/components/components/social/overview",
-                  "v6/components/components/social/installation",
-                  "v6/components/components/social/props-api",
-                  "v6/components/components/social/file-structure",
-                  "v6/components/components/social/features"
-                ]
-              },
-              {
-                "group": "Notification Control",
-                "pages": [
-                  "v6/components/components/notifications/overview",
-                  "v6/components/components/notifications/installation",
-                  "v6/components/components/notifications/props-api",
-                  "v6/components/components/notifications/customization",
-                  "v6/components/components/notifications/integration-examples"
-                ]
-              },
-              {
-                "group": "Customization",
-                "pages": [
-                  "v6/components/customization/overview",
-                  "v6/components/customization/colors-theming",
-                  "v6/components/customization/layout-structure",
-                  "v6/components/customization/styling-variants",
-                  "v6/components/customization/adding-features",
-                  "v6/components/customization/advanced"
-                ]
-              },
-              {
-                "group": "Migration",
-                "pages": [
-                  "v6/components/migration/npm-to-cli",
-                  "v6/components/migration/mapping-guide",
-                  "v6/components/migration/faq"
-                ]
-              },
-              {
-                "group": "Legacy (Deprecated)",
-                "pages": [
-                  "v6/components/legacy/overview",
-                  "v6/components/legacy/social/component",
-                  "v6/components/legacy/social/provider-and-hook",
-                  "v6/components/legacy/social/styling",
-                  "v6/components/legacy/social/callbacks",
-                  "v6/components/legacy/threaded/component",
-                  "v6/components/legacy/threaded/provider-and-hook",
-                  "v6/components/legacy/threaded/styling",
-                  "v6/components/legacy/threaded/callbacks",
-                  "v6/components/legacy/gifs-and-emojis"
-                ]
-              }
-            ]
-          },
-          {
-            "tab": "Hooks Reference",
-            "groups": [
-              {
-                "group": "Overview",
-                "pages": ["v6/hooks/overview"]
-              },
-              {
-                "group": "Crypto Hooks",
-                "pages": ["v6/hooks/crypto/use-sign-testing-jwt"]
-              },
-              {
-                "group": "User Hooks",
-                "pages": [
-                  "v6/hooks/users/use-fetch-user",
-                  "v6/hooks/users/use-fetch-user-by-foreign-id",
-                  "v6/hooks/users/use-fetch-user-followers-count",
-                  "v6/hooks/users/use-fetch-user-following-count",
-                  "v6/hooks/users/use-fetch-user-suggestions",
-                  "v6/hooks/users/use-mentions",
-                  "v6/hooks/users/use-check-username-availability",
-                  "v6/hooks/users/use-update-user"
-                ]
-              },
-              {
-                "group": "Follow Hooks",
-                "pages": [
-                  "v6/hooks/follows/use-follow-user",
-                  "v6/hooks/follows/use-fetch-followers",
-                  "v6/hooks/follows/use-fetch-followers-by-user-id",
-                  "v6/hooks/follows/use-fetch-followers-count",
-                  "v6/hooks/follows/use-fetch-followers-count-by-user-id",
-                  "v6/hooks/follows/use-fetch-following",
-                  "v6/hooks/follows/use-fetch-following-by-user-id",
-                  "v6/hooks/follows/use-fetch-following-count",
-                  "v6/hooks/follows/use-fetch-following-count-by-user-id",
-                  "v6/hooks/follows/use-fetch-follow-status",
-                  "v6/hooks/follows/use-follow-manager",
-                  "v6/hooks/follows/use-unfollow-by-follow-id",
-                  "v6/hooks/follows/use-unfollow-user-by-user-id"
-                ]
-              },
-              {
-                "group": "Connection Hooks",
-                "pages": [
-                  "v6/hooks/connections/use-accept-connection",
-                  "v6/hooks/connections/use-connection-manager",
-                  "v6/hooks/connections/use-decline-connection",
-                  "v6/hooks/connections/use-fetch-connections",
-                  "v6/hooks/connections/use-fetch-connections-by-user-id",
-                  "v6/hooks/connections/use-fetch-connections-count",
-                  "v6/hooks/connections/use-fetch-connections-count-by-user-id",
-                  "v6/hooks/connections/use-fetch-connection-status",
-                  "v6/hooks/connections/use-fetch-received-pending-connections",
-                  "v6/hooks/connections/use-fetch-sent-pending-connections",
-                  "v6/hooks/connections/use-remove-connection",
-                  "v6/hooks/connections/use-remove-connection-by-user-id",
-                  "v6/hooks/connections/use-request-connection"
-                ]
-              },
-              {
-                "group": "Entity Hooks",
-                "pages": [
-                  "v6/hooks/entities/use-create-entity",
-                  "v6/hooks/entities/use-fetch-entity",
-                  "v6/hooks/entities/use-fetch-entity-by-foreign-id",
-                  "v6/hooks/entities/use-fetch-entity-by-short-id",
-                  "v6/hooks/entities/use-update-entity",
-                  "v6/hooks/entities/use-entity-votes",
-                  "v6/hooks/entities/use-upvote-entity",
-                  "v6/hooks/entities/use-remove-entity-upvote",
-                  "v6/hooks/entities/use-downvote-entity",
-                  "v6/hooks/entities/use-remove-entity-downvote",
-                  "v6/hooks/entities/use-increment-entity-views",
-                  "v6/hooks/entities/use-delete-entity",
-                  "v6/hooks/entities/use-entity-data"
-                ]
-              },
-              {
-                "group": "Comment Hooks",
-                "pages": [
-                  "v6/hooks/comments/use-create-comment",
-                  "v6/hooks/comments/use-fetch-comment",
-                  "v6/hooks/comments/use-fetch-comment-by-foreign-id",
-                  "v6/hooks/comments/use-fetch-many-comments",
-                  "v6/hooks/comments/use-update-comment",
-                  "v6/hooks/comments/use-comment-votes",
-                  "v6/hooks/comments/use-upvote-comment",
-                  "v6/hooks/comments/use-remove-comment-upvote",
-                  "v6/hooks/comments/use-downvote-comment",
-                  "v6/hooks/comments/use-remove-comment-downvote",
-                  "v6/hooks/comments/use-delete-comment",
-                  "v6/hooks/comments/use-comment-section-data",
-                  "v6/hooks/comments/use-entity-comments",
-                  "v6/hooks/comments/use-profile-comments"
-                ]
-              },
-              {
-                "group": "Storage Hooks",
-                "pages": ["v6/hooks/storage/use-upload-file"]
-              },
-              {
-                "group": "Moderation Hooks",
-                "pages": ["v6/hooks/moderation/use-create-report"]
-              }
-            ]
-          },
-          {
-            "tab": "API Reference",
-            "groups": [
-              {
-                "group": "Getting Started",
-                "pages": [
-                  "v6/api-reference/getting-started",
-                  "v6/api-reference/authentication"
-                ]
-              },
-              {
-                "group": "Auth Endpoints",
-                "pages": [
-                  "v6/api-reference/auth/sign-in",
-                  "v6/api-reference/auth/sign-up",
-                  "v6/api-reference/auth/sign-out",
-                  "v6/api-reference/auth/request-new-access-token",
-                  "v6/api-reference/auth/verify-external-user",
-                  "v6/api-reference/auth/change-password"
-                ]
-              },
-              {
-                "group": "User Endpoints",
-                "pages": [
-                  "v6/api-reference/users/fetch-user",
-                  "v6/api-reference/users/fetch-user-by-foreign-id",
-                  "v6/api-reference/users/fetch-user-suggestions",
-                  "v6/api-reference/users/check-username-availability",
-                  "v6/api-reference/users/update-user"
-                ]
-              },
-              {
-                "group": "User Follow Operations",
-                "pages": [
-                  "v6/api-reference/users/follows/overview",
-                  "v6/api-reference/users/follows/create-follow",
-                  "v6/api-reference/users/follows/delete-follow",
-                  "v6/api-reference/users/follows/fetch-follow-status",
-                  "v6/api-reference/users/follows/fetch-followers",
-                  "v6/api-reference/users/follows/fetch-followers-count",
-                  "v6/api-reference/users/follows/fetch-following",
-                  "v6/api-reference/users/follows/fetch-following-count"
-                ]
-              },
-              {
-                "group": "Follow Endpoints",
-                "pages": [
-                  "v6/api-reference/follows/overview",
-                  "v6/api-reference/follows/fetch-following",
-                  "v6/api-reference/follows/fetch-followers",
-                  "v6/api-reference/follows/fetch-following-count",
-                  "v6/api-reference/follows/fetch-followers-count",
-                  "v6/api-reference/follows/delete-follow"
-                ]
-              },
-              {
-                "group": "User Connection Operations",
-                "pages": [
-                  "v6/api-reference/users/connections/overview",
-                  "v6/api-reference/users/connections/request-connection",
-                  "v6/api-reference/users/connections/fetch-connection-status",
-                  "v6/api-reference/users/connections/fetch-connections-by-user-id",
-                  "v6/api-reference/users/connections/fetch-connections-count-by-user-id",
-                  "v6/api-reference/users/connections/remove-connection-by-user-id"
-                ]
-              },
-              {
-                "group": "Connection Endpoints",
-                "pages": [
-                  "v6/api-reference/connections/overview",
-                  "v6/api-reference/connections/fetch-connections",
-                  "v6/api-reference/connections/fetch-connections-count",
-                  "v6/api-reference/connections/fetch-sent-pending-connections",
-                  "v6/api-reference/connections/fetch-received-pending-connections",
-                  "v6/api-reference/connections/accept-connection",
-                  "v6/api-reference/connections/decline-connection",
-                  "v6/api-reference/connections/remove-connection"
-                ]
-              },
-              {
-                "group": "Entity Endpoints",
-                "pages": [
-                  "v6/api-reference/entities/create-entity",
-                  "v6/api-reference/entities/fetch-entity",
-                  "v6/api-reference/entities/fetch-entity-by-foreign-id",
-                  "v6/api-reference/entities/fetch-entity-by-short-id",
-                  "v6/api-reference/entities/fetch-many-entities",
-                  "v6/api-reference/entities/update-entity",
-                  "v6/api-reference/entities/upvote-entity",
-                  "v6/api-reference/entities/downvote-entity",
-                  "v6/api-reference/entities/remove-entity-upvote",
-                  "v6/api-reference/entities/remove-entity-downvote",
-                  "v6/api-reference/entities/increment-entity-views",
-                  "v6/api-reference/entities/delete-entity"
-                ]
-              },
-              {
-                "group": "Comment Endpoints",
-                "pages": [
-                  "v6/api-reference/comments/create-comment",
-                  "v6/api-reference/comments/fetch-comment",
-                  "v6/api-reference/comments/fetch-comment-by-foreign-id",
-                  "v6/api-reference/comments/fetch-many-comments",
-                  "v6/api-reference/comments/update-comment",
-                  "v6/api-reference/comments/upvote-comment",
-                  "v6/api-reference/comments/downvote-comment",
-                  "v6/api-reference/comments/remove-comment-upvote",
-                  "v6/api-reference/comments/remove-comment-downvote",
-                  "v6/api-reference/comments/delete-comment"
-                ]
-              },
-              {
-                "group": "List Endpoints",
-                "pages": [
-                  "v6/api-reference/lists/create-new-list",
-                  "v6/api-reference/lists/fetch-root-list",
-                  "v6/api-reference/lists/fetch-sub-lists",
-                  "v6/api-reference/lists/is-entity-saved",
-                  "v6/api-reference/lists/update-list",
-                  "v6/api-reference/lists/add-entity-to-list",
-                  "v6/api-reference/lists/remove-entity-from-list",
-                  "v6/api-reference/lists/delete-list"
-                ]
-              },
-              {
-                "group": "App Notification Endpoints",
-                "pages": [
-                  "v6/api-reference/app-notifications/fetch-notifications",
-                  "v6/api-reference/app-notifications/count-unread-notification",
-                  "v6/api-reference/app-notifications/mark-notification-as-read"
-                ]
-              },
-              {
-                "group": "Storage Endpoints",
-                "pages": ["v6/api-reference/storage/upload-file"]
-              },
-              {
-                "group": "Moderation Endpoints",
-                "pages": ["v6/api-reference/moderation/create-report"]
-              },
-              {
-                "group": "Crypto Endpoints",
-                "pages": ["v6/api-reference/crypto/sign-testing-jwt"]
-              }
-            ]
-          },
-          {
-            "tab": "Data Models",
-            "groups": [
-              {
-                "group": "Models",
-                "pages": [
-                  "v6/data-models/user",
-                  "v6/data-models/entity",
-                  "v6/data-models/comment",
-                  "v6/data-models/list",
-                  "v6/data-models/connection",
-                  "v6/data-models/follow",
-                  "v6/data-models/app-notification"
-                ]
-              }
-            ]
-          }
-        ],
-        "global": {
-          "anchors": [
-            {
-              "anchor": "Dashboard",
-              "href": "https://dash.replyke.com",
-              "icon": "gauge"
-            }
-          ]
-        }
-      },
-      {
-        "version": "7.0.0-beta.110",
+        "version": "7.0.0",
         "default": true,
         "tabs": [
           {
@@ -1258,6 +798,466 @@
                   "v7/components/customization/styling-variants",
                   "v7/components/customization/adding-features",
                   "v7/components/customization/advanced"
+                ]
+              }
+            ]
+          }
+        ],
+        "global": {
+          "anchors": [
+            {
+              "anchor": "Dashboard",
+              "href": "https://dash.replyke.com",
+              "icon": "gauge"
+            }
+          ]
+        }
+      },
+      {
+        "version": "6.0.0",
+        "tabs": [
+          {
+            "tab": "Overview",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": [
+                  "v6/index",
+                  "v6/integration-options",
+                  "v6/authentication",
+                  "v6/security",
+                  "v6/mcp-server"
+                ]
+              },
+              {
+                "group": "SDKs",
+                "pages": ["v6/nodejs-sdk", "v6/js-sdk"]
+              }
+            ]
+          },
+
+          {
+            "tab": "SDK Reference",
+            "groups": [
+              {
+                "group": "React & React Native",
+                "pages": ["v6/sdk/getting-started"]
+              },
+              {
+                "group": "Authentication",
+                "pages": [
+                  "v6/sdk/authentication/overview",
+                  "v6/sdk/authentication/built-in",
+                  "v6/sdk/authentication/external"
+                ]
+              },
+              {
+                "group": "Users",
+                "pages": ["v6/sdk/users/use-user-hook"]
+              },
+              {
+                "group": "Relationships",
+                "pages": [
+                  "v6/sdk/relationships/overview",
+                  "v6/sdk/relationships/use-follow-manager",
+                  "v6/sdk/relationships/use-connection-manager"
+                ]
+              },
+              {
+                "group": "Entities",
+                "pages": [
+                  "v6/sdk/entities/overview",
+                  "v6/sdk/entities/provider-and-hook"
+                ]
+              },
+              {
+                "group": "Entity Lists",
+                "pages": [
+                  "v6/sdk/entity-lists/overview",
+                  "v6/sdk/entity-lists/fetch-entities",
+                  "v6/sdk/entity-lists/infuse-data",
+                  "v6/sdk/entity-lists/filters/title-filters",
+                  "v6/sdk/entity-lists/filters/content-filters",
+                  "v6/sdk/entity-lists/filters/keywords-filters",
+                  "v6/sdk/entity-lists/filters/attachments-filters",
+                  "v6/sdk/entity-lists/filters/location-filters",
+                  "v6/sdk/entity-lists/filters/metadata-filters"
+                ]
+              },
+              {
+                "group": "Lists",
+                "pages": [
+                  "v6/sdk/lists/overview",
+                  "v6/sdk/lists/hook",
+                  "v6/sdk/lists/use-is-entity-saved"
+                ]
+              },
+              {
+                "group": "App Notifications",
+                "pages": [
+                  "v6/sdk/app-notifications/overview",
+                  "v6/sdk/app-notifications/hook",
+                  "v6/sdk/app-notifications/notification-templates",
+                  "v6/sdk/app-notifications/webhook-integration"
+                ]
+              },
+              {
+                "group": "Moderation",
+                "pages": ["v6/sdk/moderation"]
+              }
+            ]
+          },
+          {
+            "tab": "Components",
+            "groups": [
+              {
+                "group": "Overview",
+                "pages": ["v6/components/overview"]
+              },
+              {
+                "group": "Installation",
+                "pages": [
+                  "v6/components/installation/cli-setup",
+                  "v6/components/installation/configuration",
+                  "v6/components/installation/quick-start"
+                ]
+              },
+              {
+                "group": "Component Types",
+                "pages": ["v6/components/components/overview"]
+              },
+              {
+                "group": "Threaded Comments",
+                "pages": [
+                  "v6/components/components/threaded/overview",
+                  "v6/components/components/threaded/installation",
+                  "v6/components/components/threaded/props-api",
+                  "v6/components/components/threaded/file-structure",
+                  "v6/components/components/threaded/features"
+                ]
+              },
+              {
+                "group": "Social Comments",
+                "pages": [
+                  "v6/components/components/social/overview",
+                  "v6/components/components/social/installation",
+                  "v6/components/components/social/props-api",
+                  "v6/components/components/social/file-structure",
+                  "v6/components/components/social/features"
+                ]
+              },
+              {
+                "group": "Notification Control",
+                "pages": [
+                  "v6/components/components/notifications/overview",
+                  "v6/components/components/notifications/installation",
+                  "v6/components/components/notifications/props-api",
+                  "v6/components/components/notifications/customization",
+                  "v6/components/components/notifications/integration-examples"
+                ]
+              },
+              {
+                "group": "Customization",
+                "pages": [
+                  "v6/components/customization/overview",
+                  "v6/components/customization/colors-theming",
+                  "v6/components/customization/layout-structure",
+                  "v6/components/customization/styling-variants",
+                  "v6/components/customization/adding-features",
+                  "v6/components/customization/advanced"
+                ]
+              },
+              {
+                "group": "Migration",
+                "pages": [
+                  "v6/components/migration/npm-to-cli",
+                  "v6/components/migration/mapping-guide",
+                  "v6/components/migration/faq"
+                ]
+              },
+              {
+                "group": "Legacy (Deprecated)",
+                "pages": [
+                  "v6/components/legacy/overview",
+                  "v6/components/legacy/social/component",
+                  "v6/components/legacy/social/provider-and-hook",
+                  "v6/components/legacy/social/styling",
+                  "v6/components/legacy/social/callbacks",
+                  "v6/components/legacy/threaded/component",
+                  "v6/components/legacy/threaded/provider-and-hook",
+                  "v6/components/legacy/threaded/styling",
+                  "v6/components/legacy/threaded/callbacks",
+                  "v6/components/legacy/gifs-and-emojis"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Hooks Reference",
+            "groups": [
+              {
+                "group": "Overview",
+                "pages": ["v6/hooks/overview"]
+              },
+              {
+                "group": "Crypto Hooks",
+                "pages": ["v6/hooks/crypto/use-sign-testing-jwt"]
+              },
+              {
+                "group": "User Hooks",
+                "pages": [
+                  "v6/hooks/users/use-fetch-user",
+                  "v6/hooks/users/use-fetch-user-by-foreign-id",
+                  "v6/hooks/users/use-fetch-user-followers-count",
+                  "v6/hooks/users/use-fetch-user-following-count",
+                  "v6/hooks/users/use-fetch-user-suggestions",
+                  "v6/hooks/users/use-mentions",
+                  "v6/hooks/users/use-check-username-availability",
+                  "v6/hooks/users/use-update-user"
+                ]
+              },
+              {
+                "group": "Follow Hooks",
+                "pages": [
+                  "v6/hooks/follows/use-follow-user",
+                  "v6/hooks/follows/use-fetch-followers",
+                  "v6/hooks/follows/use-fetch-followers-by-user-id",
+                  "v6/hooks/follows/use-fetch-followers-count",
+                  "v6/hooks/follows/use-fetch-followers-count-by-user-id",
+                  "v6/hooks/follows/use-fetch-following",
+                  "v6/hooks/follows/use-fetch-following-by-user-id",
+                  "v6/hooks/follows/use-fetch-following-count",
+                  "v6/hooks/follows/use-fetch-following-count-by-user-id",
+                  "v6/hooks/follows/use-fetch-follow-status",
+                  "v6/hooks/follows/use-follow-manager",
+                  "v6/hooks/follows/use-unfollow-by-follow-id",
+                  "v6/hooks/follows/use-unfollow-user-by-user-id"
+                ]
+              },
+              {
+                "group": "Connection Hooks",
+                "pages": [
+                  "v6/hooks/connections/use-accept-connection",
+                  "v6/hooks/connections/use-connection-manager",
+                  "v6/hooks/connections/use-decline-connection",
+                  "v6/hooks/connections/use-fetch-connections",
+                  "v6/hooks/connections/use-fetch-connections-by-user-id",
+                  "v6/hooks/connections/use-fetch-connections-count",
+                  "v6/hooks/connections/use-fetch-connections-count-by-user-id",
+                  "v6/hooks/connections/use-fetch-connection-status",
+                  "v6/hooks/connections/use-fetch-received-pending-connections",
+                  "v6/hooks/connections/use-fetch-sent-pending-connections",
+                  "v6/hooks/connections/use-remove-connection",
+                  "v6/hooks/connections/use-remove-connection-by-user-id",
+                  "v6/hooks/connections/use-request-connection"
+                ]
+              },
+              {
+                "group": "Entity Hooks",
+                "pages": [
+                  "v6/hooks/entities/use-create-entity",
+                  "v6/hooks/entities/use-fetch-entity",
+                  "v6/hooks/entities/use-fetch-entity-by-foreign-id",
+                  "v6/hooks/entities/use-fetch-entity-by-short-id",
+                  "v6/hooks/entities/use-update-entity",
+                  "v6/hooks/entities/use-entity-votes",
+                  "v6/hooks/entities/use-upvote-entity",
+                  "v6/hooks/entities/use-remove-entity-upvote",
+                  "v6/hooks/entities/use-downvote-entity",
+                  "v6/hooks/entities/use-remove-entity-downvote",
+                  "v6/hooks/entities/use-increment-entity-views",
+                  "v6/hooks/entities/use-delete-entity",
+                  "v6/hooks/entities/use-entity-data"
+                ]
+              },
+              {
+                "group": "Comment Hooks",
+                "pages": [
+                  "v6/hooks/comments/use-create-comment",
+                  "v6/hooks/comments/use-fetch-comment",
+                  "v6/hooks/comments/use-fetch-comment-by-foreign-id",
+                  "v6/hooks/comments/use-fetch-many-comments",
+                  "v6/hooks/comments/use-update-comment",
+                  "v6/hooks/comments/use-comment-votes",
+                  "v6/hooks/comments/use-upvote-comment",
+                  "v6/hooks/comments/use-remove-comment-upvote",
+                  "v6/hooks/comments/use-downvote-comment",
+                  "v6/hooks/comments/use-remove-comment-downvote",
+                  "v6/hooks/comments/use-delete-comment",
+                  "v6/hooks/comments/use-comment-section-data",
+                  "v6/hooks/comments/use-entity-comments",
+                  "v6/hooks/comments/use-profile-comments"
+                ]
+              },
+              {
+                "group": "Storage Hooks",
+                "pages": ["v6/hooks/storage/use-upload-file"]
+              },
+              {
+                "group": "Moderation Hooks",
+                "pages": ["v6/hooks/moderation/use-create-report"]
+              }
+            ]
+          },
+          {
+            "tab": "API Reference",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": [
+                  "v6/api-reference/getting-started",
+                  "v6/api-reference/authentication"
+                ]
+              },
+              {
+                "group": "Auth Endpoints",
+                "pages": [
+                  "v6/api-reference/auth/sign-in",
+                  "v6/api-reference/auth/sign-up",
+                  "v6/api-reference/auth/sign-out",
+                  "v6/api-reference/auth/request-new-access-token",
+                  "v6/api-reference/auth/verify-external-user",
+                  "v6/api-reference/auth/change-password"
+                ]
+              },
+              {
+                "group": "User Endpoints",
+                "pages": [
+                  "v6/api-reference/users/fetch-user",
+                  "v6/api-reference/users/fetch-user-by-foreign-id",
+                  "v6/api-reference/users/fetch-user-suggestions",
+                  "v6/api-reference/users/check-username-availability",
+                  "v6/api-reference/users/update-user"
+                ]
+              },
+              {
+                "group": "User Follow Operations",
+                "pages": [
+                  "v6/api-reference/users/follows/overview",
+                  "v6/api-reference/users/follows/create-follow",
+                  "v6/api-reference/users/follows/delete-follow",
+                  "v6/api-reference/users/follows/fetch-follow-status",
+                  "v6/api-reference/users/follows/fetch-followers",
+                  "v6/api-reference/users/follows/fetch-followers-count",
+                  "v6/api-reference/users/follows/fetch-following",
+                  "v6/api-reference/users/follows/fetch-following-count"
+                ]
+              },
+              {
+                "group": "Follow Endpoints",
+                "pages": [
+                  "v6/api-reference/follows/overview",
+                  "v6/api-reference/follows/fetch-following",
+                  "v6/api-reference/follows/fetch-followers",
+                  "v6/api-reference/follows/fetch-following-count",
+                  "v6/api-reference/follows/fetch-followers-count",
+                  "v6/api-reference/follows/delete-follow"
+                ]
+              },
+              {
+                "group": "User Connection Operations",
+                "pages": [
+                  "v6/api-reference/users/connections/overview",
+                  "v6/api-reference/users/connections/request-connection",
+                  "v6/api-reference/users/connections/fetch-connection-status",
+                  "v6/api-reference/users/connections/fetch-connections-by-user-id",
+                  "v6/api-reference/users/connections/fetch-connections-count-by-user-id",
+                  "v6/api-reference/users/connections/remove-connection-by-user-id"
+                ]
+              },
+              {
+                "group": "Connection Endpoints",
+                "pages": [
+                  "v6/api-reference/connections/overview",
+                  "v6/api-reference/connections/fetch-connections",
+                  "v6/api-reference/connections/fetch-connections-count",
+                  "v6/api-reference/connections/fetch-sent-pending-connections",
+                  "v6/api-reference/connections/fetch-received-pending-connections",
+                  "v6/api-reference/connections/accept-connection",
+                  "v6/api-reference/connections/decline-connection",
+                  "v6/api-reference/connections/remove-connection"
+                ]
+              },
+              {
+                "group": "Entity Endpoints",
+                "pages": [
+                  "v6/api-reference/entities/create-entity",
+                  "v6/api-reference/entities/fetch-entity",
+                  "v6/api-reference/entities/fetch-entity-by-foreign-id",
+                  "v6/api-reference/entities/fetch-entity-by-short-id",
+                  "v6/api-reference/entities/fetch-many-entities",
+                  "v6/api-reference/entities/update-entity",
+                  "v6/api-reference/entities/upvote-entity",
+                  "v6/api-reference/entities/downvote-entity",
+                  "v6/api-reference/entities/remove-entity-upvote",
+                  "v6/api-reference/entities/remove-entity-downvote",
+                  "v6/api-reference/entities/increment-entity-views",
+                  "v6/api-reference/entities/delete-entity"
+                ]
+              },
+              {
+                "group": "Comment Endpoints",
+                "pages": [
+                  "v6/api-reference/comments/create-comment",
+                  "v6/api-reference/comments/fetch-comment",
+                  "v6/api-reference/comments/fetch-comment-by-foreign-id",
+                  "v6/api-reference/comments/fetch-many-comments",
+                  "v6/api-reference/comments/update-comment",
+                  "v6/api-reference/comments/upvote-comment",
+                  "v6/api-reference/comments/downvote-comment",
+                  "v6/api-reference/comments/remove-comment-upvote",
+                  "v6/api-reference/comments/remove-comment-downvote",
+                  "v6/api-reference/comments/delete-comment"
+                ]
+              },
+              {
+                "group": "List Endpoints",
+                "pages": [
+                  "v6/api-reference/lists/create-new-list",
+                  "v6/api-reference/lists/fetch-root-list",
+                  "v6/api-reference/lists/fetch-sub-lists",
+                  "v6/api-reference/lists/is-entity-saved",
+                  "v6/api-reference/lists/update-list",
+                  "v6/api-reference/lists/add-entity-to-list",
+                  "v6/api-reference/lists/remove-entity-from-list",
+                  "v6/api-reference/lists/delete-list"
+                ]
+              },
+              {
+                "group": "App Notification Endpoints",
+                "pages": [
+                  "v6/api-reference/app-notifications/fetch-notifications",
+                  "v6/api-reference/app-notifications/count-unread-notification",
+                  "v6/api-reference/app-notifications/mark-notification-as-read"
+                ]
+              },
+              {
+                "group": "Storage Endpoints",
+                "pages": ["v6/api-reference/storage/upload-file"]
+              },
+              {
+                "group": "Moderation Endpoints",
+                "pages": ["v6/api-reference/moderation/create-report"]
+              },
+              {
+                "group": "Crypto Endpoints",
+                "pages": ["v6/api-reference/crypto/sign-testing-jwt"]
+              }
+            ]
+          },
+          {
+            "tab": "Data Models",
+            "groups": [
+              {
+                "group": "Models",
+                "pages": [
+                  "v6/data-models/user",
+                  "v6/data-models/entity",
+                  "v6/data-models/comment",
+                  "v6/data-models/list",
+                  "v6/data-models/connection",
+                  "v6/data-models/follow",
+                  "v6/data-models/app-notification"
                 ]
               }
             ]
