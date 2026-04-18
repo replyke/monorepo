@@ -3,20 +3,22 @@ import { ReactionType } from "../../interfaces/Reaction";
 
 export interface GetUserCommentReactionProps {
   commentId: string;
+  userId: string;
 }
 
 export interface UserCommentReactionResponse {
-  reaction: ReactionType | null;
+  reactionType: ReactionType | null;
 }
 
 export async function getUserReaction(
   client: ReplykeHttpClient,
   data: GetUserCommentReactionProps
 ): Promise<UserCommentReactionResponse> {
-  const { commentId } = data;
+  const { commentId, userId } = data;
   const response =
     await client.projectInstance.get<UserCommentReactionResponse>(
-      `/comments/${commentId}/reactions/me`
+      `/comments/${commentId}/reactions/me`,
+      { params: { userId } }
     );
   return response.data;
 }

@@ -31,4 +31,3 @@ export { moderateSpaceEntity } from "./moderateSpaceEntity";
 export { moderateSpaceComment } from "./moderateSpaceComment";
 export { fetchDigestConfig } from "./fetchDigestConfig";
 export { updateDigestConfig } from "./updateDigestConfig";
-export { getSpaceConversation } from "./getSpaceConversation";

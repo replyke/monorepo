@@ -2,7 +2,7 @@ import { ReplykeHttpClient } from "../../core/client";
 import { UserSpacesResponse } from "../../interfaces/Space";
 
 export interface FetchUserSpacesProps {
-  userId?: string;
+  userId: string;
   page?: number;
   limit?: number;
 }

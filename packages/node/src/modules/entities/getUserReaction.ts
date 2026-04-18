@@ -3,19 +3,21 @@ import { ReactionType } from "../../interfaces/Reaction";
 
 export interface GetUserEntityReactionProps {
   entityId: string;
+  userId: string;
 }
 
 export interface UserReactionResponse {
-  reaction: ReactionType | null;
+  reactionType: ReactionType | null;
 }
 
 export async function getUserReaction(
   client: ReplykeHttpClient,
   data: GetUserEntityReactionProps
 ): Promise<UserReactionResponse> {
-  const { entityId } = data;
+  const { entityId, userId } = data;
   const response = await client.projectInstance.get<UserReactionResponse>(
-    `/entities/${entityId}/reactions/me`
+    `/entities/${entityId}/reactions/me`,
+    { params: { userId } }
   );
   return response.data;
 }

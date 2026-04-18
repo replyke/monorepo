@@ -2,6 +2,7 @@ import { ReplykeHttpClient } from "../../core/client";
 import { Space, ReadingPermission, PostingPermission } from "../../interfaces/Space";
 
 export interface CreateSpaceProps {
+  userId: string;
   name: string;
   slug?: string;
   description?: string;

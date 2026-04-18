@@ -3,15 +3,17 @@ import { JoinSpaceResponse } from "../../interfaces/Space";
 
 export interface JoinSpaceProps {
   spaceId: string;
+  userId: string;
 }
 
 export async function joinSpace(
   client: ReplykeHttpClient,
   data: JoinSpaceProps
 ): Promise<JoinSpaceResponse> {
-  const { spaceId } = data;
+  const { spaceId, userId } = data;
   const response = await client.projectInstance.post<JoinSpaceResponse>(
-    `/spaces/${spaceId}/join`
+    `/spaces/${spaceId}/join`,
+    { userId }
   );
   return response.data;
 }

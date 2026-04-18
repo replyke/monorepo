@@ -3,15 +3,17 @@ import { CheckMyMembershipResponse } from "../../interfaces/Space";
 
 export interface CheckMyMembershipProps {
   spaceId: string;
+  userId: string;
 }
 
 export async function checkMyMembership(
   client: ReplykeHttpClient,
   data: CheckMyMembershipProps
 ): Promise<CheckMyMembershipResponse> {
-  const { spaceId } = data;
+  const { spaceId, userId } = data;
   const response = await client.projectInstance.get<CheckMyMembershipResponse>(
-    `/spaces/${spaceId}/membership/me`
+    `/spaces/${spaceId}/membership/me`,
+    { params: { userId } }
   );
   return response.data;
 }

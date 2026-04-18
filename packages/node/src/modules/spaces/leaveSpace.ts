@@ -3,15 +3,17 @@ import { LeaveSpaceResponse } from "../../interfaces/Space";
 
 export interface LeaveSpaceProps {
   spaceId: string;
+  userId: string;
 }
 
 export async function leaveSpace(
   client: ReplykeHttpClient,
   data: LeaveSpaceProps
 ): Promise<LeaveSpaceResponse> {
-  const { spaceId } = data;
+  const { spaceId, userId } = data;
   const response = await client.projectInstance.delete<LeaveSpaceResponse>(
-    `/spaces/${spaceId}/leave`
+    `/spaces/${spaceId}/leave`,
+    { params: { userId } }
   );
   return response.data;
 }

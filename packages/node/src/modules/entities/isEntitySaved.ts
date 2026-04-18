@@ -2,6 +2,7 @@ import { ReplykeHttpClient } from "../../core/client";
 
 export interface IsEntitySavedProps {
   entityId: string;
+  userId: string;
 }
 
 export interface IsEntitySavedResponse {

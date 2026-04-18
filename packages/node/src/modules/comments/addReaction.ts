@@ -3,17 +3,18 @@ import { Reaction, ReactionType } from "../../interfaces/Reaction";
 
 export interface AddCommentReactionProps {
   commentId: string;
-  reaction: ReactionType;
+  reactionType: ReactionType;
+  userId: string;
 }
 
 export async function addReaction(
   client: ReplykeHttpClient,
   data: AddCommentReactionProps
 ): Promise<Reaction> {
-  const { commentId, reaction } = data;
+  const { commentId, reactionType, userId } = data;
   const response = await client.projectInstance.post<Reaction>(
     `/comments/${commentId}/reactions`,
-    { reaction }
+    { reactionType, userId }
   );
   return response.data;
 }
