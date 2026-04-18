@@ -2,7 +2,7 @@ import { ReplykeHttpClient } from "../../core/client";
 import { AuthUser } from "../../interfaces/User";
 
 export interface VerifyExternalUserProps {
-  token: string;
+  userJwt: string;
 }
 
 export interface VerifyExternalUserResponse {
