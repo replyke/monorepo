@@ -1,0 +1,284 @@
+---
+title: "Comments"
+description: "Create, fetch, update, delete comments, and manage reactions from your server"
+---
+
+The `comments` module provides full server-side control over comments on entities. Use it to seed content, build moderation pipelines, or integrate comment data into your backend logic.
+
+---
+
+### createComment
+
+Creates a new comment on an entity.
+
+```typescript
+const comment = await replyke.comments.createComment({
+  entityId: "ent_xyz789",
+  userId: "usr_abc123",
+  content: "Great post!",
+});
+```
+
+<ParamField body="entityId" type="string" required>
+  The Replyke entity ID to comment on.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID of the comment author.
+</ParamField>
+
+<ParamField body="content" type="string" required>
+  The comment text content.
+</ParamField>
+
+<ParamField body="foreignId" type="string">
+  Your application's identifier for this comment.
+</ParamField>
+
+<ParamField body="parentId" type="string">
+  The Replyke comment ID of the parent, for creating a reply.
+</ParamField>
+
+<ParamField body="referencedCommentId" type="string">
+  A comment being directly quoted or referenced.
+</ParamField>
+
+<ParamField body="attachments" type="array">
+  File or media attachments on the comment.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary metadata attached to the comment.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  ISO 8601 timestamp to backdate the comment's creation time.
+</ParamField>
+
+<ParamField body="updatedAt" type="string">
+  ISO 8601 timestamp to backdate the comment's last update time.
+</ParamField>
+
+**Returns** — `Promise<Comment>`
+
+---
+
+### fetchComment
+
+Fetches a single comment by its Replyke ID.
+
+```typescript
+const comment = await replyke.comments.fetchComment({ commentId: "cmt_abc123" });
+```
+
+<ParamField body="commentId" type="string" required>
+  The Replyke comment ID.
+</ParamField>
+
+**Returns** — `Promise<Comment>`
+
+---
+
+### fetchCommentByForeignId
+
+Fetches a comment by your application's own identifier.
+
+```typescript
+const comment = await replyke.comments.fetchCommentByForeignId({
+  foreignId: "my-comment-id-99",
+});
+```
+
+<ParamField body="foreignId" type="string" required>
+  Your application's comment identifier.
+</ParamField>
+
+**Returns** — `Promise<Comment>`
+
+---
+
+### updateComment
+
+Updates the content or timestamp of an existing comment.
+
+```typescript
+const comment = await replyke.comments.updateComment({
+  commentId: "cmt_abc123",
+  content: "Edited comment text",
+});
+```
+
+<ParamField body="commentId" type="string" required>
+  The Replyke comment ID to update.
+</ParamField>
+
+<ParamField body="content" type="string" required>
+  The new comment text.
+</ParamField>
+
+<ParamField body="createdAt" type="string">
+  Override the creation timestamp (ISO 8601). Useful for data migrations.
+</ParamField>
+
+**Returns** — `Promise<Comment>`
+
+---
+
+### deleteComment
+
+Permanently deletes a comment.
+
+```typescript
+await replyke.comments.deleteComment({ commentId: "cmt_abc123" });
+```
+
+<ParamField body="commentId" type="string" required>
+  The Replyke comment ID to delete.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### fetchManyComments
+
+Fetches a paginated list of comments on an entity. Supports top-level and reply-level fetching.
+
+```typescript
+const { data, metadata } = await replyke.comments.fetchManyComments({
+  entityId: "ent_xyz789",
+  sort: "top",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="entityId" type="string" required>
+  The Replyke entity ID to fetch comments for.
+</ParamField>
+
+<ParamField body="parentId" type="string">
+  When provided, fetches replies to this specific comment ID instead of top-level comments.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="sort" type="string">
+  Sort order: `"top"` (highest scored), `"new"` (most recent first), or `"old"` (oldest first).
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Comment>>`
+
+---
+
+### addReaction
+
+Adds a reaction from a user to a comment.
+
+```typescript
+const reaction = await replyke.comments.addReaction({
+  commentId: "cmt_abc123",
+  userId: "usr_abc123",
+  reactionType: "like",
+});
+```
+
+<ParamField body="commentId" type="string" required>
+  The Replyke comment ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID of the reactor.
+</ParamField>
+
+<ParamField body="reactionType" type="ReactionType" required>
+  One of: `"upvote"`, `"downvote"`, `"like"`, `"love"`, `"wow"`, `"sad"`, `"angry"`, `"funny"`.
+</ParamField>
+
+**Returns** — `Promise<Reaction>`
+
+---
+
+### removeReaction
+
+Removes a user's existing reaction from a comment.
+
+```typescript
+await replyke.comments.removeReaction({
+  commentId: "cmt_abc123",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="commentId" type="string" required>
+  The Replyke comment ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID whose reaction to remove.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### fetchReactions
+
+Fetches a paginated list of reactions on a comment, optionally filtered by reaction type.
+
+```typescript
+const { data, metadata } = await replyke.comments.fetchReactions({
+  commentId: "cmt_abc123",
+  reaction: "upvote",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="commentId" type="string" required>
+  The Replyke comment ID.
+</ParamField>
+
+<ParamField body="reaction" type="ReactionType">
+  Filter to a specific reaction type.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Reaction>>`
+
+---
+
+### getUserReaction
+
+Checks what reaction (if any) a specific user has left on a comment.
+
+```typescript
+const { reactionType } = await replyke.comments.getUserReaction({
+  commentId: "cmt_abc123",
+  userId: "usr_abc123",
+});
+// reactionType is "like" | "upvote" | ... | null
+```
+
+<ParamField body="commentId" type="string" required>
+  The Replyke comment ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID to check.
+</ParamField>
+
+**Returns** — `Promise<{ reactionType: ReactionType | null }>`

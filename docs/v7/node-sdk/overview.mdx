@@ -1,0 +1,106 @@
+---
+title: "Node.js SDK"
+description: "Server-side SDK for Replyke — use in backend APIs, server actions, webhooks, and scheduled jobs"
+---
+
+The `@replyke/node` SDK gives you full programmatic access to the Replyke API from any Node.js environment. It is designed for **server-side use only** — backend endpoints, Next.js server actions, webhook handlers, cron jobs, and scripts.
+
+<Note>
+  This SDK requires a **secret API key** and must never be used in client-side
+  code or shipped to the browser.
+</Note>
+
+## Installation
+
+```bash
+npm install @replyke/node
+```
+
+## Initialization
+
+Create a single `ReplykeClient` instance at startup and reuse it throughout your application.
+
+```typescript
+import { ReplykeClient } from "@replyke/node";
+
+const replyke = await ReplykeClient.init({
+  projectId: process.env.REPLYKE_PROJECT_ID!,
+  apiKey: process.env.REPLYKE_API_KEY!,
+});
+```
+
+### Configuration
+
+<ParamField body="projectId" type="string" required>
+  Your Replyke project ID, found in the dashboard under **Settings → General**.
+</ParamField>
+
+<ParamField body="apiKey" type="string" required>
+  Your secret API key from the dashboard. Keep this in an environment variable —
+  never commit it to source control.
+</ParamField>
+
+<ParamField body="isInternal" type="boolean">
+  Set to `true` when making internal/admin requests that bypass standard project
+  authorization. Defaults to `false`.
+</ParamField>
+
+## Modules
+
+Once initialized, all functionality is accessed through module namespaces on the client:
+
+```typescript
+replyke.auth          // Authentication — sign up, sign in, tokens
+replyke.users         // User profiles, follows, connections
+replyke.entities      // Content entities — CRUD, reactions, drafts
+replyke.comments      // Comments — CRUD, reactions
+replyke.spaces        // Spaces — management, members, moderation, rules
+replyke.search        // Search and AI Q&A
+replyke.hostedApps    // Hosted app configuration
+```
+
+<CardGroup cols={2}>
+  <Card title="Auth" icon="lock" href="/v7/node-sdk/auth">
+    Sign up, sign in, token management, password reset
+  </Card>
+  <Card title="Users" icon="user" href="/v7/node-sdk/users">
+    Fetch and update profiles, follows, connections
+  </Card>
+  <Card title="Entities" icon="file" href="/v7/node-sdk/entities">
+    Create and manage content, reactions, drafts
+  </Card>
+  <Card title="Comments" icon="comment" href="/v7/node-sdk/comments">
+    Create and manage comments, reactions
+  </Card>
+  <Card title="Spaces" icon="layer-group" href="/v7/node-sdk/spaces">
+    Space CRUD, navigation, slug management
+  </Card>
+  <Card title="Space Members" icon="users" href="/v7/node-sdk/spaces-members">
+    Membership, roles, approvals, bans
+  </Card>
+  <Card title="Space Moderation" icon="shield" href="/v7/node-sdk/spaces-moderation">
+    Reports, content moderation, rules, digest
+  </Card>
+  <Card title="Search" icon="magnifying-glass" href="/v7/node-sdk/search">
+    Full-text search and AI-powered Q&A
+  </Card>
+</CardGroup>
+
+## Paginated Responses
+
+Functions that return lists use a shared `PaginatedResponse<T>` shape:
+
+```typescript
+{
+  data: T[];
+  metadata: {
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    totalItems: number;
+    hasMore: boolean;
+  };
+}
+```
+
+Pass `page` and `limit` to any list function to control pagination.

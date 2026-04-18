@@ -1,0 +1,344 @@
+---
+title: "Space Moderation"
+description: "Handle reports, moderate content, manage community rules, and configure digest newsletters"
+---
+
+This page covers the moderation and administrative functions on the `spaces` module: report handling, content moderation actions, community rules management, and digest newsletter configuration.
+
+---
+
+## Reports
+
+### handleEntityReport
+
+Resolves or dismisses a report filed against an entity in a space.
+
+```typescript
+const result = await replyke.spaces.handleEntityReport({
+  spaceId: "spc_abc123",
+  reportId: "rpt_xyz789",
+  action: "resolve",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID where the report was filed.
+</ParamField>
+
+<ParamField body="reportId" type="string" required>
+  The Replyke report ID.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  `"resolve"` — marks the report as resolved and takes action, or `"dismiss"` — closes the report without action.
+</ParamField>
+
+**Returns** — `Promise<HandleReportResponse>`
+
+---
+
+### handleCommentReport
+
+Resolves or dismisses a report filed against a comment in a space.
+
+```typescript
+const result = await replyke.spaces.handleCommentReport({
+  spaceId: "spc_abc123",
+  reportId: "rpt_abc456",
+  action: "dismiss",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID where the report was filed.
+</ParamField>
+
+<ParamField body="reportId" type="string" required>
+  The Replyke report ID.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  `"resolve"` or `"dismiss"`.
+</ParamField>
+
+**Returns** — `Promise<HandleReportResponse>`
+
+---
+
+## Content Moderation
+
+### moderateSpaceEntity
+
+Approves or removes an entity within a space.
+
+```typescript
+const result = await replyke.spaces.moderateSpaceEntity({
+  spaceId: "spc_abc123",
+  entityId: "ent_xyz789",
+  action: "remove",
+  reason: "Violates community guidelines",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The Replyke entity ID to moderate.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  `"approve"` — makes the entity visible, or `"remove"` — hides/removes it from the space.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason for the moderation action, stored for audit purposes.
+</ParamField>
+
+**Returns** — `Promise<ModerationResponse>`
+
+---
+
+### moderateSpaceComment
+
+Approves or removes a comment within a space.
+
+```typescript
+const result = await replyke.spaces.moderateSpaceComment({
+  spaceId: "spc_abc123",
+  commentId: "cmt_abc123",
+  action: "approve",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="commentId" type="string" required>
+  The Replyke comment ID to moderate.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  `"approve"` or `"remove"`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason for the moderation action.
+</ParamField>
+
+**Returns** — `Promise<ModerationResponse>`
+
+---
+
+## Rules
+
+Rules are community guidelines displayed to members. They are ordered and each consists of a title and optional description.
+
+### fetchManyRules
+
+Fetches all rules for a space.
+
+```typescript
+const result = await replyke.spaces.fetchManyRules({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+**Returns** — `Promise<FetchManyRulesResponse>`
+
+---
+
+### fetchRule
+
+Fetches a single rule by its ID.
+
+```typescript
+const rule = await replyke.spaces.fetchRule({
+  spaceId: "spc_abc123",
+  ruleId: "rul_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="ruleId" type="string" required>
+  The Replyke rule ID.
+</ParamField>
+
+**Returns** — `Promise<Rule>`
+
+---
+
+### createRule
+
+Creates a new rule for a space.
+
+```typescript
+const rule = await replyke.spaces.createRule({
+  spaceId: "spc_abc123",
+  title: "Be respectful",
+  description: "Treat all members with respect and courtesy.",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  Short title for the rule.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Extended explanation of the rule.
+</ParamField>
+
+**Returns** — `Promise<Rule>`
+
+---
+
+### updateRule
+
+Updates an existing rule's title or description.
+
+```typescript
+const rule = await replyke.spaces.updateRule({
+  spaceId: "spc_abc123",
+  ruleId: "rul_xyz789",
+  title: "Be respectful and kind",
+  description: "Updated description.",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="ruleId" type="string" required>
+  The Replyke rule ID to update.
+</ParamField>
+
+<ParamField body="title" type="string">
+  New title.
+</ParamField>
+
+<ParamField body="description" type="string">
+  New description.
+</ParamField>
+
+**Returns** — `Promise<Rule>`
+
+---
+
+### deleteRule
+
+Deletes a rule from a space.
+
+```typescript
+const result = await replyke.spaces.deleteRule({
+  spaceId: "spc_abc123",
+  ruleId: "rul_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="ruleId" type="string" required>
+  The Replyke rule ID to delete.
+</ParamField>
+
+**Returns** — `Promise<DeleteRuleResponse>`
+
+---
+
+### reorderRules
+
+Sets the display order of all rules for a space by providing an ordered array of rule IDs.
+
+```typescript
+const rules = await replyke.spaces.reorderRules({
+  spaceId: "spc_abc123",
+  ruleIds: ["rul_first", "rul_second", "rul_third"],
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="ruleIds" type="string[]" required>
+  Complete ordered array of all rule IDs for the space.
+</ParamField>
+
+**Returns** — `Promise<Rule[]>` — the full list of rules in their new order.
+
+---
+
+## Digest Newsletter
+
+The digest feature allows a space to send a periodic newsletter-style webhook payload summarizing recent activity.
+
+### fetchDigestConfig
+
+Fetches the current digest configuration for a space.
+
+```typescript
+const config = await replyke.spaces.fetchDigestConfig({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+**Returns** — `Promise<DigestConfig>`
+
+---
+
+### updateDigestConfig
+
+Updates the digest configuration for a space.
+
+```typescript
+const config = await replyke.spaces.updateDigestConfig({
+  spaceId: "spc_abc123",
+  digestEnabled: true,
+  digestWebhookUrl: "https://example.com/webhooks/digest",
+  digestWebhookSecret: "whsec_mySecret",
+  digestScheduleHour: 9,
+  digestTimezone: "America/New_York",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="digestEnabled" type="boolean">
+  Enable or disable the digest webhook.
+</ParamField>
+
+<ParamField body="digestWebhookUrl" type="string">
+  The URL that will receive the digest payload.
+</ParamField>
+
+<ParamField body="digestWebhookSecret" type="string">
+  Secret used to sign the webhook payload for verification.
+</ParamField>
+
+<ParamField body="digestScheduleHour" type="number">
+  Hour of day (0–23) at which the digest fires, in the configured timezone.
+</ParamField>
+
+<ParamField body="digestTimezone" type="string">
+  IANA timezone identifier (e.g., `"America/New_York"`, `"Europe/London"`).
+</ParamField>
+
+**Returns** — `Promise<DigestConfig>`

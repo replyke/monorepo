@@ -1176,6 +1176,30 @@
             ]
           },
           {
+            "tab": "Node SDK",
+            "url": "v7/node-sdk/overview",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["v7/node-sdk/overview"]
+              },
+              {
+                "group": "Modules",
+                "pages": [
+                  "v7/node-sdk/auth",
+                  "v7/node-sdk/users",
+                  "v7/node-sdk/entities",
+                  "v7/node-sdk/comments",
+                  "v7/node-sdk/spaces",
+                  "v7/node-sdk/spaces-members",
+                  "v7/node-sdk/spaces-moderation",
+                  "v7/node-sdk/search",
+                  "v7/node-sdk/hosted-apps"
+                ]
+              }
+            ]
+          },
+          {
             "tab": "Components",
             "url": "v7/components/overview",
             "groups": [

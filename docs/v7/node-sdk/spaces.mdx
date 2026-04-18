@@ -1,0 +1,300 @@
+---
+title: "Spaces"
+description: "Create and manage spaces, navigate hierarchies, and look up spaces by slug or short ID"
+---
+
+The `spaces` module covers core space lifecycle management: creating spaces, fetching them by various identifiers, updating settings, navigating parent-child hierarchies, and checking slug availability.
+
+For membership management see [Space Members](/v7/node-sdk/spaces-members), and for moderation, rules, and digest configuration see [Space Moderation](/v7/node-sdk/spaces-moderation).
+
+---
+
+### createSpace
+
+Creates a new space.
+
+```typescript
+const space = await replyke.spaces.createSpace({
+  userId: "usr_abc123",
+  name: "Photography",
+  slug: "photography",
+  description: "A community for photographers",
+  postingPermission: "members",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID of the space creator, who becomes the initial admin.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Display name for the space.
+</ParamField>
+
+<ParamField body="slug" type="string">
+  URL-friendly identifier. Must be unique within the project. Generated from `name` if omitted.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Short description of the space.
+</ParamField>
+
+<ParamField body="readingPermission" type="string">
+  Who can read content: `"anyone"` (default) or `"members"`.
+</ParamField>
+
+<ParamField body="postingPermission" type="string">
+  Who can post content: `"anyone"`, `"members"` (default), or `"admins"`.
+</ParamField>
+
+<ParamField body="requireJoinApproval" type="boolean">
+  When `true`, join requests must be manually approved. Defaults to `false`.
+</ParamField>
+
+<ParamField body="parentSpaceId" type="string">
+  Makes this space a child of the specified parent space.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary metadata attached to the space.
+</ParamField>
+
+**Returns** — `Promise<Space>`
+
+---
+
+### fetchSpace
+
+Fetches a space by its Replyke ID, including member counts and permission details.
+
+```typescript
+const space = await replyke.spaces.fetchSpace({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+**Returns** — `Promise<SpaceDetailed>`
+
+---
+
+### fetchManySpaces
+
+Fetches a paginated list of top-level spaces, with optional text search.
+
+```typescript
+const { data, metadata } = await replyke.spaces.fetchManySpaces({
+  page: 1,
+  limit: 20,
+  query: "photo",
+});
+```
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="parentSpaceId" type="string">
+  When provided, fetches children of this space instead of top-level spaces.
+</ParamField>
+
+<ParamField body="query" type="string">
+  Text search query to filter spaces by name.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Space>>`
+
+---
+
+### fetchSpaceBySlug
+
+Fetches a space by its unique slug.
+
+```typescript
+const space = await replyke.spaces.fetchSpaceBySlug({ slug: "photography" });
+```
+
+<ParamField body="slug" type="string" required>
+  The space's URL slug.
+</ParamField>
+
+**Returns** — `Promise<SpaceDetailed>`
+
+---
+
+### fetchSpaceByShortId
+
+Fetches a space by its short, human-readable ID (used in share URLs).
+
+```typescript
+const space = await replyke.spaces.fetchSpaceByShortId({ shortId: "ph3x9" });
+```
+
+<ParamField body="shortId" type="string" required>
+  The space's short ID.
+</ParamField>
+
+**Returns** — `Promise<SpaceDetailed>`
+
+---
+
+### fetchUserSpaces
+
+Fetches the spaces a specific user is a member of.
+
+```typescript
+const result = await replyke.spaces.fetchUserSpaces({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<UserSpacesResponse>`
+
+---
+
+### updateSpace
+
+Updates settings on an existing space.
+
+```typescript
+const space = await replyke.spaces.updateSpace({
+  spaceId: "spc_abc123",
+  name: "Photography Community",
+  postingPermission: "admins",
+  requireJoinApproval: true,
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID to update.
+</ParamField>
+
+<ParamField body="name" type="string">
+  New display name.
+</ParamField>
+
+<ParamField body="slug" type="string">
+  New slug. Must be unique.
+</ParamField>
+
+<ParamField body="description" type="string">
+  New description.
+</ParamField>
+
+<ParamField body="readingPermission" type="string">
+  Updated reading permission: `"anyone"` or `"members"`.
+</ParamField>
+
+<ParamField body="postingPermission" type="string">
+  Updated posting permission: `"anyone"`, `"members"`, or `"admins"`.
+</ParamField>
+
+<ParamField body="requireJoinApproval" type="boolean">
+  Updated join approval requirement.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Updated metadata. Merged with existing values.
+</ParamField>
+
+**Returns** — `Promise<Space>`
+
+---
+
+### deleteSpace
+
+Permanently deletes a space and all its content.
+
+```typescript
+const result = await replyke.spaces.deleteSpace({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID to delete.
+</ParamField>
+
+**Returns** — `Promise<DeleteSpaceResponse>`
+
+---
+
+### checkSlugAvailability
+
+Checks whether a slug is available for use.
+
+```typescript
+const { available } = await replyke.spaces.checkSlugAvailability({
+  slug: "photography",
+});
+```
+
+<ParamField body="slug" type="string" required>
+  The slug to check.
+</ParamField>
+
+**Returns** — `Promise<{ available: boolean }>`
+
+---
+
+### fetchChildSpaces
+
+Fetches the direct child spaces of a given parent space.
+
+```typescript
+const { data, metadata } = await replyke.spaces.fetchChildSpaces({
+  spaceId: "spc_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The parent Replyke space ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Space>>`
+
+---
+
+### fetchSpaceBreadcrumb
+
+Returns the full ancestor chain from the root down to the specified space. Useful for rendering breadcrumb navigation.
+
+```typescript
+const breadcrumb = await replyke.spaces.fetchSpaceBreadcrumb({
+  spaceId: "spc_abc123",
+});
+// [{ id: "root", name: "Root" }, { id: "spc_parent", name: "Parent" }, { id: "spc_abc123", name: "Photography" }]
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID to get the breadcrumb for.
+</ParamField>
+
+**Returns** — `Promise<SpaceBreadcrumb>`

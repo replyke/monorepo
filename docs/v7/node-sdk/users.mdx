@@ -1,0 +1,316 @@
+---
+title: "Users"
+description: "Fetch and update user profiles, check usernames, and query follow and connection graphs"
+---
+
+The `users` module provides server-side access to user profiles, social graph data (follows and connections), and username availability. All operations use your project API key and do not require a user access token.
+
+---
+
+### fetchUserById
+
+Fetches a user profile by their internal Replyke user ID.
+
+```typescript
+const user = await replyke.users.fetchUserById({ userId: "usr_abc123" });
+```
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID.
+</ParamField>
+
+**Returns** — `Promise<User>`
+
+---
+
+### fetchUserByForeignId
+
+Fetches a user profile by your application's own user identifier. Optionally creates the user if not found.
+
+```typescript
+const user = await replyke.users.fetchUserByForeignId({
+  foreignId: "external-user-42",
+  createIfNotFound: true,
+  name: "Bob Smith",
+  username: "bob",
+});
+```
+
+<ParamField body="foreignId" type="string" required>
+  Your application's user identifier.
+</ParamField>
+
+<ParamField body="createIfNotFound" type="boolean">
+  When `true`, creates the user with the provided profile fields if no match is found. Defaults to `false`.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name — used only when creating a new user.
+</ParamField>
+
+<ParamField body="username" type="string">
+  Username — used only when creating a new user.
+</ParamField>
+
+<ParamField body="avatar" type="string">
+  Avatar URL — used only when creating a new user.
+</ParamField>
+
+<ParamField body="bio" type="string">
+  Bio text — used only when creating a new user.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Public metadata — used only when creating a new user.
+</ParamField>
+
+<ParamField body="secureMetadata" type="object">
+  Secure metadata (not exposed to the client) — used only when creating a new user.
+</ParamField>
+
+**Returns** — `Promise<User>`
+
+---
+
+### fetchUserByUsername
+
+Fetches a user profile by their username.
+
+```typescript
+const user = await replyke.users.fetchUserByUsername({ username: "alice" });
+```
+
+<ParamField body="username" type="string" required>
+  The user's unique username.
+</ParamField>
+
+**Returns** — `Promise<User>`
+
+---
+
+### updateUser
+
+Updates a user's profile fields.
+
+```typescript
+const updatedUser = await replyke.users.updateUser({
+  userId: "usr_abc123",
+  name: "Alice Updated",
+  bio: "New bio",
+  avatar: "https://cdn.example.com/avatar.jpg",
+  location: { latitude: 37.7749, longitude: -122.4194 },
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID to update.
+</ParamField>
+
+<ParamField body="name" type="string">
+  New display name.
+</ParamField>
+
+<ParamField body="username" type="string">
+  New username. Must be available.
+</ParamField>
+
+<ParamField body="bio" type="string">
+  New bio text.
+</ParamField>
+
+<ParamField body="avatar" type="string">
+  New avatar URL.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Updated public metadata. Merged with existing metadata.
+</ParamField>
+
+<ParamField body="birthdate" type="string">
+  ISO 8601 date string for the user's birthdate.
+</ParamField>
+
+<ParamField body="location" type="object">
+  Geographic location `{ latitude: number; longitude: number }`.
+</ParamField>
+
+**Returns** — `Promise<UserFull>`
+
+---
+
+### fetchUserSuggestions
+
+Returns users whose name or username matches a partial query string. Useful for mention autocomplete on the server.
+
+```typescript
+const users = await replyke.users.fetchUserSuggestions({
+  query: "ali",
+  limit: 10,
+});
+```
+
+<ParamField body="query" type="string" required>
+  Partial name or username to search for.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+**Returns** — `Promise<User[]>`
+
+---
+
+### checkUsernameAvailability
+
+Checks whether a username is available for registration.
+
+```typescript
+const { available } = await replyke.users.checkUsernameAvailability({
+  username: "alice",
+});
+```
+
+<ParamField body="username" type="string" required>
+  The username to check.
+</ParamField>
+
+**Returns** — `Promise<{ available: boolean }>`
+
+---
+
+### fetchFollowersByUserId
+
+Returns a paginated list of users following the specified user.
+
+```typescript
+const { data, metadata } = await replyke.users.fetchFollowersByUserId({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<User>>`
+
+---
+
+### fetchFollowersCountByUserId
+
+Returns the total number of followers for a user.
+
+```typescript
+const { count } = await replyke.users.fetchFollowersCountByUserId({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID.
+</ParamField>
+
+**Returns** — `Promise<{ count: number }>`
+
+---
+
+### fetchFollowingByUserId
+
+Returns a paginated list of users that the specified user is following.
+
+```typescript
+const { data, metadata } = await replyke.users.fetchFollowingByUserId({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<User>>`
+
+---
+
+### fetchFollowingCountByUserId
+
+Returns the number of users the specified user is following.
+
+```typescript
+const { count } = await replyke.users.fetchFollowingCountByUserId({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID.
+</ParamField>
+
+**Returns** — `Promise<{ count: number }>`
+
+---
+
+### fetchConnectionsByUserId
+
+Returns a paginated list of established mutual connections for a user.
+
+```typescript
+const { data, metadata } = await replyke.users.fetchConnectionsByUserId({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<EstablishedConnection>>`
+
+---
+
+### fetchConnectionsCountByUserId
+
+Returns the number of established connections for a user.
+
+```typescript
+const { count } = await replyke.users.fetchConnectionsCountByUserId({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID.
+</ParamField>
+
+**Returns** — `Promise<{ count: number }>`

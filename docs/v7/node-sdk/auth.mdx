@@ -1,0 +1,177 @@
+---
+title: "Auth"
+description: "Sign users up, sign them in, manage tokens, and handle password resets from your server"
+---
+
+The `auth` module handles user authentication flows server-side. This is useful for custom onboarding pipelines, admin-initiated account creation, token introspection, and password management.
+
+<Note>
+  All auth functions operate on behalf of your project. The caller is your server, authenticated via API key — not an end user.
+</Note>
+
+---
+
+### signUp
+
+Creates a new user account and returns credentials.
+
+```typescript
+const { user, accessToken, refreshToken } = await replyke.auth.signUp({
+  email: "user@example.com",
+  password: "s3cur3P@ss",
+  name: "Alice",
+  username: "alice",
+});
+```
+
+<ParamField body="email" type="string" required>
+  The user's email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's plain-text password (hashed server-side).
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the user.
+</ParamField>
+
+<ParamField body="username" type="string">
+  Unique username. Must be available — check with `users.checkUsernameAvailability` first.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary key-value data attached to the user at creation time.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### signIn
+
+Authenticates an existing user and returns fresh credentials.
+
+```typescript
+const { user, accessToken, refreshToken } = await replyke.auth.signIn({
+  email: "user@example.com",
+  password: "s3cur3P@ss",
+});
+```
+
+<ParamField body="email" type="string" required>
+  The user's email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's password.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### signOut
+
+Invalidates a refresh token, ending the user's session.
+
+```typescript
+await replyke.auth.signOut({ refreshToken });
+```
+
+<ParamField body="refreshToken" type="string" required>
+  The refresh token to invalidate.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### requestNewAccessToken
+
+Exchanges a valid refresh token for a new access token.
+
+```typescript
+const { accessToken } = await replyke.auth.requestNewAccessToken({
+  refreshToken,
+});
+```
+
+<ParamField body="refreshToken" type="string" required>
+  A valid, non-expired refresh token.
+</ParamField>
+
+**Returns** — `Promise<{ accessToken: string }>`
+
+---
+
+### verifyExternalUser
+
+Verifies a signed JWT representing an externally-authenticated user and returns Replyke credentials. Use this when your application manages its own auth and you want to associate users with Replyke.
+
+```typescript
+const { user, accessToken, refreshToken } = await replyke.auth.verifyExternalUser({
+  userJwt: signedJwt,
+});
+```
+
+<ParamField body="userJwt" type="string" required>
+  A JWT signed with your project's signing secret, containing user identity claims.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### requestPasswordReset
+
+Sends a password reset email to the specified address.
+
+```typescript
+await replyke.auth.requestPasswordReset({ email: "user@example.com" });
+```
+
+<ParamField body="email" type="string" required>
+  The email address to send the reset link to.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### resetPassword
+
+Completes a password reset using a token from the reset email.
+
+```typescript
+await replyke.auth.resetPassword({
+  token: resetToken,
+  newPassword: "newS3cur3P@ss",
+});
+```
+
+<ParamField body="token" type="string" required>
+  The reset token from the password reset email link.
+</ParamField>
+
+<ParamField body="newPassword" type="string" required>
+  The new password to set for the account.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### verifyEmail
+
+Marks a user's email address as verified using a token from the verification email.
+
+```typescript
+await replyke.auth.verifyEmail({ token: verificationToken });
+```
+
+<ParamField body="token" type="string" required>
+  The email verification token.
+</ParamField>
+
+**Returns** — `Promise<void>`

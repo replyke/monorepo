@@ -1,0 +1,125 @@
+---
+title: "Search"
+description: "Full-text search across content, users, and spaces, plus AI-powered Q&A"
+---
+
+The `search` module provides server-side access to Replyke's search and AI capabilities. Use it to build search APIs, power recommendation engines, or answer natural-language questions about your content.
+
+---
+
+### searchContent
+
+Searches entities by full-text query, optionally scoped to a space.
+
+```typescript
+const { data, metadata } = await replyke.search.searchContent({
+  query: "getting started guide",
+  spaceId: "spc_abc123",
+  page: 1,
+  limit: 10,
+});
+```
+
+<ParamField body="query" type="string" required>
+  The search query string.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Scope the search to a specific space.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Entity>>`
+
+---
+
+### searchUsers
+
+Searches for users by name or username.
+
+```typescript
+const { data, metadata } = await replyke.search.searchUsers({
+  query: "alice",
+  page: 1,
+  limit: 10,
+});
+```
+
+<ParamField body="query" type="string" required>
+  The search query string.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<User>>`
+
+---
+
+### searchSpaces
+
+Searches for spaces by name or description.
+
+```typescript
+const { data, metadata } = await replyke.search.searchSpaces({
+  query: "photography",
+  page: 1,
+  limit: 10,
+});
+```
+
+<ParamField body="query" type="string" required>
+  The search query string.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Space>>`
+
+---
+
+### askContent
+
+Asks a natural-language question about your content and returns an AI-generated answer with source references.
+
+<Note>
+  This feature requires semantic search to be enabled for your project. See the [Semantic Search & AI](/v7/semantic-search-ai) guide for setup instructions.
+</Note>
+
+```typescript
+const { answer, sources } = await replyke.search.askContent({
+  question: "What are the best practices for error handling?",
+  spaceId: "spc_abc123",
+});
+
+// answer: "Based on the content in this space, best practices include..."
+// sources: [{ entityId: "ent_xyz", title: "Error Handling Guide" }, ...]
+```
+
+<ParamField body="question" type="string" required>
+  The natural-language question to answer.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Scope the search to content within a specific space.
+</ParamField>
+
+**Returns** — `Promise<{ answer: string; sources?: Array<{ entityId: string; title: string }> }>`

@@ -1,0 +1,239 @@
+---
+title: "Space Members"
+description: "Manage space membership — joining, leaving, approvals, role assignments, and bans"
+---
+
+The `spaces` module includes a full set of membership management functions. Use these to build admin tools, automate onboarding flows, or enforce membership policies server-side.
+
+---
+
+### joinSpace
+
+Adds a user to a space. If the space requires approval (`requireJoinApproval: true`), the membership is created in a pending state.
+
+```typescript
+const result = await replyke.spaces.joinSpace({
+  spaceId: "spc_abc123",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID to add.
+</ParamField>
+
+**Returns** — `Promise<JoinSpaceResponse>`
+
+---
+
+### leaveSpace
+
+Removes a user from a space.
+
+```typescript
+const result = await replyke.spaces.leaveSpace({
+  spaceId: "spc_abc123",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID to remove.
+</ParamField>
+
+**Returns** — `Promise<LeaveSpaceResponse>`
+
+---
+
+### checkMyMembership
+
+Returns the membership status of a user in a space.
+
+```typescript
+const result = await replyke.spaces.checkMyMembership({
+  spaceId: "spc_abc123",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Replyke user ID to check.
+</ParamField>
+
+**Returns** — `Promise<CheckMyMembershipResponse>`
+
+---
+
+### fetchSpaceMembers
+
+Returns a paginated list of approved members in a space.
+
+```typescript
+const result = await replyke.spaces.fetchSpaceMembers({
+  spaceId: "spc_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<SpaceMembersResponse>`
+
+---
+
+### fetchSpaceTeam
+
+Returns the admin and moderator members of a space (the "team").
+
+```typescript
+const result = await replyke.spaces.fetchSpaceTeam({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+**Returns** — `Promise<SpaceTeamResponse>`
+
+---
+
+### updateMemberRole
+
+Updates a member's role within a space.
+
+```typescript
+const result = await replyke.spaces.updateMemberRole({
+  spaceId: "spc_abc123",
+  memberId: "mem_xyz789",
+  role: "moderator",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="memberId" type="string" required>
+  The Replyke space member ID (not the user ID).
+</ParamField>
+
+<ParamField body="role" type="string" required>
+  The new role to assign: `"admin"`, `"moderator"`, or `"member"`.
+</ParamField>
+
+**Returns** — `Promise<UpdateMemberRoleResponse>`
+
+---
+
+### approveMembership
+
+Approves a pending membership request. Only relevant when the space has `requireJoinApproval: true`.
+
+```typescript
+const result = await replyke.spaces.approveMembership({
+  spaceId: "spc_abc123",
+  memberId: "mem_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="memberId" type="string" required>
+  The Replyke space member ID of the pending member.
+</ParamField>
+
+**Returns** — `Promise<ApproveMemberResponse>`
+
+---
+
+### declineMembership
+
+Declines and removes a pending membership request.
+
+```typescript
+const result = await replyke.spaces.declineMembership({
+  spaceId: "spc_abc123",
+  memberId: "mem_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="memberId" type="string" required>
+  The Replyke space member ID of the pending member.
+</ParamField>
+
+**Returns** — `Promise<DeclineMemberResponse>`
+
+---
+
+### banMember
+
+Bans a member from a space, preventing them from rejoining.
+
+```typescript
+const result = await replyke.spaces.banMember({
+  spaceId: "spc_abc123",
+  memberId: "mem_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="memberId" type="string" required>
+  The Replyke space member ID to ban.
+</ParamField>
+
+**Returns** — `Promise<BanMemberResponse>`
+
+---
+
+### unbanMember
+
+Removes a ban, allowing the user to rejoin the space.
+
+```typescript
+const result = await replyke.spaces.unbanMember({
+  spaceId: "spc_abc123",
+  memberId: "mem_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Replyke space ID.
+</ParamField>
+
+<ParamField body="memberId" type="string" required>
+  The Replyke space member ID to unban.
+</ParamField>
+
+**Returns** — `Promise<UnbanMemberResponse>`
