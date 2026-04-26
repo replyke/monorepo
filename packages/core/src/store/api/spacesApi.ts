@@ -196,6 +196,9 @@ export const spacesApi = baseApi.injectEndpoints({
           method: "GET",
         };
       },
+      // API returns { data: Space[], pagination }; unwrap so consumers get Space[].
+      transformResponse: (response: { data: Space[] } | Space[]) =>
+        Array.isArray(response) ? response : response.data,
       providesTags: (result) => [
         { type: "Space", id: "LIST" },
         ...(result?.map(({ id }) => ({ type: "Space" as const, id })) ?? []),

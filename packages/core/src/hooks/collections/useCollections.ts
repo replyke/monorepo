@@ -106,12 +106,16 @@ function useCollections(_: UseCollectionsProps = {}): UseCollectionsValues {
     }
   }, [dispatch, projectId, currentProjectId]);
 
-  // Fetch root collection when user and project are available
+  // Fetch root collection when user and project are available.
+  // Skip if a collection is already loaded for this project — otherwise mounting
+  // useCollections() per leaf component (e.g. a BookmarkButton in every card)
+  // hammers /collections/root and trips the rate limit.
   useEffect(() => {
     if (!user || !projectId) return;
+    if (currentCollection && currentProjectId === projectId) return;
 
     fetchRootCollection({ projectId });
-  }, [fetchRootCollection, user, projectId]);
+  }, [fetchRootCollection, user, projectId, currentCollection, currentProjectId]);
 
   // Fetch sub-collections when current collection changes
   useEffect(() => {
