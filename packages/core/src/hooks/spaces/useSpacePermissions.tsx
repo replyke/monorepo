@@ -68,7 +68,7 @@ function useSpacePermissions({
       isAdmin,
       isModerator,
       canPost,
-      canModerate: isModerator && isActiveMember && !isBanned,
+      canModerate: (isAdmin || isModerator) && isActiveMember && !isBanned,
       canRead,
       isPending,
       isBanned,

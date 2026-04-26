@@ -36,6 +36,7 @@ export interface UseSpaceDataValues {
   isModerator: boolean;
   canPost: boolean;
   canModerate: boolean;
+  canRead: boolean;
   membershipStatus: SpaceMemberStatus | null;
   isPending: boolean;
   isBanned: boolean;
@@ -283,6 +284,7 @@ function useSpaceData({
     isModerator: permissions.isModerator,
     canPost: permissions.canPost,
     canModerate: permissions.canModerate,
+    canRead: permissions.canRead,
     membershipStatus: space?.memberPermissions?.status || null,
     isPending: permissions.isPending,
     isBanned: permissions.isBanned,
