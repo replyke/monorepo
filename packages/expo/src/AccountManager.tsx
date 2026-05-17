@@ -2,7 +2,9 @@ import * as SecureStore from "expo-secure-store";
 import { useAccountSync, useProject, handleError } from "@sublay/core";
 import type { AccountStorage, AccountMap } from "@sublay/core";
 
-const STORAGE_KEY_PREFIX = "sublay-accounts:";
+// expo-secure-store rejects keys containing `:` on iOS — keys must match
+// /^[A-Za-z0-9._-]+$/. Use `_` as the separator instead.
+const STORAGE_KEY_PREFIX = "sublay-accounts_";
 
 const secureStoreStorage: AccountStorage = {
   async getAccountMap(projectId: string): Promise<AccountMap | null> {
