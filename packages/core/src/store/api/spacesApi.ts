@@ -187,9 +187,11 @@ export const spacesApi = baseApi.injectEndpoints({
         if (params.searchAny) queryParams.append("searchAny", params.searchAny);
         if (params.readingPermission) queryParams.append("readingPermission", params.readingPermission);
         if (params.memberOf !== undefined) queryParams.append("memberOf", params.memberOf.toString());
-        if (params.parentSpaceId !== undefined) {
-          // Convert null to "null" string for API
-          queryParams.append("parentSpaceId", params.parentSpaceId === null ? "null" : params.parentSpaceId);
+        // Only emit parentSpaceId when an actual ID is provided. The server
+        // treats the absence of the param as "top-level only" and rejects
+        // the literal string "null" as an invalid UUID with 400.
+        if (params.parentSpaceId) {
+          queryParams.append("parentSpaceId", params.parentSpaceId);
         }
 
         return {

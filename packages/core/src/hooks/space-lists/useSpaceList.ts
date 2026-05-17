@@ -150,7 +150,9 @@ function useSpaceList({ listId }: UseSpaceListProps): UseSpaceListValues {
           searchAny: null,
           readingPermission: null,
           memberOf: false,
-          parentSpaceId: null,
+          // undefined (not null) so the serializer omits the param entirely
+          // for top-level / unfiltered listings.
+          parentSpaceId: undefined as any,
         };
         const finalFilters = { ...currentState };
 
@@ -163,7 +165,8 @@ function useSpaceList({ listId }: UseSpaceListProps): UseSpaceListValues {
           finalFilters.searchAny = null;
           finalFilters.readingPermission = null;
           finalFilters.memberOf = false;
-          finalFilters.parentSpaceId = null;
+          // See note on currentState default — undefined, not null.
+          finalFilters.parentSpaceId = undefined as any;
         }
 
         // Apply new filters
