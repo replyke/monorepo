@@ -1,12 +1,12 @@
 {
-  "name": "@replyke/ui-core-react-native",
+  "name": "@sublay/ui-core-react-native",
   "version": "7.0.0",
   "private": false,
   "license": "Apache-2.0",
-  "author": "Replyke, maintained by Yanay Tsabary",
-  "description": "Replyke UI Core for React Native - Pre-built components for social features",
+  "author": "Sublay, maintained by Yanay Tsabary",
+  "description": "Sublay UI Core for React Native - Pre-built components for social features",
   "keywords": [
-    "replyke",
+    "sublay",
     "social",
     "comments",
     "reactions",
@@ -17,10 +17,10 @@
   "bugs": {
     "url": "https://discord.com/invite/REKxnCJzPz"
   },
-  "homepage": "https://docs.replyke.com",
+  "homepage": "https://docs.sublay.io",
   "repository": {
     "type": "git",
-    "url": "https://github.com/replyke/ui-core.git"
+    "url": "https://github.com/sublay/ui-core.git"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
