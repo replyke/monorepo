@@ -1,4 +1,4 @@
-# @replyke/node — Pre-Ship Audit
+# @sublay/node — Pre-Ship Audit
 
 **Date**: 2026-04-16  
 **Scope**: Full source review of `node-sdk/src/` before v7 release
@@ -106,13 +106,13 @@ TypeScript resolves conditions in order. When `types` comes after `import`/`requ
 
 ```typescript
 this.baseInstance = axios.create({
-  baseURL: "https://api.replyke.com",
+  baseURL: "https://api.sublay.io",
 });
 ```
 
 This instance has no auth headers and is referenced on the class, but no module anywhere in `src/modules/` calls `client.baseInstance`. It appears to be a leftover from an earlier design.
 
-**Action**: Remove it from `ReplykeHttpClient`.
+**Action**: Remove it from `SublayHttpClient`.
 
 ---
 
@@ -160,7 +160,7 @@ These are **borderline** — they require tokens that only exist in the user's e
 
 **File**: `src/modules/oauth/`
 
-The `oauth.authorize(provider, token)` function takes a provider name + token already obtained from the OAuth provider (typically acquired on the client via Google/GitHub SDK), then exchanges it with Replyke. This is a valid server-side OAuth backend exchange pattern — the client gets the token, sends it to your backend, your backend calls Replyke to authorize.
+The `oauth.authorize(provider, token)` function takes a provider name + token already obtained from the OAuth provider (typically acquired on the client via Google/GitHub SDK), then exchanges it with Sublay. This is a valid server-side OAuth backend exchange pattern — the client gets the token, sends it to your backend, your backend calls Sublay to authorize.
 
 `linkIdentity`, `unlinkIdentity`, `listIdentities` are identity management operations that make sense in admin/server contexts.
 

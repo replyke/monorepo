@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { UnifiedAppNotification } from "../../interfaces/AppNotification";
 
 export interface MarkNotificationAsReadProps {
@@ -6,7 +6,7 @@ export interface MarkNotificationAsReadProps {
 }
 
 export async function markNotificationAsRead(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: MarkNotificationAsReadProps
 ): Promise<UnifiedAppNotification> {
   const { notificationId } = data;

@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { ApproveMemberResponse } from "../../interfaces/Space";
 
 export interface ApproveMembershipProps {
@@ -7,7 +7,7 @@ export interface ApproveMembershipProps {
 }
 
 export async function approveMembership(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: ApproveMembershipProps
 ): Promise<ApproveMemberResponse> {
   const { spaceId, memberId } = data;

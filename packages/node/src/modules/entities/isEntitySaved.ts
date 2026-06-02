@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface IsEntitySavedProps {
   entityId: string;
@@ -10,7 +10,7 @@ export interface IsEntitySavedResponse {
 }
 
 export async function isEntitySaved(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: IsEntitySavedProps
 ): Promise<IsEntitySavedResponse> {
   const response = await client.projectInstance.get<IsEntitySavedResponse>(

@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { AuthUser } from "../../interfaces/User";
 
 export interface VerifyExternalUserProps {
@@ -12,7 +12,7 @@ export interface VerifyExternalUserResponse {
 }
 
 export async function verifyExternalUser(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: VerifyExternalUserProps
 ): Promise<VerifyExternalUserResponse> {
   const response =

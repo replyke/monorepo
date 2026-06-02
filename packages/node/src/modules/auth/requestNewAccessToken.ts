@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface RequestNewAccessTokenProps {
   refreshToken: string;
@@ -9,7 +9,7 @@ export interface RequestNewAccessTokenResponse {
 }
 
 export async function requestNewAccessToken(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: RequestNewAccessTokenProps
 ): Promise<RequestNewAccessTokenResponse> {
   const response =

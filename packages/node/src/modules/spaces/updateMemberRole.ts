@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { UpdateMemberRoleResponse, SpaceMemberRole } from "../../interfaces/Space";
 
 export interface UpdateMemberRoleProps {
@@ -8,7 +8,7 @@ export interface UpdateMemberRoleProps {
 }
 
 export async function updateMemberRole(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: UpdateMemberRoleProps
 ): Promise<UpdateMemberRoleResponse> {
   const { spaceId, memberId, role } = data;

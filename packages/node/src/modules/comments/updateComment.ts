@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface UpdateCommentProps {
   commentId: string;
@@ -7,7 +7,7 @@ export interface UpdateCommentProps {
 }
 
 export async function updateComment(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: UpdateCommentProps
 ): Promise<Comment> {
   const { commentId, ...restOfProps } = data;

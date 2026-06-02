@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { JoinSpaceResponse } from "../../interfaces/Space";
 
 export interface JoinSpaceProps {
@@ -7,7 +7,7 @@ export interface JoinSpaceProps {
 }
 
 export async function joinSpace(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: JoinSpaceProps
 ): Promise<JoinSpaceResponse> {
   const { spaceId, userId } = data;

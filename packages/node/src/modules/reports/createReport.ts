@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import {
   CreateReportResponse,
   ReportTargetType,
@@ -13,7 +13,7 @@ export interface CreateReportProps {
 }
 
 export async function createReport(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: CreateReportProps
 ): Promise<CreateReportResponse> {
   const response = await client.projectInstance.post<CreateReportResponse>(

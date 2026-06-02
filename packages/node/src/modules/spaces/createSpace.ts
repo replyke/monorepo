@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Space, ReadingPermission, PostingPermission } from "../../interfaces/Space";
 
 export interface CreateSpaceProps {
@@ -14,7 +14,7 @@ export interface CreateSpaceProps {
 }
 
 export async function createSpace(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: CreateSpaceProps
 ): Promise<Space> {
   const response = await client.projectInstance.post<Space>("/spaces", data);

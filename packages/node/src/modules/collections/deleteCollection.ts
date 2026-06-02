@@ -1,11 +1,11 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface DeleteCollectionProps {
   collectionId: string;
 }
 
 export async function deleteCollection(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: DeleteCollectionProps
 ): Promise<void> {
   const { collectionId } = data;

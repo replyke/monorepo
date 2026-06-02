@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { LeaveSpaceResponse } from "../../interfaces/Space";
 
 export interface LeaveSpaceProps {
@@ -7,7 +7,7 @@ export interface LeaveSpaceProps {
 }
 
 export async function leaveSpace(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: LeaveSpaceProps
 ): Promise<LeaveSpaceResponse> {
   const { spaceId, userId } = data;

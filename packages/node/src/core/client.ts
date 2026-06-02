@@ -6,32 +6,32 @@ export interface ClientConfig {
   isInternal?: boolean;
 }
 
-export class ReplykeHttpClient {
+export class SublayHttpClient {
   projectInstance: AxiosInstance;
   internalInstance: AxiosInstance;
   baseInstance: AxiosInstance;
 
   constructor({ projectId, apiKey, isInternal }: ClientConfig) {
     this.projectInstance = axios.create({
-      baseURL: `https://api.replyke.com/v7/${projectId}`,
+      baseURL: `https://api.sublay.io/v7/${projectId}`,
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "X-Replyke-Project-ID": projectId,
-        ...(isInternal && { "X-Replyke-Internal": "true" }),
+        "X-Sublay-Project-ID": projectId,
+        ...(isInternal && { "X-Sublay-Internal": "true" }),
       },
     });
 
     this.internalInstance = axios.create({
-      baseURL: "https://api.replyke.com/internal",
+      baseURL: "https://api.sublay.io/internal",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "X-Replyke-Project-ID": projectId,
-        ...(isInternal && { "X-Replyke-Internal": "true" }),
+        "X-Sublay-Project-ID": projectId,
+        ...(isInternal && { "X-Sublay-Internal": "true" }),
       },
     });
 
     this.baseInstance = axios.create({
-      baseURL: "https://api.replyke.com",
+      baseURL: "https://api.sublay.io",
     });
   }
 }

@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface AskContentProps {
   question: string;
@@ -11,7 +11,7 @@ export interface AskContentResponse {
 }
 
 export async function askContent(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: AskContentProps
 ): Promise<AskContentResponse> {
   const response = await client.projectInstance.post<AskContentResponse>(

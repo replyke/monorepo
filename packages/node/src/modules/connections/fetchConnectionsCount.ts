@@ -1,8 +1,8 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { ConnectionCountResponse } from "../../interfaces/Connection";
 
 export async function fetchConnectionsCount(
-  client: ReplykeHttpClient
+  client: SublayHttpClient
 ): Promise<ConnectionCountResponse> {
   const response = await client.projectInstance.get<ConnectionCountResponse>(
     "/connections/count"

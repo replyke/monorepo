@@ -1,11 +1,11 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface DeleteCommentProps {
   commentId: string;
 }
 
 export async function deleteComment(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: DeleteCommentProps
 ): Promise<void> {
   const path = `/comments/${data.commentId}`;

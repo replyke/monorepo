@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { AuthUser } from "../../interfaces/User";
 
 export interface SignUpProps {
@@ -16,7 +16,7 @@ export interface SignUpResponse {
 }
 
 export async function signUp(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: SignUpProps
 ): Promise<SignUpResponse> {
   const response = await client.projectInstance.post<SignUpResponse>(

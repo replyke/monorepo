@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Entity } from "../../interfaces/Entity";
 
 export interface FetchEntityByShortIdProps {
@@ -6,7 +6,7 @@ export interface FetchEntityByShortIdProps {
 }
 
 export async function fetchEntityByShortId(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchEntityByShortIdProps
 ): Promise<Entity> {
   const path = `/entities/by-short-id`;

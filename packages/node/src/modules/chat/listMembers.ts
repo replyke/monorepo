@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { ConversationMember } from "../../interfaces/ConversationMember";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
@@ -9,7 +9,7 @@ export interface ListMembersProps {
 }
 
 export async function listMembers(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: ListMembersProps
 ): Promise<PaginatedResponse<ConversationMember>> {
   const { conversationId, ...params } = data;

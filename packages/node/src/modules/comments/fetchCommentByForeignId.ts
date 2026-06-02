@@ -1,11 +1,11 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface FetchCommentByForeignIdProps {
   foreignId: string;
 }
 
 export async function fetchCommentByForeignId(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchCommentByForeignIdProps
 ): Promise<Comment> {
   const path = `/comments/by-foreign-id`;

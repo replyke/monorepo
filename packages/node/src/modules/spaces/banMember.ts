@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface BanMemberProps {
   spaceId: string;
@@ -14,7 +14,7 @@ export interface BanMemberResponse {
 }
 
 export async function banMember(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: BanMemberProps
 ): Promise<BanMemberResponse> {
   const { spaceId, memberId } = data;

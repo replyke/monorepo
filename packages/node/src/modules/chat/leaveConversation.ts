@@ -1,11 +1,11 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface LeaveConversationProps {
   conversationId: string;
 }
 
 export async function leaveConversation(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: LeaveConversationProps
 ): Promise<void> {
   const { conversationId } = data;

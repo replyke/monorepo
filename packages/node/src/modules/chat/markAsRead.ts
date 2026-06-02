@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface MarkAsReadProps {
   conversationId: string;
@@ -6,7 +6,7 @@ export interface MarkAsReadProps {
 }
 
 export async function markAsRead(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: MarkAsReadProps
 ): Promise<void> {
   const { conversationId, lastReadAt } = data;

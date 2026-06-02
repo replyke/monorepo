@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Space } from "../../interfaces/Space";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
@@ -10,7 +10,7 @@ export interface FetchManySpacesProps {
 }
 
 export async function fetchManySpaces(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchManySpacesProps
 ): Promise<PaginatedResponse<Space>> {
   const response = await client.projectInstance.get<PaginatedResponse<Space>>(

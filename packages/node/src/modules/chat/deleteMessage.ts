@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface DeleteMessageProps {
   conversationId: string;
@@ -6,7 +6,7 @@ export interface DeleteMessageProps {
 }
 
 export async function deleteMessage(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: DeleteMessageProps
 ): Promise<void> {
   const { conversationId, messageId } = data;

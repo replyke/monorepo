@@ -1,11 +1,11 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface UnreadNotificationsCountResponse {
   count: number;
 }
 
 export async function countUnreadNotifications(
-  client: ReplykeHttpClient
+  client: SublayHttpClient
 ): Promise<UnreadNotificationsCountResponse> {
   const response =
     await client.projectInstance.get<UnreadNotificationsCountResponse>(

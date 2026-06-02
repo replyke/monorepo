@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Space } from "../../interfaces/Space";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
@@ -9,7 +9,7 @@ export interface FetchChildSpacesProps {
 }
 
 export async function fetchChildSpaces(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchChildSpacesProps
 ): Promise<PaginatedResponse<Space>> {
   const { spaceId, ...params } = data;

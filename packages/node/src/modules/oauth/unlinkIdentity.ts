@@ -1,11 +1,11 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface UnlinkIdentityProps {
   identityId: string;
 }
 
 export async function unlinkIdentity(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: UnlinkIdentityProps
 ): Promise<void> {
   const { identityId } = data;

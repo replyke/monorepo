@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface FetchFollowingCountByUserIdProps {
   userId: string;
@@ -9,7 +9,7 @@ export interface FollowingCountResponse {
 }
 
 export async function fetchFollowingCountByUserId(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchFollowingCountByUserIdProps
 ): Promise<FollowingCountResponse> {
   const { userId } = data;

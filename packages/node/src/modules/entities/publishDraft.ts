@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Entity } from "../../interfaces/Entity";
 
 export interface PublishDraftProps {
@@ -6,7 +6,7 @@ export interface PublishDraftProps {
 }
 
 export async function publishDraft(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: PublishDraftProps
 ): Promise<Entity> {
   const { entityId } = data;

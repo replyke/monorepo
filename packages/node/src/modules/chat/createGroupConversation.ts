@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Conversation } from "../../interfaces/Conversation";
 
 export interface CreateGroupConversationProps {
@@ -9,7 +9,7 @@ export interface CreateGroupConversationProps {
 }
 
 export async function createGroupConversation(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: CreateGroupConversationProps
 ): Promise<Conversation> {
   const response = await client.projectInstance.post<Conversation>(

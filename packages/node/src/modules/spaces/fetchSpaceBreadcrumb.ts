@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { SpaceBreadcrumb } from "../../interfaces/Space";
 
 export interface FetchSpaceBreadcrumbProps {
@@ -6,7 +6,7 @@ export interface FetchSpaceBreadcrumbProps {
 }
 
 export async function fetchSpaceBreadcrumb(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchSpaceBreadcrumbProps
 ): Promise<SpaceBreadcrumb> {
   const { spaceId } = data;

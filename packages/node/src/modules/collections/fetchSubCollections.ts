@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Collection } from "../../interfaces/Collection";
 
 export interface FetchSubCollectionsProps {
@@ -6,7 +6,7 @@ export interface FetchSubCollectionsProps {
 }
 
 export async function fetchSubCollections(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchSubCollectionsProps
 ): Promise<Collection[]> {
   const { collectionId } = data;

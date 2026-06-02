@@ -1,4 +1,4 @@
-import { ReplykeHttpClient, ClientConfig } from "./core/client";
+import { SublayHttpClient, ClientConfig } from "./core/client";
 import * as Auth from "./modules/auth";
 import * as Comments from "./modules/comments";
 import * as Entities from "./modules/entities";
@@ -8,15 +8,15 @@ import * as Spaces from "./modules/spaces";
 import * as Users from "./modules/users";
 
 type BoundModule<
-  T extends Record<string, (client: ReplykeHttpClient, ...args: any[]) => any>
+  T extends Record<string, (client: SublayHttpClient, ...args: any[]) => any>
 > = {
   [K in keyof T]: (
     ...args: Parameters<T[K]> extends [any, ...infer R] ? R : never
   ) => ReturnType<T[K]>;
 };
 
-export class ReplykeClient {
-  private http: ReplykeHttpClient;
+export class SublayClient {
+  private http: SublayHttpClient;
 
   public auth: BoundModule<typeof Auth>;
   public comments: BoundModule<typeof Comments>;
@@ -26,7 +26,7 @@ export class ReplykeClient {
   public spaces: BoundModule<typeof Spaces>;
   public users: BoundModule<typeof Users>;
 
-  private constructor(http: ReplykeHttpClient) {
+  private constructor(http: SublayHttpClient) {
     this.http = http;
     this.auth = bindModule(Auth, this.http);
     this.comments = bindModule(Comments, this.http);
@@ -37,16 +37,16 @@ export class ReplykeClient {
     this.users = bindModule(Users, this.http);
   }
 
-  static async init(config: ClientConfig): Promise<ReplykeClient> {
-    const http = new ReplykeHttpClient(config);
+  static async init(config: ClientConfig): Promise<SublayClient> {
+    const http = new SublayHttpClient(config);
     await verifyClient(http);
-    return new ReplykeClient(http);
+    return new SublayClient(http);
   }
 }
 
 function bindModule<
-  T extends Record<string, (client: ReplykeHttpClient, ...args: any[]) => any>
->(module: T, client: ReplykeHttpClient): BoundModule<T> {
+  T extends Record<string, (client: SublayHttpClient, ...args: any[]) => any>
+>(module: T, client: SublayHttpClient): BoundModule<T> {
   const bound: any = {};
   for (const key in module) {
     bound[key] = (...args: any[]) => module[key](client, ...args);
@@ -54,11 +54,11 @@ function bindModule<
   return bound;
 }
 
-async function verifyClient(client: ReplykeHttpClient): Promise<void> {
+async function verifyClient(client: SublayHttpClient): Promise<void> {
   try {
     await client.internalInstance.get("/service/verify");
   } catch (err: any) {
-    throw new Error("[Replyke] Invalid API key or project ID.");
+    throw new Error("[Sublay] Invalid API key or project ID.");
   }
 }
 

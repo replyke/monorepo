@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface ModerateSpaceEntityProps {
   spaceId: string;
@@ -12,7 +12,7 @@ export interface ModerationResponse {
 }
 
 export async function moderateSpaceEntity(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: ModerateSpaceEntityProps
 ): Promise<ModerationResponse> {
   const { spaceId, entityId, ...body } = data;

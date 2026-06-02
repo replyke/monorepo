@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { CheckMyMembershipResponse } from "../../interfaces/Space";
 
 export interface CheckMyMembershipProps {
@@ -7,7 +7,7 @@ export interface CheckMyMembershipProps {
 }
 
 export async function checkMyMembership(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: CheckMyMembershipProps
 ): Promise<CheckMyMembershipResponse> {
   const { spaceId, userId } = data;

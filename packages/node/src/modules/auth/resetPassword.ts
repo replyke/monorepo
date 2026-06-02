@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface ResetPasswordProps {
   token: string;
@@ -6,7 +6,7 @@ export interface ResetPasswordProps {
 }
 
 export async function resetPassword(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: ResetPasswordProps
 ): Promise<void> {
   await client.projectInstance.post("/auth/reset-password", data);

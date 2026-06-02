@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Conversation } from "../../interfaces/Conversation";
 
 export interface UpdateConversationProps {
@@ -9,7 +9,7 @@ export interface UpdateConversationProps {
 }
 
 export async function updateConversation(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: UpdateConversationProps
 ): Promise<Conversation> {
   const { conversationId, ...body } = data;

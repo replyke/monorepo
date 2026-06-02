@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { ConnectionCountResponse } from "../../interfaces/Connection";
 
 export interface FetchConnectionsCountByUserIdProps {
@@ -6,7 +6,7 @@ export interface FetchConnectionsCountByUserIdProps {
 }
 
 export async function fetchConnectionsCountByUserId(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchConnectionsCountByUserIdProps
 ): Promise<ConnectionCountResponse> {
   const { userId } = data;

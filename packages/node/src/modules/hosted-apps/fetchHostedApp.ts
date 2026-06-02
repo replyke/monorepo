@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { HostedApp } from "../../interfaces/HostedApp";
 
 export interface FetchHostedAppProps {
@@ -6,7 +6,7 @@ export interface FetchHostedAppProps {
 }
 
 export async function fetchHostedApp(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchHostedAppProps
 ): Promise<HostedApp> {
   const path = `/hosted-apps/${data.appId}`;

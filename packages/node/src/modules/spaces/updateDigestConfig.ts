@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { DigestConfig } from "../../interfaces/Space";
 
 export interface UpdateDigestConfigProps {
@@ -11,7 +11,7 @@ export interface UpdateDigestConfigProps {
 }
 
 export async function updateDigestConfig(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: UpdateDigestConfigProps
 ): Promise<DigestConfig> {
   const { spaceId, ...body } = data;

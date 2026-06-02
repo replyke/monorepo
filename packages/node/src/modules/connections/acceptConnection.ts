@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { ConnectionActionResponse } from "../../interfaces/Connection";
 
 export interface AcceptConnectionProps {
@@ -6,7 +6,7 @@ export interface AcceptConnectionProps {
 }
 
 export async function acceptConnection(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: AcceptConnectionProps
 ): Promise<ConnectionActionResponse> {
   const { connectionId } = data;

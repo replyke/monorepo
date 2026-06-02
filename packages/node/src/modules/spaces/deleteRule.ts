@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { DeleteRuleResponse } from "../../interfaces/Rule";
 
 export interface DeleteRuleProps {
@@ -7,7 +7,7 @@ export interface DeleteRuleProps {
 }
 
 export async function deleteRule(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: DeleteRuleProps
 ): Promise<DeleteRuleResponse> {
   const { spaceId, ruleId } = data;

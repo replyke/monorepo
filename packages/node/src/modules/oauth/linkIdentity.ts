@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { OAuthIdentity } from "../../interfaces/OAuthIdentity";
 
 export interface LinkIdentityProps {
@@ -7,7 +7,7 @@ export interface LinkIdentityProps {
 }
 
 export async function linkIdentity(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: LinkIdentityProps
 ): Promise<OAuthIdentity> {
   const response = await client.projectInstance.post<OAuthIdentity>(

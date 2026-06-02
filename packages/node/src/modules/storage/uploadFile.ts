@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { File } from "../../interfaces/File";
 
 export interface UploadFileProps {
@@ -12,7 +12,7 @@ export interface UploadFileProps {
 }
 
 export async function uploadFile(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: UploadFileProps
 ): Promise<File> {
   const { file, filename, mimeType, ...fields } = data;

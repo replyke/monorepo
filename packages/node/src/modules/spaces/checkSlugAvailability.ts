@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface CheckSlugAvailabilityProps {
   slug: string;
@@ -9,7 +9,7 @@ export interface CheckSlugAvailabilityResponse {
 }
 
 export async function checkSlugAvailability(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: CheckSlugAvailabilityProps
 ): Promise<CheckSlugAvailabilityResponse> {
   const response =

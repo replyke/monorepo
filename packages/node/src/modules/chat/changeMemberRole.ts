@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { ConversationMember, ConversationMemberRole } from "../../interfaces/ConversationMember";
 
 export interface ChangeMemberRoleProps {
@@ -8,7 +8,7 @@ export interface ChangeMemberRoleProps {
 }
 
 export async function changeMemberRole(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: ChangeMemberRoleProps
 ): Promise<ConversationMember> {
   const { conversationId, userId, role } = data;

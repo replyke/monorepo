@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Conversation } from "../../interfaces/Conversation";
 
 export interface GetConversationProps {
@@ -6,7 +6,7 @@ export interface GetConversationProps {
 }
 
 export async function getConversation(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: GetConversationProps
 ): Promise<Conversation> {
   const { conversationId } = data;

@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Collection } from "../../interfaces/Collection";
 
 export interface AddEntityToCollectionProps {
@@ -7,7 +7,7 @@ export interface AddEntityToCollectionProps {
 }
 
 export async function addEntityToCollection(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: AddEntityToCollectionProps
 ): Promise<Collection> {
   const { collectionId, entityId } = data;

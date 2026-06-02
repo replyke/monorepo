@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { AuthUser } from "../../interfaces/User";
 
 export interface OAuthAuthorizeProps {
@@ -15,7 +15,7 @@ export interface OAuthAuthorizeResponse {
 }
 
 export async function authorize(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: OAuthAuthorizeProps
 ): Promise<OAuthAuthorizeResponse> {
   const response = await client.projectInstance.post<OAuthAuthorizeResponse>(

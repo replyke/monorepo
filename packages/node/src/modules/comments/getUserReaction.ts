@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { ReactionType } from "../../interfaces/Reaction";
 
 export interface GetUserCommentReactionProps {
@@ -11,7 +11,7 @@ export interface UserCommentReactionResponse {
 }
 
 export async function getUserReaction(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: GetUserCommentReactionProps
 ): Promise<UserCommentReactionResponse> {
   const { commentId, userId } = data;

@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { EstablishedConnection } from "../../interfaces/Connection";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
@@ -9,7 +9,7 @@ export interface FetchConnectionsByUserIdProps {
 }
 
 export async function fetchConnectionsByUserId(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchConnectionsByUserIdProps
 ): Promise<PaginatedResponse<EstablishedConnection>> {
   const { userId, ...params } = data;

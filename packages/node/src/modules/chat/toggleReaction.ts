@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface ToggleReactionProps {
   conversationId: string;
@@ -12,7 +12,7 @@ export interface ToggleReactionResponse {
 }
 
 export async function toggleReaction(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: ToggleReactionProps
 ): Promise<ToggleReactionResponse> {
   const { conversationId, messageId, emoji } = data;

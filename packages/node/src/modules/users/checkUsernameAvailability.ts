@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface CheckUsernameAvailabilityProps {
   username: string;
@@ -9,7 +9,7 @@ export interface CheckUsernameAvailabilityResponse {
 }
 
 export async function checkUsernameAvailability(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: CheckUsernameAvailabilityProps
 ): Promise<CheckUsernameAvailabilityResponse> {
   const response =

@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { File } from "../../interfaces/File";
 
 export interface GetFileProps {
@@ -6,7 +6,7 @@ export interface GetFileProps {
 }
 
 export async function getFile(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: GetFileProps
 ): Promise<File> {
   const { fileId } = data;

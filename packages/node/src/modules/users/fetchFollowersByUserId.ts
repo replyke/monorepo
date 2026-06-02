@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { User } from "../../interfaces/User";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
@@ -9,7 +9,7 @@ export interface FetchFollowersByUserIdProps {
 }
 
 export async function fetchFollowersByUserId(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchFollowersByUserIdProps
 ): Promise<PaginatedResponse<User>> {
   const { userId, ...params } = data;

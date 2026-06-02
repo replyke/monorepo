@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Comment } from "../../interfaces/Comment";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
@@ -11,7 +11,7 @@ export interface FetchManyCommentsProps {
 }
 
 export async function fetchManyComments(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchManyCommentsProps
 ): Promise<PaginatedResponse<Comment>> {
   const response = await client.projectInstance.get<PaginatedResponse<Comment>>(

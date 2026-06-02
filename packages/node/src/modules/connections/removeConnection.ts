@@ -1,11 +1,11 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface RemoveConnectionProps {
   connectionId: string;
 }
 
 export async function removeConnection(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: RemoveConnectionProps
 ): Promise<void> {
   const { connectionId } = data;

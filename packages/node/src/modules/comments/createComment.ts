@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface CreateCommentProps {
   foreignId?: string;
@@ -14,7 +14,7 @@ export interface CreateCommentProps {
 }
 
 export async function createComment(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: CreateCommentProps
 ): Promise<Comment> {
   const path = `/comments`; // assuming client handles prefix like /{projectId}

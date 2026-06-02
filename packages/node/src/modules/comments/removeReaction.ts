@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface RemoveCommentReactionProps {
   commentId: string;
@@ -6,7 +6,7 @@ export interface RemoveCommentReactionProps {
 }
 
 export async function removeReaction(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: RemoveCommentReactionProps
 ): Promise<void> {
   const { commentId, userId } = data;

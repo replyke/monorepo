@@ -311,7 +311,7 @@ Base path: `/v7/:projectId/`
 
 ## How Service Key Auth Works
 
-- Service keys are sent as `Authorization: Bearer <key>` with an `x-replyke-project-id` header.
+- Service keys are sent as `Authorization: Bearer <key>` with an `x-sublay-project-id` header.
 - The `flagServiceAccess` middleware validates the key against a hashed key stored in `ProjectApiKey`. If valid, it sets `req.isService = true`.
 - The `requireUserAuth` middleware checks `if (req.isMaster || req.isService)` first — so a valid service key bypasses JWT validation on any user-auth-guarded endpoint at the middleware level.
 - `requireElevatedAuth` (used only on `increment-views`) explicitly requires `req.isService` or `req.isMaster` and returns 403 otherwise — it is the only endpoint that actively enforces a service key.

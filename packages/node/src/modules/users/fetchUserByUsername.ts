@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { User } from "../../interfaces/User";
 
 export interface FetchUserByUsernameProps {
@@ -6,7 +6,7 @@ export interface FetchUserByUsernameProps {
 }
 
 export async function fetchUserByUsername(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchUserByUsernameProps
 ): Promise<User> {
   const response = await client.projectInstance.get<User>("/users/by-username", {

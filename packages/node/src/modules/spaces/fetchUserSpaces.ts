@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { UserSpacesResponse } from "../../interfaces/Space";
 
 export interface FetchUserSpacesProps {
@@ -8,7 +8,7 @@ export interface FetchUserSpacesProps {
 }
 
 export async function fetchUserSpaces(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchUserSpacesProps
 ): Promise<UserSpacesResponse> {
   const response = await client.projectInstance.get<UserSpacesResponse>(

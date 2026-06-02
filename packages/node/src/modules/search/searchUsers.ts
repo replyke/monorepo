@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { User } from "../../interfaces/User";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
@@ -9,7 +9,7 @@ export interface SearchUsersProps {
 }
 
 export async function searchUsers(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: SearchUsersProps
 ): Promise<PaginatedResponse<User>> {
   const response = await client.projectInstance.post<PaginatedResponse<User>>(

@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { ConnectionActionResponse } from "../../interfaces/Connection";
 
 export interface DeclineConnectionProps {
@@ -6,7 +6,7 @@ export interface DeclineConnectionProps {
 }
 
 export async function declineConnection(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: DeclineConnectionProps
 ): Promise<ConnectionActionResponse> {
   const { connectionId } = data;

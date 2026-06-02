@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { DeleteSpaceResponse } from "../../interfaces/Space";
 
 export interface DeleteSpaceProps {
@@ -6,7 +6,7 @@ export interface DeleteSpaceProps {
 }
 
 export async function deleteSpace(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: DeleteSpaceProps
 ): Promise<DeleteSpaceResponse> {
   const { spaceId } = data;

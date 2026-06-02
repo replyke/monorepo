@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { TopComment } from "../../interfaces/Entity";
 
 export interface FetchTopCommentProps {
@@ -6,7 +6,7 @@ export interface FetchTopCommentProps {
 }
 
 export async function fetchTopComment(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchTopCommentProps
 ): Promise<TopComment | null> {
   const { entityId } = data;

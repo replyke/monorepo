@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { DeclineMemberResponse } from "../../interfaces/Space";
 
 export interface DeclineMembershipProps {
@@ -7,7 +7,7 @@ export interface DeclineMembershipProps {
 }
 
 export async function declineMembership(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: DeclineMembershipProps
 ): Promise<DeclineMemberResponse> {
   const { spaceId, memberId } = data;

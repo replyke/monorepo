@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the **@replyke/node** package - the official Node.js SDK for Replyke. It's designed for server-side Node.js environments where React is not available or needed, such as server actions, backend APIs, scheduled jobs, webhooks, and CLI tools.
+This is the **@sublay/node** package - the official Node.js SDK for Sublay. It's designed for server-side Node.js environments where React is not available or needed, such as server actions, backend APIs, scheduled jobs, webhooks, and CLI tools.
 
-**Package Name**: @replyke/node
+**Package Name**: @sublay/node
 **Version**: 7.0.0
 **Type**: Node.js SDK library (published to npm)
 
@@ -55,28 +55,28 @@ src/
 │   ├── users/              # User operations (2 functions)
 │   ├── lists/              # List CRUD operations (8 functions)
 │   └── hosted-apps/        # Hosted app operations (1 function)
-└── index.ts                # Main entry point with ReplykeClient class
+└── index.ts                # Main entry point with SublayClient class
 ```
 
 ### HTTP Client Configuration
 
 The SDK uses three axios instances for different API endpoints:
 
-- **projectInstance**: `https://api.replyke.com/api/v5/{projectId}` - Main project-scoped API
-- **internalInstance**: `https://api.replyke.com/internal` - Internal operations (verification, admin)
-- **baseInstance**: `https://api.replyke.com` - Base API endpoint
+- **projectInstance**: `https://api.sublay.io/v7/{projectId}` - Main project-scoped API
+- **internalInstance**: `https://api.sublay.io/internal` - Internal operations (verification, admin)
+- **baseInstance**: `https://api.sublay.io` - Base API endpoint
 
 **Authentication Headers**:
 - `Authorization: Bearer {apiKey}`
-- `X-Replyke-Project-ID: {projectId}`
-- `X-Replyke-Internal: true` (for internal operations)
+- `X-Sublay-Project-ID: {projectId}`
+- `X-Sublay-Internal: true` (for internal operations)
 
 ### Initialization Pattern
 
 ```typescript
-import { ReplykeClient } from '@replyke/node';
+import { SublayClient } from '@sublay/node';
 
-const client = await ReplykeClient.init({
+const client = await SublayClient.init({
     projectId: "your-project-id",
     apiKey: "your-api-key",
     isInternal?: boolean  // optional
@@ -145,7 +145,7 @@ Entities are the core content objects (posts, articles, products, listings, etc.
 ### 3. Users Module (2 functions)
 
 **Functions**:
-- `client.users.fetchUserById({ userId })` - Fetch user by Replyke ID
+- `client.users.fetchUserById({ userId })` - Fetch user by Sublay ID
 - `client.users.fetchUserByForeignId({ foreignId })` - Fetch by external system ID
 
 **User Features**:
@@ -186,7 +186,7 @@ Lists allow users to create collections of entities (e.g., "Saved Posts", "Favor
 ## Key Design Patterns
 
 ### 1. Foreign ID Integration
-All major resources support foreign IDs, allowing you to map your existing system's IDs to Replyke IDs. This enables seamless integration on top of existing platforms.
+All major resources support foreign IDs, allowing you to map your existing system's IDs to Sublay IDs. This enables seamless integration on top of existing platforms.
 
 ### 2. Metadata Flexibility
 Most resources support custom metadata (10KB limit) for storing project-specific data without modifying the core schema.
@@ -203,12 +203,12 @@ Functions are bound to the HTTP client instance at initialization, providing a c
 ## Usage Example
 
 ```typescript
-import { ReplykeClient } from '@replyke/node';
+import { SublayClient } from '@sublay/node';
 
 // Initialize client
-const client = await ReplykeClient.init({
-    projectId: process.env.REPLYKE_PROJECT_ID,
-    apiKey: process.env.REPLYKE_API_KEY
+const client = await SublayClient.init({
+    projectId: process.env.SUBLAY_PROJECT_ID,
+    apiKey: process.env.SUBLAY_API_KEY
 });
 
 // Create an entity
@@ -289,7 +289,7 @@ This SDK is ideal for:
 7. **Admin Tools** - Moderation dashboards, content management
 8. **Edge Functions** - Cloudflare Workers, Vercel Edge Functions
 
-Essentially any Node.js environment where you need to interact with Replyke's social features without a React frontend.
+Essentially any Node.js environment where you need to interact with Sublay's social features without a React frontend.
 
 ## Technical Details
 
@@ -303,7 +303,7 @@ Essentially any Node.js environment where you need to interact with Replyke's so
 ## Important Notes
 
 - This SDK is on **v7** (v7.0.0)
-- Requires valid project ID and API key from Replyke dashboard
+- Requires valid project ID and API key from Sublay dashboard
 - Credentials are verified on initialization
 - All API calls are project-scoped
-- Rate limiting applies based on your Replyke plan
+- Rate limiting applies based on your Sublay plan

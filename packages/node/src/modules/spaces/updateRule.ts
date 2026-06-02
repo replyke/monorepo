@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Rule } from "../../interfaces/Rule";
 
 export interface UpdateRuleProps {
@@ -9,7 +9,7 @@ export interface UpdateRuleProps {
 }
 
 export async function updateRule(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: UpdateRuleProps
 ): Promise<Rule> {
   const { spaceId, ruleId, ...body } = data;

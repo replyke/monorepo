@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface HandleEntityReportProps {
   spaceId: string;
@@ -11,7 +11,7 @@ export interface HandleReportResponse {
 }
 
 export async function handleEntityReport(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: HandleEntityReportProps
 ): Promise<HandleReportResponse> {
   const { spaceId, reportId, action } = data;

@@ -1,11 +1,11 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface FollowingCountResponse {
   count: number;
 }
 
 export async function fetchFollowingCount(
-  client: ReplykeHttpClient
+  client: SublayHttpClient
 ): Promise<FollowingCountResponse> {
   const response = await client.projectInstance.get<FollowingCountResponse>(
     "/follows/following-count"

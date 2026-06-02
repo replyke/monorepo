@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Reaction, ReactionType } from "../../interfaces/Reaction";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
@@ -10,7 +10,7 @@ export interface FetchEntityReactionsProps {
 }
 
 export async function fetchReactions(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchEntityReactionsProps
 ): Promise<PaginatedResponse<Reaction>> {
   const { entityId, ...params } = data;

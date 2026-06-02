@@ -1,11 +1,11 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface MarkAllNotificationsAsReadResponse {
   updated: number;
 }
 
 export async function markAllNotificationsAsRead(
-  client: ReplykeHttpClient
+  client: SublayHttpClient
 ): Promise<MarkAllNotificationsAsReadResponse> {
   const response =
     await client.projectInstance.patch<MarkAllNotificationsAsReadResponse>(

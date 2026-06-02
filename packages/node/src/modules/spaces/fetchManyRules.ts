@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { FetchManyRulesResponse } from "../../interfaces/Rule";
 
 export interface FetchManyRulesProps {
@@ -6,7 +6,7 @@ export interface FetchManyRulesProps {
 }
 
 export async function fetchManyRules(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchManyRulesProps
 ): Promise<FetchManyRulesResponse> {
   const { spaceId } = data;

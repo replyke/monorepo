@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Conversation } from "../../interfaces/Conversation";
 
 export interface CreateDirectConversationProps {
@@ -6,7 +6,7 @@ export interface CreateDirectConversationProps {
 }
 
 export async function createDirectConversation(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: CreateDirectConversationProps
 ): Promise<Conversation> {
   const response = await client.projectInstance.post<Conversation>(

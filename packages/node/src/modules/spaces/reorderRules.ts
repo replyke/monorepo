@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Rule } from "../../interfaces/Rule";
 
 export interface ReorderRulesProps {
@@ -7,7 +7,7 @@ export interface ReorderRulesProps {
 }
 
 export async function reorderRules(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: ReorderRulesProps
 ): Promise<Rule[]> {
   const { spaceId, ruleIds } = data;

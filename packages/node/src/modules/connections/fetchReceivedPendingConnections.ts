@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { PendingConnectionListResponse } from "../../interfaces/Connection";
 
 export interface FetchReceivedPendingConnectionsProps {
@@ -7,7 +7,7 @@ export interface FetchReceivedPendingConnectionsProps {
 }
 
 export async function fetchReceivedPendingConnections(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchReceivedPendingConnectionsProps
 ): Promise<PendingConnectionListResponse> {
   const response =

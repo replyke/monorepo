@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface RemoveEntityFromCollectionProps {
   collectionId: string;
@@ -6,7 +6,7 @@ export interface RemoveEntityFromCollectionProps {
 }
 
 export async function removeEntityFromCollection(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: RemoveEntityFromCollectionProps
 ): Promise<void> {
   const { collectionId, entityId } = data;

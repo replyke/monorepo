@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Report } from "../../interfaces/Report";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
@@ -9,7 +9,7 @@ export interface FetchModeratedReportsProps {
 }
 
 export async function fetchModeratedReports(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchModeratedReportsProps
 ): Promise<PaginatedResponse<Report>> {
   const response = await client.projectInstance.get<PaginatedResponse<Report>>(

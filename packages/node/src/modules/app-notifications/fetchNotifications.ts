@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { UnifiedAppNotification } from "../../interfaces/AppNotification";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
@@ -8,7 +8,7 @@ export interface FetchNotificationsProps {
 }
 
 export async function fetchNotifications(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchNotificationsProps
 ): Promise<PaginatedResponse<UnifiedAppNotification>> {
   const response = await client.projectInstance.get<

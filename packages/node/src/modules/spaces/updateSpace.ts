@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { Space, ReadingPermission, PostingPermission } from "../../interfaces/Space";
 
 export interface UpdateSpaceProps {
@@ -13,7 +13,7 @@ export interface UpdateSpaceProps {
 }
 
 export async function updateSpace(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: UpdateSpaceProps
 ): Promise<Space> {
   const { spaceId, ...body } = data;

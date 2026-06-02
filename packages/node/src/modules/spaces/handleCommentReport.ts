@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 import { HandleReportResponse } from "./handleEntityReport";
 
 export interface HandleCommentReportProps {
@@ -8,7 +8,7 @@ export interface HandleCommentReportProps {
 }
 
 export async function handleCommentReport(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: HandleCommentReportProps
 ): Promise<HandleReportResponse> {
   const { spaceId, reportId, action } = data;
