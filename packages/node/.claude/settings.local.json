@@ -1,9 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:docs.replyke.com)",
-      "WebFetch(domain:docs.replyke.com)",
-      "WebFetch(domain:docs.replyke.com)"
+      "WebFetch(domain:docs.sublay.io)",
+      "WebFetch(domain:docs.sublay.io)",
+      "WebFetch(domain:docs.sublay.io)"
     ],
     "deny": []
   }
