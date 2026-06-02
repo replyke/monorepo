@@ -1,11 +1,11 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface FetchEntityProps {
   entityId: string;
 }
 
 export async function fetchEntity(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchEntityProps
 ): Promise<any> {
   const path = `/entities/${data.entityId}`;

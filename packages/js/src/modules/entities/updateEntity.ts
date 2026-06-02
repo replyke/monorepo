@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface UpdateEntityProps {
   entityId: string;
@@ -18,7 +18,7 @@ export interface UpdateEntityProps {
 }
 
 export async function updateEntity(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: UpdateEntityProps
 ): Promise<any> {
   const { entityId, ...restOfProps } = data;

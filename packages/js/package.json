@@ -1,16 +1,16 @@
 {
-  "name": "@replyke/js",
+  "name": "@sublay/js",
   "version": "5.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "description": "Official JavaScript SDK for Replyke",
+  "description": "Official JavaScript SDK for Sublay",
   "scripts": {
     "build": "tsup src/index.ts --dts --format cjs,esm",
     "build:types": "tsc --emitDeclarationOnly",
     "prepare": "pnpm build && pnpm build:types",
     "publish-beta": "pnpm publish --tag beta"
   },
-  "author": "Replyke team",
+  "author": "Sublay team",
   "license": "ISC",
   "publishConfig": {
     "access": "public"

@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface CreateEntityProps {
   foreignId?: string;
@@ -18,7 +18,7 @@ export interface CreateEntityProps {
 
 // TODO: Replace "any" with Entity once we have types here too
 export async function createEntity(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: CreateEntityProps
 ): Promise<any> {
   const path = `/entities`; // assuming client handles prefix like /{projectId}

@@ -1,4 +1,4 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface FetchUserByForeignIdProps {
   foreignId: string;
@@ -13,7 +13,7 @@ export interface FetchUserByForeignIdProps {
 }
 
 export async function fetchUserByForeignId(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: FetchUserByForeignIdProps
 ): Promise<any> {
   const path = `/users/by-foreign-id`;

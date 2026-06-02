@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the **@replyke/js** package - the official JavaScript SDK for Replyke. It's a lightweight, framework-agnostic SDK designed for JavaScript/TypeScript projects that don't use React or don't need the full React setup from the monorepo packages.
+This is the **@sublay/js** package - the official JavaScript SDK for Sublay. It's a lightweight, framework-agnostic SDK designed for JavaScript/TypeScript projects that don't use React or don't need the full React setup from the monorepo packages.
 
-**Package Name**: @replyke/js
+**Package Name**: @sublay/js
 **Version**: 5.0.0
 **Type**: JavaScript SDK library (published to npm)
 
@@ -57,29 +57,29 @@ src/
 │       ├── index.ts
 │       ├── fetchComment.ts
 │       └── fetchCommentByForeignId.ts
-└── index.ts             # Main entry point with ReplykeClient class
+└── index.ts             # Main entry point with SublayClient class
 ```
 
 ### HTTP Client
 
-Uses a custom `ReplykeHttpClient` class that wraps axios with pre-configured base URL:
-- **Base URL**: `https://api.replyke.com/api/v5/{projectId}`
+Uses a custom `SublayHttpClient` class that wraps axios with pre-configured base URL:
+- **Base URL**: `https://api.sublay.io/api/v5/{projectId}`
 - **Headers**: Standard axios configuration
 - **Method**: GET/POST/PUT/DELETE operations
 
 ### Initialization Pattern
 
 ```typescript
-import { ReplykeClient } from '@replyke/js';
+import { SublayClient } from '@sublay/js';
 
-const client = await ReplykeClient.init({
+const client = await SublayClient.init({
     projectId: "your-project-id"
 });
 
 // Client initializes and returns bound module functions
 ```
 
-**Factory Pattern**: Uses `ReplykeClient.init()` for initialization, which:
+**Factory Pattern**: Uses `SublayClient.init()` for initialization, which:
 1. Creates an HTTP client instance with the project ID
 2. Binds all module functions to the client
 3. Returns the client with namespaced API methods
@@ -89,7 +89,7 @@ const client = await ReplykeClient.init({
 ### 1. Users Module (2 functions)
 
 **Functions**:
-- `client.users.fetchUserById({ userId })` - Fetch user by Replyke ID
+- `client.users.fetchUserById({ userId })` - Fetch user by Sublay ID
 - `client.users.fetchUserByForeignId({ foreignId, name?, username?, avatar?, bio?, metadata?, secureMetadata? })` - Fetch user by external ID with optional user data
 
 **Features**:
@@ -103,7 +103,7 @@ Entities are the core content objects (posts, articles, products, listings, etc.
 
 **Functions**:
 - `client.entities.createEntity(data)` - Create a new entity
-- `client.entities.fetchEntity({ entityId })` - Fetch by Replyke ID
+- `client.entities.fetchEntity({ entityId })` - Fetch by Sublay ID
 - `client.entities.fetchEntityByForeignId({ foreignId })` - Fetch by external system ID
 - `client.entities.fetchEntityByShortId({ shortId })` - Fetch by short/shareable ID
 - `client.entities.fetchManyEntities(filters)` - Advanced querying with extensive filters
@@ -149,10 +149,10 @@ Supports extensive filtering options:
 ### 3. Comments Module (2 functions)
 
 **Functions**:
-- `client.comments.fetchComment({ commentId })` - Fetch comment by Replyke ID
+- `client.comments.fetchComment({ commentId })` - Fetch comment by Sublay ID
 - `client.comments.fetchCommentByForeignId({ foreignId })` - Fetch comment by external ID
 
-**Note**: This module currently provides read-only access. Comment creation/updates are available in other SDK packages (@replyke/node) or through direct API calls.
+**Note**: This module currently provides read-only access. Comment creation/updates are available in other SDK packages (@sublay/node) or through direct API calls.
 
 ## Key Design Patterns
 
@@ -176,9 +176,9 @@ Supports both simple `{ lat, lng }` objects and GeoJSON Point format for geo-loc
 ### Basic Initialization
 
 ```typescript
-import { ReplykeClient } from '@replyke/js';
+import { SublayClient } from '@sublay/js';
 
-const client = await ReplykeClient.init({
+const client = await SublayClient.init({
     projectId: 'your-project-id'
 });
 ```
@@ -312,7 +312,7 @@ This SDK is ideal for:
 7. **Web Workers** - Background scripts and service workers
 8. **Lightweight Integrations** - When you don't need the full React SDK overhead
 
-Essentially any JavaScript/TypeScript project that needs Replyke integration without React dependencies.
+Essentially any JavaScript/TypeScript project that needs Sublay integration without React dependencies.
 
 ## Technical Details
 
@@ -326,7 +326,7 @@ Essentially any JavaScript/TypeScript project that needs Replyke integration wit
 ## Important Notes
 
 - This SDK is **production-ready** (v5.0.0)
-- Requires a valid project ID from Replyke dashboard
+- Requires a valid project ID from Sublay dashboard
 - Currently uses v5 API endpoints
 - Return types are typed as `any` (TODOs exist to add proper types)
 - No README.md file exists yet (documentation pending)
@@ -334,6 +334,6 @@ Essentially any JavaScript/TypeScript project that needs Replyke integration wit
 
 ## Comparison with Other SDKs
 
-- **vs @replyke/node**: This SDK is lighter weight and framework-agnostic, while @replyke/node is optimized for Node.js server environments with more comprehensive API coverage
-- **vs @replyke/react-js**: This SDK has no React dependencies, making it suitable for non-React projects or when you don't need React hooks and components
+- **vs @sublay/node**: This SDK is lighter weight and framework-agnostic, while @sublay/node is optimized for Node.js server environments with more comprehensive API coverage
+- **vs @sublay/react-js**: This SDK has no React dependencies, making it suitable for non-React projects or when you don't need React hooks and components
 - **vs monorepo packages**: This SDK is standalone and simpler, while monorepo packages provide full React/React Native integration with hooks, contexts, and UI components

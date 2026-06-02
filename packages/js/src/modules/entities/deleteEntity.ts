@@ -1,11 +1,11 @@
-import { ReplykeHttpClient } from "../../core/client";
+import { SublayHttpClient } from "../../core/client";
 
 export interface DeleteEntityProps {
   entityId: string;
 }
 
 export async function deleteEntity(
-  client: ReplykeHttpClient,
+  client: SublayHttpClient,
   data: DeleteEntityProps
 ): Promise<any> {
   const path = `/entities/${data.entityId}`;
