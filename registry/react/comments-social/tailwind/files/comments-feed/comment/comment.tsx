@@ -6,7 +6,7 @@ import {
   getUserName,
   useUser,
   useCommentSection,
-} from "@replyke/react-js";
+} from "@sublay/react-js";
 
 import {
   UserAvatar,
@@ -16,7 +16,7 @@ import {
   resetP,
   EllipsisIcon,
   parseContentWithMentions,
-} from "@replyke/ui-core-react-js";
+} from "@sublay/ui-core-react-js";
 
 import { cn } from "@/lib/utils";
 import Replies from "./replies";

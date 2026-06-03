@@ -3,7 +3,7 @@ import {
   useCommentSection,
   useUser,
   Comment as CommentType,
-} from "@replyke/react-js";
+} from "@sublay/react-js";
 import useUIState from "../../../hooks/use-ui-state";
 
 function NewReplyForm({

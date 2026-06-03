@@ -2,7 +2,7 @@ import {
   HeartFullIcon,
   HeartIcon,
   resetButton,
-} from "@replyke/ui-core-react-js";
+} from "@sublay/ui-core-react-js";
 
 const HeartButton = ({
   userUpvoted,

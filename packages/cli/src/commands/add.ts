@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import path from "path";
 import chalk from "chalk";
 import ora from "ora";
-import { ReplykeConfig } from "./init.js";
+import { SublayConfig } from "./init.js";
 import { fetchRegistry, fetchFile, Registry } from "../utils/registry.js";
 import { transformImports } from "../utils/transform.js";
 import { checkComponentDependencies } from "../utils/dependencies.js";
@@ -13,15 +13,15 @@ export async function add(componentName: string) {
 
   try {
     // Read configuration
-    const configPath = path.join(process.cwd(), "replyke.json");
+    const configPath = path.join(process.cwd(), "sublay.json");
 
     if (!(await fs.pathExists(configPath))) {
-      spinner.fail("No replyke.json found");
-      console.log(chalk.yellow("\n⚠️  Please run: npx @replyke/cli init"));
+      spinner.fail("No sublay.json found");
+      console.log(chalk.yellow("\n⚠️  Please run: npx @sublay/cli init"));
       process.exit(1);
     }
 
-    const config: ReplykeConfig = await fs.readJson(configPath);
+    const config: SublayConfig = await fs.readJson(configPath);
 
     spinner.text = `Fetching ${componentName}...`;
 
@@ -33,11 +33,11 @@ export async function add(componentName: string) {
       process.exit(1);
     }
 
-    // Expo projects use @replyke/expo instead of @replyke/react-native
+    // Expo projects use @sublay/expo instead of @sublay/react-native
     if (config.platform === 'expo') {
       registry.dependencies = registry.dependencies.map((dep) =>
-        dep.startsWith('@replyke/react-native')
-          ? dep.replace('@replyke/react-native', '@replyke/expo')
+        dep.startsWith('@sublay/react-native')
+          ? dep.replace('@sublay/react-native', '@sublay/expo')
           : dep
       );
     }
@@ -143,7 +143,7 @@ export async function add(componentName: string) {
 
 function getTargetPath(
   filePath: string,
-  config: ReplykeConfig,
+  config: SublayConfig,
   componentName: string
 ): string {
   // Create parent directory for the component
@@ -172,7 +172,7 @@ function getTargetPath(
 
 async function createIndexFile(
   componentName: string,
-  config: ReplykeConfig,
+  config: SublayConfig,
   registry: Registry
 ): Promise<void> {
   const componentDir = path.join(

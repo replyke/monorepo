@@ -1,6 +1,6 @@
 import { View, Text, Pressable } from "react-native";
 import { useCallback, useMemo } from "react";
-import { FlagIcon } from "@replyke/ui-core-react-native";
+import { FlagIcon } from "@sublay/ui-core-react-native";
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,

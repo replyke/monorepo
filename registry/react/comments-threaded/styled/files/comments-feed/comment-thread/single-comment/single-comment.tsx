@@ -5,11 +5,11 @@ import {
   getUserName,
   useCommentSection,
   useUser,
-} from "@replyke/react-js";
+} from "@sublay/react-js";
 import {
   parseContentWithMentions,
   UserAvatar,
-} from "@replyke/ui-core-react-js";
+} from "@sublay/ui-core-react-js";
 import VoteButtons from "./vote-buttons";
 import ActionMenu from "../action-menu";
 import NewReplyForm from "../new-reply-form";

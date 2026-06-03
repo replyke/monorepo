@@ -21,7 +21,7 @@ import {
   useCommentSection,
   useUserMentions,
   useProject,
-} from "@replyke/react-native";
+} from "@sublay/react-native";
 import {
   resetButton,
   resetTextInput,
@@ -30,7 +30,7 @@ import {
   useTextInputCursorIndicator,
   EmojiSuggestions,
   GiphyContainer,
-} from "@replyke/ui-core-react-native";
+} from "@sublay/ui-core-react-native";
 
 import ReplyBanner from "../reply-banner/reply-banner";
 import MentionSuggestions from "../mention-suggestions/mention-suggestions";

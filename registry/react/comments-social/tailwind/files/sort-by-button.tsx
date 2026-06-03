@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
-import { CommentsSortByOptions, useCommentSection } from "@replyke/react-js";
-import { resetButton } from "@replyke/ui-core-react-js";
+import { CommentsSortByOptions, useCommentSection } from "@sublay/react-js";
+import { resetButton } from "@sublay/ui-core-react-js";
 
 export function SortByButton({
   priority,

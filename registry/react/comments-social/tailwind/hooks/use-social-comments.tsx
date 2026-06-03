@@ -2,7 +2,7 @@ import { ReactNode, useMemo } from "react";
 import {
   CommentSectionProvider,
   Entity,
-} from "@replyke/react-js";
+} from "@sublay/react-js";
 import CommentsFeed from "../files/comments-feed/comments-feed";
 import NewCommentForm from "../files/new-comment-form";
 import CommentMenuModal from "../files/modals/comment-menu-modal/comment-menu-modal";

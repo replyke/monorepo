@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import ThreadedCommentSectionStyled from "../../../registry/react/comments-threaded/styled/files/threaded-comment-section";
 import ThreadedCommentSectionTailwind from "../../../registry/react/comments-threaded/tailwind/files/threaded-comment-section";
-import { EntityProvider } from "@replyke/react-js";
+import { EntityProvider } from "@sublay/react-js";
 
 type StyleVariant = "styled" | "tailwind";
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { FlatList, View } from "react-native";
-import { useReplies, useCommentSection } from "@replyke/react-native";
-import { CommentSkeleton } from "@replyke/ui-core-react-native";
+import { useReplies, useCommentSection } from "@sublay/react-native";
+import { CommentSkeleton } from "@sublay/ui-core-react-native";
 import Comment from "../comment";
 import ShowHideButton from "./show-hide-button";
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Modal, resetDiv } from "@replyke/ui-core-react-js";
+import { Modal, resetDiv } from "@sublay/ui-core-react-js";
 import { cn } from "@/lib/utils";
 import useUIState from "../../../hooks/use-ui-state";
 import MainContent from "./main-content";

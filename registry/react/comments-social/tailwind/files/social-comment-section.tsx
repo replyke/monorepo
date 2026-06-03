@@ -1,17 +1,17 @@
 /**
- * Replyke Social Comment Section (Tailwind Variant)
+ * Sublay Social Comment Section (Tailwind Variant)
  *
  * A complete social-style comment system with likes, replies, and moderation.
  * Instagram-inspired design with hearts, avatars, and nested replies.
  *
- * Installation: npx @replyke/cli add comments-social
+ * Installation: npx @sublay/cli add comments-social
  *
  * Required dependencies:
- * - @replyke/react-js ^6.0.0
- * - @replyke/ui-core-react-js ^6.0.0
+ * - @sublay/react-js ^6.0.0
+ * - @sublay/ui-core-react-js ^6.0.0
  * - Tailwind CSS configured with dark mode support
  *
- * @see https://docs.replyke.com/components/comments-social
+ * @see https://docs.sublay.com/components/comments-social
  *
  * ========================
  * TAILWIND CONFIGURATION
@@ -53,7 +53,7 @@
  * - text-red-600 dark:text-red-400 (danger actions)
  */
 import React from "react";
-import { Entity } from "@replyke/react-js";
+import { Entity } from "@sublay/react-js";
 import useSocialComments from "../hooks/use-social-comments";
 import { SortByButton } from "./sort-by-button";
 import CommentsFeed from "./comments-feed/comments-feed";

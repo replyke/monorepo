@@ -1,5 +1,5 @@
 import React, { createContext, useState, useMemo, useCallback } from "react";
-import { Comment as CommentType } from "@replyke/react-js";
+import { Comment as CommentType } from "@sublay/react-js";
 
 type UIStateContext = {
   isCommentOptionsModalOpen: boolean;

@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { ReplykeConfig } from '../commands/init.js';
+import { SublayConfig } from '../commands/init.js';
 
 export interface RegistryFile {
   path: string;
@@ -34,7 +34,7 @@ const LOCAL_REGISTRY_PATH = path.resolve(__dirname, '..', '..', '..', 'registry'
 
 export async function fetchRegistry(
   componentName: string,
-  config: ReplykeConfig
+  config: SublayConfig
 ): Promise<Registry | null> {
   try {
     // Expo projects share the react-native registry
@@ -57,7 +57,7 @@ export async function fetchRegistry(
     }
 
     // Fetch from GitHub (for production/npx usage)
-    const url = `https://raw.githubusercontent.com/replyke/cli/main/registry/${registryPlatform}/${componentName}/${config.style}/registry.json`;
+    const url = `https://raw.githubusercontent.com/sublay-io/cli/main/registry/${registryPlatform}/${componentName}/${config.style}/registry.json`;
 
     try {
       const response = await fetch(url);

@@ -6,8 +6,8 @@ import {
   useCommentSection,
   useCreateReport,
   useUser,
-} from "@replyke/react-js";
-import { FlagIcon } from "@replyke/ui-core-react-js";
+} from "@sublay/react-js";
+import { FlagIcon } from "@sublay/ui-core-react-js";
 import { cn } from "@/lib/utils";
 import useUIState from "../../../hooks/use-ui-state";
 

@@ -1,5 +1,4 @@
-import { useCommentSection } from "@replyke/react-js";
-import useUIState from "../../hooks/use-ui-state";
+import { useCommentSection } from "@sublay/react-js";
 
 const CommentsFooterComponent = () => {
   const { hasMore, loading } = useCommentSection();

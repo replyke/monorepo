@@ -1,5 +1,5 @@
-import { Comment as CommentType, useCommentSection } from "@replyke/react-js";
-import { resetDiv } from "@replyke/ui-core-react-js";
+import { Comment as CommentType, useCommentSection } from "@sublay/react-js";
+import { resetDiv } from "@sublay/ui-core-react-js";
 import useUIState from "../../hooks/use-ui-state";
 
 import Comment from "./comment";

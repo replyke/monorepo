@@ -1,4 +1,4 @@
-import { resetButton, resetUl } from "@replyke/ui-core-react-js";
+import { resetButton, resetUl } from "@sublay/ui-core-react-js";
 import useUIState from "../../../hooks/use-ui-state";
 
 function MainContent({ clickReport }: { clickReport: () => void }) {

@@ -22,12 +22,12 @@ import {
   useCommentSection,
   useUserMentions,
   useProject,
-} from "@replyke/react-native";
+} from "@sublay/react-native";
 import {
   UserAvatar,
   useTextInputCursorIndicator,
   GiphyContainer,
-} from "@replyke/ui-core-react-native";
+} from "@sublay/ui-core-react-native";
 
 import MentionSuggestions from "../mention-suggestions/mention-suggestions";
 import useUIState from "../../hooks/use-ui-state";

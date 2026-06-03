@@ -1,7 +1,7 @@
 import "./index.css";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
-import { ReplykeProvider, useSignTestingJwt } from "@replyke/react-js";
+import { SublayProvider, useSignTestingJwt } from "@sublay/react-js";
 import { AuthProvider } from "./context/auth-provider";
 import { useAuth } from "./context/use-auth";
 import App from "./App";
@@ -17,7 +17,7 @@ if (!PROJECT_ID) {
 
 // Wraps the app with a signed token derived from the mock user.
 // Mirrors the pattern used in the landing page sandbox.
-function ReplykeWrapper({ children }: { children: React.ReactNode }) {
+function SublayWrapper({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const signTestingJwt = useSignTestingJwt();
   const [token, setToken] = useState<string | undefined>();
@@ -38,18 +38,18 @@ function ReplykeWrapper({ children }: { children: React.ReactNode }) {
   }, [user, signTestingJwt]);
 
   return (
-    <ReplykeProvider projectId={PROJECT_ID} signedToken={token}>
+    <SublayProvider projectId={PROJECT_ID} signedToken={token}>
       {children}
-    </ReplykeProvider>
+    </SublayProvider>
   );
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <AuthProvider>
-      <ReplykeWrapper>
+      <SublayWrapper>
         <App />
-      </ReplykeWrapper>
+      </SublayWrapper>
     </AuthProvider>
   </React.StrictMode>,
 );

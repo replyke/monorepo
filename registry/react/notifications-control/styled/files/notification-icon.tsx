@@ -15,7 +15,7 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from "lucide-react";
-import { AppNotification } from "@replyke/react-js";
+import { AppNotification } from "@sublay/react-js";
 
 interface NotificationIconProps {
   type: AppNotification.UnifiedAppNotification["type"];

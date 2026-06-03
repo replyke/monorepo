@@ -3,7 +3,7 @@ import {
   HeartIcon,
   HeartFullIcon,
   resetButton,
-} from "@replyke/ui-core-react-native";
+} from "@sublay/ui-core-react-native";
 
 const HeartButton = ({
   userUpvoted,

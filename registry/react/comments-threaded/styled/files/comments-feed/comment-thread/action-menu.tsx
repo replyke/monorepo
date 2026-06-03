@@ -1,4 +1,4 @@
-import { useUser, Comment as CommentType } from "@replyke/react-js";
+import { useUser, Comment as CommentType } from "@sublay/react-js";
 import useUIState from "../../../hooks/use-ui-state";
 
 interface ActionMenuProps {

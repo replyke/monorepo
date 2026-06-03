@@ -1,18 +1,18 @@
 /**
- * Replyke Social Comment Section (React Native - Tailwind)
+ * Sublay Social Comment Section (React Native - Tailwind)
  *
  * A complete social-style comment system with likes, replies, and moderation.
  * Instagram-inspired design with hearts, avatars, and nested replies.
  *
- * Installation: npx @replyke/cli add comments-social
+ * Installation: npx @sublay/cli add comments-social
  *
  * Required dependencies:
- * - @replyke/core ^6.0.0
- * - @replyke/ui-core-react-native ^6.0.0
+ * - @sublay/core ^6.0.0
+ * - @sublay/ui-core-react-native ^6.0.0
  * - @gorhom/bottom-sheet
  * - nativewind ^4.0.0
  *
- * @see https://docs.replyke.com/components/comments-social
+ * @see https://docs.sublay.com/components/comments-social
  *
  * ====================
  * THEME COLOR PALETTE
@@ -43,7 +43,7 @@
  */
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { Entity } from "@replyke/react-native";
+import { Entity } from "@sublay/react-native";
 import useSocialComments from "../hooks/use-social-comments";
 import { deepEqual, warnPropChanges } from "../utils/prop-comparison";
 import useUIState from "../hooks/use-ui-state";

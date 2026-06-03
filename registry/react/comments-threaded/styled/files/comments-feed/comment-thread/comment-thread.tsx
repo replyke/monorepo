@@ -3,7 +3,7 @@ import {
   Comment as CommentType,
   useCommentSection,
   useReplies,
-} from "@replyke/react-js";
+} from "@sublay/react-js";
 import SingleComment from "./single-comment";
 import CommentReplies from "./comment-replies";
 

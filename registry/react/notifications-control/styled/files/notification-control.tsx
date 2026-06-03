@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { AppNotification, useAppNotifications } from "@replyke/react-js";
+import { AppNotification, useAppNotifications } from "@sublay/react-js";
 import { CheckCheck } from "lucide-react";
 import NotificationList from "./notification-list";
 

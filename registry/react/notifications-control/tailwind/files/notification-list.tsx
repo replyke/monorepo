@@ -26,7 +26,7 @@
 import { motion } from "framer-motion";
 import { Loader2, Bell } from "lucide-react";
 import NotificationItem from "./notification-item";
-import { AppNotification } from "@replyke/react-js";
+import { AppNotification } from "@sublay/react-js";
 import { cn } from "@/lib/utils";
 
 interface NotificationListProps {

@@ -1,15 +1,15 @@
 /**
- * Replyke Threaded Comment Section
+ * Sublay Threaded Comment Section
  *
  * A complete threaded comment system with upvotes/downvotes, nested replies, and moderation.
  *
- * Installation: npx @replyke/cli add comments-threaded
+ * Installation: npx @sublay/cli add comments-threaded
  *
  * Required dependencies:
- * - @replyke/react-js ^6.0.0
- * - @replyke/ui-core-react-js ^6.0.0
+ * - @sublay/react-js ^6.0.0
+ * - @sublay/ui-core-react-js ^6.0.0
  *
- * @see https://docs.replyke.com/components/comments-threaded
+ * @see https://docs.sublay.com/components/comments-threaded
  *
  * ====================
  * THEME COLOR PALETTE
@@ -51,7 +51,7 @@
  * - #DC2626 → #EF4444 (destructive buttons)
  */
 import React from "react";
-import { Entity } from "@replyke/react-js";
+import { Entity } from "@sublay/react-js";
 import useThreadedComments from "../hooks/use-threaded-comments";
 import CommentsFeed from "./comments-feed/comments-feed";
 import NewCommentForm from "./new-comment-form";

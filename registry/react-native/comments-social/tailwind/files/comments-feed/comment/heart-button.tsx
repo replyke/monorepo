@@ -2,7 +2,7 @@ import { TouchableOpacity, Vibration } from "react-native";
 import {
   HeartIcon,
   HeartFullIcon,
-} from "@replyke/ui-core-react-native";
+} from "@sublay/ui-core-react-native";
 
 const HeartButton = ({
   userUpvoted,

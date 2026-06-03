@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   useCommentSection,
   useUser,
   Comment as CommentType,
-} from "@replyke/react-native";
+} from "@sublay/react-native";
 import useUIState from "../../../hooks/use-ui-state";
 
 function NewReplyForm({

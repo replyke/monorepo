@@ -1,7 +1,7 @@
 import { useState } from "react";
 import SocialCommentSectionStyled from "../../../registry/react/comments-social/styled/files/social-comment-section";
 import SocialCommentSectionTailwind from "../../../registry/react/comments-social/tailwind/files/social-comment-section";
-import { EntityProvider } from "@replyke/react-js";
+import { EntityProvider } from "@sublay/react-js";
 
 type StyleVariant = "styled" | "tailwind";
 

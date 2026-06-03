@@ -1,5 +1,5 @@
 import React, { ReactNode, useMemo } from "react";
-import { useCommentSection } from "@replyke/react-js";
+import { useCommentSection } from "@sublay/react-js";
 import LoadedComments from "./loaded-comments";
 import FetchingCommentsSkeletons from "./fetching-comments-skeletons";
 import NoCommentsPlaceHolder from "./no-comments-placeholder";

@@ -11,7 +11,7 @@ import {
   useUserMentions,
   useUser,
   useProject,
-} from "@replyke/react-js";
+} from "@sublay/react-js";
 import {
   resetButton,
   resetDiv,
@@ -20,7 +20,7 @@ import {
   GiphyContainer,
   EmojiSuggestions,
   useTextareaCursorIndicator,
-} from "@replyke/ui-core-react-js";
+} from "@sublay/ui-core-react-js";
 
 import ReplyBanner from "./reply-banner";
 import MentionSuggestions from "./mention-suggestions";
@@ -231,7 +231,7 @@ function NewCommentForm() {
               <div className="h-8 w-0.5" />
             )}
             <textarea
-              id="replyke-social-textarea"
+              id="sublay-social-textarea"
               rows={1}
               ref={textAreaRef}
               placeholder="Add a comment..."

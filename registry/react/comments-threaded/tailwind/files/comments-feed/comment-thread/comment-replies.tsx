@@ -1,5 +1,5 @@
 import React from "react";
-import { Comment as CommentType } from "@replyke/react-js";
+import { Comment as CommentType } from "@sublay/react-js";
 import { CommentThreadProps } from "./comment-thread";
 
 interface CommentRepliesProps {

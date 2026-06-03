@@ -1,6 +1,6 @@
-import { ReplykeConfig } from '../commands/init.js';
+import { SublayConfig } from '../commands/init.js';
 
-export function transformImports(content: string, config: ReplykeConfig): string {
+export function transformImports(content: string, config: SublayConfig): string {
   let transformed = content;
 
   // Transform registry 'files/' references to 'components/' in the installed structure
@@ -15,11 +15,11 @@ export function transformImports(content: string, config: ReplykeConfig): string
   // For now, keep imports as-is since they use relative paths
   // In the future, we can add more sophisticated transformations
 
-  // Expo projects use @replyke/expo instead of @replyke/react-native
+  // Expo projects use @sublay/expo instead of @sublay/react-native
   if (config.platform === 'expo') {
     transformed = transformed.replace(
-      /from\s+["']@replyke\/react-native["']/g,
-      'from "@replyke/expo"'
+      /from\s+["']@sublay\/react-native["']/g,
+      'from "@sublay/expo"'
     );
   }
 
@@ -32,7 +32,7 @@ export function transformImports(content: string, config: ReplykeConfig): string
   return transformed;
 }
 
-export function transformPaths(filePath: string, config: ReplykeConfig): string {
+export function transformPaths(filePath: string, config: SublayConfig): string {
   // Transform file paths if needed
   // For now, just return as-is
   return filePath;

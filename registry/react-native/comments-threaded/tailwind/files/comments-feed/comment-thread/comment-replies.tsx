@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { Comment as CommentType } from "@replyke/react-native";
+import { Comment as CommentType } from "@sublay/react-native";
 import { CommentThreadProps } from "./comment-thread";
 import useUIState from "../../../hooks/use-ui-state";
 

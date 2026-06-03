@@ -1,18 +1,18 @@
 /**
- * Replyke Threaded Comment Section (Tailwind Variant)
+ * Sublay Threaded Comment Section (Tailwind Variant)
  *
  * A complete threaded comment system with upvotes/downvotes, nested replies, and moderation.
  *
- * Installation: npx @replyke/cli add comments-threaded
+ * Installation: npx @sublay/cli add comments-threaded
  *
  * Required dependencies:
- * - @replyke/react-js ^6.0.0
- * - @replyke/ui-core-react-js ^6.0.0
+ * - @sublay/react-js ^6.0.0
+ * - @sublay/ui-core-react-js ^6.0.0
  *
  * Requires Tailwind CSS with dark mode enabled in tailwind.config.js:
  * - darkMode: 'class' or darkMode: 'media'
  *
- * @see https://docs.replyke.com/components/comments-threaded
+ * @see https://docs.sublay.com/components/comments-threaded
  *
  * ====================
  * TAILWIND COLOR CLASSES
@@ -50,7 +50,7 @@
  * - bg-red-600 dark:bg-red-500 (destructive buttons)
  */
 import React from "react";
-import { Entity } from "@replyke/react-js";
+import { Entity } from "@sublay/react-js";
 import useThreadedComments from "../hooks/use-threaded-comments";
 import CommentsFeed from "./comments-feed/comments-feed";
 import NewCommentForm from "./new-comment-form";

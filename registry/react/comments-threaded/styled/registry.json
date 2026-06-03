@@ -4,11 +4,11 @@
   "style": "styled",
   "version": "1.0.0",
   "description": "Threaded comment system with upvotes/downvotes, nested replies, and moderation",
-  "author": "Replyke",
+  "author": "Sublay",
   "license": "Apache-2.0",
   "dependencies": [
-    "@replyke/react-js@^7.0.0",
-    "@replyke/ui-core-react-js@^7.0.0"
+    "@sublay/react-js@^7.0.0",
+    "@sublay/ui-core-react-js@^7.0.0"
   ],
   "files": [
     {
@@ -142,7 +142,7 @@
       "description": "Context for UI state (modals and theme)"
     }
   ],
-  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-threaded/styled",
+  "registryUrl": "https://raw.githubusercontent.com/sublay-io/cli/main/registry/react/comments-threaded/styled",
   "exports": {
     "mainComponent": "ThreadedCommentSection",
     "mainFile": "threaded-comment-section",

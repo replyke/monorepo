@@ -1,5 +1,5 @@
-import { User } from "@replyke/react-js";
-import { UserAvatar, UserMentionSkeleton } from "@replyke/ui-core-react-js";
+import { User } from "@sublay/react-js";
+import { UserAvatar, UserMentionSkeleton } from "@sublay/ui-core-react-js";
 
 function MentionSuggestions({
   isMentionActive,

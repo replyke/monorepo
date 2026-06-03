@@ -1,16 +1,16 @@
 /**
- * Replyke Social Comment Section
+ * Sublay Social Comment Section
  *
  * A complete social-style comment system with likes, replies, and moderation.
  * Instagram-inspired design with hearts, avatars, and nested replies.
  *
- * Installation: npx @replyke/cli add comments-social
+ * Installation: npx @sublay/cli add comments-social
  *
  * Required dependencies:
- * - @replyke/react-js ^6.0.0
- * - @replyke/ui-core-react-js ^6.0.0
+ * - @sublay/react-js ^6.0.0
+ * - @sublay/ui-core-react-js ^6.0.0
  *
- * @see https://docs.replyke.com/components/comments-social
+ * @see https://docs.sublay.com/components/comments-social
  *
  * ====================
  * THEME COLOR PALETTE
@@ -43,7 +43,7 @@
  * - #8E8E8E → #9CA3AF (empty heart)
  */
 import React from "react";
-import { Entity } from "@replyke/react-js";
+import { Entity } from "@sublay/react-js";
 import useSocialComments from "../hooks/use-social-comments";
 import { SortByButton } from "./sort-by-button";
 import CommentsFeed from "./comments-feed/comments-feed";

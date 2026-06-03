@@ -1,5 +1,3 @@
-import useUIState from "../../hooks/use-ui-state";
-
 function NoCommentsPlaceHolder() {
   return (
     <div

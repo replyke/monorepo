@@ -1,10 +1,10 @@
-import { useCommentSection } from "@replyke/react-js";
+import { useCommentSection } from "@sublay/react-js";
 import {
   Modal,
   resetButton,
   resetDiv,
   resetUl,
-} from "@replyke/ui-core-react-js";
+} from "@sublay/ui-core-react-js";
 import useUIState from "../../../hooks/use-ui-state";
 
 function CommentMenuModalOwner() {

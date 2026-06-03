@@ -1,5 +1,5 @@
 import { TouchableOpacity, View, Text } from "react-native";
-import { resetButton } from "@replyke/ui-core-react-native";
+import { resetButton } from "@sublay/ui-core-react-native";
 import useUIState from "../../../../hooks/use-ui-state";
 
 const ShowHideButton = ({

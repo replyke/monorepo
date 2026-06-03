@@ -37,7 +37,7 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from "lucide-react";
-import { AppNotification } from "@replyke/react-js";
+import { AppNotification } from "@sublay/react-js";
 import { cn } from "@/lib/utils";
 
 interface NotificationIconProps {

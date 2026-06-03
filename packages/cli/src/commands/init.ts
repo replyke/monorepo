@@ -4,7 +4,7 @@ import path from 'path';
 import chalk from 'chalk';
 import { detectProjectType, detectTypeScript } from '../utils/detect.js';
 
-export interface ReplykeConfig {
+export interface SublayConfig {
   platform: 'react' | 'react-native' | 'expo';
   style: 'styled' | 'tailwind';
   typescript: boolean;
@@ -17,7 +17,7 @@ export interface ReplykeConfig {
 }
 
 export async function init() {
-  console.log(chalk.bold('\n🚀 Welcome to Replyke CLI\n'));
+  console.log(chalk.bold('\n🚀 Welcome to Sublay CLI\n'));
 
   // Detect project type
   const projectType = await detectProjectType();
@@ -59,7 +59,7 @@ export async function init() {
   }
 
   // Create configuration
-  const config: ReplykeConfig = {
+  const config: SublayConfig = {
     platform: answers.platform,
     style: answers.style || 'styled',
     typescript: hasTypeScript,
@@ -72,14 +72,14 @@ export async function init() {
   };
 
   // Write configuration file
-  const configPath = path.join(process.cwd(), 'replyke.json');
+  const configPath = path.join(process.cwd(), 'sublay.json');
   await fs.writeJson(configPath, config, { spaces: 2 });
 
-  console.log(chalk.green('\n✅ Configuration saved to replyke.json'));
+  console.log(chalk.green('\n✅ Configuration saved to sublay.json'));
 
-  console.log(chalk.bold('\n🎉 Replyke CLI initialized successfully!\n'));
+  console.log(chalk.bold('\n🎉 Sublay CLI initialized successfully!\n'));
   console.log(chalk.dim('Next steps:'));
-  console.log(chalk.dim('  1. Run: npx @replyke/cli add <component-name>'));
+  console.log(chalk.dim('  1. Run: npx @sublay/cli add <component-name>'));
   console.log(chalk.dim('     Available: comments-threaded, comments-social, notifications-control'));
   console.log(chalk.dim('  2. Import components in your app'));
   console.log(chalk.dim('  3. Customize styles directly in the component files\n'));

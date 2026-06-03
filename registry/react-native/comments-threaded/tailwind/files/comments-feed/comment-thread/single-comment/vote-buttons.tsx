@@ -4,7 +4,7 @@ import {
   useUser,
   Comment as CommentType,
   useReactionToggle,
-} from "@replyke/react-native";
+} from "@sublay/react-native";
 import useUIState from "../../../../hooks/use-ui-state";
 
 interface VoteButtonsProps {

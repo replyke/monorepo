@@ -1,17 +1,17 @@
 /**
- * Replyke Threaded Comment Section (React Native - Tailwind)
+ * Sublay Threaded Comment Section (React Native - Tailwind)
  *
  * A complete threaded comment system with upvotes/downvotes, nested replies, and moderation.
  *
- * Installation: npx @replyke/cli add comments-threaded
+ * Installation: npx @sublay/cli add comments-threaded
  *
  * Required dependencies:
- * - @replyke/core ^6.0.0
- * - @replyke/ui-core-react-native ^6.0.0
+ * - @sublay/core ^6.0.0
+ * - @sublay/ui-core-react-native ^6.0.0
  * - @gorhom/bottom-sheet
  * - nativewind ^4.0.0
  *
- * @see https://docs.replyke.com/components/comments-threaded
+ * @see https://docs.sublay.com/components/comments-threaded
  *
  * ====================
  * THEME COLOR PALETTE
@@ -45,7 +45,7 @@
  */
 import React from "react";
 import { View, ScrollView } from "react-native";
-import { Entity } from "@replyke/react-native";
+import { Entity } from "@sublay/react-native";
 import useThreadedComments from "../hooks/use-threaded-comments";
 import { deepEqual, warnPropChanges } from "../utils/prop-comparison";
 import useUIState from "../hooks/use-ui-state";

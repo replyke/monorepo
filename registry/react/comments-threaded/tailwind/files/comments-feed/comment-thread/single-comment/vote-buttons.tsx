@@ -3,7 +3,7 @@ import {
   useUser,
   Comment as CommentType,
   useReactionToggle,
-} from "@replyke/react-js";
+} from "@sublay/react-js";
 import { cn } from "@/lib/utils";
 
 interface VoteButtonsProps {

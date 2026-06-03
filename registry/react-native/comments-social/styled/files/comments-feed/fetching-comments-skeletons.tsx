@@ -1,5 +1,5 @@
 import { FlatList, View } from "react-native";
-import { CommentSkeleton } from "@replyke/ui-core-react-native";
+import { CommentSkeleton } from "@sublay/ui-core-react-native";
 
 const FetchingCommentsSkeletons = () => {
   // 🎨 CUSTOMIZATION: Comments gap (spacing between skeletons)

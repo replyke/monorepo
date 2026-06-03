@@ -14,13 +14,13 @@ import {
   useCommentSection,
   useUser,
   getUserName,
-} from "@replyke/react-native";
+} from "@sublay/react-native";
 import {
   UserAvatar,
   FromNow,
   parseContentWithMentions,
   getImageComponent,
-} from "@replyke/ui-core-react-native";
+} from "@sublay/ui-core-react-native";
 import { Replies } from "./replies";
 import HeartButton from "./heart-button";
 import useUIState from "../../../hooks/use-ui-state";

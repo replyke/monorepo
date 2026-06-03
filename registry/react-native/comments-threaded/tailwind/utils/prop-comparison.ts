@@ -1,5 +1,5 @@
 // Utility functions for prop comparison and stability checks
-import { isDevelopment } from "@replyke/react-native";
+import { isDevelopment } from "@sublay/react-native";
 
 /**
  * Performs shallow equality check for objects

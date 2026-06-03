@@ -4,7 +4,7 @@ import {
   Comment as CommentType,
   useCommentSection,
   useReplies,
-} from "@replyke/react-native";
+} from "@sublay/react-native";
 import SingleComment from "./single-comment";
 import CommentReplies from "./comment-replies";
 

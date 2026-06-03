@@ -5,9 +5,9 @@ import prompts from 'prompts';
 import { execa } from 'execa';
 
 const REQUIRED_DEPS = {
-  react: ['@replyke/react-js', '@replyke/ui-core-react-js'],
-  'react-native': ['@replyke/react-native', '@replyke/ui-core-react-native'],
-  expo: ['@replyke/expo', '@replyke/ui-core-react-native'],
+  react: ['@sublay/react-js', '@sublay/ui-core-react-js'],
+  'react-native': ['@sublay/react-native', '@sublay/ui-core-react-native'],
+  expo: ['@sublay/expo', '@sublay/ui-core-react-native'],
 };
 
 export async function checkDependencies(platform: 'react' | 'react-native' | 'expo') {
@@ -110,7 +110,7 @@ export async function checkComponentDependencies(dependencies: string[]) {
 
     // Parse dependencies (format: "package@version" -> extract package name)
     const requiredDeps = dependencies.map((dep) => {
-      // Handle scoped packages like @replyke/react-js@^6.0.0
+      // Handle scoped packages like @sublay/react-js@^6.0.0
       const parts = dep.split('@').filter(Boolean);
       if (dep.startsWith('@')) {
         // Scoped package: @scope/name@version

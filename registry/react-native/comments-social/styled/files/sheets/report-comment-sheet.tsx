@@ -7,8 +7,8 @@ import {
   useUser,
   useCommentSection,
   useCreateReport,
-} from "@replyke/react-native";
-import { FlagIcon, CustomButton } from "@replyke/ui-core-react-native";
+} from "@sublay/react-native";
+import { FlagIcon, CustomButton } from "@sublay/ui-core-react-native";
 
 import BottomSheet, {
   BottomSheetBackdrop,

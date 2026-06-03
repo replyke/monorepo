@@ -1,4 +1,4 @@
-import { Comment as CommentType, useCommentSection } from "@replyke/react-js";
+import { Comment as CommentType, useCommentSection } from "@sublay/react-js";
 import CommentThread from "./comment-thread";
 
 function LoadedComments({ data }: { data: CommentType[] }) {

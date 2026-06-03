@@ -6,12 +6,12 @@ import {
   getUserName,
   useCommentSection,
   useUser,
-} from "@replyke/react-native";
+} from "@sublay/react-native";
 import {
   parseContentWithMentions,
   UserAvatar,
   getImageComponent,
-} from "@replyke/ui-core-react-native";
+} from "@sublay/ui-core-react-native";
 import VoteButtons from "./vote-buttons";
 import ActionMenu from "../action-menu";
 import NewReplyForm from "../new-reply-form";

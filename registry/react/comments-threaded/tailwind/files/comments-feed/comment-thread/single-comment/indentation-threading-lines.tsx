@@ -1,5 +1,3 @@
-import React from "react";
-
 function IndentationThreadingLines({ isLastReply }: { isLastReply: boolean }) {
   return (
     <>

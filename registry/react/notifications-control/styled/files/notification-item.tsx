@@ -1,6 +1,6 @@
 "use client";
 
-import { AppNotification } from "@replyke/react-js";
+import { AppNotification } from "@sublay/react-js";
 import { motion } from "framer-motion";
 import { formatRelativeTime, truncateText } from "../utils/notification-utils";
 import NotificationIcon from "./notification-icon";

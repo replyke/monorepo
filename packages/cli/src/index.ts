@@ -7,13 +7,13 @@ import { add } from './commands/add.js';
 const program = new Command();
 
 program
-  .name('replyke')
-  .description('CLI for installing Replyke UI components')
+  .name('sublay')
+  .description('CLI for installing Sublay UI components')
   .version('0.1.0');
 
 program
   .command('init')
-  .description('Initialize Replyke configuration in your project')
+  .description('Initialize Sublay configuration in your project')
   .action(init);
 
 program

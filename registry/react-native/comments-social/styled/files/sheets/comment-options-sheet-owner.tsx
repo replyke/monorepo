@@ -1,7 +1,7 @@
 import { View, Text, Pressable, Alert } from "react-native";
 import { useCallback, useMemo } from "react";
-import { useCommentSection } from "@replyke/react-native";
-import { TrashIcon } from "@replyke/ui-core-react-native";
+import { useCommentSection } from "@sublay/react-native";
+import { TrashIcon } from "@sublay/ui-core-react-native";
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,

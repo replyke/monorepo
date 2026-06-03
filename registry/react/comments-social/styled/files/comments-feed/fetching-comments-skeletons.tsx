@@ -1,4 +1,4 @@
-import { resetDiv, CommentSkeleton } from "@replyke/ui-core-react-js";
+import { resetDiv, CommentSkeleton } from "@sublay/ui-core-react-js";
 import useUIState from "../../hooks/use-ui-state";
 
 function FetchingCommentsSkeletons() {

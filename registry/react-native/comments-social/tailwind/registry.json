@@ -4,11 +4,11 @@
   "style": "tailwind",
   "version": "1.0.0",
   "description": "Social-style comment system with likes, nested replies, and moderation (Instagram-inspired) for React Native with Tailwind CSS",
-  "author": "Replyke",
+  "author": "Sublay",
   "license": "Apache-2.0",
   "dependencies": [
-    "@replyke/react-native@^7.0.0",
-    "@replyke/ui-core-react-native@^7.0.0",
+    "@sublay/react-native@^7.0.0",
+    "@sublay/ui-core-react-native@^7.0.0",
     "@gorhom/bottom-sheet@^5.0.0",
     "nativewind@^4.0.0"
   ],
@@ -129,7 +129,7 @@
       "description": "Context for UI state (bottom sheets and theme)"
     }
   ],
-  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react-native/comments-social/tailwind",
+  "registryUrl": "https://raw.githubusercontent.com/sublay-io/cli/main/registry/react-native/comments-social/tailwind",
   "exports": {
     "mainComponent": "SocialCommentSection",
     "mainFile": "social-comment-section",

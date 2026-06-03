@@ -1,4 +1,3 @@
-import React from "react";
 import useUIState from "../../../../hooks/use-ui-state";
 
 function IndentationThreadingLines({ isLastReply }: { isLastReply: boolean }) {

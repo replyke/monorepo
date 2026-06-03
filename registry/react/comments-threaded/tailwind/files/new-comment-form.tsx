@@ -5,11 +5,11 @@ import {
   useUserMentions,
   useProject,
   handleError,
-} from "@replyke/react-js";
+} from "@sublay/react-js";
 import {
   useTextareaCursorIndicator,
   GiphyContainer,
-} from "@replyke/ui-core-react-js";
+} from "@sublay/ui-core-react-js";
 import MentionSuggestions from "./mention-suggestions";
 import { cn } from "@/lib/utils";
 
