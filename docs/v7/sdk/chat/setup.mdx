@@ -6,25 +6,25 @@ description: "Add ChatProvider to your app to enable real-time messaging"
 `ChatProvider` is the root component for the entire chat system. It establishes and manages the Socket.io connection, fetches initial unread counts, and provides the shared socket instance to all hooks that need it.
 
 <Note>
-  `ChatProvider` must be placed inside `ReplykeProvider` and above any component that uses chat hooks.
+  `ChatProvider` must be placed inside `SublayProvider` and above any component that uses chat hooks.
 </Note>
 
 ## Adding ChatProvider
 
 <Steps>
   <Step title="Import and wrap your app">
-    Place `ChatProvider` inside `ReplykeProvider` but outside your conversation UI:
+    Place `ChatProvider` inside `SublayProvider` but outside your conversation UI:
 
     ```tsx
-    import { ReplykeProvider, ChatProvider } from "@replyke/react-js";
+    import { SublayProvider, ChatProvider } from "@sublay/react-js";
 
     function App() {
       return (
-        <ReplykeProvider projectId="your-project-id">
+        <SublayProvider projectId="your-project-id">
           <ChatProvider>
             <YourApp />
           </ChatProvider>
-        </ReplykeProvider>
+        </SublayProvider>
       );
     }
     ```
@@ -38,7 +38,7 @@ description: "Add ChatProvider to your app to enable real-time messaging"
 
 When a user is authenticated, `ChatProvider`:
 
-1. **Opens a Socket.io connection** to the Replyke server, authenticated with the user's access token
+1. **Opens a Socket.io connection** to the Sublay server, authenticated with the user's access token
 2. **Fetches initial unread counts** (total unread messages and count of conversations with unread messages) so badges are accurate before the conversation list is loaded
 3. **Listens for real-time events** — new messages, message edits, deletions, reactions, typing indicators, and conversation updates
 4. **Updates Redux state** automatically as events arrive, so all components using chat hooks stay in sync
@@ -52,7 +52,7 @@ When the access token rotates (e.g. after a refresh), `ChatProvider` updates the
 Use [`useChatSocket`](/hooks/chat/use-chat-socket) to read the connection state in your UI:
 
 ```tsx
-import { useChatSocket } from "@replyke/react-js";
+import { useChatSocket } from "@sublay/react-js";
 
 function ConnectionBadge() {
   const { connected } = useChatSocket();
@@ -70,7 +70,7 @@ Two hooks expose the unread counts fetched on mount:
 These are useful for badges in navigation:
 
 ```tsx
-import { useTotalUnreadCount } from "@replyke/react-js";
+import { useTotalUnreadCount } from "@sublay/react-js";
 
 function NavBadge() {
   const unread = useTotalUnreadCount();

@@ -8,12 +8,12 @@ icon: "plug"
 
 `useFetchUserByForeignId` returns a function that fetches a user's public profile using their `foreignId` — the ID from your own system that was associated with this user during authentication.
 
-Use this when you have your own user ID and need to look up the corresponding Replyke user profile.
+Use this when you have your own user ID and need to look up the corresponding Sublay user profile.
 
 ## Usage Example
 
 ```tsx
-import { useFetchUserByForeignId } from "@replyke/react-js";
+import { useFetchUserByForeignId } from "@sublay/react-js";
 
 function UserCard({ myUserId }: { myUserId: string }) {
   const fetchUser = useFetchUserByForeignId();

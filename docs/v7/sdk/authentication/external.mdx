@@ -3,23 +3,23 @@ title: "External Auth"
 description: "Integrating your own auth system via signed JWT"
 ---
 
-If you already have a user authentication system (such as Clerk, Auth0, Firebase Auth, or your own backend), you can integrate it with Replyke without requiring users to create a separate Replyke account. Your backend signs a JWT with a project-specific private key; the SDK exchanges that JWT for Replyke tokens.
+If you already have a user authentication system (such as Clerk, Auth0, Firebase Auth, or your own backend), you can integrate it with Sublay without requiring users to create a separate Sublay account. Your backend signs a JWT with a project-specific private key; the SDK exchanges that JWT for Sublay tokens.
 
 ## How It Works
 
 <Steps>
   <Step title="Your backend signs a JWT">
     After your own auth system verifies the user, your server signs a JWT using
-    your Replyke project's RSA private key. The token identifies the user by
+    your Sublay project's RSA private key. The token identifies the user by
     their ID in your system.
   </Step>
   <Step title="The SDK exchanges the JWT">
     Call `verifyExternalUser` (available via the `useAuth` hook or directly) with
-    the signed JWT. Replyke verifies the signature, looks up or creates the user,
-    and returns Replyke access and refresh tokens.
+    the signed JWT. Sublay verifies the signature, looks up or creates the user,
+    and returns Sublay access and refresh tokens.
   </Step>
   <Step title="The user is authenticated">
-    From this point, the user is signed into Replyke and all SDK hooks work
+    From this point, the user is signed into Sublay and all SDK hooks work
     normally. Token refresh is handled automatically.
   </Step>
 </Steps>
@@ -30,13 +30,13 @@ Your backend must sign the JWT using **RS256** (RSA 256-bit) with your project's
 
 | Claim | Description |
 |-------|-------------|
-| `sub` | The user's ID in your system (becomes `foreignId` in Replyke) |
-| `iss` | Your Replyke project ID |
+| `sub` | The user's ID in your system (becomes `foreignId` in Sublay) |
+| `iss` | Your Sublay project ID |
 | `userData` | Object with optional profile fields (see below) |
 
 ### `userData` fields
 
-All fields in `userData` are optional. If a user already exists and any field has changed, Replyke updates the stored value.
+All fields in `userData` are optional. If a user already exists and any field has changed, Sublay updates the stored value.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -56,13 +56,13 @@ All fields in `userData` are optional. If a user already exists and any field ha
 import jwt from "jsonwebtoken";
 import fs from "fs";
 
-const privateKey = fs.readFileSync("replyke-private-key.pem");
+const privateKey = fs.readFileSync("sublay-private-key.pem");
 
-function createReplykeJwt(userId: string, userData: object) {
+function createSublayJwt(userId: string, userData: object) {
   return jwt.sign(
     {
       sub: userId,
-      iss: "your-replyke-project-id",
+      iss: "your-sublay-project-id",
       userData,
     },
     privateKey,
@@ -79,36 +79,36 @@ function createReplykeJwt(userId: string, userData: object) {
 
 ## Frontend Integration
 
-Pass the signed JWT directly to `ReplykeProvider` (or `ReplykeIntegrationProvider` if you manage your own Redux store) via the `signedToken` prop. The SDK exchanges the token automatically on initialization — no manual API calls required.
+Pass the signed JWT directly to `SublayProvider` (or `SublayIntegrationProvider` if you manage your own Redux store) via the `signedToken` prop. The SDK exchanges the token automatically on initialization — no manual API calls required.
 
 <CodeGroup>
 ```tsx Standard setup
-import { ReplykeProvider } from "@replyke/react-js";
+import { SublayProvider } from "@sublay/react-js";
 
 function App() {
   // Fetch or derive the signed JWT from your own auth system
-  const signedToken = useMyAuthSystem().replykeJwt;
+  const signedToken = useMyAuthSystem().sublayJwt;
 
   return (
-    <ReplykeProvider projectId="your-project-id" signedToken={signedToken}>
+    <SublayProvider projectId="your-project-id" signedToken={signedToken}>
       <YourApp />
-    </ReplykeProvider>
+    </SublayProvider>
   );
 }
 ```
 
 ```tsx Integration mode (own Redux store)
-import { ReplykeIntegrationProvider } from "@replyke/react-js";
+import { SublayIntegrationProvider } from "@sublay/react-js";
 
 function App() {
   // Fetch or derive the signed JWT from your own auth system
-  const signedToken = useMyAuthSystem().replykeJwt;
+  const signedToken = useMyAuthSystem().sublayJwt;
 
   return (
     <Provider store={yourStore}>
-      <ReplykeIntegrationProvider projectId="your-project-id" signedToken={signedToken}>
+      <SublayIntegrationProvider projectId="your-project-id" signedToken={signedToken}>
         <YourApp />
-      </ReplykeIntegrationProvider>
+      </SublayIntegrationProvider>
     </Provider>
   );
 }
@@ -126,7 +126,7 @@ Whenever `signedToken` changes (e.g., after a new user signs in), the SDK re-ini
 
 ## User Identity
 
-When a user signs in via external auth, Replyke stores the `sub` claim as `foreignId` on the user record and creates a `UserIdentity` entry with `provider: "external"`. On subsequent sign-ins, the user is looked up by identity first, then by `foreignId` as a fallback, then by email.
+When a user signs in via external auth, Sublay stores the `sub` claim as `foreignId` on the user record and creates a `UserIdentity` entry with `provider: "external"`. On subsequent sign-ins, the user is looked up by identity first, then by `foreignId` as a fallback, then by email.
 
 ## See Also
 

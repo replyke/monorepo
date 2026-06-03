@@ -13,7 +13,7 @@ Updates are applied optimistically — the UI reflects changes immediately, and 
 ## Usage Example
 
 ```tsx
-import { useUser } from "@replyke/react-js";
+import { useUser } from "@sublay/react-js";
 
 function ProfileEditor() {
   const { user, updating, updateUser } = useUser();
@@ -38,7 +38,7 @@ function ProfileEditor() {
 ### Uploading an Avatar
 
 ```tsx
-import { useUser } from "@replyke/react-js";
+import { useUser } from "@sublay/react-js";
 
 function AvatarUpload({ file }: { file: File }) {
   const { updateUser } = useUser();

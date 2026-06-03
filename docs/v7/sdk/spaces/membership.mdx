@@ -10,7 +10,7 @@ Each space has its own membership list. Members can be regular users, moderators
 The simplest membership operations are exposed directly from `useSpace`:
 
 ```tsx
-import { useSpace } from "@replyke/react-js";
+import { useSpace } from "@sublay/react-js";
 
 function MembershipButton() {
   const { isMember, isPending, joinSpace, leaveSpace } = useSpace();
@@ -28,7 +28,7 @@ When a space has `requireJoinApproval: true`, `joinSpace()` creates a `pending` 
 Use standalone hooks to fetch member lists:
 
 ```tsx
-import { useFetchSpaceMembers, useFetchSpaceTeam } from "@replyke/react-js";
+import { useFetchSpaceMembers, useFetchSpaceTeam } from "@sublay/react-js";
 
 // Paginated list of all members
 const fetchMembers = useFetchSpaceMembers();
@@ -46,7 +46,7 @@ const { data } = await fetchTeam({ spaceId });
 Check the current user's membership without loading the full space:
 
 ```tsx
-import { useCheckMyMembership } from "@replyke/react-js";
+import { useCheckMyMembership } from "@sublay/react-js";
 
 const checkMembership = useCheckMyMembership();
 const result = await checkMembership({ spaceId });
@@ -58,7 +58,7 @@ const result = await checkMembership({ spaceId });
 Moderators and admins can process pending membership requests:
 
 ```tsx
-import { useApproveMember, useDeclineMember } from "@replyke/react-js";
+import { useApproveMember, useDeclineMember } from "@sublay/react-js";
 
 const approve = useApproveMember();
 const decline = useDeclineMember();
@@ -74,7 +74,7 @@ await decline({ spaceId, memberId });
 Admins can change a member's role:
 
 ```tsx
-import { useUpdateMemberRole } from "@replyke/react-js";
+import { useUpdateMemberRole } from "@sublay/react-js";
 
 const updateRole = useUpdateMemberRole();
 await updateRole({ spaceId, memberId, role: "moderator" });
@@ -86,7 +86,7 @@ await updateRole({ spaceId, memberId, role: "moderator" });
 Moderators can ban and unban members:
 
 ```tsx
-import { useRemoveMember, useUnbanMember } from "@replyke/react-js";
+import { useRemoveMember, useUnbanMember } from "@sublay/react-js";
 
 const removeMember = useRemoveMember();
 const unban = useUnbanMember();

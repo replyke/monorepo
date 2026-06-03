@@ -1,17 +1,17 @@
 ---
 title: "Fetch user"
-description: "Fetch a user's public profile by their Replyke user ID"
+description: "Fetch a user's public profile by their Sublay user ID"
 icon: "plug"
 ---
 
 ## Overview
 
-`useFetchUser` returns a function that fetches a user's public profile by their Replyke user ID. Use this when you have the user's `id` and need to load their profile on demand.
+`useFetchUser` returns a function that fetches a user's public profile by their Sublay user ID. Use this when you have the user's `id` and need to load their profile on demand.
 
 ## Usage Example
 
 ```tsx
-import { useFetchUser } from "@replyke/react-js";
+import { useFetchUser } from "@sublay/react-js";
 import { useState } from "react";
 
 function UserCard({ userId }: { userId: string }) {
@@ -32,7 +32,7 @@ function UserCard({ userId }: { userId: string }) {
 The hook returns a function. That function accepts:
 
 <ParamField path="userId" type="string" required>
-  The Replyke user ID to fetch.
+  The Sublay user ID to fetch.
 </ParamField>
 
 <ParamField path="include" type="string | string[]">

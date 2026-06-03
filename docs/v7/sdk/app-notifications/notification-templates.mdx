@@ -3,7 +3,7 @@ title: "Notification Templates"
 description: "Customize the display text shown for each notification type"
 ---
 
-Replyke stores notifications as structured records with typed `metadata` — not pre-rendered strings. Your app controls how each notification type is displayed using **notification templates**.
+Sublay stores notifications as structured records with typed `metadata` — not pre-rendered strings. Your app controls how each notification type is displayed using **notification templates**.
 
 Templates are passed to `useAppNotifications` via the `notificationTemplates` prop. Each template can define a `title` and/or `content`. Each field accepts either:
 
@@ -13,7 +13,7 @@ Templates are passed to `useAppNotifications` via the `notificationTemplates` pr
 ## String template example
 
 ```tsx
-import { useAppNotifications } from "@replyke/react-js";
+import { useAppNotifications } from "@sublay/react-js";
 
 const templates = {
   entityComment: {
@@ -103,7 +103,7 @@ Each key in `notificationTemplates` corresponds to one notification type. The va
 | `spaceMembershipApproved` | `space-membership-approved` | `spaceName`, `spaceShortId`, `spaceSlug` |
 
 <Note>
-  All template keys are optional. If a template is not provided for a given notification type, Replyke uses a built-in default string template for that type. You only need to supply the keys you want to customize.
+  All template keys are optional. If a template is not provided for a given notification type, Sublay uses a built-in default string template for that type. You only need to supply the keys you want to customize.
 </Note>
 
 ## Accessing raw metadata

@@ -9,14 +9,14 @@ The `users` module provides server-side access to user profiles, social graph da
 
 ### fetchUserById
 
-Fetches a user profile by their internal Replyke user ID.
+Fetches a user profile by their internal Sublay user ID.
 
 ```typescript
-const user = await replyke.users.fetchUserById({ userId: "usr_abc123" });
+const user = await sublay.users.fetchUserById({ userId: "usr_abc123" });
 ```
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID.
+  The Sublay user ID.
 </ParamField>
 
 **Returns** — `Promise<User>`
@@ -28,7 +28,7 @@ const user = await replyke.users.fetchUserById({ userId: "usr_abc123" });
 Fetches a user profile by your application's own user identifier. Optionally creates the user if not found.
 
 ```typescript
-const user = await replyke.users.fetchUserByForeignId({
+const user = await sublay.users.fetchUserByForeignId({
   foreignId: "external-user-42",
   createIfNotFound: true,
   name: "Bob Smith",
@@ -77,7 +77,7 @@ const user = await replyke.users.fetchUserByForeignId({
 Fetches a user profile by their username.
 
 ```typescript
-const user = await replyke.users.fetchUserByUsername({ username: "alice" });
+const user = await sublay.users.fetchUserByUsername({ username: "alice" });
 ```
 
 <ParamField body="username" type="string" required>
@@ -93,7 +93,7 @@ const user = await replyke.users.fetchUserByUsername({ username: "alice" });
 Updates a user's profile fields.
 
 ```typescript
-const updatedUser = await replyke.users.updateUser({
+const updatedUser = await sublay.users.updateUser({
   userId: "usr_abc123",
   name: "Alice Updated",
   bio: "New bio",
@@ -103,7 +103,7 @@ const updatedUser = await replyke.users.updateUser({
 ```
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID to update.
+  The Sublay user ID to update.
 </ParamField>
 
 <ParamField body="name" type="string">
@@ -143,7 +143,7 @@ const updatedUser = await replyke.users.updateUser({
 Returns users whose name or username matches a partial query string. Useful for mention autocomplete on the server.
 
 ```typescript
-const users = await replyke.users.fetchUserSuggestions({
+const users = await sublay.users.fetchUserSuggestions({
   query: "ali",
   limit: 10,
 });
@@ -166,7 +166,7 @@ const users = await replyke.users.fetchUserSuggestions({
 Checks whether a username is available for registration.
 
 ```typescript
-const { available } = await replyke.users.checkUsernameAvailability({
+const { available } = await sublay.users.checkUsernameAvailability({
   username: "alice",
 });
 ```
@@ -184,7 +184,7 @@ const { available } = await replyke.users.checkUsernameAvailability({
 Returns a paginated list of users following the specified user.
 
 ```typescript
-const { data, metadata } = await replyke.users.fetchFollowersByUserId({
+const { data, metadata } = await sublay.users.fetchFollowersByUserId({
   userId: "usr_abc123",
   page: 1,
   limit: 20,
@@ -192,7 +192,7 @@ const { data, metadata } = await replyke.users.fetchFollowersByUserId({
 ```
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID.
+  The Sublay user ID.
 </ParamField>
 
 <ParamField body="page" type="number">
@@ -212,13 +212,13 @@ const { data, metadata } = await replyke.users.fetchFollowersByUserId({
 Returns the total number of followers for a user.
 
 ```typescript
-const { count } = await replyke.users.fetchFollowersCountByUserId({
+const { count } = await sublay.users.fetchFollowersCountByUserId({
   userId: "usr_abc123",
 });
 ```
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID.
+  The Sublay user ID.
 </ParamField>
 
 **Returns** — `Promise<{ count: number }>`
@@ -230,7 +230,7 @@ const { count } = await replyke.users.fetchFollowersCountByUserId({
 Returns a paginated list of users that the specified user is following.
 
 ```typescript
-const { data, metadata } = await replyke.users.fetchFollowingByUserId({
+const { data, metadata } = await sublay.users.fetchFollowingByUserId({
   userId: "usr_abc123",
   page: 1,
   limit: 20,
@@ -238,7 +238,7 @@ const { data, metadata } = await replyke.users.fetchFollowingByUserId({
 ```
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID.
+  The Sublay user ID.
 </ParamField>
 
 <ParamField body="page" type="number">
@@ -258,13 +258,13 @@ const { data, metadata } = await replyke.users.fetchFollowingByUserId({
 Returns the number of users the specified user is following.
 
 ```typescript
-const { count } = await replyke.users.fetchFollowingCountByUserId({
+const { count } = await sublay.users.fetchFollowingCountByUserId({
   userId: "usr_abc123",
 });
 ```
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID.
+  The Sublay user ID.
 </ParamField>
 
 **Returns** — `Promise<{ count: number }>`
@@ -276,7 +276,7 @@ const { count } = await replyke.users.fetchFollowingCountByUserId({
 Returns a paginated list of established mutual connections for a user.
 
 ```typescript
-const { data, metadata } = await replyke.users.fetchConnectionsByUserId({
+const { data, metadata } = await sublay.users.fetchConnectionsByUserId({
   userId: "usr_abc123",
   page: 1,
   limit: 20,
@@ -284,7 +284,7 @@ const { data, metadata } = await replyke.users.fetchConnectionsByUserId({
 ```
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID.
+  The Sublay user ID.
 </ParamField>
 
 <ParamField body="page" type="number">
@@ -304,13 +304,13 @@ const { data, metadata } = await replyke.users.fetchConnectionsByUserId({
 Returns the number of established connections for a user.
 
 ```typescript
-const { count } = await replyke.users.fetchConnectionsCountByUserId({
+const { count } = await sublay.users.fetchConnectionsCountByUserId({
   userId: "usr_abc123",
 });
 ```
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID.
+  The Sublay user ID.
 </ParamField>
 
 **Returns** — `Promise<{ count: number }>`

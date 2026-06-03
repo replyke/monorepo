@@ -10,7 +10,7 @@ This guide covers how to work with conversations: listing the user's conversatio
 `useConversations` fetches the authenticated user's conversation list with cursor-based pagination. The list is sorted by most recent activity.
 
 ```tsx
-import { useConversations } from "@replyke/react-js";
+import { useConversations } from "@sublay/react-js";
 
 function ConversationList() {
   const { conversations, loading, hasMore, loadMore } = useConversations();
@@ -49,7 +49,7 @@ See [`useConversations`](/hooks/chat/conversations/use-conversations) for the fu
 Use `useCreateDirectConversation` to start a 1:1 conversation with another user. If a direct conversation between the two users already exists, the server returns the existing one.
 
 ```tsx
-import { useCreateDirectConversation } from "@replyke/react-js";
+import { useCreateDirectConversation } from "@sublay/react-js";
 
 function StartChat({ userId }: { userId: string }) {
   const createDirect = useCreateDirectConversation();
@@ -70,7 +70,7 @@ See [`useCreateDirectConversation`](/hooks/chat/conversations/use-create-direct-
 Group conversations are created via `useConversations`, which exposes a `createGroup` function:
 
 ```tsx
-import { useConversations } from "@replyke/react-js";
+import { useConversations } from "@sublay/react-js";
 
 function NewGroupButton() {
   const { createGroup } = useConversations();
@@ -94,7 +94,7 @@ After creation, the new conversation is prepended to the conversation list in Re
 `useConversation` fetches full details for one conversation and provides `update` and `deleteConversation` actions:
 
 ```tsx
-import { useConversation } from "@replyke/react-js";
+import { useConversation } from "@sublay/react-js";
 
 function ConversationHeader({ conversationId }: { conversationId: string }) {
   const { conversation, loading, update } = useConversation({ conversationId });
@@ -119,7 +119,7 @@ See [`useConversation`](/hooks/chat/conversations/use-conversation).
 `useConversationMembers` loads the member list and exposes add, remove, leave, and role-change actions:
 
 ```tsx
-import { useConversationMembers } from "@replyke/react-js";
+import { useConversationMembers } from "@sublay/react-js";
 
 function MemberList({ conversationId }: { conversationId: string }) {
   const { members, addMember, removeMember, changeRole, leave } =
@@ -147,7 +147,7 @@ See [`useConversationMembers`](/hooks/chat/conversations/use-conversation-member
 Every Space has a single associated conversation. Use `useFetchSpaceConversation` to retrieve it:
 
 ```tsx
-import { useFetchSpaceConversation } from "@replyke/react-js";
+import { useFetchSpaceConversation } from "@sublay/react-js";
 
 function SpaceChat({ spaceId }: { spaceId: string }) {
   const { conversation, loading } = useFetchSpaceConversation({ spaceId });

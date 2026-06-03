@@ -3,16 +3,16 @@ title: "Webhook Integration"
 description: "Forward app notification events to your backend for push delivery"
 ---
 
-App Notifications in Replyke are in-app records — they appear in a notification feed inside your app. To deliver push notifications (iOS APNs, Android FCM) when users are not actively using the app, you can configure a webhook that fires whenever a notification is created.
+App Notifications in Sublay are in-app records — they appear in a notification feed inside your app. To deliver push notifications (iOS APNs, Android FCM) when users are not actively using the app, you can configure a webhook that fires whenever a notification is created.
 
 ## How It Works
 
 <Steps>
   <Step title="Configure a webhook URL in the dashboard">
-    In your Replyke project dashboard, go to **Settings → Webhooks** and add a webhook URL pointing to your backend endpoint. Select the **App Notification Created** event.
+    In your Sublay project dashboard, go to **Settings → Webhooks** and add a webhook URL pointing to your backend endpoint. Select the **App Notification Created** event.
   </Step>
   <Step title="Receive the event on your backend">
-    When Replyke creates an app notification, it sends an HTTP POST to your webhook URL with a JSON payload describing the notification:
+    When Sublay creates an app notification, it sends an HTTP POST to your webhook URL with a JSON payload describing the notification:
 
     ```json
     {
@@ -46,13 +46,13 @@ App Notifications in Replyke are in-app records — they appear in a notificatio
 | Field | Type | Description |
 |-------|------|-------------|
 | `type` | `string` | Always `"app-notification.created"` |
-| `projectId` | `string` | The Replyke project ID |
-| `data.projectId` | `string` | The Replyke project ID (repeated inside data) |
+| `projectId` | `string` | The Sublay project ID |
+| `data.projectId` | `string` | The Sublay project ID (repeated inside data) |
 | `data.userId` | `string` | The recipient's user ID |
 | `data.type` | `string` | The notification type (e.g., `"entity-comment"`) |
 | `data.action` | `string` | Navigation hint for the push tap action |
 | `data.metadata` | `object` | Type-specific data — see [Notification Templates](/sdk/app-notifications/notification-templates) for fields per type |
 
 <Note>
-  You are responsible for managing and storing push tokens in your own backend. Replyke does not store device tokens.
+  You are responsible for managing and storing push tokens in your own backend. Sublay does not store device tokens.
 </Note>

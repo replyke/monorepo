@@ -10,14 +10,14 @@ description: "CommentSectionProvider setup and the useCommentSection hook refere
 Identify the target entity with one of four mutually exclusive props:
 
 ```tsx
-import { CommentSectionProvider } from "@replyke/react-js";
+import { CommentSectionProvider } from "@sublay/react-js";
 
 // By foreign ID (most common — links to your own content)
 <CommentSectionProvider foreignId="your-article-id" createIfNotFound>
   <CommentList />
 </CommentSectionProvider>
 
-// By Replyke entity ID
+// By Sublay entity ID
 <CommentSectionProvider entityId="ent_abc123">
   <CommentList />
 </CommentSectionProvider>
@@ -36,7 +36,7 @@ import { CommentSectionProvider } from "@replyke/react-js";
 ## Provider Props Reference
 
 <ParamField path="entityId" type="string">
-  Replyke entity ID. Mutually exclusive with `foreignId`, `shortId`, and `entity`.
+  Sublay entity ID. Mutually exclusive with `foreignId`, `shortId`, and `entity`.
 </ParamField>
 
 <ParamField path="foreignId" type="string">
@@ -81,7 +81,7 @@ import { CommentSectionProvider } from "@replyke/react-js";
 ## Accessing State with `useCommentSection`
 
 ```tsx
-import { useCommentSection } from "@replyke/react-js";
+import { useCommentSection } from "@sublay/react-js";
 
 function CommentList() {
   const {

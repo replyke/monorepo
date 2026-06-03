@@ -1,10 +1,10 @@
 ---
 title: "Webhooks"
-description: "How Replyke calls your server — event notifications, validation hooks, and signature verification."
+description: "How Sublay calls your server — event notifications, validation hooks, and signature verification."
 icon: "webhook"
 ---
 
-Replyke can call your server when things happen in your project. There are two webhook systems:
+Sublay can call your server when things happen in your project. There are two webhook systems:
 
 - **Project webhooks** — broadcast and validation events for the project as a whole, configured once in the project dashboard.
 - **Space digest webhooks** — a separate per-space delivery system that sends a daily activity digest to a URL you configure on each space individually.
@@ -17,7 +17,7 @@ Both use HTTP POST with HMAC-SHA256 signatures, but they are configured and beha
 
 Webhooks are configured per project in the dashboard. You need to set:
 
-- **Webhook URL** — the endpoint on your server that Replyke will call
+- **Webhook URL** — the endpoint on your server that Sublay will call
 - **Webhook secret** — a shared secret used to sign outgoing requests and verify incoming responses
 - **Subscribed events** — the specific event types you want to receive (you only get called for events you opt into)
 
@@ -42,11 +42,11 @@ These fire after an operation completes. Your server is notified but the origina
 | `message.created.complete` | A new chat message has been sent |
 | `notification.created` | An app notification was created for a user |
 
-The `notification.created` event is the primary mechanism for bridging Replyke's in-app notification system to push notifications, email, or any other delivery channel your app uses.
+The `notification.created` event is the primary mechanism for bridging Sublay's in-app notification system to push notifications, email, or any other delivery channel your app uses.
 
 ### Validation Events (Blocking)
 
-These fire before an operation is committed. Replyke waits for your response. If you respond with `{ "valid": true }`, the operation proceeds. Any other response (or no response) causes the operation to be rejected.
+These fire before an operation is committed. Sublay waits for your response. If you respond with `{ "valid": true }`, the operation proceeds. Any other response (or no response) causes the operation to be rejected.
 
 | Event | Fires when |
 |-------|-----------|
@@ -86,7 +86,7 @@ All webhook deliveries use the same envelope:
 | Field | Description |
 |-------|-------------|
 | `type` | The event type string (see tables above) |
-| `projectId` | Your Replyke project ID |
+| `projectId` | Your Sublay project ID |
 | `stage` | Lifecycle stage of the event |
 | `data` | The event payload — the created/updated object or notification data |
 
@@ -94,7 +94,7 @@ All webhook deliveries use the same envelope:
 
 ## Signature Verification
 
-Every webhook request includes two headers that allow you to verify the request came from Replyke and has not been tampered with.
+Every webhook request includes two headers that allow you to verify the request came from Sublay and has not been tampered with.
 
 | Header | Value |
 |--------|-------|
@@ -178,7 +178,7 @@ res.json(responseBody);
 ```
 
 <Warning>
-  If the response signature is missing or invalid, Replyke treats the validation as failed and rejects the operation — even if the body contained `{ "valid": true }`.
+  If the response signature is missing or invalid, Sublay treats the validation as failed and rejects the operation — even if the body contained `{ "valid": true }`.
 </Warning>
 
 ---
@@ -205,7 +205,7 @@ Subscribe to broadcast complete events (`user.created.complete`, `entity.created
 
 The space digest system is separate from project webhooks. Each space can be configured with its own digest webhook URL and secret, independent of the project-level webhook settings.
 
-When the digest is enabled for a space, Replyke sends a daily summary of the past 24 hours of activity to that space's digest webhook URL. The cron runs hourly and delivers the digest at the configured schedule hour in the space's timezone.
+When the digest is enabled for a space, Sublay sends a daily summary of the past 24 hours of activity to that space's digest webhook URL. The cron runs hourly and delivers the digest at the configured schedule hour in the space's timezone.
 
 The digest payload uses the `space.digest` event type:
 

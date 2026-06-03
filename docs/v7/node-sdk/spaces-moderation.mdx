@@ -14,7 +14,7 @@ This page covers the moderation and administrative functions on the `spaces` mod
 Resolves or dismisses a report filed against an entity in a space.
 
 ```typescript
-const result = await replyke.spaces.handleEntityReport({
+const result = await sublay.spaces.handleEntityReport({
   spaceId: "spc_abc123",
   reportId: "rpt_xyz789",
   action: "resolve",
@@ -22,11 +22,11 @@ const result = await replyke.spaces.handleEntityReport({
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID where the report was filed.
+  The Sublay space ID where the report was filed.
 </ParamField>
 
 <ParamField body="reportId" type="string" required>
-  The Replyke report ID.
+  The Sublay report ID.
 </ParamField>
 
 <ParamField body="action" type="string" required>
@@ -42,7 +42,7 @@ const result = await replyke.spaces.handleEntityReport({
 Resolves or dismisses a report filed against a comment in a space.
 
 ```typescript
-const result = await replyke.spaces.handleCommentReport({
+const result = await sublay.spaces.handleCommentReport({
   spaceId: "spc_abc123",
   reportId: "rpt_abc456",
   action: "dismiss",
@@ -50,11 +50,11 @@ const result = await replyke.spaces.handleCommentReport({
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID where the report was filed.
+  The Sublay space ID where the report was filed.
 </ParamField>
 
 <ParamField body="reportId" type="string" required>
-  The Replyke report ID.
+  The Sublay report ID.
 </ParamField>
 
 <ParamField body="action" type="string" required>
@@ -72,7 +72,7 @@ const result = await replyke.spaces.handleCommentReport({
 Approves or removes an entity within a space.
 
 ```typescript
-const result = await replyke.spaces.moderateSpaceEntity({
+const result = await sublay.spaces.moderateSpaceEntity({
   spaceId: "spc_abc123",
   entityId: "ent_xyz789",
   action: "remove",
@@ -81,11 +81,11 @@ const result = await replyke.spaces.moderateSpaceEntity({
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID to moderate.
+  The Sublay entity ID to moderate.
 </ParamField>
 
 <ParamField body="action" type="string" required>
@@ -105,7 +105,7 @@ const result = await replyke.spaces.moderateSpaceEntity({
 Approves or removes a comment within a space.
 
 ```typescript
-const result = await replyke.spaces.moderateSpaceComment({
+const result = await sublay.spaces.moderateSpaceComment({
   spaceId: "spc_abc123",
   commentId: "cmt_abc123",
   action: "approve",
@@ -113,11 +113,11 @@ const result = await replyke.spaces.moderateSpaceComment({
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="commentId" type="string" required>
-  The Replyke comment ID to moderate.
+  The Sublay comment ID to moderate.
 </ParamField>
 
 <ParamField body="action" type="string" required>
@@ -141,11 +141,11 @@ Rules are community guidelines displayed to members. They are ordered and each c
 Fetches all rules for a space.
 
 ```typescript
-const result = await replyke.spaces.fetchManyRules({ spaceId: "spc_abc123" });
+const result = await sublay.spaces.fetchManyRules({ spaceId: "spc_abc123" });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 **Returns** — `Promise<FetchManyRulesResponse>`
@@ -157,18 +157,18 @@ const result = await replyke.spaces.fetchManyRules({ spaceId: "spc_abc123" });
 Fetches a single rule by its ID.
 
 ```typescript
-const rule = await replyke.spaces.fetchRule({
+const rule = await sublay.spaces.fetchRule({
   spaceId: "spc_abc123",
   ruleId: "rul_xyz789",
 });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="ruleId" type="string" required>
-  The Replyke rule ID.
+  The Sublay rule ID.
 </ParamField>
 
 **Returns** — `Promise<Rule>`
@@ -180,7 +180,7 @@ const rule = await replyke.spaces.fetchRule({
 Creates a new rule for a space.
 
 ```typescript
-const rule = await replyke.spaces.createRule({
+const rule = await sublay.spaces.createRule({
   spaceId: "spc_abc123",
   title: "Be respectful",
   description: "Treat all members with respect and courtesy.",
@@ -188,7 +188,7 @@ const rule = await replyke.spaces.createRule({
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="title" type="string" required>
@@ -208,7 +208,7 @@ const rule = await replyke.spaces.createRule({
 Updates an existing rule's title or description.
 
 ```typescript
-const rule = await replyke.spaces.updateRule({
+const rule = await sublay.spaces.updateRule({
   spaceId: "spc_abc123",
   ruleId: "rul_xyz789",
   title: "Be respectful and kind",
@@ -217,11 +217,11 @@ const rule = await replyke.spaces.updateRule({
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="ruleId" type="string" required>
-  The Replyke rule ID to update.
+  The Sublay rule ID to update.
 </ParamField>
 
 <ParamField body="title" type="string">
@@ -241,18 +241,18 @@ const rule = await replyke.spaces.updateRule({
 Deletes a rule from a space.
 
 ```typescript
-const result = await replyke.spaces.deleteRule({
+const result = await sublay.spaces.deleteRule({
   spaceId: "spc_abc123",
   ruleId: "rul_xyz789",
 });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="ruleId" type="string" required>
-  The Replyke rule ID to delete.
+  The Sublay rule ID to delete.
 </ParamField>
 
 **Returns** — `Promise<DeleteRuleResponse>`
@@ -264,14 +264,14 @@ const result = await replyke.spaces.deleteRule({
 Sets the display order of all rules for a space by providing an ordered array of rule IDs.
 
 ```typescript
-const rules = await replyke.spaces.reorderRules({
+const rules = await sublay.spaces.reorderRules({
   spaceId: "spc_abc123",
   ruleIds: ["rul_first", "rul_second", "rul_third"],
 });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="ruleIds" type="string[]" required>
@@ -291,11 +291,11 @@ The digest feature allows a space to send a periodic newsletter-style webhook pa
 Fetches the current digest configuration for a space.
 
 ```typescript
-const config = await replyke.spaces.fetchDigestConfig({ spaceId: "spc_abc123" });
+const config = await sublay.spaces.fetchDigestConfig({ spaceId: "spc_abc123" });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 **Returns** — `Promise<DigestConfig>`
@@ -307,7 +307,7 @@ const config = await replyke.spaces.fetchDigestConfig({ spaceId: "spc_abc123" })
 Updates the digest configuration for a space.
 
 ```typescript
-const config = await replyke.spaces.updateDigestConfig({
+const config = await sublay.spaces.updateDigestConfig({
   spaceId: "spc_abc123",
   digestEnabled: true,
   digestWebhookUrl: "https://example.com/webhooks/digest",
@@ -318,7 +318,7 @@ const config = await replyke.spaces.updateDigestConfig({
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="digestEnabled" type="boolean">

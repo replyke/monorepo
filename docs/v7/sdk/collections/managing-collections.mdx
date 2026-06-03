@@ -9,10 +9,10 @@ The `useCollections` hook gives you a navigable view of the user's collection tr
 
 ## Setting Up
 
-`useCollections` requires a logged-in user. It reads the user and project context from the nearest `ReplykeProvider`.
+`useCollections` requires a logged-in user. It reads the user and project context from the nearest `SublayProvider`.
 
 ```tsx
-import { useCollections } from "@replyke/react-js";
+import { useCollections } from "@sublay/react-js";
 
 function CollectionsPanel() {
   const {
@@ -124,7 +124,7 @@ const specificResult = await isEntitySaved({ entityId: entity.id, collectionId: 
 Use [useCollectionEntitiesWrapper](/hooks/collections/use-collection-entities-wrapper) to fetch the paginated list of entities saved in a collection.
 
 ```tsx
-import { useCollectionEntitiesWrapper } from "@replyke/react-js";
+import { useCollectionEntitiesWrapper } from "@sublay/react-js";
 
 function CollectionFeed({ collectionId }) {
   const { entities, loading, hasMore, loadMore } = useCollectionEntitiesWrapper({

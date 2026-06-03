@@ -13,7 +13,7 @@ icon: "cube"
 - **`handleOAuthCallback`** — call this on the OAuth callback page to extract tokens from the URL fragment and set the authenticated session.
 
 <Note>
-  This hook is available in `@replyke/react-js` only. It uses `window.location` and is not compatible with React Native.
+  This hook is available in `@sublay/react-js` only. It uses `window.location` and is not compatible with React Native.
 </Note>
 
 ## Usage Example
@@ -21,7 +21,7 @@ icon: "cube"
 **Initiating sign-in:**
 
 ```tsx
-import { useOAuthSignIn } from "@replyke/react-js";
+import { useOAuthSignIn } from "@sublay/react-js";
 
 function SignInPage() {
   const { initiateOAuth, isLoading, error } = useOAuthSignIn();
@@ -49,7 +49,7 @@ function SignInPage() {
 
 ```tsx
 import { useEffect } from "react";
-import { useOAuthSignIn } from "@replyke/react-js";
+import { useOAuthSignIn } from "@sublay/react-js";
 
 function OAuthCallbackPage() {
   const { handleOAuthCallback } = useOAuthSignIn();
@@ -65,7 +65,7 @@ function OAuthCallbackPage() {
 **Linking an additional provider:**
 
 ```tsx
-import { useOAuthSignIn } from "@replyke/react-js";
+import { useOAuthSignIn } from "@sublay/react-js";
 
 function LinkGitHub() {
   const { linkOAuthProvider } = useOAuthSignIn();

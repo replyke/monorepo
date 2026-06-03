@@ -14,7 +14,7 @@ If the removed account is the currently active one, the SDK automatically switch
 
 <CodeGroup>
 ```tsx React
-import { useAccounts, useRemoveAccount } from "@replyke/react-js";
+import { useAccounts, useRemoveAccount } from "@sublay/react-js";
 
 function AccountList() {
   const { accounts } = useAccounts();
@@ -40,7 +40,7 @@ function AccountList() {
 ```
 
 ```tsx React Native
-import { useAccounts, useRemoveAccount } from "@replyke/react-native";
+import { useAccounts, useRemoveAccount } from "@sublay/react-native";
 
 function AccountItem({ userId }: { userId: string }) {
   const { removeAccount, isRemoving } = useRemoveAccount();

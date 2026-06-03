@@ -1,12 +1,12 @@
 ---
 title: "Components Overview"
-description: "Own your components with Replyke's CLI-based distribution system"
+description: "Own your components with Sublay's CLI-based distribution system"
 icon: "puzzle-piece"
 ---
 
-# Replyke Components
+# Sublay Components
 
-Replyke provides a **CLI-based component distribution** system inspired by shadcn/ui. Instead of hiding UI components in `node_modules`, Replyke copies the full source code directly into your project so you own and control every line.
+Sublay provides a **CLI-based component distribution** system inspired by shadcn/ui. Instead of hiding UI components in `node_modules`, Sublay copies the full source code directly into your project so you own and control every line.
 
 <Info>
 **The philosophy:** Copy, paste, customize. Not install and configure.
@@ -19,18 +19,18 @@ You get **source code**, not packages. You **own** your components and can modif
 ## How It Works
 
 <Steps>
-  <Step title="Initialize Replyke">
+  <Step title="Initialize Sublay">
     ```bash
-    npx @replyke/cli init
+    npx @sublay/cli init
     ```
     Configure your platform (React/React Native/Expo), styling preference (Tailwind/Inline styles), and component installation path.
   </Step>
 
   <Step title="Add Components">
     ```bash
-    npx @replyke/cli add comments-threaded
+    npx @sublay/cli add comments-threaded
     # or
-    npx @replyke/cli add comments-social
+    npx @sublay/cli add comments-social
     ```
     Components are copied directly into your `src/components/` directory as editable source files.
   </Step>
@@ -132,14 +132,14 @@ Every file is:
 
 ## Required Dependencies
 
-Components depend on Replyke's core libraries for data fetching, real-time updates, authentication, and more.
+Components depend on Sublay's core libraries for data fetching, real-time updates, authentication, and more.
 
 **For React (Web):**
 ```json
 {
   "dependencies": {
-    "@replyke/react-js": "^7.0.0",
-    "@replyke/ui-core-react-js": "^7.0.0"
+    "@sublay/react-js": "^7.0.0",
+    "@sublay/ui-core-react-js": "^7.0.0"
   }
 }
 ```
@@ -148,8 +148,8 @@ Components depend on Replyke's core libraries for data fetching, real-time updat
 ```json
 {
   "dependencies": {
-    "@replyke/react-native": "^7.0.0",
-    "@replyke/ui-core-react-native": "^7.0.0"
+    "@sublay/react-native": "^7.0.0",
+    "@sublay/ui-core-react-native": "^7.0.0"
   }
 }
 ```
@@ -182,7 +182,7 @@ The CLI checks for these and offers to install them automatically.
 
 ## Philosophy
 
-The Replyke CLI follows these principles:
+The Sublay CLI follows these principles:
 
 1. **Minimal Props** — Components work with just `entityId`. No complex configuration required.
 2. **Sensible Defaults** — Beautiful, accessible styling out of the box.

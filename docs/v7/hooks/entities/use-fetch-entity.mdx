@@ -1,17 +1,17 @@
 ---
 title: "Fetch entity"
-description: "Fetch a single entity by its Replyke entity ID"
+description: "Fetch a single entity by its Sublay entity ID"
 icon: "plug"
 ---
 
 ## Overview
 
-`useFetchEntity` returns a function that fetches a single entity by its Replyke entity ID. Use this for on-demand fetches outside of `EntityProvider`.
+`useFetchEntity` returns a function that fetches a single entity by its Sublay entity ID. Use this for on-demand fetches outside of `EntityProvider`.
 
 ## Usage Example
 
 ```tsx
-import { useFetchEntity } from "@replyke/react-js";
+import { useFetchEntity } from "@sublay/react-js";
 
 function EntityLoader({ entityId }: { entityId: string }) {
   const fetchEntity = useFetchEntity();
@@ -28,7 +28,7 @@ function EntityLoader({ entityId }: { entityId: string }) {
 ## Parameters
 
 <ParamField path="entityId" type="string" required>
-  The Replyke entity ID to fetch.
+  The Sublay entity ID to fetch.
 </ParamField>
 
 <ParamField path="include" type="string | string[]">

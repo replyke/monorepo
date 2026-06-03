@@ -1,35 +1,35 @@
 ---
 title: "Redux Integration"
-description: "Merge Replyke's Redux state into your existing store using ReplykeIntegrationProvider"
+description: "Merge Sublay's Redux state into your existing store using SublayIntegrationProvider"
 ---
 
-By default, `ReplykeProvider` creates and manages its own isolated Redux store. This is the recommended approach for most projects — no Redux configuration required.
+By default, `SublayProvider` creates and manages its own isolated Redux store. This is the recommended approach for most projects — no Redux configuration required.
 
-If your application already has its own Redux store, we strongly recommend merging Replyke's state into it using `ReplykeIntegrationProvider`. Running two separate Redux stores in the same React app is a common source of subtle bugs: React-Redux binds components to the nearest `<Provider>` in the tree, so hooks can silently read from the wrong store depending on where components are rendered.
+If your application already has its own Redux store, we strongly recommend merging Sublay's state into it using `SublayIntegrationProvider`. Running two separate Redux stores in the same React app is a common source of subtle bugs: React-Redux binds components to the nearest `<Provider>` in the tree, so hooks can silently read from the wrong store depending on where components are rendered.
 
 ## When to Use This
 
-**If your app already has a Redux store, use `ReplykeIntegrationProvider`.** This is the right path for virtually every app in that situation. The standalone `ReplykeProvider` is only appropriate for apps that don't use Redux at all.
+**If your app already has a Redux store, use `SublayIntegrationProvider`.** This is the right path for virtually every app in that situation. The standalone `SublayProvider` is only appropriate for apps that don't use Redux at all.
 
 The standalone provider creates its own internal store. When that coexists with your app's store, React-Redux binds components to whichever `<Provider>` is closest in the tree — which means hooks silently read from the wrong store depending on where a component is rendered. These bugs are hard to spot and hard to trace.
 
-The only reason to use `ReplykeProvider` alongside an existing Redux store is if you have a specific, deliberate reason to keep the two stores completely separate and you fully understand the implications. For nearly everyone, that's not the case.
+The only reason to use `SublayProvider` alongside an existing Redux store is if you have a specific, deliberate reason to keep the two stores completely separate and you fully understand the implications. For nearly everyone, that's not the case.
 
 ## Setup
 
 Integration mode requires three changes to your existing store and one change to your provider setup.
 
 <Steps>
-  <Step title="Add Replyke reducers to your store">
-    Import `replykeReducers` and `replykeApiReducer` from `@replyke/react-js` and add them to your store's `reducer` map. The keys must be exactly `replyke` and `replykeApi` — the SDK's internal selectors depend on these names.
+  <Step title="Add Sublay reducers to your store">
+    Import `sublayReducers` and `sublayApiReducer` from `@sublay/react-js` and add them to your store's `reducer` map. The keys must be exactly `sublay` and `sublayApi` — the SDK's internal selectors depend on these names.
 
     ```ts
     import { configureStore } from "@reduxjs/toolkit";
     import {
-      replykeReducers,
-      replykeApiReducer,
-      replykeMiddleware,
-    } from "@replyke/react-js";
+      sublayReducers,
+      sublayApiReducer,
+      sublayMiddleware,
+    } from "@sublay/react-js";
     import yourReducer from "./yourSlice";
 
     const store = configureStore({
@@ -37,12 +37,12 @@ Integration mode requires three changes to your existing store and one change to
         // Your own reducers
         yourFeature: yourReducer,
 
-        // Replyke — keys must be exactly these
-        replyke: replykeReducers,
-        replykeApi: replykeApiReducer,
+        // Sublay — keys must be exactly these
+        sublay: sublayReducers,
+        sublayApi: sublayApiReducer,
       },
       middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(...replykeMiddleware),
+        getDefaultMiddleware().concat(...sublayMiddleware),
     });
 
     export default store;
@@ -51,20 +51,20 @@ Integration mode requires three changes to your existing store and one change to
     ```
   </Step>
 
-  <Step title="Replace ReplykeProvider with ReplykeIntegrationProvider">
-    Use `ReplykeIntegrationProvider` instead of `ReplykeProvider`. This provider does not create a Redux store — it expects your own `<Provider>` to already be in the tree above it.
+  <Step title="Replace SublayProvider with SublayIntegrationProvider">
+    Use `SublayIntegrationProvider` instead of `SublayProvider`. This provider does not create a Redux store — it expects your own `<Provider>` to already be in the tree above it.
 
     ```tsx
     import { Provider } from "react-redux";
-    import { ReplykeIntegrationProvider } from "@replyke/react-js";
+    import { SublayIntegrationProvider } from "@sublay/react-js";
     import store from "./store";
 
     function App() {
       return (
         <Provider store={store}>
-          <ReplykeIntegrationProvider projectId="your-project-id">
+          <SublayIntegrationProvider projectId="your-project-id">
             {/* your app */}
-          </ReplykeIntegrationProvider>
+          </SublayIntegrationProvider>
         </Provider>
       );
     }
@@ -74,10 +74,10 @@ Integration mode requires three changes to your existing store and one change to
 
 ## Props
 
-`ReplykeIntegrationProvider` accepts the same props as `ReplykeProvider`:
+`SublayIntegrationProvider` accepts the same props as `SublayProvider`:
 
 <ParamField body="projectId" type="string" required>
-  Your Replyke project ID.
+  Your Sublay project ID.
 </ParamField>
 
 <ParamField body="signedToken" type="string | null">
@@ -86,23 +86,23 @@ Integration mode requires three changes to your existing store and one change to
 
 ## Exports Reference
 
-All integration exports are available from `@replyke/react-js`:
+All integration exports are available from `@sublay/react-js`:
 
 | Export | Type | Purpose |
 |--------|------|---------|
-| `replykeReducers` | `Reducer` | Combined reducer for all Replyke feature slices. Mount under the `replyke` key. |
-| `replykeApiReducer` | `Reducer` | RTK Query API reducer. Mount under the `replykeApi` key. |
-| `replykeApiMiddleware` | `Middleware` | RTK Query middleware for cache invalidation and subscriptions. |
-| `replykeMiddleware` | `Middleware[]` | Combined array of all required Replyke middleware. Spread into your middleware chain. |
-| `ReplykeIntegrationProvider` | `React.FC` | Context provider for integration mode. |
+| `sublayReducers` | `Reducer` | Combined reducer for all Sublay feature slices. Mount under the `sublay` key. |
+| `sublayApiReducer` | `Reducer` | RTK Query API reducer. Mount under the `sublayApi` key. |
+| `sublayApiMiddleware` | `Middleware` | RTK Query middleware for cache invalidation and subscriptions. |
+| `sublayMiddleware` | `Middleware[]` | Combined array of all required Sublay middleware. Spread into your middleware chain. |
+| `SublayIntegrationProvider` | `React.FC` | Context provider for integration mode. |
 
 ## State Shape
 
-When integrated, Replyke occupies two top-level keys in your store:
+When integrated, Sublay occupies two top-level keys in your store:
 
 ```ts
 {
-  replyke: {
+  sublay: {
     auth: { ... },          // Auth tokens, current user, initialization state
     accounts: { ... },      // Multi-account list and active account
     user: { ... },          // Current user profile
@@ -112,7 +112,7 @@ When integrated, Replyke occupies two top-level keys in your store:
     spaceLists: { ... },
     chat: { ... },
   },
-  replykeApi: { ... },      // RTK Query cache (collections, entity lists, etc.)
+  sublayApi: { ... },      // RTK Query cache (collections, entity lists, etc.)
   
   // Your own slices
   yourFeature: { ... },
@@ -120,19 +120,19 @@ When integrated, Replyke occupies two top-level keys in your store:
 ```
 
 <Note>
-  The `replyke` and `replykeApi` keys are required by Replyke's internal selectors. Mounting the reducers under different keys will cause the SDK to malfunction.
+  The `sublay` and `sublayApi` keys are required by Sublay's internal selectors. Mounting the reducers under different keys will cause the SDK to malfunction.
 </Note>
 
 ## TypeScript
 
-Replyke exports `ReplykeState` if you need to type a state slice that references Replyke's shape:
+Sublay exports `SublayState` if you need to type a state slice that references Sublay's shape:
 
 ```ts
-import type { ReplykeState } from "@replyke/react-js";
+import type { SublayState } from "@sublay/react-js";
 
 interface RootState {
-  replyke: ReplykeState;
-  replykeApi: unknown; // RTK Query manages this type internally
+  sublay: SublayState;
+  sublayApi: unknown; // RTK Query manages this type internally
   yourFeature: YourFeatureState;
 }
 ```

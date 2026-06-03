@@ -1,9 +1,9 @@
 ---
 title: "Infusing Data"
-description: "Merging Replyke entity data with data from your own backend"
+description: "Merging Sublay entity data with data from your own backend"
 ---
 
-**Data infusion** lets you merge Replyke entity data with records from your own system at the point of display. This is useful when your entities are linked to content in your own database (via `foreignId`) and you want to render a combined view without duplicating data in Replyke.
+**Data infusion** lets you merge Sublay entity data with records from your own system at the point of display. This is useful when your entities are linked to content in your own database (via `foreignId`) and you want to render a combined view without duplicating data in Sublay.
 
 ## How It Works
 
@@ -14,7 +14,7 @@ Results are cached by `foreignId` — each external record is only fetched once 
 ## Usage Example
 
 ```tsx
-import { useEntityList } from "@replyke/react-js";
+import { useEntityList } from "@sublay/react-js";
 import { useEffect } from "react";
 
 async function fetchProductDetails(productId: string) {
@@ -64,7 +64,7 @@ infuseData: (foreignId: string) => Promise<Record<string, any> | null>
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `entities` | `Entity[]` | Raw entities from Replyke |
+| `entities` | `Entity[]` | Raw entities from Sublay |
 | `infusedEntities` | `(Entity & { infusion: Record<string, any> })[]` | Entities merged with your external data |
 
 Use `infusedEntities` when rendering — it always has the same length as `entities` and contains an `infusion` object on each item (empty if no `foreignId` or if `infuseData` returned `null`).

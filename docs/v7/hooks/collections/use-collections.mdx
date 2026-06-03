@@ -8,12 +8,12 @@ icon: "cube"
 
 `useCollections` is the primary hook for working with a user's collection library. It automatically fetches the root collection on mount, loads sub-collections as you navigate deeper, and exposes actions for creating, updating, deleting, and saving entities.
 
-<Note>Requires an authenticated user. The hook reads user and project context from the nearest `ReplykeProvider`.</Note>
+<Note>Requires an authenticated user. The hook reads user and project context from the nearest `SublayProvider`.</Note>
 
 ## Usage Example
 
 ```tsx
-import { useCollections } from "@replyke/react-js";
+import { useCollections } from "@sublay/react-js";
 
 function CollectionsPanel() {
   const {

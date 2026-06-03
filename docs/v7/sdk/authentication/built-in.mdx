@@ -3,14 +3,14 @@ title: "Built-in Auth"
 description: "Email/password sign-up, sign-in, and sign-out flows"
 ---
 
-Replyke's built-in authentication lets you register and sign in users with an email address and password without building your own auth backend. The SDK's `useAuth` hook exposes all the actions you need.
+Sublay's built-in authentication lets you register and sign in users with an email address and password without building your own auth backend. The SDK's `useAuth` hook exposes all the actions you need.
 
 ## Sign Up
 
 Call `signUpWithEmailAndPassword` with at minimum an `email` and `password`. Additional profile fields are optional.
 
 ```tsx
-import { useAuth } from "@replyke/react-js";
+import { useAuth } from "@sublay/react-js";
 
 function SignUpForm() {
   const { signUpWithEmailAndPassword } = useAuth();
@@ -66,7 +66,7 @@ You can pass additional profile data at registration time:
 ## Sign In
 
 ```tsx
-import { useAuth } from "@replyke/react-js";
+import { useAuth } from "@sublay/react-js";
 
 function SignInForm() {
   const { signInWithEmailAndPassword } = useAuth();
@@ -99,7 +99,7 @@ function SignInForm() {
 `signOut` revokes the current session's entire token family on the server and clears local auth state.
 
 ```tsx
-import { useAuth } from "@replyke/react-js";
+import { useAuth } from "@sublay/react-js";
 
 function SignOutButton() {
   const { signOut } = useAuth();
@@ -113,7 +113,7 @@ function SignOutButton() {
 Users who signed up with email/password can change their password while authenticated. The current password must be provided for verification.
 
 ```tsx
-import { useAuth } from "@replyke/react-js";
+import { useAuth } from "@sublay/react-js";
 
 function ChangePasswordForm() {
   const { changePassword } = useAuth();
@@ -143,10 +143,10 @@ function ChangePasswordForm() {
 
 ## Password Reset
 
-Users who forget their password can request a reset email. Replyke sends a link to the registered email address. The link expires after 1 hour.
+Users who forget their password can request a reset email. Sublay sends a link to the registered email address. The link expires after 1 hour.
 
 ```tsx
-import { useRequestPasswordReset } from "@replyke/react-js";
+import { useRequestPasswordReset } from "@sublay/react-js";
 
 function ForgotPasswordForm() {
   const requestPasswordReset = useRequestPasswordReset();
@@ -178,7 +178,7 @@ function ForgotPasswordForm() {
 Check whether the SDK has finished initializing and whether a user is currently signed in:
 
 ```tsx
-import { useAuth } from "@replyke/react-js";
+import { useAuth } from "@sublay/react-js";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { initialized, accessToken } = useAuth();
@@ -192,12 +192,12 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 ## Email Verification
 
-After sign-up, you can prompt users to verify their email address. Replyke sends a short-lived token (5 minutes) via email. There are two delivery modes: a **code** the user types back into your app, or a **link** they click to verify automatically.
+After sign-up, you can prompt users to verify their email address. Sublay sends a short-lived token (5 minutes) via email. There are two delivery modes: a **code** the user types back into your app, or a **link** they click to verify automatically.
 
 ### Send a verification email
 
 ```tsx
-import { useSendVerificationEmail } from "@replyke/react-js";
+import { useSendVerificationEmail } from "@sublay/react-js";
 
 function VerifyEmailPrompt() {
   const sendVerificationEmail = useSendVerificationEmail();
@@ -235,7 +235,7 @@ await sendVerificationEmail({
 When using `mode: "code"`, collect the token from the user and call `useVerifyEmail`:
 
 ```tsx
-import { useVerifyEmail } from "@replyke/react-js";
+import { useVerifyEmail } from "@sublay/react-js";
 
 function VerifyCodeForm() {
   const verifyEmail = useVerifyEmail();

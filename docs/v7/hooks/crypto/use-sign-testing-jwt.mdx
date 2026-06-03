@@ -6,7 +6,7 @@ icon: "plug"
 
 ## Overview
 
-Returns a function that calls the Replyke API to sign a JWT using your project's private key. This is intended **exclusively for development and testing** of external authentication flows — it lets you generate valid user JWTs from the client without setting up a backend.
+Returns a function that calls the Sublay API to sign a JWT using your project's private key. This is intended **exclusively for development and testing** of external authentication flows — it lets you generate valid user JWTs from the client without setting up a backend.
 
 <Warning>
 **Never use this hook in production.** Calling this function exposes your project's private key in client-side code, which is a critical security vulnerability. In production, JWT signing must happen on your backend server. See the [External Authentication](/sdk/authentication/external) guide.
@@ -15,8 +15,8 @@ Returns a function that calls the Replyke API to sign a JWT using your project's
 ## Usage Example
 
 ```tsx
-import { useSignTestingJwt } from "@replyke/react-js";
-import { useAuth } from "@replyke/react-js";
+import { useSignTestingJwt } from "@sublay/react-js";
+import { useAuth } from "@sublay/react-js";
 
 function DevAuthHelper() {
   const signTestingJwt = useSignTestingJwt();
@@ -45,11 +45,11 @@ function DevAuthHelper() {
 ## Parameters
 
 <ParamField body="projectId" type="string" required>
-  Your Replyke project ID.
+  Your Sublay project ID.
 </ParamField>
 
 <ParamField body="privateKey" type="string" required>
-  Your project's private key, used to sign the JWT. This key is available in your Replyke dashboard. **Never expose this in production code.**
+  Your project's private key, used to sign the JWT. This key is available in your Sublay dashboard. **Never expose this in production code.**
 </ParamField>
 
 <ParamField body="userData" type="object" required>

@@ -3,7 +3,7 @@ title: "Entities"
 description: "Create and manage content entities, reactions, drafts, and view counts from your server"
 ---
 
-Entities are the core content objects in Replyke — posts, articles, products, or any item in your application that users interact with. The `entities` module gives you full server-side control over their lifecycle.
+Entities are the core content objects in Sublay — posts, articles, products, or any item in your application that users interact with. The `entities` module gives you full server-side control over their lifecycle.
 
 ---
 
@@ -12,7 +12,7 @@ Entities are the core content objects in Replyke — posts, articles, products, 
 Creates a new entity.
 
 ```typescript
-const entity = await replyke.entities.createEntity({
+const entity = await sublay.entities.createEntity({
   foreignId: "post-42",
   title: "My First Post",
   content: "Hello world",
@@ -59,7 +59,7 @@ const entity = await replyke.entities.createEntity({
 </ParamField>
 
 <ParamField body="userId" type="string">
-  The Replyke user ID to set as the entity's author.
+  The Sublay user ID to set as the entity's author.
 </ParamField>
 
 <ParamField body="createdAt" type="string">
@@ -76,14 +76,14 @@ const entity = await replyke.entities.createEntity({
 
 ### fetchEntity
 
-Fetches a single entity by its Replyke ID.
+Fetches a single entity by its Sublay ID.
 
 ```typescript
-const entity = await replyke.entities.fetchEntity({ entityId: "ent_xyz789" });
+const entity = await sublay.entities.fetchEntity({ entityId: "ent_xyz789" });
 ```
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID.
+  The Sublay entity ID.
 </ParamField>
 
 **Returns** — `Promise<Entity>`
@@ -95,7 +95,7 @@ const entity = await replyke.entities.fetchEntity({ entityId: "ent_xyz789" });
 Fetches an entity by your application's own identifier. Optionally creates it if not found.
 
 ```typescript
-const entity = await replyke.entities.fetchEntityByForeignId({
+const entity = await sublay.entities.fetchEntityByForeignId({
   foreignId: "post-42",
   createIfNotFound: true,
 });
@@ -118,7 +118,7 @@ const entity = await replyke.entities.fetchEntityByForeignId({
 Fetches an entity by its short, human-readable ID (used in share URLs).
 
 ```typescript
-const entity = await replyke.entities.fetchEntityByShortId({ shortId: "abc12" });
+const entity = await sublay.entities.fetchEntityByShortId({ shortId: "abc12" });
 ```
 
 <ParamField body="shortId" type="string" required>
@@ -134,7 +134,7 @@ const entity = await replyke.entities.fetchEntityByShortId({ shortId: "abc12" })
 Fetches a filtered, paginated list of entities. Supports rich filtering by metadata, keywords, location, and more.
 
 ```typescript
-const { data, metadata } = await replyke.entities.fetchManyEntities({
+const { data, metadata } = await sublay.entities.fetchManyEntities({
   spaceId: "spc_abc123",
   sortBy: "hot",
   page: 1,
@@ -208,7 +208,7 @@ const { data, metadata } = await replyke.entities.fetchManyEntities({
 Updates fields on an existing entity.
 
 ```typescript
-const entity = await replyke.entities.updateEntity({
+const entity = await sublay.entities.updateEntity({
   entityId: "ent_xyz789",
   title: "Updated Title",
   metadata: { featured: true },
@@ -216,7 +216,7 @@ const entity = await replyke.entities.updateEntity({
 ```
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID to update.
+  The Sublay entity ID to update.
 </ParamField>
 
 <ParamField body="title" type="string">
@@ -260,11 +260,11 @@ const entity = await replyke.entities.updateEntity({
 Permanently deletes an entity and its associated data.
 
 ```typescript
-await replyke.entities.deleteEntity({ entityId: "ent_xyz789" });
+await sublay.entities.deleteEntity({ entityId: "ent_xyz789" });
 ```
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID to delete.
+  The Sublay entity ID to delete.
 </ParamField>
 
 **Returns** — `Promise<void>`
@@ -276,14 +276,14 @@ await replyke.entities.deleteEntity({ entityId: "ent_xyz789" });
 Increments the view counter on an entity. Call this when a user views content to track engagement.
 
 ```typescript
-const entity = await replyke.entities.incrementEntityViews({
+const entity = await sublay.entities.incrementEntityViews({
   entityId: "ent_xyz789",
   count: 1,
 });
 ```
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID.
+  The Sublay entity ID.
 </ParamField>
 
 <ParamField body="count" type="number">
@@ -299,7 +299,7 @@ const entity = await replyke.entities.incrementEntityViews({
 Fetches a user's unpublished draft entities.
 
 ```typescript
-const { data, metadata } = await replyke.entities.fetchDrafts({
+const { data, metadata } = await sublay.entities.fetchDrafts({
   userId: "usr_abc123",
   page: 1,
   limit: 20,
@@ -307,7 +307,7 @@ const { data, metadata } = await replyke.entities.fetchDrafts({
 ```
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID whose drafts to fetch.
+  The Sublay user ID whose drafts to fetch.
 </ParamField>
 
 <ParamField body="page" type="number">
@@ -327,11 +327,11 @@ const { data, metadata } = await replyke.entities.fetchDrafts({
 Publishes a draft entity, making it publicly visible.
 
 ```typescript
-const entity = await replyke.entities.publishDraft({ entityId: "ent_xyz789" });
+const entity = await sublay.entities.publishDraft({ entityId: "ent_xyz789" });
 ```
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID of the draft to publish.
+  The Sublay entity ID of the draft to publish.
 </ParamField>
 
 **Returns** — `Promise<Entity>`
@@ -343,13 +343,13 @@ const entity = await replyke.entities.publishDraft({ entityId: "ent_xyz789" });
 Fetches the highest-scored (top) comment on an entity. Returns `null` if the entity has no comments.
 
 ```typescript
-const topComment = await replyke.entities.fetchTopComment({
+const topComment = await sublay.entities.fetchTopComment({
   entityId: "ent_xyz789",
 });
 ```
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID.
+  The Sublay entity ID.
 </ParamField>
 
 **Returns** — `Promise<TopComment | null>`
@@ -361,7 +361,7 @@ const topComment = await replyke.entities.fetchTopComment({
 Adds a reaction from a user to an entity.
 
 ```typescript
-const reaction = await replyke.entities.addReaction({
+const reaction = await sublay.entities.addReaction({
   entityId: "ent_xyz789",
   userId: "usr_abc123",
   reactionType: "like",
@@ -369,11 +369,11 @@ const reaction = await replyke.entities.addReaction({
 ```
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID.
+  The Sublay entity ID.
 </ParamField>
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID of the reactor.
+  The Sublay user ID of the reactor.
 </ParamField>
 
 <ParamField body="reactionType" type="ReactionType" required>
@@ -389,18 +389,18 @@ const reaction = await replyke.entities.addReaction({
 Removes a user's existing reaction from an entity.
 
 ```typescript
-await replyke.entities.removeReaction({
+await sublay.entities.removeReaction({
   entityId: "ent_xyz789",
   userId: "usr_abc123",
 });
 ```
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID.
+  The Sublay entity ID.
 </ParamField>
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID whose reaction to remove.
+  The Sublay user ID whose reaction to remove.
 </ParamField>
 
 **Returns** — `Promise<void>`
@@ -412,7 +412,7 @@ await replyke.entities.removeReaction({
 Fetches a paginated list of reactions on an entity, optionally filtered by reaction type.
 
 ```typescript
-const { data, metadata } = await replyke.entities.fetchReactions({
+const { data, metadata } = await sublay.entities.fetchReactions({
   entityId: "ent_xyz789",
   reaction: "like",
   page: 1,
@@ -421,7 +421,7 @@ const { data, metadata } = await replyke.entities.fetchReactions({
 ```
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID.
+  The Sublay entity ID.
 </ParamField>
 
 <ParamField body="reaction" type="ReactionType">
@@ -445,7 +445,7 @@ const { data, metadata } = await replyke.entities.fetchReactions({
 Checks what reaction (if any) a specific user has left on an entity.
 
 ```typescript
-const { reactionType } = await replyke.entities.getUserReaction({
+const { reactionType } = await sublay.entities.getUserReaction({
   entityId: "ent_xyz789",
   userId: "usr_abc123",
 });
@@ -453,11 +453,11 @@ const { reactionType } = await replyke.entities.getUserReaction({
 ```
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID.
+  The Sublay entity ID.
 </ParamField>
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID to check.
+  The Sublay user ID to check.
 </ParamField>
 
 **Returns** — `Promise<{ reactionType: ReactionType | null }>`
@@ -469,18 +469,18 @@ const { reactionType } = await replyke.entities.getUserReaction({
 Checks whether a user has saved an entity to any of their collections.
 
 ```typescript
-const { isSaved } = await replyke.entities.isEntitySaved({
+const { isSaved } = await sublay.entities.isEntitySaved({
   entityId: "ent_xyz789",
   userId: "usr_abc123",
 });
 ```
 
 <ParamField body="entityId" type="string" required>
-  The Replyke entity ID.
+  The Sublay entity ID.
 </ParamField>
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID to check.
+  The Sublay user ID to check.
 </ParamField>
 
 **Returns** — `Promise<{ isSaved: boolean }>`

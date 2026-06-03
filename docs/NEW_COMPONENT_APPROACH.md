@@ -1,13 +1,13 @@
-# Replyke's New Component Distribution Approach - Documentation Brief
+# Sublay's New Component Distribution Approach - Documentation Brief
 
 **Audience**: Agent writing public-facing documentation
-**Purpose**: Complete technical and conceptual understanding of Replyke's new CLI-based component distribution system
+**Purpose**: Complete technical and conceptual understanding of Sublay's new CLI-based component distribution system
 
 ---
 
 ## Executive Summary
 
-Replyke has fundamentally changed how developers add comment systems to their applications. We've moved from the traditional **npm package approach** (install, import, style with props) to a **shadcn-inspired CLI approach** (copy source code into your project and customize directly).
+Sublay has fundamentally changed how developers add comment systems to their applications. We've moved from the traditional **npm package approach** (install, import, style with props) to a **shadcn-inspired CLI approach** (copy source code into your project and customize directly).
 
 ---
 
@@ -17,14 +17,14 @@ Replyke has fundamentally changed how developers add comment systems to their ap
 
 **Installation:**
 ```bash
-npm install @replyke/comments-threaded
+npm install @sublay/comments-threaded
 # or
-npm install @replyke/comments-social
+npm install @sublay/comments-social
 ```
 
 **Usage:**
 ```tsx
-import { ThreadedCommentSection } from '@replyke/comments-threaded';
+import { ThreadedCommentSection } from '@sublay/comments-threaded';
 
 function App() {
   return (
@@ -72,28 +72,28 @@ Users get **source code**, not packages. They **own** their components and can m
 
 ### How It Works Now
 
-**Step 1: Initialize Replyke in your project**
+**Step 1: Initialize Sublay in your project**
 ```bash
-npx @replyke/cli init
+npx @sublay/cli init
 ```
 
 This command:
 - Detects your project type (React, React Native, or Expo)
 - Asks for styling preference (Tailwind CSS or Inline Styles)
 - Asks where to install components (default: `src/components`)
-- Creates a `replyke.json` configuration file
-- Checks for required peer dependencies (@replyke/react-js, @replyke/ui-core-react-js)
+- Creates a `sublay.json` configuration file
+- Checks for required peer dependencies (@sublay/react-js, @sublay/ui-core-react-js)
 - Optionally installs missing dependencies
 
 **Step 2: Add a component**
 ```bash
-npx @replyke/cli add comments-threaded
+npx @sublay/cli add comments-threaded
 # or
-npx @replyke/cli add comments-social
+npx @sublay/cli add comments-social
 ```
 
 This command:
-- Reads your `replyke.json` config
+- Reads your `sublay.json` config
 - Fetches the component from the registry (local during dev, GitHub in production)
 - Copies all source files into your project at `src/components/comments-threaded/`
 - Transforms imports to work with your project structure
@@ -121,7 +121,7 @@ Change colors, layouts, add features, remove elements - it's YOUR code now.
 
 ### File Structure After Installation
 
-When you run `npx @replyke/cli add comments-threaded`, you get this structure:
+When you run `npx @sublay/cli add comments-threaded`, you get this structure:
 
 ```
 src/components/comments-threaded/
@@ -163,7 +163,7 @@ src/components/comments-threaded/
 ### For Social Comments
 
 ```bash
-npx @replyke/cli add comments-social
+npx @sublay/cli add comments-social
 ```
 
 Similar structure but with Instagram-inspired components:
@@ -206,7 +206,7 @@ Each component comes in TWO styling flavors:
 #### 1. Inline Styles (`styled`)
 ```bash
 # During init, select "Inline Styles"
-npx @replyke/cli add comments-threaded
+npx @sublay/cli add comments-threaded
 ```
 
 **Characteristics:**
@@ -240,7 +240,7 @@ npx @replyke/cli add comments-threaded
 #### 2. Tailwind CSS (`tailwind`)
 ```bash
 # During init, select "Tailwind CSS"
-npx @replyke/cli add comments-threaded
+npx @sublay/cli add comments-threaded
 ```
 
 **Characteristics:**
@@ -327,7 +327,7 @@ interface SocialCommentSectionProps {
 
 ## Required Dependencies
 
-Components are NOT standalone. They depend on Replyke's core libraries for:
+Components are NOT standalone. They depend on Sublay's core libraries for:
 - Comment data fetching & caching
 - Real-time updates
 - Authentication integration
@@ -338,8 +338,8 @@ Components are NOT standalone. They depend on Replyke's core libraries for:
 ```json
 {
   "dependencies": {
-    "@replyke/react-js": "^6.0.0",
-    "@replyke/ui-core-react-js": "^6.0.0"
+    "@sublay/react-js": "^6.0.0",
+    "@sublay/ui-core-react-js": "^6.0.0"
   }
 }
 ```
@@ -348,8 +348,8 @@ Components are NOT standalone. They depend on Replyke's core libraries for:
 ```json
 {
   "dependencies": {
-    "@replyke/react-native": "^6.0.0",  // or @replyke/expo
-    "@replyke/ui-core-react-native": "^6.0.0"
+    "@sublay/react-native": "^6.0.0",  // or @sublay/expo
+    "@sublay/ui-core-react-native": "^6.0.0"
   }
 }
 ```
@@ -438,7 +438,7 @@ return (
     <CommentsFeed ... />
 
     {/* Add custom footer */}
-    <footer>Powered by Replyke</footer>
+    <footer>Powered by Sublay</footer>
   </div>
 );
 ```
@@ -519,14 +519,14 @@ Components use text-based icons (arrows, hearts, dots) or Unicode symbols. Repla
 
 1. **Install CLI** (or use npx)
    ```bash
-   npm install -g @replyke/cli
+   npm install -g @sublay/cli
    # or just use npx (no install needed)
    ```
 
 2. **Initialize in your project**
    ```bash
    cd my-react-app
-   npx @replyke/cli init
+   npx @sublay/cli init
    ```
 
    Prompts:
@@ -534,17 +534,17 @@ Components use text-based icons (arrows, hearts, dots) or Unicode symbols. Repla
    - Styling? → Tailwind CSS
    - Components path? → src/components
 
-   Creates: `replyke.json`
+   Creates: `sublay.json`
 
 3. **Add a component**
    ```bash
-   npx @replyke/cli add comments-threaded
+   npx @sublay/cli add comments-threaded
    ```
 
    Output:
    - ✅ Successfully installed 25 files!
    - 📁 Files added to src/components/comments-threaded
-   - 📦 Required dependencies: @replyke/react-js@^6.0.0
+   - 📦 Required dependencies: @sublay/react-js@^6.0.0
    - 📖 Usage: import { ThreadedCommentSection } from './components/comments-threaded'
 
 4. **Use in your app**
@@ -571,7 +571,7 @@ Components use text-based icons (arrows, hearts, dots) or Unicode symbols. Repla
 ### Adding Another Component
 
 ```bash
-npx @replyke/cli add comments-social
+npx @sublay/cli add comments-social
 ```
 
 Now you have both:
@@ -585,8 +585,8 @@ Use whichever fits your UI better, or use different ones on different pages.
 If you initialized with inline styles but want Tailwind:
 
 1. Delete existing components: `rm -rf src/components/comments-*`
-2. Edit `replyke.json`: Change `"style": "styled"` to `"style": "tailwind"`
-3. Re-add: `npx @replyke/cli add comments-threaded`
+2. Edit `sublay.json`: Change `"style": "styled"` to `"style": "tailwind"`
+3. Re-add: `npx @sublay/cli add comments-threaded`
 
 (In future, we may add a `diff` command to help update components)
 
@@ -628,8 +628,8 @@ registry/
   "version": "1.0.0",
   "description": "Threaded comment system with upvotes/downvotes, nested replies, and moderation",
   "dependencies": [
-    "@replyke/react-js@^6.0.0",
-    "@replyke/ui-core-react-js@^6.0.0"
+    "@sublay/react-js@^6.0.0",
+    "@sublay/ui-core-react-js@^6.0.0"
   ],
   "files": [
     {
@@ -639,7 +639,7 @@ registry/
     },
     // ... all 25 files listed
   ],
-  "registryUrl": "https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-threaded/styled",
+  "registryUrl": "https://raw.githubusercontent.com/sublay/cli/main/registry/react/comments-threaded/styled",
   "exports": {
     "mainComponent": "ThreadedCommentSection",
     "mainFile": "threaded-comment-section",
@@ -655,9 +655,9 @@ registry/
 - CLI reads from local files
 
 **In Production (npx usage):**
-- GitHub repository: `https://github.com/replyke/cli`
+- GitHub repository: `https://github.com/sublay-io/cli`
 - CLI fetches from GitHub raw URLs
-- Example: `https://raw.githubusercontent.com/replyke/cli/main/registry/react/comments-threaded/styled/registry.json`
+- Example: `https://raw.githubusercontent.com/sublay/cli/main/registry/react/comments-threaded/styled/registry.json`
 
 Users don't need to know this - CLI handles it automatically.
 
@@ -667,7 +667,7 @@ Users don't need to know this - CLI handles it automatically.
 
 | Aspect | Old Approach (npm packages) | New Approach (CLI) |
 |--------|---------------------------|-------------------|
-| **Installation** | `npm install @replyke/comments-threaded` | `npx @replyke/cli add comments-threaded` |
+| **Installation** | `npm install @sublay/comments-threaded` | `npx @sublay/cli add comments-threaded` |
 | **Code Location** | `node_modules/` (hidden) | `src/components/` (visible) |
 | **Ownership** | Library code, can't modify | Your code, full control |
 | **Customization** | Via `styleCallbacks` prop (limited surfaces) | Edit source code directly (unlimited) |
@@ -689,18 +689,18 @@ Users don't need to know this - CLI handles it automatically.
 
 ### For Existing Users
 
-If you're currently using `@replyke/comments-threaded` from npm:
+If you're currently using `@sublay/comments-threaded` from npm:
 
 **Step 1: Install CLI version alongside (for testing)**
 ```bash
-npx @replyke/cli init
-npx @replyke/cli add comments-threaded
+npx @sublay/cli init
+npx @sublay/cli add comments-threaded
 ```
 
 **Step 2: Update your import**
 ```tsx
 // Old
-import { ThreadedCommentSection } from '@replyke/comments-threaded';
+import { ThreadedCommentSection } from '@sublay/comments-threaded';
 
 // New
 import { ThreadedCommentSection } from './components/comments-threaded';
@@ -737,7 +737,7 @@ Open `src/components/comments-threaded/components/single-comment/single-comment.
 
 **Step 5: Test thoroughly, then uninstall old package**
 ```bash
-npm uninstall @replyke/comments-threaded
+npm uninstall @sublay/comments-threaded
 ```
 
 ### Mapping styleCallbacks to Source Files
@@ -877,7 +877,7 @@ Only component source files are copied.
 
 These are planned but not implemented yet:
 
-1. **Diff Command**: `npx @replyke/cli diff comments-threaded` to see what changed in new versions
+1. **Diff Command**: `npx @sublay/cli diff comments-threaded` to see what changed in new versions
 2. **Update Command**: Smart merging of updates while preserving user customizations
 3. **More Platforms**: React Native threaded comments, Vue, Svelte versions
 4. **Component Variants**: Compact mode, minimal mode, dark-only variants
@@ -887,11 +887,11 @@ These are planned but not implemented yet:
 
 ## Common Questions to Address in Docs
 
-### "Do I still need @replyke/react-js?"
+### "Do I still need @sublay/react-js?"
 
 **Yes.** The CLI components handle UI only. They depend on:
-- `@replyke/react-js` - Data layer (fetching, caching, real-time updates)
-- `@replyke/ui-core-react-js` - Core hooks and utilities
+- `@sublay/react-js` - Data layer (fetching, caching, real-time updates)
+- `@sublay/ui-core-react-js` - Core hooks and utilities
 
 These remain as npm packages because they don't require customization (they're not UI).
 
@@ -926,18 +926,18 @@ Manually, yes (rewrite styles). Automatically, not yet. Choose wisely during ini
 Suggested docs outline:
 
 1. **Introduction**
-   - What is Replyke CLI
+   - What is Sublay CLI
    - Benefits over traditional npm packages
    - Quick start (3 commands to working comments)
 
 2. **Installation**
    - Prerequisites (React project, Node 18+)
-   - `npx @replyke/cli init`
+   - `npx @sublay/cli init`
    - Configuration options
 
 3. **Adding Components**
-   - `npx @replyke/cli add comments-threaded`
-   - `npx @replyke/cli add comments-social`
+   - `npx @sublay/cli add comments-threaded`
+   - `npx @sublay/cli add comments-social`
    - What gets installed
 
 4. **Component Reference**

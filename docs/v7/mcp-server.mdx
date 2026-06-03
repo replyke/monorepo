@@ -1,25 +1,25 @@
 ---
 title: "MCP Server"
-description: "Integrate Replyke documentation into AI tools like Claude Code, Cursor, and Windsurf using the Model Context Protocol."
+description: "Integrate Sublay documentation into AI tools like Claude Code, Cursor, and Windsurf using the Model Context Protocol."
 icon: "brain-circuit"
 ---
 
-The Replyke MCP (Model Context Protocol) server gives AI development tools direct access to the Replyke documentation. Once configured, your AI assistant can search and reference the complete docs in real-time — without you having to paste context manually.
+The Sublay MCP (Model Context Protocol) server gives AI development tools direct access to the Sublay documentation. Once configured, your AI assistant can search and reference the complete docs in real-time — without you having to paste context manually.
 
 ## Server URL
 
 ```
-https://docs.replyke.com/mcp
+https://docs.sublay.io/mcp
 ```
 
 ## Available Tools
 
-### search_replyke_documentation
+### search_sublay_documentation
 
-Searches across the full Replyke documentation knowledge base to find relevant pages, code examples, API references, and guides.
+Searches across the full Sublay documentation knowledge base to find relevant pages, code examples, API references, and guides.
 
 **Useful for:**
-- Answering questions about how Replyke features work
+- Answering questions about how Sublay features work
 - Finding specific API endpoints or hook signatures
 - Understanding integration patterns and configuration options
 - Locating code examples for any SDK feature
@@ -36,20 +36,20 @@ Searches across the full Replyke documentation knowledge base to find relevant p
   <Step title="Open MCP settings">
     Run `/mcp` in Claude Code or open the MCP configuration file.
   </Step>
-  <Step title="Add the Replyke server">
+  <Step title="Add the Sublay server">
     Add the following entry:
     ```json
     {
       "mcpServers": {
-        "replyke": {
-          "url": "https://docs.replyke.com/mcp"
+        "sublay": {
+          "url": "https://docs.sublay.io/mcp"
         }
       }
     }
     ```
   </Step>
   <Step title="Restart Claude Code">
-    The Replyke MCP server will be available in your next session.
+    The Sublay MCP server will be available in your next session.
   </Step>
 </Steps>
 
@@ -60,7 +60,7 @@ Searches across the full Replyke documentation knowledge base to find relevant p
     Go to **Settings → MCP**.
   </Step>
   <Step title="Add the server URL">
-    Enter `https://docs.replyke.com/mcp` and save.
+    Enter `https://docs.sublay.io/mcp` and save.
   </Step>
   <Step title="Restart Cursor">
     The integration activates on next launch.
@@ -74,7 +74,7 @@ Searches across the full Replyke documentation knowledge base to find relevant p
     Navigate to the MCP integration section.
   </Step>
   <Step title="Add the server URL">
-    Enter `https://docs.replyke.com/mcp` and save.
+    Enter `https://docs.sublay.io/mcp` and save.
   </Step>
   <Step title="Restart Windsurf">
     The integration activates on next launch.
@@ -85,9 +85,9 @@ Searches across the full Replyke documentation knowledge base to find relevant p
 
 ## Usage
 
-Once installed, your AI assistant uses the MCP server automatically when you ask about Replyke. Example prompts:
+Once installed, your AI assistant uses the MCP server automatically when you ask about Sublay. Example prompts:
 
-- "How do I set up authentication with an external user system in Replyke?"
+- "How do I set up authentication with an external user system in Sublay?"
 - "Show me how to use `useEntityList` with filters"
 - "What fields does the Space data model have?"
 - "How do I configure webhooks for push notifications?"
@@ -103,7 +103,7 @@ The assistant retrieves accurate, up-to-date answers directly from the official 
     The MCP server always reflects the live documentation — no stale training data.
   </Card>
   <Card title="Accurate Code Examples" icon="code">
-    Suggestions are grounded in actual Replyke patterns and API shapes.
+    Suggestions are grounded in actual Sublay patterns and API shapes.
   </Card>
   <Card title="No Context Pasting" icon="bolt">
     Skip copying documentation into prompts — the assistant fetches what it needs automatically.
@@ -119,7 +119,7 @@ The assistant retrieves accurate, up-to-date answers directly from the official 
 
 If the integration is not working:
 
-1. Verify the server URL is entered correctly: `https://docs.replyke.com/mcp`
+1. Verify the server URL is entered correctly: `https://docs.sublay.io/mcp`
 2. Confirm your AI tool supports MCP (Claude Code, Cursor, and Windsurf all do)
 3. Restart the tool after adding the server
-4. Check that `https://docs.replyke.com/mcp` is reachable from your network
+4. Check that `https://docs.sublay.io/mcp` is reachable from your network

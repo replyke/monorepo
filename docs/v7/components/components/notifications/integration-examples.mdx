@@ -234,7 +234,7 @@ const AccessibleBell = ({ unreadCount }: { unreadCount: number }) => (
 'use client';
 
 import { useState } from 'react';
-import { ReplykeProvider } from '@replyke/react-js';
+import { SublayProvider } from '@sublay/react-js';
 import NotificationControl from './components/notifications-control';
 import { Bell } from 'lucide-react';
 
@@ -253,7 +253,7 @@ export default function App() {
   );
 
   return (
-    <ReplykeProvider projectId="your-project-id" signedToken={token}>
+    <SublayProvider projectId="your-project-id" signedToken={token}>
       <div className={isDark ? 'dark' : ''}>
         <header className="bg-white dark:bg-gray-900 border-b">
           <nav className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -279,7 +279,7 @@ export default function App() {
 
         <main>{/* Your app content */}</main>
       </div>
-    </ReplykeProvider>
+    </SublayProvider>
   );
 }
 ```

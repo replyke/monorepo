@@ -28,7 +28,7 @@ description: "Typing indicators, unread counts, and marking conversations as rea
 Use `useChatSocket` to read whether the socket is connected:
 
 ```tsx
-import { useChatSocket } from "@replyke/react-js";
+import { useChatSocket } from "@sublay/react-js";
 
 function ConnectionStatus() {
   const { connected } = useChatSocket();
@@ -43,7 +43,7 @@ See [`useChatSocket`](/hooks/chat/use-chat-socket).
 `ChatProvider` fetches unread counts on mount and keeps them in sync via socket events.
 
 ```tsx
-import { useTotalUnreadCount, useUnreadConversationCount } from "@replyke/react-js";
+import { useTotalUnreadCount, useUnreadConversationCount } from "@sublay/react-js";
 
 function ChatBadge() {
   const total = useTotalUnreadCount();
@@ -70,7 +70,7 @@ function ChatBadge() {
 Mark a conversation as read by calling `useMarkConversationAsRead`. This clears the unread count in Redux immediately (optimistic) and sends the mark-as-read request to the server.
 
 ```tsx
-import { useMarkConversationAsRead } from "@replyke/react-js";
+import { useMarkConversationAsRead } from "@sublay/react-js";
 
 function ConversationView({ conversationId, messages }) {
   const mark = useMarkConversationAsRead({ conversationId });
@@ -92,7 +92,7 @@ See [`useMarkConversationAsRead`](/hooks/chat/use-mark-conversation-as-read).
 `useTypingIndicator` manages both sending typing events to other users and receiving typing events from them.
 
 ```tsx
-import { useTypingIndicator } from "@replyke/react-js";
+import { useTypingIndicator } from "@sublay/react-js";
 
 function MessageInput({ conversationId }) {
   const { typingUsers, startTyping, stopTyping } = useTypingIndicator({
@@ -130,7 +130,7 @@ See [`useTypingIndicator`](/hooks/chat/use-typing-indicator).
 Users can report messages for moderation review:
 
 ```tsx
-import { useReportMessage } from "@replyke/react-js";
+import { useReportMessage } from "@sublay/react-js";
 
 function MessageMenu({ conversationId, messageId }) {
   const report = useReportMessage();

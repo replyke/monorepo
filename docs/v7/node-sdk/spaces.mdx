@@ -14,7 +14,7 @@ For membership management see [Space Members](/v7/node-sdk/spaces-members), and 
 Creates a new space.
 
 ```typescript
-const space = await replyke.spaces.createSpace({
+const space = await sublay.spaces.createSpace({
   userId: "usr_abc123",
   name: "Photography",
   slug: "photography",
@@ -24,7 +24,7 @@ const space = await replyke.spaces.createSpace({
 ```
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID of the space creator, who becomes the initial admin.
+  The Sublay user ID of the space creator, who becomes the initial admin.
 </ParamField>
 
 <ParamField body="name" type="string" required>
@@ -65,14 +65,14 @@ const space = await replyke.spaces.createSpace({
 
 ### fetchSpace
 
-Fetches a space by its Replyke ID, including member counts and permission details.
+Fetches a space by its Sublay ID, including member counts and permission details.
 
 ```typescript
-const space = await replyke.spaces.fetchSpace({ spaceId: "spc_abc123" });
+const space = await sublay.spaces.fetchSpace({ spaceId: "spc_abc123" });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 **Returns** — `Promise<SpaceDetailed>`
@@ -84,7 +84,7 @@ const space = await replyke.spaces.fetchSpace({ spaceId: "spc_abc123" });
 Fetches a paginated list of top-level spaces, with optional text search.
 
 ```typescript
-const { data, metadata } = await replyke.spaces.fetchManySpaces({
+const { data, metadata } = await sublay.spaces.fetchManySpaces({
   page: 1,
   limit: 20,
   query: "photo",
@@ -116,7 +116,7 @@ const { data, metadata } = await replyke.spaces.fetchManySpaces({
 Fetches a space by its unique slug.
 
 ```typescript
-const space = await replyke.spaces.fetchSpaceBySlug({ slug: "photography" });
+const space = await sublay.spaces.fetchSpaceBySlug({ slug: "photography" });
 ```
 
 <ParamField body="slug" type="string" required>
@@ -132,7 +132,7 @@ const space = await replyke.spaces.fetchSpaceBySlug({ slug: "photography" });
 Fetches a space by its short, human-readable ID (used in share URLs).
 
 ```typescript
-const space = await replyke.spaces.fetchSpaceByShortId({ shortId: "ph3x9" });
+const space = await sublay.spaces.fetchSpaceByShortId({ shortId: "ph3x9" });
 ```
 
 <ParamField body="shortId" type="string" required>
@@ -148,7 +148,7 @@ const space = await replyke.spaces.fetchSpaceByShortId({ shortId: "ph3x9" });
 Fetches the spaces a specific user is a member of.
 
 ```typescript
-const result = await replyke.spaces.fetchUserSpaces({
+const result = await sublay.spaces.fetchUserSpaces({
   userId: "usr_abc123",
   page: 1,
   limit: 20,
@@ -156,7 +156,7 @@ const result = await replyke.spaces.fetchUserSpaces({
 ```
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID.
+  The Sublay user ID.
 </ParamField>
 
 <ParamField body="page" type="number">
@@ -176,7 +176,7 @@ const result = await replyke.spaces.fetchUserSpaces({
 Updates settings on an existing space.
 
 ```typescript
-const space = await replyke.spaces.updateSpace({
+const space = await sublay.spaces.updateSpace({
   spaceId: "spc_abc123",
   name: "Photography Community",
   postingPermission: "admins",
@@ -185,7 +185,7 @@ const space = await replyke.spaces.updateSpace({
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID to update.
+  The Sublay space ID to update.
 </ParamField>
 
 <ParamField body="name" type="string">
@@ -225,11 +225,11 @@ const space = await replyke.spaces.updateSpace({
 Permanently deletes a space and all its content.
 
 ```typescript
-const result = await replyke.spaces.deleteSpace({ spaceId: "spc_abc123" });
+const result = await sublay.spaces.deleteSpace({ spaceId: "spc_abc123" });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID to delete.
+  The Sublay space ID to delete.
 </ParamField>
 
 **Returns** — `Promise<DeleteSpaceResponse>`
@@ -241,7 +241,7 @@ const result = await replyke.spaces.deleteSpace({ spaceId: "spc_abc123" });
 Checks whether a slug is available for use.
 
 ```typescript
-const { available } = await replyke.spaces.checkSlugAvailability({
+const { available } = await sublay.spaces.checkSlugAvailability({
   slug: "photography",
 });
 ```
@@ -259,7 +259,7 @@ const { available } = await replyke.spaces.checkSlugAvailability({
 Fetches the direct child spaces of a given parent space.
 
 ```typescript
-const { data, metadata } = await replyke.spaces.fetchChildSpaces({
+const { data, metadata } = await sublay.spaces.fetchChildSpaces({
   spaceId: "spc_abc123",
   page: 1,
   limit: 20,
@@ -267,7 +267,7 @@ const { data, metadata } = await replyke.spaces.fetchChildSpaces({
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The parent Replyke space ID.
+  The parent Sublay space ID.
 </ParamField>
 
 <ParamField body="page" type="number">
@@ -287,14 +287,14 @@ const { data, metadata } = await replyke.spaces.fetchChildSpaces({
 Returns the full ancestor chain from the root down to the specified space. Useful for rendering breadcrumb navigation.
 
 ```typescript
-const breadcrumb = await replyke.spaces.fetchSpaceBreadcrumb({
+const breadcrumb = await sublay.spaces.fetchSpaceBreadcrumb({
   spaceId: "spc_abc123",
 });
 // [{ id: "root", name: "Root" }, { id: "spc_parent", name: "Parent" }, { id: "spc_abc123", name: "Photography" }]
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID to get the breadcrumb for.
+  The Sublay space ID to get the breadcrumb for.
 </ParamField>
 
 **Returns** — `Promise<SpaceBreadcrumb>`

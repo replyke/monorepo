@@ -15,25 +15,25 @@ Add Reddit-style threaded comments to your project with a single command.
 <Steps>
   <Step title="Initialize CLI">
     ```bash
-    npx @replyke/cli init
+    npx @sublay/cli init
     ```
-    Creates your `replyke.json` configuration file.
+    Creates your `sublay.json` configuration file.
   </Step>
 
   <Step title="Install Dependencies">
     **React (Web):**
     ```bash
-    npm install @replyke/react-js @replyke/ui-core-react-js
+    npm install @sublay/react-js @sublay/ui-core-react-js
     ```
 
     **React Native:**
     ```bash
-    npm install @replyke/react-native @replyke/ui-core-react-native
+    npm install @sublay/react-native @sublay/ui-core-react-native
     ```
 
     **Expo:**
     ```bash
-    npm install @replyke/expo @replyke/ui-core-react-native
+    npm install @sublay/expo @sublay/ui-core-react-native
     ```
   </Step>
 </Steps>
@@ -45,7 +45,7 @@ See the [CLI Setup Guide](/v7/components/installation/cli-setup) for details.
 ## Installation Command
 
 ```bash
-npx @replyke/cli add comments-threaded
+npx @sublay/cli add comments-threaded
 ```
 
 ---
@@ -54,7 +54,7 @@ npx @replyke/cli add comments-threaded
 
 The CLI will:
 
-1. **Fetch the component** from the registry based on your `replyke.json` platform and style settings
+1. **Fetch the component** from the registry based on your `sublay.json` platform and style settings
 2. **Copy ~25 files** into your project at `{componentsPath}/comments-threaded/`
 3. **Transform imports** to work with your project structure
 4. **Create `index.ts`** barrel export for clean imports
@@ -118,7 +118,7 @@ function BlogPost({ post }) {
 ```
 
 <Info>
-Make sure your app is wrapped with `<ReplykeProvider>`. See the [Quick Start Guide](/v7/components/installation/quick-start) for setup details.
+Make sure your app is wrapped with `<SublayProvider>`. See the [Quick Start Guide](/v7/components/installation/quick-start) for setup details.
 </Info>
 
 ---
@@ -135,7 +135,7 @@ To switch between Tailwind and Inline Styles after installation:
   </Step>
 
   <Step title="Update Configuration">
-    Edit `replyke.json`:
+    Edit `sublay.json`:
     ```json
     {
       "style": "styled"
@@ -145,7 +145,7 @@ To switch between Tailwind and Inline Styles after installation:
 
   <Step title="Re-install">
     ```bash
-    npx @replyke/cli add comments-threaded
+    npx @sublay/cli add comments-threaded
     ```
   </Step>
 </Steps>
@@ -160,7 +160,7 @@ This replaces your component files. Back up any customizations first.
 
 <AccordionGroup>
   <Accordion title="Import errors" icon="file-import">
-    Make sure your import path matches your `paths.components` in `replyke.json`:
+    Make sure your import path matches your `paths.components` in `sublay.json`:
 
     ```tsx
     // paths.components = "src/components"
@@ -181,7 +181,7 @@ This replaces your component files. Back up any customizations first.
 
     ```bash
     rm -rf src/components/comments-threaded
-    npx @replyke/cli add comments-threaded
+    npx @sublay/cli add comments-threaded
     ```
   </Accordion>
 </AccordionGroup>

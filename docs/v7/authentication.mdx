@@ -1,20 +1,20 @@
 ---
 title: "Authentication"
-description: "How Replyke handles user identity — built-in auth, external JWT integration, and OAuth."
+description: "How Sublay handles user identity — built-in auth, external JWT integration, and OAuth."
 icon: "key"
 ---
 
-Replyke supports three authentication models. You choose the one that fits how your application manages users, and they can coexist within the same project.
+Sublay supports three authentication models. You choose the one that fits how your application manages users, and they can coexist within the same project.
 
 <CardGroup cols={3}>
   <Card title="Built-in Auth" icon="lock">
-    Replyke manages the full user lifecycle: sign-up, sign-in, and password reset using email and password. No external auth system needed.
+    Sublay manages the full user lifecycle: sign-up, sign-in, and password reset using email and password. No external auth system needed.
   </Card>
   <Card title="OAuth" icon="key">
     Sign in with Google, GitHub, Apple, or Facebook. Supports linking multiple providers to one account.
   </Card>
   <Card title="External Auth" icon="server">
-    Your backend signs a JWT. Replyke verifies it and creates or matches a user automatically. Keep your existing auth stack.
+    Your backend signs a JWT. Sublay verifies it and creates or matches a user automatically. Keep your existing auth stack.
   </Card>
 </CardGroup>
 
@@ -41,7 +41,7 @@ The React/React Native SDK handles token storage and refresh automatically. When
 
 ## Built-in Auth
 
-Replyke provides a complete email/password authentication system out of the box. Use it when you do not have an existing user identity system and want Replyke to manage everything.
+Sublay provides a complete email/password authentication system out of the box. Use it when you do not have an existing user identity system and want Sublay to manage everything.
 
 **What it includes:**
 - User sign-up with email and password
@@ -58,13 +58,13 @@ See [SDK Reference → Authentication → Built-in](/sdk/authentication/built-in
 
 ## External Auth
 
-Use this model when your application already has its own user management system (Supabase Auth, Auth0, Firebase Auth, NextAuth, a custom system, or anything else) and you want Replyke to associate its data with those users — without rebuilding auth.
+Use this model when your application already has its own user management system (Supabase Auth, Auth0, Firebase Auth, NextAuth, a custom system, or anything else) and you want Sublay to associate its data with those users — without rebuilding auth.
 
 ### How It Works
 
 <Steps>
   <Step title="Generate a JWT key pair in the dashboard">
-    Replyke generates an RSA key pair (RS256) for your project. The **public key** is stored in Replyke. The **private key** is shown to you once — store it securely as a server-side environment variable. If it is lost or compromised, generate a new key pair from the dashboard.
+    Sublay generates an RSA key pair (RS256) for your project. The **public key** is stored in Sublay. The **private key** is shown to you once — store it securely as a server-side environment variable. If it is lost or compromised, generate a new key pair from the dashboard.
   </Step>
   <Step title="Sign a JWT on your server when a user logs in">
     When your application detects a logged-in user, make a request to your own backend. Your backend signs a JWT with your private key and returns it to the client.
@@ -74,7 +74,7 @@ Use this model when your application already has its own user management system 
     | Claim | Value |
     |-------|-------|
     | `sub` | Your external user ID (string) |
-    | `iss` | Your Replyke project ID |
+    | `iss` | Your Sublay project ID |
     | `userData` | Object with user profile fields (see below) |
 
     The `userData` object can include:
@@ -93,22 +93,22 @@ Use this model when your application already has its own user management system 
 
     The signed JWT is safe to pass to the client — it cannot be tampered with because the signature covers the payload using your private key.
   </Step>
-  <Step title="Pass the JWT to Replyke">
-    Pass the signed JWT to `ReplykeProvider` via the `signedToken` prop (SDK), or call the verify external user API endpoint directly.
+  <Step title="Pass the JWT to Sublay">
+    Pass the signed JWT to `SublayProvider` via the `signedToken` prop (SDK), or call the verify external user API endpoint directly.
 
-    Replyke verifies the JWT against the project's stored public key. If valid, it looks up the user by the `sub` claim. If the user does not exist, it is created from the `userData` fields. If the user already exists, their profile fields are updated if anything has changed.
+    Sublay verifies the JWT against the project's stored public key. If valid, it looks up the user by the `sub` claim. If the user does not exist, it is created from the `userData` fields. If the user already exists, their profile fields are updated if anything has changed.
 
-    On success, Replyke returns its own access token + refresh token pair tied to this user.
+    On success, Sublay returns its own access token + refresh token pair tied to this user.
   </Step>
 </Steps>
 
 ### Profile Sync
 
-Every time a valid external JWT is presented, Replyke compares the `userData` fields against the stored user record and updates any fields that have changed. Your user profiles in Replyke stay in sync with your external system automatically — no separate update call needed.
+Every time a valid external JWT is presented, Sublay compares the `userData` fields against the stored user record and updates any fields that have changed. Your user profiles in Sublay stay in sync with your external system automatically — no separate update call needed.
 
 ### Security
 
-The private key must never leave your server. Signing happens server-side; the client only receives the finished JWT. Because Replyke verifies using your public key, a client cannot forge or modify user data.
+The private key must never leave your server. Signing happens server-side; the client only receives the finished JWT. Because Sublay verifies using your public key, a client cannot forge or modify user data.
 
 See [SDK Reference → Authentication → External](/sdk/authentication/external) for implementation guidance.
 
@@ -116,7 +116,7 @@ See [SDK Reference → Authentication → External](/sdk/authentication/external
 
 ## OAuth
 
-OAuth allows users to sign in using a third-party provider. Replyke handles the full flow: PKCE generation, state management, callback processing, and user creation or linking.
+OAuth allows users to sign in using a third-party provider. Sublay handles the full flow: PKCE generation, state management, callback processing, and user creation or linking.
 
 **Supported providers:** Google, GitHub, Apple, Facebook
 
@@ -124,25 +124,25 @@ OAuth allows users to sign in using a third-party provider. Replyke handles the 
 
 Each provider must be configured in the project dashboard with:
 - The provider's client ID and client secret
-- A list of allowed redirect URIs (the URLs Replyke may redirect back to after authentication)
+- A list of allowed redirect URIs (the URLs Sublay may redirect back to after authentication)
 
 ### Flow Overview
 
 <Steps>
   <Step title="Request an authorization URL">
-    Call the authorize endpoint with the provider name and the `redirectAfterAuth` URL. Replyke creates a short-lived state record (10-minute TTL) and returns an authorization URL pointing to the provider. For Google, a PKCE code verifier and challenge are generated automatically.
+    Call the authorize endpoint with the provider name and the `redirectAfterAuth` URL. Sublay creates a short-lived state record (10-minute TTL) and returns an authorization URL pointing to the provider. For Google, a PKCE code verifier and challenge are generated automatically.
   </Step>
   <Step title="Redirect the user to the provider">
-    Redirect the user to the authorization URL. They authenticate with the provider and are sent back to Replyke's callback endpoint.
+    Redirect the user to the authorization URL. They authenticate with the provider and are sent back to Sublay's callback endpoint.
   </Step>
-  <Step title="Replyke processes the callback">
-    Replyke exchanges the authorization code for the provider's tokens, fetches the user profile, and resolves which Replyke user to return using this priority:
+  <Step title="Sublay processes the callback">
+    Sublay exchanges the authorization code for the provider's tokens, fetches the user profile, and resolves which Sublay user to return using this priority:
 
     1. **Existing identity** — if this provider account has signed in before, the matching user is returned immediately.
     2. **Verified email match** — if the provider supplies a verified email that matches an existing user, the new identity is linked to that account automatically.
     3. **New user** — if no match is found, a new user is created from the provider profile (name, email, avatar).
 
-    Replyke then redirects to the `redirectAfterAuth` URL with Replyke tokens appended as query parameters.
+    Sublay then redirects to the `redirectAfterAuth` URL with Sublay tokens appended as query parameters.
   </Step>
   <Step title="Complete sign-in in your app">
     Your app reads the tokens from the redirect URL, stores them, and the user is signed in.
@@ -151,7 +151,7 @@ Each provider must be configured in the project dashboard with:
 
 ### Account Linking
 
-A user can link multiple OAuth providers (and a password account) to a single Replyke user record. To link an additional provider, the user must be signed in, and the OAuth flow is initiated via the link endpoint rather than the authorize endpoint. The new identity is attached to the existing account.
+A user can link multiple OAuth providers (and a password account) to a single Sublay user record. To link an additional provider, the user must be signed in, and the OAuth flow is initiated via the link endpoint rather than the authorize endpoint. The new identity is attached to the existing account.
 
 This enables scenarios like "sign in with Google on a laptop and GitHub on another device" — both map to the same user.
 
@@ -171,7 +171,7 @@ See [SDK Reference → Authentication → Multi-Account](/sdk/authentication/mul
 
 ## Authorization
 
-Beyond authentication, Replyke enforces authorization on every request:
+Beyond authentication, Sublay enforces authorization on every request:
 
 - Most write operations require an authenticated user (or a service API key)
 - Ownership checks are enforced server-side — a user cannot modify another user's content through the normal API

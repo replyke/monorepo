@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Replyke Documentation",
+  "name": "Sublay Documentation",
   "colors": {
     "primary": "#D22F55",
     "light": "#F06789",
@@ -807,7 +807,7 @@
           "anchors": [
             {
               "anchor": "Dashboard",
-              "href": "https://dash.replyke.com",
+              "href": "https://dash.sublay.io",
               "icon": "gauge"
             }
           ]
@@ -1267,7 +1267,7 @@
           "anchors": [
             {
               "anchor": "Dashboard",
-              "href": "https://dash.replyke.com",
+              "href": "https://dash.sublay.io",
               "icon": "gauge"
             }
           ]
@@ -1283,7 +1283,7 @@
     "links": [
       {
         "label": "Dashboard",
-        "href": "https://dash.replyke.com"
+        "href": "https://dash.sublay.io"
       }
     ]
   },
@@ -1300,12 +1300,12 @@
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/replyke"
+      "github": "https://github.com/sublay-io"
     }
   },
   "api": {
     "mdx": {
-      "server": "https://api.replyke.com/api/v6",
+      "server": "https://api.sublay.io/api/v6",
       "playground": {
         "mode": "interactive"
       }

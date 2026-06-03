@@ -6,7 +6,7 @@ icon: "plug"
 
 ## Overview
 
-Uploads a file to Replyke storage without any server-side processing. The raw file is stored and a proxy URL is returned. Use this for PDFs, videos, Office documents, or any file type where you don't need variant generation.
+Uploads a file to Sublay storage without any server-side processing. The raw file is stored and a proxy URL is returned. Use this for PDFs, videos, Office documents, or any file type where you don't need variant generation.
 
 For images that need resizing or format conversion, use [`useUploadImage`](/hooks/storage/use-upload-image) instead.
 
@@ -15,7 +15,7 @@ For images that need resizing or format conversion, use [`useUploadImage`](/hook
 ## Usage Example
 
 ```tsx
-import { useUploadFile } from "@replyke/react-js";
+import { useUploadFile } from "@sublay/react-js";
 
 function DocumentUploader({ entityId }: { entityId: string }) {
   const uploadFile = useUploadFile();

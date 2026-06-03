@@ -10,7 +10,7 @@ Spaces can define community rules — titled and optionally described guidelines
 Rules are publicly readable without authentication:
 
 ```tsx
-import { useFetchManyRules, useFetchRule } from "@replyke/react-js";
+import { useFetchManyRules, useFetchRule } from "@sublay/react-js";
 
 // Fetch all rules for a space
 const fetchRules = useFetchManyRules();
@@ -26,7 +26,7 @@ const rule = await fetchRule({ spaceId, ruleId });
 Only space admins can create rules:
 
 ```tsx
-import { useCreateRule } from "@replyke/react-js";
+import { useCreateRule } from "@sublay/react-js";
 
 const createRule = useCreateRule();
 const newRule = await createRule({
@@ -39,7 +39,7 @@ const newRule = await createRule({
 ## Updating and Deleting Rules
 
 ```tsx
-import { useUpdateRule, useDeleteRule } from "@replyke/react-js";
+import { useUpdateRule, useDeleteRule } from "@sublay/react-js";
 
 const updateRule = useUpdateRule();
 const deleteRule = useDeleteRule();
@@ -59,7 +59,7 @@ await deleteRule({ spaceId, ruleId });
 Admins can reorder rules by providing a new ordered array of rule IDs:
 
 ```tsx
-import { useReorderRules } from "@replyke/react-js";
+import { useReorderRules } from "@sublay/react-js";
 
 const reorderRules = useReorderRules();
 await reorderRules({

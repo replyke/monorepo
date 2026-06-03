@@ -13,14 +13,14 @@ Use `useUserActions` directly when you need to manually set or clear user state 
 ## Usage Example
 
 ```tsx
-import { useUserActions } from "@replyke/react-js";
+import { useUserActions } from "@sublay/react-js";
 
 function CustomAuth() {
   const { setUser, clearUser } = useUserActions();
 
   const handleExternalLogin = async (token: string) => {
     const userData = await myAuthService.login(token);
-    setUser(userData); // Sync the authenticated user into Replyke state
+    setUser(userData); // Sync the authenticated user into Sublay state
   };
 
   const handleLogout = () => {

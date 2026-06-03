@@ -3,14 +3,14 @@ title: "Semantic Search"
 description: "Search content, users, and spaces with natural language queries"
 ---
 
-Replyke provides three semantic search hooks — one for content (entities, comments, messages), one for users, and one for spaces. All three return results ranked by semantic similarity to the query.
+Sublay provides three semantic search hooks — one for content (entities, comments, messages), one for users, and one for spaces. All three return results ranked by semantic similarity to the query.
 
 ## useSearchContent
 
 Search across entities, comments, and chat messages. You can filter by `sourceTypes` to target only specific content types, or scope results to a specific space or conversation.
 
 ```tsx
-import { useSearchContent } from "@replyke/react-js";
+import { useSearchContent } from "@sublay/react-js";
 
 function ContentSearch() {
   const { results, loading, search, reset } = useSearchContent();
@@ -98,7 +98,7 @@ function ContentSearch() {
 Search for users by natural language query — matches against name, username, bio, and other profile text.
 
 ```tsx
-import { useSearchUsers } from "@replyke/react-js";
+import { useSearchUsers } from "@sublay/react-js";
 
 function UserSearch() {
   const { results, search } = useSearchUsers();
@@ -147,7 +147,7 @@ function UserSearch() {
 Search for spaces by name, description, or topic.
 
 ```tsx
-import { useSearchSpaces } from "@replyke/react-js";
+import { useSearchSpaces } from "@sublay/react-js";
 
 function SpaceSearch() {
   const { results, search } = useSearchSpaces();

@@ -3,14 +3,14 @@ title: "Drafts & Publishing"
 description: "Create entities as drafts and publish them when ready"
 ---
 
-Replyke supports a draft/publish workflow for entities. An entity created with `isDraft: true` is stored but not publicly visible. When the creator is ready, they publish it and it becomes visible to others.
+Sublay supports a draft/publish workflow for entities. An entity created with `isDraft: true` is stored but not publicly visible. When the creator is ready, they publish it and it becomes visible to others.
 
 ## Creating a Draft
 
 Pass `isDraft: true` to `useCreateEntity`:
 
 ```tsx
-import { useCreateEntity } from "@replyke/react-js";
+import { useCreateEntity } from "@sublay/react-js";
 
 function NewPostEditor() {
   const createEntity = useCreateEntity();
@@ -33,7 +33,7 @@ function NewPostEditor() {
 Use `useFetchDrafts` to retrieve all unpublished drafts for the authenticated user:
 
 ```tsx
-import { useFetchDrafts } from "@replyke/react-js";
+import { useFetchDrafts } from "@sublay/react-js";
 import { useEffect, useState } from "react";
 
 function DraftsList() {
@@ -71,7 +71,7 @@ Returns a paginated response: `{ data: Entity[], pagination: { page, pageSize, t
 Use `usePublishDraft` to publish an existing draft:
 
 ```tsx
-import { usePublishDraft } from "@replyke/react-js";
+import { usePublishDraft } from "@sublay/react-js";
 
 function DraftItem({ entityId }: { entityId: string }) {
   const publishDraft = usePublishDraft();

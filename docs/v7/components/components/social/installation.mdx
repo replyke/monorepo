@@ -15,25 +15,25 @@ Add Instagram-style social comments to your project with a single command.
 <Steps>
   <Step title="Initialize CLI">
     ```bash
-    npx @replyke/cli init
+    npx @sublay/cli init
     ```
-    Creates your `replyke.json` configuration file. Select your platform and styling preference.
+    Creates your `sublay.json` configuration file. Select your platform and styling preference.
   </Step>
 
   <Step title="Install Dependencies">
     **React (Web):**
     ```bash
-    npm install @replyke/react-js @replyke/ui-core-react-js
+    npm install @sublay/react-js @sublay/ui-core-react-js
     ```
 
     **React Native:**
     ```bash
-    npm install @replyke/react-native @replyke/ui-core-react-native
+    npm install @sublay/react-native @sublay/ui-core-react-native
     ```
 
     **Expo:**
     ```bash
-    npm install @replyke/expo @replyke/ui-core-react-native
+    npm install @sublay/expo @sublay/ui-core-react-native
     ```
   </Step>
 </Steps>
@@ -45,7 +45,7 @@ See the [CLI Setup Guide](/v7/components/installation/cli-setup) for details.
 ## Installation Command
 
 ```bash
-npx @replyke/cli add comments-social
+npx @sublay/cli add comments-social
 ```
 
 ---
@@ -103,7 +103,7 @@ function Post({ post }) {
 ```
 
 <Info>
-Make sure your app is wrapped with `<ReplykeProvider>`. See the [Quick Start Guide](/v7/components/installation/quick-start) for setup details.
+Make sure your app is wrapped with `<SublayProvider>`. See the [Quick Start Guide](/v7/components/installation/quick-start) for setup details.
 </Info>
 
 ---
@@ -128,7 +128,7 @@ Make sure your app is wrapped with `<ReplykeProvider>`. See the [Quick Start Gui
   </Step>
 
   <Step title="Update Configuration">
-    Edit `replyke.json`:
+    Edit `sublay.json`:
     ```json
     { "style": "styled" }
     ```
@@ -136,7 +136,7 @@ Make sure your app is wrapped with `<ReplykeProvider>`. See the [Quick Start Gui
 
   <Step title="Re-install">
     ```bash
-    npx @replyke/cli add comments-social
+    npx @sublay/cli add comments-social
     ```
   </Step>
 </Steps>

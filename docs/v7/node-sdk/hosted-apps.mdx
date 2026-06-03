@@ -3,7 +3,7 @@ title: "Hosted Apps"
 description: "Fetch hosted app configuration from your server"
 ---
 
-The `hostedApps` module provides access to hosted app configuration objects managed in your Replyke project.
+The `hostedApps` module provides access to hosted app configuration objects managed in your Sublay project.
 
 ---
 
@@ -12,7 +12,7 @@ The `hostedApps` module provides access to hosted app configuration objects mana
 Fetches the configuration for a hosted app by its ID.
 
 ```typescript
-const app = await replyke.hostedApps.fetchHostedApp({ appId: "app_abc123" });
+const app = await sublay.hostedApps.fetchHostedApp({ appId: "app_abc123" });
 ```
 
 <ParamField body="appId" type="string" required>

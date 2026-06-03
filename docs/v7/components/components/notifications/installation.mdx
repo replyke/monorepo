@@ -15,14 +15,14 @@ Add a notification dropdown control to your navigation bar with a single command
 <Steps>
   <Step title="Initialize CLI">
     ```bash
-    npx @replyke/cli init
+    npx @sublay/cli init
     ```
-    Creates your `replyke.json`. Select `react` as platform (notifications are web-only).
+    Creates your `sublay.json`. Select `react` as platform (notifications are web-only).
   </Step>
 
   <Step title="Install Dependencies">
     ```bash
-    npm install @replyke/react-js framer-motion lucide-react
+    npm install @sublay/react-js framer-motion lucide-react
     ```
   </Step>
 </Steps>
@@ -34,7 +34,7 @@ See the [CLI Setup Guide](/v7/components/installation/cli-setup) for details.
 ## Installation Command
 
 ```bash
-npx @replyke/cli add notifications-control
+npx @sublay/cli add notifications-control
 ```
 
 ---
@@ -89,7 +89,7 @@ function Header() {
 ```
 
 <Info>
-Make sure your app is wrapped with `<ReplykeProvider>`. See the [Quick Start Guide](/v7/components/installation/quick-start) for details.
+Make sure your app is wrapped with `<SublayProvider>`. See the [Quick Start Guide](/v7/components/installation/quick-start) for details.
 </Info>
 
 ---
@@ -97,17 +97,17 @@ Make sure your app is wrapped with `<ReplykeProvider>`. See the [Quick Start Gui
 ## Complete Example
 
 ```tsx
-import { ReplykeProvider } from '@replyke/react-js';
+import { SublayProvider } from '@sublay/react-js';
 import NotificationControl from './components/notifications-control';
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 function App() {
   return (
-    <ReplykeProvider projectId="your-project-id" signedToken={token}>
+    <SublayProvider projectId="your-project-id" signedToken={token}>
       <Header />
       <main>{/* Your app */}</main>
-    </ReplykeProvider>
+    </SublayProvider>
   );
 }
 
@@ -166,7 +166,7 @@ function Header() {
 
   <Step title="Re-install">
     ```bash
-    npx @replyke/cli add notifications-control
+    npx @sublay/cli add notifications-control
     ```
   </Step>
 </Steps>
@@ -194,7 +194,7 @@ function Header() {
   </Accordion>
 
   <Accordion title="Unread count not updating" icon="circle-dot">
-    Ensure `<ReplykeProvider>` wraps the component and `signedToken` is set correctly.
+    Ensure `<SublayProvider>` wraps the component and `signedToken` is set correctly.
   </Accordion>
 </AccordionGroup>
 

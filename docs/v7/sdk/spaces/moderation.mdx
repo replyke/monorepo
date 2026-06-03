@@ -10,7 +10,7 @@ Space moderators and admins can review and act on content in their space. Modera
 Moderators can act on specific entities or comments without a report being filed:
 
 ```tsx
-import { useModerateSpaceEntity, useModerateSpaceComment } from "@replyke/react-js";
+import { useModerateSpaceEntity, useModerateSpaceComment } from "@sublay/react-js";
 
 const moderateEntity = useModerateSpaceEntity();
 const moderateComment = useModerateSpaceComment();
@@ -34,7 +34,7 @@ When members report content, moderators receive those reports and can resolve th
 import {
   useHandleSpaceEntityReport,
   useHandleSpaceCommentReport,
-} from "@replyke/react-js";
+} from "@sublay/react-js";
 
 const handleEntityReport = useHandleSpaceEntityReport();
 const handleCommentReport = useHandleSpaceCommentReport();
@@ -52,7 +52,7 @@ await handleCommentReport({ spaceId, reportId, action: "remove_content" });
 Use `useFetchModeratedReports` to retrieve pending reports for a space:
 
 ```tsx
-import { useFetchModeratedReports } from "@replyke/react-js";
+import { useFetchModeratedReports } from "@sublay/react-js";
 
 const fetchReports = useFetchModeratedReports();
 const reports = await fetchReports({ spaceId });

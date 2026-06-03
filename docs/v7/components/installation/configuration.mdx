@@ -1,12 +1,12 @@
 ---
 title: "Configuration"
-description: "Understanding the replyke.json configuration file"
+description: "Understanding the sublay.json configuration file"
 icon: "file-code"
 ---
 
 # Configuration File
 
-The `replyke.json` file is created in your project root during initialization. It stores your preferences and is used by the CLI when adding components.
+The `sublay.json` file is created in your project root during initialization. It stores your preferences and is used by the CLI when adding components.
 
 ---
 
@@ -15,7 +15,7 @@ The `replyke.json` file is created in your project root during initialization. I
 ```
 your-project/
 ├── package.json
-├── replyke.json          ← Configuration file
+├── sublay.json          ← Configuration file
 ├── src/
 │   └── components/
 └── ...
@@ -106,7 +106,7 @@ Determines which styling approach to use for components.
 </Tabs>
 
 <Warning>
-Once you've added components with a specific style variant, switching requires re-installing them. Change `style` in `replyke.json`, delete the installed component directory, then re-run `add`.
+Once you've added components with a specific style variant, switching requires re-installing them. Change `style` in `sublay.json`, delete the installed component directory, then re-run `add`.
 </Warning>
 
 ---
@@ -173,7 +173,7 @@ Aliases must match your `tsconfig.json` or bundler config. Mismatched aliases ca
 
 ## Complete Example
 
-A typical `replyke.json` for a React web app with Tailwind CSS:
+A typical `sublay.json` for a React web app with Tailwind CSS:
 
 ```json
 {
@@ -199,7 +199,7 @@ A typical `replyke.json` for a React web app with Tailwind CSS:
 { "platform": "react" }
 ```
 
-Required dependency: `@replyke/react-js@^7.0.0`
+Required dependency: `@sublay/react-js@^7.0.0`
 
 Available components: Threaded comments ✅, Social comments ✅, Notification control ✅
 
@@ -211,7 +211,7 @@ Available components: Threaded comments ✅, Social comments ✅, Notification c
 { "platform": "react-native" }
 ```
 
-Required dependency: `@replyke/react-native@^7.0.0`
+Required dependency: `@sublay/react-native@^7.0.0`
 
 Available components: Threaded comments ✅, Social comments ✅
 
@@ -223,7 +223,7 @@ Available components: Threaded comments ✅, Social comments ✅
 { "platform": "expo" }
 ```
 
-Required dependency: `@replyke/expo@^7.0.0`
+Required dependency: `@sublay/expo@^7.0.0`
 
 Available components: Threaded comments ✅, Social comments ✅
 
@@ -231,18 +231,18 @@ Available components: Threaded comments ✅, Social comments ✅
 
 ## Changing Configuration
 
-**Option 1 — Edit manually:** Update `replyke.json` directly, then delete and re-add any installed components.
+**Option 1 — Edit manually:** Update `sublay.json` directly, then delete and re-add any installed components.
 
 ```bash
 rm -rf src/components/comments-threaded
-npx @replyke/cli add comments-threaded
+npx @sublay/cli add comments-threaded
 ```
 
-**Option 2 — Re-initialize:** Delete `replyke.json` and run `init` again.
+**Option 2 — Re-initialize:** Delete `sublay.json` and run `init` again.
 
 ```bash
-rm replyke.json
-npx @replyke/cli init
+rm sublay.json
+npx @sublay/cli init
 ```
 
 ---
@@ -254,12 +254,12 @@ npx @replyke/cli init
     No, the configuration applies globally. Pick one approach for consistency.
   </Accordion>
 
-  <Accordion title="What if I delete replyke.json?" icon="trash">
-    The CLI will error when you try to `add` components. Run `npx @replyke/cli init` to recreate it.
+  <Accordion title="What if I delete sublay.json?" icon="trash">
+    The CLI will error when you try to `add` components. Run `npx @sublay/cli init` to recreate it.
   </Accordion>
 
   <Accordion title="Does this file affect my application at runtime?" icon="play">
-    No. `replyke.json` is only used by the CLI during component installation. Your application never reads this file.
+    No. `sublay.json` is only used by the CLI during component installation. Your application never reads this file.
   </Accordion>
 </AccordionGroup>
 

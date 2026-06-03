@@ -2,7 +2,7 @@
 
 **Audience**: Documentation writers adding notifications component to existing docs
 **Purpose**: Complete reference for the new NotificationControl component
-**Integration**: Add this to existing Replyke CLI documentation
+**Integration**: Add this to existing Sublay CLI documentation
 
 ---
 
@@ -32,8 +32,8 @@ This is NOT a full-page notifications center or inbox. It's a dropdown control c
 ### Add to Your Project
 
 ```bash
-# After running `npx @replyke/cli init`
-npx @replyke/cli add notifications-control
+# After running `npx @sublay/cli init`
+npx @sublay/cli add notifications-control
 ```
 
 ### What Gets Installed
@@ -56,13 +56,13 @@ src/components/notifications-control/
 
 ## Available Variants
 
-Like all Replyke CLI components, NotificationControl comes in **two styling variants**:
+Like all Sublay CLI components, NotificationControl comes in **two styling variants**:
 
 ### 1. Inline Styles (`styled`)
 
 ```bash
 # During init, select "Inline Styles"
-npx @replyke/cli add notifications-control
+npx @sublay/cli add notifications-control
 ```
 
 **Characteristics:**
@@ -91,7 +91,7 @@ muted: "oklch(0.708 0 0)"
 
 ```bash
 # During init, select "Tailwind CSS"
-npx @replyke/cli add notifications-control
+npx @sublay/cli add notifications-control
 ```
 
 **Characteristics:**
@@ -246,7 +246,7 @@ The dropdown automatically positions itself to stay within viewport:
 ```tsx
 // Loads 10 notifications initially
 // "Load more" button at bottom loads next batch
-// Powered by useAppNotifications hook from @replyke/react-js
+// Powered by useAppNotifications hook from @sublay/react-js
 ```
 
 ### 3. Mark as Read
@@ -459,7 +459,7 @@ NotificationControl depends on:
 ```json
 {
   "dependencies": {
-    "@replyke/react-js": "^6.0.0",
+    "@sublay/react-js": "^6.0.0",
     "framer-motion": "^11.0.0",
     "lucide-react": "^0.400.0"
   }
@@ -703,14 +703,14 @@ Or switch to fixed positioning manually in `notification-control.tsx`.
 
 ### Unread count not updating
 
-Ensure `@replyke/react-js` is properly configured:
+Ensure `@sublay/react-js` is properly configured:
 ```tsx
-// Wrap your app with ReplykeProvider
-import { ReplykeProvider } from '@replyke/react-js';
+// Wrap your app with SublayProvider
+import { SublayProvider } from '@sublay/react-js';
 
-<ReplykeProvider apiKey="your-key">
+<SublayProvider apiKey="your-key">
   <App />
-</ReplykeProvider>
+</SublayProvider>
 ```
 
 ### Dark mode not working (Tailwind)
@@ -799,7 +799,7 @@ interface UnifiedAppNotification {
 ### Headline Benefits
 
 1. **"Drop-in notification control"** - Add to any navigation bar
-2. **"Real-time updates"** - Powered by Replyke's notification system
+2. **"Real-time updates"** - Powered by Sublay's notification system
 3. **"Fully customizable"** - It's your code, modify anything
 4. **"Smart positioning"** - Never overflows viewport
 5. **"Theme-aware"** - Light/dark mode built-in
@@ -809,13 +809,13 @@ interface UnifiedAppNotification {
 **Use NotificationControl when:**
 - You need a dropdown notification bell in your app
 - You want real-time notification updates
-- You're using Replyke's commenting/social features
+- You're using Sublay's commenting/social features
 - You need a lightweight, customizable solution
 
 **Don't use when:**
 - You need a full-page notifications center (build custom with the data from `useAppNotifications` hook)
 - You want push notifications (this is in-app only)
-- You need custom notification types (limited to Replyke's types)
+- You need custom notification types (limited to Sublay's types)
 
 ---
 
@@ -831,7 +831,7 @@ When new versions are released with improvements:
    mv src/components/notifications-control src/components/notifications-control-old
 
    # Install new version
-   npx @replyke/cli add notifications-control
+   npx @sublay/cli add notifications-control
 
    # Copy your customizations from -old to new
    # Delete -old when done
@@ -839,7 +839,7 @@ When new versions are released with improvements:
 
 2. **Diff command** (planned):
    ```bash
-   npx @replyke/cli diff notifications-control
+   npx @sublay/cli diff notifications-control
    # Shows what changed, helps merge updates
    ```
 
@@ -852,7 +852,7 @@ When new versions are released with improvements:
 'use client';
 
 import { useState } from 'react';
-import { ReplykeProvider } from '@replyke/react-js';
+import { SublayProvider } from '@sublay/react-js';
 import NotificationControl from './components/notifications-control';
 import { Bell } from 'lucide-react';
 
@@ -871,7 +871,7 @@ function App() {
   );
 
   return (
-    <ReplykeProvider apiKey={process.env.NEXT_PUBLIC_REPLYKE_KEY}>
+    <SublayProvider apiKey={process.env.NEXT_PUBLIC_SUBLAY_KEY}>
       <div className={isDark ? 'dark' : ''}>
         <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <nav className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -900,7 +900,7 @@ function App() {
           {/* Your app content */}
         </main>
       </div>
-    </ReplykeProvider>
+    </SublayProvider>
   );
 }
 

@@ -4,15 +4,15 @@ api: "POST /:projectId/api/v7/auth/verify-external-user"
 description: "Verify or create a user from an external auth system JWT"
 ---
 
-Accepts a JWT signed by your own auth system and returns Replyke tokens. If the user does not exist in the project, they are created. If they do exist, their profile is updated with any changed fields from the JWT payload.
+Accepts a JWT signed by your own auth system and returns Sublay tokens. If the user does not exist in the project, they are created. If they do exist, their profile is updated with any changed fields from the JWT payload.
 
-The JWT must be signed with the RSA private key corresponding to the public key configured in your Replyke project settings.
+The JWT must be signed with the RSA private key corresponding to the public key configured in your Sublay project settings.
 
 ## Body Parameters
 
 <ParamField body="userJwt" type="string" required>
   A JWT signed with your project's RSA private key (RS256 algorithm). The
-  payload must include `sub` (external user ID) and `iss` (your Replyke project
+  payload must include `sub` (external user ID) and `iss` (your Sublay project
   ID). The `userData` claim may contain optional profile fields.
 </ParamField>
 
@@ -22,8 +22,8 @@ The `userJwt` must contain:
 
 | Claim | Required | Description |
 |-------|----------|-------------|
-| `sub` | Yes | External user ID. Stored as `foreignId` on the Replyke user. |
-| `iss` | Yes | Your Replyke project ID. Must match the request project. |
+| `sub` | Yes | External user ID. Stored as `foreignId` on the Sublay user. |
+| `iss` | Yes | Your Sublay project ID. Must match the request project. |
 | `userData` | No | Object with optional profile fields (see below). |
 
 ### `userData` fields

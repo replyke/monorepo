@@ -3,10 +3,10 @@ title: "Overview"
 description: "Threaded comment sections using CommentSectionProvider and useCommentSection"
 ---
 
-Comments in Replyke are threaded discussions attached to entities. They support replies (nested or flat), reactions, GIF attachments, user mentions, space mentions, sorting, and pagination.
+Comments in Sublay are threaded discussions attached to entities. They support replies (nested or flat), reactions, GIF attachments, user mentions, space mentions, sorting, and pagination.
 
 <Tip>
-**Don't want to build your own comment UI from scratch?** Replyke ships ready-made comment components — fully featured, themeable, and installed directly into your codebase via the CLI as editable source code. Skip straight to the [Components section](/components/overview) to get up and running in minutes.
+**Don't want to build your own comment UI from scratch?** Sublay ships ready-made comment components — fully featured, themeable, and installed directly into your codebase via the CLI as editable source code. Skip straight to the [Components section](/components/overview) to get up and running in minutes.
 </Tip>
 
 ## The Provider Pattern
@@ -14,7 +14,7 @@ Comments in Replyke are threaded discussions attached to entities. They support 
 The comment system uses a `CommentSectionProvider` + `useCommentSection` pair. Wrap your comment UI with `CommentSectionProvider` to load comments for an entity, then access all comment state and actions from any descendant with `useCommentSection`.
 
 ```tsx
-import { CommentSectionProvider } from "@replyke/react-js";
+import { CommentSectionProvider } from "@sublay/react-js";
 
 function ArticlePage({ articleId }: { articleId: string }) {
   return (
@@ -46,7 +46,7 @@ function ArticlePage({ articleId }: { articleId: string }) {
 
 ## Pre-Built Comment Components
 
-If you'd rather not wire up your own comment UI, Replyke provides two production-ready comment components installed via the CLI directly into your project as editable source code.
+If you'd rather not wire up your own comment UI, Sublay provides two production-ready comment components installed via the CLI directly into your project as editable source code.
 
 <CardGroup cols={2}>
   <Card title="Threaded Comments" href="/components/components/threaded/overview">

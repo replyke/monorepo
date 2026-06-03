@@ -1,17 +1,17 @@
 ---
 title: "Overview"
-description: "Upload, retrieve, and manage files and images in Replyke"
+description: "Upload, retrieve, and manage files and images in Sublay"
 ---
 
 ## Overview
 
-Replyke's storage system lets you upload files and images on behalf of authenticated users. Uploaded assets are stored in managed cloud storage and served through a proxy URL so direct storage credentials are never exposed to the client.
+Sublay's storage system lets you upload files and images on behalf of authenticated users. Uploaded assets are stored in managed cloud storage and served through a proxy URL so direct storage credentials are never exposed to the client.
 
 Files can be optionally associated with an entity, comment, or space, enabling cascade deletion when the parent object is removed.
 
 ## Upload Modes
 
-Replyke provides two hooks for uploading assets:
+Sublay provides two hooks for uploading assets:
 
 - **Image upload** — server-side processing with automatic variant generation (resizing, format conversion, EXIF stripping). Returns named variants for responsive display.
 - **File upload** — generic upload for documents, videos, and other files. No server-side processing — the file is stored as-is and a proxy URL is returned.

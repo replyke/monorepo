@@ -6,7 +6,7 @@ icon: "rocket"
 
 # Quick Start Guide
 
-This guide will have you up and running with Replyke comment components in under 5 minutes.
+This guide will have you up and running with Sublay comment components in under 5 minutes.
 
 ---
 
@@ -14,7 +14,7 @@ This guide will have you up and running with Replyke comment components in under
 
 - ✅ Node.js 18+ installed
 - ✅ A React, React Native, or Expo project
-- ✅ A [Replyke project](https://dash.replyke.com) created
+- ✅ A [Sublay project](https://dash.sublay.io) created
 
 ---
 
@@ -24,7 +24,7 @@ Run the init command in your project directory:
 
 ```bash
 cd your-project
-npx @replyke/cli init
+npx @sublay/cli init
 ```
 
 ### Answer the prompts:
@@ -59,7 +59,7 @@ npx @replyke/cli init
   </Step>
 </Steps>
 
-The CLI creates a `replyke.json` configuration file and checks for required dependencies.
+The CLI creates a `sublay.json` configuration file and checks for required dependencies.
 
 ---
 
@@ -68,19 +68,19 @@ The CLI creates a `replyke.json` configuration file and checks for required depe
 <Tabs>
   <Tab title="React (Web)">
     ```bash
-    npm install @replyke/react-js
+    npm install @sublay/react-js
     ```
   </Tab>
 
   <Tab title="React Native">
     ```bash
-    npm install @replyke/react-native
+    npm install @sublay/react-native
     ```
   </Tab>
 
   <Tab title="Expo">
     ```bash
-    npm install @replyke/expo
+    npm install @sublay/expo
     ```
   </Tab>
 </Tabs>
@@ -96,7 +96,7 @@ The CLI will prompt you to install these automatically if they're missing.
 <Tabs>
   <Tab title="Threaded Comments">
     ```bash
-    npx @replyke/cli add comments-threaded
+    npx @sublay/cli add comments-threaded
     ```
 
     Reddit-style discussions with unlimited nesting, upvote/downvote, threading lines, and collapsible threads.
@@ -104,7 +104,7 @@ The CLI will prompt you to install these automatically if they're missing.
 
   <Tab title="Social Comments">
     ```bash
-    npx @replyke/cli add comments-social
+    npx @sublay/cli add comments-social
     ```
 
     Instagram-style comments with single-level nesting, heart/like system, and Top/New/Old sorting.
@@ -115,24 +115,24 @@ The CLI copies ~25 source files into your project and shows a usage example.
 
 ---
 
-## Step 4: Set Up ReplykeProvider
+## Step 4: Set Up SublayProvider
 
-Wrap your app (or the relevant section) with `ReplykeProvider`:
+Wrap your app (or the relevant section) with `SublayProvider`:
 
 <Tabs>
   <Tab title="React (Web)">
     ```tsx
     // App.tsx
-    import { ReplykeProvider } from '@replyke/react-js';
+    import { SublayProvider } from '@sublay/react-js';
 
     function App() {
       return (
-        <ReplykeProvider
+        <SublayProvider
           projectId="your-project-id"
           signedToken={yourAuthToken}
         >
           {/* Your app content */}
-        </ReplykeProvider>
+        </SublayProvider>
       );
     }
     ```
@@ -141,16 +141,16 @@ Wrap your app (or the relevant section) with `ReplykeProvider`:
   <Tab title="React Native / Expo">
     ```tsx
     // App.tsx
-    import { ReplykeProvider } from '@replyke/react-native'; // or '@replyke/expo'
+    import { SublayProvider } from '@sublay/react-native'; // or '@sublay/expo'
 
     function App() {
       return (
-        <ReplykeProvider
+        <SublayProvider
           projectId="your-project-id"
           signedToken={yourAuthToken}
         >
           {/* Your app content */}
-        </ReplykeProvider>
+        </SublayProvider>
       );
     }
     ```
@@ -211,11 +211,11 @@ That's it! You now have a fully functional comment system.
   <Tab title="Threaded Comments">
     ```tsx
     import { useEffect, useState } from 'react';
-    import { ReplykeProvider, useSignTestingJwt } from '@replyke/react-js';
+    import { SublayProvider, useSignTestingJwt } from '@sublay/react-js';
     import { ThreadedCommentSection } from './components/comments-threaded';
 
-    const PROJECT_ID = import.meta.env.VITE_PUBLIC_REPLYKE_PROJECT_ID;
-    const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_REPLYKE_SECRET_KEY;
+    const PROJECT_ID = import.meta.env.VITE_PUBLIC_SUBLAY_PROJECT_ID;
+    const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_SUBLAY_SECRET_KEY;
 
     const DUMMY_USER = { id: 'user1', username: 'tech_developer' };
 
@@ -236,13 +236,13 @@ That's it! You now have a fully functional comment system.
       }, []);
 
       return (
-        <ReplykeProvider projectId={PROJECT_ID} signedToken={signedToken}>
+        <SublayProvider projectId={PROJECT_ID} signedToken={signedToken}>
           <div className="max-w-4xl mx-auto p-8">
             <h1>My Blog Post</h1>
             <p>This is my awesome blog post content...</p>
             <ThreadedCommentSection entityId="blog-post-123" />
           </div>
-        </ReplykeProvider>
+        </SublayProvider>
       );
     }
 
@@ -253,11 +253,11 @@ That's it! You now have a fully functional comment system.
   <Tab title="Social Comments">
     ```tsx
     import { useEffect, useState } from 'react';
-    import { ReplykeProvider, useSignTestingJwt } from '@replyke/react-js';
+    import { SublayProvider, useSignTestingJwt } from '@sublay/react-js';
     import { SocialCommentSection } from './components/comments-social';
 
-    const PROJECT_ID = import.meta.env.VITE_PUBLIC_REPLYKE_PROJECT_ID;
-    const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_REPLYKE_SECRET_KEY;
+    const PROJECT_ID = import.meta.env.VITE_PUBLIC_SUBLAY_PROJECT_ID;
+    const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_SUBLAY_SECRET_KEY;
 
     const DUMMY_USER = { id: 'user1', username: 'social_user' };
 
@@ -278,13 +278,13 @@ That's it! You now have a fully functional comment system.
       }, []);
 
       return (
-        <ReplykeProvider projectId={PROJECT_ID} signedToken={signedToken}>
+        <SublayProvider projectId={PROJECT_ID} signedToken={signedToken}>
           <div className="max-w-2xl mx-auto p-8">
             <img src="post.jpg" className="w-full rounded-lg" />
             <p className="mt-4">Check out this amazing photo!</p>
             <SocialCommentSection entityId="post-456" />
           </div>
-        </ReplykeProvider>
+        </SublayProvider>
       );
     }
 
@@ -318,7 +318,7 @@ All files are editable TypeScript/TSX, documented with inline comments, and comm
 
 <AccordionGroup>
   <Accordion title="Import errors after adding component" icon="triangle-exclamation">
-    Make sure the import path matches your `paths.components` in `replyke.json`:
+    Make sure the import path matches your `paths.components` in `sublay.json`:
 
     ```tsx
     // paths.components = "src/components"
@@ -330,7 +330,7 @@ All files are editable TypeScript/TSX, documented with inline comments, and comm
   </Accordion>
 
   <Accordion title="Components not rendering" icon="eye-slash">
-    1. Check that `<ReplykeProvider>` wraps the component
+    1. Check that `<SublayProvider>` wraps the component
     2. Verify `projectId` and `signedToken` are correctly set
     3. Check the browser console for errors
   </Accordion>

@@ -5,7 +5,7 @@ description: "Content reporting and moderation tools at the project and space le
 
 ## Overview
 
-Replyke provides a two-tier moderation system:
+Sublay provides a two-tier moderation system:
 
 1. **Project-level moderation** — Users with project-level admin permissions can moderate any content across the entire project, regardless of which space it belongs to. This is typically used by the platform owner or trust-and-safety team.
 
@@ -36,9 +36,9 @@ Both tiers share the same reporting flow. The difference is in who can act on re
 
 ### Project-Level Moderation
 
-Project-level moderation is handled through the **Replyke Dashboard** — no code integration is required. Platform owners and trust-and-safety teams can log into the dashboard to review and act on reports across the entire project.
+Project-level moderation is handled through the **Sublay Dashboard** — no code integration is required. Platform owners and trust-and-safety teams can log into the dashboard to review and act on reports across the entire project.
 
-- Managed entirely from the Replyke Dashboard
+- Managed entirely from the Sublay Dashboard
 - Access to all reports, regardless of space
 - Can remove any entity or comment in the project
 - Can ban any user from any space
@@ -68,16 +68,16 @@ Space-level moderation must be **integrated in your application**. Users with an
 | `selfHarm` | Promotes self-harm or suicide |
 | `other` | Other |
 
-Import reason keys from `@replyke/core`:
+Import reason keys from `@sublay/core`:
 
 ```ts
-import { reportReasons } from "@replyke/core";
+import { reportReasons } from "@sublay/core";
 // { spam: "It's spam", inappropriateContent: "Contains inappropriate content", ... }
 ```
 
 ## Hooks
 
-The hooks below are used for **space-level moderation** integrated in your app. Project-level moderation does not require any hooks — it is handled through the Replyke Dashboard.
+The hooks below are used for **space-level moderation** integrated in your app. Project-level moderation does not require any hooks — it is handled through the Sublay Dashboard.
 
 <CardGroup cols={2}>
   <Card title="useCreateReport" href="/hooks/reports/use-create-report">

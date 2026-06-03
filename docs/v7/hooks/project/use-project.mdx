@@ -6,12 +6,12 @@ icon: "cube"
 
 ## Overview
 
-`useProject` returns the project context values set by the nearest `ReplykeProvider`. Use it to read the active `projectId` and the project's configuration (such as enabled integrations) from anywhere inside the provider tree.
+`useProject` returns the project context values set by the nearest `SublayProvider`. Use it to read the active `projectId` and the project's configuration (such as enabled integrations) from anywhere inside the provider tree.
 
 ## Usage Example
 
 ```tsx
-import { useProject } from "@replyke/react-js";
+import { useProject } from "@sublay/react-js";
 
 function IntegrationStatus() {
   const { projectId, project } = useProject();
@@ -30,7 +30,7 @@ function IntegrationStatus() {
 ## Returns
 
 <ResponseField name="projectId" type="string | undefined">
-  The project ID passed to the enclosing `ReplykeProvider`.
+  The project ID passed to the enclosing `SublayProvider`.
 </ResponseField>
 
 <ResponseField name="project" type="object | null | undefined">

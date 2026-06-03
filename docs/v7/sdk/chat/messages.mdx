@@ -10,7 +10,7 @@ This guide covers working with messages inside a conversation: loading the messa
 `useChatMessages` fetches paginated messages for a conversation. Messages are stored in Redux and kept in sync by the `ChatProvider` socket.
 
 ```tsx
-import { useChatMessages } from "@replyke/react-js";
+import { useChatMessages } from "@sublay/react-js";
 
 function MessageList({ conversationId }: { conversationId: string }) {
   const { messages, loading, hasMore, loadOlder } = useChatMessages({
@@ -49,7 +49,7 @@ See [`useChatMessages`](/hooks/chat/messages/use-chat-messages).
 `useSendMessage` returns an async function that sends a message and performs an optimistic insert — the message appears immediately in the UI with a temporary ID, then the temporary entry is replaced by the server-confirmed message.
 
 ```tsx
-import { useSendMessage } from "@replyke/react-js";
+import { useSendMessage } from "@sublay/react-js";
 
 function MessageInput({ conversationId }: { conversationId: string }) {
   const send = useSendMessage({ conversationId });
@@ -104,7 +104,7 @@ See [`useSendMessage`](/hooks/chat/messages/use-send-message).
 `useEditMessage` returns a function that takes `conversationId`, `messageId`, and updated content fields. The Redux store is updated immediately on success.
 
 ```tsx
-import { useEditMessage } from "@replyke/react-js";
+import { useEditMessage } from "@sublay/react-js";
 
 function EditableMessage({ conversationId, messageId }) {
   const edit = useEditMessage();
@@ -124,7 +124,7 @@ See [`useEditMessage`](/hooks/chat/messages/use-edit-message).
 `useDeleteMessage` performs a soft delete. The message is removed from the local Redux store immediately; on the server, it is soft-deleted (content cleared, `userDeletedAt` set).
 
 ```tsx
-import { useDeleteMessage } from "@replyke/react-js";
+import { useDeleteMessage } from "@sublay/react-js";
 
 function MessageActions({ conversationId, messageId }) {
   const deleteMsg = useDeleteMessage();
@@ -144,7 +144,7 @@ See [`useDeleteMessage`](/hooks/chat/messages/use-delete-message).
 `useToggleReaction` adds or removes an emoji reaction on a message. The response includes updated `reactionCounts` and `userReactions`:
 
 ```tsx
-import { useToggleReaction } from "@replyke/react-js";
+import { useToggleReaction } from "@sublay/react-js";
 
 function ReactionBar({ conversationId, messageId, reactionCounts, userReactions }) {
   const toggle = useToggleReaction();

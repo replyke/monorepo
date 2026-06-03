@@ -12,18 +12,18 @@ The `spaces` module includes a full set of membership management functions. Use 
 Adds a user to a space. If the space requires approval (`requireJoinApproval: true`), the membership is created in a pending state.
 
 ```typescript
-const result = await replyke.spaces.joinSpace({
+const result = await sublay.spaces.joinSpace({
   spaceId: "spc_abc123",
   userId: "usr_abc123",
 });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID to add.
+  The Sublay user ID to add.
 </ParamField>
 
 **Returns** — `Promise<JoinSpaceResponse>`
@@ -35,18 +35,18 @@ const result = await replyke.spaces.joinSpace({
 Removes a user from a space.
 
 ```typescript
-const result = await replyke.spaces.leaveSpace({
+const result = await sublay.spaces.leaveSpace({
   spaceId: "spc_abc123",
   userId: "usr_abc123",
 });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID to remove.
+  The Sublay user ID to remove.
 </ParamField>
 
 **Returns** — `Promise<LeaveSpaceResponse>`
@@ -58,18 +58,18 @@ const result = await replyke.spaces.leaveSpace({
 Returns the membership status of a user in a space.
 
 ```typescript
-const result = await replyke.spaces.checkMyMembership({
+const result = await sublay.spaces.checkMyMembership({
   spaceId: "spc_abc123",
   userId: "usr_abc123",
 });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="userId" type="string" required>
-  The Replyke user ID to check.
+  The Sublay user ID to check.
 </ParamField>
 
 **Returns** — `Promise<CheckMyMembershipResponse>`
@@ -81,7 +81,7 @@ const result = await replyke.spaces.checkMyMembership({
 Returns a paginated list of approved members in a space.
 
 ```typescript
-const result = await replyke.spaces.fetchSpaceMembers({
+const result = await sublay.spaces.fetchSpaceMembers({
   spaceId: "spc_abc123",
   page: 1,
   limit: 20,
@@ -89,7 +89,7 @@ const result = await replyke.spaces.fetchSpaceMembers({
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="page" type="number">
@@ -109,11 +109,11 @@ const result = await replyke.spaces.fetchSpaceMembers({
 Returns the admin and moderator members of a space (the "team").
 
 ```typescript
-const result = await replyke.spaces.fetchSpaceTeam({ spaceId: "spc_abc123" });
+const result = await sublay.spaces.fetchSpaceTeam({ spaceId: "spc_abc123" });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 **Returns** — `Promise<SpaceTeamResponse>`
@@ -125,7 +125,7 @@ const result = await replyke.spaces.fetchSpaceTeam({ spaceId: "spc_abc123" });
 Updates a member's role within a space.
 
 ```typescript
-const result = await replyke.spaces.updateMemberRole({
+const result = await sublay.spaces.updateMemberRole({
   spaceId: "spc_abc123",
   memberId: "mem_xyz789",
   role: "moderator",
@@ -133,11 +133,11 @@ const result = await replyke.spaces.updateMemberRole({
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="memberId" type="string" required>
-  The Replyke space member ID (not the user ID).
+  The Sublay space member ID (not the user ID).
 </ParamField>
 
 <ParamField body="role" type="string" required>
@@ -153,18 +153,18 @@ const result = await replyke.spaces.updateMemberRole({
 Approves a pending membership request. Only relevant when the space has `requireJoinApproval: true`.
 
 ```typescript
-const result = await replyke.spaces.approveMembership({
+const result = await sublay.spaces.approveMembership({
   spaceId: "spc_abc123",
   memberId: "mem_xyz789",
 });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="memberId" type="string" required>
-  The Replyke space member ID of the pending member.
+  The Sublay space member ID of the pending member.
 </ParamField>
 
 **Returns** — `Promise<ApproveMemberResponse>`
@@ -176,18 +176,18 @@ const result = await replyke.spaces.approveMembership({
 Declines and removes a pending membership request.
 
 ```typescript
-const result = await replyke.spaces.declineMembership({
+const result = await sublay.spaces.declineMembership({
   spaceId: "spc_abc123",
   memberId: "mem_xyz789",
 });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="memberId" type="string" required>
-  The Replyke space member ID of the pending member.
+  The Sublay space member ID of the pending member.
 </ParamField>
 
 **Returns** — `Promise<DeclineMemberResponse>`
@@ -199,18 +199,18 @@ const result = await replyke.spaces.declineMembership({
 Bans a member from a space, preventing them from rejoining.
 
 ```typescript
-const result = await replyke.spaces.banMember({
+const result = await sublay.spaces.banMember({
   spaceId: "spc_abc123",
   memberId: "mem_xyz789",
 });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="memberId" type="string" required>
-  The Replyke space member ID to ban.
+  The Sublay space member ID to ban.
 </ParamField>
 
 **Returns** — `Promise<BanMemberResponse>`
@@ -222,18 +222,18 @@ const result = await replyke.spaces.banMember({
 Removes a ban, allowing the user to rejoin the space.
 
 ```typescript
-const result = await replyke.spaces.unbanMember({
+const result = await sublay.spaces.unbanMember({
   spaceId: "spc_abc123",
   memberId: "mem_xyz789",
 });
 ```
 
 <ParamField body="spaceId" type="string" required>
-  The Replyke space ID.
+  The Sublay space ID.
 </ParamField>
 
 <ParamField body="memberId" type="string" required>
-  The Replyke space member ID to unban.
+  The Sublay space member ID to unban.
 </ParamField>
 
 **Returns** — `Promise<UnbanMemberResponse>`

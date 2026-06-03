@@ -10,7 +10,7 @@ The `SpaceProvider` and `useSpace` hook are the primary way to work with a singl
 Place `SpaceProvider` anywhere in your tree where space data is needed. You can identify the space by UUID, shortId, or slug — or skip the fetch entirely by passing a pre-fetched space object directly.
 
 ```tsx
-import { SpaceProvider } from "@replyke/react-js";
+import { SpaceProvider } from "@sublay/react-js";
 
 // By UUID
 <SpaceProvider spaceId="space-uuid">
@@ -62,7 +62,7 @@ import { SpaceProvider } from "@replyke/react-js";
 `useSpace` must be called inside a descendant of `SpaceProvider`.
 
 ```tsx
-import { useSpace } from "@replyke/react-js";
+import { useSpace } from "@sublay/react-js";
 
 function SpaceContent() {
   const {
@@ -177,7 +177,7 @@ function SpaceContent() {
 ## Example: Space Page with Membership Button
 
 ```tsx
-import { SpaceProvider, useSpace } from "@replyke/react-js";
+import { SpaceProvider, useSpace } from "@sublay/react-js";
 
 function SpacePage({ spaceId }: { spaceId: string }) {
   return (

@@ -3,7 +3,7 @@ title: "Multi-Account"
 description: "Managing multiple user accounts in a single app instance"
 ---
 
-Replyke supports up to **5 simultaneously stored accounts** in a single app instance. Users can add new accounts, switch between them, and remove individual accounts without losing session data for the others.
+Sublay supports up to **5 simultaneously stored accounts** in a single app instance. Users can add new accounts, switch between them, and remove individual accounts without losing session data for the others.
 
 ## Architecture
 
@@ -24,7 +24,7 @@ When the user switches accounts, the SDK restores the stored refresh token for t
 ## Reading Account State
 
 ```tsx
-import { useAccounts } from "@replyke/react-js";
+import { useAccounts } from "@sublay/react-js";
 
 function AccountList() {
   const { accounts, activeAccount, accountCount } = useAccounts();
@@ -50,7 +50,7 @@ Each account entry in `accounts` is an `AccountSummary` containing `id`, `name`,
 Calling `addAccount` clears the current auth state, which causes the app to display the sign-in UI. The previously stored accounts remain in the accounts map and are not affected. After the user signs in to the new account, it is added to the map automatically.
 
 ```tsx
-import { useAddAccount } from "@replyke/react-js";
+import { useAddAccount } from "@sublay/react-js";
 
 function AddAccountButton() {
   const { addAccount, canAddAccount } = useAddAccount();
@@ -68,7 +68,7 @@ function AddAccountButton() {
 ## Switching Accounts
 
 ```tsx
-import { useAccounts, useSwitchAccount } from "@replyke/react-js";
+import { useAccounts, useSwitchAccount } from "@sublay/react-js";
 
 function AccountSwitcher() {
   const { accounts, activeAccount } = useAccounts();
@@ -100,7 +100,7 @@ Switching is asynchronous. The SDK revokes the current access token, sets the ta
 ## Removing an Account
 
 ```tsx
-import { useAccounts, useRemoveAccount } from "@replyke/react-js";
+import { useAccounts, useRemoveAccount } from "@sublay/react-js";
 
 function RemoveAccountButton({ userId }: { userId: string }) {
   const { removeAccount, isRemoving, error } = useRemoveAccount();
@@ -123,7 +123,7 @@ Removing an account also sends a best-effort sign-out request to the server to r
 ## Signing Out All Accounts
 
 ```tsx
-import { useSignOutAll } from "@replyke/react-js";
+import { useSignOutAll } from "@sublay/react-js";
 
 function SignOutAllButton() {
   const { signOutAll } = useSignOutAll();

@@ -10,7 +10,7 @@ Entity Lists is the system for building feeds, search results, and any paginated
 The primary entry point is `useEntityList`. You call it with a unique `listId` — this is how multiple independent lists can exist on the same page without conflicting state.
 
 ```tsx
-import { useEntityList } from "@replyke/react-js";
+import { useEntityList } from "@sublay/react-js";
 
 function Feed() {
   const { entities, loading, hasMore, fetchEntities, loadMore } = useEntityList({
@@ -37,7 +37,7 @@ function Feed() {
     How to call `fetchEntities`, paginate with `loadMore`, and create or delete entities within a list.
   </Card>
   <Card title="Infusing Data" href="/sdk/entity-lists/infuse-data">
-    Merge Replyke entities with data from your own system using the `infuseData` callback.
+    Merge Sublay entities with data from your own system using the `infuseData` callback.
   </Card>
   <Card title="Filters" href="/sdk/entity-lists/filters">
     Complete reference for keywords, title, content, metadata, attachments, and location filters.

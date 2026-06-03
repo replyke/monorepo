@@ -1,23 +1,23 @@
 ---
 title: "Getting Started"
-description: "Install the Replyke SDK and add ReplykeProvider to your app"
+description: "Install the Sublay SDK and add SublayProvider to your app"
 ---
 
-Replyke's SDK is distributed through the `@replyke` family of packages. The React web package (`@replyke/react-js`) is the starting point for most projects.
+Sublay's SDK is distributed through the `@sublay` family of packages. The React web package (`@sublay/react-js`) is the starting point for most projects.
 
 ## Installation
 
 <CodeGroup>
   ```bash npm
-  npm install @replyke/react-js@beta
+  npm install @sublay/react-js@beta
   ```
 
   ```bash yarn
-  yarn add @replyke/react-js@beta
+  yarn add @sublay/react-js@beta
   ```
 
   ```bash pnpm
-  pnpm add @replyke/react-js@beta
+  pnpm add @sublay/react-js@beta
   ```
 </CodeGroup>
 
@@ -25,26 +25,26 @@ For React Native or Expo projects, install the platform-specific package instead
 
 <CodeGroup>
   ```bash React Native
-  npm install @replyke/react-native@beta
+  npm install @sublay/react-native@beta
   ```
 
   ```bash Expo
-  npm install @replyke/expo@beta
+  npm install @sublay/expo@beta
   ```
 </CodeGroup>
 
-## Wrap Your App with ReplykeProvider
+## Wrap Your App with SublayProvider
 
-`ReplykeProvider` is the root provider that must wrap your entire application (or the portion of it that uses Replyke features). It initializes the Redux store, bootstraps auth state, and makes the `projectId` available to all child hooks and components.
+`SublayProvider` is the root provider that must wrap your entire application (or the portion of it that uses Sublay features). It initializes the Redux store, bootstraps auth state, and makes the `projectId` available to all child hooks and components.
 
 ```tsx
-import { ReplykeProvider } from "@replyke/react-js";
+import { SublayProvider } from "@sublay/react-js";
 
 function App() {
   return (
-    <ReplykeProvider projectId="your-project-id">
+    <SublayProvider projectId="your-project-id">
       {/* your app */}
-    </ReplykeProvider>
+    </SublayProvider>
   );
 }
 ```
@@ -52,7 +52,7 @@ function App() {
 ### Props
 
 <ParamField body="projectId" type="string" required>
-  Your Replyke project ID. Found in the Replyke dashboard under project settings.
+  Your Sublay project ID. Found in the Sublay dashboard under project settings.
 </ParamField>
 
 <ParamField body="signedToken" type="string | null">
@@ -61,11 +61,11 @@ function App() {
 
 ## Choosing an Authentication Mode
 
-After wrapping with `ReplykeProvider`, users are unauthenticated by default. You can authenticate them using any combination of:
+After wrapping with `SublayProvider`, users are unauthenticated by default. You can authenticate them using any combination of:
 
 <CardGroup cols={2}>
   <Card title="Built-in Auth" icon="lock" href="/sdk/authentication/built-in">
-    Sign up and sign in with email and password. Replyke manages credentials and sessions.
+    Sign up and sign in with email and password. Sublay manages credentials and sessions.
   </Card>
   <Card title="External Auth" icon="code" href="/sdk/authentication/external">
     Pass a signed JWT from your own auth system via the `signedToken` prop.
@@ -80,10 +80,10 @@ After wrapping with `ReplykeProvider`, users are unauthenticated by default. You
 
 ## Checking Auth State
 
-Use the `useAuth` hook for auth actions and `useUser` to access the current user anywhere inside `ReplykeProvider`:
+Use the `useAuth` hook for auth actions and `useUser` to access the current user anywhere inside `SublayProvider`:
 
 ```tsx
-import { useAuth, useUser } from "@replyke/react-js";
+import { useAuth, useUser } from "@sublay/react-js";
 
 function Header() {
   const { initialized, signOut } = useAuth();
@@ -107,9 +107,9 @@ function Header() {
 
 ## Redux Store
 
-`ReplykeProvider` automatically creates and manages an isolated Redux store. You do not need to configure Redux to use Replyke.
+`SublayProvider` automatically creates and manages an isolated Redux store. You do not need to configure Redux to use Sublay.
 
-If your application already has its own Redux store, we strongly recommend using `ReplykeIntegrationProvider` instead — running two separate Redux stores in the same app is a common source of subtle bugs. See [Redux Integration](/sdk/redux-integration) for setup details.
+If your application already has its own Redux store, we strongly recommend using `SublayIntegrationProvider` instead — running two separate Redux stores in the same app is a common source of subtle bugs. See [Redux Integration](/sdk/redux-integration) for setup details.
 
 ## What's Next
 

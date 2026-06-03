@@ -3,7 +3,7 @@ title: "Authentication"
 description: "How to authenticate API requests with Bearer tokens and manage token refresh"
 ---
 
-Most Replyke API endpoints require an authenticated user. Authentication uses short-lived JWT access tokens passed as `Bearer` tokens in the `Authorization` header.
+Most Sublay API endpoints require an authenticated user. Authentication uses short-lived JWT access tokens passed as `Bearer` tokens in the `Authorization` header.
 
 ## Bearer Token
 
@@ -56,7 +56,7 @@ See [Request New Access Token](/api-reference/auth/request-new-access-token) for
 
 ## SDK Token Management
 
-If you are using the Replyke SDK (`@replyke/react-js`, `@replyke/react-native`, etc.), **you do not need to manage tokens manually**. The SDK stores tokens, attaches them to every request, and automatically refreshes them before they expire.
+If you are using the Sublay SDK (`@sublay/react-js`, `@sublay/react-native`, etc.), **you do not need to manage tokens manually**. The SDK stores tokens, attaches them to every request, and automatically refreshes them before they expire.
 
 Token management is only relevant when calling the REST API directly — for example, from a server-side environment using the [Node SDK](/sdk/getting-started) or a custom HTTP client.
 

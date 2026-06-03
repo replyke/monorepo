@@ -7,14 +7,14 @@ Spaces can be configured to send a digest — a summary of recent content — to
 
 ## How It Works
 
-The digest system is configured per space by admins. When enabled, Replyke periodically sends a webhook payload to the configured URL containing recent space activity. The exact delivery format and payload structure are determined by the webhook handler on your server.
+The digest system is configured per space by admins. When enabled, Sublay periodically sends a webhook payload to the configured URL containing recent space activity. The exact delivery format and payload structure are determined by the webhook handler on your server.
 
 ## Fetching Digest Config
 
 Only space admins can fetch the digest configuration:
 
 ```tsx
-import { useFetchDigestConfig } from "@replyke/react-js";
+import { useFetchDigestConfig } from "@sublay/react-js";
 
 const fetchDigestConfig = useFetchDigestConfig();
 const config = await fetchDigestConfig({ spaceId });
@@ -33,7 +33,7 @@ const config = await fetchDigestConfig({ spaceId });
 ## Updating Digest Config
 
 ```tsx
-import { useUpdateDigestConfig } from "@replyke/react-js";
+import { useUpdateDigestConfig } from "@sublay/react-js";
 
 const updateDigestConfig = useUpdateDigestConfig();
 

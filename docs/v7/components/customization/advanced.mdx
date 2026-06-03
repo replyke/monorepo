@@ -1,6 +1,6 @@
 ---
 title: "Advanced Customization"
-description: "Advanced techniques for customizing Replyke components"
+description: "Advanced techniques for customizing Sublay components"
 icon: "star"
 ---
 
@@ -182,7 +182,7 @@ const otherUserClickCallback = (userId: string, foreignId?: string) => {
   // foreignId is your system's user ID if set during auth
   const profileUrl = foreignId
     ? `/users/${foreignId}`
-    : `/users/replyke/${userId}`;
+    : `/users/sublay/${userId}`;
 
   router.push(profileUrl);
 };

@@ -6,7 +6,7 @@ icon: "plug"
 
 ## Overview
 
-Uploads an image to Replyke storage. The server processes the image using Sharp, generates named variants according to the specified mode, and returns an [`Image`](/data-models/file) object with proxy URLs for all variants.
+Uploads an image to Sublay storage. The server processes the image using Sharp, generates named variants according to the specified mode, and returns an [`Image`](/data-models/file) object with proxy URLs for all variants.
 
 Works in both browser and React Native environments. Provides upload progress tracking.
 
@@ -15,7 +15,7 @@ Works in both browser and React Native environments. Provides upload progress tr
 ## Usage Example
 
 ```tsx
-import { useUploadImage } from "@replyke/react-js";
+import { useUploadImage } from "@sublay/react-js";
 
 function AvatarUploader() {
   const { uploadImage, uploading, progress } = useUploadImage();

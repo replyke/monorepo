@@ -1,6 +1,6 @@
 ---
 title: "Introduction"
-description: "Replyke is infrastructure for user-powered applications — auth, social graph, content, chat, community spaces, and more, pre-built and ready to integrate."
+description: "Sublay is infrastructure for user-powered applications — auth, social graph, content, chat, community spaces, and more, pre-built and ready to integrate."
 icon: "house"
 ---
 
@@ -8,11 +8,11 @@ Every product eventually needs users to *do* something — comment on a post, re
 
 The typical answer is a third-party tool. But third-party tools mean your users create *another* account, in someone else's UI, disconnected from your product. The experience fragments — and you lose control.
 
-Replyke is the alternative. It gives you the complete set of social primitives — feeds, comments, chat, notifications, and more — as infrastructure you own. Bring your existing users via a signed JWT, or let Replyke handle auth entirely. Either way: one unified user identity, your design, whether social features are the heart of your product or just one corner of it.
+Sublay is the alternative. It gives you the complete set of social primitives — feeds, comments, chat, notifications, and more — as infrastructure you own. Bring your existing users via a signed JWT, or let Sublay handle auth entirely. Either way: one unified user identity, your design, whether social features are the heart of your product or just one corner of it.
 
 ## What's Included
 
-Replyke ships with every building block a user-powered application needs:
+Sublay ships with every building block a user-powered application needs:
 
 <CardGroup cols={3}>
   <Card title="Auth & Identity" icon="key">
@@ -55,20 +55,20 @@ Replyke ships with every building block a user-powered application needs:
 
 ## How It Works
 
-Every Replyke project gets a hosted API endpoint. Your application talks to that endpoint — either through the React/React Native SDK (which handles tokens, state, and real-time automatically) or directly via the REST API.
+Every Sublay project gets a hosted API endpoint. Your application talks to that endpoint — either through the React/React Native SDK (which handles tokens, state, and real-time automatically) or directly via the REST API.
 
 All data is scoped to your project. Users, entities, conversations, and spaces exist only within your project's namespace. You can have multiple projects — a staging environment, separate apps, or white-labeled products — each fully isolated.
 
 <Note>
-  Replyke uses a project-scoped architecture. All API paths include a `projectId`. Your project ID is available in the dashboard.
+  Sublay uses a project-scoped architecture. All API paths include a `projectId`. Your project ID is available in the dashboard.
 </Note>
 
 ## Auth Flexibility
 
-Replyke does not force you into one authentication model. You choose how users are identified:
+Sublay does not force you into one authentication model. You choose how users are identified:
 
-- **Built-in auth** — Replyke manages the full user identity: email/password sign-up, password reset, OAuth providers. No external auth system needed.
-- **External auth** — Your backend issues a signed JWT, and Replyke automatically creates or matches a user from it. Keep your existing auth stack and add Replyke alongside it.
+- **Built-in auth** — Sublay manages the full user identity: email/password sign-up, password reset, OAuth providers. No external auth system needed.
+- **External auth** — Your backend issues a signed JWT, and Sublay automatically creates or matches a user from it. Keep your existing auth stack and add Sublay alongside it.
 - **OAuth** — Sign in with Google, GitHub, or other configured providers. Supports linking multiple OAuth identities to a single account.
 
 See [Authentication](/authentication) for a full conceptual overview.
@@ -77,13 +77,13 @@ See [Authentication](/authentication) for a full conceptual overview.
 
 <CardGroup cols={2}>
   <Card title="SDK Quick Start" icon="rocket" href="/sdk/getting-started">
-    Install `@replyke/react-js` or `@replyke/react-native` and get your first feature running in minutes.
+    Install `@sublay/react-js` or `@sublay/react-native` and get your first feature running in minutes.
   </Card>
   <Card title="Integration Options" icon="plug" href="/integration-options">
     Learn about the SDK, raw REST API, and Redux integration options — and choose the right path for your project.
   </Card>
   <Card title="Authentication" icon="lock" href="/authentication">
-    Built-in, external, and OAuth auth models explained. Understand how user identity flows through Replyke.
+    Built-in, external, and OAuth auth models explained. Understand how user identity flows through Sublay.
   </Card>
   <Card title="API Reference" icon="code" href="/api-reference/getting-started">
     Complete REST API documentation — every endpoint, every field.

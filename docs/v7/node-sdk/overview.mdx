@@ -1,9 +1,9 @@
 ---
 title: "Node.js SDK"
-description: "Server-side SDK for Replyke — use in backend APIs, server actions, webhooks, and scheduled jobs"
+description: "Server-side SDK for Sublay — use in backend APIs, server actions, webhooks, and scheduled jobs"
 ---
 
-The `@replyke/node` SDK gives you full programmatic access to the Replyke API from any Node.js environment. It is designed for **server-side use only** — backend endpoints, Next.js server actions, webhook handlers, cron jobs, and scripts.
+The `@sublay/node` SDK gives you full programmatic access to the Sublay API from any Node.js environment. It is designed for **server-side use only** — backend endpoints, Next.js server actions, webhook handlers, cron jobs, and scripts.
 
 <Note>
   This SDK requires a **secret API key** and must never be used in client-side
@@ -13,26 +13,26 @@ The `@replyke/node` SDK gives you full programmatic access to the Replyke API fr
 ## Installation
 
 ```bash
-npm install @replyke/node
+npm install @sublay/node
 ```
 
 ## Initialization
 
-Create a single `ReplykeClient` instance at startup and reuse it throughout your application.
+Create a single `SublayClient` instance at startup and reuse it throughout your application.
 
 ```typescript
-import { ReplykeClient } from "@replyke/node";
+import { SublayClient } from "@sublay/node";
 
-const replyke = await ReplykeClient.init({
-  projectId: process.env.REPLYKE_PROJECT_ID!,
-  apiKey: process.env.REPLYKE_API_KEY!,
+const sublay = await SublayClient.init({
+  projectId: process.env.SUBLAY_PROJECT_ID!,
+  apiKey: process.env.SUBLAY_API_KEY!,
 });
 ```
 
 ### Configuration
 
 <ParamField body="projectId" type="string" required>
-  Your Replyke project ID, found in the dashboard under **Settings → General**.
+  Your Sublay project ID, found in the dashboard under **Settings → General**.
 </ParamField>
 
 <ParamField body="apiKey" type="string" required>
@@ -50,13 +50,13 @@ const replyke = await ReplykeClient.init({
 Once initialized, all functionality is accessed through module namespaces on the client:
 
 ```typescript
-replyke.auth          // Authentication — sign up, sign in, tokens
-replyke.users         // User profiles, follows, connections
-replyke.entities      // Content entities — CRUD, reactions, drafts
-replyke.comments      // Comments — CRUD, reactions
-replyke.spaces        // Spaces — management, members, moderation, rules
-replyke.search        // Search and AI Q&A
-replyke.hostedApps    // Hosted app configuration
+sublay.auth          // Authentication — sign up, sign in, tokens
+sublay.users         // User profiles, follows, connections
+sublay.entities      // Content entities — CRUD, reactions, drafts
+sublay.comments      // Comments — CRUD, reactions
+sublay.spaces        // Spaces — management, members, moderation, rules
+sublay.search        // Search and AI Q&A
+sublay.hostedApps    // Hosted app configuration
 ```
 
 <CardGroup cols={2}>

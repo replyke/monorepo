@@ -17,7 +17,7 @@ Threads allow users to reply to a specific message in a focused side-conversatio
 `useMessageThread` is a convenience hook that combines message loading and sending for a specific message thread:
 
 ```tsx
-import { useMessageThread } from "@replyke/react-js";
+import { useMessageThread } from "@sublay/react-js";
 
 function ThreadPanel({
   conversationId,
@@ -67,7 +67,7 @@ See [`useMessageThread`](/hooks/chat/messages/use-message-thread).
 For more control, use `useChatMessages` with a `parentId` to load thread replies:
 
 ```tsx
-import { useChatMessages, useSendMessage } from "@replyke/react-js";
+import { useChatMessages, useSendMessage } from "@sublay/react-js";
 
 const { messages: replies, loading, hasMore, loadOlder } = useChatMessages({
   conversationId,

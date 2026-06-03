@@ -16,7 +16,7 @@ The `auth` module handles user authentication flows server-side. This is useful 
 Creates a new user account and returns credentials.
 
 ```typescript
-const { user, accessToken, refreshToken } = await replyke.auth.signUp({
+const { user, accessToken, refreshToken } = await sublay.auth.signUp({
   email: "user@example.com",
   password: "s3cur3P@ss",
   name: "Alice",
@@ -53,7 +53,7 @@ const { user, accessToken, refreshToken } = await replyke.auth.signUp({
 Authenticates an existing user and returns fresh credentials.
 
 ```typescript
-const { user, accessToken, refreshToken } = await replyke.auth.signIn({
+const { user, accessToken, refreshToken } = await sublay.auth.signIn({
   email: "user@example.com",
   password: "s3cur3P@ss",
 });
@@ -76,7 +76,7 @@ const { user, accessToken, refreshToken } = await replyke.auth.signIn({
 Invalidates a refresh token, ending the user's session.
 
 ```typescript
-await replyke.auth.signOut({ refreshToken });
+await sublay.auth.signOut({ refreshToken });
 ```
 
 <ParamField body="refreshToken" type="string" required>
@@ -92,7 +92,7 @@ await replyke.auth.signOut({ refreshToken });
 Exchanges a valid refresh token for a new access token.
 
 ```typescript
-const { accessToken } = await replyke.auth.requestNewAccessToken({
+const { accessToken } = await sublay.auth.requestNewAccessToken({
   refreshToken,
 });
 ```
@@ -107,10 +107,10 @@ const { accessToken } = await replyke.auth.requestNewAccessToken({
 
 ### verifyExternalUser
 
-Verifies a signed JWT representing an externally-authenticated user and returns Replyke credentials. Use this when your application manages its own auth and you want to associate users with Replyke.
+Verifies a signed JWT representing an externally-authenticated user and returns Sublay credentials. Use this when your application manages its own auth and you want to associate users with Sublay.
 
 ```typescript
-const { user, accessToken, refreshToken } = await replyke.auth.verifyExternalUser({
+const { user, accessToken, refreshToken } = await sublay.auth.verifyExternalUser({
   userJwt: signedJwt,
 });
 ```
@@ -128,7 +128,7 @@ const { user, accessToken, refreshToken } = await replyke.auth.verifyExternalUse
 Sends a password reset email to the specified address.
 
 ```typescript
-await replyke.auth.requestPasswordReset({ email: "user@example.com" });
+await sublay.auth.requestPasswordReset({ email: "user@example.com" });
 ```
 
 <ParamField body="email" type="string" required>
@@ -144,7 +144,7 @@ await replyke.auth.requestPasswordReset({ email: "user@example.com" });
 Completes a password reset using a token from the reset email.
 
 ```typescript
-await replyke.auth.resetPassword({
+await sublay.auth.resetPassword({
   token: resetToken,
   newPassword: "newS3cur3P@ss",
 });
@@ -167,7 +167,7 @@ await replyke.auth.resetPassword({
 Marks a user's email address as verified using a token from the verification email.
 
 ```typescript
-await replyke.auth.verifyEmail({ token: verificationToken });
+await sublay.auth.verifyEmail({ token: verificationToken });
 ```
 
 <ParamField body="token" type="string" required>

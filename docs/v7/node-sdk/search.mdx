@@ -3,7 +3,7 @@ title: "Search"
 description: "Full-text search across content, users, and spaces, plus AI-powered Q&A"
 ---
 
-The `search` module provides server-side access to Replyke's search and AI capabilities. Use it to build search APIs, power recommendation engines, or answer natural-language questions about your content.
+The `search` module provides server-side access to Sublay's search and AI capabilities. Use it to build search APIs, power recommendation engines, or answer natural-language questions about your content.
 
 ---
 
@@ -12,7 +12,7 @@ The `search` module provides server-side access to Replyke's search and AI capab
 Searches entities by full-text query, optionally scoped to a space.
 
 ```typescript
-const { data, metadata } = await replyke.search.searchContent({
+const { data, metadata } = await sublay.search.searchContent({
   query: "getting started guide",
   spaceId: "spc_abc123",
   page: 1,
@@ -45,7 +45,7 @@ const { data, metadata } = await replyke.search.searchContent({
 Searches for users by name or username.
 
 ```typescript
-const { data, metadata } = await replyke.search.searchUsers({
+const { data, metadata } = await sublay.search.searchUsers({
   query: "alice",
   page: 1,
   limit: 10,
@@ -73,7 +73,7 @@ const { data, metadata } = await replyke.search.searchUsers({
 Searches for spaces by name or description.
 
 ```typescript
-const { data, metadata } = await replyke.search.searchSpaces({
+const { data, metadata } = await sublay.search.searchSpaces({
   query: "photography",
   page: 1,
   limit: 10,
@@ -105,7 +105,7 @@ Asks a natural-language question about your content and returns an AI-generated 
 </Note>
 
 ```typescript
-const { answer, sources } = await replyke.search.askContent({
+const { answer, sources } = await sublay.search.askContent({
   question: "What are the best practices for error handling?",
   spaceId: "spc_abc123",
 });

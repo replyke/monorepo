@@ -1,15 +1,15 @@
 ---
 title: "Integration Options"
-description: "The different ways to integrate Replyke — SDK, raw REST API, and Redux store integration."
+description: "The different ways to integrate Sublay — SDK, raw REST API, and Redux store integration."
 icon: "plug"
 ---
 
-Replyke exposes its infrastructure through a REST API. On top of that, the React and React Native SDK packages provide a higher-level integration layer that handles token management, state, real-time subscriptions, and type safety automatically.
+Sublay exposes its infrastructure through a REST API. On top of that, the React and React Native SDK packages provide a higher-level integration layer that handles token management, state, real-time subscriptions, and type safety automatically.
 
 This page explains your options so you can choose the path that fits your project.
 
 <Warning>
-  When using Replyke from a web application in production, whitelist your domain in the project dashboard. Requests from non-whitelisted origins will be rejected.
+  When using Sublay from a web application in production, whitelist your domain in the project dashboard. Requests from non-whitelisted origins will be rejected.
 </Warning>
 
 ## Option 1: React / React Native SDK (Recommended)
@@ -19,15 +19,15 @@ If your application uses React or React Native, the SDK is the recommended integ
 - **Token lifecycle** — Access tokens are requested, stored, and refreshed automatically. You never manually manage auth headers.
 - **Real-time** — The chat system connects via WebSocket automatically when `ChatProvider` is mounted. Message delivery, read state, and typing indicators are handled for you.
 - **Optimistic state** — Actions like sending a message or toggling a reaction update local state immediately and sync with the server in the background.
-- **Typed interfaces** — Every object your hooks return is typed against the interfaces in `@replyke/core`. You get full autocomplete and type safety across entities, users, conversations, comments, and more.
+- **Typed interfaces** — Every object your hooks return is typed against the interfaces in `@sublay/core`. You get full autocomplete and type safety across entities, users, conversations, comments, and more.
 - **Context providers** — Features like the entity subtree, comment section, conversation, and space are scoped via React context providers, so any component in the subtree can access the full feature state with a single hook call.
 
 <CardGroup cols={2}>
   <Card title="React (Web)" icon="react" href="/sdk/getting-started">
-    Install `@replyke/react-js`. Works with Next.js, Vite, Create React App, or any React web setup.
+    Install `@sublay/react-js`. Works with Next.js, Vite, Create React App, or any React web setup.
   </Card>
   <Card title="React Native / Expo" icon="mobile" href="/sdk/getting-started">
-    Install `@replyke/react-native` (or `@replyke/expo` for Expo-managed workflows with secure token storage).
+    Install `@sublay/react-native` (or `@sublay/expo` for Expo-managed workflows with secure token storage).
   </Card>
 </CardGroup>
 
@@ -35,14 +35,14 @@ If your application uses React or React Native, the SDK is the recommended integ
 
 | Package | Platform | Notes |
 |---------|----------|-------|
-| `@replyke/react-js` | React web | Full SDK for browser environments |
-| `@replyke/react-native` | React Native | Full SDK with AsyncStorage token storage |
-| `@replyke/expo` | Expo | Same as React Native but uses SecureStore |
-| `@replyke/core` | Shared | Platform-agnostic hooks and types — not imported directly in most cases |
+| `@sublay/react-js` | React web | Full SDK for browser environments |
+| `@sublay/react-native` | React Native | Full SDK with AsyncStorage token storage |
+| `@sublay/expo` | Expo | Same as React Native but uses SecureStore |
+| `@sublay/core` | Shared | Platform-agnostic hooks and types — not imported directly in most cases |
 
 ## Option 2: Raw REST API
 
-If your application does not use React, or you need to call Replyke from a server-side context, the REST API is available directly.
+If your application does not use React, or you need to call Sublay from a server-side context, the REST API is available directly.
 
 All endpoints are under `/:projectId/api/v7/`. Every request that requires a user identity must include a valid access token in the `Authorization: Bearer <token>` header.
 
@@ -66,7 +66,7 @@ Requests with a service key require two headers:
 
 ```http
 Authorization: Bearer <your-service-api-key>
-x-replyke-project-id: <your-project-id>
+x-sublay-project-id: <your-project-id>
 ```
 
 <Warning>
@@ -81,14 +81,14 @@ See [API Reference → Getting Started](/api-reference/getting-started) for auth
 
 ## Option 3: Redux Store Integration
 
-If your React application already has its own Redux store, you can integrate Replyke's state directly into it rather than using the default built-in store.
+If your React application already has its own Redux store, you can integrate Sublay's state directly into it rather than using the default built-in store.
 
-By default, `ReplykeProvider` creates an internal Redux store for Replyke's state. If you have an existing store, using two separate Redux stores in one app is not ideal. `ReplykeIntegrationProvider` lets you pass your own Redux store configuration and mount Replyke's reducers and middleware alongside your own.
+By default, `SublayProvider` creates an internal Redux store for Sublay's state. If you have an existing store, using two separate Redux stores in one app is not ideal. `SublayIntegrationProvider` lets you pass your own Redux store configuration and mount Sublay's reducers and middleware alongside your own.
 
 This requires:
-- Adding `replykeReducers` and `replykeApiReducer` to your `combineReducers` call
-- Adding `replykeMiddleware` to your middleware chain
-- Using `ReplykeIntegrationProvider` instead of `ReplykeProvider`
+- Adding `sublayReducers` and `sublayApiReducer` to your `combineReducers` call
+- Adding `sublayMiddleware` to your middleware chain
+- Using `SublayIntegrationProvider` instead of `SublayProvider`
 
 See [SDK Reference → Redux Integration](/sdk/redux-integration) for the full setup guide.
 
@@ -96,9 +96,9 @@ See [SDK Reference → Redux Integration](/sdk/redux-integration) for the full s
 
 | Scenario | Recommended |
 |----------|-------------|
-| Building with React or React Native | SDK (`@replyke/react-js` or `@replyke/react-native`) |
-| Expo project | `@replyke/expo` |
-| Already have a Redux store in React | SDK + Redux integration (`ReplykeIntegrationProvider`) |
+| Building with React or React Native | SDK (`@sublay/react-js` or `@sublay/react-native`) |
+| Expo project | `@sublay/expo` |
+| Already have a Redux store in React | SDK + Redux integration (`SublayIntegrationProvider`) |
 | Vue, Angular, Svelte, or other frameworks | REST API with user access tokens |
 | Server-side / backend operations | REST API with service API key |
 | Webhook handlers, scheduled jobs, data pipelines | REST API with service API key |
