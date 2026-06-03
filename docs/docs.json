@@ -7,7 +7,7 @@
     "light": "#F06789",
     "dark": "#9E1E3E"
   },
-  "favicon": "/favicon.webp",
+  "favicon": "/favicon.svg",
   "navigation": {
     "versions": [
       {
@@ -1276,8 +1276,8 @@
     ]
   },
   "logo": {
-    "light": "/logo/dark.webp",
-    "dark": "/logo/light.webp"
+    "light": "/logo/wordmark-dark.png",
+    "dark": "/logo/wordmark-light.png"
   },
   "navbar": {
     "links": [
