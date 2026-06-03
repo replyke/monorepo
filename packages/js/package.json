@@ -8,7 +8,8 @@
     "build": "tsup src/index.ts --dts --format cjs,esm",
     "build:types": "tsc --emitDeclarationOnly",
     "prepare": "pnpm build && pnpm build:types",
-    "publish-beta": "pnpm publish --tag beta"
+    "publish-beta": "pnpm publish --tag beta",
+    "publish-prod": "pnpm publish"
   },
   "author": "Sublay team",
   "license": "ISC",
