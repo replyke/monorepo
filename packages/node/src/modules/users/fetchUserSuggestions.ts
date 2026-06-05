@@ -3,7 +3,6 @@ import { User } from "../../interfaces/User";
 
 export interface FetchUserSuggestionsProps {
   query: string;
-  limit?: number;
 }
 
 export async function fetchUserSuggestions(

@@ -8,6 +8,7 @@ export interface UpdateUserProps {
   bio?: string;
   avatar?: string;
   metadata?: Record<string, any>;
+  secureMetadata?: Record<string, any>;
   birthdate?: Date;
   location?: {
     latitude: number;

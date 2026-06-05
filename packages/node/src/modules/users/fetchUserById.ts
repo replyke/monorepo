@@ -3,13 +3,15 @@ import { User } from "../../interfaces/User";
 
 export interface FetchUserByIdProps {
   userId: string;
+  include?: string;
 }
 
 export async function fetchUserById(
   client: SublayHttpClient,
   data: FetchUserByIdProps
 ): Promise<User> {
-  const path = `/users/${data.userId}`; // assuming client handles prefix like /{projectId}
-  const response = await client.projectInstance.get<User>(path);
+  const { userId, ...params } = data;
+  const path = `/users/${userId}`; // assuming client handles prefix like /{projectId}
+  const response = await client.projectInstance.get<User>(path, { params });
   return response.data;
 }

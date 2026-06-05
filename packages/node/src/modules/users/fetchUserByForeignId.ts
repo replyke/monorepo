@@ -10,6 +10,7 @@ export interface FetchUserByForeignIdProps {
   bio?: string;
   metadata?: Record<string, any>;
   secureMetadata?: Record<string, any>;
+  include?: string;
 }
 
 export async function fetchUserByForeignId(
@@ -20,7 +21,7 @@ export async function fetchUserByForeignId(
 
   const params: Record<string, any> = {
     foreignId: data.foreignId,
-    createIfNotFound: true,
+    createIfNotFound: data.createIfNotFound,
     name: data.name,
     username: data.username,
     avatar: data.avatar,
@@ -29,6 +30,7 @@ export async function fetchUserByForeignId(
     secureMetadata: data.secureMetadata
       ? JSON.stringify(data.secureMetadata)
       : undefined,
+    include: data.include,
   };
 
   const response = await client.projectInstance.get<User>(path, {

@@ -3,6 +3,7 @@ import { User } from "../../interfaces/User";
 
 export interface FetchUserByUsernameProps {
   username: string;
+  include?: string;
 }
 
 export async function fetchUserByUsername(
