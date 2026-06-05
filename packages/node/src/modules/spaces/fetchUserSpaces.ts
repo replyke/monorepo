@@ -5,6 +5,10 @@ export interface FetchUserSpacesProps {
   userId: string;
   page?: number;
   limit?: number;
+  sortBy?: "alphabetical" | "newest" | "members";
+  include?: string;
+  role?: string; // single role or comma-separated, e.g. "admin,moderator"
+  all?: "true" | "false";
 }
 
 export async function fetchUserSpaces(

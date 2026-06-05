@@ -1,9 +1,15 @@
 import { SublayHttpClient } from "../../core/client";
 
+export type EntityReportAction = "remove-entity" | "ban-user" | "dismiss";
+
 export interface HandleEntityReportProps {
   spaceId: string;
   reportId: string;
-  action: "resolve" | "dismiss";
+  entityId: string;
+  actions: EntityReportAction[];
+  summary?: string;
+  reason?: string;
+  userId?: string;
 }
 
 export interface HandleReportResponse {
@@ -14,10 +20,10 @@ export async function handleEntityReport(
   client: SublayHttpClient,
   data: HandleEntityReportProps
 ): Promise<HandleReportResponse> {
-  const { spaceId, reportId, action } = data;
+  const { spaceId, reportId, ...body } = data;
   const response = await client.projectInstance.patch<HandleReportResponse>(
     `/spaces/${spaceId}/reports/entity/${reportId}`,
-    { action }
+    body
   );
   return response.data;
 }

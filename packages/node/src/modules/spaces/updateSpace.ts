@@ -8,7 +8,6 @@ export interface UpdateSpaceProps {
   description?: string;
   readingPermission?: ReadingPermission;
   postingPermission?: PostingPermission;
-  requireJoinApproval?: boolean;
   metadata?: Record<string, any>;
 }
 

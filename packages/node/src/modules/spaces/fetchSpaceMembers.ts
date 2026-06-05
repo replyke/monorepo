@@ -5,6 +5,8 @@ export interface FetchSpaceMembersProps {
   spaceId: string;
   page?: number;
   limit?: number;
+  role?: "admin" | "moderator" | "member";
+  status?: "pending" | "active" | "banned" | "rejected";
 }
 
 export async function fetchSpaceMembers(

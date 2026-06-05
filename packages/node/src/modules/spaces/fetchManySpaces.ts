@@ -5,8 +5,14 @@ import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 export interface FetchManySpacesProps {
   page?: number;
   limit?: number;
-  parentSpaceId?: string;
-  query?: string;
+  sortBy?: "alphabetical" | "newest" | "members";
+  searchSlug?: string;
+  searchName?: string;
+  searchDescription?: string;
+  searchAny?: string;
+  memberOf?: "true";
+  parentSpaceId?: string | "null";
+  include?: string;
 }
 
 export async function fetchManySpaces(

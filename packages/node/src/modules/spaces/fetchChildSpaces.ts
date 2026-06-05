@@ -6,6 +6,8 @@ export interface FetchChildSpacesProps {
   spaceId: string;
   page?: number;
   limit?: number;
+  sortBy?: "alphabetical" | "newest" | "members";
+  include?: string;
 }
 
 export async function fetchChildSpaces(
