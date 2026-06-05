@@ -1,10 +1,14 @@
 import { SublayHttpClient } from "../../core/client";
+import { Comment, GifData } from "../../interfaces/Comment";
+import { Mention } from "../../interfaces/Mention";
 
 export interface CreateCommentProps {
   foreignId?: string;
   userId: string;
   entityId: string;
-  content: string;
+  content?: string;
+  gif?: GifData | null;
+  mentions?: Mention[];
   parentId?: string;
   referencedCommentId?: string;
   attachments?: Record<string, any>[];

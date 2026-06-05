@@ -1,7 +1,9 @@
 import { SublayHttpClient } from "../../core/client";
+import { Comment } from "../../interfaces/Comment";
 
 export interface FetchCommentByForeignIdProps {
   foreignId: string;
+  include?: string;
 }
 
 export async function fetchCommentByForeignId(

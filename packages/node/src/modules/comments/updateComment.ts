@@ -1,9 +1,9 @@
 import { SublayHttpClient } from "../../core/client";
+import { Comment } from "../../interfaces/Comment";
 
 export interface UpdateCommentProps {
   commentId: string;
   content: string;
-  createdAt?: Date;
 }
 
 export async function updateComment(
@@ -11,7 +11,7 @@ export async function updateComment(
   data: UpdateCommentProps
 ): Promise<Comment> {
   const { commentId, ...restOfProps } = data;
-  const path = `/comments/${data.commentId}`;
+  const path = `/comments/${commentId}`;
   const response = await client.projectInstance.patch<Comment>(
     path,
     restOfProps
