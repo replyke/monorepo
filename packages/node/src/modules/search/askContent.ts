@@ -1,8 +1,11 @@
 import { SublayHttpClient } from "../../core/client";
 
 export interface AskContentProps {
-  question: string;
+  query: string;
+  sourceTypes?: ("entity" | "comment" | "message")[];
   spaceId?: string;
+  conversationId?: string;
+  limit?: number;
 }
 
 export interface AskContentResponse {

@@ -4,8 +4,9 @@ import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
 export interface SearchContentProps {
   query: string;
+  sourceTypes?: ("entity" | "comment" | "message")[];
   spaceId?: string;
-  page?: number;
+  conversationId?: string;
   limit?: number;
 }
 

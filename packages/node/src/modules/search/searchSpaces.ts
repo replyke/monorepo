@@ -4,7 +4,6 @@ import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
 export interface SearchSpacesProps {
   query: string;
-  page?: number;
   limit?: number;
 }
 
