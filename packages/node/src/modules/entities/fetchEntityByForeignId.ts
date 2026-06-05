@@ -4,6 +4,7 @@ import { Entity } from "../../interfaces/Entity";
 export interface FetchEntityByForeignIdProps {
   foreignId: string;
   createIfNotFound?: boolean;
+  include?: string;
 }
 
 export async function fetchEntityByForeignId(

@@ -3,6 +3,7 @@ import { Entity } from "../../interfaces/Entity";
 
 export interface FetchEntityByShortIdProps {
   shortId: string;
+  include?: string;
 }
 
 export async function fetchEntityByShortId(

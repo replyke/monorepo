@@ -4,9 +4,10 @@ import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
 export interface FetchEntityReactionsProps {
   entityId: string;
-  reaction?: ReactionType;
+  reactionType?: ReactionType;
   page?: number;
   limit?: number;
+  sortDir?: "asc" | "desc";
 }
 
 export async function fetchReactions(

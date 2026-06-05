@@ -6,6 +6,9 @@ export interface FetchDraftsProps {
   userId: string;
   page?: number;
   limit?: number;
+  sourceId?: string;
+  spaceId?: string;
+  include?: string;
 }
 
 export async function fetchDrafts(

@@ -3,13 +3,17 @@ import { Entity } from "../../interfaces/Entity";
 
 export interface FetchEntityProps {
   entityId: string;
+  include?: string;
 }
 
 export async function fetchEntity(
   client: SublayHttpClient,
   data: FetchEntityProps
 ): Promise<Entity> {
-  const path = `/entities/${data.entityId}`;
-  const response = await client.projectInstance.get<Entity>(path);
+  const { entityId, ...params } = data;
+  const response = await client.projectInstance.get<Entity>(
+    `/entities/${entityId}`,
+    { params }
+  );
   return response.data;
 }

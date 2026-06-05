@@ -1,5 +1,6 @@
 import { SublayHttpClient } from "../../core/client";
 import { Entity } from "../../interfaces/Entity";
+import { Mention } from "../../interfaces/Mention";
 
 export interface CreateEntityProps {
   foreignId?: string;
@@ -9,12 +10,16 @@ export interface CreateEntityProps {
   content?: string;
   attachments?: any[];
   keywords?: string[];
+  mentions?: Mention[];
   location?: {
     latitude: number;
     longitude: number;
   };
   metadata?: Record<string, any>;
   userId?: string;
+  isDraft?: boolean;
+  excludeUserId?: boolean;
+  requireUser?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
