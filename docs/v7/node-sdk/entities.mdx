@@ -78,12 +78,12 @@ const entity = await sublay.entities.createEntity({
   When `true`, the request fails unless a valid author user is resolved.
 </ParamField>
 
-<ParamField body="createdAt" type="string">
-  ISO 8601 timestamp to backdate the entity's creation time.
+<ParamField body="createdAt" type="Date">
+  A `Date` used to backdate the entity's creation time.
 </ParamField>
 
-<ParamField body="updatedAt" type="string">
-  ISO 8601 timestamp to backdate the entity's last update time.
+<ParamField body="updatedAt" type="Date">
+  A `Date` used to backdate the entity's last update time.
 </ParamField>
 
 **Returns** — `Promise<Entity>`

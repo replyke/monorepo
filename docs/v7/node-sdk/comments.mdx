@@ -27,7 +27,7 @@ const comment = await sublay.comments.createComment({
   The Sublay user ID of the comment author.
 </ParamField>
 
-<ParamField body="content" type="string" required>
+<ParamField body="content" type="string">
   The comment text content.
 </ParamField>
 
@@ -59,12 +59,12 @@ const comment = await sublay.comments.createComment({
   Arbitrary metadata attached to the comment.
 </ParamField>
 
-<ParamField body="createdAt" type="string">
-  ISO 8601 timestamp to backdate the comment's creation time.
+<ParamField body="createdAt" type="Date">
+  A `Date` used to backdate the comment's creation time.
 </ParamField>
 
-<ParamField body="updatedAt" type="string">
-  ISO 8601 timestamp to backdate the comment's last update time.
+<ParamField body="updatedAt" type="Date">
+  A `Date` used to backdate the comment's last update time.
 </ParamField>
 
 **Returns** — `Promise<Comment>`
@@ -115,7 +115,7 @@ const comment = await sublay.comments.fetchCommentByForeignId({
 
 ### updateComment
 
-Updates the content or timestamp of an existing comment.
+Updates the content of an existing comment.
 
 ```typescript
 const comment = await sublay.comments.updateComment({
