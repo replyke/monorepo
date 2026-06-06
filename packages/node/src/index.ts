@@ -10,6 +10,7 @@ import * as HostedApps from "./modules/hosted-apps";
 import * as Reports from "./modules/reports";
 import * as Search from "./modules/search";
 import * as Spaces from "./modules/spaces";
+import * as Storage from "./modules/storage";
 import * as Users from "./modules/users";
 
 type BoundModule<
@@ -34,6 +35,7 @@ export class SublayClient {
   public reports: BoundModule<typeof Reports>;
   public search: BoundModule<typeof Search>;
   public spaces: BoundModule<typeof Spaces>;
+  public storage: BoundModule<typeof Storage>;
   public users: BoundModule<typeof Users>;
 
   private constructor(http: SublayHttpClient) {
@@ -49,6 +51,7 @@ export class SublayClient {
     this.reports = bindModule(Reports, this.http);
     this.search = bindModule(Search, this.http);
     this.spaces = bindModule(Spaces, this.http);
+    this.storage = bindModule(Storage, this.http);
     this.users = bindModule(Users, this.http);
   }
 
@@ -97,4 +100,14 @@ export type { Reaction, ReactionType, ReactionCounts } from "./interfaces/Reacti
 export type { UnifiedAppNotification, PotentiallyPopulatedUnifiedAppNotification } from "./interfaces/AppNotification";
 export type { OAuthIdentity } from "./interfaces/OAuthIdentity";
 export type { Report, CreateReportResponse } from "./interfaces/Report";
-export type { File, FileImage } from "./interfaces/File";
+export type { File, FileImage, FileImageVariant } from "./interfaces/File";
+export type {
+  ImageOptions,
+  ImageFit,
+  ImageFormat,
+  ExactDimensionsOptions,
+  AspectRatioWidthOptions,
+  AspectRatioHeightOptions,
+  OriginalAspectOptions,
+  MultiAspectRatioOptions,
+} from "./interfaces/ImageProcessing";

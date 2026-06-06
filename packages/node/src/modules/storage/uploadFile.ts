@@ -5,10 +5,23 @@ export interface UploadFileProps {
   file: Uint8Array | Blob;
   filename?: string;
   mimeType?: string;
+  /**
+   * Storage path segments for the file, e.g. ["avatars", userId]. Required by
+   * the server (`uploadFileBodySchema.pathParts`).
+   */
+  pathParts: string[];
+  /** Ordering within the associated entity/comment/space. */
+  position?: number;
+  metadata?: Record<string, any>;
+  /** Only one of entityId/commentId/spaceId may be set. */
   entityId?: string;
   commentId?: string;
   spaceId?: string;
-  metadata?: Record<string, any>;
+  /**
+   * Attribute the upload to a user. With a service key this may be any user;
+   * omit for a backend/project-owned file.
+   */
+  userId?: string;
 }
 
 export async function uploadFile(
@@ -32,10 +45,8 @@ export async function uploadFile(
     }
   }
 
-  const response = await client.projectInstance.post<File>(
-    "/storage",
-    formData,
-    { headers: { "Content-Type": "multipart/form-data" } }
-  );
+  // Do not set Content-Type manually — axios derives the multipart boundary from
+  // the FormData instance; a hand-set header would omit it and break parsing.
+  const response = await client.projectInstance.post<File>("/storage", formData);
   return response.data;
 }
