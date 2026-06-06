@@ -94,101 +94,83 @@ const client = await SublayClient.init({
 
 ## API Modules & Features
 
-### 1. Entities Module (8 functions)
+`SublayClient` binds **12 modules**. The source of truth is `src/index.ts` (the `bindModule` calls) and each module's `index.ts`. The full public surface and per-function props/returns are documented in `docs/v7/node-sdk/`.
 
-Entities are the core content objects (posts, articles, products, listings, etc.).
+**Acting on behalf of a user**: the SDK authenticates as the project (service key), not as an end user. So user-scoped functions take an explicit `userId` — the user the operation is performed as. The nested follow/connection routes on the `users` module act on one user *toward another*: the path target is `userId`, the actor is `actingUserId`.
 
-**Functions**:
-- `client.entities.createEntity(data)` - Create a new entity
-- `client.entities.fetchEntity({ entityId })` - Fetch by ID
-- `client.entities.fetchEntityByForeignId({ foreignId })` - Fetch by external system ID
-- `client.entities.fetchEntityByShortId({ shortId })` - Fetch by short/shareable ID
-- `client.entities.fetchManyEntities(filters)` - Advanced querying with filters
-- `client.entities.updateEntity(data)` - Update entity
-- `client.entities.incrementEntityViews({ entityId })` - Track view count
-- `client.entities.deleteEntity({ entityId })` - Delete entity
+**Intentionally NOT bound** (deferred — see `plan-service-key-act-as-user.md`): `chat`, `storage`, `oauth`. These directories exist under `src/modules/` but are not exposed on `SublayClient`; do not document them.
 
-**Key Features**:
-- Foreign ID support for integration with existing systems
-- Geo-location (GeoJSON Point format)
-- Upvotes/downvotes with automatic "hotness" scoring
-- Comments and replies counting
-- Keywords/tags
-- Attachments (flexible JSON structure)
-- User mentions
-- Custom metadata (up to 10KB)
-- Top comment caching
+### 1. Entities Module (16 functions)
 
-**Advanced Filtering** (fetchManyEntities):
-- **Sorting**: hot, top, controversial
-- **Time frames**: hour, day, week, month, year, all
-- **Keywords**: includes/excludes arrays
-- **Metadata**: includes/excludes/exists/doesNotExist filters
-- **Text search**: title and content filtering
-- **Media**: presence/absence of attachments
-- **Geo-location**: latitude, longitude, radius filtering
-- **User-specific**: filter by userId, followedOnly
-- **Pagination**: page and limit parameters
+Core content objects (posts, articles, products, listings, etc.).
 
-### 2. Comments Module (5 functions)
+`createEntity`, `fetchEntity`, `fetchEntityByForeignId`, `fetchEntityByShortId`, `fetchManyEntities`, `updateEntity`, `incrementEntityViews`, `deleteEntity`, `fetchDrafts`, `publishDraft`, `fetchTopComment`, `addReaction`, `removeReaction`, `fetchReactions`, `getUserReaction`, `isEntitySaved`
 
-**Functions**:
-- `client.comments.createComment({ userId, entityId, content, ... })` - Create comment or reply
-- `client.comments.fetchComment({ commentId })` - Fetch by ID
-- `client.comments.fetchCommentByForeignId({ foreignId })` - Fetch by external ID
-- `client.comments.updateComment(data)` - Update comment
-- `client.comments.deleteComment({ commentId })` - Delete comment (soft delete)
+`fetchManyEntities` supports rich filtering via object-shaped filters: `keywordsFilters`, `metadataFilters` (`includes`/`includesAny`/`doesNotInclude`/`exists`/`doesNotExist`), `titleFilters`, `contentFilters`, `attachmentsFilters`, `locationFilters`; plus `sortBy` (new/hot/top/controversial or `metadata.<prop>`), `sortDir`, `sortType`, `sortByReaction`, `timeFrame`, `userId`/`followedOnly`, `include`, pagination.
 
-**Key Features**:
-- Threaded replies (parentId support)
-- Referenced comments for quote-replies
-- GIF support with preview URLs and aspect ratios
-- User mentions
-- Upvotes/downvotes
-- Custom metadata
-- Foreign ID support
-- Soft deletes (deletedAt, parentDeletedAt timestamps)
+### 2. Comments Module (10 functions)
 
-### 3. Users Module (2 functions)
+`createComment`, `fetchComment`, `fetchCommentByForeignId`, `updateComment`, `deleteComment`, `fetchManyComments`, `addReaction`, `removeReaction`, `fetchReactions`, `getUserReaction`
 
-**Functions**:
-- `client.users.fetchUserById({ userId })` - Fetch user by Sublay ID
-- `client.users.fetchUserByForeignId({ foreignId })` - Fetch by external system ID
+Threaded replies (`parentId`), quote-replies (`referencedCommentId`), GIFs, mentions, reactions, foreign IDs, soft deletes. `fetchManyComments` sorts by `sortBy` (new/old/top/controversial).
 
-**User Features**:
-- Roles: admin, moderator, visitor
-- Profile data: email, name, username, avatar, bio (300 char max)
-- Birthdate and geo-location
-- Reputation score (auto-managed based on activity)
-- Verification status
-- Active/inactive account status
-- Last activity tracking
-- Public and secure metadata
-- Suspension tracking
+### 3. Users Module (18 functions)
 
-### 4. Lists Module (8 functions)
+Read/update profiles and query + act on the follow/connection graph.
 
-Lists allow users to create collections of entities (e.g., "Saved Posts", "Favorites", "Reading List").
+Profiles: `fetchUserById`, `fetchUserByForeignId`, `fetchUserByUsername`, `fetchUserSuggestions`, `checkUsernameAvailability`, `updateUser`
 
-**Functions**:
-- `client.lists.createNewList({ userId, listId, listName })` - Create new list
-- `client.lists.fetchRootList(data)` - Fetch root-level list
-- `client.lists.fetchSubLists(data)` - Fetch child lists
-- `client.lists.isEntitySaved(data)` - Check if entity is in list
-- `client.lists.updateList(data)` - Update list
-- `client.lists.addEntityToList(data)` - Add entity to list
-- `client.lists.removeEntityFromList(data)` - Remove entity from list
-- `client.lists.deleteList({ listId })` - Delete list
+Graph queries (by target user ID): `fetchFollowersByUserId`, `fetchFollowersCountByUserId`, `fetchFollowingByUserId`, `fetchFollowingCountByUserId`, `fetchConnectionsByUserId`, `fetchConnectionsCountByUserId`
 
-**Key Features**:
-- Hierarchical structure (parent/child lists)
-- User-scoped collections
-- Entity membership tracking
+Graph actions (nested routes, take `actingUserId` + path `userId`): `createFollow`, `deleteFollow`, `fetchFollowStatus`, `requestConnection`, `fetchConnectionStatus`, `removeConnectionByUserId`
 
-### 5. Hosted Apps Module (1 function)
+### 4. Collections Module (8 functions)
 
-**Functions**:
-- `client.hostedApps.fetchHostedApp(data)` - Fetch hosted app information
+A user's saved-content collections (replaces the old "lists"). All take `userId`.
+
+`fetchRootCollection`, `fetchSubCollections`, `createNewCollection`, `fetchCollectionEntities`, `addEntityToCollection`, `removeEntityFromCollection`, `updateCollection`, `deleteCollection`
+
+### 5. Follows Module (5 functions)
+
+Read a user's follow graph and remove follows by record ID. All take `userId`.
+
+`fetchFollowing`, `fetchFollowers`, `fetchFollowingCount`, `fetchFollowersCount`, `deleteFollow`
+
+### 6. Connections Module (7 functions)
+
+A user's mutual connections and pending requests. All take `userId`.
+
+`fetchConnections`, `fetchConnectionsCount`, `fetchSentPendingConnections`, `fetchReceivedPendingConnections`, `acceptConnection`, `declineConnection`, `removeConnection`
+
+### 7. Spaces Module (32 functions)
+
+Space lifecycle, membership, moderation, rules, and digest config — documented across three pages (`spaces`, `spaces-members`, `spaces-moderation`).
+
+Lifecycle: `createSpace`, `fetchManySpaces`, `fetchSpace`, `fetchSpaceByShortId`, `fetchSpaceBySlug`, `fetchUserSpaces`, `checkSlugAvailability`, `updateSpace`, `deleteSpace`, `fetchChildSpaces`, `fetchSpaceBreadcrumb`
+
+Members: `joinSpace`, `leaveSpace`, `checkMyMembership`, `fetchSpaceMembers`, `fetchSpaceTeam`, `updateMemberRole`, `approveMembership`, `declineMembership`, `banMember`, `unbanMember`
+
+Moderation/rules/digest: `handleEntityReport`, `handleCommentReport` (both take an `actions` array), `moderateSpaceEntity`, `moderateSpaceComment`, `fetchManyRules`, `fetchRule`, `createRule`, `updateRule`, `deleteRule`, `reorderRules`, `fetchDigestConfig`, `updateDigestConfig`
+
+### 8. Search Module (4 functions)
+
+`searchContent`, `searchUsers`, `searchSpaces`, `askContent` (AI Q&A). Content/ask take `query`, `sourceTypes`, `spaceId`, `conversationId`, `limit`.
+
+### 9. Reports Module (2 functions)
+
+`createReport` (reporter is `userId`), `fetchModeratedReports` (moderator is `userId`). `ReportStatus`: `pending` | `on-hold` | `escalated` | `dismissed` | `actioned`.
+
+### 10. App Notifications Module (4 functions)
+
+`fetchNotifications`, `countUnreadNotifications`, `markNotificationAsRead`, `markAllNotificationsAsRead`. All take `userId`.
+
+### 11. Auth Module (10 functions)
+
+`signUp`, `signIn`, `signOut`, `requestNewAccessToken`, `verifyExternalUser`, `requestPasswordReset`, `resetPassword`, `verifyEmail`, `sendVerificationEmail`, `changePassword`
+
+### 12. Hosted Apps Module (1 function)
+
+`fetchHostedApp` — fetches hosted app configuration (uses the internal axios instance).
 
 ## Key Design Patterns
 
