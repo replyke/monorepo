@@ -4,6 +4,7 @@ import * as Auth from "./modules/auth";
 import * as Collections from "./modules/collections";
 import * as Comments from "./modules/comments";
 import * as Entities from "./modules/entities";
+import * as Follows from "./modules/follows";
 import * as HostedApps from "./modules/hosted-apps";
 import * as Reports from "./modules/reports";
 import * as Search from "./modules/search";
@@ -26,6 +27,7 @@ export class SublayClient {
   public collections: BoundModule<typeof Collections>;
   public comments: BoundModule<typeof Comments>;
   public entities: BoundModule<typeof Entities>;
+  public follows: BoundModule<typeof Follows>;
   public hostedApps: BoundModule<typeof HostedApps>;
   public reports: BoundModule<typeof Reports>;
   public search: BoundModule<typeof Search>;
@@ -39,6 +41,7 @@ export class SublayClient {
     this.collections = bindModule(Collections, this.http);
     this.comments = bindModule(Comments, this.http);
     this.entities = bindModule(Entities, this.http);
+    this.follows = bindModule(Follows, this.http);
     this.hostedApps = bindModule(HostedApps, this.http);
     this.reports = bindModule(Reports, this.http);
     this.search = bindModule(Search, this.http);
