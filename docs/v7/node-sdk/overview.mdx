@@ -50,27 +50,51 @@ const sublay = await SublayClient.init({
 Once initialized, all functionality is accessed through module namespaces on the client:
 
 ```typescript
-sublay.auth          // Authentication — sign up, sign in, tokens
-sublay.users         // User profiles, follows, connections
-sublay.entities      // Content entities — CRUD, reactions, drafts
-sublay.comments      // Comments — CRUD, reactions
-sublay.spaces        // Spaces — management, members, moderation, rules
-sublay.search        // Search and AI Q&A
-sublay.hostedApps    // Hosted app configuration
+sublay.auth              // Authentication — sign up, sign in, tokens, passwords
+sublay.users             // User profiles, follow/connection actions
+sublay.entities          // Content entities — CRUD, reactions, drafts
+sublay.comments          // Comments — CRUD, reactions
+sublay.collections       // Saved-content collections
+sublay.follows           // Follow graph — followers, following, counts
+sublay.connections       // Mutual connections and requests
+sublay.spaces            // Spaces — management, members, moderation, rules
+sublay.search            // Search and AI Q&A
+sublay.reports           // Content reports and the moderation queue
+sublay.appNotifications  // In-app notification feed
+sublay.hostedApps        // Hosted app configuration
 ```
+
+## Acting on behalf of a user
+
+Your service key authenticates as the project, not as any single end user. So functions that operate **on a user's behalf** take an explicit `userId` — the named user the action is performed as (saving to a collection, reading a notification feed, filing a report, listing connections).
+
+A few routes on the `users` module act on one user toward another — following someone, requesting a connection. These are nested under the target user's ID in the path, so the **target** is `userId` and the **actor** is passed separately as `actingUserId`.
+
+<Note>
+  `chat`, `storage`, and `oauth` are intentionally not exposed by this SDK.
+</Note>
 
 <CardGroup cols={2}>
   <Card title="Auth" icon="lock" href="/v7/node-sdk/auth">
     Sign up, sign in, token management, password reset
   </Card>
   <Card title="Users" icon="user" href="/v7/node-sdk/users">
-    Fetch and update profiles, follows, connections
+    Fetch and update profiles, follow and connection actions
   </Card>
   <Card title="Entities" icon="file" href="/v7/node-sdk/entities">
     Create and manage content, reactions, drafts
   </Card>
   <Card title="Comments" icon="comment" href="/v7/node-sdk/comments">
     Create and manage comments, reactions
+  </Card>
+  <Card title="Collections" icon="folder" href="/v7/node-sdk/collections">
+    Organize a user's saved entities into collections
+  </Card>
+  <Card title="Follows" icon="user-plus" href="/v7/node-sdk/follows">
+    Read a user's follow graph and counts
+  </Card>
+  <Card title="Connections" icon="link" href="/v7/node-sdk/connections">
+    Mutual connections, pending requests, accept/decline
   </Card>
   <Card title="Spaces" icon="layer-group" href="/v7/node-sdk/spaces">
     Space CRUD, navigation, slug management
@@ -83,6 +107,15 @@ sublay.hostedApps    // Hosted app configuration
   </Card>
   <Card title="Search" icon="magnifying-glass" href="/v7/node-sdk/search">
     Full-text search and AI-powered Q&A
+  </Card>
+  <Card title="Reports" icon="flag" href="/v7/node-sdk/reports">
+    File content reports and read the moderation queue
+  </Card>
+  <Card title="App Notifications" icon="bell" href="/v7/node-sdk/app-notifications">
+    Read and mark a user's in-app notifications
+  </Card>
+  <Card title="Hosted Apps" icon="cube" href="/v7/node-sdk/hosted-apps">
+    Fetch hosted app configuration
   </Card>
 </CardGroup>
 

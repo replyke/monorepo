@@ -19,6 +19,10 @@ const user = await sublay.users.fetchUserById({ userId: "usr_abc123" });
   The Sublay user ID.
 </ParamField>
 
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
 **Returns** — `Promise<User>`
 
 ---
@@ -68,6 +72,10 @@ const user = await sublay.users.fetchUserByForeignId({
   Secure metadata (not exposed to the client) — used only when creating a new user.
 </ParamField>
 
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
 **Returns** — `Promise<User>`
 
 ---
@@ -82,6 +90,10 @@ const user = await sublay.users.fetchUserByUsername({ username: "alice" });
 
 <ParamField body="username" type="string" required>
   The user's unique username.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
 </ParamField>
 
 **Returns** — `Promise<User>`
@@ -126,6 +138,10 @@ const updatedUser = await sublay.users.updateUser({
   Updated public metadata. Merged with existing metadata.
 </ParamField>
 
+<ParamField body="secureMetadata" type="object">
+  Updated secure metadata (not exposed in public responses). Merged with existing values.
+</ParamField>
+
 <ParamField body="birthdate" type="string">
   ISO 8601 date string for the user's birthdate.
 </ParamField>
@@ -143,18 +159,11 @@ const updatedUser = await sublay.users.updateUser({
 Returns users whose name or username matches a partial query string. Useful for mention autocomplete on the server.
 
 ```typescript
-const users = await sublay.users.fetchUserSuggestions({
-  query: "ali",
-  limit: 10,
-});
+const users = await sublay.users.fetchUserSuggestions({ query: "ali" });
 ```
 
 <ParamField body="query" type="string" required>
   Partial name or username to search for.
-</ParamField>
-
-<ParamField body="limit" type="number">
-  Maximum number of results to return.
 </ParamField>
 
 **Returns** — `Promise<User[]>`
@@ -314,3 +323,163 @@ const { count } = await sublay.users.fetchConnectionsCountByUserId({
 </ParamField>
 
 **Returns** — `Promise<{ count: number }>`
+
+---
+
+## Acting on a user's follows and connections
+
+The functions above are read-only queries about a target user. The functions below **perform an action** on behalf of one user toward another. Because a service key isn't tied to a single user, these routes take both:
+
+- `userId` — the **target** of the action (the user being followed, connected with, etc.), taken from the request path.
+- `actingUserId` — the **actor** performing it (the follower, the requester, the user whose perspective a status is from).
+
+<Note>
+  Listing and managing the acting user's own follow/connection graph by record ID
+  lives on the dedicated [`follows`](/v7/node-sdk/follows) and
+  [`connections`](/v7/node-sdk/connections) modules.
+</Note>
+
+---
+
+### createFollow
+
+Makes one user follow another.
+
+```typescript
+const follow = await sublay.users.createFollow({
+  userId: "usr_target",
+  actingUserId: "usr_follower",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user being followed (the target).
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  The user performing the follow (the follower).
+</ParamField>
+
+**Returns** — `Promise<Follow>`
+
+---
+
+### deleteFollow
+
+Makes one user unfollow another.
+
+```typescript
+await sublay.users.deleteFollow({
+  userId: "usr_target",
+  actingUserId: "usr_follower",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user being unfollowed (the target).
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  The user performing the unfollow (the follower).
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### fetchFollowStatus
+
+Checks whether the acting user follows the target user.
+
+```typescript
+const { isFollowing, followId } = await sublay.users.fetchFollowStatus({
+  userId: "usr_target",
+  actingUserId: "usr_viewer",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user whose follow relationship is being checked (the target).
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  The user whose perspective the status is from.
+</ParamField>
+
+**Returns** — `Promise<{ isFollowing: boolean; followId?: string }>`
+
+---
+
+### requestConnection
+
+Sends a connection request from the acting user to the target user.
+
+```typescript
+const connection = await sublay.users.requestConnection({
+  userId: "usr_target",
+  actingUserId: "usr_requester",
+  message: "Let's connect!",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user the connection is requested with (the target).
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  The user sending the request (the requester).
+</ParamField>
+
+<ParamField body="message" type="string">
+  Optional message to include with the request.
+</ParamField>
+
+**Returns** — `Promise<Connection>`
+
+---
+
+### fetchConnectionStatus
+
+Returns the connection status between the acting user and the target user.
+
+```typescript
+const status = await sublay.users.fetchConnectionStatus({
+  userId: "usr_target",
+  actingUserId: "usr_viewer",
+});
+// status.status is "none" | "pending" | "connected" | "declined"
+```
+
+<ParamField body="userId" type="string" required>
+  The other user in the connection (the target).
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  The user whose perspective the status is from.
+</ParamField>
+
+**Returns** — `Promise<ConnectionStatusResponse>` — a discriminated union on `status`: `"none"`, `"pending"` (with `type` and `connectionId`), `"connected"`, or `"declined"`.
+
+---
+
+### removeConnectionByUserId
+
+Removes the connection between the acting user and the target user — withdrawing a sent request, declining a received one, or disconnecting an established connection, depending on the current state.
+
+```typescript
+const result = await sublay.users.removeConnectionByUserId({
+  userId: "usr_target",
+  actingUserId: "usr_viewer",
+});
+// result.action is "withdraw" | "disconnect" | "decline"
+```
+
+<ParamField body="userId" type="string" required>
+  The other user in the connection (the target).
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  The user withdrawing, declining, or disconnecting.
+</ParamField>
+
+**Returns** — `Promise<RemoveConnectionByUserIdResponse>`

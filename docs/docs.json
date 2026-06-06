@@ -730,10 +730,15 @@
                   "v7/node-sdk/users",
                   "v7/node-sdk/entities",
                   "v7/node-sdk/comments",
+                  "v7/node-sdk/collections",
+                  "v7/node-sdk/follows",
+                  "v7/node-sdk/connections",
                   "v7/node-sdk/spaces",
                   "v7/node-sdk/spaces-members",
                   "v7/node-sdk/spaces-moderation",
                   "v7/node-sdk/search",
+                  "v7/node-sdk/reports",
+                  "v7/node-sdk/app-notifications",
                   "v7/node-sdk/hosted-apps"
                 ]
               }

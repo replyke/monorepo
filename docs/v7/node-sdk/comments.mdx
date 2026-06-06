@@ -35,6 +35,14 @@ const comment = await sublay.comments.createComment({
   Your application's identifier for this comment.
 </ParamField>
 
+<ParamField body="gif" type="object">
+  A GIF to attach to the comment (`GifData`), or `null`.
+</ParamField>
+
+<ParamField body="mentions" type="array">
+  User mentions embedded in the comment.
+</ParamField>
+
 <ParamField body="parentId" type="string">
   The Sublay comment ID of the parent, for creating a reply.
 </ParamField>
@@ -75,6 +83,10 @@ const comment = await sublay.comments.fetchComment({ commentId: "cmt_abc123" });
   The Sublay comment ID.
 </ParamField>
 
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
 **Returns** — `Promise<Comment>`
 
 ---
@@ -91,6 +103,10 @@ const comment = await sublay.comments.fetchCommentByForeignId({
 
 <ParamField body="foreignId" type="string" required>
   Your application's comment identifier.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
 </ParamField>
 
 **Returns** — `Promise<Comment>`
@@ -114,10 +130,6 @@ const comment = await sublay.comments.updateComment({
 
 <ParamField body="content" type="string" required>
   The new comment text.
-</ParamField>
-
-<ParamField body="createdAt" type="string">
-  Override the creation timestamp (ISO 8601). Useful for data migrations.
 </ParamField>
 
 **Returns** — `Promise<Comment>`
@@ -147,18 +159,26 @@ Fetches a paginated list of comments on an entity. Supports top-level and reply-
 ```typescript
 const { data, metadata } = await sublay.comments.fetchManyComments({
   entityId: "ent_xyz789",
-  sort: "top",
+  sortBy: "top",
   page: 1,
   limit: 20,
 });
 ```
 
-<ParamField body="entityId" type="string" required>
+<ParamField body="entityId" type="string">
   The Sublay entity ID to fetch comments for.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Filter to comments authored by a specific user.
 </ParamField>
 
 <ParamField body="parentId" type="string">
   When provided, fetches replies to this specific comment ID instead of top-level comments.
+</ParamField>
+
+<ParamField body="sourceId" type="string">
+  Filter comments by source ID.
 </ParamField>
 
 <ParamField body="page" type="number">
@@ -169,8 +189,12 @@ const { data, metadata } = await sublay.comments.fetchManyComments({
   Results per page. Defaults to `20`.
 </ParamField>
 
-<ParamField body="sort" type="string">
-  Sort order: `"top"` (highest scored), `"new"` (most recent first), or `"old"` (oldest first).
+<ParamField body="sortBy" type="string">
+  Sort order: `"new"` (most recent first), `"old"` (oldest first), `"top"` (highest scored), or `"controversial"`.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
 </ParamField>
 
 **Returns** — `Promise<PaginatedResponse<Comment>>`
@@ -235,7 +259,7 @@ Fetches a paginated list of reactions on a comment, optionally filtered by react
 ```typescript
 const { data, metadata } = await sublay.comments.fetchReactions({
   commentId: "cmt_abc123",
-  reaction: "upvote",
+  reactionType: "upvote",
   page: 1,
   limit: 20,
 });
@@ -245,7 +269,7 @@ const { data, metadata } = await sublay.comments.fetchReactions({
   The Sublay comment ID.
 </ParamField>
 
-<ParamField body="reaction" type="ReactionType">
+<ParamField body="reactionType" type="ReactionType">
   Filter to a specific reaction type.
 </ParamField>
 
@@ -255,6 +279,10 @@ const { data, metadata } = await sublay.comments.fetchReactions({
 
 <ParamField body="limit" type="number">
   Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="sortDir" type="string">
+  Sort direction: `"asc"` or `"desc"`.
 </ParamField>
 
 **Returns** — `Promise<PaginatedResponse<Reaction>>`

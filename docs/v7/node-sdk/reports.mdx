@@ -1,0 +1,110 @@
+---
+title: "Reports"
+description: "File content reports on behalf of a user and read the moderated report queue from your server"
+---
+
+The `reports` module lets a user report an entity or comment, and lets moderators read the queue of reports they're responsible for.
+
+<Note>
+  Both functions act on behalf of a named user. Pass that user's Sublay ID as
+  `userId` — for `createReport` this is the reporter; for `fetchModeratedReports`
+  it is the moderator whose queue is returned.
+</Note>
+
+---
+
+### createReport
+
+Files a report against an entity or comment on behalf of a user. If the same user has already reported the same target, the existing report is updated rather than duplicated.
+
+```typescript
+const result = await sublay.reports.createReport({
+  userId: "usr_abc123",
+  targetType: "comment",
+  targetId: "cmt_abc123",
+  reason: "spam",
+  details: "Posting the same link repeatedly.",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID filing the report (the reporter).
+</ParamField>
+
+<ParamField body="targetType" type="string" required>
+  What is being reported: `"entity"` or `"comment"`.
+</ParamField>
+
+<ParamField body="targetId" type="string" required>
+  The Sublay ID of the entity or comment being reported.
+</ParamField>
+
+<ParamField body="reason" type="string" required>
+  The reason for the report.
+</ParamField>
+
+<ParamField body="details" type="string">
+  Optional free-text details about the report.
+</ParamField>
+
+**Returns** — `Promise<CreateReportResponse>`
+
+```typescript
+{
+  message: string;
+  code: "report/created" | "report/updated" | "report/already-reported";
+}
+```
+
+---
+
+### fetchModeratedReports
+
+Returns a paginated list of reports in the spaces the user moderates. Each report is aggregated across all users who reported the same target, and is populated with the target content and space.
+
+```typescript
+const { data, metadata } = await sublay.reports.fetchModeratedReports({
+  userId: "usr_mod123",
+  status: "pending",
+  targetType: "entity",
+  sortBy: "new",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID of the moderator whose queue to fetch.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Filter to reports within a specific space.
+</ParamField>
+
+<ParamField body="targetType" type="string">
+  Filter by target type: `"entity"` or `"comment"`.
+</ParamField>
+
+<ParamField body="status" type="string">
+  Filter by report status: `"pending"`, `"on-hold"`, `"escalated"`, `"dismissed"`, or `"actioned"`.
+</ParamField>
+
+<ParamField body="sortBy" type="string">
+  Sort order: `"new"` (most recent first) or `"old"` (oldest first).
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Report>>`
+
+<Note>
+  To act on a report (remove content, ban the author, or dismiss it), use
+  `handleEntityReport` / `handleCommentReport` on the
+  [Space Moderation](/v7/node-sdk/spaces-moderation) module.
+</Note>

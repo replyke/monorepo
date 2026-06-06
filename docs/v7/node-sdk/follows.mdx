@@ -1,0 +1,133 @@
+---
+title: "Follows"
+description: "Read a user's follow graph and remove follows by ID from your server"
+---
+
+The `follows` module reads a user's follow graph — the users they follow and the users following them — and removes follow relationships by ID.
+
+<Note>
+  Every function acts on behalf of a named user. Pass that user's Sublay ID as
+  `userId` — the returned graph and counts are from that user's perspective.
+</Note>
+
+<Tip>
+  To **create** a follow (or unfollow by target user ID, or check follow status),
+  use the nested routes on the [`users`](/v7/node-sdk/users) module
+  (`createFollow`, `deleteFollow`, `fetchFollowStatus`), which take an
+  `actingUserId`.
+</Tip>
+
+---
+
+### fetchFollowing
+
+Returns a paginated list of the follow records for users the given user follows.
+
+```typescript
+const { data, metadata } = await sublay.follows.fetchFollowing({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose following list to fetch.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Follow>>`
+
+---
+
+### fetchFollowers
+
+Returns a paginated list of the follow records for users that follow the given user.
+
+```typescript
+const { data, metadata } = await sublay.follows.fetchFollowers({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose followers list to fetch.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Follow>>`
+
+---
+
+### fetchFollowingCount
+
+Returns the number of users the given user follows.
+
+```typescript
+const { count } = await sublay.follows.fetchFollowingCount({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID.
+</ParamField>
+
+**Returns** — `Promise<{ count: number }>`
+
+---
+
+### fetchFollowersCount
+
+Returns the number of users following the given user.
+
+```typescript
+const { count } = await sublay.follows.fetchFollowersCount({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID.
+</ParamField>
+
+**Returns** — `Promise<{ count: number }>`
+
+---
+
+### deleteFollow
+
+Deletes a follow relationship by its follow record ID.
+
+```typescript
+await sublay.follows.deleteFollow({
+  followId: "fol_xyz789",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="followId" type="string" required>
+  The ID of the follow record to delete.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID on whose behalf the follow is removed (must be the follower).
+</ParamField>
+
+**Returns** — `Promise<void>`

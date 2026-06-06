@@ -175,3 +175,66 @@ await sublay.auth.verifyEmail({ token: verificationToken });
 </ParamField>
 
 **Returns** — `Promise<void>`
+
+---
+
+### sendVerificationEmail
+
+Sends (or re-sends) an email-verification message to a user. Verification can be delivered as a short code or as a clickable link.
+
+```typescript
+const { success } = await sublay.auth.sendVerificationEmail({
+  userId: "usr_abc123",
+  mode: "code",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID to send the verification email to.
+</ParamField>
+
+<ParamField body="mode" type="string">
+  `"code"` emails a short token the user enters; `"link"` emails a verification URL. Defaults to `"code"`.
+</ParamField>
+
+<ParamField body="tokenFormat" type="string">
+  Format of the generated token: `"hex"`, `"numeric"`, `"alpha"`, or `"alphanumeric"`.
+</ParamField>
+
+<ParamField body="tokenLength" type="number">
+  Length of the generated token.
+</ParamField>
+
+<ParamField body="redirectUrl" type="string">
+  For `mode: "link"` — where to send the user after the link is verified.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean }>`
+
+---
+
+### changePassword
+
+Changes a user's password, verifying their current password first. Use this for an authenticated "change password" flow (as opposed to the token-based `resetPassword`).
+
+```typescript
+const { success, message } = await sublay.auth.changePassword({
+  userId: "usr_abc123",
+  password: "currentP@ss",
+  newPassword: "newS3cur3P@ss",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose password to change.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's current password (verified before the change).
+</ParamField>
+
+<ParamField body="newPassword" type="string" required>
+  The new password to set.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean; message: string }>`

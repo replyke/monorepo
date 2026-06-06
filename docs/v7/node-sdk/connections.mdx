@@ -1,0 +1,192 @@
+---
+title: "Connections"
+description: "Query and respond to a user's mutual connections from your server"
+---
+
+The `connections` module reads and manages a user's mutual connections (bidirectional relationships, similar to "friends"). Use it to list established connections, inspect pending requests, and accept, decline, or remove connections.
+
+<Note>
+  Every function acts on behalf of a named user. Pass that user's Sublay ID as
+  `userId` — your service key performs the operation as that user.
+</Note>
+
+<Tip>
+  To **send** a connection request, check a connection's status, or remove a
+  connection by the other user's ID, use the nested routes on the
+  [`users`](/v7/node-sdk/users) module (`requestConnection`,
+  `fetchConnectionStatus`, `removeConnectionByUserId`), which take an
+  `actingUserId`.
+</Tip>
+
+---
+
+### fetchConnections
+
+Fetches a paginated list of a user's established (mutual) connections.
+
+```typescript
+const { data, metadata } = await sublay.connections.fetchConnections({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose connections to fetch.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<EstablishedConnection>>`
+
+---
+
+### fetchConnectionsCount
+
+Returns the number of established connections for a user.
+
+```typescript
+const { count } = await sublay.connections.fetchConnectionsCount({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID.
+</ParamField>
+
+**Returns** — `Promise<{ count: number }>`
+
+---
+
+### fetchSentPendingConnections
+
+Returns a paginated list of connection requests the user has sent that are still pending.
+
+```typescript
+const { requests, pagination } =
+  await sublay.connections.fetchSentPendingConnections({
+    userId: "usr_abc123",
+    page: 1,
+    limit: 20,
+  });
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose sent requests to fetch.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<{ requests: PendingConnection[]; pagination: PaginationInfo }>`
+
+---
+
+### fetchReceivedPendingConnections
+
+Returns a paginated list of pending connection requests the user has received.
+
+```typescript
+const { requests, pagination } =
+  await sublay.connections.fetchReceivedPendingConnections({
+    userId: "usr_abc123",
+    page: 1,
+    limit: 20,
+  });
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose received requests to fetch.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<{ requests: PendingConnection[]; pagination: PaginationInfo }>`
+
+---
+
+### acceptConnection
+
+Accepts a pending connection request received by the user.
+
+```typescript
+const result = await sublay.connections.acceptConnection({
+  connectionId: "con_xyz789",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="connectionId" type="string" required>
+  The ID of the pending connection request to accept.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID accepting the request (the recipient).
+</ParamField>
+
+**Returns** — `Promise<ConnectionActionResponse>` — `{ id, status, createdAt?, respondedAt? }`
+
+---
+
+### declineConnection
+
+Declines a pending connection request received by the user.
+
+```typescript
+const result = await sublay.connections.declineConnection({
+  connectionId: "con_xyz789",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="connectionId" type="string" required>
+  The ID of the pending connection request to decline.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID declining the request (the recipient).
+</ParamField>
+
+**Returns** — `Promise<ConnectionActionResponse>` — `{ id, status, createdAt?, respondedAt? }`
+
+---
+
+### removeConnection
+
+Removes an established connection (or withdraws a pending request) by its connection ID.
+
+```typescript
+await sublay.connections.removeConnection({
+  connectionId: "con_xyz789",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="connectionId" type="string" required>
+  The connection ID to remove.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID on whose behalf the connection is removed.
+</ParamField>
+
+**Returns** — `Promise<void>`

@@ -50,6 +50,10 @@ const entity = await sublay.entities.createEntity({
   Tags or keywords used for filtering and discovery.
 </ParamField>
 
+<ParamField body="mentions" type="array">
+  User mentions embedded in the entity.
+</ParamField>
+
 <ParamField body="location" type="object">
   Geographic coordinates `{ latitude: number; longitude: number }`.
 </ParamField>
@@ -60,6 +64,18 @@ const entity = await sublay.entities.createEntity({
 
 <ParamField body="userId" type="string">
   The Sublay user ID to set as the entity's author.
+</ParamField>
+
+<ParamField body="isDraft" type="boolean">
+  When `true`, the entity is created as an unpublished draft. Defaults to `false`.
+</ParamField>
+
+<ParamField body="excludeUserId" type="boolean">
+  When `true`, creates the entity with no author association even if `userId` is provided.
+</ParamField>
+
+<ParamField body="requireUser" type="boolean">
+  When `true`, the request fails unless a valid author user is resolved.
 </ParamField>
 
 <ParamField body="createdAt" type="string">
@@ -86,6 +102,10 @@ const entity = await sublay.entities.fetchEntity({ entityId: "ent_xyz789" });
   The Sublay entity ID.
 </ParamField>
 
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
 **Returns** — `Promise<Entity>`
 
 ---
@@ -109,6 +129,10 @@ const entity = await sublay.entities.fetchEntityByForeignId({
   When `true`, creates a stub entity if no match is found. Defaults to `false`.
 </ParamField>
 
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
 **Returns** — `Promise<Entity>`
 
 ---
@@ -125,6 +149,10 @@ const entity = await sublay.entities.fetchEntityByShortId({ shortId: "abc12" });
   The entity's short ID.
 </ParamField>
 
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
 **Returns** — `Promise<Entity>`
 
 ---
@@ -139,7 +167,7 @@ const { data, metadata } = await sublay.entities.fetchManyEntities({
   sortBy: "hot",
   page: 1,
   limit: 20,
-  metadataFilters: [{ key: "category", value: "blog", operator: "eq" }],
+  metadataFilters: { includes: { category: "blog" } },
 });
 ```
 
@@ -152,7 +180,19 @@ const { data, metadata } = await sublay.entities.fetchManyEntities({
 </ParamField>
 
 <ParamField body="sortBy" type="string">
-  Sort order: `"hot"` (trending), `"top"` (highest scored), or `"controversial"`.
+  Sort order: `"new"`, `"hot"` (trending), `"top"` (highest scored), or `"controversial"`. A `"metadata.<prop>"` value is also accepted to sort by a metadata field.
+</ParamField>
+
+<ParamField body="sortDir" type="string">
+  Sort direction: `"asc"` or `"desc"`.
+</ParamField>
+
+<ParamField body="sortType" type="string">
+  How to interpret a metadata sort value: `"auto"`, `"numeric"`, `"text"`, `"boolean"`, or `"timestamp"`.
+</ParamField>
+
+<ParamField body="sortByReaction" type="string">
+  Sort by the count of a specific reaction: `"upvote"`, `"downvote"`, `"like"`, `"love"`, `"wow"`, `"sad"`, `"angry"`, or `"funny"`.
 </ParamField>
 
 <ParamField body="page" type="number">
@@ -163,40 +203,44 @@ const { data, metadata } = await sublay.entities.fetchManyEntities({
   Results per page. Defaults to `20`.
 </ParamField>
 
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate (e.g. `"user"`).
+</ParamField>
+
 <ParamField body="timeFrame" type="string">
-  Time window for `"top"` and `"controversial"` sorts (e.g., `"day"`, `"week"`, `"month"`, `"all"`).
+  Time window to restrict results to: `"hour"`, `"day"`, `"week"`, `"month"`, or `"year"`.
 </ParamField>
 
 <ParamField body="userId" type="string">
-  Filter to entities authored by a specific user.
+  The viewing user, used to resolve `followedOnly`.
 </ParamField>
 
-<ParamField body="followedOnly" type="boolean">
-  When `true`, returns only entities from users the specified `userId` follows.
+<ParamField body="followedOnly" type='"true" | "false"'>
+  When `"true"`, returns only entities from users the given `userId` follows.
 </ParamField>
 
-<ParamField body="keywordsFilters" type="array">
-  Filter entities by keyword tags.
+<ParamField body="keywordsFilters" type="object">
+  Filter by keyword tags: `{ includes?: string[]; doesNotInclude?: string[] }`.
 </ParamField>
 
-<ParamField body="metadataFilters" type="array">
-  Filter entities by metadata fields. Each filter: `{ key, value, operator }`.
+<ParamField body="metadataFilters" type="object">
+  Filter by metadata fields: `{ includes?, includesAny?, doesNotInclude?, exists?: string[], doesNotExist?: string[] }`.
 </ParamField>
 
-<ParamField body="titleFilters" type="array">
-  Filter entities by title text.
+<ParamField body="titleFilters" type="object">
+  Filter by title: `{ hasTitle?: "true" | "false"; includes?: string | string[]; doesNotInclude?: string | string[] }`.
 </ParamField>
 
-<ParamField body="contentFilters" type="array">
-  Filter entities by content text.
+<ParamField body="contentFilters" type="object">
+  Filter by content: `{ hasContent?: "true" | "false"; includes?: string | string[]; doesNotInclude?: string | string[] }`.
 </ParamField>
 
-<ParamField body="mediaFilters" type="array">
-  Filter by presence or type of media attachments.
+<ParamField body="attachmentsFilters" type="object">
+  Filter by attachments: `{ hasAttachments?: "true" | "false" }`.
 </ParamField>
 
 <ParamField body="locationFilters" type="object">
-  Filter entities within a geographic radius.
+  Filter within a geographic radius: `{ latitude: string; longitude: string; radius: string }`.
 </ParamField>
 
 **Returns** — `Promise<PaginatedResponse<Entity>>`
@@ -236,7 +280,7 @@ const entity = await sublay.entities.updateEntity({
 </ParamField>
 
 <ParamField body="location" type="object">
-  Updated location `{ type: "Point"; coordinates: [longitude, latitude] }`.
+  Updated coordinates `{ latitude: number; longitude: number }`.
 </ParamField>
 
 <ParamField body="metadata" type="object">
@@ -245,10 +289,6 @@ const entity = await sublay.entities.updateEntity({
 
 <ParamField body="mentions" type="array">
   Updated user mentions list.
-</ParamField>
-
-<ParamField body="createdAt" type="string">
-  Override the creation timestamp (ISO 8601).
 </ParamField>
 
 **Returns** — `Promise<Entity>`
@@ -316,6 +356,18 @@ const { data, metadata } = await sublay.entities.fetchDrafts({
 
 <ParamField body="limit" type="number">
   Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="sourceId" type="string">
+  Filter drafts by source ID.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Filter drafts to a specific space.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
 </ParamField>
 
 **Returns** — `Promise<PaginatedResponse<Entity>>`
@@ -414,7 +466,7 @@ Fetches a paginated list of reactions on an entity, optionally filtered by react
 ```typescript
 const { data, metadata } = await sublay.entities.fetchReactions({
   entityId: "ent_xyz789",
-  reaction: "like",
+  reactionType: "like",
   page: 1,
   limit: 20,
 });
@@ -424,7 +476,7 @@ const { data, metadata } = await sublay.entities.fetchReactions({
   The Sublay entity ID.
 </ParamField>
 
-<ParamField body="reaction" type="ReactionType">
+<ParamField body="reactionType" type="ReactionType">
   Filter to a specific reaction type.
 </ParamField>
 
@@ -434,6 +486,10 @@ const { data, metadata } = await sublay.entities.fetchReactions({
 
 <ParamField body="limit" type="number">
   Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="sortDir" type="string">
+  Sort direction: `"asc"` or `"desc"`.
 </ParamField>
 
 **Returns** — `Promise<PaginatedResponse<Reaction>>`

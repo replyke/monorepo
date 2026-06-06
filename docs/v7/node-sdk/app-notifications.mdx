@@ -1,0 +1,101 @@
+---
+title: "App Notifications"
+description: "Read a user's in-app notifications and mark them as read from your server"
+---
+
+The `appNotifications` module reads a user's in-app notification feed (comments, replies, mentions, reactions, follows, connection requests, milestones, and system messages) and marks notifications as read.
+
+<Note>
+  Every function acts on behalf of a named user. Pass that user's Sublay ID as
+  `userId` — the feed and counts returned are that user's.
+</Note>
+
+---
+
+### fetchNotifications
+
+Returns a paginated list of a user's notifications, newest first.
+
+```typescript
+const { data, metadata } = await sublay.appNotifications.fetchNotifications({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose notifications to fetch.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<UnifiedAppNotification>>`
+
+Each notification is a discriminated union on `type` (e.g. `"entity-comment"`, `"comment-reply"`, `"new-follow"`, `"connection-request"`, `"system"`), with a `metadata` object whose shape depends on the type. See the [App Notification data model](/v7/data-models/app-notification) for the full set of variants.
+
+---
+
+### countUnreadNotifications
+
+Returns the number of unread notifications for a user.
+
+```typescript
+const count = await sublay.appNotifications.countUnreadNotifications({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID.
+</ParamField>
+
+**Returns** — `Promise<number>`
+
+---
+
+### markNotificationAsRead
+
+Marks a single notification as read.
+
+```typescript
+await sublay.appNotifications.markNotificationAsRead({
+  notificationId: "ntf_xyz789",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="notificationId" type="string" required>
+  The ID of the notification to mark as read.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID who owns the notification.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### markAllNotificationsAsRead
+
+Marks all of a user's unread notifications as read.
+
+```typescript
+const { markedAsRead } =
+  await sublay.appNotifications.markAllNotificationsAsRead({
+    userId: "usr_abc123",
+  });
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose notifications to mark as read.
+</ParamField>
+
+**Returns** — `Promise<{ markedAsRead: number }>`

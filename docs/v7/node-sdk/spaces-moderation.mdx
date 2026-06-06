@@ -11,13 +11,15 @@ This page covers the moderation and administrative functions on the `spaces` mod
 
 ### handleEntityReport
 
-Resolves or dismisses a report filed against an entity in a space.
+Resolves a report filed against an entity in a space by applying one or more moderation actions.
 
 ```typescript
 const result = await sublay.spaces.handleEntityReport({
   spaceId: "spc_abc123",
   reportId: "rpt_xyz789",
-  action: "resolve",
+  entityId: "ent_xyz789",
+  actions: ["remove-entity", "ban-user"],
+  reason: "Repeated spam",
 });
 ```
 
@@ -29,8 +31,24 @@ const result = await sublay.spaces.handleEntityReport({
   The Sublay report ID.
 </ParamField>
 
-<ParamField body="action" type="string" required>
-  `"resolve"` — marks the report as resolved and takes action, or `"dismiss"` — closes the report without action.
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID the report targets.
+</ParamField>
+
+<ParamField body="actions" type="string[]" required>
+  One or more actions to apply: `"remove-entity"`, `"ban-user"`, and/or `"dismiss"`.
+</ParamField>
+
+<ParamField body="summary" type="string">
+  Optional moderator summary of the resolution.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason, stored for audit purposes.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The Sublay user ID of the moderator performing the action.
 </ParamField>
 
 **Returns** — `Promise<HandleReportResponse>`
@@ -39,13 +57,14 @@ const result = await sublay.spaces.handleEntityReport({
 
 ### handleCommentReport
 
-Resolves or dismisses a report filed against a comment in a space.
+Resolves a report filed against a comment in a space by applying one or more moderation actions.
 
 ```typescript
 const result = await sublay.spaces.handleCommentReport({
   spaceId: "spc_abc123",
   reportId: "rpt_abc456",
-  action: "dismiss",
+  commentId: "cmt_abc123",
+  actions: ["dismiss"],
 });
 ```
 
@@ -57,8 +76,24 @@ const result = await sublay.spaces.handleCommentReport({
   The Sublay report ID.
 </ParamField>
 
-<ParamField body="action" type="string" required>
-  `"resolve"` or `"dismiss"`.
+<ParamField body="commentId" type="string" required>
+  The Sublay comment ID the report targets.
+</ParamField>
+
+<ParamField body="actions" type="string[]" required>
+  One or more actions to apply: `"remove-comment"`, `"ban-user"`, and/or `"dismiss"`.
+</ParamField>
+
+<ParamField body="summary" type="string">
+  Optional moderator summary of the resolution.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason, stored for audit purposes.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The Sublay user ID of the moderator performing the action.
 </ParamField>
 
 **Returns** — `Promise<HandleReportResponse>`
