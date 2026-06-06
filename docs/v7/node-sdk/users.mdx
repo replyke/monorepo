@@ -1,6 +1,6 @@
 ---
 title: "Users"
-description: "Fetch and update user profiles, check usernames, and query follow and connection graphs"
+description: "Fetch, update and delete user profiles, check usernames, and query follow and connection graphs"
 ---
 
 The `users` module provides server-side access to user profiles, social graph data (follows and connections), and username availability. All operations use your project API key and do not require a user access token.
@@ -151,6 +151,26 @@ const updatedUser = await sublay.users.updateUser({
 </ParamField>
 
 **Returns** — `Promise<UserFull>`
+
+---
+
+### deleteUser
+
+Permanently deletes a user and cascades cleanup across all of their related data — reactions, files, follows, connections, notifications, collections, reports, and mentions are removed, and their entities and comments are stripped of authored content. This mirrors the full-cascade delete performed from the dashboard.
+
+<Warning>
+  This is a hard, irreversible delete — the user and their related data cannot be recovered.
+</Warning>
+
+```typescript
+await sublay.users.deleteUser({ userId: "usr_abc123" });
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID to delete.
+</ParamField>
+
+**Returns** — `Promise<void>`
 
 ---
 

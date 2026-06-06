@@ -455,7 +455,8 @@
                   "v7/api-reference/users/fetch-user-by-username",
                   "v7/api-reference/users/fetch-user-suggestions",
                   "v7/api-reference/users/check-username-availability",
-                  "v7/api-reference/users/update-user"
+                  "v7/api-reference/users/update-user",
+                  "v7/api-reference/users/delete-user"
                 ]
               },
               {
