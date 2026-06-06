@@ -17,36 +17,6 @@ export interface PendingConnection extends Connection {
   type: "received" | "sent";
 }
 
-export interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalCount: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-  limit: number;
-}
-
-export interface ConnectionsResponse {
-  connections: EstablishedConnection[];
-  pagination: PaginationInfo;
-}
-
-export interface PendingConnectionsResponse {
-  received: {
-    requests: PendingConnection[];
-    pagination: PaginationInfo;
-  };
-  sent: {
-    requests: PendingConnection[];
-    pagination: PaginationInfo;
-  };
-}
-
-export interface PendingConnectionListResponse {
-  requests: PendingConnection[];
-  pagination: PaginationInfo;
-}
-
 export interface ConnectionRequestParams {
   userId: string;
   message?: string;
