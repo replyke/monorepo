@@ -6,7 +6,16 @@ export interface SignUpProps {
   password: string;
   name?: string;
   username?: string;
+  avatar?: string;
+  bio?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
+  /** ISO 8601 datetime string. */
+  birthdate?: string;
   metadata?: Record<string, any>;
+  secureMetadata?: Record<string, any>;
 }
 
 export interface SignUpResponse {
