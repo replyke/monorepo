@@ -4,6 +4,7 @@ export { fetchUserByUsername } from "./fetchUserByUsername";
 export { fetchUserSuggestions } from "./fetchUserSuggestions";
 export { checkUsernameAvailability } from "./checkUsernameAvailability";
 export { updateUser } from "./updateUser";
+export { deleteUser } from "./deleteUser";
 export { fetchFollowersByUserId } from "./fetchFollowersByUserId";
 export { fetchFollowersCountByUserId } from "./fetchFollowersCountByUserId";
 export { fetchFollowingByUserId } from "./fetchFollowingByUserId";
