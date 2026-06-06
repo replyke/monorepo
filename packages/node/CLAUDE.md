@@ -33,7 +33,7 @@ pnpm publish-prod
 
 ### Module Structure
 
-The SDK exposes **12 modules** bound on `SublayClient` (camelCase accessor in
+The SDK exposes **13 modules** bound on `SublayClient` (camelCase accessor in
 parentheses). Every endpoint is reached with a **service key**; operations that
 act on behalf of a user take an explicit `userId` (or `actingUserId` on the
 nested `users` follow/connection routes), since a service key has no implicit
@@ -57,13 +57,15 @@ src/
 │   ├── connections/        # client.connections      (service-key userId)
 │   ├── follows/            # client.follows          (service-key userId)
 │   ├── reports/            # client.reports          (service-key userId)
-│   └── app-notifications/  # client.appNotifications (service-key userId)
+│   ├── app-notifications/  # client.appNotifications (service-key userId)
+│   └── storage/            # client.storage          (service-key userId)
 └── index.ts                # Main entry point with SublayClient class
 ```
 
-> **Not yet bound (unmounted):** `chat`, `storage`, `oauth`. These remain
+> **Not yet bound (unmounted):** `chat`, `oauth`. These remain
 > user-session-centric and are deferred — see `plan-service-key-act-as-user.md`
-> at the engine root for the rationale and the per-route plan.
+> at the engine root for the rationale and the per-route plan. (`storage` was a
+> third deferred module; it has since been taken up and bound — see §13 below.)
 
 ### HTTP Client Configuration
 
@@ -94,11 +96,11 @@ const client = await SublayClient.init({
 
 ## API Modules & Features
 
-`SublayClient` binds **12 modules**. The source of truth is `src/index.ts` (the `bindModule` calls) and each module's `index.ts`. The full public surface and per-function props/returns are documented in `docs/v7/node-sdk/`.
+`SublayClient` binds **13 modules**. The source of truth is `src/index.ts` (the `bindModule` calls) and each module's `index.ts`. The full public surface and per-function props/returns are documented in `docs/v7/node-sdk/`.
 
 **Acting on behalf of a user**: the SDK authenticates as the project (service key), not as an end user. So user-scoped functions take an explicit `userId` — the user the operation is performed as. The nested follow/connection routes on the `users` module act on one user *toward another*: the path target is `userId`, the actor is `actingUserId`.
 
-**Intentionally NOT bound** (deferred — see `plan-service-key-act-as-user.md`): `chat`, `storage`, `oauth`. These directories exist under `src/modules/` but are not exposed on `SublayClient`; do not document them.
+**Intentionally NOT bound** (deferred — see `plan-service-key-act-as-user.md`): `chat`, `oauth`. These directories exist under `src/modules/` but are not exposed on `SublayClient`; do not document them.
 
 ### 1. Entities Module (16 functions)
 
@@ -171,6 +173,22 @@ Moderation/rules/digest: `handleEntityReport`, `handleCommentReport` (both take 
 ### 12. Hosted Apps Module (1 function)
 
 `fetchHostedApp` — fetches hosted app configuration (uses the internal axios instance).
+
+### 13. Storage Module (4 functions)
+
+File and image uploads, plus read/delete. `uploadFile`, `uploadImage`, `getFile`, `deleteFile`.
+
+- **Uploads** are multipart (`FormData`); `file` accepts a `Uint8Array` or `Blob`. Content-Type is left
+  to axios so the multipart boundary is set correctly — do not hand-set it.
+- **`uploadFile`** requires `pathParts` (string[]); optional `position`, `metadata`, one of
+  `entityId`/`commentId`/`spaceId`, and `userId` (attribution; omit for a backend/project-owned file).
+- **`uploadImage`** takes `imageOptions` — a discriminated union on `mode` (`exact-dimensions`,
+  `aspect-ratio-width-based`, `aspect-ratio-height-based`, `original-aspect`, `multi-aspect-ratio`),
+  mirroring the server schema (see `interfaces/ImageProcessing.ts`); plus optional `pathParts`, one
+  association, and `userId`. (No `metadata`/`position` — the image schema doesn't read them.)
+- **Access model:** reads (`getFile`) are project-scoped (any caller in the project); **delete is
+  owner-or-service** — a user token may only delete files it owns, service/master keys may delete any.
+  Both enforced server-side in `server/src/{v7,v7-schema}/controllers/storage/`.
 
 ## Key Design Patterns
 
