@@ -24,7 +24,7 @@ The `follows` module reads a user's follow graph — the users they follow and t
 Returns a paginated list of the follow records for users the given user follows.
 
 ```typescript
-const { data, metadata } = await sublay.follows.fetchFollowing({
+const { data, pagination } = await sublay.follows.fetchFollowing({
   userId: "usr_abc123",
   page: 1,
   limit: 20,
@@ -52,7 +52,7 @@ const { data, metadata } = await sublay.follows.fetchFollowing({
 Returns a paginated list of the follow records for users that follow the given user.
 
 ```typescript
-const { data, metadata } = await sublay.follows.fetchFollowers({
+const { data, pagination } = await sublay.follows.fetchFollowers({
   userId: "usr_abc123",
   page: 1,
   limit: 20,

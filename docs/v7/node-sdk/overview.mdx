@@ -126,7 +126,7 @@ Functions that return lists use a shared `PaginatedResponse<T>` shape:
 ```typescript
 {
   data: T[];
-  metadata: {
+  pagination: {
     page: number;
     pageSize: number;
     totalPages: number;

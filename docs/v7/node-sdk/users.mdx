@@ -193,7 +193,7 @@ const { available } = await sublay.users.checkUsernameAvailability({
 Returns a paginated list of users following the specified user.
 
 ```typescript
-const { data, metadata } = await sublay.users.fetchFollowersByUserId({
+const { data, pagination } = await sublay.users.fetchFollowersByUserId({
   userId: "usr_abc123",
   page: 1,
   limit: 20,
@@ -239,7 +239,7 @@ const { count } = await sublay.users.fetchFollowersCountByUserId({
 Returns a paginated list of users that the specified user is following.
 
 ```typescript
-const { data, metadata } = await sublay.users.fetchFollowingByUserId({
+const { data, pagination } = await sublay.users.fetchFollowingByUserId({
   userId: "usr_abc123",
   page: 1,
   limit: 20,
@@ -285,7 +285,7 @@ const { count } = await sublay.users.fetchFollowingCountByUserId({
 Returns a paginated list of established mutual connections for a user.
 
 ```typescript
-const { data, metadata } = await sublay.users.fetchConnectionsByUserId({
+const { data, pagination } = await sublay.users.fetchConnectionsByUserId({
   userId: "usr_abc123",
   page: 1,
   limit: 20,

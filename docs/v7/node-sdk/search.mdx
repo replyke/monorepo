@@ -12,7 +12,7 @@ The `search` module provides server-side access to Sublay's search and AI capabi
 Searches entities by full-text query, optionally scoped to a space.
 
 ```typescript
-const { data, metadata } = await sublay.search.searchContent({
+const { data, pagination } = await sublay.search.searchContent({
   query: "getting started guide",
   spaceId: "spc_abc123",
   sourceTypes: ["entity", "comment"],
@@ -49,7 +49,7 @@ const { data, metadata } = await sublay.search.searchContent({
 Searches for users by name or username.
 
 ```typescript
-const { data, metadata } = await sublay.search.searchUsers({
+const { data, pagination } = await sublay.search.searchUsers({
   query: "alice",
   limit: 10,
 });
@@ -72,7 +72,7 @@ const { data, metadata } = await sublay.search.searchUsers({
 Searches for spaces by name or description.
 
 ```typescript
-const { data, metadata } = await sublay.search.searchSpaces({
+const { data, pagination } = await sublay.search.searchSpaces({
   query: "photography",
   limit: 10,
 });

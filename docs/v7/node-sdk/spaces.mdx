@@ -84,7 +84,7 @@ const space = await sublay.spaces.fetchSpace({ spaceId: "spc_abc123" });
 Fetches a paginated list of top-level spaces, with optional text search.
 
 ```typescript
-const { data, metadata } = await sublay.spaces.fetchManySpaces({
+const { data, pagination } = await sublay.spaces.fetchManySpaces({
   page: 1,
   limit: 20,
   searchName: "photo",
@@ -300,7 +300,7 @@ const { available } = await sublay.spaces.checkSlugAvailability({
 Fetches the direct child spaces of a given parent space.
 
 ```typescript
-const { data, metadata } = await sublay.spaces.fetchChildSpaces({
+const { data, pagination } = await sublay.spaces.fetchChildSpaces({
   spaceId: "spc_abc123",
   page: 1,
   limit: 20,

@@ -162,7 +162,7 @@ const entity = await sublay.entities.fetchEntityByShortId({ shortId: "abc12" });
 Fetches a filtered, paginated list of entities. Supports rich filtering by metadata, keywords, location, and more.
 
 ```typescript
-const { data, metadata } = await sublay.entities.fetchManyEntities({
+const { data, pagination } = await sublay.entities.fetchManyEntities({
   spaceId: "spc_abc123",
   sortBy: "hot",
   page: 1,
@@ -339,7 +339,7 @@ const entity = await sublay.entities.incrementEntityViews({
 Fetches a user's unpublished draft entities.
 
 ```typescript
-const { data, metadata } = await sublay.entities.fetchDrafts({
+const { data, pagination } = await sublay.entities.fetchDrafts({
   userId: "usr_abc123",
   page: 1,
   limit: 20,
@@ -464,7 +464,7 @@ await sublay.entities.removeReaction({
 Fetches a paginated list of reactions on an entity, optionally filtered by reaction type.
 
 ```typescript
-const { data, metadata } = await sublay.entities.fetchReactions({
+const { data, pagination } = await sublay.entities.fetchReactions({
   entityId: "ent_xyz789",
   reactionType: "like",
   page: 1,

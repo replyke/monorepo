@@ -87,7 +87,7 @@ const collection = await sublay.collections.createNewCollection({
 Fetches a paginated list of entities saved in a collection.
 
 ```typescript
-const { data, metadata } = await sublay.collections.fetchCollectionEntities({
+const { data, pagination } = await sublay.collections.fetchCollectionEntities({
   collectionId: "col_xyz789",
   userId: "usr_abc123",
   sortBy: "added",

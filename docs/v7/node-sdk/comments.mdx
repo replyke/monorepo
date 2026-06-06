@@ -157,7 +157,7 @@ await sublay.comments.deleteComment({ commentId: "cmt_abc123" });
 Fetches a paginated list of comments on an entity. Supports top-level and reply-level fetching.
 
 ```typescript
-const { data, metadata } = await sublay.comments.fetchManyComments({
+const { data, pagination } = await sublay.comments.fetchManyComments({
   entityId: "ent_xyz789",
   sortBy: "top",
   page: 1,
@@ -257,7 +257,7 @@ await sublay.comments.removeReaction({
 Fetches a paginated list of reactions on a comment, optionally filtered by reaction type.
 
 ```typescript
-const { data, metadata } = await sublay.comments.fetchReactions({
+const { data, pagination } = await sublay.comments.fetchReactions({
   commentId: "cmt_abc123",
   reactionType: "upvote",
   page: 1,

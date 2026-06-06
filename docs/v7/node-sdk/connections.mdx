@@ -25,7 +25,7 @@ The `connections` module reads and manages a user's mutual connections (bidirect
 Fetches a paginated list of a user's established (mutual) connections.
 
 ```typescript
-const { data, metadata } = await sublay.connections.fetchConnections({
+const { data, pagination } = await sublay.connections.fetchConnections({
   userId: "usr_abc123",
   page: 1,
   limit: 20,
@@ -71,7 +71,7 @@ const { count } = await sublay.connections.fetchConnectionsCount({
 Returns a paginated list of connection requests the user has sent that are still pending.
 
 ```typescript
-const { requests, pagination } =
+const { data, pagination } =
   await sublay.connections.fetchSentPendingConnections({
     userId: "usr_abc123",
     page: 1,
@@ -91,7 +91,7 @@ const { requests, pagination } =
   Results per page. Defaults to `20`.
 </ParamField>
 
-**Returns** — `Promise<{ requests: PendingConnection[]; pagination: PaginationInfo }>`
+**Returns** — `Promise<PaginatedResponse<PendingConnection>>`
 
 ---
 
@@ -100,7 +100,7 @@ const { requests, pagination } =
 Returns a paginated list of pending connection requests the user has received.
 
 ```typescript
-const { requests, pagination } =
+const { data, pagination } =
   await sublay.connections.fetchReceivedPendingConnections({
     userId: "usr_abc123",
     page: 1,
@@ -120,7 +120,7 @@ const { requests, pagination } =
   Results per page. Defaults to `20`.
 </ParamField>
 
-**Returns** — `Promise<{ requests: PendingConnection[]; pagination: PaginationInfo }>`
+**Returns** — `Promise<PaginatedResponse<PendingConnection>>`
 
 ---
 

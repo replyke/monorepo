@@ -17,7 +17,7 @@ The `appNotifications` module reads a user's in-app notification feed (comments,
 Returns a paginated list of a user's notifications, newest first.
 
 ```typescript
-const { data, metadata } = await sublay.appNotifications.fetchNotifications({
+const { data, pagination } = await sublay.appNotifications.fetchNotifications({
   userId: "usr_abc123",
   page: 1,
   limit: 20,

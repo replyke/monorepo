@@ -63,7 +63,7 @@ const result = await sublay.reports.createReport({
 Returns a paginated list of reports in the spaces the user moderates. Each report is aggregated across all users who reported the same target, and is populated with the target content and space.
 
 ```typescript
-const { data, metadata } = await sublay.reports.fetchModeratedReports({
+const { data, pagination } = await sublay.reports.fetchModeratedReports({
   userId: "usr_mod123",
   status: "pending",
   targetType: "entity",
