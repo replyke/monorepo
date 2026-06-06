@@ -1,9 +1,13 @@
 import { SublayHttpClient } from "../../core/client";
-import { Report } from "../../interfaces/Report";
+import { Report, ReportStatus, ReportTargetType } from "../../interfaces/Report";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
 export interface FetchModeratedReportsProps {
+  userId: string;
   spaceId?: string;
+  targetType?: ReportTargetType;
+  status?: ReportStatus;
+  sortBy?: "new" | "old";
   page?: number;
   limit?: number;
 }

@@ -5,11 +5,11 @@ import {
 } from "../../interfaces/Report";
 
 export interface CreateReportProps {
+  userId: string;
   targetType: ReportTargetType;
   targetId: string;
   reason: string;
   details?: string;
-  spaceId?: string;
 }
 
 export async function createReport(
