@@ -1,6 +1,6 @@
 {
   "name": "@sublay/node",
-  "version": "7.0.2",
+  "version": "7.1.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "description": "Official NodeJS SDK for Sublay",
