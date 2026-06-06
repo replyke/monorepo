@@ -4,16 +4,17 @@ import { Collection } from "../../interfaces/Collection";
 export interface AddEntityToCollectionProps {
   collectionId: string;
   entityId: string;
+  userId: string;
 }
 
 export async function addEntityToCollection(
   client: SublayHttpClient,
   data: AddEntityToCollectionProps
 ): Promise<Collection> {
-  const { collectionId, entityId } = data;
+  const { collectionId, ...body } = data;
   const response = await client.projectInstance.post<Collection>(
     `/collections/${collectionId}/entities`,
-    { entityId }
+    body
   );
   return response.data;
 }

@@ -4,8 +4,13 @@ import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
 export interface FetchCollectionEntitiesProps {
   collectionId: string;
+  userId: string;
   page?: number;
   limit?: number;
+  sortBy?: "new" | "added" | "top" | "hot";
+  sortDir?: "asc" | "desc";
+  /** Comma-separated list of associations to populate, e.g. "user". */
+  include?: string;
 }
 
 export async function fetchCollectionEntities(

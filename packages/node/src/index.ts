@@ -1,6 +1,7 @@
 import { SublayHttpClient, ClientConfig } from "./core/client";
 import * as AppNotifications from "./modules/app-notifications";
 import * as Auth from "./modules/auth";
+import * as Collections from "./modules/collections";
 import * as Comments from "./modules/comments";
 import * as Entities from "./modules/entities";
 import * as HostedApps from "./modules/hosted-apps";
@@ -22,6 +23,7 @@ export class SublayClient {
 
   public appNotifications: BoundModule<typeof AppNotifications>;
   public auth: BoundModule<typeof Auth>;
+  public collections: BoundModule<typeof Collections>;
   public comments: BoundModule<typeof Comments>;
   public entities: BoundModule<typeof Entities>;
   public hostedApps: BoundModule<typeof HostedApps>;
@@ -34,6 +36,7 @@ export class SublayClient {
     this.http = http;
     this.appNotifications = bindModule(AppNotifications, this.http);
     this.auth = bindModule(Auth, this.http);
+    this.collections = bindModule(Collections, this.http);
     this.comments = bindModule(Comments, this.http);
     this.entities = bindModule(Entities, this.http);
     this.hostedApps = bindModule(HostedApps, this.http);

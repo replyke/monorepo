@@ -2,9 +2,10 @@ import { SublayHttpClient } from "../../core/client";
 import { Collection } from "../../interfaces/Collection";
 
 export interface CreateNewCollectionProps {
+  /** The parent collection under which to create the sub-collection. */
   collectionId: string;
-  name: string;
-  metadata?: Record<string, any>;
+  collectionName: string;
+  userId: string;
 }
 
 export async function createNewCollection(
