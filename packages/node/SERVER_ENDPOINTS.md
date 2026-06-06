@@ -22,13 +22,13 @@ Base path: `/v7/:projectId/`
 | POST | `/auth/sign-up` | no key needed | `auth.signUp` | yes |
 | POST | `/auth/sign-in` | no key needed | `auth.signIn` | yes |
 | POST | `/auth/sign-out` | no key needed | `auth.signOut` | yes |
-| POST | `/auth/change-password` | can't access even with a key | — | — |
+| POST | `/auth/change-password` | can access with a key | `auth.changePassword` | yes |
 | POST | `/auth/request-password-reset` | no key needed | `auth.requestPasswordReset` | yes |
 | POST | `/auth/reset-password` | no key needed | `auth.resetPassword` | yes |
 | GET | `/auth/reset-password-page` | no key needed | — | — |
 | POST | `/auth/request-new-access-token` | no key needed | `auth.requestNewAccessToken` | yes |
 | POST | `/auth/verify-external-user` | no key needed | `auth.verifyExternalUser` | yes |
-| POST | `/auth/send-verification-email` | can't access even with a key | — | — |
+| POST | `/auth/send-verification-email` | can access with a key | `auth.sendVerificationEmail` | yes |
 | POST | `/auth/verify-email` | no key needed | `auth.verifyEmail` | yes |
 | GET | `/auth/verify-email-link` | no key needed | — | — |
 
@@ -36,14 +36,13 @@ Base path: `/v7/:projectId/`
 
 ## App Notifications
 
-> **SDK module unmounted** — all endpoints require user identity. Files kept for future re-enablement.
 
 | Method | Path | Service Key Access | SDK Function | SDK Call Valid |
 |--------|------|--------------------|--------------|----------------|
-| GET | `/app-notifications/` | can't access even with a key | `appNotifications.fetchNotifications` | no: needs user identity |
-| GET | `/app-notifications/count` | can't access even with a key | `appNotifications.countUnreadNotifications` | no: needs user identity |
-| PATCH | `/app-notifications/:notificationId/mark-as-read` | can't access even with a key | `appNotifications.markNotificationAsRead` | no: needs user identity |
-| PATCH | `/app-notifications/mark-all-as-read` | can't access even with a key | `appNotifications.markAllNotificationsAsRead` | no: needs user identity |
+| GET | `/app-notifications/` | can access with a key | `appNotifications.fetchNotifications` | yes |
+| GET | `/app-notifications/count` | can access with a key | `appNotifications.countUnreadNotifications` | yes |
+| PATCH | `/app-notifications/:notificationId/mark-as-read` | can access with a key | `appNotifications.markNotificationAsRead` | yes |
+| PATCH | `/app-notifications/mark-all-as-read` | can access with a key | `appNotifications.markAllNotificationsAsRead` | yes |
 
 ---
 
@@ -116,17 +115,16 @@ Base path: `/v7/:projectId/`
 
 ## Connections
 
-> **SDK module unmounted** — all endpoints require user identity. Files kept for future re-enablement.
 
 | Method | Path | Service Key Access | SDK Function | SDK Call Valid |
 |--------|------|--------------------|--------------|----------------|
-| GET | `/connections/` | can't access even with a key | `connections.fetchConnections` | no: needs user identity |
-| GET | `/connections/count` | can't access even with a key | `connections.fetchConnectionsCount` | no: needs user identity |
-| GET | `/connections/pending/sent` | can't access even with a key | `connections.fetchSentPendingConnections` | no: needs user identity |
-| GET | `/connections/pending/received` | can't access even with a key | `connections.fetchReceivedPendingConnections` | no: needs user identity |
-| PATCH | `/connections/:connectionId/accept` | can't access even with a key | `connections.acceptConnection` | no: needs user identity |
-| PATCH | `/connections/:connectionId/decline` | can't access even with a key | `connections.declineConnection` | no: needs user identity |
-| DELETE | `/connections/:connectionId` | can't access even with a key | `connections.removeConnection` | no: needs user identity |
+| GET | `/connections/` | can access with a key | `connections.fetchConnections` | yes |
+| GET | `/connections/count` | can access with a key | `connections.fetchConnectionsCount` | yes |
+| GET | `/connections/pending/sent` | can access with a key | `connections.fetchSentPendingConnections` | yes |
+| GET | `/connections/pending/received` | can access with a key | `connections.fetchReceivedPendingConnections` | yes |
+| PATCH | `/connections/:connectionId/accept` | can access with a key | `connections.acceptConnection` | yes |
+| PATCH | `/connections/:connectionId/decline` | can access with a key | `connections.declineConnection` | yes |
+| DELETE | `/connections/:connectionId` | can access with a key | `connections.removeConnection` | yes |
 
 ---
 
@@ -155,43 +153,40 @@ Base path: `/v7/:projectId/`
 
 ## Follows
 
-> **SDK module unmounted** — all endpoints require user identity. Files kept for future re-enablement.
 
 | Method | Path | Service Key Access | SDK Function | SDK Call Valid |
 |--------|------|--------------------|--------------|----------------|
-| GET | `/follows/following` | can't access even with a key | `follows.fetchFollowing` | no: needs user identity |
-| GET | `/follows/followers` | can't access even with a key | `follows.fetchFollowers` | no: needs user identity |
-| GET | `/follows/following-count` | can't access even with a key | `follows.fetchFollowingCount` | no: needs user identity |
-| GET | `/follows/followers-count` | can't access even with a key | `follows.fetchFollowersCount` | no: needs user identity |
-| DELETE | `/follows/:followId` | can't access even with a key | `follows.deleteFollow` | no: needs user identity |
+| GET | `/follows/following` | can access with a key | `follows.fetchFollowing` | yes |
+| GET | `/follows/followers` | can access with a key | `follows.fetchFollowers` | yes |
+| GET | `/follows/following-count` | can access with a key | `follows.fetchFollowingCount` | yes |
+| GET | `/follows/followers-count` | can access with a key | `follows.fetchFollowersCount` | yes |
+| DELETE | `/follows/:followId` | can access with a key | `follows.deleteFollow` | yes |
 
 ---
 
 ## Collections
 
-> **SDK module unmounted** — all endpoints require user identity. Files kept for future re-enablement.
 
 | Method | Path | Service Key Access | SDK Function | SDK Call Valid |
 |--------|------|--------------------|--------------|----------------|
-| POST | `/collections/:collectionId/sub-collections` | can't access even with a key | `collections.createNewCollection` | no: needs user identity |
-| GET | `/collections/root` | can't access even with a key | `collections.fetchRootCollection` | no: needs user identity |
-| GET | `/collections/:collectionId/sub-collections` | can't access even with a key | `collections.fetchSubCollections` | no: needs user identity |
-| GET | `/collections/:collectionId/entities` | can't access even with a key | `collections.fetchCollectionEntities` | no: needs user identity |
-| POST | `/collections/:collectionId/entities` | can't access even with a key | `collections.addEntityToCollection` | no: needs user identity |
-| DELETE | `/collections/:collectionId/entities/:entityId` | can't access even with a key | `collections.removeEntityFromCollection` | no: needs user identity |
-| PATCH | `/collections/:collectionId` | can't access even with a key | `collections.updateCollection` | no: needs user identity |
-| DELETE | `/collections/:collectionId` | can't access even with a key | `collections.deleteCollection` | no: needs user identity |
+| POST | `/collections/:collectionId/sub-collections` | can access with a key | `collections.createNewCollection` | yes |
+| GET | `/collections/root` | can access with a key | `collections.fetchRootCollection` | yes |
+| GET | `/collections/:collectionId/sub-collections` | can access with a key | `collections.fetchSubCollections` | yes |
+| GET | `/collections/:collectionId/entities` | can access with a key | `collections.fetchCollectionEntities` | yes |
+| POST | `/collections/:collectionId/entities` | can access with a key | `collections.addEntityToCollection` | yes |
+| DELETE | `/collections/:collectionId/entities/:entityId` | can access with a key | `collections.removeEntityFromCollection` | yes |
+| PATCH | `/collections/:collectionId` | can access with a key | `collections.updateCollection` | yes |
+| DELETE | `/collections/:collectionId` | can access with a key | `collections.deleteCollection` | yes |
 
 ---
 
 ## Reports
 
-> **SDK module unmounted** — all endpoints require user identity. Files kept for future re-enablement.
 
 | Method | Path | Service Key Access | SDK Function | SDK Call Valid |
 |--------|------|--------------------|--------------|----------------|
-| POST | `/reports/` | can't access even with a key | `reports.createReport` | no: needs user identity |
-| GET | `/reports/moderated` | can't access even with a key | `reports.fetchModeratedReports` | no: needs user identity |
+| POST | `/reports/` | can access with a key | `reports.createReport` | yes |
+| GET | `/reports/moderated` | can access with a key | `reports.fetchModeratedReports` | yes |
 
 ---
 
@@ -248,18 +243,18 @@ Base path: `/v7/:projectId/`
 | GET | `/users/by-username` | no key needed | `users.fetchUserByUsername` | yes |
 | GET | `/users/:userId` | no key needed | `users.fetchUserById` | yes |
 | PATCH | `/users/:userId` | can access with a key | `users.updateUser` | yes |
-| POST | `/users/:userId/follow` | can't access even with a key | — | — |
-| GET | `/users/:userId/follow` | can't access even with a key | — | — |
+| POST | `/users/:userId/follow` | can access with a key | `users.createFollow` | yes |
+| GET | `/users/:userId/follow` | can access with a key | `users.fetchFollowStatus` | yes |
 | GET | `/users/:userId/followers` | no key needed | `users.fetchFollowersByUserId` | yes |
 | GET | `/users/:userId/followers-count` | no key needed | `users.fetchFollowersCountByUserId` | yes |
 | GET | `/users/:userId/following` | no key needed | `users.fetchFollowingByUserId` | yes |
 | GET | `/users/:userId/following-count` | no key needed | `users.fetchFollowingCountByUserId` | yes |
-| DELETE | `/users/:userId/follow` | can't access even with a key | — | — |
-| POST | `/users/:userId/connection` | can't access even with a key | — | — |
-| GET | `/users/:userId/connection` | can't access even with a key | — | — |
+| DELETE | `/users/:userId/follow` | can access with a key | `users.deleteFollow` | yes |
+| POST | `/users/:userId/connection` | can access with a key | `users.requestConnection` | yes |
+| GET | `/users/:userId/connection` | can access with a key | `users.fetchConnectionStatus` | yes |
 | GET | `/users/:userId/connections` | no key needed | `users.fetchConnectionsByUserId` | yes |
 | GET | `/users/:userId/connections-count` | no key needed | `users.fetchConnectionsCountByUserId` | yes |
-| DELETE | `/users/:userId/connection` | can't access even with a key | — | — |
+| DELETE | `/users/:userId/connection` | can access with a key | `users.removeConnectionByUserId` | yes |
 
 ---
 
