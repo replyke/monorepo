@@ -82,6 +82,12 @@ This endpoint accepts `multipart/form-data`. Requires an authenticated user.
   Associates the file with a space.
 </ParamField>
 
+<ParamField body="userId" type="string">
+  Attribute the upload to a specific user. With a user token the upload is
+  already attributed to the caller; only **service/master keys** may name a
+  different user. Omit for a backend/project-owned file (no owning user).
+</ParamField>
+
 ## Response
 
 ```json

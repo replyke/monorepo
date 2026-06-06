@@ -1,0 +1,208 @@
+---
+title: "Storage"
+description: "Upload, retrieve, and delete files and images from your server"
+---
+
+The `storage` module uploads files and images to managed cloud storage and returns proxy URLs, plus reads and deletes existing files. Uploads are sent as `multipart/form-data` — pass the file bytes as a `Uint8Array` or a `Blob`.
+
+<Note>
+  Uploads can be attributed to a user by passing that user's Sublay ID as `userId` —
+  your service key performs the upload on behalf of that named user. Omit `userId`
+  for a **backend/project-owned** file (no owning user).
+</Note>
+
+<Warning>
+  **Access model.** Reads (`getFile`) are project-scoped — reachable for any file
+  in your project. **Deletes are owner-or-service:** your service key may delete
+  any file, but the same call made with an end-user token only succeeds for files
+  that user owns. Backend-owned files (`userId` unset) are deletable only with a
+  service/master key.
+</Warning>
+
+---
+
+### uploadFile
+
+Uploads a generic file (PDF, video, document, …) without server-side processing. The file type is inferred from the MIME type.
+
+```typescript
+import { readFile } from "node:fs/promises";
+
+const buffer = await readFile("./report.pdf");
+
+const file = await sublay.storage.uploadFile({
+  file: new Uint8Array(buffer),
+  filename: "report.pdf",
+  mimeType: "application/pdf",
+  pathParts: ["documents", "usr_abc123"],
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="file" type="Uint8Array | Blob" required>
+  The file bytes to upload. Maximum 50 MB.
+</ParamField>
+
+<ParamField body="pathParts" type="string[]" required>
+  Storage path segments. The file is stored under the joined path with a UUID
+  sub-folder appended, e.g. `["documents", "usr_abc123"]` →
+  `documents/usr_abc123/<uuid>/<filename>`.
+</ParamField>
+
+<ParamField body="filename" type="string">
+  Name to store the file under. Defaults to `"upload"`.
+</ParamField>
+
+<ParamField body="mimeType" type="string">
+  MIME type used when wrapping a `Uint8Array`. Defaults to
+  `"application/octet-stream"`. Ignored when `file` is already a `Blob`.
+</ParamField>
+
+<ParamField body="position" type="number">
+  Display order when a record has multiple attachments. Defaults to `0`.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Custom key-value data stored alongside the file record.
+</ParamField>
+
+<ParamField body="entityId" type="string">
+  Associates the file with an entity for cascade deletion. Only one of
+  `entityId` / `commentId` / `spaceId` may be set.
+</ParamField>
+
+<ParamField body="commentId" type="string">
+  Associates the file with a comment for cascade deletion.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Associates the file with a space.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Attribute the upload to a user. Omit for a backend/project-owned file.
+</ParamField>
+
+**Returns** — `Promise<File>`
+
+---
+
+### uploadImage
+
+Uploads an image, processes it with Sharp, and stores the original plus all requested variants. The `imageOptions` object is a discriminated union on `mode` — the shape of the other fields depends on the mode you pick.
+
+```typescript
+import { readFile } from "node:fs/promises";
+
+const buffer = await readFile("./avatar.png");
+
+const file = await sublay.storage.uploadImage({
+  file: new Uint8Array(buffer),
+  filename: "avatar.png",
+  mimeType: "image/png",
+  imageOptions: {
+    mode: "exact-dimensions",
+    dimensions: {
+      thumbnail: { width: 64, height: 64 },
+      card: { width: 400, height: 300 },
+    },
+    format: "webp",
+    quality: 85,
+  },
+  pathParts: ["avatars", "usr_abc123"],
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="file" type="Uint8Array | Blob" required>
+  The image bytes. Must be a valid image format recognized by Sharp. Maximum 50 MB.
+</ParamField>
+
+<ParamField body="imageOptions" type="ImageOptions" required>
+  Image-processing configuration — a discriminated union on `mode`. The supported
+  modes and their required fields:
+
+  | `mode` | Required fields | Notes |
+  |--------|-----------------|-------|
+  | `exact-dimensions` | `dimensions` (`{ [variant]: { width, height } }`) | Fixed-size crops. |
+  | `aspect-ratio-width-based` | `aspectRatio`, `widths` (`{ [variant]: number }`) | Heights computed from the ratio. |
+  | `aspect-ratio-height-based` | `aspectRatio`, `heights` (`{ [variant]: number }`) | Widths computed from the ratio. |
+  | `original-aspect` | `sizes` (`{ [variant]: number }`) | Preserves source ratio; `fit` limited to `inside`/`outside`. |
+  | `multi-aspect-ratio` | `aspectRatios` (`{ width, height }[]`), `sizes` | 1–10 aspect ratios. |
+
+  All modes also accept optional `quality` (1–100), `format` (`webp` \| `jpeg` \|
+  `png` \| `original`), `stripExif` (boolean), and `fit` (`cover` \| `contain` \|
+  `inside` \| `outside`). Dimension/size values are 50–10000.
+</ParamField>
+
+<ParamField body="filename" type="string">
+  Name to store the image under. Defaults to `"upload"`.
+</ParamField>
+
+<ParamField body="mimeType" type="string">
+  MIME type used when wrapping a `Uint8Array`. Ignored when `file` is a `Blob`.
+</ParamField>
+
+<ParamField body="pathParts" type="string[]">
+  Storage path segments. Defaults to `["images", "<fileId>"]`.
+</ParamField>
+
+<ParamField body="entityId" type="string">
+  Associates the image with an entity. Only one of `entityId` / `commentId` /
+  `spaceId` may be set.
+</ParamField>
+
+<ParamField body="commentId" type="string">
+  Associates the image with a comment.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Associates the image with a space.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Attribute the upload to a user. Omit for a backend/project-owned file.
+</ParamField>
+
+**Returns** — `Promise<File>` (the `image` field carries the generated `variants`).
+
+---
+
+### getFile
+
+Fetches a file's metadata and proxy URLs by ID. For images, the `image` extension (variants, processing details) is included. Reads are project-scoped.
+
+```typescript
+const file = await sublay.storage.getFile({
+  fileId: "fil_abc123",
+});
+```
+
+<ParamField body="fileId" type="string" required>
+  The UUID of the file to retrieve.
+</ParamField>
+
+**Returns** — `Promise<File>`
+
+---
+
+### deleteFile
+
+Deletes a file record and removes all associated storage objects (for images, every generated variant too).
+
+```typescript
+await sublay.storage.deleteFile({
+  fileId: "fil_abc123",
+});
+```
+
+<ParamField body="fileId" type="string" required>
+  The UUID of the file to delete.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+<Note>
+  With a service key this deletes any file in the project. The same call from an
+  end-user token only succeeds when that user owns the file (otherwise `403`).
+</Note>

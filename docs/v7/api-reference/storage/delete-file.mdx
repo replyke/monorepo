@@ -6,7 +6,7 @@ description: "Delete a file and all its variants from storage"
 
 Deletes a file record and removes all associated storage objects. For image files, all generated variants are also deleted.
 
-Requires an authenticated user.
+Requires an authenticated user. **Delete is owner-or-service:** a user token may only delete files it owns; **service/master keys** may delete any file in the project. Backend-owned files (uploaded without a `userId`) are deletable only with a service/master key.
 
 **Rate limit**: 50 requests per 5 minutes.
 
@@ -38,6 +38,12 @@ Requires an authenticated user.
   <Accordion title="Not Found — 404">
     ```json
     { "error": "File not found", "code": "storage/file-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Unauthorized — 403">
+    Returned when a user token attempts to delete a file it does not own.
+    ```json
+    { "error": "Unauthorized", "code": "storage/unauthorized" }
     ```
   </Accordion>
 </AccordionGroup>

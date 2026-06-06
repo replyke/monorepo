@@ -739,7 +739,7 @@
                   "v7/node-sdk/search",
                   "v7/node-sdk/reports",
                   "v7/node-sdk/app-notifications",
-                  "v7/node-sdk/hosted-apps"
+                  "v7/node-sdk/storage"
                 ]
               }
             ]
