@@ -142,7 +142,7 @@ A user's mutual connections and pending requests. All take `userId`.
 
 `fetchConnections`, `fetchConnectionsCount`, `fetchSentPendingConnections`, `fetchReceivedPendingConnections`, `acceptConnection`, `declineConnection`, `removeConnection`
 
-### 7. Spaces Module (32 functions)
+### 7. Spaces Module (33 functions)
 
 Space lifecycle, membership, moderation, rules, and digest config — documented across three pages (`spaces`, `spaces-members`, `spaces-moderation`).
 
@@ -215,9 +215,9 @@ const entity = await client.entities.createEntity({
 
 // Fetch entities with advanced filtering
 const trendingPosts = await client.entities.fetchManyEntities({
-    sort: 'hot',
-    timeframe: 'week',
-    keywords: { includes: ['nodejs'] },
+    sortBy: 'hot',
+    timeFrame: 'week',
+    keywordsFilters: { includes: ['nodejs'] },
     limit: 10,
     page: 1
 });
