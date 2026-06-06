@@ -1,15 +1,16 @@
 import { SublayHttpClient } from "../../core/client";
 
-export interface UnreadNotificationsCountResponse {
-  count: number;
+export interface CountUnreadNotificationsProps {
+  userId: string;
 }
 
 export async function countUnreadNotifications(
-  client: SublayHttpClient
-): Promise<UnreadNotificationsCountResponse> {
-  const response =
-    await client.projectInstance.get<UnreadNotificationsCountResponse>(
-      "/app-notifications/count"
-    );
+  client: SublayHttpClient,
+  data: CountUnreadNotificationsProps
+): Promise<number> {
+  const response = await client.projectInstance.get<number>(
+    "/app-notifications/count",
+    { params: data }
+  );
   return response.data;
 }
