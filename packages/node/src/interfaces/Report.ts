@@ -3,7 +3,12 @@ import { Comment } from "./Comment";
 import { Space } from "./Space";
 
 export type ReportTargetType = "entity" | "comment";
-export type ReportStatus = "pending" | "resolved" | "dismissed";
+export type ReportStatus =
+  | "pending"
+  | "on-hold"
+  | "escalated"
+  | "dismissed"
+  | "actioned";
 
 export interface UserReport {
   id: string;

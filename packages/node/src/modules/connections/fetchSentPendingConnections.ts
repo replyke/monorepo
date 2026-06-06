@@ -1,7 +1,8 @@
 import { SublayHttpClient } from "../../core/client";
-import { PendingConnection, PendingConnectionListResponse } from "../../interfaces/Connection";
+import { PendingConnectionListResponse } from "../../interfaces/Connection";
 
 export interface FetchSentPendingConnectionsProps {
+  userId: string;
   page?: number;
   limit?: number;
 }

@@ -3,6 +3,7 @@ import { EstablishedConnection } from "../../interfaces/Connection";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
 export interface FetchConnectionsProps {
+  userId: string;
   page?: number;
   limit?: number;
 }

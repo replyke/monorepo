@@ -3,8 +3,8 @@ import { Collection } from "../../interfaces/Collection";
 
 export interface UpdateCollectionProps {
   collectionId: string;
+  userId: string;
   name?: string;
-  metadata?: Record<string, any>;
 }
 
 export async function updateCollection(

@@ -1,15 +1,21 @@
 import { SublayHttpClient } from "../../core/client";
 
+export interface MarkAllNotificationsAsReadProps {
+  userId: string;
+}
+
 export interface MarkAllNotificationsAsReadResponse {
-  updated: number;
+  markedAsRead: number;
 }
 
 export async function markAllNotificationsAsRead(
-  client: SublayHttpClient
+  client: SublayHttpClient,
+  data: MarkAllNotificationsAsReadProps
 ): Promise<MarkAllNotificationsAsReadResponse> {
   const response =
     await client.projectInstance.patch<MarkAllNotificationsAsReadResponse>(
-      "/app-notifications/mark-all-as-read"
+      "/app-notifications/mark-all-as-read",
+      { userId: data.userId }
     );
   return response.data;
 }

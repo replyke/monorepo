@@ -33,30 +33,37 @@ pnpm publish-prod
 
 ### Module Structure
 
-The SDK is organized into 5 main API modules:
+The SDK exposes **12 modules** bound on `SublayClient` (camelCase accessor in
+parentheses). Every endpoint is reached with a **service key**; operations that
+act on behalf of a user take an explicit `userId` (or `actingUserId` on the
+nested `users` follow/connection routes), since a service key has no implicit
+session user.
 
 ```
 src/
 ├── core/
 │   └── client.ts           # HTTP client with axios instances
-├── interfaces/             # TypeScript type definitions
-│   ├── Entity.ts
-│   ├── Comment.ts
-│   ├── User.ts
-│   ├── List.ts
-│   ├── HostedApp.ts
-│   ├── Connection.ts
-│   ├── Follow.ts
-│   ├── Mention.ts
-│   └── AppNotification.ts
+├── interfaces/             # TypeScript type definitions (Entity, Comment, User,
+│                           #   Collection, Connection, Follow, Report, Space, …)
 ├── modules/
-│   ├── entities/           # Entity CRUD operations (8 functions)
-│   ├── comments/           # Comment CRUD operations (5 functions)
-│   ├── users/              # User operations (2 functions)
-│   ├── lists/              # List CRUD operations (8 functions)
-│   └── hosted-apps/        # Hosted app operations (1 function)
+│   ├── entities/           # client.entities
+│   ├── comments/           # client.comments
+│   ├── users/              # client.users (incl. nested follow/connection actions)
+│   ├── spaces/             # client.spaces
+│   ├── search/             # client.search
+│   ├── auth/               # client.auth
+│   ├── hosted-apps/        # client.hostedApps
+│   ├── collections/        # client.collections      (service-key userId)
+│   ├── connections/        # client.connections      (service-key userId)
+│   ├── follows/            # client.follows          (service-key userId)
+│   ├── reports/            # client.reports          (service-key userId)
+│   └── app-notifications/  # client.appNotifications (service-key userId)
 └── index.ts                # Main entry point with SublayClient class
 ```
+
+> **Not yet bound (unmounted):** `chat`, `storage`, `oauth`. These remain
+> user-session-centric and are deferred — see `plan-service-key-act-as-user.md`
+> at the engine root for the rationale and the per-route plan.
 
 ### HTTP Client Configuration
 

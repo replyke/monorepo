@@ -3,6 +3,7 @@ import { Follow } from "../../interfaces/Follow";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
 export interface FetchFollowingProps {
+  userId: string;
   page?: number;
   limit?: number;
 }
