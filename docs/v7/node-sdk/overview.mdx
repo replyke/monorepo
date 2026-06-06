@@ -61,7 +61,7 @@ sublay.spaces            // Spaces — management, members, moderation, rules
 sublay.search            // Search and AI Q&A
 sublay.reports           // Content reports and the moderation queue
 sublay.appNotifications  // In-app notification feed
-sublay.hostedApps        // Hosted app configuration
+sublay.storage           // File and image uploads, read, delete
 ```
 
 ## Acting on behalf of a user
@@ -71,7 +71,7 @@ Your service key authenticates as the project, not as any single end user. So fu
 A few routes on the `users` module act on one user toward another — following someone, requesting a connection. These are nested under the target user's ID in the path, so the **target** is `userId` and the **actor** is passed separately as `actingUserId`.
 
 <Note>
-  `chat`, `storage`, and `oauth` are intentionally not exposed by this SDK.
+  `chat` and `oauth` are intentionally not exposed by this SDK.
 </Note>
 
 <CardGroup cols={2}>
@@ -114,8 +114,8 @@ A few routes on the `users` module act on one user toward another — following 
   <Card title="App Notifications" icon="bell" href="/v7/node-sdk/app-notifications">
     Read and mark a user's in-app notifications
   </Card>
-  <Card title="Hosted Apps" icon="cube" href="/v7/node-sdk/hosted-apps">
-    Fetch hosted app configuration
+  <Card title="Storage" icon="upload" href="/v7/node-sdk/storage">
+    Upload, fetch, and delete files and images
   </Card>
 </CardGroup>
 
