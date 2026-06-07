@@ -4,336 +4,107 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the **@sublay/js** package - the official JavaScript SDK for Sublay. It's a lightweight, framework-agnostic SDK designed for JavaScript/TypeScript projects that don't use React or don't need the full React setup from the monorepo packages.
+**@sublay/js** is the official framework-agnostic JavaScript SDK for Sublay. It targets browser apps and JS runtimes that don't use React (or don't want the React provider tree). It mirrors the Sublay **v7** server API, authenticated as an **end user** via a bearer token — no React, no Redux, no state management.
 
-**Package Name**: @sublay/js
-**Version**: 5.0.0
-**Type**: JavaScript SDK library (published to npm)
+- **Package**: `@sublay/js`
+- **Version**: 7.0.0 (tracks the v7 server API)
+- **Type**: published npm library (CJS + ESM)
+- **Only runtime dependency**: `axios`
+- **Base URL**: `https://api.sublay.io/v7/{projectId}`
+
+> Sibling SDKs: `@sublay/node` is the server-side SDK (authenticates with a **service key** and may act on behalf of any user). This SDK is its user-token counterpart. The two share the same module/file layout and the `bindModule` pattern, so `@sublay/node` is a useful reference donor — but with one inversion (see **Rule A** below).
 
 ## Development Commands
 
 ```bash
-# Build the package (TypeScript compilation + bundling)
-pnpm build
-
-# Generate TypeScript declaration files
-pnpm build:types
-
-# Build both (runs before publishing)
-pnpm prepare
-
-# Publish to npm with beta tag
-pnpm publish-beta
-
-# Publish to npm production
-pnpm publish-prod
+pnpm build          # tsup → dist/ (CJS + ESM + .d.ts)
+pnpm build:types    # tsc --emitDeclarationOnly (type-check + emit declarations)
+pnpm prepare        # build + build:types (runs before publish)
+pnpm publish-beta   # publish with the beta tag
+pnpm publish-prod   # publish to latest
 ```
 
-## Core Architecture
+When verifying changes during development, prefer `npx tsc --noEmit` (read-only) over `pnpm build`, which overwrites `dist/`.
 
-### Module Structure
+## Architecture
 
-The SDK is organized into 3 main API modules:
+### The client
 
-```
-src/
-├── core/
-│   └── client.ts        # HTTP client wrapper using axios
-├── modules/
-│   ├── users/           # User operations (2 functions)
-│   │   ├── index.ts
-│   │   ├── fetchUserById.ts
-│   │   └── fetchUserByForeignId.ts
-│   ├── entities/        # Entity CRUD operations (7 functions)
-│   │   ├── index.ts
-│   │   ├── createEntity.ts
-│   │   ├── fetchEntity.ts
-│   │   ├── fetchEntityByForeignId.ts
-│   │   ├── fetchEntityByShortId.ts
-│   │   ├── fetchManyEntities.ts
-│   │   ├── updateEntity.ts
-│   │   └── deleteEntity.ts
-│   └── comments/        # Comment operations (2 functions)
-│       ├── index.ts
-│       ├── fetchComment.ts
-│       └── fetchCommentByForeignId.ts
-└── index.ts             # Main entry point with SublayClient class
-```
+`SublayClient.init(config)` (in [src/index.ts](src/index.ts)) constructs a `SublayHttpClient` ([src/core/client.ts](src/core/client.ts)) and returns a client whose 14 module namespaces are pre-bound to it.
 
-### HTTP Client
-
-Uses a custom `SublayHttpClient` class that wraps axios with pre-configured base URL:
-- **Base URL**: `https://api.sublay.io/api/v5/{projectId}`
-- **Headers**: Standard axios configuration
-- **Method**: GET/POST/PUT/DELETE operations
-
-### Initialization Pattern
-
-```typescript
-import { SublayClient } from '@sublay/js';
-
-const client = await SublayClient.init({
-    projectId: "your-project-id"
-});
-
-// Client initializes and returns bound module functions
-```
-
-**Factory Pattern**: Uses `SublayClient.init()` for initialization, which:
-1. Creates an HTTP client instance with the project ID
-2. Binds all module functions to the client
-3. Returns the client with namespaced API methods
-
-## API Modules & Features
-
-### 1. Users Module (2 functions)
-
-**Functions**:
-- `client.users.fetchUserById({ userId })` - Fetch user by Sublay ID
-- `client.users.fetchUserByForeignId({ foreignId, name?, username?, avatar?, bio?, metadata?, secureMetadata? })` - Fetch user by external ID with optional user data
-
-**Features**:
-- Foreign ID support for external system integration
-- Optional user data creation on first fetch
-- Support for public and secure metadata
-
-### 2. Entities Module (7 functions)
-
-Entities are the core content objects (posts, articles, products, listings, etc.).
-
-**Functions**:
-- `client.entities.createEntity(data)` - Create a new entity
-- `client.entities.fetchEntity({ entityId })` - Fetch by Sublay ID
-- `client.entities.fetchEntityByForeignId({ foreignId })` - Fetch by external system ID
-- `client.entities.fetchEntityByShortId({ shortId })` - Fetch by short/shareable ID
-- `client.entities.fetchManyEntities(filters)` - Advanced querying with extensive filters
-- `client.entities.updateEntity(data)` - Update entity
-- `client.entities.deleteEntity({ entityId })` - Delete entity
-
-**Create Entity Parameters**:
-- `foreignId` - External system ID for integration
-- `sourceId` - Source identifier (e.g., "blog", "shop")
-- `title` - Entity title
-- `content` - Main content/body
-- `attachments` - Media attachments (flexible structure)
-- `keywords` - Tags/categories
-- `location` - Geo-location (lat/lng or GeoJSON Point)
-- `metadata` - Custom metadata (up to 10KB)
-- `userId` - Author/creator ID
-
-**Advanced Filtering** (fetchManyEntities):
-Supports extensive filtering options:
-- **Sorting**: `hot`, `top`, `controversial`
-- **Timeframes**: `hour`, `day`, `week`, `month`, `year`, `all`
-- **Pagination**: `page`, `limit`
-- **Keywords**:
-  - `keywords.includes` - Array of required tags
-  - `keywords.excludes` - Array of excluded tags
-- **Metadata Filters**:
-  - `metadata.includes` - Object of required key-value pairs
-  - `metadata.excludes` - Object of excluded key-value pairs
-  - `metadata.exists` - Array of required metadata keys
-- **Content Filters**:
-  - `title.includes` / `title.excludes` - Title text filtering
-  - `content.includes` / `content.excludes` - Content text filtering
-- **Attachment Filters**:
-  - `attachments.has` - Entities with attachments
-  - `attachments.hasNot` - Entities without attachments
-- **Location Filters**:
-  - `location.latitude` / `location.longitude` - Geo-coordinates
-  - `location.radius` - Radius in kilometers
-- **User Filters**:
-  - `userId` - Filter by specific user
-  - `followedOnly` - Only from users the current user follows
-
-### 3. Comments Module (2 functions)
-
-**Functions**:
-- `client.comments.fetchComment({ commentId })` - Fetch comment by Sublay ID
-- `client.comments.fetchCommentByForeignId({ foreignId })` - Fetch comment by external ID
-
-**Note**: This module currently provides read-only access. Comment creation/updates are available in other SDK packages (@sublay/node) or through direct API calls.
-
-## Key Design Patterns
-
-### 1. Framework-Agnostic
-No dependencies on React, Vue, Angular, or any specific framework. Works with vanilla JavaScript, TypeScript, or any JavaScript framework.
-
-### 2. Type Safety
-Full TypeScript support with type definitions, though return types are currently `any` with TODOs to add proper entity types in future versions.
-
-### 3. Function Binding
-Module functions are bound to the HTTP client at initialization, providing a clean API without manually passing the client.
-
-### 4. Foreign ID Support
-Seamless integration with existing systems through foreign ID mapping on all major resources.
-
-### 5. Location Flexibility
-Supports both simple `{ lat, lng }` objects and GeoJSON Point format for geo-location data.
-
-## Usage Examples
-
-### Basic Initialization
-
-```typescript
-import { SublayClient } from '@sublay/js';
-
-const client = await SublayClient.init({
-    projectId: 'your-project-id'
+```ts
+const sublay = await SublayClient.init({
+  projectId,
+  initialTokens?,   // hydrate from a persisted session (SDK-managed mode)
+  getToken?,        // providing this switches to host-managed mode
+  onAuthChange?,    // notified when the SDK sets/rotates/clears tokens (SDK-managed mode)
 });
 ```
 
-### Fetching Entities
+### Two auth modes
 
-```javascript
-// Fetch single entity
-const entity = await client.entities.fetchEntity({
-    entityId: 'entity-123'
-});
+- **SDK-managed (default)** — the SDK keeps `accessToken`/`refreshToken` in memory, attaches `Authorization: Bearer` on every request, auto-refreshes on a `403` (single-flight mutex), and fires `onAuthChange` so the host can persist tokens. No storage is baked in (the SDK must run in any JS runtime), so persistence is the host's job via `onAuthChange` + `initialTokens`.
+- **Host-managed** — set when `getToken` is provided. The SDK never stores or refreshes; it reads the current token from `getToken()` on each request, and on a `403` re-reads it once. `setTokens`/`clearTokens`/`setAccessToken` are all no-ops in this mode.
 
-// Fetch by foreign ID
-const post = await client.entities.fetchEntityByForeignId({
-    foreignId: 'blog-post-456'
-});
+An explicit `Authorization` header on a request always wins over both.
 
-// Fetch with advanced filters
-const trendingPosts = await client.entities.fetchManyEntities({
-    sort: 'hot',
-    timeframe: 'week',
-    keywords: { includes: ['javascript', 'tutorial'] },
-    attachments: { has: true },
-    limit: 20,
-    page: 1
-});
-```
+**Refresh-token rotation (important):** the v7 server *rotates* the refresh token on every refresh and runs reuse detection — re-sending a spent refresh token destroys the whole session family. So `refreshAccessToken()` and `auth.requestNewAccessToken` must persist the **new** `refreshToken` from the response (via `setTokens`), not just the access token.
 
-### Creating Entities
+### `bindModule` pattern
 
-```javascript
-const newEntity = await client.entities.createEntity({
-    foreignId: 'my-post-789',
-    sourceId: 'blog',
-    title: 'Getting Started with JavaScript',
-    content: 'In this tutorial, we will learn...',
-    keywords: ['javascript', 'tutorial', 'beginner'],
-    userId: 'user-123',
-    metadata: {
-        category: 'programming',
-        difficulty: 'beginner',
-        readTime: 5
-    }
-});
-```
+Every module function is written as `(client: SublayHttpClient, data) => Promise<...>`. At init, `bindModule` partially applies the client so callers write `sublay.entities.fetchEntity({ entityId })` (no client arg). Adding a function = add the file, export it from the module's `index.ts`, and (for a new module) bind it in [src/index.ts](src/index.ts).
 
-### Updating Entities
+### Rule A — the user-token inversion (READ THIS before porting from @sublay/node)
 
-```javascript
-await client.entities.updateEntity({
-    entityId: 'entity-123',
-    title: 'Updated Title',
-    content: 'Updated content...',
-    keywords: ['updated', 'tags']
-});
-```
+`@sublay/node` is a service-key SDK with no inherent user, so it passes an explicit `userId`/`actingUserId` to tell the server who is acting. This SDK uses a **user token**, so the server derives the actor from the token. **When porting a function, DROP the actor param.** Decide per-param by reading the server controller:
 
-### Geo-Location Filtering
+- Param feeds `resolveUserId(...)` / `resolveActingUserId(...)` / `req.userId` (the **actor**) → **drop it**.
+- Param is a path `:userId` target, a ban/moderation **target**, or a genuine query **filter** (e.g. "entities by this author") → **keep it**.
+- Param the controller never reads → drop it.
 
-```javascript
-// Find entities near a location
-const nearbyPosts = await client.entities.fetchManyEntities({
-    location: {
-        latitude: 40.7128,
-        longitude: -74.0060,
-        radius: 10  // 10km radius
-    },
-    limit: 50
-});
-```
+Sending an actor param a user token shouldn't set → `403` or silently ignored. This is the single most common porting mistake.
 
-### Working with Users
+### Mirror the server exactly
 
-```javascript
-// Fetch user by ID
-const user = await client.users.fetchUserById({
-    userId: 'user-123'
-});
+The server's zod schemas + controllers are the source of truth ([server/src/v7-schema/controllers/](../server/src/v7-schema/controllers/)). Expose the server's exact param names (no aliases/renames), drop params the server ignores, and type returns to what the controller actually responds with (`res.json(...)`) — not what a naive port assumed. The `@sublay/node` donor has several wrong return types; verify against the controller, not the donor.
 
-// Fetch or create user by foreign ID
-const externalUser = await client.users.fetchUserByForeignId({
-    foreignId: 'external-user-456',
-    name: 'John Doe',
-    username: 'johndoe',
-    avatar: 'https://example.com/avatar.jpg',
-    metadata: {
-        source: 'external-system'
-    }
-});
-```
+### Multipart uploads
 
-## Build & Publishing
+File-bearing requests use `FormData` and the shared helpers in [src/core/multipart.ts](src/core/multipart.ts) (`appendField` / `appendFields` / `appendFile`): object/array fields are JSON-stringified (the server re-parses them), scalars are coerced to strings, `undefined` is skipped. Don't set `Content-Type` manually — axios sets it to `undefined` for a `FormData` body so the browser writes the multipart boundary. Used by `storage.uploadFile`/`uploadImage`, `chat.sendMessage` (field `files`), and `users.updateUser` (`avatarFile`/`bannerFile` + `<field>.options`).
 
-### Build Configuration
-- **Build Tool**: tsup
-- **Output Formats**: CommonJS and ESM (dual package)
-- **Type Declarations**: Generated via TypeScript compiler
-- **Target**: Modern JavaScript (ES modules)
-- **Entry Point**: `src/index.ts`
+### Interfaces
 
-### Output Structure
-```
-dist/
-├── index.js         # Main bundle (CJS/ESM)
-└── index.d.ts       # TypeScript declarations
-```
+[src/interfaces/](src/interfaces/) holds the response/model types (Entity, Comment, User/AuthUser, Space, Conversation, ChatMessage, Follow/FollowListItem, Connection, Collection, Reaction, File, ImageProcessing, Report, AppNotification, OAuthIdentity, Mention, Rule, IPaginatedResponse, …), ported from `@sublay/node`. Reuse them; don't invent parallel types. Note `IPaginatedResponse` (`{ data, pagination: { page, pageSize, totalPages, totalItems, hasMore } }`) matches the server's `createPaginatedResponse` helper — but a few endpoints return bespoke shapes (cursor pagination, raw arrays, `{ data, pagination: { ...limit/total } }`), so confirm per endpoint.
 
-### Publishing
-```bash
-# Beta release
-pnpm publish-beta
+## Modules (14 namespaces, `sublay.<module>.<fn>`)
 
-# Production release
-pnpm publish-prod
-```
+Source under [src/modules/](src/modules/); each folder has one file per function + an `index.ts` barrel.
 
-**Package Exports**:
-- Main: `dist/index.js`
-- Types: `dist/index.d.ts`
+- **auth** — `signUp`, `signIn`, `signOut`, `requestNewAccessToken`, `verifyExternalUser`, `requestPasswordReset`, `resetPassword`, `changePassword`, `verifyEmail`, `sendVerificationEmail`
+- **users** — `fetchUserById`, `fetchUserByForeignId`, `fetchUserByUsername`, `fetchUserSuggestions`, `checkUsernameAvailability`, `updateUser` (multipart avatar/banner), plus the **per-user** graph: `fetchFollowers/FollowingByUserId`, `fetchFollowers/FollowingCountByUserId`, `fetchConnections/ConnectionsCountByUserId`, `createFollow`, `deleteFollow`, `fetchFollowStatus`, `requestConnection`, `fetchConnectionStatus`, `removeConnectionByUserId` (these hit `/users/:userId/*` — an *arbitrary* user)
+- **entities** — `createEntity`, `fetchEntity`, `fetchEntityByForeignId`, `fetchEntityByShortId`, `fetchManyEntities` (feeds + filters), `updateEntity`, `deleteEntity`, `fetchDrafts`, `publishDraft`, `fetchTopComment`, `addReaction`, `removeReaction`, `fetchReactions`, `getUserReaction`, `isEntitySaved`
+- **comments** — `createComment`, `fetchComment`, `fetchCommentByForeignId`, `updateComment`, `deleteComment`, `fetchManyComments`, `addReaction`, `removeReaction`, `fetchReactions`, `getUserReaction` (reaction add/remove return the full `Comment`)
+- **spaces** (36 fns) — lifecycle, membership/roles, rules, digest config, and moderation (report handlers, message moderation). Report/ban handlers KEEP `userId` as the **ban target**.
+- **collections** — `fetchRootCollection`, `fetchSubCollections`, `createNewCollection`, `fetchCollectionEntities`, `addEntityToCollection`, `removeEntityFromCollection`, `updateCollection`, `deleteCollection`
+- **follows** / **connections** — the **logged-in user's own** graph (`/follows/*`, `/connections/*`) — distinct from the `/users/:userId/*` functions in the users module
+- **appNotifications** — `fetchNotifications`, `countUnreadNotifications`, `markNotificationAsRead`, `markAllNotificationsAsRead`
+- **reports** — `createReport`, `fetchModeratedReports`
+- **search** — `searchContent`, `searchUsers`, `searchSpaces` (return raw arrays of `{ similarity, record }`), and `askContent` — an **SSE async generator** (`for await` it; cancel via `AbortSignal` or `break`). It uses `fetch` (not axios), so it reads the token via `client.getAuthHeader()` and does NOT get the auto-refresh retry.
+- **storage** — `uploadFile`, `uploadImage`, `getFile`, `deleteFile` (browser `File`/`Blob`)
+- **oauth** — `authorize`, `linkIdentity` (both: `{ provider, redirectAfterAuth }` → `{ authorizationUrl }`, redirect flow), `listIdentities`, `unlinkIdentity`
+- **chat** (21 fns) — conversations (incl. **cursor** pagination on `listConversations`/`listMessages`), members, messages (`sendMessage` supports multipart `files`), reactions, `markAsRead` (`{ messageId }`), `reportMessage`
 
-## Use Cases
+## Critical files
 
-This SDK is ideal for:
+- [src/index.ts](src/index.ts) — `SublayClient`, `init`, `bindModule`, module wiring, public type re-exports
+- [src/core/client.ts](src/core/client.ts) — `SublayHttpClient`: auth modes, interceptors, refresh+rotation, `getAuthHeader`
+- [src/core/multipart.ts](src/core/multipart.ts) — shared `FormData` helpers
+- [src/modules/*/index.ts](src/modules/) — per-module barrels
+- [src/interfaces/](src/interfaces/) — response/model types
 
-1. **Vanilla JavaScript Projects** - Plain JS applications without frameworks
-2. **Non-React Frameworks** - Vue, Svelte, Angular, Solid, etc.
-3. **Server-Side Rendering** - SSR applications without React
-4. **Static Site Generators** - Eleventy, Hugo (with JavaScript), Astro (non-React)
-5. **Chrome Extensions** - Browser extensions built with vanilla JS
-6. **Electron Apps** - Desktop applications using web technologies
-7. **Web Workers** - Background scripts and service workers
-8. **Lightweight Integrations** - When you don't need the full React SDK overhead
+## Conventions
 
-Essentially any JavaScript/TypeScript project that needs Sublay integration without React dependencies.
-
-## Technical Details
-
-- **TypeScript**: Strict mode enabled
-- **Dependencies**: Only axios for HTTP requests
-- **API Version**: Uses v5 API endpoints
-- **Bundle Size**: Lightweight (no framework dependencies)
-- **Browser Support**: Modern browsers (ES6+)
-- **Node.js Support**: Yes (v14+)
-
-## Important Notes
-
-- This SDK is **production-ready** (v5.0.0)
-- Requires a valid project ID from Sublay dashboard
-- Currently uses v5 API endpoints
-- Return types are typed as `any` (TODOs exist to add proper types)
-- No README.md file exists yet (documentation pending)
-- Comment module has limited functionality (read-only)
-
-## Comparison with Other SDKs
-
-- **vs @sublay/node**: This SDK is lighter weight and framework-agnostic, while @sublay/node is optimized for Node.js server environments with more comprehensive API coverage
-- **vs @sublay/react-js**: This SDK has no React dependencies, making it suitable for non-React projects or when you don't need React hooks and components
-- **vs monorepo packages**: This SDK is standalone and simpler, while monorepo packages provide full React/React Native integration with hooks, contexts, and UI components
+- One function per file; export it from the module `index.ts`.
+- `(client, data)` signature; keep the server's exact param names; apply **Rule A**.
+- Type returns to the controller's actual response; reuse `src/interfaces/` types.
+- TypeScript strict mode; framework-agnostic (no DOM-only assumptions beyond `fetch`/`FormData`, which the build's `lib` provides).

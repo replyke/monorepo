@@ -1,14 +1,18 @@
 import { SublayHttpClient } from "../../core/client";
+import { Entity } from "../../interfaces/Entity";
 
 export interface FetchEntityByShortIdProps {
   shortId: string;
+  include?: string;
 }
 
 export async function fetchEntityByShortId(
   client: SublayHttpClient,
   data: FetchEntityByShortIdProps
-): Promise<any> {
+): Promise<Entity> {
   const path = `/entities/by-short-id`;
-  const response = await client.instance.get<any>(path, { params: data });
+  const response = await client.projectInstance.get<Entity>(path, {
+    params: data,
+  });
   return response.data;
 }

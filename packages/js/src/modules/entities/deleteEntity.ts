@@ -7,8 +7,8 @@ export interface DeleteEntityProps {
 export async function deleteEntity(
   client: SublayHttpClient,
   data: DeleteEntityProps
-): Promise<any> {
+): Promise<void> {
   const path = `/entities/${data.entityId}`;
-  const response = await client.instance.delete<any>(path);
+  const response = await client.projectInstance.delete<void>(path);
   return response.data;
 }

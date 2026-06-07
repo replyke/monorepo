@@ -1,4 +1,6 @@
 import { SublayHttpClient } from "../../core/client";
+import { Entity } from "../../interfaces/Entity";
+import { Mention } from "../../interfaces/Mention";
 
 export interface UpdateEntityProps {
   entityId: string;
@@ -6,23 +8,23 @@ export interface UpdateEntityProps {
   content?: string;
   attachments?: Record<string, any>[];
   keywords?: string[];
+  mentions?: Mention[];
   location?: {
-    type: "Point";
-    coordinates: [number, number]; // [longitude, latitude]
+    latitude: number;
+    longitude: number;
   };
   metadata?: Record<string, any>;
-  mentions?: {
-    id: string;
-    username: string;
-  }[];
 }
 
 export async function updateEntity(
   client: SublayHttpClient,
   data: UpdateEntityProps
-): Promise<any> {
+): Promise<Entity> {
   const { entityId, ...restOfProps } = data;
-  const path = `/entities/${data.entityId}`;
-  const response = await client.instance.patch<any>(path, restOfProps);
+  const path = `/entities/${entityId}`;
+  const response = await client.projectInstance.patch<Entity>(
+    path,
+    restOfProps
+  );
   return response.data;
 }

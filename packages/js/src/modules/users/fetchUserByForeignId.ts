@@ -1,40 +1,22 @@
 import { SublayHttpClient } from "../../core/client";
+import { User } from "../../interfaces/User";
 
 export interface FetchUserByForeignIdProps {
   foreignId: string;
-  name?: string;
-  username?: string;
-  avatar?: string;
-  bio?: string;
-  // birthdate?: string; // ISO format string
-  // location?: string;  // "lat,lng" string format (e.g. "32.0853,34.7818")
-  metadata?: Record<string, any>;
-  secureMetadata?: Record<string, any>;
+  include?: string;
 }
 
+// Note: the server's `createIfNotFound` flag (and the accompanying creation
+// fields name/username/avatar/bio/metadata/secureMetadata) is gated to
+// service/master keys only (`req.isService || req.isMaster` in the controller).
+// A user token cannot use it, so it is intentionally omitted here.
 export async function fetchUserByForeignId(
   client: SublayHttpClient,
   data: FetchUserByForeignIdProps
-): Promise<any> {
-  const path = `/users/by-foreign-id`;
-
-  const params: Record<string, any> = {
-    foreignId: data.foreignId,
-    name: data.name,
-    username: data.username,
-    avatar: data.avatar,
-    bio: data.bio,
-    // birthdate: data.birthdate,
-    // location: data.location,
-    metadata: data.metadata ? JSON.stringify(data.metadata) : undefined,
-    secureMetadata: data.secureMetadata
-      ? JSON.stringify(data.secureMetadata)
-      : undefined,
-  };
-
-  const response = await client.instance.get<any>(path, {
-    params,
-  });
-
+): Promise<User> {
+  const response = await client.projectInstance.get<User>(
+    "/users/by-foreign-id",
+    { params: data }
+  );
   return response.data;
 }

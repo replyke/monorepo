@@ -1,6 +1,6 @@
 {
   "name": "@sublay/js",
-  "version": "5.0.0",
+  "version": "7.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "description": "Official JavaScript SDK for Sublay",
@@ -18,9 +18,9 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     }
   },
   "dependencies": {

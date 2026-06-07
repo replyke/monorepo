@@ -1,14 +1,18 @@
 import { SublayHttpClient } from "../../core/client";
+import { Comment } from "../../interfaces/Comment";
 
 export interface FetchCommentByForeignIdProps {
   foreignId: string;
+  include?: string;
 }
 
 export async function fetchCommentByForeignId(
   client: SublayHttpClient,
   data: FetchCommentByForeignIdProps
-): Promise<any> {
+): Promise<Comment> {
   const path = `/comments/by-foreign-id`;
-  const response = await client.instance.get<any>(path, { params: data });
+  const response = await client.projectInstance.get<Comment>(path, {
+    params: data,
+  });
   return response.data;
 }

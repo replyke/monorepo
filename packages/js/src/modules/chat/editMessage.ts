@@ -1,0 +1,25 @@
+import { SublayHttpClient } from "../../core/client";
+import { ChatMessage } from "../../interfaces/ChatMessage";
+import { Mention } from "../../interfaces/Mention";
+
+export interface EditMessageProps {
+  conversationId: string;
+  messageId: string;
+  content?: string;
+  /** A GIF URL, or null to clear it. */
+  gif?: string | null;
+  mentions?: Mention[];
+  metadata?: Record<string, any> | null;
+}
+
+export async function editMessage(
+  client: SublayHttpClient,
+  data: EditMessageProps
+): Promise<ChatMessage> {
+  const { conversationId, messageId, ...body } = data;
+  const response = await client.projectInstance.patch<ChatMessage>(
+    `/chat/conversations/${conversationId}/messages/${messageId}`,
+    body
+  );
+  return response.data;
+}
