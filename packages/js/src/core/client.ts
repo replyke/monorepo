@@ -125,6 +125,20 @@ export class SublayHttpClient {
     return this.refreshToken;
   }
 
+  /**
+   * The `Authorization` header value (`Bearer <token>`) for the active auth
+   * mode, or `undefined` if there is no token. Host-managed mode reads the
+   * `getToken` hook; SDK-managed mode reads the in-memory access token. Use this
+   * for requests that bypass `projectInstance` (e.g. the SSE `askContent`
+   * stream, which needs `fetch` rather than axios).
+   */
+  async getAuthHeader(): Promise<string | undefined> {
+    const token = this.hostManaged
+      ? await this.getToken?.()
+      : this.accessToken;
+    return token ? `Bearer ${token}` : undefined;
+  }
+
   /** Store a full token pair (SDK-managed mode only; no-op when host-managed). */
   setTokens(tokens: AuthTokens): void {
     if (this.hostManaged) return;
