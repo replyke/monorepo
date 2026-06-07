@@ -15,6 +15,7 @@ import * as AppNotifications from "./modules/app-notifications";
 import * as Reports from "./modules/reports";
 import * as Search from "./modules/search";
 import * as Storage from "./modules/storage";
+import * as OAuth from "./modules/oauth";
 
 type BoundModule<
   T extends Record<string, (client: SublayHttpClient, ...args: any[]) => any>
@@ -39,6 +40,7 @@ export class SublayClient {
   public reports: BoundModule<typeof Reports>;
   public search: BoundModule<typeof Search>;
   public storage: BoundModule<typeof Storage>;
+  public oauth: BoundModule<typeof OAuth>;
 
   private constructor(http: SublayHttpClient) {
     this.http = http;
@@ -54,6 +56,7 @@ export class SublayClient {
     this.reports = bindModule(Reports, this.http);
     this.search = bindModule(Search, this.http);
     this.storage = bindModule(Storage, this.http);
+    this.oauth = bindModule(OAuth, this.http);
   }
 
   static async init(config: ClientConfig): Promise<SublayClient> {
