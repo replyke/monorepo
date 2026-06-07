@@ -15,6 +15,7 @@ export interface HandleEntityReportProps {
 
 export interface HandleReportResponse {
   message: string;
+  code: string;
 }
 
 export async function handleEntityReport(
