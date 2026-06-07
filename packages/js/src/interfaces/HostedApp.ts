@@ -5,7 +5,7 @@ export interface HostedApp{
   type: "discord-board";
   subdomain: string;
   metadata: Record<string, any>;
-  createdAt: Date; // Timestamp of when the report was created
-  updatedAt: Date;
-  deletedAt: Date | null; // Timestamp of the last update to the report
+  createdAt: string; // Timestamp of when the report was created
+  updatedAt: string;
+  deletedAt: string | null; // Timestamp of the last update to the report
 }

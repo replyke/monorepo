@@ -8,8 +8,8 @@ export interface SpaceMember {
   userId: string;
   role: SpaceMemberRole;
   status: SpaceMemberStatus;
-  joinedAt: Date;
-  createdAt: Date;
+  joinedAt: string;
+  createdAt: string;
 }
 
 // Returned from fetchSpaceMembers
@@ -17,7 +17,7 @@ export interface SpaceMemberWithUser {
   membershipId: string;
   role: SpaceMemberRole;
   status: SpaceMemberStatus;
-  joinedAt: Date;
+  joinedAt: string;
   user: {
     id: string;
     username: string;

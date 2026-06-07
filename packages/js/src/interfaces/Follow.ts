@@ -5,7 +5,7 @@ export interface Follow {
   projectId: string;
   followerId: string;
   followedId: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
 /**

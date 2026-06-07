@@ -6,8 +6,8 @@ export interface Rule {
   description: string | null;
   order: number;
   lastApprovedBy: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface FetchManyRulesResponse {

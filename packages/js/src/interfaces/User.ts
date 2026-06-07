@@ -16,7 +16,7 @@ export type UserFull = {
   avatarFile?: File | null;
   bannerFile?: File | null;
   bio: string | null; // Max 300 characters
-  birthdate: Date | null;
+  birthdate: string | null;
   location: {
     type: "Point";
     coordinates: [number, number]; // [longitude, latitude]
@@ -26,17 +26,17 @@ export type UserFull = {
   reputation: number;
   isVerified: boolean;
   isActive: boolean;
-  lastActive: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  lastActive: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 // Returned to the authenticated user about themselves
 export type AuthUser = Omit<UserFull, "secureMetadata"> & {
   suspensions: {
     reason: string | null;
-    startDate: Date;
-    endDate: Date | null;
+    startDate: string;
+    endDate: string | null;
   }[];
   authMethods: string[]; // e.g. ["password", "google", "github"]
 };

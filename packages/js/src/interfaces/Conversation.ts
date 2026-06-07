@@ -11,12 +11,12 @@ export interface Conversation {
   spaceId: string | null;
   createdById: string | null;
   avatarFileId: string | null;
-  lastMessageAt: Date | null;
+  lastMessageAt: string | null;
   // Null for DMs and groups; 'members' | 'admins' for space chats
   postingPermission: "members" | "admins" | null;
   metadata: Record<string, any>;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 
   // Populated fields
   memberCount?: number;

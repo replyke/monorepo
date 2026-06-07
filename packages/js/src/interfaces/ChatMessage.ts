@@ -18,15 +18,15 @@ export interface ChatMessage {
   threadReplyCount: number;
   reactionCounts: Record<string, number>; // emoji → count
   userReactions: string[];               // emojis the requesting user reacted with
-  editedAt: Date | null;
-  userDeletedAt: Date | null;
+  editedAt: string | null;
+  userDeletedAt: string | null;
   moderationStatus: "approved" | "removed" | null;
-  moderatedAt: Date | null;
+  moderatedAt: string | null;
   moderatedById: string | null;
   moderatedByType: "client" | "user" | null;
   moderationReason: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 
   // Populated fields
   user: User | null;
