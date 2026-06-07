@@ -3,7 +3,6 @@ import { ChatMessage } from "../../interfaces/ChatMessage";
 import { GifData } from "../../interfaces/Comment";
 import { Mention } from "../../interfaces/Mention";
 
-// NOTE: multipart file attachments not yet supported — JSON body only.
 export interface SendMessageProps {
   conversationId: string;
   content?: string;
@@ -14,16 +13,47 @@ export interface SendMessageProps {
   metadata?: Record<string, any>;
   /** Client-generated id echoed back on the created message (not stored). */
   localId?: string;
+  /**
+   * Optional file attachments (browser `File`/`Blob`), up to 10. When present
+   * the request is sent as `multipart/form-data`; otherwise it's a JSON body.
+   */
+  files?: (Blob | File)[];
 }
 
 export async function sendMessage(
   client: SublayHttpClient,
   data: SendMessageProps
 ): Promise<ChatMessage> {
-  const { conversationId, ...body } = data;
-  const response = await client.projectInstance.post<ChatMessage>(
-    `/chat/conversations/${conversationId}/messages`,
-    body
-  );
+  const { conversationId, files, ...body } = data;
+  const path = `/chat/conversations/${conversationId}/messages`;
+
+  if (files && files.length > 0) {
+    const formData = new FormData();
+    // The server's multer config reads attachments from the `files` field.
+    for (const file of files) {
+      formData.append(
+        "files",
+        file,
+        file instanceof File ? file.name : "attachment"
+      );
+    }
+    // Multer delivers non-file fields as strings; the server's
+    // parseChatMessageFields middleware JSON-parses gif/mentions/metadata back,
+    // so object/array fields must be stringified here.
+    for (const [key, value] of Object.entries(body)) {
+      if (value === undefined) continue;
+      formData.append(
+        key,
+        typeof value === "object" ? JSON.stringify(value) : String(value)
+      );
+    }
+    const response = await client.projectInstance.post<ChatMessage>(
+      path,
+      formData
+    );
+    return response.data;
+  }
+
+  const response = await client.projectInstance.post<ChatMessage>(path, body);
   return response.data;
 }
