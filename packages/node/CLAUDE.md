@@ -33,11 +33,11 @@ pnpm publish-prod
 
 ### Module Structure
 
-The SDK exposes **13 modules** bound on `SublayClient` (camelCase accessor in
+The SDK exposes **14 modules** bound on `SublayClient` (camelCase accessor in
 parentheses). Every endpoint is reached with a **service key**; operations that
 act on behalf of a user take an explicit `userId` (or `actingUserId` on the
-nested `users` follow/connection routes), since a service key has no implicit
-session user.
+nested `users` follow/connection routes and the `chat` target routes), since a
+service key has no implicit session user.
 
 ```
 src/
@@ -58,14 +58,19 @@ src/
 │   ├── follows/            # client.follows          (service-key userId)
 │   ├── reports/            # client.reports          (service-key userId)
 │   ├── app-notifications/  # client.appNotifications (service-key userId)
-│   └── storage/            # client.storage          (service-key userId)
+│   ├── storage/            # client.storage          (service-key userId)
+│   └── chat/               # client.chat             (service-key userId / actingUserId)
 └── index.ts                # Main entry point with SublayClient class
 ```
 
-> **Not yet bound (unmounted):** `chat`, `oauth`. These remain
-> user-session-centric and are deferred — see `plan-service-key-act-as-user.md`
-> at the engine root for the rationale and the per-route plan. (`storage` was a
-> third deferred module; it has since been taken up and bound — see §13 below.)
+> **Not bound (unmounted):** `oauth` only. It's a browser redirect flow with no
+> meaningful server-to-server contract — the directory stays on disk but is not
+> exposed on `SublayClient`. (`chat` and `storage` were previously deferred here;
+> both are now bound — see §13 and §14 below and `plan-chat-node-sdk-parity.md`.)
+>
+> The space-scoped chat endpoints (`getSpaceConversation`, `moderateSpaceChatMessage`,
+> `handleSpaceChatReport`) live on **`client.spaces`** (they're `/spaces/...` routes),
+> not on `client.chat`.
 
 ### HTTP Client Configuration
 
@@ -96,11 +101,11 @@ const client = await SublayClient.init({
 
 ## API Modules & Features
 
-`SublayClient` binds **13 modules**. The source of truth is `src/index.ts` (the `bindModule` calls) and each module's `index.ts`. The full public surface and per-function props/returns are documented in `docs/v7/node-sdk/`.
+`SublayClient` binds **14 modules**. The source of truth is `src/index.ts` (the `bindModule` calls) and each module's `index.ts`. The full public surface and per-function props/returns are documented in `docs/v7/node-sdk/`.
 
-**Acting on behalf of a user**: the SDK authenticates as the project (service key), not as an end user. So user-scoped functions take an explicit `userId` — the user the operation is performed as. The nested follow/connection routes on the `users` module act on one user *toward another*: the path target is `userId`, the actor is `actingUserId`.
+**Acting on behalf of a user**: the SDK authenticates as the project (service key), not as an end user. So user-scoped functions take an explicit `userId` — the user the operation is performed as. A few routes act on one user *toward another* and take the actor as `actingUserId` while `userId` is the target: the nested follow/connection routes on the `users` module, and `chat.createDirectConversation` / `chat.addMember` / `chat.removeMember` / `chat.changeMemberRole`.
 
-**Intentionally NOT bound** (deferred — see `plan-service-key-act-as-user.md`): `chat`, `oauth`. These directories exist under `src/modules/` but are not exposed on `SublayClient`; do not document them.
+**Intentionally NOT bound**: `oauth` only (a browser redirect flow). The directory exists under `src/modules/` but is not exposed on `SublayClient`; do not document it.
 
 ### 1. Entities Module (16 functions)
 
@@ -189,6 +194,32 @@ File and image uploads, plus read/delete. `uploadFile`, `uploadImage`, `getFile`
 - **Access model:** reads (`getFile`) are project-scoped (any caller in the project); **delete is
   owner-or-service** — a user token may only delete files it owns, service/master keys may delete any.
   Both enforced server-side in `server/src/{v7,v7-schema}/controllers/storage/`.
+
+### 14. Chat Module (20 functions)
+
+Conversations, messages, members, reactions, read state, and reporting.
+
+Conversations: `listConversations`, `createDirectConversation`, `createGroupConversation`, `getConversation`, `updateConversation`, `deleteConversation`, `getUnreadCount`
+Members: `listMembers`, `addMember`, `removeMember`, `changeMemberRole`, `leaveConversation`
+Messages: `listMessages`, `sendMessage`, `getMessage`, `editMessage`, `deleteMessage`, `reportMessage`
+Reactions: `toggleReaction`, `listReactions` · Read state: `markAsRead`
+
+- **Acting user — resolve-then-check.** Every call takes the acting user (`userId`,
+  or `actingUserId` where `userId` is the target: `createDirectConversation`,
+  `addMember`, `removeMember`, `changeMemberRole`). The server resolves that user,
+  then runs the normal membership/role checks against them — so you can only act as
+  a genuine member, and admin ops require that user to be a group admin. This is
+  stricter than `spaces` (which bypasses the check entirely for service keys).
+- **Cursor pagination.** `listConversations` (`cursor`/`cursorCreatedAt`) and
+  `listMessages` (`before`/`after`) return raw arrays + `hasMore`, **not** the
+  `PaginatedResponse` envelope. `listMembers` uses offset (`PaginatedResponse`).
+- **`sendMessage` is multipart when `files` are attached** (object fields
+  JSON-stringified, like `storage`); otherwise a JSON body. Don't hand-set
+  Content-Type.
+- **Space chat lives on `client.spaces`:** `getSpaceConversation`,
+  `moderateSpaceChatMessage`, `handleSpaceChatReport`. The two moderation routes
+  are service-key god-mode (space-moderator check bypassed); their `actingUserId`
+  is attribution-only. See `plan-chat-node-sdk-parity.md` at the engine root.
 
 ## Key Design Patterns
 

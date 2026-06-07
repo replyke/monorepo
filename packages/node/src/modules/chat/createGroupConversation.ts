@@ -2,9 +2,11 @@ import { SublayHttpClient } from "../../core/client";
 import { Conversation } from "../../interfaces/Conversation";
 
 export interface CreateGroupConversationProps {
-  name: string;
-  memberIds: string[];
+  /** The acting user (becomes the group admin). Service key required to name a user. */
+  userId: string;
+  name?: string;
   description?: string;
+  memberIds?: string[];
   metadata?: Record<string, any>;
 }
 
@@ -14,7 +16,7 @@ export async function createGroupConversation(
 ): Promise<Conversation> {
   const response = await client.projectInstance.post<Conversation>(
     "/chat/conversations",
-    data
+    { type: "group", ...data }
   );
   return response.data;
 }

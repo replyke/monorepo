@@ -1,4 +1,5 @@
 import { SublayHttpClient } from "../../core/client";
+import { appendFile, appendFields } from "../../core/formData";
 import { File } from "../../interfaces/File";
 import { ImageOptions } from "../../interfaces/ImageProcessing";
 
@@ -31,27 +32,12 @@ export async function uploadImage(
   const { file, filename, mimeType, imageOptions, ...rest } = data;
 
   const formData = new FormData();
-  // Cast needed because TypeScript's Blob constructor types are stricter than Node.js runtime allows
-  const blob =
-    file instanceof Blob
-      ? file
-      : new Blob([file as unknown as BlobPart], { type: mimeType ?? "application/octet-stream" });
-
-  formData.append("file", blob, filename ?? "upload");
-
+  appendFile(formData, "file", file, filename, mimeType);
   // The server reads the image-processing options as individual top-level
   // multipart fields (mode + mode-specific keys + quality/format/stripExif/fit),
   // not as a nested object — so flatten imageOptions alongside the other fields.
-  const fields: Record<string, unknown> = { ...imageOptions, ...rest };
+  appendFields(formData, { ...imageOptions, ...rest });
 
-  for (const [key, value] of Object.entries(fields)) {
-    if (value !== undefined) {
-      formData.append(key, typeof value === "object" ? JSON.stringify(value) : String(value));
-    }
-  }
-
-  // Do not set Content-Type manually — axios derives the multipart boundary from
-  // the FormData instance; a hand-set header would omit it and break parsing.
   const response = await client.projectInstance.post<File>(
     "/storage/images",
     formData
