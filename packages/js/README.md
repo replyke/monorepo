@@ -5,9 +5,7 @@
 
 > **Backend infrastructure for user-powered products.** Pre-modeled bundles for the layers every app ends up rebuilding — comments, notifications, files, search, chat, and more. Install what you need, call through one SDK. Build the part that's actually yours.
 
-Framework-agnostic JavaScript SDK for Sublay. For browser apps and JS runtimes that don't use React, or don't want the React provider tree.
-
-Exposes a single `SublayClient` with module namespaces for `users`, `entities`, and `comments`.
+Framework-agnostic JavaScript SDK for Sublay. For browser apps and JS runtimes that don't use React, or don't want the React provider tree. It mirrors the Sublay v7 API surface — authenticated as an end user via a bearer token — without any React or state-management dependencies.
 
 ```bash
 npm install @sublay/js
@@ -16,12 +14,43 @@ npm install @sublay/js
 ```ts
 import { SublayClient } from "@sublay/js";
 
+// SDK-managed auth: the SDK holds the tokens and auto-refreshes them on expiry.
 const sublay = await SublayClient.init({
   projectId: "your-project-id",
+  onAuthChange: (tokens) => {
+    // Persist tokens so the session survives a reload (called with null on sign-out).
+  },
 });
 
-const entities = await sublay.entities.list({ ... });
+await sublay.auth.signIn({ email, password });
+
+const { entities } = await sublay.entities.fetchManyEntities({
+  sortBy: "hot",
+  limit: 20,
+});
 ```
+
+**Two auth modes.** By default the SDK is *SDK-managed*: it stores the tokens in memory, attaches the bearer on every request, auto-refreshes on a 403, and fires `onAuthChange` so you can persist them. If your host app already owns the token (e.g. it's shared with another SDK), pass `getToken` to `init({ ... })` for *host-managed* mode — the SDK then reads the token from your hook on each request and never stores or refreshes it itself.
+
+### API surface
+
+One `SublayClient` with 14 module namespaces (call them as `sublay.<module>.<fn>(...)`):
+
+| Namespace | What it covers |
+| --- | --- |
+| `auth` | sign up / in / out, email verification, password reset, token refresh |
+| `users` | profiles, username lookup, suggestions, updates, and the per-user follow/connection graph |
+| `entities` | content CRUD, drafts, feeds (`fetchManyEntities`), reactions, saves |
+| `comments` | threaded comments CRUD, reactions |
+| `spaces` | communities: lifecycle, membership, roles, rules, digests, moderation |
+| `collections` | saved-entity collections |
+| `follows` / `connections` | the logged-in user's own follow graph and mutual connections |
+| `appNotifications` | in-app notifications and unread counts |
+| `reports` | submit reports, fetch the moderation queue |
+| `search` | semantic `searchContent` / `searchUsers` / `searchSpaces`, plus streaming `askContent` |
+| `storage` | file & image uploads, fetch, delete |
+| `oauth` | OAuth sign-in/link (redirect flow) and identity management |
+| `chat` | conversations, members, messages, reactions, read-state, reporting |
 
 See [docs.sublay.io](https://docs.sublay.io) for the full reference.
 
