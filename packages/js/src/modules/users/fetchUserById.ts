@@ -1,15 +1,18 @@
 import { SublayHttpClient } from "../../core/client";
+import { User } from "../../interfaces/User";
 
 export interface FetchUserByIdProps {
   userId: string;
+  include?: string;
 }
 
-// TODO: Replace "any" with Entity once we have types here too
 export async function fetchUserById(
   client: SublayHttpClient,
   data: FetchUserByIdProps
-): Promise<any> {
-  const path = `/users/${data.userId}`; // assuming client handles prefix like /{projectId}
-  const response = await client.instance.get<any>(path);
+): Promise<User> {
+  const { userId, ...params } = data;
+  const response = await client.projectInstance.get<User>(`/users/${userId}`, {
+    params,
+  });
   return response.data;
 }

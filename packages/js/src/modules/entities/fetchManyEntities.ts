@@ -1,4 +1,5 @@
 import { SublayHttpClient } from "../../core/client";
+import { Entity } from "../../interfaces/Entity";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
 export interface KeywordsFilters {
@@ -8,6 +9,7 @@ export interface KeywordsFilters {
 
 export interface MetadataFilters {
   includes?: { [key: string]: any };
+  includesAny?: { [key: string]: any }[];
   doesNotInclude?: { [key: string]: any };
   exists?: string[];
   doesNotExist?: string[];
@@ -34,15 +36,31 @@ export interface FetchManyEntitiesProps {
   spaceId?: string;
 
   // Sorting & Pagination
-  sortBy?: "hot" | "top" | "controversial";
+  // `metadata.<prop>` is also accepted by the server for metadata-based sorting.
+  sortBy?: "new" | "hot" | "top" | "controversial" | (string & {});
+  sortDir?: "asc" | "desc";
+  sortType?: "auto" | "numeric" | "text" | "boolean" | "timestamp";
+  sortByReaction?:
+    | "upvote"
+    | "downvote"
+    | "like"
+    | "love"
+    | "wow"
+    | "sad"
+    | "angry"
+    | "funny";
   page?: number;
   limit?: number;
+
+  // Optional associations to expand
+  include?: string;
 
   // Time-based filtering
   timeFrame?: "hour" | "day" | "week" | "month" | "year";
 
+  // Filter by author
   userId?: string;
-  followedOnly?: "true";
+  followedOnly?: "true" | "false";
 
   // Keyword filters
   keywordsFilters?: KeywordsFilters;
@@ -60,7 +78,7 @@ export interface FetchManyEntitiesProps {
     doesNotInclude?: string | string[];
   };
 
-  // Media filtering
+  // Attachments filtering
   attachmentsFilters?: AttachmentsFilters;
 
   // Location filtering
@@ -70,10 +88,13 @@ export interface FetchManyEntitiesProps {
 export async function fetchManyEntities(
   client: SublayHttpClient,
   data: FetchManyEntitiesProps
-): Promise<PaginatedResponse<any>> {
+): Promise<PaginatedResponse<Entity>> {
   const path = `/entities`;
-  const response = await client.instance.get<PaginatedResponse<any>>(path, {
-    params: data,
-  });
+  const response = await client.projectInstance.get<PaginatedResponse<Entity>>(
+    path,
+    {
+      params: data,
+    }
+  );
   return response.data;
 }

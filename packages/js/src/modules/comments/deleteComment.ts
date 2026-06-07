@@ -1,14 +1,14 @@
 import { SublayHttpClient } from "../../core/client";
 
-export interface DeleteEntityProps {
-  entityId: string;
+export interface DeleteCommentProps {
+  commentId: string;
 }
 
-export async function deleteEntity(
+export async function deleteComment(
   client: SublayHttpClient,
-  data: DeleteEntityProps
+  data: DeleteCommentProps
 ): Promise<void> {
-  const path = `/entities/${data.entityId}`;
+  const path = `/comments/${data.commentId}`;
   const response = await client.projectInstance.delete<void>(path);
   return response.data;
 }

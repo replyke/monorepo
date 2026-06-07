@@ -1,4 +1,6 @@
 import { SublayHttpClient } from "../../core/client";
+import { Entity } from "../../interfaces/Entity";
+import { Mention } from "../../interfaces/Mention";
 
 export interface CreateEntityProps {
   foreignId?: string;
@@ -8,20 +10,22 @@ export interface CreateEntityProps {
   content?: string;
   attachments?: Record<string, any>[];
   keywords?: string[];
+  mentions?: Mention[];
   location?: {
     latitude: number;
     longitude: number;
   };
   metadata?: Record<string, any>;
-  userId?: string;
+  isDraft?: boolean;
+  /** Create the entity without attributing it to the logged-in user (authorless). */
+  excludeUserId?: boolean;
 }
 
-// TODO: Replace "any" with Entity once we have types here too
 export async function createEntity(
   client: SublayHttpClient,
   data: CreateEntityProps
-): Promise<any> {
-  const path = `/entities`; // assuming client handles prefix like /{projectId}
-  const response = await client.instance.post<any>(path, data);
+): Promise<Entity> {
+  const path = `/entities`;
+  const response = await client.projectInstance.post<Entity>(path, data);
   return response.data;
 }

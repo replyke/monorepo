@@ -180,13 +180,4 @@ export class SublayHttpClient {
     }
     return this.refreshPromise;
   }
-
-  /**
-   * @deprecated Temporary alias for `projectInstance` so the pre-v7 modules
-   * (entities/comments/users) keep compiling until Phase 2 rewrites them to use
-   * `projectInstance` directly. Remove this alias in Phase 2.
-   */
-  get instance(): AxiosInstance {
-    return this.projectInstance;
-  }
 }
