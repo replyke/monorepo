@@ -17,7 +17,7 @@ export interface UserReport {
   userId: string;
   reason: string;
   details: string | null;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export interface Report {
@@ -28,8 +28,8 @@ export interface Report {
   targetType: ReportTargetType;
   status: ReportStatus;
   reporterCount: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
   userReports?: UserReport[];
   // Populated when fetched via fetchModeratedReports
   target?: Entity | Comment | null;

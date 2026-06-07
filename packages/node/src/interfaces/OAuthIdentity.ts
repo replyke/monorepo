@@ -6,7 +6,7 @@ export interface OAuthIdentity {
   name: string | null;
   avatar: string | null;
   isVerified: boolean;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export interface ListIdentitiesResponse {

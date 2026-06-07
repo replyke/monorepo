@@ -8,8 +8,8 @@ export interface Project {
     projectId: string;
     name: string;
     data: Record<string, any>;
-    createdAt: Date;
+    createdAt: string;
   }[];
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }

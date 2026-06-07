@@ -35,7 +35,7 @@ export interface Entity {
   repliesCount: number;
   views: number;
   score: number;
-  scoreUpdatedAt: Date;
+  scoreUpdatedAt: string;
   location: {
     type: "Point";
     coordinates: [number, number]; // [longitude, latitude]
@@ -45,11 +45,11 @@ export interface Entity {
   isSaved?: boolean; // Populated when include contains "saved"
   isDraft: boolean | null;
   moderationStatus: "approved" | "removed" | null;
-  moderatedAt: Date | null;
+  moderatedAt: string | null;
   moderatedById: string | null;
   moderatedByType: "client" | "user" | null;
   moderationReason: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }

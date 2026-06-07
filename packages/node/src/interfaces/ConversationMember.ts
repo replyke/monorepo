@@ -8,11 +8,11 @@ export interface ConversationMember {
   conversationId: string;
   userId: string;
   role: ConversationMemberRole | null;
-  lastReadAt: Date | null;
-  mutedUntil: Date | null;
+  lastReadAt: string | null;
+  mutedUntil: string | null;
   isActive: boolean;
-  leftAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+  leftAt: string | null;
+  createdAt: string;
+  updatedAt: string;
   user?: User;
 }

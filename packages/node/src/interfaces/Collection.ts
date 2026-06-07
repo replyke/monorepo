@@ -5,6 +5,6 @@ export interface Collection {
   parentId: string | null;
   name: string;
   entityCount: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }

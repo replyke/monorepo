@@ -32,13 +32,13 @@ export interface Comment {
   userReaction?: ReactionType | null; // Present when authenticated
   repliesCount: number;
   metadata: Record<string, any>;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-  parentDeletedAt: Date | null; // Legacy v6
-  userDeletedAt: Date | null;   // v7 user-initiated deletion (Reddit-style placeholder)
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  parentDeletedAt: string | null; // Legacy v6
+  userDeletedAt: string | null;   // v7 user-initiated deletion (Reddit-style placeholder)
   moderationStatus: "approved" | "removed" | null;
-  moderatedAt: Date | null;
+  moderatedAt: string | null;
   moderatedById: string | null;
   moderatedByType: "client" | "user" | null;
   moderationReason: string | null;
