@@ -178,14 +178,19 @@ export class SublayHttpClient {
     if (!this.refreshPromise) {
       const refreshToken = this.refreshToken;
       this.refreshPromise = axios
-        .post<{ accessToken: string }>(
+        .post<{ accessToken: string; refreshToken?: string }>(
           `${this.baseURL}/auth/request-new-access-token`,
           { refreshToken }
         )
         .then((res) => {
-          const token = res.data.accessToken;
-          this.setAccessToken(token);
-          return token;
+          const { accessToken, refreshToken: rotated } = res.data;
+          // The server ROTATES the refresh token on every refresh (with reuse
+          // detection): the presented token is revoked and a new one returned.
+          // Persist the new pair, or the next refresh re-sends a revoked token
+          // and trips reuse detection — destroying the whole session family.
+          if (rotated) this.setTokens({ accessToken, refreshToken: rotated });
+          else this.setAccessToken(accessToken);
+          return accessToken;
         })
         .catch(() => null)
         .finally(() => {

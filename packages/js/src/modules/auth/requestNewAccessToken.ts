@@ -7,6 +7,8 @@ export interface RequestNewAccessTokenProps {
 
 export interface RequestNewAccessTokenResponse {
   accessToken: string;
+  /** The server rotates the refresh token on every refresh and returns the new one. */
+  refreshToken?: string;
 }
 
 /**
@@ -29,6 +31,10 @@ export async function requestNewAccessToken(
       "/auth/request-new-access-token",
       { refreshToken }
     );
-  client.setAccessToken(response.data.accessToken);
+  // Persist the rotated refresh token (SDK-managed mode); a no-op in
+  // host-managed mode where the host owns token storage.
+  const { accessToken, refreshToken: rotated } = response.data;
+  if (rotated) client.setTokens({ accessToken, refreshToken: rotated });
+  else client.setAccessToken(accessToken);
   return response.data;
 }

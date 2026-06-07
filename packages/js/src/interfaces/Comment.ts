@@ -8,8 +8,10 @@ export interface GifData {
   url: string;
   gifUrl: string;
   gifPreviewUrl: string;
-  altText: string | undefined;
-  aspectRatio: number;
+  // The server's gif schema requires both as strings (aspectRatio is a string,
+  // e.g. "1.5", not a number).
+  altText: string;
+  aspectRatio: string;
 }
 
 export interface Comment {

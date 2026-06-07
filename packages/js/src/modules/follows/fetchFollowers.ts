@@ -1,5 +1,5 @@
 import { SublayHttpClient } from "../../core/client";
-import { Follow } from "../../interfaces/Follow";
+import { FollowListItem } from "../../interfaces/Follow";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
 export interface FetchFollowersProps {
@@ -10,10 +10,9 @@ export interface FetchFollowersProps {
 export async function fetchFollowers(
   client: SublayHttpClient,
   data: FetchFollowersProps
-): Promise<PaginatedResponse<Follow>> {
-  const response = await client.projectInstance.get<PaginatedResponse<Follow>>(
-    "/follows/followers",
-    { params: data }
-  );
+): Promise<PaginatedResponse<FollowListItem>> {
+  const response = await client.projectInstance.get<
+    PaginatedResponse<FollowListItem>
+  >("/follows/followers", { params: data });
   return response.data;
 }
