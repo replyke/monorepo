@@ -3,6 +3,7 @@
   "version": "7.2.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": ["dist"],
   "description": "Official NodeJS SDK for Sublay",
   "scripts": {
     "build": "tsup src/index.ts --dts --format cjs,esm",
