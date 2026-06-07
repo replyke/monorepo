@@ -58,6 +58,7 @@ sublay.collections       // Saved-content collections
 sublay.follows           // Follow graph — followers, following, counts
 sublay.connections       // Mutual connections and requests
 sublay.spaces            // Spaces — management, members, moderation, rules
+sublay.chat              // Conversations, messages, members, reactions, read state
 sublay.search            // Search and AI Q&A
 sublay.reports           // Content reports and the moderation queue
 sublay.appNotifications  // In-app notification feed
@@ -68,10 +69,10 @@ sublay.storage           // File and image uploads, read, delete
 
 Your service key authenticates as the project, not as any single end user. So functions that operate **on a user's behalf** take an explicit `userId` — the named user the action is performed as (saving to a collection, reading a notification feed, filing a report, listing connections).
 
-A few routes on the `users` module act on one user toward another — following someone, requesting a connection. These are nested under the target user's ID in the path, so the **target** is `userId` and the **actor** is passed separately as `actingUserId`.
+A few routes — on the `users` module (following someone, requesting a connection) and on `chat` (`createDirectConversation`, `addMember`, `removeMember`, `changeMemberRole`) — act on one user toward another. There the **target** is `userId` and the **actor** is passed separately as `actingUserId`.
 
 <Note>
-  `chat` and `oauth` are intentionally not exposed by this SDK.
+  `oauth` is intentionally not exposed by this SDK (it's a browser redirect flow).
 </Note>
 
 <CardGroup cols={2}>
@@ -104,6 +105,9 @@ A few routes on the `users` module act on one user toward another — following 
   </Card>
   <Card title="Space Moderation" icon="shield" href="/v7/node-sdk/spaces-moderation">
     Reports, content moderation, rules, digest
+  </Card>
+  <Card title="Chat" icon="message" href="/v7/node-sdk/chat">
+    Conversations, messages, members, reactions, read state
   </Card>
   <Card title="Search" icon="magnifying-glass" href="/v7/node-sdk/search">
     Full-text search and AI-powered Q&A
