@@ -7,6 +7,14 @@ import * as Auth from "./modules/auth";
 import * as Users from "./modules/users";
 import * as Entities from "./modules/entities";
 import * as Comments from "./modules/comments";
+import * as Spaces from "./modules/spaces";
+import * as Collections from "./modules/collections";
+import * as Follows from "./modules/follows";
+import * as Connections from "./modules/connections";
+import * as AppNotifications from "./modules/app-notifications";
+import * as Reports from "./modules/reports";
+import * as Search from "./modules/search";
+import * as Storage from "./modules/storage";
 
 type BoundModule<
   T extends Record<string, (client: SublayHttpClient, ...args: any[]) => any>
@@ -20,10 +28,17 @@ export class SublayClient {
   private http: SublayHttpClient;
 
   public auth: BoundModule<typeof Auth>;
-  // NOTE: still on the pre-v7 surface — rewritten to full v7 parity in Phase 2.
   public users: BoundModule<typeof Users>;
   public entities: BoundModule<typeof Entities>;
   public comments: BoundModule<typeof Comments>;
+  public spaces: BoundModule<typeof Spaces>;
+  public collections: BoundModule<typeof Collections>;
+  public follows: BoundModule<typeof Follows>;
+  public connections: BoundModule<typeof Connections>;
+  public appNotifications: BoundModule<typeof AppNotifications>;
+  public reports: BoundModule<typeof Reports>;
+  public search: BoundModule<typeof Search>;
+  public storage: BoundModule<typeof Storage>;
 
   private constructor(http: SublayHttpClient) {
     this.http = http;
@@ -31,6 +46,14 @@ export class SublayClient {
     this.users = bindModule(Users, this.http);
     this.entities = bindModule(Entities, this.http);
     this.comments = bindModule(Comments, this.http);
+    this.spaces = bindModule(Spaces, this.http);
+    this.collections = bindModule(Collections, this.http);
+    this.follows = bindModule(Follows, this.http);
+    this.connections = bindModule(Connections, this.http);
+    this.appNotifications = bindModule(AppNotifications, this.http);
+    this.reports = bindModule(Reports, this.http);
+    this.search = bindModule(Search, this.http);
+    this.storage = bindModule(Storage, this.http);
   }
 
   static async init(config: ClientConfig): Promise<SublayClient> {
