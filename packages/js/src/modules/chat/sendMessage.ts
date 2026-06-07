@@ -2,6 +2,7 @@ import { SublayHttpClient } from "../../core/client";
 import { ChatMessage } from "../../interfaces/ChatMessage";
 import { GifData } from "../../interfaces/Comment";
 import { Mention } from "../../interfaces/Mention";
+import { appendFields, appendFile } from "../../core/multipart";
 
 export interface SendMessageProps {
   conversationId: string;
@@ -31,22 +32,12 @@ export async function sendMessage(
     const formData = new FormData();
     // The server's multer config reads attachments from the `files` field.
     for (const file of files) {
-      formData.append(
-        "files",
-        file,
-        file instanceof File ? file.name : "attachment"
-      );
+      appendFile(formData, "files", file, { fallback: "attachment" });
     }
     // Multer delivers non-file fields as strings; the server's
     // parseChatMessageFields middleware JSON-parses gif/mentions/metadata back,
     // so object/array fields must be stringified here.
-    for (const [key, value] of Object.entries(body)) {
-      if (value === undefined) continue;
-      formData.append(
-        key,
-        typeof value === "object" ? JSON.stringify(value) : String(value)
-      );
-    }
+    appendFields(formData, body);
     const response = await client.projectInstance.post<ChatMessage>(
       path,
       formData

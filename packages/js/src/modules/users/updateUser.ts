@@ -1,6 +1,7 @@
 import { SublayHttpClient } from "../../core/client";
 import { AuthUser } from "../../interfaces/User";
 import { ImageOptions } from "../../interfaces/ImageProcessing";
+import { appendField, appendFields, appendFile } from "../../core/multipart";
 
 /** A file plus the image-processing options the server requires alongside it. */
 export interface UserImageUpload {
@@ -46,31 +47,17 @@ export async function updateUser(
     // `<field>.options` JSON strings (the server's parseImageOptions middleware
     // parses them back).
     if (avatarFile) {
-      formData.append(
-        "avatarFile",
-        avatarFile.file,
-        avatarFile.file instanceof File ? avatarFile.file.name : "avatar"
-      );
-      formData.append("avatarFile.options", JSON.stringify(avatarFile.options));
+      appendFile(formData, "avatarFile", avatarFile.file, { fallback: "avatar" });
+      appendField(formData, "avatarFile.options", avatarFile.options);
     }
     if (bannerFile) {
-      formData.append(
-        "bannerFile",
-        bannerFile.file,
-        bannerFile.file instanceof File ? bannerFile.file.name : "banner"
-      );
-      formData.append("bannerFile.options", JSON.stringify(bannerFile.options));
+      appendFile(formData, "bannerFile", bannerFile.file, { fallback: "banner" });
+      appendField(formData, "bannerFile.options", bannerFile.options);
     }
 
     // Object fields (location/metadata/secureMetadata) must be stringified; the
     // server reads them via jsonOrObject. Scalars go as plain strings.
-    for (const [key, value] of Object.entries(body)) {
-      if (value === undefined) continue;
-      formData.append(
-        key,
-        typeof value === "object" ? JSON.stringify(value) : String(value)
-      );
-    }
+    appendFields(formData, body);
 
     const response = await client.projectInstance.patch<AuthUser>(
       path,

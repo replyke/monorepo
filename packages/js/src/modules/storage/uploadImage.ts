@@ -1,5 +1,6 @@
 import { SublayHttpClient } from "../../core/client";
 import { ImageOptions } from "../../interfaces/ImageProcessing";
+import { appendFields, appendFile } from "../../core/multipart";
 
 export interface UploadedImageVariant {
   path: string;
@@ -50,27 +51,13 @@ export async function uploadImage(
 
   const formData = new FormData();
   // The server's multer config reads the file from the `file` field.
-  const resolvedName =
-    filename ?? (file instanceof File ? file.name : undefined) ?? "upload";
-  formData.append("file", file, resolvedName);
+  appendFile(formData, "file", file, { filename });
 
   // The server reads the image-processing options as individual top-level
   // multipart fields (mode + mode-specific keys + quality/format/stripExif/fit),
   // not as a nested object — so flatten imageOptions alongside the other fields.
-  const fields: Record<string, unknown> = { ...imageOptions, ...rest };
+  appendFields(formData, { ...imageOptions, ...rest });
 
-  for (const [key, value] of Object.entries(fields)) {
-    if (value !== undefined) {
-      formData.append(
-        key,
-        typeof value === "object" ? JSON.stringify(value) : String(value)
-      );
-    }
-  }
-
-  // Do not set Content-Type manually — the browser/axios derives the multipart
-  // boundary from the FormData instance; a hand-set header would omit it and
-  // break parsing.
   const response = await client.projectInstance.post<UploadImageResponse>(
     "/storage/images",
     formData
