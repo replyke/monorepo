@@ -1,11 +1,15 @@
 import { SublayHttpClient } from "../../core/client";
 import { User } from "../../interfaces/User";
-import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
 export interface ListReactionsProps {
   conversationId: string;
   messageId: string;
-  emoji?: string;
+  /** The reaction emoji to list reactors for (required). */
+  emoji: string;
+  /** The user to act as (must be a member). Service key required to name a user. */
+  userId: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface MessageReaction {
@@ -14,14 +18,22 @@ export interface MessageReaction {
   createdAt: Date;
 }
 
+export interface ListReactionsResponse {
+  data: MessageReaction[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
 export async function listReactions(
   client: SublayHttpClient,
   data: ListReactionsProps
-): Promise<PaginatedResponse<MessageReaction>> {
+): Promise<ListReactionsResponse> {
   const { conversationId, messageId, ...params } = data;
-  const response = await client.projectInstance.get<
-    PaginatedResponse<MessageReaction>
-  >(
+  const response = await client.projectInstance.get<ListReactionsResponse>(
     `/chat/conversations/${conversationId}/messages/${messageId}/reactions`,
     { params }
   );

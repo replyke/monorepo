@@ -48,51 +48,54 @@ Base path: `/v7/:projectId/`
 
 ## Chat — Conversations
 
-> **SDK module unmounted** — all chat endpoints require user identity. Files kept for future re-enablement.
+> **Bound (2026-06-07).** Chat is now reachable with a service key via the act-as-user
+> param (`userId`, or `actingUserId` where `userId` is the target). The server resolves
+> the acting user and then runs the normal membership/role checks against them
+> (resolve-then-check). See `plan-chat-node-sdk-parity.md` at the engine root.
 
 | Method | Path | Service Key Access | SDK Function | SDK Call Valid |
 |--------|------|--------------------|--------------|----------------|
-| GET | `/chat/conversations/` | can't access even with a key | `chat.listConversations` | no: needs user identity |
-| POST | `/chat/conversations/` | can't access even with a key | `chat.createGroupConversation` | no: needs user identity |
-| POST | `/chat/conversations/direct` | can't access even with a key | `chat.createDirectConversation` | no: needs user identity |
-| GET | `/chat/conversations/unread-count` | can't access even with a key | `chat.getUnreadCount` | no: needs user identity |
-| GET | `/chat/conversations/:conversationId` | can't access even with a key | `chat.getConversation` | no: needs user identity |
-| PATCH | `/chat/conversations/:conversationId` | can't access even with a key | `chat.updateConversation` | no: needs user identity |
-| DELETE | `/chat/conversations/:conversationId` | can't access even with a key | `chat.deleteConversation` | no: needs user identity |
+| GET | `/chat/conversations/` | can access with a key | `chat.listConversations` | yes |
+| POST | `/chat/conversations/` | can access with a key | `chat.createGroupConversation` | yes |
+| POST | `/chat/conversations/direct` | can access with a key | `chat.createDirectConversation` | yes |
+| GET | `/chat/conversations/unread-count` | can access with a key | `chat.getUnreadCount` | yes |
+| GET | `/chat/conversations/:conversationId` | can access with a key | `chat.getConversation` | yes |
+| PATCH | `/chat/conversations/:conversationId` | can access with a key | `chat.updateConversation` | yes |
+| DELETE | `/chat/conversations/:conversationId` | can access with a key | `chat.deleteConversation` | yes |
 
 ## Chat — Members
 
 | Method | Path | Service Key Access | SDK Function | SDK Call Valid |
 |--------|------|--------------------|--------------|----------------|
-| GET | `/chat/conversations/:conversationId/members` | can't access even with a key | `chat.listMembers` | no: needs user identity |
-| POST | `/chat/conversations/:conversationId/members` | can't access even with a key | `chat.addMember` | no: needs user identity |
-| DELETE | `/chat/conversations/:conversationId/members/:userId` | can't access even with a key | `chat.removeMember` | no: needs user identity |
-| DELETE | `/chat/conversations/:conversationId/leave` | can't access even with a key | `chat.leaveConversation` | no: needs user identity |
-| PATCH | `/chat/conversations/:conversationId/members/:userId/role` | can't access even with a key | `chat.changeMemberRole` | no: needs user identity |
+| GET | `/chat/conversations/:conversationId/members` | can access with a key | `chat.listMembers` | yes |
+| POST | `/chat/conversations/:conversationId/members` | can access with a key | `chat.addMember` | yes |
+| DELETE | `/chat/conversations/:conversationId/members/:userId` | can access with a key | `chat.removeMember` | yes |
+| DELETE | `/chat/conversations/:conversationId/leave` | can access with a key | `chat.leaveConversation` | yes |
+| PATCH | `/chat/conversations/:conversationId/members/:userId/role` | can access with a key | `chat.changeMemberRole` | yes |
 
 ## Chat — Messages
 
 | Method | Path | Service Key Access | SDK Function | SDK Call Valid |
 |--------|------|--------------------|--------------|----------------|
-| GET | `/chat/conversations/:conversationId/messages` | can't access even with a key | `chat.listMessages` | no: needs user identity |
-| POST | `/chat/conversations/:conversationId/messages` | can't access even with a key | `chat.sendMessage` | no: needs user identity |
-| GET | `/chat/conversations/:conversationId/messages/:messageId` | can't access even with a key | `chat.getMessage` | no: needs user identity |
-| PATCH | `/chat/conversations/:conversationId/messages/:messageId` | can't access even with a key | `chat.editMessage` | no: needs user identity |
-| DELETE | `/chat/conversations/:conversationId/messages/:messageId` | can't access even with a key | `chat.deleteMessage` | no: needs user identity |
+| GET | `/chat/conversations/:conversationId/messages` | can access with a key | `chat.listMessages` | yes |
+| POST | `/chat/conversations/:conversationId/messages` | can access with a key | `chat.sendMessage` | yes |
+| GET | `/chat/conversations/:conversationId/messages/:messageId` | can access with a key | `chat.getMessage` | yes |
+| PATCH | `/chat/conversations/:conversationId/messages/:messageId` | can access with a key | `chat.editMessage` | yes |
+| DELETE | `/chat/conversations/:conversationId/messages/:messageId` | can access with a key | `chat.deleteMessage` | yes |
 
 ## Chat — Reactions
 
 | Method | Path | Service Key Access | SDK Function | SDK Call Valid |
 |--------|------|--------------------|--------------|----------------|
-| POST | `/chat/conversations/:conversationId/messages/:messageId/reactions` | can't access even with a key | `chat.toggleReaction` | no: needs user identity |
-| GET | `/chat/conversations/:conversationId/messages/:messageId/reactions` | can't access even with a key | `chat.listReactions` | no: needs user identity |
+| POST | `/chat/conversations/:conversationId/messages/:messageId/reactions` | can access with a key | `chat.toggleReaction` | yes |
+| GET | `/chat/conversations/:conversationId/messages/:messageId/reactions` | can access with a key | `chat.listReactions` | yes |
 
 ## Chat — Read State & Reports
 
 | Method | Path | Service Key Access | SDK Function | SDK Call Valid |
 |--------|------|--------------------|--------------|----------------|
-| POST | `/chat/conversations/:conversationId/read` | can't access even with a key | `chat.markAsRead` | no: needs user identity |
-| POST | `/chat/conversations/:conversationId/messages/:messageId/report` | can't access even with a key | — | — |
+| POST | `/chat/conversations/:conversationId/read` | can access with a key | `chat.markAsRead` | yes |
+| POST | `/chat/conversations/:conversationId/messages/:messageId/report` | can access with a key | `chat.reportMessage` | yes |
 
 ---
 

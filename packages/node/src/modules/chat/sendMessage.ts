@@ -1,21 +1,50 @@
 import { SublayHttpClient } from "../../core/client";
+import { appendFile, appendFields } from "../../core/formData";
 import { ChatMessage } from "../../interfaces/ChatMessage";
+import { GifData } from "../../interfaces/Comment";
+import { Mention } from "../../interfaces/Mention";
+
+export interface ChatMessageFile {
+  file: Uint8Array | Blob;
+  filename?: string;
+  mimeType?: string;
+}
 
 export interface SendMessageProps {
   conversationId: string;
+  /** The message author (must be a member). Service key required to name a user. */
+  userId: string;
   content?: string;
-  files?: any[];
+  gif?: GifData | null;
+  mentions?: Mention[];
+  parentMessageId?: string;
+  quotedMessageId?: string;
   metadata?: Record<string, any>;
+  /** Client-generated id echoed back on the created message (not stored). */
+  localId?: string;
+  /** Attachments. When present, the request is sent as multipart/form-data. */
+  files?: ChatMessageFile[];
 }
 
 export async function sendMessage(
   client: SublayHttpClient,
   data: SendMessageProps
 ): Promise<ChatMessage> {
-  const { conversationId, ...body } = data;
-  const response = await client.projectInstance.post<ChatMessage>(
-    `/chat/conversations/${conversationId}/messages`,
-    body
-  );
+  const { conversationId, files, ...body } = data;
+  const url = `/chat/conversations/${conversationId}/messages`;
+
+  // With attachments, send multipart: object fields are JSON-stringified (the
+  // server parses them back) and the files are appended. Otherwise send JSON.
+  if (files && files.length > 0) {
+    const formData = new FormData();
+    appendFields(formData, body);
+    for (const f of files) {
+      appendFile(formData, "files", f.file, f.filename, f.mimeType);
+    }
+    const response = await client.projectInstance.post<ChatMessage>(url, formData);
+    return response.data;
+  }
+
+  const response = await client.projectInstance.post<ChatMessage>(url, body);
   return response.data;
 }
