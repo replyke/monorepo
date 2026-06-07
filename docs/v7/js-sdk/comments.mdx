@@ -1,0 +1,284 @@
+---
+title: "Comments"
+description: "Create and manage threaded comments and reactions"
+---
+
+Comments are threaded discussions attached to entities. The `comments` module lets you create, fetch, update, and delete comments, and manage reactions on them. All actions are performed on behalf of the logged-in user.
+
+---
+
+### createComment
+
+Creates a comment on an entity. Optionally a reply, with a GIF, mentions, attachments, or metadata.
+
+```typescript
+const comment = await sublay.comments.createComment({
+  entityId: "ent_xyz789",
+  content: "Great post!",
+});
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID the comment belongs to.
+</ParamField>
+
+<ParamField body="foreignId" type="string">
+  Your application's identifier for this comment.
+</ParamField>
+
+<ParamField body="content" type="string">
+  The comment's text content.
+</ParamField>
+
+<ParamField body="gif" type="GifData | null">
+  An optional GIF attached to the comment.
+</ParamField>
+
+<ParamField body="mentions" type="Mention[]">
+  User mentions embedded in the comment.
+</ParamField>
+
+<ParamField body="parentId" type="string | null">
+  The ID of the parent comment when this is a reply.
+</ParamField>
+
+<ParamField body="referencedCommentId" type="string">
+  The ID of another comment this comment references.
+</ParamField>
+
+<ParamField body="attachments" type="Record<string, any>[]">
+  File or media attachments.
+</ParamField>
+
+<ParamField body="metadata" type="Record<string, any>">
+  Arbitrary public metadata.
+</ParamField>
+
+**Returns** — `Promise<Comment>`
+
+---
+
+### fetchComment
+
+Fetches a single comment by its ID.
+
+```typescript
+const comment = await sublay.comments.fetchComment({ commentId: "cmt_abc123" });
+```
+
+<ParamField body="commentId" type="string" required>
+  The Sublay comment ID.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+**Returns** — `Promise<Comment>`
+
+---
+
+### fetchCommentByForeignId
+
+Fetches a comment by your application's own identifier.
+
+```typescript
+const comment = await sublay.comments.fetchCommentByForeignId({
+  foreignId: "comment-99",
+});
+```
+
+<ParamField body="foreignId" type="string" required>
+  Your application's comment identifier.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+**Returns** — `Promise<Comment>`
+
+---
+
+### updateComment
+
+Updates a comment's content.
+
+```typescript
+const comment = await sublay.comments.updateComment({
+  commentId: "cmt_abc123",
+  content: "Edited comment text",
+});
+```
+
+<ParamField body="commentId" type="string" required>
+  The Sublay comment ID to update.
+</ParamField>
+
+<ParamField body="content" type="string" required>
+  The new content for the comment.
+</ParamField>
+
+**Returns** — `Promise<Comment>`
+
+---
+
+### deleteComment
+
+Deletes a comment.
+
+```typescript
+await sublay.comments.deleteComment({ commentId: "cmt_abc123" });
+```
+
+<ParamField body="commentId" type="string" required>
+  The Sublay comment ID to delete.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### fetchManyComments
+
+Fetches a paginated list of comments, filterable by entity, user, or parent.
+
+```typescript
+const { data, pagination } = await sublay.comments.fetchManyComments({
+  entityId: "ent_xyz789",
+  sortBy: "top",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="entityId" type="string">
+  Filter to comments on a specific entity.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Filter to comments authored by a given user.
+</ParamField>
+
+<ParamField body="parentId" type="string">
+  Filter to replies of a specific parent comment.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page.
+</ParamField>
+
+<ParamField body="sortBy" type="string">
+  Sort order: `"new"`, `"old"`, `"top"`, or `"controversial"`.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+<ParamField body="sourceId" type="string">
+  Filter by source ID.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Comment>>`
+
+---
+
+### addReaction
+
+Adds the logged-in user's reaction to a comment and returns the full populated comment.
+
+```typescript
+const comment = await sublay.comments.addReaction({
+  commentId: "cmt_abc123",
+  reactionType: "like",
+});
+```
+
+<ParamField body="commentId" type="string" required>
+  The Sublay comment ID.
+</ParamField>
+
+<ParamField body="reactionType" type="ReactionType" required>
+  One of: `"upvote"`, `"downvote"`, `"like"`, `"love"`, `"wow"`, `"sad"`, `"angry"`, `"funny"`.
+</ParamField>
+
+**Returns** — `Promise<Comment>`
+
+---
+
+### removeReaction
+
+Removes the logged-in user's reaction from a comment and returns the full populated comment.
+
+```typescript
+const comment = await sublay.comments.removeReaction({
+  commentId: "cmt_abc123",
+});
+```
+
+<ParamField body="commentId" type="string" required>
+  The Sublay comment ID.
+</ParamField>
+
+**Returns** — `Promise<Comment>`
+
+---
+
+### fetchReactions
+
+Fetches a paginated list of reactions on a comment, optionally filtered by reaction type.
+
+```typescript
+const { data, pagination } = await sublay.comments.fetchReactions({
+  commentId: "cmt_abc123",
+  reactionType: "like",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="commentId" type="string" required>
+  The Sublay comment ID.
+</ParamField>
+
+<ParamField body="reactionType" type="ReactionType">
+  Filter to a specific reaction type.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page.
+</ParamField>
+
+<ParamField body="sortDir" type="string">
+  Sort direction: `"asc"` or `"desc"`.
+</ParamField>
+
+**Returns** — `Promise<{ data: Reaction[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasMore: boolean } }>`
+
+---
+
+### getUserReaction
+
+Gets the logged-in user's reaction on a comment. Returns `null` if there is no reaction.
+
+```typescript
+const { reactionType } = await sublay.comments.getUserReaction({
+  commentId: "cmt_abc123",
+});
+// reactionType is "like" | "upvote" | ... | null
+```
+
+<ParamField body="commentId" type="string" required>
+  The Sublay comment ID.
+</ParamField>
+
+**Returns** — `Promise<{ reactionType: ReactionType | null }>`

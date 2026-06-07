@@ -747,6 +747,37 @@
             ]
           },
           {
+            "tab": "JS SDK",
+            "url": "v7/js-sdk/overview",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["v7/js-sdk/overview"]
+              },
+              {
+                "group": "Modules",
+                "pages": [
+                  "v7/js-sdk/auth",
+                  "v7/js-sdk/users",
+                  "v7/js-sdk/entities",
+                  "v7/js-sdk/comments",
+                  "v7/js-sdk/collections",
+                  "v7/js-sdk/follows",
+                  "v7/js-sdk/connections",
+                  "v7/js-sdk/spaces",
+                  "v7/js-sdk/spaces-members",
+                  "v7/js-sdk/spaces-moderation",
+                  "v7/js-sdk/chat",
+                  "v7/js-sdk/search",
+                  "v7/js-sdk/reports",
+                  "v7/js-sdk/app-notifications",
+                  "v7/js-sdk/storage",
+                  "v7/js-sdk/oauth"
+                ]
+              }
+            ]
+          },
+          {
             "tab": "Components",
             "url": "v7/components/overview",
             "groups": [

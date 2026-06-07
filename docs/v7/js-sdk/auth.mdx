@@ -1,0 +1,258 @@
+---
+title: "Auth"
+description: "Sign up, sign in, manage tokens, and handle password and email-verification flows for the end user"
+---
+
+The `auth` module handles authentication for the current end user. Use it to register and log in users, rotate tokens, and run password and email-verification flows.
+
+<Note>
+  These functions run as the end user — there is no API key and no actor user ID. `signIn`, `signUp`, and `verifyExternalUser` automatically store the returned tokens, and `signOut` clears them (see the auth section of the SDK overview).
+</Note>
+
+---
+
+### signUp
+
+Registers a new user and stores the returned tokens.
+
+```typescript
+const { user, accessToken, refreshToken } = await sublay.auth.signUp({
+  email: "user@example.com",
+  password: "s3cur3P@ss",
+  name: "Alice",
+  username: "alice",
+});
+```
+
+<ParamField body="email" type="string" required>
+  The user's email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's plain-text password (hashed server-side).
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the user.
+</ParamField>
+
+<ParamField body="username" type="string">
+  Unique username for the user.
+</ParamField>
+
+<ParamField body="avatar" type="string">
+  URL of the user's avatar image.
+</ParamField>
+
+<ParamField body="bio" type="string">
+  Short biography for the user.
+</ParamField>
+
+<ParamField body="location" type="{ latitude: number; longitude: number }">
+  The user's geographic location.
+</ParamField>
+
+<ParamField body="birthdate" type="string">
+  The user's birthdate as an ISO 8601 string.
+</ParamField>
+
+<ParamField body="metadata" type="Record<string, any>">
+  Arbitrary key-value data attached to the user at creation time.
+</ParamField>
+
+<ParamField body="secureMetadata" type="Record<string, any>">
+  Sensitive key-value data attached to the user, not exposed to clients.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### signIn
+
+Authenticates with email/password and stores the returned tokens.
+
+```typescript
+const { user, accessToken, refreshToken } = await sublay.auth.signIn({
+  email: "user@example.com",
+  password: "s3cur3P@ss",
+});
+```
+
+<ParamField body="email" type="string" required>
+  The user's email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's password.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### signOut
+
+Signs the user out (revokes the refresh token) and clears stored tokens.
+
+```typescript
+await sublay.auth.signOut();
+```
+
+The whole argument is optional.
+
+<ParamField body="refreshToken" type="string">
+  The refresh token to revoke. Defaults to the SDK's stored refresh token.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### verifyExternalUser
+
+Exchanges a host-issued user JWT for Sublay tokens and stores them. Use this when your app manages its own auth.
+
+```typescript
+const { user, accessToken, refreshToken } = await sublay.auth.verifyExternalUser({
+  userJwt: signedJwt,
+});
+```
+
+<ParamField body="userJwt" type="string" required>
+  A JWT issued by your application, containing user identity claims.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### requestNewAccessToken
+
+Manually rotates the access token using a refresh token. Normally this is handled automatically on a `403` in SDK-managed mode.
+
+```typescript
+const { accessToken, refreshToken } = await sublay.auth.requestNewAccessToken();
+```
+
+The whole argument is optional.
+
+<ParamField body="refreshToken" type="string">
+  The refresh token to exchange. Defaults to the SDK's stored refresh token.
+</ParamField>
+
+<Note>
+  Persist the new `refreshToken` if one is present (token rotation), or use SDK-managed mode, which does this for you.
+</Note>
+
+**Returns** — `Promise<{ accessToken: string; refreshToken?: string }>`
+
+---
+
+### requestPasswordReset
+
+Sends a password-reset email.
+
+```typescript
+await sublay.auth.requestPasswordReset({ email: "user@example.com" });
+```
+
+<ParamField body="email" type="string" required>
+  The email address to send the reset link to.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### resetPassword
+
+Completes a password reset using a token from the email.
+
+```typescript
+await sublay.auth.resetPassword({
+  token: resetToken,
+  newPassword: "newS3cur3P@ss",
+});
+```
+
+<ParamField body="token" type="string" required>
+  The reset token from the password reset email.
+</ParamField>
+
+<ParamField body="newPassword" type="string" required>
+  The new password to set for the account.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### changePassword
+
+Changes the authenticated user's password after verifying the current one. Use this for an authenticated "change password" flow, as opposed to the token-based `resetPassword`.
+
+```typescript
+const { success, message } = await sublay.auth.changePassword({
+  password: "currentP@ss",
+  newPassword: "newS3cur3P@ss",
+});
+```
+
+<ParamField body="password" type="string" required>
+  The user's current password (verified before the change).
+</ParamField>
+
+<ParamField body="newPassword" type="string" required>
+  The new password to set.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean; message: string }>`
+
+---
+
+### sendVerificationEmail
+
+Sends (or re-sends) an email-verification message to the authenticated user, delivered as a code or a link.
+
+```typescript
+const { success } = await sublay.auth.sendVerificationEmail({
+  mode: "code",
+});
+```
+
+The whole argument is optional.
+
+<ParamField body="mode" type='"code" | "link"'>
+  `"code"` emails a short token the user enters; `"link"` emails a verification URL. Defaults to `"code"`.
+</ParamField>
+
+<ParamField body="tokenFormat" type='"hex" | "numeric" | "alpha" | "alphanumeric"'>
+  Format of the generated token.
+</ParamField>
+
+<ParamField body="tokenLength" type="number">
+  Length of the generated token.
+</ParamField>
+
+<ParamField body="redirectUrl" type="string">
+  For `mode: "link"` — where to send the user after the link is verified.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean }>`
+
+---
+
+### verifyEmail
+
+Verifies a user's email using a verification token.
+
+```typescript
+await sublay.auth.verifyEmail({ token: verificationToken });
+```
+
+<ParamField body="token" type="string" required>
+  The email verification token.
+</ParamField>
+
+**Returns** — `Promise<void>`

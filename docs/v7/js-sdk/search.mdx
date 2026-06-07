@@ -1,0 +1,186 @@
+---
+title: "Search"
+description: "Semantic search across content, users, and spaces, plus streaming AI Q&A"
+---
+
+The `search` module runs semantic (vector) search over your project's content and powers a streaming, RAG-style question-answering endpoint.
+
+<Note>
+  These features require semantic search to be enabled for your project. See the
+  [Semantic Search & AI](/v7/semantic-search-ai) guide for setup.
+</Note>
+
+The three `search*` functions return **raw arrays** of similarity-ranked results
+(not a `PaginatedResponse`); each element is `{ similarity, record }`. `askContent`
+is different — it **streams** its answer (see below).
+
+---
+
+### searchContent
+
+Semantic search over content — entities, comments, and chat messages.
+
+```typescript
+const results = await sublay.search.searchContent({
+  query: "getting started guide",
+  sourceTypes: ["entity", "comment"],
+  spaceId: "spc_abc123",
+  limit: 10,
+});
+
+for (const { sourceType, similarity, record } of results) {
+  console.log(sourceType, similarity, record);
+}
+```
+
+<ParamField body="query" type="string" required>
+  The search query string.
+</ParamField>
+
+<ParamField body="sourceTypes" type='("entity" | "comment" | "message")[]'>
+  Which content types to search. Defaults to all.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Scope the search to a specific space.
+</ParamField>
+
+<ParamField body="conversationId" type="string">
+  Scope the search to a specific conversation.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+**Returns** — `Promise<ContentSearchResult[]>`, where each element is
+`{ sourceType: "entity" | "comment" | "message"; similarity: number; record: Entity | Comment | ChatMessage }`.
+
+---
+
+### searchUsers
+
+Semantic search over the project's users.
+
+```typescript
+const results = await sublay.search.searchUsers({ query: "alice", limit: 10 });
+// results: [{ similarity, record: User }, ...]
+```
+
+<ParamField body="query" type="string" required>
+  The search query string.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+**Returns** — `Promise<UserSearchResult[]>`, where each element is
+`{ similarity: number; record: User }`.
+
+---
+
+### searchSpaces
+
+Semantic search over the project's spaces.
+
+```typescript
+const results = await sublay.search.searchSpaces({ query: "photography", limit: 10 });
+// results: [{ similarity, record: Space }, ...]
+```
+
+<ParamField body="query" type="string" required>
+  The search query string.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+**Returns** — `Promise<SpaceSearchResult[]>`, where each element is
+`{ similarity: number; record: Space }`.
+
+---
+
+### askContent
+
+Asks a natural-language question over your content and **streams** the answer back
+as it is generated. Unlike every other SDK function, `askContent` is an **async
+generator** over Server-Sent Events — you `for await` over it rather than awaiting
+a single result.
+
+<Note>
+  `askContent` streams via `fetch` rather than axios, so it does **not** get the
+  automatic token-refresh-on-`403` retry that other calls have. In SDK-managed
+  mode, make sure a fresh access token is in place before starting a long stream.
+</Note>
+
+```typescript
+const controller = new AbortController();
+
+const stream = sublay.search.askContent({
+  query: "What are the best practices for error handling?",
+  spaceId: "spc_abc123",
+  signal: controller.signal,
+});
+
+let answer = "";
+let sources = [];
+
+for await (const event of stream) {
+  switch (event.type) {
+    case "token":
+      answer += event.content; // append streamed text
+      break;
+    case "sources":
+      sources = event.sources; // ContentSearchResult[] the answer draws on
+      break;
+    case "done":
+      break; // the stream is complete
+    case "error":
+      console.error(event.error);
+      break;
+  }
+}
+
+// Cancel early with controller.abort() — or simply `break` out of the loop.
+```
+
+<ParamField body="query" type="string" required>
+  The natural-language question to answer.
+</ParamField>
+
+<ParamField body="sourceTypes" type='("entity" | "comment" | "message")[]'>
+  Which content types to draw from. Defaults to all.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Scope the answer to content within a specific space.
+</ParamField>
+
+<ParamField body="conversationId" type="string">
+  Scope the answer to a specific conversation.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of sources to draw from.
+</ParamField>
+
+<ParamField body="signal" type="AbortSignal">
+  Aborts the in-flight stream (e.g. when the user navigates away). You can also
+  stop consuming by `break`ing out of the `for await` loop.
+</ParamField>
+
+**Returns** — `AsyncGenerator<AskContentEvent, void, unknown>`. Each yielded event
+is one of:
+
+```typescript
+type AskContentEvent =
+  | { type: "token"; content: string }              // a chunk of answer text
+  | { type: "sources"; sources: ContentSearchResult[] } // the cited sources
+  | { type: "done" }                                 // stream finished
+  | { type: "error"; error: string };                // a stream/server error
+```
+
+Completion and errors are signalled **in-band** as `done` / `error` events — the
+generator itself returns `void` and does not throw on a server-reported error.

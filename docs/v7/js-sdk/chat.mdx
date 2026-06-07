@@ -1,0 +1,626 @@
+---
+title: "Chat"
+description: "Conversations, messages, members, reactions, and read state"
+---
+
+The `chat` module powers direct, group, and space conversations — sending and
+editing messages (with file attachments), managing members, reacting, and tracking
+read state. All actions are performed as the logged-in user.
+
+<Note>
+  **Two list endpoints use cursor (keyset) pagination, not `page`/`limit`:**
+  [`listConversations`](#listconversations) and [`listMessages`](#listmessages).
+  Their return shapes differ from the standard `PaginatedResponse` — see each
+  below.
+</Note>
+
+---
+
+### listConversations
+
+Lists the user's conversations, newest activity first, with keyset pagination.
+
+```typescript
+const { conversations, hasMore } = await sublay.chat.listConversations({
+  types: "direct,group",
+  limit: 20,
+});
+
+// Next page: pass the last item's lastMessageAt + createdAt as cursors.
+const last = conversations[conversations.length - 1];
+const next = await sublay.chat.listConversations({
+  cursor: last.lastMessageAt,
+  cursorCreatedAt: last.createdAt,
+});
+```
+
+<ParamField body="types" type="string">
+  Comma-separated conversation types to include, e.g. `"direct,group,space"`.
+</ParamField>
+
+<ParamField body="cursor" type="string">
+  Keyset cursor — the `lastMessageAt` (ISO datetime) of the last item from the
+  previous page.
+</ParamField>
+
+<ParamField body="cursorCreatedAt" type="string">
+  Tie-breaker cursor — the `createdAt` (ISO datetime) of the last item from the
+  previous page.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Page size. Defaults to `20`, max `50`.
+</ParamField>
+
+**Returns** — `Promise<{ conversations: ConversationPreview[]; hasMore: boolean }>`.
+
+---
+
+### createDirectConversation
+
+Creates (or returns the existing) 1:1 direct conversation with another user.
+
+```typescript
+const conversation = await sublay.chat.createDirectConversation({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The other participant's Sublay user ID.
+</ParamField>
+
+**Returns** — `Promise<Conversation>`
+
+---
+
+### createGroupConversation
+
+Creates a group conversation.
+
+```typescript
+const conversation = await sublay.chat.createGroupConversation({
+  name: "Design Team",
+  memberIds: ["usr_abc123", "usr_def456"],
+});
+```
+
+<ParamField body="name" type="string">
+  Group name.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Group description.
+</ParamField>
+
+<ParamField body="memberIds" type="string[]">
+  Sublay user IDs to add to the group. Defaults to an empty list.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary key-value data attached to the conversation.
+</ParamField>
+
+**Returns** — `Promise<Conversation>`
+
+---
+
+### getConversation
+
+Fetches a single conversation by ID.
+
+```typescript
+const conversation = await sublay.chat.getConversation({
+  conversationId: "cnv_abc123",
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+**Returns** — `Promise<Conversation>`
+
+---
+
+### updateConversation
+
+Updates a conversation's settings.
+
+```typescript
+const conversation = await sublay.chat.updateConversation({
+  conversationId: "cnv_abc123",
+  name: "Renamed Group",
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="name" type="string">
+  New name.
+</ParamField>
+
+<ParamField body="description" type="string">
+  New description.
+</ParamField>
+
+<ParamField body="avatarFileId" type="string | null">
+  File ID for the conversation avatar, or `null` to clear it.
+</ParamField>
+
+<ParamField body="postingPermission" type='"members" | "admins"'>
+  Space conversations only: who may post.
+</ParamField>
+
+**Returns** — `Promise<Conversation>`
+
+---
+
+### deleteConversation
+
+Deletes a conversation.
+
+```typescript
+await sublay.chat.deleteConversation({ conversationId: "cnv_abc123" });
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+**Returns** — `Promise<{ message: string }>`
+
+---
+
+### getUnreadCount
+
+Returns the user's total unread message count and unread-conversation count. Takes
+no arguments.
+
+```typescript
+const { totalUnread, unreadConversationCount } = await sublay.chat.getUnreadCount();
+```
+
+**Returns** — `Promise<{ totalUnread: number; unreadConversationCount: number }>`
+
+---
+
+### listMembers
+
+Lists the members of a conversation (standard page-based pagination).
+
+```typescript
+const { data, pagination } = await sublay.chat.listMembers({
+  conversationId: "cnv_abc123",
+  page: 1,
+  limit: 50,
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page.
+</ParamField>
+
+<ParamField body="role" type='"admin" | "member"'>
+  Filter members by role.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<ConversationMember>>`
+
+---
+
+### addMember
+
+Adds a user as a member of a conversation.
+
+```typescript
+const member = await sublay.chat.addMember({
+  conversationId: "cnv_abc123",
+  userId: "usr_def456",
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The user to add (the target member).
+</ParamField>
+
+**Returns** — `Promise<ConversationMember>`
+
+---
+
+### removeMember
+
+Removes a member from a conversation.
+
+```typescript
+await sublay.chat.removeMember({
+  conversationId: "cnv_abc123",
+  userId: "usr_def456",
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The member to remove (the target).
+</ParamField>
+
+**Returns** — `Promise<{ message: string }>`
+
+---
+
+### changeMemberRole
+
+Changes a member's role within a conversation.
+
+```typescript
+const member = await sublay.chat.changeMemberRole({
+  conversationId: "cnv_abc123",
+  userId: "usr_def456",
+  role: "admin",
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The member whose role to change (the target).
+</ParamField>
+
+<ParamField body="role" type='"admin" | "member"' required>
+  The new role.
+</ParamField>
+
+**Returns** — `Promise<ConversationMember>`
+
+---
+
+### leaveConversation
+
+The logged-in user leaves a conversation.
+
+```typescript
+await sublay.chat.leaveConversation({ conversationId: "cnv_abc123" });
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+**Returns** — `Promise<{ message: string }>`
+
+---
+
+### listMessages
+
+Lists messages in a conversation with keyset (before/after) pagination.
+
+```typescript
+const { messages, hasMore, oldestCreatedAt } = await sublay.chat.listMessages({
+  conversationId: "cnv_abc123",
+  limit: 50,
+  sort: "desc",
+});
+
+// Older page: pass the oldest message's timestamp as `before`.
+const older = await sublay.chat.listMessages({
+  conversationId: "cnv_abc123",
+  before: oldestCreatedAt,
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="parentId" type="string">
+  Restrict to replies of this message (thread view).
+</ParamField>
+
+<ParamField body="before" type="string">
+  Keyset cursor (ISO timestamp) — return messages created before this. Mutually
+  exclusive with `after`.
+</ParamField>
+
+<ParamField body="after" type="string">
+  Keyset cursor (ISO timestamp) — return messages created after this. Mutually
+  exclusive with `before`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Page size. Defaults to `50`, max `100`.
+</ParamField>
+
+<ParamField body="sort" type='"asc" | "desc"'>
+  Sort direction by creation time.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated associations to populate, e.g. `"files"`.
+</ParamField>
+
+**Returns** — `Promise<{ messages: ChatMessage[]; hasMore: boolean; oldestCreatedAt: string | null; newestCreatedAt: string | null }>`.
+
+---
+
+### sendMessage
+
+Sends a message to a conversation, optionally with file attachments. When `files`
+is provided the request is sent as `multipart/form-data` (pass browser `File` /
+`Blob` objects); otherwise it is a plain JSON body.
+
+```typescript
+const input = document.querySelector('input[type="file"]');
+
+const message = await sublay.chat.sendMessage({
+  conversationId: "cnv_abc123",
+  content: "Here's the doc 👇",
+  files: Array.from(input.files), // up to 10 File/Blob attachments
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="content" type="string">
+  Message text.
+</ParamField>
+
+<ParamField body="gif" type="GifData | null">
+  An attached GIF, or `null`.
+</ParamField>
+
+<ParamField body="mentions" type="Mention[]">
+  User mentions embedded in the message.
+</ParamField>
+
+<ParamField body="parentMessageId" type="string">
+  The message this is a threaded reply to.
+</ParamField>
+
+<ParamField body="quotedMessageId" type="string">
+  A message being quoted.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary key-value data attached to the message.
+</ParamField>
+
+<ParamField body="localId" type="string">
+  A client-generated ID echoed back on the created message (for optimistic UI);
+  not stored.
+</ParamField>
+
+<ParamField body="files" type="(Blob | File)[]">
+  Up to 10 file attachments, as browser `File` / `Blob` objects. Triggers a
+  `multipart/form-data` upload.
+</ParamField>
+
+**Returns** — `Promise<ChatMessage>`
+
+---
+
+### getMessage
+
+Fetches a single message by ID.
+
+```typescript
+const message = await sublay.chat.getMessage({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz789",
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The message ID.
+</ParamField>
+
+**Returns** — `Promise<ChatMessage>`
+
+---
+
+### editMessage
+
+Edits an existing message.
+
+```typescript
+const message = await sublay.chat.editMessage({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz789",
+  content: "Edited text",
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The message ID.
+</ParamField>
+
+<ParamField body="content" type="string">
+  New message text.
+</ParamField>
+
+<ParamField body="gif" type="string | null">
+  A GIF URL, or `null` to clear it.
+</ParamField>
+
+<ParamField body="mentions" type="Mention[]">
+  Updated mentions.
+</ParamField>
+
+<ParamField body="metadata" type="object | null">
+  Updated metadata, or `null` to clear it.
+</ParamField>
+
+**Returns** — `Promise<ChatMessage>`
+
+---
+
+### deleteMessage
+
+Deletes a message in a conversation.
+
+```typescript
+await sublay.chat.deleteMessage({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz789",
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The message ID.
+</ParamField>
+
+**Returns** — `Promise<{ message: string; userDeletedAt?: string }>` (`userDeletedAt`
+is set when the author soft-deletes their own message).
+
+---
+
+### reportMessage
+
+Reports a message for moderation.
+
+```typescript
+const result = await sublay.chat.reportMessage({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz789",
+  reason: "spam",
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The message ID.
+</ParamField>
+
+<ParamField body="reason" type="string" required>
+  Why the message is being reported.
+</ParamField>
+
+<ParamField body="details" type="string">
+  Additional detail.
+</ParamField>
+
+**Returns** — `Promise<{ message: string; code: string }>`
+
+---
+
+### toggleReaction
+
+Toggles (adds or removes) an emoji reaction on a message for the logged-in user.
+
+```typescript
+const { reactionCounts, userReactions, delta } = await sublay.chat.toggleReaction({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz789",
+  emoji: "👍",
+});
+// delta is +1 if the reaction was added, -1 if removed.
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The message ID.
+</ParamField>
+
+<ParamField body="emoji" type="string" required>
+  The reaction emoji (1–10 characters).
+</ParamField>
+
+**Returns** — `Promise<{ reactionCounts: Record<string, number>; userReactions: string[]; delta: 1 | -1 }>`
+
+---
+
+### listReactions
+
+Lists the users who reacted to a message with a given emoji.
+
+```typescript
+const { data, pagination } = await sublay.chat.listReactions({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz789",
+  emoji: "👍",
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The message ID.
+</ParamField>
+
+<ParamField body="emoji" type="string" required>
+  The reaction emoji to list reactors for.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number. Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `50`, max `100`.
+</ParamField>
+
+**Returns** — `Promise<{ data: MessageReaction[]; pagination: { page: number; limit: number; total: number; hasMore: boolean } }>`,
+where `MessageReaction` is `{ user: User; emoji: string; createdAt: Date }`.
+
+---
+
+### markAsRead
+
+Marks a conversation as read up to a given message.
+
+```typescript
+await sublay.chat.markAsRead({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz789",
+});
+```
+
+<ParamField body="conversationId" type="string" required>
+  The conversation ID.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The message up to which the conversation is marked read.
+</ParamField>
+
+**Returns** — `Promise<{ message: string }>`

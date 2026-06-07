@@ -1,0 +1,353 @@
+---
+title: "Spaces"
+description: "Create, fetch, update, and navigate spaces from the browser"
+---
+
+Spaces are containers — communities for organizing content. The `spaces` module covers the space lifecycle and navigation: creating spaces, looking them up by ID, slug, or short ID, updating settings, and traversing parent-child hierarchies.
+
+For membership management see [Space Members](/v7/js-sdk/spaces-members), and for moderation, rules, and digest configuration see [Space Moderation](/v7/js-sdk/spaces-moderation).
+
+---
+
+### createSpace
+
+Creates a new space.
+
+```typescript
+const space = await sublay.spaces.createSpace({
+  name: "Photography",
+  slug: "photography",
+  description: "A community for photographers",
+  postingPermission: "members",
+});
+```
+
+<ParamField body="name" type="string" required>
+  Display name for the space.
+</ParamField>
+
+<ParamField body="slug" type="string">
+  URL-friendly identifier. Must be unique within the project. Generated from `name` if omitted.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Short description of the space.
+</ParamField>
+
+<ParamField body="readingPermission" type="string">
+  Who can read content: `"anyone"` or `"members"`.
+</ParamField>
+
+<ParamField body="postingPermission" type="string">
+  Who can post content: `"anyone"`, `"members"`, or `"admins"`.
+</ParamField>
+
+<ParamField body="requireJoinApproval" type="boolean">
+  When `true`, join requests must be manually approved.
+</ParamField>
+
+<ParamField body="parentSpaceId" type="string">
+  Makes this space a child of the specified parent space.
+</ParamField>
+
+<ParamField body="metadata" type="Record<string, any>">
+  Arbitrary metadata attached to the space.
+</ParamField>
+
+**Returns** — `Promise<Space>`
+
+---
+
+### fetchSpace
+
+Fetches a single space, including detailed information, by its ID.
+
+```typescript
+const space = await sublay.spaces.fetchSpace({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+**Returns** — `Promise<SpaceDetailed>`
+
+---
+
+### fetchManySpaces
+
+Fetches a paginated, filterable list of spaces.
+
+```typescript
+const { data, pagination } = await sublay.spaces.fetchManySpaces({
+  sortBy: "members",
+  parentSpaceId: "null",
+  limit: 20,
+});
+```
+
+<ParamField body="page" type="number">
+  The page number to fetch.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  The number of spaces to return per page.
+</ParamField>
+
+<ParamField body="sortBy" type="string">
+  Sort order: `"alphabetical"`, `"newest"`, or `"members"`.
+</ParamField>
+
+<ParamField body="searchSlug" type="string">
+  Filter by matching slug.
+</ParamField>
+
+<ParamField body="searchName" type="string">
+  Filter by matching name.
+</ParamField>
+
+<ParamField body="searchDescription" type="string">
+  Filter by matching description.
+</ParamField>
+
+<ParamField body="searchAny" type="string">
+  Filter by matching across slug, name, and description.
+</ParamField>
+
+<ParamField body="memberOf" type="string">
+  Pass `"true"` to return only spaces you belong to.
+</ParamField>
+
+<ParamField body="parentSpaceId" type="string">
+  Filter by parent space. Pass `"null"` for top-level spaces.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated related resources to include in the response.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Space>>`
+
+---
+
+### fetchSpaceBySlug
+
+Fetches a detailed space by its slug.
+
+```typescript
+const space = await sublay.spaces.fetchSpaceBySlug({ slug: "photography" });
+```
+
+<ParamField body="slug" type="string" required>
+  The space slug.
+</ParamField>
+
+**Returns** — `Promise<SpaceDetailed>`
+
+---
+
+### fetchSpaceByShortId
+
+Fetches a detailed space by its short ID.
+
+```typescript
+const space = await sublay.spaces.fetchSpaceByShortId({ shortId: "a1b2c3" });
+```
+
+<ParamField body="shortId" type="string" required>
+  The space short ID.
+</ParamField>
+
+**Returns** — `Promise<SpaceDetailed>`
+
+---
+
+### fetchUserSpaces
+
+Fetches the spaces the logged-in user belongs to.
+
+```typescript
+const userSpaces = await sublay.spaces.fetchUserSpaces({
+  role: "admin,moderator",
+  sortBy: "newest",
+});
+```
+
+<ParamField body="page" type="number">
+  The page number to fetch.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  The number of spaces to return per page.
+</ParamField>
+
+<ParamField body="sortBy" type="string">
+  Sort order: `"alphabetical"`, `"newest"`, or `"members"`.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated related resources to include in the response.
+</ParamField>
+
+<ParamField body="role" type="string">
+  Filter by role. A single role or a comma-separated list, e.g. `"admin,moderator"`.
+</ParamField>
+
+<ParamField body="all" type="string">
+  Pass `"true"` or `"false"`.
+</ParamField>
+
+**Returns** — `Promise<UserSpacesResponse>`
+
+---
+
+### updateSpace
+
+Updates a space's settings.
+
+```typescript
+const space = await sublay.spaces.updateSpace({
+  spaceId: "spc_abc123",
+  description: "An updated description",
+  postingPermission: "admins",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="name" type="string">
+  New display name for the space.
+</ParamField>
+
+<ParamField body="slug" type="string">
+  New URL-friendly identifier.
+</ParamField>
+
+<ParamField body="description" type="string">
+  New description of the space.
+</ParamField>
+
+<ParamField body="readingPermission" type="string">
+  Who can read content: `"anyone"` or `"members"`.
+</ParamField>
+
+<ParamField body="postingPermission" type="string">
+  Who can post content: `"anyone"`, `"members"`, or `"admins"`.
+</ParamField>
+
+<ParamField body="metadata" type="Record<string, any>">
+  Arbitrary metadata attached to the space.
+</ParamField>
+
+**Returns** — `Promise<Space>`
+
+---
+
+### deleteSpace
+
+Deletes a space.
+
+```typescript
+const result = await sublay.spaces.deleteSpace({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+**Returns** — `Promise<DeleteSpaceResponse>`
+
+---
+
+### checkSlugAvailability
+
+Checks whether a space slug is available.
+
+```typescript
+const { available } = await sublay.spaces.checkSlugAvailability({
+  slug: "photography",
+});
+```
+
+<ParamField body="slug" type="string" required>
+  The slug to check.
+</ParamField>
+
+**Returns** — `Promise<{ available: boolean }>`
+
+---
+
+### fetchChildSpaces
+
+Fetches a paginated list of child spaces under a parent.
+
+```typescript
+const { data, pagination } = await sublay.spaces.fetchChildSpaces({
+  spaceId: "spc_abc123",
+  sortBy: "alphabetical",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The parent space ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  The page number to fetch.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  The number of spaces to return per page.
+</ParamField>
+
+<ParamField body="sortBy" type="string">
+  Sort order: `"alphabetical"`, `"newest"`, or `"members"`.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated related resources to include in the response.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Space>>`
+
+---
+
+### fetchSpaceBreadcrumb
+
+Fetches the ancestor breadcrumb chain for a space.
+
+```typescript
+const breadcrumb = await sublay.spaces.fetchSpaceBreadcrumb({
+  spaceId: "spc_abc123",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+**Returns** — `Promise<SpaceBreadcrumb>`
+
+---
+
+### getSpaceConversation
+
+Gets the chat conversation object associated with a space.
+
+```typescript
+const conversation = await sublay.spaces.getSpaceConversation({
+  spaceId: "spc_abc123",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+**Returns** — `Promise<Conversation>`
+
+<Note>
+  Space chat messages are sent and read via the [chat](/v7/js-sdk/chat) module.
+</Note>

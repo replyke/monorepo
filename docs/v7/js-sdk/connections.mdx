@@ -1,0 +1,147 @@
+---
+title: "Connections"
+description: "Read and manage the logged-in user's own connections and pending requests"
+---
+
+The `connections` module acts on the **logged-in user's own** mutual connections — bidirectional relationships, similar to "friends." Use it to list established connections, inspect outgoing and incoming pending requests, and accept, decline, or remove connections.
+
+<Tip>
+  To **request** a connection with someone, check the connection status against a
+  specific user, or remove a connection by the other user's ID, use the
+  [`users`](/v7/js-sdk/users) module.
+</Tip>
+
+---
+
+### fetchConnections
+
+Returns a paginated list of your established (mutual) connections.
+
+```typescript
+const { data, pagination } = await sublay.connections.fetchConnections({
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<EstablishedConnection>>`, where `EstablishedConnection` is `{ id, connectedUser, connectedAt }`.
+
+---
+
+### fetchConnectionsCount
+
+Returns the number of your established connections.
+
+```typescript
+const { count } = await sublay.connections.fetchConnectionsCount();
+```
+
+**Returns** — `Promise<{ count: number }>`
+
+---
+
+### fetchSentPendingConnections
+
+Returns a paginated list of your outgoing connection requests that are still pending.
+
+```typescript
+const { data, pagination } =
+  await sublay.connections.fetchSentPendingConnections({
+    page: 1,
+    limit: 20,
+  });
+```
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<PendingConnection>>`, where `PendingConnection` is `{ id, message?, createdAt, user, type: "received" | "sent" }`.
+
+---
+
+### fetchReceivedPendingConnections
+
+Returns a paginated list of incoming connection requests you have received.
+
+```typescript
+const { data, pagination } =
+  await sublay.connections.fetchReceivedPendingConnections({
+    page: 1,
+    limit: 20,
+  });
+```
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<PendingConnection>>`
+
+---
+
+### acceptConnection
+
+Accepts a pending incoming connection request.
+
+```typescript
+const result = await sublay.connections.acceptConnection({
+  connectionId: "con_xyz789",
+});
+```
+
+<ParamField body="connectionId" type="string" required>
+  The ID of the pending connection request to accept.
+</ParamField>
+
+**Returns** — `Promise<{ id: string; status: string; createdAt?: string; respondedAt?: string }>`
+
+---
+
+### declineConnection
+
+Declines a pending incoming connection request.
+
+```typescript
+const result = await sublay.connections.declineConnection({
+  connectionId: "con_xyz789",
+});
+```
+
+<ParamField body="connectionId" type="string" required>
+  The ID of the pending connection request to decline.
+</ParamField>
+
+**Returns** — `Promise<{ id: string; status: string; createdAt?: string; respondedAt?: string }>`
+
+---
+
+### removeConnection
+
+Removes an established connection by its connection ID.
+
+```typescript
+await sublay.connections.removeConnection({ connectionId: "con_xyz789" });
+```
+
+<ParamField body="connectionId" type="string" required>
+  The connection ID to remove.
+</ParamField>
+
+**Returns** — `Promise<void>`

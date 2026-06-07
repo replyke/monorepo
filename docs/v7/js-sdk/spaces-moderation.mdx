@@ -1,0 +1,457 @@
+---
+title: "Space Moderation"
+description: "Resolve reports, moderate content, and manage rules and digest delivery"
+---
+
+The space moderation functions let admins and moderators resolve reports, moderate entities, comments, and chat messages, manage community rules, and configure digest delivery within a space.
+
+---
+
+### handleEntityReport
+
+Resolves a reported entity by applying one or more actions.
+
+```typescript
+const result = await sublay.spaces.handleEntityReport({
+  spaceId: "spc_abc123",
+  reportId: "rep_111",
+  entityId: "ent_222",
+  actions: ["remove-entity", "ban-user"],
+  userId: "usr_333",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="reportId" type="string" required>
+  The ID of the report to resolve.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The ID of the reported entity.
+</ParamField>
+
+<ParamField body="actions" type="string[]" required>
+  One or more actions to apply: `"remove-entity"`, `"ban-user"`, and/or `"dismiss"`.
+</ParamField>
+
+<ParamField body="summary" type="string">
+  A summary of the resolution.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  The reason for the resolution.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The user to ban. Required when `actions` includes `"ban-user"`.
+</ParamField>
+
+<Note>
+  `userId` here is the ban **target** — the user being banned — not the actor performing the moderation.
+</Note>
+
+**Returns** — `Promise<{ message: string; code: string }>`
+
+---
+
+### handleCommentReport
+
+Resolves a reported comment by applying one or more actions.
+
+```typescript
+const result = await sublay.spaces.handleCommentReport({
+  spaceId: "spc_abc123",
+  reportId: "rep_111",
+  commentId: "cmt_222",
+  actions: ["dismiss"],
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="reportId" type="string" required>
+  The ID of the report to resolve.
+</ParamField>
+
+<ParamField body="commentId" type="string" required>
+  The ID of the reported comment.
+</ParamField>
+
+<ParamField body="actions" type="string[]" required>
+  One or more actions to apply: `"remove-comment"`, `"ban-user"`, and/or `"dismiss"`.
+</ParamField>
+
+<ParamField body="summary" type="string">
+  A summary of the resolution.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  The reason for the resolution.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The user to ban. Required when `actions` includes `"ban-user"`.
+</ParamField>
+
+<Note>
+  `userId` here is the ban **target** — the user being banned — not the actor performing the moderation.
+</Note>
+
+**Returns** — `Promise<{ message: string; code: string }>`
+
+---
+
+### handleSpaceChatReport
+
+Resolves a reported space chat message by applying one or more actions.
+
+```typescript
+const result = await sublay.spaces.handleSpaceChatReport({
+  spaceId: "spc_abc123",
+  reportId: "rep_111",
+  actions: ["remove-message"],
+  messageId: "msg_222",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="reportId" type="string" required>
+  The ID of the report to resolve.
+</ParamField>
+
+<ParamField body="actions" type="string[]" required>
+  One or more actions to apply: `"remove-message"`, `"ban-user"`, and/or `"dismiss"`.
+</ParamField>
+
+<ParamField body="summary" type="string">
+  A summary of the resolution.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  The reason for the resolution.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The user to ban. Required when `actions` includes `"ban-user"`.
+</ParamField>
+
+<ParamField body="messageId" type="string">
+  The message to remove. Required when `actions` includes `"remove-message"`.
+</ParamField>
+
+<Note>
+  `userId` here is the ban **target** — the user being banned — not the actor performing the moderation.
+</Note>
+
+**Returns** — `Promise<{ message: string; code: string }>`
+
+---
+
+### moderateSpaceEntity
+
+Approves or removes an entity in a space.
+
+```typescript
+const result = await sublay.spaces.moderateSpaceEntity({
+  spaceId: "spc_abc123",
+  entityId: "ent_222",
+  action: "remove",
+  reason: "Off-topic",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The ID of the entity to moderate.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  The action to take: `"approve"` or `"remove"`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  The reason for the moderation action.
+</ParamField>
+
+**Returns** — `Promise<{ message: string; moderationStatus: "approved" | "removed" }>`
+
+---
+
+### moderateSpaceComment
+
+Approves or removes a comment in a space.
+
+```typescript
+const result = await sublay.spaces.moderateSpaceComment({
+  spaceId: "spc_abc123",
+  commentId: "cmt_222",
+  action: "approve",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="commentId" type="string" required>
+  The ID of the comment to moderate.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  The action to take: `"approve"` or `"remove"`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  The reason for the moderation action.
+</ParamField>
+
+**Returns** — `Promise<{ message: string; moderationStatus: "approved" | "removed" }>`
+
+---
+
+### moderateSpaceChatMessage
+
+Applies a moderation status to a space chat message.
+
+```typescript
+const result = await sublay.spaces.moderateSpaceChatMessage({
+  spaceId: "spc_abc123",
+  messageId: "msg_222",
+  moderationStatus: "removed",
+  moderationReason: "Spam",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="messageId" type="string" required>
+  The ID of the chat message to moderate.
+</ParamField>
+
+<ParamField body="moderationStatus" type="string" required>
+  The moderation status to apply: `"removed"`.
+</ParamField>
+
+<ParamField body="moderationReason" type="string">
+  The reason for the moderation action.
+</ParamField>
+
+**Returns** — `Promise<{ message: string; moderationStatus: string }>`
+
+---
+
+### fetchManyRules
+
+Fetches all rules for a space.
+
+```typescript
+const rules = await sublay.spaces.fetchManyRules({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+**Returns** — `Promise<FetchManyRulesResponse>`
+
+---
+
+### fetchRule
+
+Fetches a single rule by ID.
+
+```typescript
+const rule = await sublay.spaces.fetchRule({
+  spaceId: "spc_abc123",
+  ruleId: "rul_222",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="ruleId" type="string" required>
+  The ID of the rule to fetch.
+</ParamField>
+
+**Returns** — `Promise<Rule>`
+
+---
+
+### createRule
+
+Creates a rule in a space.
+
+```typescript
+const rule = await sublay.spaces.createRule({
+  spaceId: "spc_abc123",
+  title: "Be respectful",
+  description: "No harassment or hate speech.",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  The rule title.
+</ParamField>
+
+<ParamField body="description" type="string">
+  The rule description.
+</ParamField>
+
+**Returns** — `Promise<Rule>`
+
+---
+
+### updateRule
+
+Updates a rule's title and/or description.
+
+```typescript
+const rule = await sublay.spaces.updateRule({
+  spaceId: "spc_abc123",
+  ruleId: "rul_222",
+  title: "Be kind",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="ruleId" type="string" required>
+  The ID of the rule to update.
+</ParamField>
+
+<ParamField body="title" type="string">
+  The new rule title.
+</ParamField>
+
+<ParamField body="description" type="string">
+  The new rule description.
+</ParamField>
+
+**Returns** — `Promise<Rule>`
+
+---
+
+### deleteRule
+
+Deletes a rule.
+
+```typescript
+const result = await sublay.spaces.deleteRule({
+  spaceId: "spc_abc123",
+  ruleId: "rul_222",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="ruleId" type="string" required>
+  The ID of the rule to delete.
+</ParamField>
+
+**Returns** — `Promise<DeleteRuleResponse>`
+
+---
+
+### reorderRules
+
+Reorders a space's rules.
+
+```typescript
+const rules = await sublay.spaces.reorderRules({
+  spaceId: "spc_abc123",
+  ruleIds: ["rul_333", "rul_111", "rul_222"],
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="ruleIds" type="string[]" required>
+  The rule IDs in the new order.
+</ParamField>
+
+**Returns** — `Promise<Rule[]>`
+
+---
+
+### fetchDigestConfig
+
+Fetches the digest configuration for a space.
+
+```typescript
+const config = await sublay.spaces.fetchDigestConfig({
+  spaceId: "spc_abc123",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+**Returns** — `Promise<DigestConfig>`
+
+---
+
+### updateDigestConfig
+
+Updates the digest configuration.
+
+```typescript
+const config = await sublay.spaces.updateDigestConfig({
+  spaceId: "spc_abc123",
+  digestEnabled: true,
+  digestWebhookUrl: "https://example.com/digest",
+  digestScheduleHour: 9,
+  digestTimezone: "America/New_York",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="digestEnabled" type="boolean">
+  Whether digest delivery is enabled.
+</ParamField>
+
+<ParamField body="digestWebhookUrl" type="string">
+  The webhook URL to deliver the digest to.
+</ParamField>
+
+<ParamField body="digestWebhookSecret" type="string">
+  The secret used to sign digest webhook deliveries.
+</ParamField>
+
+<ParamField body="digestScheduleHour" type="number">
+  The hour of day at which the digest is delivered.
+</ParamField>
+
+<ParamField body="digestTimezone" type="string">
+  The timezone used to interpret the schedule hour.
+</ParamField>
+
+**Returns** — `Promise<DigestConfig>`
