@@ -6,7 +6,7 @@
   "files": ["dist"],
   "description": "Official JavaScript SDK for Sublay",
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm",
+    "build": "tsup src/index.ts --dts --format cjs,esm",
     "build:types": "tsc --emitDeclarationOnly",
     "prepare": "pnpm build && pnpm build:types",
     "publish-beta": "pnpm publish --tag beta",
