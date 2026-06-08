@@ -1,5 +1,6 @@
 import { SublayHttpClient } from "../../core/client";
 import { Reaction, ReactionType } from "../../interfaces/Reaction";
+import { PaginationMetadata } from "../../interfaces/IPaginatedResponse";
 
 export interface FetchEntityReactionsProps {
   entityId: string;
@@ -11,13 +12,7 @@ export interface FetchEntityReactionsProps {
 
 export interface FetchEntityReactionsResponse {
   data: Reaction[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasMore: boolean;
-  };
+  pagination: PaginationMetadata;
 }
 
 export async function fetchReactions(

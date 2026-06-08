@@ -1,5 +1,6 @@
 import { SublayHttpClient } from "../../core/client";
 import { User } from "../../interfaces/User";
+import { PaginationMetadata } from "../../interfaces/IPaginatedResponse";
 
 export interface ListReactionsProps {
   conversationId: string;
@@ -20,12 +21,7 @@ export interface MessageReaction {
 
 export interface ListReactionsResponse {
   data: MessageReaction[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    hasMore: boolean;
-  };
+  pagination: PaginationMetadata;
 }
 
 export async function listReactions(
