@@ -13,7 +13,8 @@ icon: "cube"
 - **`handleOAuthCallback`** — call this on the OAuth callback page to extract tokens from the URL fragment and set the authenticated session.
 
 <Note>
-  This hook is available in `@sublay/react-js` only. It uses `window.location` and is not compatible with React Native.
+  This page documents the `@sublay/react-js` hook, which uses `window.location` for the redirect-based web flow. For Expo apps, `@sublay/expo` exports a
+  `useOAuthSignIn` hook with the **same API** that opens the system browser and returns via a deep link — see [OAuth Authentication → Expo Integration](/sdk/authentication/oauth#expo-integration).
 </Note>
 
 ## Usage Example
