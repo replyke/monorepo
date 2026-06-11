@@ -8,3 +8,5 @@ export { resetPassword } from "./resetPassword";
 export { changePassword } from "./changePassword";
 export { verifyEmail } from "./verifyEmail";
 export { sendVerificationEmail } from "./sendVerificationEmail";
+export { requestAccountDeletion } from "./requestAccountDeletion";
+export { confirmAccountDeletion } from "./confirmAccountDeletion";
