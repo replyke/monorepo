@@ -170,7 +170,9 @@
                   "v7/hooks/auth/use-oauth-sign-in",
                   "v7/hooks/auth/use-request-password-reset",
                   "v7/hooks/auth/use-send-verification-email",
-                  "v7/hooks/auth/use-verify-email"
+                  "v7/hooks/auth/use-verify-email",
+                  "v7/hooks/auth/use-request-account-deletion",
+                  "v7/hooks/auth/use-confirm-account-deletion"
                 ]
               },
               {
@@ -436,7 +438,9 @@
                   "v7/api-reference/auth/reset-password",
                   "v7/api-reference/auth/send-verification-email",
                   "v7/api-reference/auth/verify-email",
-                  "v7/api-reference/auth/verify-email-link"
+                  "v7/api-reference/auth/verify-email-link",
+                  "v7/api-reference/auth/request-account-deletion",
+                  "v7/api-reference/auth/confirm-account-deletion"
                 ]
               },
               {
