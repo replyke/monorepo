@@ -7,6 +7,10 @@ description: "Upload, retrieve, and manage files and images in Sublay"
 
 Sublay's storage system lets you upload files and images on behalf of authenticated users. Uploaded assets are stored in managed cloud storage and served through a proxy URL so direct storage credentials are never exposed to the client.
 
+<Note>
+  **Requires the `files-images` bundle.** File and image uploads are only available when the `files-images` bundle is installed on your project. See [Bundles](/bundles) to add it.
+</Note>
+
 Files can be optionally associated with an entity, comment, or space, enabling cascade deletion when the parent object is removed.
 
 ## Upload Modes

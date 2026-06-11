@@ -21,6 +21,7 @@
                 "group": "Getting Started",
                 "pages": [
                   "v7/index",
+                  "v7/bundles",
                   "v7/integration-options",
                   "v7/authentication",
                   "v7/webhooks",
