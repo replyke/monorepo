@@ -57,6 +57,8 @@ export {
   useRequestPasswordReset,
   useSendVerificationEmail,
   useVerifyEmail,
+  useRequestAccountDeletion,
+  useConfirmAccountDeletion,
   type UseAuthValues,
   type SignUpWithEmailAndPasswordProps,
   type SignInWithEmailAndPasswordProps,
@@ -64,6 +66,7 @@ export {
   type RequestPasswordResetProps,
   type SendVerificationEmailProps,
   type VerifyEmailProps,
+  type ConfirmAccountDeletionProps,
 } from "./hooks/auth";
 
 // -- authentication (accounts)

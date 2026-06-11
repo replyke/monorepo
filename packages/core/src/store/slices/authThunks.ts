@@ -139,6 +139,10 @@ const authService = {
   ) {
     await axios.post(`/${projectId}/auth/change-password`, data);
   },
+
+  async confirmAccountDeletion(projectId: string, code: string) {
+    await axios.post(`/${projectId}/auth/confirm-account-deletion`, { code });
+  },
 };
 
 // Async Thunks
@@ -291,6 +295,74 @@ export const signOutThunk = createAsyncThunk(
       return;
     } catch (error) {
       handleError(error, "Failed to log user out:");
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    } finally {
+      dispatch(setAuthenticating(false));
+    }
+  }
+);
+
+export const confirmAccountDeletionThunk = createAsyncThunk(
+  "auth/confirmAccountDeletion",
+  async (
+    data: { projectId: string; code: string },
+    { dispatch, getState, rejectWithValue }
+  ) => {
+    const state = getState() as RootState;
+    const activeAccountId = state.sublay.accounts.activeAccountId;
+    const accounts = state.sublay.accounts.accounts;
+
+    try {
+      dispatch(setAuthenticating(true));
+
+      // Permanently delete the account on the server (verifies the emailed
+      // code). The user's tokens are destroyed as part of the cascade.
+      await authService.confirmAccountDeletion(data.projectId, data.code);
+
+      // Tear down the local session exactly like sign-out: drop the deleted
+      // account from the multi-account map, then either switch to a remaining
+      // account or fully reset. No server sign-out call — the session is
+      // already gone.
+      if (activeAccountId) {
+        dispatch(removeAccount(activeAccountId));
+      }
+
+      const remainingIds = Object.keys(accounts).filter(
+        (id) => id !== activeAccountId
+      );
+
+      if (remainingIds.length > 0) {
+        // Switch to the first remaining account
+        const nextId = remainingIds[0];
+        const nextAccount = accounts[nextId];
+
+        dispatch(resetAuth());
+        dispatch(clearUserInUserSlice());
+        dispatch(baseApi.util.resetApiState());
+        dispatch(
+          setTokens({
+            accessToken: null,
+            refreshToken: nextAccount.refreshToken,
+          })
+        );
+        dispatch(setInitialized(false));
+
+        await dispatch(
+          requestNewAccessTokenThunk({ projectId: data.projectId })
+        );
+        dispatch(setInitialized(true));
+      } else {
+        // No remaining accounts — standard teardown
+        dispatch(resetAuth());
+        dispatch(clearUserInUserSlice());
+        dispatch(baseApi.util.resetApiState());
+      }
+
+      return;
+    } catch (error) {
+      handleError(error, "Failed to delete account:");
       return rejectWithValue(
         error instanceof Error ? error.message : "Unknown error"
       );

@@ -8,4 +8,6 @@ export { default as useSignOutAll, type UseSignOutAllReturn } from './useSignOut
 export { default as useRequestPasswordReset, type RequestPasswordResetProps } from './useRequestPasswordReset';
 export { default as useSendVerificationEmail, type SendVerificationEmailProps } from './useSendVerificationEmail';
 export { default as useVerifyEmail, type VerifyEmailProps } from './useVerifyEmail';
+export { default as useRequestAccountDeletion } from './useRequestAccountDeletion';
+export { default as useConfirmAccountDeletion, type ConfirmAccountDeletionProps } from './useConfirmAccountDeletion';
 export { default as useOAuthIdentities, type OAuthIdentity, type UseOAuthIdentitiesReturn } from './useOAuthIdentities';
