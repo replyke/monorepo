@@ -1,0 +1,73 @@
+---
+title: "Request account deletion"
+description: "Email the authenticated user a one-time code to confirm self-service account deletion"
+icon: "plug"
+---
+
+## Overview
+
+`useRequestAccountDeletion` returns a function that starts the self-service account-deletion flow for the currently authenticated user. It emails the user a 6-digit confirmation code (valid for 10 minutes) and does **not** delete anything on its own. Pass the code the user receives to [`useConfirmAccountDeletion`](/hooks/auth/use-confirm-account-deletion) to finish.
+
+<Warning>
+  Only works for accounts with an email on file. Accounts without one (e.g.
+  anonymous or foreign-id users) must be deleted server-side with a service key.
+</Warning>
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useRequestAccountDeletion } from "@sublay/react-js";
+
+function DeleteAccountButton({ onCodeSent }: { onCodeSent: () => void }) {
+  const requestAccountDeletion = useRequestAccountDeletion();
+
+  const handleClick = async () => {
+    try {
+      await requestAccountDeletion();
+      onCodeSent(); // reveal the "enter your code" step
+    } catch (err: any) {
+      // e.g. auth/no-email-on-file
+      console.error(err.response?.data?.error ?? "Could not start deletion.");
+    }
+  };
+
+  return <button onClick={handleClick}>Delete my account</button>;
+}
+```
+
+```tsx React Native
+import { useRequestAccountDeletion } from "@sublay/react-native";
+
+function DeleteAccountButton({ onCodeSent }: { onCodeSent: () => void }) {
+  const requestAccountDeletion = useRequestAccountDeletion();
+
+  return (
+    <Button
+      title="Delete my account"
+      onPress={async () => {
+        await requestAccountDeletion();
+        onCodeSent();
+      }}
+    />
+  );
+}
+```
+</CodeGroup>
+
+## Parameters
+
+The returned function takes no arguments — it always acts on the currently authenticated user.
+
+## Returns
+
+The hook returns an async function. That function resolves to:
+
+<ResponseField name="success" type="boolean">
+  `true` when the request completes without a server error.
+</ResponseField>
+
+## See Also
+
+- [`useConfirmAccountDeletion`](/hooks/auth/use-confirm-account-deletion)
+- [Request Account Deletion API reference](/api-reference/auth/request-account-deletion)

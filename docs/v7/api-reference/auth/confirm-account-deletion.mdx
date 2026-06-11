@@ -1,0 +1,44 @@
+---
+title: "Confirm Account Deletion"
+api: "POST /:projectId/api/v7/auth/confirm-account-deletion"
+description: "Verify the emailed code and permanently delete the authenticated user's account"
+---
+
+Completes the self-service account-deletion flow. Verifies the one-time code sent by the [Request Account Deletion](/api-reference/auth/request-account-deletion) endpoint and, on a match, **permanently deletes** the authenticated user's account.
+
+Requires a valid user access token. The cascade is identical to the service-key [Delete User](/api-reference/users/delete-user) endpoint: reactions, files, follows, connections, collections, reports, mentions, notifications, and embeddings are removed, while the user's entities and comments are preserved as hollow shells (their `userId`, content, and attachments cleared) to keep threads intact.
+
+<Warning>
+  Deletion is **immediate and irreversible**. There is no grace period and no
+  recovery once this endpoint returns `204`.
+</Warning>
+
+## Body Parameters
+
+<ParamField body="code" type="string" required>
+  The one-time confirmation code from the deletion email. Must match the most recently issued code exactly.
+</ParamField>
+
+## Response
+
+Returns `204 No Content` on success. The user and their session tokens no longer exist after this call.
+
+## Error Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `auth/invalid-or-expired-code` | 400 | The code does not match, was never issued, or has expired (10-minute TTL). |
+| `user/not-found` | 404 | The authenticated user no longer exists. |
+| `user/delete-failed` | 404 | The user could not be deleted (not found or already deleted). |
+
+<Note>
+  The confirmation code is single-use — it is consumed once deletion succeeds,
+  so it cannot be replayed. If deletion fails with a server error, the code is
+  left in place so you can retry until it expires (10-minute TTL).
+</Note>
+
+## See Also
+
+- [`useConfirmAccountDeletion` hook](/hooks/auth/use-confirm-account-deletion)
+- [Request Account Deletion endpoint](/api-reference/auth/request-account-deletion)
+- [Delete User (service key) endpoint](/api-reference/users/delete-user)

@@ -256,3 +256,40 @@ await sublay.auth.verifyEmail({ token: verificationToken });
 </ParamField>
 
 **Returns** — `Promise<void>`
+
+---
+
+### requestAccountDeletion
+
+Starts self-service deletion of the authenticated user's account by emailing them a one-time confirmation code (valid for 10 minutes). This does not delete anything on its own — pass the code to [`confirmAccountDeletion`](#confirmaccountdeletion) to finish.
+
+```typescript
+const { success } = await sublay.auth.requestAccountDeletion();
+```
+
+Only works for accounts with an email on file. Accounts without one (e.g. anonymous or foreign-id users) must be deleted server-side with a service key via [`@sublay/node`](/node-sdk/users). The request fails with `auth/no-email-on-file` otherwise.
+
+Takes no arguments.
+
+**Returns** — `Promise<{ success: boolean }>`
+
+---
+
+### confirmAccountDeletion
+
+Verifies the emailed code and **permanently deletes** the authenticated user's account. The cascade matches the service-key delete — entities and comments are kept as hollow shells; everything else owned by the user is removed.
+
+```typescript
+await sublay.auth.confirmAccountDeletion({ code: "048291" });
+```
+
+<Warning>
+  Deletion is immediate and irreversible. The user and their session tokens no
+  longer exist after this resolves.
+</Warning>
+
+<ParamField body="code" type="string" required>
+  The one-time confirmation code from the deletion email.
+</ParamField>
+
+**Returns** — `Promise<void>`
