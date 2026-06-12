@@ -1,6 +1,15 @@
 import { SublayHttpClient } from "../../core/client";
 import { ChatMessage } from "../../interfaces/ChatMessage";
 
+export interface MessageFilters {
+  /**
+   * Filter to messages that have thread replies (not quotings). `true` returns
+   * only messages with at least one thread reply; `false` returns only messages
+   * with none. Omit for no reply-count filtering.
+   */
+  hasReplies?: boolean;
+}
+
 export interface ListMessagesProps {
   conversationId: string;
   /** The user to act as (must be a member). Service key required to name a user. */
@@ -15,6 +24,8 @@ export interface ListMessagesProps {
   sort?: "asc" | "desc";
   /** Comma-separated associations to populate, e.g. "files". */
   include?: string;
+  /** Optional filters, e.g. `{ hasReplies: true }`. */
+  filters?: MessageFilters;
 }
 
 export interface ListMessagesResponse {
@@ -22,6 +33,12 @@ export interface ListMessagesResponse {
   hasMore: boolean;
   oldestCreatedAt: string | null;
   newestCreatedAt: string | null;
+  /**
+   * Present only when a filter combination can't return results — e.g.
+   * `hasReplies: true` together with `parentId` (thread replies are one level
+   * deep and never have their own replies).
+   */
+  notice?: string;
 }
 
 export async function listMessages(
