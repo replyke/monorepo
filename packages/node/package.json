@@ -1,6 +1,6 @@
 {
   "name": "@sublay/node",
-  "version": "7.2.2",
+  "version": "7.3.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],
@@ -10,8 +10,8 @@
     "build:types": "tsc --emitDeclarationOnly",
     "prepare": "pnpm build && pnpm build:types",
     "test": "jest",
-    "publish-beta": "pnpm publish --tag beta",
-    "publish-prod": "pnpm publish"
+    "publish-beta": "pnpm publish --tag beta --no-git-checks",
+    "publish-prod": "pnpm publish --no-git-checks"
   },
   "author": "Sublay team",
   "license": "ISC",
