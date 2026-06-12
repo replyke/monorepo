@@ -366,12 +366,15 @@
               {
                 "group": "Chat — Messages",
                 "pages": [
-                  "v7/hooks/chat/messages/use-chat-messages",
+                  "v7/hooks/chat/messages/use-live-chat-messages",
+                  "v7/hooks/chat/messages/use-fetch-many-chat-messages",
+                  "v7/hooks/chat/messages/use-fetch-many-chat-messages-wrapper",
                   "v7/hooks/chat/messages/use-send-message",
                   "v7/hooks/chat/messages/use-edit-message",
                   "v7/hooks/chat/messages/use-delete-message",
                   "v7/hooks/chat/messages/use-toggle-reaction",
-                  "v7/hooks/chat/messages/use-message-thread"
+                  "v7/hooks/chat/messages/use-message-thread",
+                  "v7/hooks/chat/messages/use-chat-messages"
                 ]
               },
               {

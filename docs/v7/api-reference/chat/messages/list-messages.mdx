@@ -40,6 +40,14 @@ The caller must be a member. Former members (who left) can only read messages up
   Comma-separated list of extra fields to include. Currently supports `files`. Example: `include=files`.
 </ParamField>
 
+<ParamField query="filters" type="object">
+  Optional filters object, serialized as bracket-notation query params (e.g. `filters[hasReplies]=true`).
+
+  - `hasReplies` (boolean) — When `true`, returns only messages that have thread replies (`threadReplyCount > 0`). When `false`, returns only messages with no thread replies. This filters by **thread replies**, not quotings (`quotedMessageId`).
+
+  <Note>Threads are one level deep — a reply can never have its own replies. So `filters[hasReplies]=true` combined with `parentId` always returns an empty list; the response includes a `notice` field explaining why.</Note>
+</ParamField>
+
 ## Response
 
 <ResponseField name="messages" type="ChatMessage[]">
@@ -56,6 +64,10 @@ The caller must be a member. Former members (who left) can only read messages up
 
 <ResponseField name="newestCreatedAt" type="string | null">
   ISO timestamp of the newest message in this page. `null` if no messages were returned.
+</ResponseField>
+
+<ResponseField name="notice" type="string">
+  Present only when a filter combination can't return results — e.g. `hasReplies: true` together with `parentId`. Explains why the list is empty.
 </ResponseField>
 
 ## Error Responses

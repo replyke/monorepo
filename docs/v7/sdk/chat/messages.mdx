@@ -7,13 +7,15 @@ This guide covers working with messages inside a conversation: loading the messa
 
 ## Loading Messages
 
-`useChatMessages` fetches paginated messages for a conversation. Messages are stored in Redux and kept in sync by the `ChatProvider` socket.
+`useLiveChatMessages` fetches paginated messages for a conversation. Messages are stored in Redux and kept in sync by the `ChatProvider` socket.
+
+<Note>`useChatMessages` was renamed to `useLiveChatMessages`. The old name still works as a deprecated alias.</Note>
 
 ```tsx
-import { useChatMessages } from "@sublay/react-js";
+import { useLiveChatMessages } from "@sublay/react-js";
 
 function MessageList({ conversationId }: { conversationId: string }) {
-  const { messages, loading, hasMore, loadOlder } = useChatMessages({
+  const { messages, loading, hasMore, loadOlder } = useLiveChatMessages({
     conversationId,
   });
 
@@ -39,10 +41,26 @@ Messages are sorted oldest-first in the returned array. `loadOlder` fetches mess
 To include attached files in the response, pass `includeFiles: true`:
 
 ```tsx
-const { messages } = useChatMessages({ conversationId, includeFiles: true });
+const { messages } = useLiveChatMessages({ conversationId, includeFiles: true });
 ```
 
-See [`useChatMessages`](/hooks/chat/messages/use-chat-messages).
+See [`useLiveChatMessages`](/hooks/chat/messages/use-live-chat-messages).
+
+### Filtered / read-only queries
+
+`useLiveChatMessages` is the live conversation stream and intentionally takes no `filters`. To fetch a **filtered** or read-only list of messages — for example, only messages that have replies — use [`useFetchManyChatMessagesWrapper`](/hooks/chat/messages/use-fetch-many-chat-messages), which keeps results in local state and never receives live socket traffic:
+
+```tsx
+import { useFetchManyChatMessagesWrapper } from "@sublay/react-js";
+
+const { messages, loading, hasMore, loadMore, refetch } =
+  useFetchManyChatMessagesWrapper({
+    conversationId,
+    filters: { hasReplies: true },
+  });
+```
+
+See [`useFetchManyChatMessages`](/hooks/chat/messages/use-fetch-many-chat-messages).
 
 ## Sending Messages
 

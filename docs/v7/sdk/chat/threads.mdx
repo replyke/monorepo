@@ -62,14 +62,14 @@ Replies are loaded in ascending order (oldest first) and `loadMore` fetches newe
 
 See [`useMessageThread`](/hooks/chat/messages/use-message-thread).
 
-## Using useChatMessages Directly
+## Using useLiveChatMessages Directly
 
-For more control, use `useChatMessages` with a `parentId` to load thread replies:
+For more control, use `useLiveChatMessages` with a `parentId` to load thread replies:
 
 ```tsx
-import { useChatMessages, useSendMessage } from "@sublay/react-js";
+import { useLiveChatMessages, useSendMessage } from "@sublay/react-js";
 
-const { messages: replies, loading, hasMore, loadOlder } = useChatMessages({
+const { messages: replies, loading, hasMore, loadOlder } = useLiveChatMessages({
   conversationId,
   parentId: messageId,   // pass parentId to load thread replies
 });
