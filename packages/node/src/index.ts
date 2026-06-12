@@ -12,7 +12,10 @@ import * as Reports from "./modules/reports";
 import * as Search from "./modules/search";
 import * as Spaces from "./modules/spaces";
 import * as Storage from "./modules/storage";
+import * as TablesManagement from "./modules/tables-management";
 import * as Users from "./modules/users";
+import { createTableAccessor } from "./modules/tables";
+import { TableAccessor, TableRow } from "./interfaces/Table";
 
 type BoundModule<
   T extends Record<string, (client: SublayHttpClient, ...args: any[]) => any>
@@ -39,6 +42,8 @@ export class SublayClient {
   public spaces: BoundModule<typeof Spaces>;
   public storage: BoundModule<typeof Storage>;
   public users: BoundModule<typeof Users>;
+  /** Table-management (DDL) — service-key only. */
+  public tables: BoundModule<typeof TablesManagement>;
 
   private constructor(http: SublayHttpClient) {
     this.http = http;
@@ -56,6 +61,16 @@ export class SublayClient {
     this.spaces = bindModule(Spaces, this.http);
     this.storage = bindModule(Storage, this.http);
     this.users = bindModule(Users, this.http);
+    this.tables = bindModule(TablesManagement, this.http);
+  }
+
+  /**
+   * Callable row-operations accessor for a custom table:
+   * `client.table<EventRow>("Events").find(...)`. A net-new pattern — the flat
+   * `bindModule` namespace can't capture a per-call table name.
+   */
+  table<T = TableRow>(name: string): TableAccessor<T> {
+    return createTableAccessor<T>(this.http, name);
   }
 
   static async init(config: ClientConfig): Promise<SublayClient> {
@@ -85,6 +100,22 @@ async function verifyClient(client: SublayHttpClient): Promise<void> {
 
 // Export pagination types
 export type { PaginatedResponse, PaginationMetadata } from "./interfaces/IPaginatedResponse";
+
+// Export custom-table types
+export type {
+  TableAccessor,
+  TableRow,
+  TableQuery,
+  DbFilter,
+  DbFilterOperator,
+  CustomColumnType,
+  CustomColumnDefinition,
+  CreateTableProps,
+  BulkDeleteProps,
+  DeleteResult,
+  BulkDeleteResult,
+} from "./interfaces/Table";
+export type { AddColumnProps } from "./modules/tables-management/addColumn";
 
 // Export commonly used interfaces
 export type { Entity, TopComment } from "./interfaces/Entity";
