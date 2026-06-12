@@ -4,6 +4,7 @@ export { fetchSpace } from "./fetchSpace";
 export { fetchSpaceByShortId } from "./fetchSpaceByShortId";
 export { fetchSpaceBySlug } from "./fetchSpaceBySlug";
 export { fetchUserSpaces } from "./fetchUserSpaces";
+export { fetchMutualSpaces } from "./fetchMutualSpaces";
 export { checkSlugAvailability } from "./checkSlugAvailability";
 export { updateSpace } from "./updateSpace";
 export { deleteSpace } from "./deleteSpace";
