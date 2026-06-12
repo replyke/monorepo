@@ -325,6 +325,12 @@ const older = await sublay.chat.listMessages({
   conversationId: "cnv_abc123",
   before: oldestCreatedAt,
 });
+
+// Only messages that have thread replies.
+const withReplies = await sublay.chat.listMessages({
+  conversationId: "cnv_abc123",
+  filters: { hasReplies: true },
+});
 ```
 
 <ParamField body="conversationId" type="string" required>
@@ -355,6 +361,15 @@ const older = await sublay.chat.listMessages({
 
 <ParamField body="include" type="string">
   Comma-separated associations to populate, e.g. `"files"`.
+</ParamField>
+
+<ParamField body="filters" type="MessageFilters">
+  Optional filters. `filters.hasReplies` (boolean): when `true`, returns only
+  messages that have thread replies (`threadReplyCount > 0`); when `false`, only
+  messages with none. Filters by thread replies, not quotings.
+
+  Threads are one level deep, so `hasReplies: true` together with `parentId`
+  always returns an empty list — the response's `notice` field explains why.
 </ParamField>
 
 **Returns** — `Promise<{ messages: ChatMessage[]; hasMore: boolean; oldestCreatedAt: string | null; newestCreatedAt: string | null }>`.

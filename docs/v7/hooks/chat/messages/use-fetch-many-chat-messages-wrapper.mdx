@@ -1,0 +1,91 @@
+---
+title: "Fetch many chat messages (wrapper)"
+description: "Stateful, paginated message list for read-only / filtered queries"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchManyChatMessagesWrapper` is a stateful wrapper around [`useFetchManyChatMessages`](/hooks/chat/messages/use-fetch-many-chat-messages) that manages the message list and cursor pagination for you. It keeps results in local component state — **not** Redux — and never receives socket updates.
+
+Use it for a read-only or **filtered** list of messages that should not be touched by live traffic — for example, a "messages with replies" panel, an admin/moderation view, or any custom message list outside the live conversation stream. For the live canonical conversation view, use [`useLiveChatMessages`](/hooks/chat/messages/use-live-chat-messages) instead.
+
+<Note>This is a point-in-time query: it does not auto-update from socket events. Call `refetch` (e.g. on a refresh button, or on a socket signal of your choosing) to pick up new matches. It does not require `ChatProvider`.</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchManyChatMessagesWrapper } from "@sublay/react-js";
+
+function MessagesWithReplies({ conversationId }: { conversationId: string }) {
+  const { messages, loading, hasMore, loadMore, refetch } =
+    useFetchManyChatMessagesWrapper({
+      conversationId,
+      filters: { hasReplies: true },
+    });
+
+  return (
+    <div>
+      <button onClick={refetch} disabled={loading}>Refresh</button>
+      {messages.map((m) => (
+        <div key={m.id}>
+          {m.content} · {m.threadReplyCount} replies
+        </div>
+      ))}
+      {hasMore && (
+        <button onClick={loadMore} disabled={loading}>Load more</button>
+      )}
+    </div>
+  );
+}
+```
+
+## Props
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation to query.
+</ParamField>
+
+<ParamField body="parentId" type="string | null">
+  Restrict to thread replies of this message.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Page size. Defaults to `50`.
+</ParamField>
+
+<ParamField body="sort" type='"asc" | "desc"'>
+  Sort by creation time. Defaults to `"desc"` (newest first), where `loadMore` fetches older messages. With `"asc"`, `loadMore` fetches newer messages.
+</ParamField>
+
+<ParamField body="includeFiles" type="boolean">
+  When `true`, the server populates the `files` field on each message.
+</ParamField>
+
+<ParamField body="filters" type="MessageFilters">
+  Optional filters. `filters.hasReplies` (boolean): when `true`, returns only messages that have thread replies (`threadReplyCount > 0`); when `false`, only messages with none. Filters by thread replies, not quotings.
+
+  <Note>Threads are one level deep, so `hasReplies: true` together with `parentId` always yields an empty list. This wrapper exposes only `messages`; use the lower-level [`useFetchManyChatMessages`](/hooks/chat/messages/use-fetch-many-chat-messages) if you want the `notice` explaining why.</Note>
+</ParamField>
+
+## Returns
+
+<ResponseField name="messages" type="ChatMessage[]">
+  The loaded messages. See [ChatMessage](/data-models/chat-message).
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a fetch is in progress.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` if more messages can be loaded.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Loads the next page in the direction of `sort` and appends it. No-ops while loading or when there are no more pages.
+</ResponseField>
+
+<ResponseField name="refetch" type="() => void">
+  Re-fetches the first page from scratch (e.g. to pick up new matches).
+</ResponseField>
