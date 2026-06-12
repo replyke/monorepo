@@ -201,6 +201,38 @@ const userSpaces = await sublay.spaces.fetchUserSpaces({
 
 ---
 
+### fetchMutualSpaces
+
+Fetches the spaces the logged-in user shares with another user — the spaces both are active members of.
+
+```typescript
+const mutual = await sublay.spaces.fetchMutualSpaces({
+  userId: "usr_other",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The other user's ID. Mutual spaces are computed between this user and the logged-in user.
+</ParamField>
+
+<ParamField body="page" type="number">
+  The page number to fetch.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  The number of spaces to return per page. Max `100`.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated related resources to include (e.g. `"files"`).
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Space>>`
+
+---
+
 ### updateSpace
 
 Updates a space's settings.

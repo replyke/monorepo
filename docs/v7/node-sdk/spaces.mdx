@@ -212,6 +212,43 @@ const result = await sublay.spaces.fetchUserSpaces({
 
 ---
 
+### fetchMutualSpaces
+
+Fetches the spaces shared between two users — the spaces both are active members of.
+
+```typescript
+const result = await sublay.spaces.fetchMutualSpaces({
+  userId: "usr_other",       // the other user
+  actingUserId: "usr_self",  // the user to act as (service key required)
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The other user's Sublay ID. Mutual spaces are computed between this user and `actingUserId`.
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  The user to act as. Because the SDK authenticates with a service key, you must name the acting user explicitly.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Max `100`. Defaults to `20`.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate (e.g. `"files"`).
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Space>>`
+
+---
+
 ### updateSpace
 
 Updates settings on an existing space.
