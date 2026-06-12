@@ -17,6 +17,8 @@ import * as Search from "./modules/search";
 import * as Storage from "./modules/storage";
 import * as OAuth from "./modules/oauth";
 import * as Chat from "./modules/chat";
+import { createTableAccessor } from "./modules/tables";
+import { TableAccessor, TableRow } from "./interfaces/Table";
 
 type BoundModule<
   T extends Record<string, (client: SublayHttpClient, ...args: any[]) => any>
@@ -67,6 +69,15 @@ export class SublayClient {
     return new SublayClient(http);
   }
 
+  /**
+   * Callable row-operations accessor for a custom table:
+   * `client.table<EventRow>("Events").find(...)`. Row ops only — the js-sdk
+   * holds no service key, so there is no table-management/DDL surface.
+   */
+  table<T = TableRow>(name: string): TableAccessor<T> {
+    return createTableAccessor<T>(this.http, name);
+  }
+
   /** Imperatively set the session tokens (SDK-managed mode). */
   setTokens(tokens: AuthTokens): void {
     this.http.setTokens(tokens);
@@ -93,3 +104,13 @@ export type {
   PaginatedResponse,
   PaginationMetadata,
 } from "./interfaces/IPaginatedResponse";
+export type {
+  TableAccessor,
+  TableRow,
+  TableQuery,
+  DbFilter,
+  DbFilterOperator,
+  BulkDeleteProps,
+  DeleteResult,
+  BulkDeleteResult,
+} from "./interfaces/Table";
