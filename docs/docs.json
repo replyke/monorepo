@@ -25,6 +25,7 @@
                   "v7/integration-options",
                   "v7/authentication",
                   "v7/webhooks",
+                  "v7/custom-tables",
                   "v7/semantic-search-ai",
                   "v7/mcp-server"
                 ]
@@ -146,6 +147,10 @@
               {
                 "group": "Moderation",
                 "pages": ["v7/sdk/moderation/overview"]
+              },
+              {
+                "group": "Custom Tables",
+                "pages": ["v7/sdk/tables/overview"]
               }
             ]
           },
@@ -411,6 +416,10 @@
               {
                 "group": "Project",
                 "pages": ["v7/hooks/project/use-project"]
+              },
+              {
+                "group": "Custom Tables",
+                "pages": ["v7/hooks/tables/use-table"]
               }
             ]
           },
@@ -746,7 +755,9 @@
                   "v7/node-sdk/search",
                   "v7/node-sdk/reports",
                   "v7/node-sdk/app-notifications",
-                  "v7/node-sdk/storage"
+                  "v7/node-sdk/storage",
+                  "v7/node-sdk/tables",
+                  "v7/node-sdk/tables-management"
                 ]
               }
             ]
@@ -777,7 +788,8 @@
                   "v7/js-sdk/reports",
                   "v7/js-sdk/app-notifications",
                   "v7/js-sdk/storage",
-                  "v7/js-sdk/oauth"
+                  "v7/js-sdk/oauth",
+                  "v7/js-sdk/tables"
                 ]
               }
             ]
