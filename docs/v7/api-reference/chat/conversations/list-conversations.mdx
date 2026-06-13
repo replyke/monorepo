@@ -48,6 +48,9 @@ Returns a cursor-paginated list of `ConversationPreview` objects for the authent
     <ResponseField name="lastMessageUserId" type="string | null">
       ID of the user who sent the most recent message. `null` if no messages exist.
     </ResponseField>
+    <ResponseField name="otherMembers" type="object[]">
+      Up to 5 active members of the conversation other than the requesting user, each with public user fields (`id`, `name`, `username`, `avatar`). Populated for `direct` and `group` conversations only — a DM/group has no `name`, so the counterparty is how a client renders the title and avatar. Capped at 5 (a preview avatar stack needs a few, not all — use `memberCount` for the full group total). Always an empty array (`[]`) for `space` conversations (whose membership can be large and which carry their own `name`). Ordered by member join time.
+    </ResponseField>
   </Expandable>
 </ResponseField>
 

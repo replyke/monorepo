@@ -46,7 +46,7 @@ function ConversationList() {
 ## Returns
 
 <ResponseField name="conversations" type="ConversationPreview[]">
-  The loaded conversations sorted by most recent activity. Each item is a [Conversation](/data-models/conversation) extended with `unreadCount` and a truncated `lastMessage`.
+  The loaded conversations sorted by most recent activity. Each item is a [Conversation](/data-models/conversation) extended with `unreadCount`, a truncated `lastMessage`, and `otherMembers` — up to 5 active members other than the current user (public fields `id`, `name`, `username`, `avatar`), populated for `direct`/`group` conversations so a DM/group row can render the counterparty's name and avatar. Capped at 5 (use `memberCount` for the group total); empty for `space` conversations.
 </ResponseField>
 
 <ResponseField name="loading" type="boolean">
@@ -65,8 +65,8 @@ function ConversationList() {
   Resets the cursor and re-fetches the conversation list from the beginning.
 </ResponseField>
 
-<ResponseField name="createGroup" type="(params: { name?: string; metadata?: Record<string, unknown> }) => Promise<ConversationPreview>">
-  Creates a new group conversation and prepends it to the loaded list. Resolves to the created `ConversationPreview`.
+<ResponseField name="createGroup" type="(params: { name?: string; metadata?: Record<string, unknown>; memberIds?: string[] }) => Promise<ConversationPreview>">
+  Creates a new group conversation and prepends it to the loaded list. Resolves to the created `ConversationPreview`. Pass `memberIds` to add initial members in the same request — the server creates their member rows in one transaction. The creator is added as admin automatically and is de-duplicated if also present in `memberIds`.
 </ResponseField>
 
 ## Notes
