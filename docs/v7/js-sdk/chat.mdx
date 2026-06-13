@@ -54,6 +54,8 @@ const next = await sublay.chat.listConversations({
 
 **Returns** — `Promise<{ conversations: ConversationPreview[]; hasMore: boolean }>`.
 
+Each `ConversationPreview` includes `otherMembers` — up to 5 active members other than the current user (`id`, `name`, `username`, `avatar`) for `direct`/`group` conversations, so a DM/group can render the counterparty without a separate members fetch. Capped at 5 (use `memberCount` for the group total); empty for `space` conversations.
+
 ---
 
 ### createDirectConversation

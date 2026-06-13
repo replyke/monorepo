@@ -28,12 +28,13 @@ A `Conversation` represents a messaging thread between two or more participants.
 
 ## ConversationPreview
 
-When listing conversations (e.g. in an inbox), the API returns `ConversationPreview` objects, which extend `Conversation` with two additional fields:
+When listing conversations (e.g. in an inbox), the API returns `ConversationPreview` objects, which extend `Conversation` with these additional fields:
 
 | Property | Type | Description |
 |----------|------|-------------|
 | `unreadCount` | `number` | Number of messages sent after the current user's `lastReadAt`. |
 | `lastMessage` | `ChatMessage \| null` | The most recent message in the conversation, truncated to 100 characters. `null` if no messages have been sent. |
+| `otherMembers` | `{ id, name, username, avatar }[]` | Up to 5 active members other than the current user. Populated for `direct` and `group` conversations (a DM/group has no `name`, so the counterparty supplies the title/avatar); capped at 5 (use `memberCount` for the group total); empty for `space` conversations. |
 
 ## Conversation Types
 
