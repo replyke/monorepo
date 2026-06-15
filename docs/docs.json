@@ -717,6 +717,7 @@
                 "group": "Models",
                 "pages": [
                   "v7/data-models/user",
+                  "v7/data-models/reputation",
                   "v7/data-models/entity",
                   "v7/data-models/comment",
                   "v7/data-models/space",
