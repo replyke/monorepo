@@ -1,0 +1,74 @@
+---
+title: "Reputation"
+description: "Per-space reputation buckets, the maintained overall total, and the opt-in read contract for space-scoped reputation"
+---
+
+Reputation in Sublay is **space-scoped**. Instead of a single number per user, each user accrues reputation into separate **buckets** — one per space, plus a project-general bucket — and their `reputation` field is the maintained sum of all of them.
+
+Reputation is owned by the optional **`reputation`** bundle. Install it from the **Database** page of your project to turn the feature on. The `reputation` bundle works with or without the `spaces` bundle: without spaces, only the general bucket accrues. See [Bundles](/bundles).
+
+## Buckets
+
+The bundle provisions a per-tenant table of reputation buckets, keyed by `(userId, spaceId)`.
+
+| Bucket | Key | Meaning |
+|--------|-----|---------|
+| Project-general | `spaceId IS NULL` | The user's reputation outside of any space. |
+| Per-space | `spaceId = <spaceId>` | The user's reputation within that specific space. |
+
+A few rules govern buckets:
+
+- **Lazy creation** — a bucket is created the first time a user's reputation changes for that `(user, space)` pair. A bucket that has never been touched reads as `0`.
+- **Negative scores allowed** — there is no floor; a bucket can go below zero.
+- **Buckets are not returned directly** — there is no endpoint that lists raw buckets. You read reputation through the `reputation` total and the opt-in `spaceReputation` field described below.
+
+## The maintained total
+
+Every user object still carries a `reputation` field, and default API responses are unchanged. `reputation` is the **maintained overall total** — the sum of all of that user's buckets (general plus every space). It is always present, whether or not a space is in context.
+
+## Reading space-scoped reputation
+
+On user-returning endpoints **where a space is in context**, you can opt in to a per-space figure with two query-string params. The `reputation` total is always included regardless; `spaceReputation` is purely additive.
+
+<ParamField query="spaceReputationId" type="string">
+  Adds a numeric `spaceReputation` field to each returned user equal to that user's reputation in the referenced bucket.
+
+  - A space ID → the user's reputation in that space.
+  - Empty (`spaceReputationId=`), `null`, or `general` → the project-general (space-less) bucket.
+
+  A bucket that doesn't exist reads as `0`.
+</ParamField>
+
+<ParamField query="spaceReputationDescendants" type="boolean">
+  Only valid alongside a real space ID. When `true`, `spaceReputation` is the **subtree sum** — the named space plus all of its descendant spaces (the root space's own bucket is included).
+</ParamField>
+
+The resulting field appears on each user object as:
+
+<ResponseField name="spaceReputation" type="number">
+  The user's reputation in the requested space (or the general bucket). Present only when `spaceReputationId` was supplied. Missing buckets read as `0`.
+</ResponseField>
+
+### Where the params apply
+
+The opt-in contract is **uniform** across every user-returning endpoint that has a space in context:
+
+- Entity feed and single entity
+- Comment feed and single comment
+- Entity and comment reaction lists
+- Chat — list messages, get message, send message, list members, list reactions
+- Space members and space team
+- Moderated reports
+- Content search
+
+Endpoints with **no space context** — global user lookups, project-wide user search, and follows/connections lists — return the `reputation` total only and do **not** accept `spaceReputationId` or `spaceReputationDescendants`.
+
+## Uninstalling is lossy
+
+Removing the `reputation` bundle drops the buckets table **and** zeroes the `reputation` column on every user. Reinstalling starts fresh from zero — past scores are not recomputed. Back up anything you need before uninstalling. See [Bundles](/bundles).
+
+## See Also
+
+- [Bundles](/bundles)
+- [User data model](/data-models/user)
+- [Space data model](/data-models/space)

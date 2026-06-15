@@ -38,6 +38,7 @@ On top of core, you choose which of these to install. Each one is independent �
 | `moderation` | [Moderation](/sdk/moderation/overview) | Reports, report resolution, and user suspensions |
 | `notifications` | [App Notifications](/sdk/app-notifications/overview) | In-app notification system |
 | `ai-search` | [Semantic Search & AI](/sdk/search/overview) | Content embeddings, semantic search, and the AI ask endpoint |
+| `reputation` | [Reputation](/data-models/reputation) | Per-space reputation buckets, with a maintained overall total on each user |
 
 ## Choosing bundles when you create a project
 
@@ -51,6 +52,8 @@ Installing a bundle is an asynchronous operation — the dashboard shows it as *
 
 <Warning>
   **Removing a bundle is destructive.** Uninstalling drops the bundle's tables and the data in them, and clears references to that data from other bundles. For example, removing the `spaces` bundle deletes all spaces and clears the `spaceId` on any entities, comments, or conversations that pointed at a space. There is no undo — back up anything you need first.
+
+  Uninstalling the `reputation` bundle is doubly lossy: it drops the reputation buckets table **and** zeroes the `reputation` column on every user. Reinstalling starts fresh from zero — past scores are not recomputed. See [Reputation](/data-models/reputation).
 </Warning>
 
 ## What happens if a bundle isn't installed

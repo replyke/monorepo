@@ -132,6 +132,18 @@ Returns a paginated list of entities for the project. Supports rich filtering by
   - `files` — uploaded file/image attachments
 </ParamField>
 
+### Space-scoped reputation
+
+This endpoint has a space in context, so it accepts the opt-in reputation params. They add a `spaceReputation` field to each populated author `user`, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation) for the full contract.
+
+<ParamField query="spaceReputationId" type="string">
+  Adds `spaceReputation` for the referenced bucket. A space ID returns that space's bucket; empty, `null`, or `general` returns the project-general bucket. Missing buckets read as `0`.
+</ParamField>
+
+<ParamField query="spaceReputationDescendants" type="boolean">
+  Only valid with a real space ID. When `true`, `spaceReputation` is the subtree sum — the space plus all of its descendants (the root space's own bucket included).
+</ParamField>
+
 ## Response
 
 Returns a paginated response object:
@@ -154,3 +166,8 @@ Each item in `data` is an [Entity](/data-models/entity) object. File URLs are si
 <Note>
   Viewing scores (`hot` sort) are updated asynchronously after each fetch. Scores use a configurable half-life that can be set per project in your project settings.
 </Note>
+
+## See Also
+
+- [Reputation data model](/data-models/reputation) — the `spaceReputationId` / `spaceReputationDescendants` contract
+- [Entity data model](/data-models/entity)

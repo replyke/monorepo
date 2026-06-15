@@ -56,7 +56,9 @@ On success, returns HTTP `200` with the user object:
 </ResponseField>
 
 <ResponseField name="reputation" type="number">
-  Reputation score.
+  The user's overall reputation total (the sum of all their reputation buckets).
+  This is a global lookup with no space in context, so it returns the total only —
+  see [Reputation](/data-models/reputation) for space-scoped reads.
 </ResponseField>
 
 <ResponseField name="avatarFile" type="object | null">
