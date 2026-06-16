@@ -1,8 +1,10 @@
 import { SublayHttpClient } from "../../core/client";
 import { Reaction, ReactionType } from "../../interfaces/Reaction";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface FetchCommentReactionsProps {
+export interface FetchCommentReactionsProps
+  extends SpaceReputationContextParams {
   commentId: string;
   reactionType?: ReactionType;
   page?: number;

@@ -121,6 +121,10 @@ export type { AddColumnProps } from "./modules/tables-management/addColumn";
 export type { Entity, TopComment } from "./interfaces/Entity";
 export type { Comment, GifData } from "./interfaces/Comment";
 export type { User, UserFull, AuthUser, UserRole } from "./interfaces/User";
+export type {
+  SpaceReputationContextParams,
+  SpaceReputationUserParams,
+} from "./interfaces/SpaceReputation";
 export type { Collection } from "./interfaces/Collection";
 export type { Space, SpaceDetailed, SpacePreview, DigestConfig, SpaceBreadcrumb } from "./interfaces/Space";
 export type { SpaceMember, SpaceMemberWithUser } from "./interfaces/SpaceMember";

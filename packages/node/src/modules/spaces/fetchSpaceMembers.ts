@@ -1,7 +1,8 @@
 import { SublayHttpClient } from "../../core/client";
 import { SpaceMembersResponse } from "../../interfaces/SpaceMember";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface FetchSpaceMembersProps {
+export interface FetchSpaceMembersProps extends SpaceReputationContextParams {
   spaceId: string;
   page?: number;
   limit?: number;

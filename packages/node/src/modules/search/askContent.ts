@@ -1,6 +1,7 @@
 import { SublayHttpClient } from "../../core/client";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface AskContentProps {
+export interface AskContentProps extends SpaceReputationContextParams {
   query: string;
   sourceTypes?: ("entity" | "comment" | "message")[];
   spaceId?: string;
@@ -17,9 +18,11 @@ export async function askContent(
   client: SublayHttpClient,
   data: AskContentProps
 ): Promise<AskContentResponse> {
+  const { spaceReputationId, spaceReputationDescendants, ...body } = data;
   const response = await client.projectInstance.post<AskContentResponse>(
     "/search/ask",
-    data
+    body,
+    { params: { spaceReputationId, spaceReputationDescendants } }
   );
   return response.data;
 }

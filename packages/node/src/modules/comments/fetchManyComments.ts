@@ -1,8 +1,9 @@
 import { SublayHttpClient } from "../../core/client";
 import { Comment } from "../../interfaces/Comment";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface FetchManyCommentsProps {
+export interface FetchManyCommentsProps extends SpaceReputationContextParams {
   entityId?: string;
   userId?: string;
   parentId?: string;
