@@ -3,8 +3,9 @@ import { ChatMessage } from "../../interfaces/ChatMessage";
 import { GifData } from "../../interfaces/Comment";
 import { Mention } from "../../interfaces/Mention";
 import { appendFields, appendFile } from "../../core/multipart";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface SendMessageProps {
+export interface SendMessageProps extends SpaceReputationContextParams {
   conversationId: string;
   content?: string;
   gif?: GifData | null;
@@ -25,8 +26,17 @@ export async function sendMessage(
   client: SublayHttpClient,
   data: SendMessageProps
 ): Promise<ChatMessage> {
-  const { conversationId, files, ...body } = data;
+  const {
+    conversationId,
+    files,
+    // The server reads these from `req.query`, not the body, so they are
+    // forwarded as query params (in both the JSON and multipart branches).
+    spaceReputationId,
+    spaceReputationDescendants,
+    ...body
+  } = data;
   const path = `/chat/conversations/${conversationId}/messages`;
+  const params = { spaceReputationId, spaceReputationDescendants };
 
   if (files && files.length > 0) {
     const formData = new FormData();
@@ -40,11 +50,14 @@ export async function sendMessage(
     appendFields(formData, body);
     const response = await client.projectInstance.post<ChatMessage>(
       path,
-      formData
+      formData,
+      { params }
     );
     return response.data;
   }
 
-  const response = await client.projectInstance.post<ChatMessage>(path, body);
+  const response = await client.projectInstance.post<ChatMessage>(path, body, {
+    params,
+  });
   return response.data;
 }

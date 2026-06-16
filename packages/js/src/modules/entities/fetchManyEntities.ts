@@ -1,6 +1,7 @@
 import { SublayHttpClient } from "../../core/client";
 import { Entity } from "../../interfaces/Entity";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
 export interface KeywordsFilters {
   includes?: string[];
@@ -31,7 +32,7 @@ export interface LocationFilters {
   radius: string;
 }
 
-export interface FetchManyEntitiesProps {
+export interface FetchManyEntitiesProps extends SpaceReputationContextParams {
   sourceId?: string;
   spaceId?: string;
 

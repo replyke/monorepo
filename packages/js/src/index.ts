@@ -105,6 +105,10 @@ export type {
   PaginationMetadata,
 } from "./interfaces/IPaginatedResponse";
 export type {
+  SpaceReputationContextParams,
+  SpaceReputationUserParams,
+} from "./interfaces/SpaceReputation";
+export type {
   TableAccessor,
   TableRow,
   TableQuery,

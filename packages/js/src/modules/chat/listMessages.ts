@@ -1,5 +1,6 @@
 import { SublayHttpClient } from "../../core/client";
 import { ChatMessage } from "../../interfaces/ChatMessage";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
 export interface MessageFilters {
   /**
@@ -10,7 +11,7 @@ export interface MessageFilters {
   hasReplies?: boolean;
 }
 
-export interface ListMessagesProps {
+export interface ListMessagesProps extends SpaceReputationContextParams {
   conversationId: string;
   /** Restrict to replies of this message (thread view). */
   parentId?: string;

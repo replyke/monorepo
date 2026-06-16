@@ -24,6 +24,13 @@ export type UserFull = {
   metadata: Record<string, any>;
   secureMetadata: Record<string, any>; // Excluded from public responses
   reputation: number;
+  /**
+   * Space-scoped reputation, present only when the request opted in via
+   * `spaceReputationId` (and the project has the reputation bundle). It is the
+   * user's reputation within the requested space context — see
+   * {@link SpaceReputationContextParams} / {@link SpaceReputationUserParams}.
+   */
+  spaceReputation?: number;
   isVerified: boolean;
   isActive: boolean;
   lastActive: string;
