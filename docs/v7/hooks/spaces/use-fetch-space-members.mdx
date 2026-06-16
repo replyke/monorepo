@@ -47,10 +47,18 @@ function MemberList({ spaceId }: { spaceId: string }) {
   Filter by role: `"admin"`, `"moderator"`, or `"member"`.
 </ParamField>
 
+<ParamField path="spaceReputationId" type="string">
+  Resolves each member's reputation into a `spaceReputation` number on the embedded `user`. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField path="spaceReputationDescendants" type="boolean">
+  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 ## Returns
 
 <ResponseField name="data" type="SpaceMemberWithUser[]">
-  Array of [SpaceMemberWithUser](/data-models/space-member) objects including embedded user details.
+  Array of [SpaceMemberWithUser](/data-models/space-member) objects including embedded user details. When `spaceReputationId` is set, each embedded user carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
 </ResponseField>
 
 <ResponseField name="pagination" type="object">

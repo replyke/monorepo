@@ -51,6 +51,14 @@ The hook returns a function. That function accepts:
   Number of results per page. Defaults to `20`.
 </ParamField>
 
+<ParamField path="spaceReputationId" type="string">
+  Resolves each followed user's reputation into a `spaceReputation` number on the embedded `user`. Accepts a space `<uuid>` or `"none"` (project-general bucket) only — `"context"` is rejected with a `400` on this endpoint. Empty string, `"general"`, and `null` are also rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField path="spaceReputationDescendants" type="boolean">
+  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 ## Returns
 
 Returns a `PaginatedResponse` containing an array of following entries:
@@ -62,7 +70,7 @@ Returns a `PaginatedResponse` containing an array of following entries:
       ID of the follow record.
     </ResponseField>
     <ResponseField name="user" type="User">
-      The followed user's profile. See [User data model](/data-models/user).
+      The followed user's profile. When `spaceReputationId` is set, it carries an added `spaceReputation` number. See [User data model](/data-models/user) and [Reputation](/data-models/reputation).
     </ResponseField>
     <ResponseField name="followedAt" type="string">
       ISO timestamp of when the follow was created.

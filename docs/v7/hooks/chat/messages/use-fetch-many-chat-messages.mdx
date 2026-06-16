@@ -66,6 +66,14 @@ function MessagesWithReplies({ conversationId }: { conversationId: string }) {
   When `true`, the server populates the `files` field on each message.
 </ParamField>
 
+<ParamField path="spaceReputationId" type="string">
+  Resolves each message sender's reputation into a `spaceReputation` number on the embedded `user`. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField path="spaceReputationDescendants" type="boolean">
+  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 <ParamField path="filters" type="MessageFilters">
   Optional filters. `filters.hasReplies` (boolean): when `true`, returns only messages that have thread replies (`threadReplyCount > 0`); when `false`, only messages with none. Filters by thread replies, not quotings.
 
@@ -77,7 +85,7 @@ function MessagesWithReplies({ conversationId }: { conversationId: string }) {
 A `Promise` resolving to:
 
 <ResponseField name="messages" type="ChatMessage[]">
-  Messages for the requested page. See [ChatMessage](/data-models/chat-message).
+  Messages for the requested page. When `spaceReputationId` is set, each embedded sender carries an added `spaceReputation` number. See [ChatMessage](/data-models/chat-message) and [Reputation](/data-models/reputation).
 </ResponseField>
 
 <ResponseField name="hasMore" type="boolean">

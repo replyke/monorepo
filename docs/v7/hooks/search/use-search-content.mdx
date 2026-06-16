@@ -55,6 +55,14 @@ This hook returns an object. Call `search` with:
   Maximum number of results to return.
 </ParamField>
 
+<ParamField path="spaceReputationId" type="string">
+  Resolves the embedded author reputation on each matched record into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField path="spaceReputationDescendants" type="boolean">
+  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 ## Returns
 
 <ResponseField name="results" type="ContentSearchResult[]">
@@ -67,7 +75,7 @@ This hook returns an object. Call `search` with:
       Cosine similarity score (0–1).
     </ResponseField>
     <ResponseField name="record" type="Entity | Comment | ChatMessage">
-      The full matched record.
+      The full matched record. When `spaceReputationId` is set, its embedded author carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
     </ResponseField>
   </Expandable>
 </ResponseField>

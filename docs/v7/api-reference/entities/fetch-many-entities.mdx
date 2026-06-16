@@ -137,11 +137,11 @@ Returns a paginated list of entities for the project. Supports rich filtering by
 This endpoint has a space in context, so it accepts the opt-in reputation params. They add a `spaceReputation` field to each populated author `user`, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation) for the full contract.
 
 <ParamField query="spaceReputationId" type="string">
-  Adds `spaceReputation` for the referenced bucket. A space ID returns that space's bucket; empty, `null`, or `general` returns the project-general bucket. Missing buckets read as `0`.
+  Adds `spaceReputation` to each populated author. One of: a space **`<uuid>`** (that space's bucket), **`none`** (the project-general bucket), or **`context`** (per-row — each author scored in the space that row's entity belongs to). The empty string and the legacy `general` / `null` aliases are rejected (400). Missing buckets read as `0`.
 </ParamField>
 
 <ParamField query="spaceReputationDescendants" type="boolean">
-  Only valid with a real space ID. When `true`, `spaceReputation` is the subtree sum — the space plus all of its descendants (the root space's own bucket included).
+  Only honored with an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the space plus all of its descendants (the root space's own bucket included). Ignored for `none`; not allowed with `context`.
 </ParamField>
 
 ## Response

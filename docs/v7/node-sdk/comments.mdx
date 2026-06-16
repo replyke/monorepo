@@ -87,6 +87,14 @@ const comment = await sublay.comments.fetchComment({ commentId: "cmt_abc123" });
   Comma-separated list of associations to populate.
 </ParamField>
 
+<ParamField body="spaceReputationId" type="string">
+  Opts the returned comment's author into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the space derived from the request context). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
+</ParamField>
+
 **Returns** — `Promise<Comment>`
 
 ---
@@ -197,6 +205,14 @@ const { data, pagination } = await sublay.comments.fetchManyComments({
   Comma-separated list of associations to populate.
 </ParamField>
 
+<ParamField body="spaceReputationId" type="string">
+  Opts each returned comment's author into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the space derived from the request context — resolved per-row from the space each comment belongs to). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
+</ParamField>
+
 **Returns** — `Promise<PaginatedResponse<Comment>>`
 
 ---
@@ -283,6 +299,14 @@ const { data, pagination } = await sublay.comments.fetchReactions({
 
 <ParamField body="sortDir" type="string">
   Sort direction: `"asc"` or `"desc"`.
+</ParamField>
+
+<ParamField body="spaceReputationId" type="string">
+  Opts each returned reactor into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the space derived from the request context). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
 </ParamField>
 
 **Returns** — `Promise<PaginatedResponse<Reaction>>`

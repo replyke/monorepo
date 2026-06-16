@@ -31,8 +31,16 @@ function SpaceTeam({ spaceId }: { spaceId: string }) {
   UUID of the space.
 </ParamField>
 
+<ParamField path="spaceReputationId" type="string">
+  Resolves each team member's reputation into a `spaceReputation` number on the embedded `user`. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField path="spaceReputationDescendants" type="boolean">
+  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 ## Returns
 
 <ResponseField name="data" type="SpaceMemberWithUser[]">
-  All admins and moderators with active status, including embedded user details. See [SpaceMember](/data-models/space-member).
+  All admins and moderators with active status, including embedded user details. When `spaceReputationId` is set, each embedded user carries an added `spaceReputation` number. See [SpaceMember](/data-models/space-member) and [Reputation](/data-models/reputation).
 </ResponseField>
