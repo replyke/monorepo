@@ -72,10 +72,18 @@ The hook returns a function. That function accepts:
   File attachments. When provided, the request is sent as `multipart/form-data`.
 </ParamField>
 
+<ParamField body="spaceReputationId" type="string">
+  Resolves the sender's reputation into a `spaceReputation` number on the embedded `user` of the returned message. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 ## Returns
 
 <ResponseField name="ChatMessage" type="ChatMessage">
-  The server-confirmed [ChatMessage](/data-models/chat-message) object.
+  The server-confirmed [ChatMessage](/data-models/chat-message) object. When `spaceReputationId` is set, its embedded sender carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
 </ResponseField>
 
 ## Notes

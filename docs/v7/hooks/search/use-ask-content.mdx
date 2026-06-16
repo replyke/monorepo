@@ -54,6 +54,14 @@ Call `ask` with:
   Maximum number of source records to use as context.
 </ParamField>
 
+<ParamField path="spaceReputationId" type="string">
+  Resolves the embedded author reputation on each source record into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField path="spaceReputationDescendants" type="boolean">
+  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 ## Returns
 
 <ResponseField name="answer" type="string">
@@ -61,7 +69,7 @@ Call `ask` with:
 </ResponseField>
 
 <ResponseField name="sources" type="ContentSearchResult[]">
-  Source records used as context. Populated after streaming ends.
+  Source records used as context. Populated after streaming ends. When `spaceReputationId` is set, each record's embedded author carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
 </ResponseField>
 
 <ResponseField name="streaming" type="boolean">

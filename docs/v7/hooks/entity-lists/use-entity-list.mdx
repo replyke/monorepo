@@ -48,6 +48,18 @@ function Feed() {
   Optional. A function called for each entity with a `foreignId`. Its result is merged into the entity under an `infusion` key. See [Infusing Data](/sdk/entity-lists/infuse-data).
 </ParamField>
 
+## Reputation
+
+The `config` object passed to `fetchEntities` accepts two optional reputation fields that opt each row's embedded author into an added `spaceReputation` number. See [Reputation](/data-models/reputation).
+
+<ParamField path="config.spaceReputationId" type="string">
+  Resolves each row's embedded author reputation into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived per row from the request context — useful for mixed-space feeds). Empty string, `"general"`, and `null` are rejected.
+</ParamField>
+
+<ParamField path="config.spaceReputationDescendants" type="boolean">
+  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 ## Return Values
 
 <ResponseField name="entities" type="Entity[]">

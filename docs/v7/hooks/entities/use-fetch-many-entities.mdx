@@ -112,10 +112,18 @@ function EntityFeed() {
   Populate related fields. Accepted values: `"user"`, `"space"`, `"topComment"`, `"saved"`, `"files"`.
 </ParamField>
 
+<ParamField path="spaceReputationId" type="string">
+  Resolves each row's embedded author reputation into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived per row from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField path="spaceReputationDescendants" type="boolean">
+  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 ## Returns
 
 <ResponseField name="data" type="Entity[]">
-  Array of entities for the current page.
+  Array of entities for the current page. When `spaceReputationId` is set, each embedded author carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
 </ResponseField>
 
 <ResponseField name="pagination.page" type="number">

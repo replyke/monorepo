@@ -25,6 +25,14 @@ const user = await sublay.users.fetchUserById({ userId: "usr_abc123" });
   Comma-separated list of associations to populate.
 </ParamField>
 
+<ParamField body="spaceReputationId" type="string">
+  Opts the returned user into a `spaceReputation` number. Accepts a space `<uuid>` or `"none"` (the project-general bucket) only — `"context"` is rejected (400), since a bare user lookup has no space context. The empty string and the legacy `general` / `null` aliases are also rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
+</ParamField>
+
 **Returns** — `Promise<User>`
 
 ---
@@ -47,6 +55,14 @@ const user = await sublay.users.fetchUserByForeignId({
   Comma-separated list of associations to populate.
 </ParamField>
 
+<ParamField body="spaceReputationId" type="string">
+  Opts the returned user into a `spaceReputation` number. Accepts a space `<uuid>` or `"none"` (the project-general bucket) only — `"context"` is rejected (400), since a bare user lookup has no space context. The empty string and the legacy `general` / `null` aliases are also rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
+</ParamField>
+
 **Returns** — `Promise<User>`
 
 ---
@@ -67,6 +83,14 @@ const user = await sublay.users.fetchUserByUsername({ username: "alice" });
   Comma-separated list of associations to populate.
 </ParamField>
 
+<ParamField body="spaceReputationId" type="string">
+  Opts the returned user into a `spaceReputation` number. Accepts a space `<uuid>` or `"none"` (the project-general bucket) only — `"context"` is rejected (400), since a bare user lookup has no space context. The empty string and the legacy `general` / `null` aliases are also rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
+</ParamField>
+
 **Returns** — `Promise<User>`
 
 ---
@@ -81,6 +105,14 @@ const users = await sublay.users.fetchUserSuggestions({ query: "ali" });
 
 <ParamField body="query" type="string" required>
   Partial name or username to search for.
+</ParamField>
+
+<ParamField body="spaceReputationId" type="string">
+  Opts each returned user into a `spaceReputation` number. Accepts a space `<uuid>` or `"none"` (the project-general bucket) only — `"context"` is rejected (400), since this lookup has no space context. The empty string and the legacy `general` / `null` aliases are also rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
 </ParamField>
 
 **Returns** — `Promise<User[]>`
@@ -215,6 +247,14 @@ const { data, pagination } = await sublay.users.fetchFollowersByUserId({
   Results per page. Defaults to `20`.
 </ParamField>
 
+<ParamField body="spaceReputationId" type="string">
+  Opts each returned follower into a `spaceReputation` number. Accepts a space `<uuid>` or `"none"` (the project-general bucket) only — `"context"` is rejected (400), since this list has no space context. The empty string and the legacy `general` / `null` aliases are also rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
+</ParamField>
+
 **Returns** — `Promise<PaginatedResponse<FollowListItem>>`
 
 ---
@@ -261,6 +301,14 @@ const { data, pagination } = await sublay.users.fetchFollowingByUserId({
   Results per page. Defaults to `20`.
 </ParamField>
 
+<ParamField body="spaceReputationId" type="string">
+  Opts each returned user into a `spaceReputation` number. Accepts a space `<uuid>` or `"none"` (the project-general bucket) only — `"context"` is rejected (400), since this list has no space context. The empty string and the legacy `general` / `null` aliases are also rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
+</ParamField>
+
 **Returns** — `Promise<PaginatedResponse<FollowListItem>>`
 
 ---
@@ -305,6 +353,14 @@ const { data, pagination } = await sublay.users.fetchConnectionsByUserId({
 
 <ParamField body="limit" type="number">
   Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="spaceReputationId" type="string">
+  Opts each returned connection's user into a `spaceReputation` number. Accepts a space `<uuid>` or `"none"` (the project-general bucket) only — `"context"` is rejected (400), since this list has no space context. The empty string and the legacy `general` / `null` aliases are also rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
 </ParamField>
 
 **Returns** — `Promise<PaginatedResponse<EstablishedConnection>>`

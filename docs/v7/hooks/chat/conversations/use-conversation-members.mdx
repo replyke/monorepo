@@ -50,10 +50,18 @@ function MemberList({ conversationId }: { conversationId: string }) {
   The ID of the conversation whose members to fetch.
 </ParamField>
 
+<ParamField body="spaceReputationId" type="string">
+  Resolves each member's reputation into a `spaceReputation` number on the embedded `user`. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 ## Returns
 
 <ResponseField name="members" type="ConversationMember[]">
-  The current member list. See [ConversationMember](/data-models/conversation-member).
+  The current member list. When `spaceReputationId` is set, each embedded user carries an added `spaceReputation` number. See [ConversationMember](/data-models/conversation-member) and [Reputation](/data-models/reputation).
 </ResponseField>
 
 <ResponseField name="loading" type="boolean">

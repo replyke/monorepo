@@ -35,8 +35,16 @@ function EntityLoader({ entityId }: { entityId: string }) {
   Optional. Populate related fields. Accepted values: `"user"`, `"space"`, `"topComment"`, `"saved"`, `"files"`.
 </ParamField>
 
+<ParamField path="spaceReputationId" type="string">
+  Optional. Resolves the embedded author's reputation into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField path="spaceReputationDescendants" type="boolean">
+  Optional. When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 ## Returns
 
 <ResponseField name="Entity" type="Entity">
-  The fetched entity. See [Entity data model](/data-models/entity).
+  The fetched entity. When `spaceReputationId` is set, the embedded author carries an added `spaceReputation` number. See [Entity data model](/data-models/entity) and [Reputation](/data-models/reputation).
 </ResponseField>

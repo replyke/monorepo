@@ -63,6 +63,14 @@ function ModerationQueue({ spaceId }: { spaceId: string }) {
   Items per page. Defaults to `20`.
 </ParamField>
 
+<ParamField body="spaceReputationId" type="string">
+  Resolves the reported content's author reputation into a `spaceReputation` number on the embedded `target` author. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
+</ParamField>
+
+<ParamField body="spaceReputationDescendants" type="boolean">
+  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+</ParamField>
+
 ## Returns
 
 Returns `Promise<PaginatedResponse<Report>>`:
@@ -91,7 +99,7 @@ Returns `Promise<PaginatedResponse<Report>>`:
 <ResponseField name="userReports" type="array">Individual user report entries. Each includes `id`, `userId`, `reason`, `details`, and `createdAt`.</ResponseField>
 <ResponseField name="status" type="string">Current moderation status: `pending`, `on-hold`, `escalated`, `dismissed`, or `actioned`.</ResponseField>
 <ResponseField name="actionTaken" type="string | null">Free-text description of action taken, if any.</ResponseField>
-<ResponseField name="target" type="Entity | Comment | null">The reported content record (includes the author user object). Populated even if the content was soft-deleted.</ResponseField>
+<ResponseField name="target" type="Entity | Comment | null">The reported content record (includes the author user object). Populated even if the content was soft-deleted. When `spaceReputationId` is set, the embedded author carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
 <ResponseField name="space" type="Space | null">The space the reported content belongs to.</ResponseField>
 <ResponseField name="createdAt" type="Date">When the first report for this target was submitted.</ResponseField>
 <ResponseField name="updatedAt" type="Date">When the report record was last updated.</ResponseField>

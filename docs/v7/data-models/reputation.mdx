@@ -28,30 +28,33 @@ Every user object still carries a `reputation` field, and default API responses 
 
 ## Reading space-scoped reputation
 
-On user-returning endpoints **where a space is in context**, you can opt in to a per-space figure with two query-string params. The `reputation` total is always included regardless; `spaceReputation` is purely additive.
+Every user-returning endpoint accepts an opt-in `spaceReputationId` query param that adds a `spaceReputation` number to each returned user. The `reputation` total is always included regardless; `spaceReputation` is purely additive and only appears when you ask for it.
 
 <ParamField query="spaceReputationId" type="string">
-  Adds a numeric `spaceReputation` field to each returned user equal to that user's reputation in the referenced bucket.
+  Adds a `spaceReputation` field to each returned user. One of:
 
-  - A space ID → the user's reputation in that space.
-  - Empty (`spaceReputationId=`), `null`, or `general` → the project-general (space-less) bucket.
+  - a space **`<uuid>`** — that user's reputation in that specific space;
+  - **`none`** — the project-general (space-less) bucket;
+  - **`context`** — the space derived from the request context. On lists this is **per-row** (each author scored in the space *that row* belongs to); on single-space surfaces — space members/team, a chat conversation — it's that one space. Only valid where a space is in context, so it is **rejected (400) on bare user lookups**.
 
-  A bucket that doesn't exist reads as `0`.
+  A bucket that doesn't exist reads as `0`. The empty string and the legacy `general` / `null` aliases are **rejected (400)** — use `none` for the space-less bucket.
 </ParamField>
 
 <ParamField query="spaceReputationDescendants" type="boolean">
-  Only valid alongside a real space ID. When `true`, `spaceReputation` is the **subtree sum** — the named space plus all of its descendant spaces (the root space's own bucket is included).
+  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the **subtree sum** — the named space plus all of its descendant spaces (the root space's own bucket is included). Ignored for `none`; not allowed with `context`.
 </ParamField>
 
 The resulting field appears on each user object as:
 
 <ResponseField name="spaceReputation" type="number">
-  The user's reputation in the requested space (or the general bucket). Present only when `spaceReputationId` was supplied. Missing buckets read as `0`.
+  The user's reputation in the requested space (or the space-less bucket). Present only when `spaceReputationId` was supplied. Missing buckets read as `0`.
 </ResponseField>
 
 ### Where the params apply
 
-The opt-in contract is **uniform** across every user-returning endpoint that has a space in context:
+`spaceReputationId` is accepted on **every** user-returning endpoint, but the allowed values depend on whether the endpoint has a space in context.
+
+**Context endpoints** accept `<uuid>`, `none`, **and** `context`:
 
 - Entity feed and single entity
 - Comment feed and single comment
@@ -59,9 +62,15 @@ The opt-in contract is **uniform** across every user-returning endpoint that has
 - Chat — list messages, get message, send message, list members, list reactions
 - Space members and space team
 - Moderated reports
-- Content search
+- Content search and AI ask
 
-Endpoints with **no space context** — global user lookups, project-wide user search, and follows/connections lists — return the `reputation` total only and do **not** accept `spaceReputationId` or `spaceReputationDescendants`.
+**User-direct endpoints** accept `<uuid>` and `none` only — `context` is **rejected (400)** because there is no space context to derive:
+
+- Fetch user (by ID, foreign ID, or username) and user suggestions
+- Followers / following lists (by user ID)
+- Connections list (by user ID)
+
+Project-wide user search (`search-users`) and the self-relative follows/connections lists are **not** enriched and ignore the param.
 
 ## Uninstalling is lossy
 
