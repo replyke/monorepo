@@ -1,7 +1,8 @@
 import { SublayHttpClient } from "../../core/client";
 import { Comment } from "../../interfaces/Comment";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface FetchCommentProps {
+export interface FetchCommentProps extends SpaceReputationContextParams {
   commentId: string;
   include?: string;
 }

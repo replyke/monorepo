@@ -1,7 +1,8 @@
 import { SublayHttpClient } from "../../core/client";
 import { ContentSearchResult } from "./searchContent";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface AskContentProps {
+export interface AskContentProps extends SpaceReputationContextParams {
   query: string;
   sourceTypes?: ("entity" | "comment" | "message")[];
   spaceId?: string;
@@ -83,7 +84,10 @@ export async function* askContent(
   client: SublayHttpClient,
   data: AskContentProps
 ): AsyncGenerator<AskContentEvent, void, unknown> {
-  const { signal, ...body } = data;
+  // The server reads the space-reputation options from `req.query`, not the
+  // request body, so they are appended to the URL as query params.
+  const { signal, spaceReputationId, spaceReputationDescendants, ...body } =
+    data;
 
   const baseURL = client.projectInstance.defaults.baseURL ?? "";
   const authHeader = await client.getAuthHeader();
@@ -93,7 +97,18 @@ export async function* askContent(
   };
   if (authHeader) headers.Authorization = authHeader;
 
-  const response = await fetch(`${baseURL}/search/ask`, {
+  const search = new URLSearchParams();
+  if (spaceReputationId != null)
+    search.set("spaceReputationId", spaceReputationId);
+  if (spaceReputationDescendants != null)
+    search.set(
+      "spaceReputationDescendants",
+      String(spaceReputationDescendants)
+    );
+  const queryString = search.toString();
+  const url = `${baseURL}/search/ask${queryString ? `?${queryString}` : ""}`;
+
+  const response = await fetch(url, {
     method: "POST",
     headers,
     body: JSON.stringify(body),

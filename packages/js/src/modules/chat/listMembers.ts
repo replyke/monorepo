@@ -1,8 +1,9 @@
 import { SublayHttpClient } from "../../core/client";
 import { ConversationMember } from "../../interfaces/ConversationMember";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface ListMembersProps {
+export interface ListMembersProps extends SpaceReputationContextParams {
   conversationId: string;
   page?: number;
   limit?: number;

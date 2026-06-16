@@ -1,8 +1,9 @@
 import { SublayHttpClient } from "../../core/client";
 import { User } from "../../interfaces/User";
 import { PaginationMetadata } from "../../interfaces/IPaginatedResponse";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface ListReactionsProps {
+export interface ListReactionsProps extends SpaceReputationContextParams {
   conversationId: string;
   messageId: string;
   /** The reaction emoji to list reactors for (required). */
