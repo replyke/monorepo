@@ -3,6 +3,7 @@ import { appendFile, appendFields } from "../../core/formData";
 import { ChatMessage } from "../../interfaces/ChatMessage";
 import { GifData } from "../../interfaces/Comment";
 import { Mention } from "../../interfaces/Mention";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
 export interface ChatMessageFile {
   file: Uint8Array | Blob;
@@ -10,7 +11,7 @@ export interface ChatMessageFile {
   mimeType?: string;
 }
 
-export interface SendMessageProps {
+export interface SendMessageProps extends SpaceReputationContextParams {
   conversationId: string;
   /** The message author (must be a member). Service key required to name a user. */
   userId: string;
@@ -30,8 +31,18 @@ export async function sendMessage(
   client: SublayHttpClient,
   data: SendMessageProps
 ): Promise<ChatMessage> {
-  const { conversationId, files, ...body } = data;
+  const {
+    conversationId,
+    files,
+    spaceReputationId,
+    spaceReputationDescendants,
+    ...body
+  } = data;
   const url = `/chat/conversations/${conversationId}/messages`;
+
+  // Space-reputation opts go as query params (never body fields), so they
+  // travel the same way for both the JSON and multipart variants.
+  const params = { spaceReputationId, spaceReputationDescendants };
 
   // With attachments, send multipart: object fields are JSON-stringified (the
   // server parses them back) and the files are appended. Otherwise send JSON.
@@ -41,10 +52,16 @@ export async function sendMessage(
     for (const f of files) {
       appendFile(formData, "files", f.file, f.filename, f.mimeType);
     }
-    const response = await client.projectInstance.post<ChatMessage>(url, formData);
+    const response = await client.projectInstance.post<ChatMessage>(
+      url,
+      formData,
+      { params }
+    );
     return response.data;
   }
 
-  const response = await client.projectInstance.post<ChatMessage>(url, body);
+  const response = await client.projectInstance.post<ChatMessage>(url, body, {
+    params,
+  });
   return response.data;
 }

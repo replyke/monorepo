@@ -24,6 +24,7 @@ export type UserFull = {
   metadata: Record<string, any>;
   secureMetadata: Record<string, any>; // Excluded from public responses
   reputation: number;
+  spaceReputation?: number;
   isVerified: boolean;
   isActive: boolean;
   lastActive: string;

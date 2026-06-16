@@ -1,7 +1,8 @@
 import { SublayHttpClient } from "../../core/client";
 import { User } from "../../interfaces/User";
+import { SpaceReputationUserParams } from "../../interfaces/SpaceReputation";
 
-export interface FetchUserByUsernameProps {
+export interface FetchUserByUsernameProps extends SpaceReputationUserParams {
   username: string;
   include?: string;
 }

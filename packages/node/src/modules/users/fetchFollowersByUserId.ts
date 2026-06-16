@@ -1,8 +1,9 @@
 import { SublayHttpClient } from "../../core/client";
 import { User } from "../../interfaces/User";
+import { SpaceReputationUserParams } from "../../interfaces/SpaceReputation";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 
-export interface FetchFollowersByUserIdProps {
+export interface FetchFollowersByUserIdProps extends SpaceReputationUserParams {
   userId: string;
   page?: number;
   limit?: number;

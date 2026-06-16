@@ -1,8 +1,9 @@
 import { SublayHttpClient } from "../../core/client";
 import { ConversationMember } from "../../interfaces/ConversationMember";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface ListMembersProps {
+export interface ListMembersProps extends SpaceReputationContextParams {
   conversationId: string;
   /** The user to act as (must be a member). Service key required to name a user. */
   userId: string;
