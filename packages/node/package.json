@@ -1,17 +1,25 @@
 {
   "name": "@sublay/node",
-  "version": "7.3.0",
+  "version": "7.3.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "description": "Official NodeJS SDK for Sublay",
   "scripts": {
     "build": "tsup src/index.ts --dts --format cjs,esm",
     "build:types": "tsc --emitDeclarationOnly",
     "prepare": "pnpm build && pnpm build:types",
     "test": "jest",
+    "version:patch": "pnpm version patch --no-git-tag-version --no-git-checks",
+    "version:minor": "pnpm version minor --no-git-tag-version --no-git-checks",
     "publish-beta": "pnpm publish --tag beta --no-git-checks",
-    "publish-prod": "pnpm publish --no-git-checks"
+    "publish-prod": "pnpm publish --no-git-checks",
+    "publish-beta:patch": "pnpm version:patch && pnpm publish-beta",
+    "publish-beta:minor": "pnpm version:minor && pnpm publish-beta",
+    "publish-prod:patch": "pnpm version:patch && pnpm publish-prod",
+    "publish-prod:minor": "pnpm version:minor && pnpm publish-prod"
   },
   "author": "Sublay team",
   "license": "ISC",
