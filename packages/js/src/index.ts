@@ -6,6 +6,7 @@ import {
 import * as Auth from "./modules/auth";
 import * as Users from "./modules/users";
 import * as Entities from "./modules/entities";
+import * as Events from "./modules/events";
 import * as Comments from "./modules/comments";
 import * as Spaces from "./modules/spaces";
 import * as Collections from "./modules/collections";
@@ -34,6 +35,7 @@ export class SublayClient {
   public auth: BoundModule<typeof Auth>;
   public users: BoundModule<typeof Users>;
   public entities: BoundModule<typeof Entities>;
+  public events: BoundModule<typeof Events>;
   public comments: BoundModule<typeof Comments>;
   public spaces: BoundModule<typeof Spaces>;
   public collections: BoundModule<typeof Collections>;
@@ -51,6 +53,7 @@ export class SublayClient {
     this.auth = bindModule(Auth, this.http);
     this.users = bindModule(Users, this.http);
     this.entities = bindModule(Entities, this.http);
+    this.events = bindModule(Events, this.http);
     this.comments = bindModule(Comments, this.http);
     this.spaces = bindModule(Spaces, this.http);
     this.collections = bindModule(Collections, this.http);
