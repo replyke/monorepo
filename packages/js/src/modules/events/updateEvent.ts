@@ -24,6 +24,13 @@ export interface UpdateEventProps {
   guestListVisible?: boolean;
   metadata?: Record<string, any>;
   /**
+   * File IDs of existing event images to REMOVE (gallery photos and/or the
+   * current cover). Combine with `gallery` (append) + `cover` (replace) to fully
+   * curate the image set in one update. Sent in the JSON body, or — when an
+   * image file is also attached — as a JSON-string field the server parses.
+   */
+  removeImageIds?: string[];
+  /**
    * New cover image (single) — REPLACES the existing cover. When present the
    * request is sent as `multipart/form-data`. Requires the `files-images` bundle.
    */
