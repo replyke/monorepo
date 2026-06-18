@@ -6,6 +6,7 @@ import * as Collections from "./modules/collections";
 import * as Comments from "./modules/comments";
 import * as Connections from "./modules/connections";
 import * as Entities from "./modules/entities";
+import * as Events from "./modules/events";
 import * as Follows from "./modules/follows";
 import * as HostedApps from "./modules/hosted-apps";
 import * as Reports from "./modules/reports";
@@ -35,6 +36,7 @@ export class SublayClient {
   public comments: BoundModule<typeof Comments>;
   public connections: BoundModule<typeof Connections>;
   public entities: BoundModule<typeof Entities>;
+  public events: BoundModule<typeof Events>;
   public follows: BoundModule<typeof Follows>;
   public hostedApps: BoundModule<typeof HostedApps>;
   public reports: BoundModule<typeof Reports>;
@@ -54,6 +56,7 @@ export class SublayClient {
     this.comments = bindModule(Comments, this.http);
     this.connections = bindModule(Connections, this.http);
     this.entities = bindModule(Entities, this.http);
+    this.events = bindModule(Events, this.http);
     this.follows = bindModule(Follows, this.http);
     this.hostedApps = bindModule(HostedApps, this.http);
     this.reports = bindModule(Reports, this.http);
@@ -119,6 +122,16 @@ export type { AddColumnProps } from "./modules/tables-management/addColumn";
 
 // Export commonly used interfaces
 export type { Entity, TopComment } from "./interfaces/Entity";
+export type {
+  Event,
+  EventRsvp,
+  EventInvite,
+  EventType,
+  EventVisibility,
+  EventStatus,
+  RsvpStatus,
+  RsvpCounts,
+} from "./interfaces/Event";
 export type { Comment, GifData } from "./interfaces/Comment";
 export type { User, UserFull, AuthUser, UserRole } from "./interfaces/User";
 export type {
