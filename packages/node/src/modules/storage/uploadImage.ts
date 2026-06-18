@@ -14,10 +14,11 @@ export interface UploadImageProps {
   imageOptions: ImageOptions;
   /** Storage path segments, e.g. ["spaces", spaceId, "banner"]. */
   pathParts?: string[];
-  /** Only one of entityId/commentId/spaceId may be set. */
+  /** Only one of entityId/commentId/spaceId/eventId may be set. */
   entityId?: string;
   commentId?: string;
   spaceId?: string;
+  eventId?: string;
   /**
    * Attribute the upload to a user. With a service key this may be any user;
    * omit for a backend/project-owned file.
