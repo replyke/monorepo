@@ -144,7 +144,7 @@ const uploaded = await sublay.storage.uploadImage({
 
 <ParamField body="entityId" type="string">
   Associates the image with an entity. Only one of `entityId` / `commentId` /
-  `spaceId` may be set.
+  `spaceId` / `eventId` may be set.
 </ParamField>
 
 <ParamField body="commentId" type="string">
@@ -153,6 +153,12 @@ const uploaded = await sublay.storage.uploadImage({
 
 <ParamField body="spaceId" type="string">
   Associates the image with a space.
+</ParamField>
+
+<ParamField body="eventId" type="string">
+  Associates the image with an event. Most apps attach event images inline via
+  `sublay.events.createEvent`/`updateEvent` (`cover` / `gallery`); use this only
+  to attach an image to an existing event out-of-band.
 </ParamField>
 
 **Returns** — `Promise<UploadImageResponse>`:
