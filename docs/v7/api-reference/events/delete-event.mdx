@@ -1,0 +1,44 @@
+---
+title: "Delete Event"
+api: "DELETE /:projectId/api/v7/events/:eventId"
+description: "Permanently or soft-delete an event and clean up its children (host-only)"
+---
+
+Deletes an event. **Host-only** (service/master keys bypass the host check). The event's child `EventRsvps` and `EventInvites` are cleaned up, and—depending on settings—its files.
+
+Deletion honors the project's `eventDeletion` settings:
+
+- `softDelete` (default `false`) — when `true`, the event is soft-deleted (a `deletedAt` timestamp is set) and drops out of listings while the row is retained.
+- `preserveFilesOnSoftDelete` (default `true`) — on a soft delete, keep the event's files. On a hard delete, files are always removed.
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event to delete.
+</ParamField>
+
+## Response
+
+Returns `204 No Content` on success.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (not a host) — 403">
+    ```json
+    { "error": "Only a host of this event may delete it.", "code": "event/forbidden" }
+    ```
+  </Accordion>
+  <Accordion title="Already Deleted — 404">
+    ```json
+    { "error": "Event not found or already deleted.", "code": "event/delete-failed" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useDeleteEvent](/hooks/events/use-delete-event)

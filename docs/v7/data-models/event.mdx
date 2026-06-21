@@ -1,0 +1,82 @@
+---
+title: "Event"
+description: "The shape of an Event object returned by the Events API and SDKs"
+---
+
+An Event is a scheduled happening — online, physical, or hybrid — that users can RSVP to. Events support hosts, capacity limits, invite-only or space-scoped visibility, a guest list, a single cover image, and a multi-image gallery. RSVP counts are denormalized onto the event so every read carries up-to-date `going` / `maybe` / `not_going` totals without an extra query.
+
+Events belong to the `events` bundle. They work standalone, but some behaviors depend on other bundles: space-scoping and `members` visibility require the `spaces` bundle, cover/gallery images require the `files-images` bundle, and invite/update/cancel notifications require the `notifications` bundle. When a dependency is absent, that specific behavior is rejected or skipped — the rest of the events surface keeps working.
+
+## Event
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique event identifier (UUID). |
+| `shortId` | `string` | Short, URL-safe identifier generated automatically. |
+| `projectId` | `string` | The project this event belongs to. |
+| `userId` | `string \| null` | ID of the event creator. Set to `null` if the creator's account is deleted (the event survives). |
+| `user` | `User \| null` | Populated creator object. Only present when `include` contains `"user"`. |
+| `title` | `string` | Event title (1–300 characters). |
+| `description` | `string \| null` | Optional description. Empty strings are normalized to `null`. |
+| `startTime` | `string` | ISO datetime when the event starts. RSVPs close at this moment. |
+| `endTime` | `string \| null` | Optional ISO datetime when the event ends. Drives the `ongoing` vs `past` time window. |
+| `timezone` | `string \| null` | Optional IANA timezone string (e.g. `"America/New_York"`). |
+| `type` | `"online" \| "physical" \| "hybrid"` | The event format. Determines which location fields are required. |
+| `url` | `string \| null` | Join/stream URL. Required for `online` and `hybrid` events. |
+| `venueName` | `string \| null` | Optional human-readable venue name. |
+| `address` | `string \| null` | Street address. Required (with or instead of `location`) for `physical` and `hybrid` events. |
+| `location` | `{ type: "Point"; coordinates: [number, number] } \| null` | GeoJSON point as `[longitude, latitude]` (PostGIS). Set from the `latitude`/`longitude` you pass on create/update. Powers proximity search. |
+| `spaceId` | `string \| null` | Optional soft reference to a Space. Required when `visibility` is `"members"`. No enforced cross-bundle FK. |
+| `space` | `Space \| null` | Populated space object. Only present when `include` contains `"space"`. |
+| `visibility` | `"public" \| "members" \| "invite"` | Who can see the event. See [Visibility](#visibility) below. Defaults to `"public"`. |
+| `status` | `"active" \| "cancelled"` | Lifecycle status. A cancelled event stays fetchable but rejects new RSVPs. Defaults to `"active"`. |
+| `allowMaybe` | `boolean` | Whether a `"maybe"` RSVP is permitted. Defaults to `true`. |
+| `guestListVisible` | `boolean` | Whether non-hosts can see the named RSVP/guest list (counts are always public). Defaults to `true`. |
+| `capacity` | `number \| null` | Maximum number of `going` RSVPs. `null` means unlimited. Enforced under a row lock so it can't be oversold. |
+| `hostIds` | `string[]` | UUIDs of the event's hosts. The creator is always included. Always has at least one entry. |
+| `coverImageId` | `string \| null` | File ID of the single cover image. Requires the `files-images` bundle. |
+| `files` | `File[]` | Cover + gallery file objects. Only present when `include` contains `"files"`. |
+| `rsvpCounts` | `{ going: number; maybe: number; not_going: number }` | Denormalized RSVP totals, always returned. |
+| `userRsvp` | `"going" \| "maybe" \| "not_going" \| null` | The requesting user's own RSVP status. Only populated when `include` contains `"userRsvp"` and the caller is authenticated; otherwise `null`. |
+| `metadata` | `Record<string, any>` | Arbitrary key-value data. Up to 1 MB. Use this for ticketing, tags, or any custom fields. |
+| `createdAt` | `string` | ISO timestamp when the event was created. |
+| `updatedAt` | `string` | ISO timestamp when the event was last updated. |
+| `deletedAt` | `string \| null` | Soft-delete timestamp when `eventDeletion.softDelete` is enabled; otherwise `null`. |
+
+## Type
+
+The `type` field controls which location fields are required on create and update:
+
+| Type | Required fields |
+|------|-----------------|
+| `"online"` | `url` |
+| `"physical"` | `address` or `location` (at least one) |
+| `"hybrid"` | `url` **and** (`address` or `location`) |
+
+## Visibility
+
+Visibility is enforced **server-side** on every read — an event you can't see returns `404` (its existence is never leaked).
+
+| Value | Who can see it |
+|-------|----------------|
+| `"public"` | Anyone, including anonymous callers. |
+| `"members"` | Active members of the event's `spaceId`. Requires a `spaceId` and the `spaces` bundle. |
+| `"invite"` | Users with an `EventInvite` row for the event. |
+
+In every case, a **host** (a user whose ID is in `hostIds`) can always see the event regardless of visibility, and service/master keys bypass visibility entirely.
+
+## Capacity & RSVP rules
+
+- An RSVP can be `going`, `maybe`, or `not_going`. There is one RSVP per user per event.
+- RSVPs close at `startTime` and are rejected on `cancelled` events.
+- A `"maybe"` RSVP is rejected when `allowMaybe` is `false`.
+- A transition into `going` is rejected with `event/full` when `rsvpCounts.going` has reached `capacity`. Capacity is checked under a row-level lock, so concurrent RSVPs can never oversell the event.
+
+## Related
+
+- [EventRsvp data model](/data-models/event-rsvp)
+- [EventInvite data model](/data-models/event-invite)
+- [File data model](/data-models/file)
+- [Create Event API](/api-reference/events/create-event)
+- [Fetch Many Events API](/api-reference/events/fetch-many-events)
+- [EventProvider & useEvent](/sdk/events/provider-and-hook)

@@ -1,0 +1,42 @@
+---
+title: "Add Invite"
+api: "POST /:projectId/api/v7/events/:eventId/invites"
+description: "Invite a user to an event (host-only)"
+---
+
+Creates an [EventInvite](/data-models/event-invite) for a user. **Host-only** (service/master keys bypass the check). The invite is keyed on a Sublay `userId` (never a foreign ID) and is idempotent against the unique `(eventId, userId)` constraint — re-inviting an already-invited user is a no-op success.
+
+For an `invite`-visibility event, the invited user can now see and RSVP to the event. When the `notifications` bundle is present, the invitee receives an `event-invite` notification (best-effort).
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string" required>
+  The user to invite.
+</ParamField>
+
+## Response
+
+Returns the updated [Event](/data-models/event).
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (not a host) — 403">
+    ```json
+    { "error": "Only a host of this event may manage its invites.", "code": "event/forbidden" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useAddInvite](/hooks/events/use-add-invite)

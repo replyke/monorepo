@@ -1,0 +1,40 @@
+---
+title: "Remove Invite"
+api: "DELETE /:projectId/api/v7/events/:eventId/invites"
+description: "Revoke a user's invite to an event (host-only)"
+---
+
+Removes a user's [EventInvite](/data-models/event-invite). **Host-only** (service/master keys bypass the check). Removing the invite **revokes access** to an `invite`-only event and also **deletes that user's RSVP** (decrementing the matching `rsvpCounts` entry), all under a row-level lock. Removing a non-invited user is an idempotent no-op success.
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string" required>
+  The invitee to remove.
+</ParamField>
+
+## Response
+
+Returns the updated [Event](/data-models/event) with refreshed `rsvpCounts`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (not a host) — 403">
+    ```json
+    { "error": "Only a host of this event may manage its invites.", "code": "event/forbidden" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useRemoveInvite](/hooks/events/use-remove-invite)

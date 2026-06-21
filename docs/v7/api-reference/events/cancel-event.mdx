@@ -1,0 +1,38 @@
+---
+title: "Cancel Event"
+api: "POST /:projectId/api/v7/events/:eventId/cancel"
+description: "Cancel an event without deleting it (host-only)"
+---
+
+Cancels an event by setting its `status` to `"cancelled"`. The event remains fetchable, but new and changed RSVPs are rejected. **Host-only** (service/master keys bypass the host check).
+
+On cancel, an `event-cancelled` notification is fanned out to all `going`/`maybe` RSVPs (best-effort, requires the `notifications` bundle).
+
+To remove an event entirely, use [Delete Event](/api-reference/events/delete-event).
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event to cancel.
+</ParamField>
+
+## Response
+
+Returns the updated [Event](/data-models/event) object with `status: "cancelled"`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (not a host) — 403">
+    ```json
+    { "error": "Only a host of this event may cancel it.", "code": "event/forbidden" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useCancelEvent](/hooks/events/use-cancel-event)

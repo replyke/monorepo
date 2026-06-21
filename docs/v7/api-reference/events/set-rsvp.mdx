@@ -1,0 +1,68 @@
+---
+title: "Set RSVP"
+api: "POST /:projectId/api/v7/events/:eventId/rsvp"
+description: "Set or change the caller's RSVP to an event"
+---
+
+Sets or changes the caller's RSVP. A new RSVP is created, or an existing one is switched, and the event's `rsvpCounts` are updated atomically. Requires authentication, and the caller must be able to [see the event](/data-models/event#visibility) (otherwise `404`).
+
+Transitions into `going` are capacity-checked under a row-level lock, so an event can never be oversold.
+
+**Rules:**
+
+- RSVPs close at `startTime`.
+- A `cancelled` event rejects RSVPs.
+- `"maybe"` is rejected when the event's `allowMaybe` is `false`.
+- `"going"` (new or switched into) is rejected when `rsvpCounts.going` has reached `capacity`.
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="status" type="string" required>
+  `"going"`, `"maybe"`, or `"not_going"`.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Service/master key only. RSVP on behalf of this user.
+</ParamField>
+
+## Response
+
+Returns the [Event](/data-models/event) with refreshed `rsvpCounts` and the caller's `userRsvp`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found / No Access — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Event Cancelled — 409">
+    ```json
+    { "error": "This event has been cancelled.", "code": "event/cancelled" }
+    ```
+  </Accordion>
+  <Accordion title="RSVPs Closed — 409">
+    ```json
+    { "error": "RSVPs are closed for this event.", "code": "event/rsvp-closed" }
+    ```
+  </Accordion>
+  <Accordion title="Maybe Disabled — 409">
+    ```json
+    { "error": "This event does not allow a 'maybe' RSVP.", "code": "event/maybe-disabled" }
+    ```
+  </Accordion>
+  <Accordion title="At Capacity — 409">
+    ```json
+    { "error": "This event is at capacity.", "code": "event/full" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useSetRsvp](/hooks/events/use-set-rsvp)

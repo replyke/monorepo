@@ -1,0 +1,102 @@
+---
+title: "Fetch Many Events"
+api: "GET /:projectId/api/v7/events"
+description: "List events with visibility enforcement, filtering, sorting, geo, and free-text search"
+---
+
+Returns a paginated list of events. The [server-side visibility predicate](/data-models/event#visibility) is always applied: anonymous callers see only `public` events; authenticated callers additionally see `members` events of spaces they belong to, `invite` events they were invited to, and any event they host. Service/master keys see everything.
+
+Each event includes inline `rsvpCounts`, and—with the `userRsvp` include and an authenticated caller—the caller's own `userRsvp`.
+
+Authentication is optional (`optionalUserAuth`). Several filters interact with the caller's identity (`myRsvp`, `userRsvp`).
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page. Capped at `100`. Defaults to `10`.
+</ParamField>
+
+<ParamField query="sortBy" type="string">
+  `"startTime"` (chronological) or `"going"` (by going-RSVP count). Defaults to `"startTime"`.
+</ParamField>
+
+<ParamField query="sortDir" type="string">
+  `"asc"` or `"desc"`. Defaults to `"asc"`.
+</ParamField>
+
+<ParamField query="timeWindow" type="string">
+  Derived time window: `"upcoming"` (`startTime` in the future), `"ongoing"` (started, has an `endTime`, not yet ended), or `"past"`. Events without an `endTime` become `past` once they start.
+</ParamField>
+
+<ParamField query="startsAfter" type="string">
+  ISO datetime. Only events starting after this. ANDed with `timeWindow`.
+</ParamField>
+
+<ParamField query="startsBefore" type="string">
+  ISO datetime. Only events starting before this.
+</ParamField>
+
+<ParamField query="spaceId" type="string">
+  Restrict to events scoped to this space. Omit for all scopes.
+</ParamField>
+
+<ParamField query="hostId" type="string">
+  Only events hosted by this user (array containment on `hostIds`).
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by `"online"`, `"physical"`, or `"hybrid"`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  `"active"` or `"cancelled"`. Defaults to `"active"`.
+</ParamField>
+
+<ParamField query="myRsvp" type="string">
+  Comma-separated RSVP statuses the caller responded with, e.g. `"going,maybe"`. Requires an authenticated caller (or a service/master key passing `userId`); otherwise returns `400`.
+</ParamField>
+
+<ParamField query="locationFilters" type="object">
+  Proximity filter `{ latitude, longitude, radius }` (radius in meters). Uses `ST_DWithin`.
+</ParamField>
+
+<ParamField query="titleFilters" type="object">
+  Free-text filter on `title`: `{ hasTitle?, includes?, doesNotInclude? }`. `includes`/`doesNotInclude` accept a string or array.
+</ParamField>
+
+<ParamField query="descriptionFilters" type="object">
+  Free-text filter on `description`: `{ hasDescription?, includes?, doesNotInclude? }`.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated associations to expand: `"user"`, `"space"`, `"files"`, `"userRsvp"`.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  The requester id. Used for the `myRsvp` filter, `userRsvp` enrichment, and visibility resolution. For non-privileged callers the server infers this from the auth token; service/master keys may pass it explicitly.
+</ParamField>
+
+## Response
+
+Returns a paginated response: `{ data: Event[], pagination: { page, limit, totalItems, hasMore, ... } }`. See [Event](/data-models/event).
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="myRsvp Requires Auth — 400">
+    ```json
+    { "error": "The myRsvp filter requires an authenticated caller (or a service/master key acting via a userId query param).", "code": "event/my-rsvp-requires-auth" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Query — 400">
+    ```json
+    { "error": "Limit must be a positive number", "code": "event/invalid-query" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchManyEvents](/hooks/events/use-fetch-many-events) · [useFetchManyEventsWrapper](/hooks/events/use-fetch-many-events-wrapper)

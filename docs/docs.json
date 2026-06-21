@@ -98,6 +98,13 @@
                 ]
               },
               {
+                "group": "Events",
+                "pages": [
+                  "v7/sdk/events/overview",
+                  "v7/sdk/events/provider-and-hook"
+                ]
+              },
+              {
                 "group": "Chat",
                 "pages": [
                   "v7/sdk/chat/overview",
@@ -273,6 +280,27 @@
                 "pages": [
                   "v7/hooks/space-lists/use-space-list",
                   "v7/hooks/space-lists/use-space-list-actions"
+                ]
+              },
+              {
+                "group": "Events",
+                "pages": [
+                  "v7/hooks/events/use-event",
+                  "v7/hooks/events/use-fetch-event",
+                  "v7/hooks/events/use-fetch-many-events",
+                  "v7/hooks/events/use-fetch-many-events-wrapper",
+                  "v7/hooks/events/use-create-event",
+                  "v7/hooks/events/use-update-event",
+                  "v7/hooks/events/use-cancel-event",
+                  "v7/hooks/events/use-delete-event",
+                  "v7/hooks/events/use-set-rsvp",
+                  "v7/hooks/events/use-withdraw-rsvp",
+                  "v7/hooks/events/use-add-host",
+                  "v7/hooks/events/use-remove-host",
+                  "v7/hooks/events/use-add-invite",
+                  "v7/hooks/events/use-remove-invite",
+                  "v7/hooks/events/use-fetch-invitees",
+                  "v7/hooks/events/use-fetch-event-rsvps"
                 ]
               },
               {
@@ -691,6 +719,25 @@
                 "pages": ["v7/api-reference/spaces/chat/get-space-conversation"]
               },
               {
+                "group": "Event Endpoints",
+                "pages": [
+                  "v7/api-reference/events/create-event",
+                  "v7/api-reference/events/fetch-event",
+                  "v7/api-reference/events/fetch-many-events",
+                  "v7/api-reference/events/update-event",
+                  "v7/api-reference/events/cancel-event",
+                  "v7/api-reference/events/delete-event",
+                  "v7/api-reference/events/set-rsvp",
+                  "v7/api-reference/events/withdraw-rsvp",
+                  "v7/api-reference/events/add-host",
+                  "v7/api-reference/events/remove-host",
+                  "v7/api-reference/events/add-invite",
+                  "v7/api-reference/events/remove-invite",
+                  "v7/api-reference/events/fetch-invitees",
+                  "v7/api-reference/events/fetch-event-rsvps"
+                ]
+              },
+              {
                 "group": "Storage Endpoints",
                 "pages": [
                   "v7/api-reference/storage/upload-image",
@@ -723,6 +770,9 @@
                   "v7/data-models/space",
                   "v7/data-models/space-member",
                   "v7/data-models/rule",
+                  "v7/data-models/event",
+                  "v7/data-models/event-rsvp",
+                  "v7/data-models/event-invite",
                   "v7/data-models/conversation",
                   "v7/data-models/conversation-member",
                   "v7/data-models/chat-message",
@@ -757,6 +807,7 @@
                   "v7/node-sdk/spaces",
                   "v7/node-sdk/spaces-members",
                   "v7/node-sdk/spaces-moderation",
+                  "v7/node-sdk/events",
                   "v7/node-sdk/chat",
                   "v7/node-sdk/search",
                   "v7/node-sdk/reports",
@@ -789,6 +840,7 @@
                   "v7/js-sdk/spaces",
                   "v7/js-sdk/spaces-members",
                   "v7/js-sdk/spaces-moderation",
+                  "v7/js-sdk/events",
                   "v7/js-sdk/chat",
                   "v7/js-sdk/search",
                   "v7/js-sdk/reports",

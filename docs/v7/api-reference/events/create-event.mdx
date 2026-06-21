@@ -1,0 +1,147 @@
+---
+title: "Create Event"
+api: "POST /:projectId/api/v7/events"
+description: "Create an event, optionally with a cover image and gallery"
+---
+
+Creates an event. The authenticated user becomes the creator (`userId`) and is automatically added to `hostIds`. Supports inline cover and gallery image upload via `multipart/form-data`.
+
+The required location fields depend on `type`: `online` needs a `url`; `physical` needs an `address` or `location`; `hybrid` needs both a `url` and an `address`/`location`.
+
+Requires authentication. Space-scoped events (`spaceId`) require the `spaces` bundle and active membership of the space. Image upload requires the `files-images` bundle.
+
+## Body Parameters
+
+<ParamField body="title" type="string" required>
+  Event title. 1–300 characters.
+</ParamField>
+
+<ParamField body="startTime" type="string" required>
+  ISO datetime when the event starts. RSVPs close at this moment.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  `"online"`, `"physical"`, or `"hybrid"`. Controls which location fields are required.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description.
+</ParamField>
+
+<ParamField body="endTime" type="string">
+  Optional ISO datetime when the event ends.
+</ParamField>
+
+<ParamField body="timezone" type="string">
+  Optional IANA timezone string, e.g. `"America/New_York"`.
+</ParamField>
+
+<ParamField body="url" type="string">
+  Join/stream URL. Required for `online` and `hybrid` events.
+</ParamField>
+
+<ParamField body="venueName" type="string">
+  Optional venue name.
+</ParamField>
+
+<ParamField body="address" type="string">
+  Street address. Required (alone or with `location`) for `physical` and `hybrid` events.
+</ParamField>
+
+<ParamField body="location" type="{ latitude: number; longitude: number }">
+  Geographic coordinates. Stored as a GeoJSON point and used for proximity search. On multipart requests, send as a JSON string.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Optional UUID of a space to scope the event to. Requires the `spaces` bundle and active membership. Mandatory when `visibility` is `"members"`.
+</ParamField>
+
+<ParamField body="visibility" type="string">
+  `"public"`, `"members"`, or `"invite"`. Defaults to `"public"`. `"members"` requires a `spaceId`.
+</ParamField>
+
+<ParamField body="capacity" type="number">
+  Maximum number of `going` RSVPs. Positive integer. Omit for unlimited.
+</ParamField>
+
+<ParamField body="allowMaybe" type="boolean">
+  Whether a `"maybe"` RSVP is allowed. Defaults to `true`.
+</ParamField>
+
+<ParamField body="guestListVisible" type="boolean">
+  Whether non-hosts can view the named guest list. Defaults to `true`.
+</ParamField>
+
+<ParamField body="hostIds" type="string[]">
+  Additional host user IDs. The creator is always added automatically. On multipart requests, send as a JSON string.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary key-value data. Up to 1 MB.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Service/master key only. Create the event on behalf of this user (who becomes the creator and first host).
+</ParamField>
+
+<ParamField body="cover" type="file">
+  Optional single cover image. Multipart file field. Requires `cover.options` when provided.
+</ParamField>
+
+<ParamField body="cover.options" type="string">
+  JSON-stringified image-processing options for the cover (the same discriminated union used by [Upload Image](/api-reference/storage/upload-image)).
+</ParamField>
+
+<ParamField body="gallery" type="file[]">
+  Optional gallery images (up to 10). Multipart file field. Requires `gallery.options` when provided.
+</ParamField>
+
+<ParamField body="gallery.options" type="string">
+  JSON-stringified image-processing options applied to every gallery image.
+</ParamField>
+
+## Response
+
+Returns `201` with the created [Event](/data-models/event) object, including inline `rsvpCounts` and (with images) the `files` association.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "Online events require a `url`.", "code": "event/invalid-body" }
+    ```
+  </Accordion>
+  <Accordion title="files-images Bundle Required — 403">
+    ```json
+    { "error": "Event cover/gallery images require the files-images bundle. Enable it for this project.", "code": "event/files-images-bundle-required" }
+    ```
+  </Accordion>
+  <Accordion title="spaces Bundle Required — 403">
+    ```json
+    { "error": "Space-scoped events require the spaces bundle. Enable it for this project.", "code": "event/spaces-bundle-required" }
+    ```
+  </Accordion>
+  <Accordion title="Space Not Found — 404">
+    ```json
+    { "error": "Space not found", "code": "event/space-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Not a Space Member — 403">
+    ```json
+    { "error": "You must be an active member of this space to create an event in it.", "code": "event/not-space-member" }
+    ```
+  </Accordion>
+  <Accordion title="File Too Large — 413">
+    ```json
+    { "code": "event/file-too-large", "message": "Image \"cover.jpg\" exceeds 50MB limit." }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Image — 422">
+    ```json
+    { "code": "event/invalid-image", "message": "File \"cover.jpg\" is not a valid image: ..." }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useCreateEvent](/hooks/events/use-create-event) · [node-sdk](/v7/node-sdk/events) · [js-sdk](/v7/js-sdk/events)
