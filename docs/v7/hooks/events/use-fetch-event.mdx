@@ -1,0 +1,36 @@
+---
+title: "useFetchEvent"
+description: "Fetch a single event by ID"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchEvent` returns a callable that fetches one event by ID. Visibility is enforced server-side: if the event doesn't exist or the logged-in user can't see it, the request returns `404`. Pass `include` to expand associations and populate `userRsvp`.
+
+## Usage Example
+
+```tsx
+import { useFetchEvent } from "@sublay/react-js";
+
+function useLoadEvent(eventId: string) {
+  const fetchEvent = useFetchEvent();
+  return () => fetchEvent({ eventId, include: ["user", "files", "userRsvp"] });
+}
+```
+
+## Parameters
+
+<ParamField path="eventId" type="string" required>The event ID.</ParamField>
+<ParamField path="include" type="string | string[]">
+  Associations to expand: `"user"`, `"space"`, `"files"`, `"userRsvp"`.
+</ParamField>
+
+## Returns
+
+Returns a `Promise<Event>` — the [Event](/data-models/event).
+
+## See Also
+
+- [Fetch Event API](/api-reference/events/fetch-event)
+- [EventProvider & useEvent](/sdk/events/provider-and-hook)

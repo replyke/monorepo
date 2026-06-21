@@ -1,0 +1,38 @@
+---
+title: "useAddInvite"
+description: "Invite a user to an event (host-only)"
+icon: "plug"
+---
+
+## Overview
+
+`useAddInvite` returns a callable that invites a user to an event. **Host-only.** Idempotent against the unique `(eventId, userId)` constraint. For an `invite`-visibility event, the invited user can now see and RSVP to it; when the `notifications` bundle is enabled, the invitee receives an `event-invite` notification.
+
+## Usage Example
+
+```tsx
+import { useAddInvite } from "@sublay/react-js";
+
+function InviteButton({ eventId }: { eventId: string }) {
+  const addInvite = useAddInvite();
+  return (
+    <button onClick={() => addInvite({ eventId, userId: "usr_guest" })}>
+      Invite
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="eventId" type="string" required>The event ID.</ParamField>
+<ParamField path="userId" type="string" required>The user to invite (userId only — never a foreign ID).</ParamField>
+
+## Returns
+
+Returns a `Promise<Event>` — the updated [Event](/data-models/event).
+
+## See Also
+
+- [Add Invite API](/api-reference/events/add-invite)
+- [useRemoveInvite](/hooks/events/use-remove-invite)

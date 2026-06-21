@@ -149,7 +149,7 @@ const file = await sublay.storage.uploadImage({
 
 <ParamField body="entityId" type="string">
   Associates the image with an entity. Only one of `entityId` / `commentId` /
-  `spaceId` may be set.
+  `spaceId` / `eventId` may be set.
 </ParamField>
 
 <ParamField body="commentId" type="string">
@@ -158,6 +158,12 @@ const file = await sublay.storage.uploadImage({
 
 <ParamField body="spaceId" type="string">
   Associates the image with a space.
+</ParamField>
+
+<ParamField body="eventId" type="string">
+  Associates the image with an event. Use this to attach a cover or gallery image
+  to an event created via `sublay.events.createEvent` (the Node SDK does not
+  support inline event image upload). See the [Events module](/v7/node-sdk/events).
 </ParamField>
 
 <ParamField body="userId" type="string">

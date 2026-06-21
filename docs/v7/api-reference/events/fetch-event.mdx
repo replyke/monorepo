@@ -1,0 +1,41 @@
+---
+title: "Fetch Event"
+api: "GET /:projectId/api/v7/events/:eventId"
+description: "Fetch a single event by ID, with visibility enforced"
+---
+
+Returns a single event by UUID. The [server-side visibility predicate](/data-models/event#visibility) is applied: if the event does not exist **or** the caller cannot see it, the response is `404` (existence is never leaked).
+
+The response always includes inline `rsvpCounts`. Authentication is optional; pass the `userRsvp` include with an authenticated caller to populate `userRsvp`.
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="include" type="string">
+  Comma-separated associations to expand: `"user"`, `"space"`, `"files"`, `"userRsvp"`.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  The requester id, used for visibility resolution and `userRsvp` enrichment. Inferred from the token for normal callers; service/master keys may pass it explicitly.
+</ParamField>
+
+## Response
+
+Returns the [Event](/data-models/event) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found / No Access — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchEvent](/hooks/events/use-fetch-event) · [EventProvider & useEvent](/sdk/events/provider-and-hook)

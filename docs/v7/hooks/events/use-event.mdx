@@ -1,0 +1,67 @@
+---
+title: "useEvent & useEventData"
+description: "Access a single event from context, or manage one directly"
+icon: "plug"
+---
+
+## Overview
+
+`useEvent` reads the event loaded by [`EventProvider`](/sdk/events/provider-and-hook) from context, returning the event plus bound actions (`updateEvent`, `deleteEvent`, `cancelEvent`, `setRsvp`, `withdrawRsvp`). `useEventData` is the underlying hook the provider uses — call it directly when you want the same managed state without the provider/context.
+
+## useEvent
+
+Call inside a descendant of `EventProvider`.
+
+```tsx
+import { useEvent } from "@sublay/react-js";
+
+function EventDetail() {
+  const { event, setRsvp, withdrawRsvp, cancelEvent } = useEvent();
+
+  if (event === undefined) return <p>Loading…</p>;
+  if (!event) return <p>Not found.</p>;
+
+  return (
+    <div>
+      <h1>{event.title}</h1>
+      <button onClick={() => setRsvp("going")}>Going</button>
+    </div>
+  );
+}
+```
+
+`useEvent` returns a `Partial<UseEventDataValues>` (empty object outside a provider).
+
+## useEventData
+
+Manage an event without the provider. Pass either a pre-fetched `event` or an `eventId` to fetch.
+
+```tsx
+import { useEventData } from "@sublay/react-js";
+
+function EventCard({ eventId }: { eventId: string }) {
+  const { event, setRsvp } = useEventData({ eventId, include: "userRsvp" });
+  // ...
+}
+```
+
+### Parameters
+
+<ParamField path="event" type="Event">A pre-fetched event. Use this or `eventId`.</ParamField>
+<ParamField path="eventId" type="string">An event ID to fetch. Use this or `event`.</ParamField>
+<ParamField path="include" type="string | string[]">Associations to expand when fetching by `eventId`.</ParamField>
+
+## Returns (both hooks)
+
+<ResponseField name="event" type="Event | null | undefined">The event. `undefined` while loading, `null` if not found.</ResponseField>
+<ResponseField name="setEvent" type="React.Dispatch">Set the event state directly (optimistic updates).</ResponseField>
+<ResponseField name="updateEvent" type="(props: { update }) => Promise<Event | undefined>">Update mutable fields (host-only).</ResponseField>
+<ResponseField name="deleteEvent" type="() => Promise<void>">Delete the event (host-only).</ResponseField>
+<ResponseField name="cancelEvent" type="() => Promise<Event | undefined>">Cancel the event (host-only).</ResponseField>
+<ResponseField name="setRsvp" type="(status: RsvpStatus) => Promise<Event | undefined>">Set/change the caller's RSVP.</ResponseField>
+<ResponseField name="withdrawRsvp" type="() => Promise<Event | undefined>">Withdraw the caller's RSVP.</ResponseField>
+
+## See Also
+
+- [EventProvider & useEvent guide](/sdk/events/provider-and-hook)
+- [Event data model](/data-models/event)

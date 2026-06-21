@@ -1,0 +1,56 @@
+---
+title: "useFetchManyEvents"
+description: "Low-level one-shot query for a page of events"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchManyEvents` returns a callable that fetches a single page of events with all filters, sorting, geo, and free-text search. Visibility is enforced server-side. This is the low-level query — for a stateful list with sort state and load-more, use [`useFetchManyEventsWrapper`](/hooks/events/use-fetch-many-events-wrapper).
+
+## Usage Example
+
+```tsx
+import { useFetchManyEvents } from "@sublay/react-js";
+
+function useUpcoming() {
+  const fetchManyEvents = useFetchManyEvents();
+  return () =>
+    fetchManyEvents({
+      timeWindow: "upcoming",
+      sortBy: "startTime",
+      type: "physical",
+      page: 1,
+      limit: 20,
+      include: ["userRsvp"],
+    });
+}
+```
+
+## Parameters
+
+<ParamField path="page" type="number">Page number (1-indexed). Defaults to `1`.</ParamField>
+<ParamField path="limit" type="number">Results per page. Capped at `100`.</ParamField>
+<ParamField path="sortBy" type='"startTime" | "going"'>Sort field. Defaults to `"startTime"`.</ParamField>
+<ParamField path="sortDir" type='"asc" | "desc"'>Sort direction. Defaults to `"asc"`.</ParamField>
+<ParamField path="timeWindow" type='"upcoming" | "ongoing" | "past"'>Derived time window.</ParamField>
+<ParamField path="startsAfter" type="string">ISO datetime lower bound on `startTime`.</ParamField>
+<ParamField path="startsBefore" type="string">ISO datetime upper bound on `startTime`.</ParamField>
+<ParamField path="spaceId" type="string">Restrict to one space.</ParamField>
+<ParamField path="hostId" type="string">Only events this user hosts.</ParamField>
+<ParamField path="type" type='"online" | "physical" | "hybrid"'>Filter by type.</ParamField>
+<ParamField path="status" type='"active" | "cancelled"'>Defaults to `"active"`.</ParamField>
+<ParamField path="myRsvp" type="RsvpStatus | RsvpStatus[]">Statuses the logged-in user RSVP'd with, e.g. `["going","maybe"]`.</ParamField>
+<ParamField path="locationFilters" type="{ latitude; longitude; radius }">Proximity filter (radius in meters).</ParamField>
+<ParamField path="titleFilters" type="{ hasTitle?; includes?; doesNotInclude? }">Free-text filter on `title`.</ParamField>
+<ParamField path="descriptionFilters" type="{ hasDescription?; includes?; doesNotInclude? }">Free-text filter on `description`.</ParamField>
+<ParamField path="include" type="string | string[]">Associations to expand.</ParamField>
+
+## Returns
+
+Returns a `Promise<PaginatedResponse<Event>>` — `{ data, pagination }`.
+
+## See Also
+
+- [useFetchManyEventsWrapper](/hooks/events/use-fetch-many-events-wrapper)
+- [Fetch Many Events API](/api-reference/events/fetch-many-events)

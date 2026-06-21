@@ -1,0 +1,33 @@
+---
+title: "EventInvite"
+description: "The shape of an EventInvite record returned by the event invitee-list endpoint"
+---
+
+An `EventInvite` grants a specific user access to an `invite`-only event. There is at most one invite per user per event (enforced by a unique `(eventId, userId)` constraint), so re-inviting a user is idempotent. Invites are managed by hosts and always reference a Sublay `userId` (never a foreign ID).
+
+Invite records are returned by the host-only invitee-list endpoint ([Fetch Invitees](/api-reference/events/fetch-invitees)).
+
+## EventInvite
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique invite identifier (UUID). |
+| `eventId` | `string` | The event the user is invited to. |
+| `userId` | `string` | The invited user. |
+| `user` | `User \| null` | Populated user object. Present on invitee-list reads. |
+| `invitedAt` | `string` | ISO timestamp when the invite was created. |
+| `createdAt` | `string` | ISO timestamp when the record was created. |
+| `updatedAt` | `string` | ISO timestamp when the record was last updated. |
+
+## Behavior
+
+- **Add** — `POST /events/:eventId/invites` with a `userId`. Host-only. Idempotent against the unique constraint. When the `notifications` bundle is present, the invitee receives an `event-invite` notification.
+- **Remove** — `DELETE /events/:eventId/invites` with a `userId`. Host-only. Removing an invite revokes the user's access to an `invite`-only event **and** deletes their RSVP (decrementing the count).
+- **Visibility tie-in** — for an `invite`-visibility event, only users with an invite row (plus hosts) can see or RSVP to the event.
+
+## Related
+
+- [Event data model](/data-models/event)
+- [Add Invite API](/api-reference/events/add-invite)
+- [Remove Invite API](/api-reference/events/remove-invite)
+- [Fetch Invitees API](/api-reference/events/fetch-invitees)

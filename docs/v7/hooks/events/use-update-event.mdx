@@ -1,0 +1,54 @@
+---
+title: "useUpdateEvent"
+description: "Edit an event's fields and curate its cover and gallery images (host-only)"
+icon: "plug"
+---
+
+## Overview
+
+`useUpdateEvent` returns a callable that edits an event. **Host-only.** The mutable fields go under `update`; `hostIds`, `status`, and `spaceId` are not editable here. Pass `cover` to **replace** the cover, `gallery` to **append** images, and `update.removeImageIds` to remove existing event images — any image operation sends `multipart/form-data` and requires the `files-images` bundle.
+
+## Usage Example
+
+```tsx
+import { useUpdateEvent } from "@sublay/react-js";
+
+function EditEvent({ eventId }: { eventId: string }) {
+  const updateEvent = useUpdateEvent();
+
+  const handleSave = async (newCover: File) => {
+    const event = await updateEvent({
+      eventId,
+      update: { capacity: 150, description: "Now with more space!" },
+      cover: { file: newCover, options: { mode: "original-aspect", sizes: { full: 1600 } } },
+    });
+    console.log("Updated:", event.id);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="eventId" type="string" required>The event to update.</ParamField>
+<ParamField path="update" type="object" required>
+  The mutable fields to change. All optional:
+  `title`, `description`, `startTime`, `endTime`, `timezone`, `type`, `url`,
+  `venueName`, `address`, `location` (`{ latitude, longitude }`), `visibility`,
+  `capacity`, `allowMaybe`, `guestListVisible`, `metadata`, and `removeImageIds`
+  (`string[]` — File IDs of existing event images to remove).
+</ParamField>
+<ParamField path="cover" type="{ file: File | RNFile; options?: UploadImageOptions }">
+  New cover image — replaces the existing cover. Sends multipart.
+</ParamField>
+<ParamField path="gallery" type="{ files: (File | RNFile)[]; options?: UploadImageOptions }">
+  Gallery images to append. Sends multipart.
+</ParamField>
+
+## Returns
+
+Returns a `Promise<Event>` — the updated [Event](/data-models/event).
+
+## See Also
+
+- [Update Event API](/api-reference/events/update-event)
+- [EventProvider & useEvent](/sdk/events/provider-and-hook)

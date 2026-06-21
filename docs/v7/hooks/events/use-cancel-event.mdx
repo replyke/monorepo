@@ -1,0 +1,32 @@
+---
+title: "useCancelEvent"
+description: "Cancel an event without deleting it (host-only)"
+icon: "plug"
+---
+
+## Overview
+
+`useCancelEvent` returns a callable that cancels an event by setting its `status` to `"cancelled"`. **Host-only.** The event stays fetchable but rejects new RSVPs. When the `notifications` bundle is enabled, all `going`/`maybe` attendees receive an `event-cancelled` notification.
+
+## Usage Example
+
+```tsx
+import { useCancelEvent } from "@sublay/react-js";
+
+function CancelButton({ eventId }: { eventId: string }) {
+  const cancelEvent = useCancelEvent();
+  return <button onClick={() => cancelEvent({ eventId })}>Cancel event</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="eventId" type="string" required>The event to cancel.</ParamField>
+
+## Returns
+
+Returns a `Promise<Event>` — the [Event](/data-models/event) with `status: "cancelled"`.
+
+## See Also
+
+- [Cancel Event API](/api-reference/events/cancel-event)

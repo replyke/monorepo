@@ -1,0 +1,36 @@
+---
+title: "useFetchEventRsvps"
+description: "Fetch the named guest list (who RSVP'd) for an event"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchEventRsvps` returns a callable that fetches the paginated named RSVP (guest) list. Each item is an [EventRsvp](/data-models/event-rsvp) with the `user` populated. The named list is visible to hosts always, and to any viewer when the event's `guestListVisible` is `true` (otherwise `403`). Aggregate counts are always available on the event's `rsvpCounts`.
+
+## Usage Example
+
+```tsx
+import { useFetchEventRsvps } from "@sublay/react-js";
+
+function useGuestList(eventId: string) {
+  const fetchEventRsvps = useFetchEventRsvps();
+  return () => fetchEventRsvps({ eventId, status: "going,maybe", page: 1, limit: 20 });
+}
+```
+
+## Parameters
+
+<ParamField path="eventId" type="string" required>The event ID.</ParamField>
+<ParamField path="status" type="string">Comma-separated statuses to filter by, e.g. `"going,maybe"`. Omit for all.</ParamField>
+<ParamField path="page" type="number">Page number (1-indexed). Defaults to `1`.</ParamField>
+<ParamField path="limit" type="number">Results per page. Capped at `100`.</ParamField>
+
+## Returns
+
+Returns a `Promise<PaginatedResponse<EventRsvp>>` — `{ data, pagination }`.
+
+## See Also
+
+- [Fetch Event RSVPs API](/api-reference/events/fetch-event-rsvps)
+- [useFetchInvitees](/hooks/events/use-fetch-invitees)

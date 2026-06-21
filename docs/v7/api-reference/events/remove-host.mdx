@@ -1,0 +1,47 @@
+---
+title: "Remove Host"
+api: "DELETE /:projectId/api/v7/events/:eventId/hosts"
+description: "Revoke a user's host privileges on an event (host-only)"
+---
+
+Removes a user from the event's `hostIds`. **Host-only** (service/master keys bypass the check). The mutation runs under a row-level lock and enforces the **at-least-one-host invariant**: a removal that would leave the event with zero hosts is rejected with `409`.
+
+The target user is supplied in the request body (symmetric with [Withdraw RSVP](/api-reference/events/withdraw-rsvp)).
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string" required>
+  The host to remove.
+</ParamField>
+
+## Response
+
+Returns the updated [Event](/data-models/event) with the new `hostIds`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (not a host) — 403">
+    ```json
+    { "error": "Only a host of this event may manage its hosts.", "code": "event/forbidden" }
+    ```
+  </Accordion>
+  <Accordion title="Last Host — 409">
+    ```json
+    { "error": "An event must have at least one host.", "code": "event/last-host" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useRemoveHost](/hooks/events/use-remove-host)

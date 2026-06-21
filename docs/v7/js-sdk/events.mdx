@@ -1,0 +1,328 @@
+---
+title: "Events"
+description: "Create and manage events, RSVPs, hosts, and invites from the browser"
+---
+
+The `events` module covers the full events surface: creating and editing events (with inline cover/gallery image upload), the RSVP lifecycle, host and invite management, and the guest list. It maps directly to the [Events API](/api-reference/events/create-event).
+
+Because the JS SDK authenticates as an **end user** (bearer token), you never pass an actor `userId` — the server derives who is acting from the token. The only `userId` arguments are **targets**: the host or invitee on the host/invite functions.
+
+Requires the `events` bundle. Space-scoping needs the `spaces` bundle; images need `files-images`; notifications need `notifications`.
+
+---
+
+### createEvent
+
+Creates an event. The logged-in user becomes the creator and first host. Pass `cover` and/or `gallery` to upload images inline (the request is sent as `multipart/form-data`).
+
+```typescript
+const event = await sublay.events.createEvent({
+  title: "Launch Party",
+  type: "physical",
+  startTime: "2026-09-01T18:00:00.000Z",
+  venueName: "The Loft",
+  address: "123 Main St, New York, NY",
+  capacity: 100,
+  cover: {
+    file: coverBlob,
+    options: { mode: "original-aspect", sizes: { full: 1600 }, format: "webp" },
+  },
+});
+```
+
+<ParamField body="title" type="string" required>Event title. 1–300 characters.</ParamField>
+<ParamField body="startTime" type="string" required>ISO datetime when the event starts.</ParamField>
+<ParamField body="type" type='"online" | "physical" | "hybrid"' required>
+  `online` requires `url`; `physical` requires `address` or `location`; `hybrid` requires both.
+</ParamField>
+<ParamField body="description" type="string">Optional description.</ParamField>
+<ParamField body="endTime" type="string">Optional ISO end datetime.</ParamField>
+<ParamField body="timezone" type="string">Optional IANA timezone.</ParamField>
+<ParamField body="url" type="string">Join/stream URL.</ParamField>
+<ParamField body="venueName" type="string">Venue name.</ParamField>
+<ParamField body="address" type="string">Street address.</ParamField>
+<ParamField body="location" type="{ latitude: number; longitude: number }">Coordinates for proximity search.</ParamField>
+<ParamField body="spaceId" type="string">Scope to a space. Required when `visibility` is `"members"`.</ParamField>
+<ParamField body="visibility" type='"public" | "members" | "invite"'>Defaults to `"public"`.</ParamField>
+<ParamField body="capacity" type="number">Max `going` RSVPs. Omit for unlimited.</ParamField>
+<ParamField body="allowMaybe" type="boolean">Allow `"maybe"` RSVPs. Defaults to `true`.</ParamField>
+<ParamField body="guestListVisible" type="boolean">Expose the named guest list. Defaults to `true`.</ParamField>
+<ParamField body="hostIds" type="string[]">Additional host user IDs (the logged-in user is auto-added).</ParamField>
+<ParamField body="metadata" type="object">Arbitrary key-value data. Up to 1 MB.</ParamField>
+<ParamField body="cover" type="{ file: Blob | File; options: ImageOptions }">
+  Single cover image plus its processing options. Requires the `files-images` bundle.
+</ParamField>
+<ParamField body="gallery" type="{ files: (Blob | File)[]; options: ImageOptions }">
+  Gallery image set (up to 10) plus shared processing options. Requires the `files-images` bundle.
+</ParamField>
+
+**Returns** — `Promise<Event>`
+
+---
+
+### fetchEvent
+
+Fetches a single event by ID. Visibility and `userRsvp` are resolved from the logged-in user's token.
+
+```typescript
+const event = await sublay.events.fetchEvent({
+  eventId: "evt_abc123",
+  include: "user,space,files,userRsvp",
+});
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+<ParamField body="include" type="string">Comma-separated associations: `"user"`, `"space"`, `"files"`, `"userRsvp"`.</ParamField>
+
+**Returns** — `Promise<Event>`
+
+---
+
+### fetchManyEvents
+
+Lists events with visibility enforced, plus filtering, sorting, geo, and free-text search. The `myRsvp` filter and `userRsvp` enrichment use the logged-in user.
+
+```typescript
+const { data, pagination } = await sublay.events.fetchManyEvents({
+  timeWindow: "upcoming",
+  sortBy: "startTime",
+  myRsvp: "going,maybe",
+  include: "userRsvp",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="page" type="number">Page number (1-indexed). Defaults to `1`.</ParamField>
+<ParamField body="limit" type="number">Results per page. Capped at `100`.</ParamField>
+<ParamField body="sortBy" type='"startTime" | "going"'>Sort field. Defaults to `"startTime"`.</ParamField>
+<ParamField body="sortDir" type='"asc" | "desc"'>Sort direction. Defaults to `"asc"`.</ParamField>
+<ParamField body="timeWindow" type='"upcoming" | "ongoing" | "past"'>Derived time window.</ParamField>
+<ParamField body="startsAfter" type="string">ISO datetime lower bound on `startTime`.</ParamField>
+<ParamField body="startsBefore" type="string">ISO datetime upper bound on `startTime`.</ParamField>
+<ParamField body="spaceId" type="string">Restrict to one space.</ParamField>
+<ParamField body="hostId" type="string">Only events this user hosts.</ParamField>
+<ParamField body="type" type='"online" | "physical" | "hybrid"'>Filter by type.</ParamField>
+<ParamField body="status" type='"active" | "cancelled"'>Defaults to `"active"`.</ParamField>
+<ParamField body="myRsvp" type="string">Comma-separated statuses the logged-in user RSVP'd with, e.g. `"going,maybe"`.</ParamField>
+<ParamField body="locationFilters" type="{ latitude: string; longitude: string; radius: string }">Proximity filter (radius in meters).</ParamField>
+<ParamField body="titleFilters" type="{ hasTitle?; includes?; doesNotInclude? }">Free-text filter on `title`.</ParamField>
+<ParamField body="descriptionFilters" type="{ hasDescription?; includes?; doesNotInclude? }">Free-text filter on `description`.</ParamField>
+<ParamField body="include" type="string">Comma-separated associations.</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Event>>`
+
+---
+
+### updateEvent
+
+Edits an event's mutable fields. Host-only. `hostIds`, `status`, and `spaceId` are not editable here.
+
+<Note>
+  The JS SDK `updateEvent` accepts a flat JSON body. To curate images on update
+  (replace the cover, append gallery photos, or remove images via
+  `removeImageIds`), use the [React SDK's `useUpdateEvent`](/hooks/events/use-update-event)
+  which supports inline multipart upload, or the underlying
+  [Update Event API](/api-reference/events/update-event) directly.
+</Note>
+
+```typescript
+const event = await sublay.events.updateEvent({
+  eventId: "evt_abc123",
+  capacity: 150,
+  description: "Now with more space!",
+});
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+<ParamField body="title" type="string">New title.</ParamField>
+<ParamField body="description" type="string">New description.</ParamField>
+<ParamField body="startTime" type="string">New ISO start datetime.</ParamField>
+<ParamField body="endTime" type="string">New ISO end datetime.</ParamField>
+<ParamField body="timezone" type="string">New timezone.</ParamField>
+<ParamField body="type" type='"online" | "physical" | "hybrid"'>New type.</ParamField>
+<ParamField body="url" type="string">New URL.</ParamField>
+<ParamField body="venueName" type="string">New venue name.</ParamField>
+<ParamField body="address" type="string">New address.</ParamField>
+<ParamField body="location" type="{ latitude: number; longitude: number }">New coordinates.</ParamField>
+<ParamField body="visibility" type='"public" | "members" | "invite"'>New visibility.</ParamField>
+<ParamField body="capacity" type="number">New capacity.</ParamField>
+<ParamField body="allowMaybe" type="boolean">Allow `"maybe"` RSVPs.</ParamField>
+<ParamField body="guestListVisible" type="boolean">Expose the guest list.</ParamField>
+<ParamField body="metadata" type="object">New metadata.</ParamField>
+
+**Returns** — `Promise<Event>`
+
+---
+
+### cancelEvent
+
+Cancels an event (sets `status: "cancelled"`). Host-only. The event stays fetchable but rejects new RSVPs.
+
+```typescript
+const event = await sublay.events.cancelEvent({ eventId: "evt_abc123" });
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+
+**Returns** — `Promise<Event>`
+
+---
+
+### deleteEvent
+
+Deletes an event (soft or hard per the project's `eventDeletion` settings). Host-only.
+
+```typescript
+await sublay.events.deleteEvent({ eventId: "evt_abc123" });
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### setRsvp
+
+Sets or changes the logged-in user's RSVP. Transitions into `going` are capacity-checked.
+
+```typescript
+const event = await sublay.events.setRsvp({
+  eventId: "evt_abc123",
+  status: "going",
+});
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+<ParamField body="status" type='"going" | "maybe" | "not_going"' required>The RSVP response.</ParamField>
+
+**Returns** — `Promise<Event>` (with refreshed `rsvpCounts`)
+
+---
+
+### withdrawRsvp
+
+Removes the logged-in user's RSVP. Idempotent.
+
+```typescript
+const event = await sublay.events.withdrawRsvp({ eventId: "evt_abc123" });
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+
+**Returns** — `Promise<Event>`
+
+---
+
+### addHost
+
+Grants a user host privileges. Host-only. The `userId` is the **target** host.
+
+```typescript
+const event = await sublay.events.addHost({
+  eventId: "evt_abc123",
+  userId: "usr_cohost",
+});
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+<ParamField body="userId" type="string" required>The user to grant host on the event.</ParamField>
+
+**Returns** — `Promise<Event>`
+
+---
+
+### removeHost
+
+Revokes a user's host privileges. Host-only. Rejected if it would leave the event with no hosts.
+
+```typescript
+const event = await sublay.events.removeHost({
+  eventId: "evt_abc123",
+  userId: "usr_cohost",
+});
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+<ParamField body="userId" type="string" required>The host to remove.</ParamField>
+
+**Returns** — `Promise<Event>`
+
+---
+
+### addInvite
+
+Invites a user to the event. Host-only. Idempotent. The `userId` is the **target** invitee.
+
+```typescript
+const event = await sublay.events.addInvite({
+  eventId: "evt_abc123",
+  userId: "usr_guest",
+});
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+<ParamField body="userId" type="string" required>The user to invite (userId only — never a foreign ID).</ParamField>
+
+**Returns** — `Promise<Event>`
+
+---
+
+### removeInvite
+
+Removes a user's invite, revoking their access and dropping their RSVP. Host-only.
+
+```typescript
+const event = await sublay.events.removeInvite({
+  eventId: "evt_abc123",
+  userId: "usr_guest",
+});
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+<ParamField body="userId" type="string" required>The invitee to remove.</ParamField>
+
+**Returns** — `Promise<Event>`
+
+---
+
+### fetchInvitees
+
+Host-only invitee (guest) list. Returns paginated [EventInvite](/data-models/event-invite) records with the invited user populated.
+
+```typescript
+const { data, pagination } = await sublay.events.fetchInvitees({
+  eventId: "evt_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+<ParamField body="page" type="number">Page number (1-indexed).</ParamField>
+<ParamField body="limit" type="number">Results per page. Capped at `100`.</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<EventInvite>>`
+
+---
+
+### fetchEventRsvps
+
+Named RSVP (guest) list. Returns paginated [EventRsvp](/data-models/event-rsvp) records with the user populated. Visible to hosts always, to any viewer when `guestListVisible` is `true`. RSVP counts themselves are public via the event's `rsvpCounts`.
+
+```typescript
+const { data, pagination } = await sublay.events.fetchEventRsvps({
+  eventId: "evt_abc123",
+  status: "going,maybe",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="eventId" type="string" required>The event ID.</ParamField>
+<ParamField body="status" type="string">Comma-separated statuses to filter by, e.g. `"going,maybe"`. Omit for all.</ParamField>
+<ParamField body="page" type="number">Page number (1-indexed).</ParamField>
+<ParamField body="limit" type="number">Results per page. Capped at `100`.</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<EventRsvp>>`

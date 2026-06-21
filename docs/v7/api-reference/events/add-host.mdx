@@ -1,0 +1,42 @@
+---
+title: "Add Host"
+api: "POST /:projectId/api/v7/events/:eventId/hosts"
+description: "Grant a user host privileges on an event (host-only)"
+---
+
+Adds a user to the event's `hostIds`. **Host-only** — the caller must already be a host (service/master keys bypass this). The operation is idempotent (adding an existing host is a no-op) and takes a row-level lock to serialize concurrent host changes.
+
+There is no requirement that the target be a space member or invitee — any user can be made a host.
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string" required>
+  The user to grant host on the event.
+</ParamField>
+
+## Response
+
+Returns the updated [Event](/data-models/event) with the new `hostIds`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (not a host) — 403">
+    ```json
+    { "error": "Only a host of this event may manage its hosts.", "code": "event/forbidden" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useAddHost](/hooks/events/use-add-host)
