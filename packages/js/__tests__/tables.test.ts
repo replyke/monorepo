@@ -1,4 +1,3 @@
-import { SublayHttpClient } from "../src/core/client";
 import {
   bulkCreate,
   bulkDelete,
@@ -9,24 +8,22 @@ import {
   restore,
   update,
 } from "../src/modules/tables";
+import { makeClient as makeBaseClient } from "./helpers/client";
 
+/** Tables module expects richer default response shapes than the shared helper's `{}`. */
 function makeClient() {
-  const projectInstance = {
-    get: jest.fn().mockResolvedValue({
-      data: { data: [], pagination: {}, row: { id: "1" } },
-    }),
-    post: jest
-      .fn()
-      .mockResolvedValue({ data: { row: { id: "1" }, rows: [{ id: "1" }] } }),
-    patch: jest.fn().mockResolvedValue({ data: { row: { id: "1" } } }),
-    delete: jest
-      .fn()
-      .mockResolvedValue({ data: { deleted: true, soft: true, deletedCount: 1 } }),
-  };
-  return {
-    client: { projectInstance } as unknown as SublayHttpClient,
-    projectInstance,
-  };
+  const { client, projectInstance } = makeBaseClient();
+  projectInstance.get.mockResolvedValue({
+    data: { data: [], pagination: {}, row: { id: "1" } },
+  });
+  projectInstance.post.mockResolvedValue({
+    data: { row: { id: "1" }, rows: [{ id: "1" }] },
+  });
+  projectInstance.patch.mockResolvedValue({ data: { row: { id: "1" } } });
+  projectInstance.delete.mockResolvedValue({
+    data: { deleted: true, soft: true, deletedCount: 1 },
+  });
+  return { client, projectInstance };
 }
 
 describe("js-sdk custom-table row ops — request shaping (no DDL surface)", () => {
