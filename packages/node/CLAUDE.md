@@ -33,7 +33,7 @@ pnpm publish-prod
 
 ### Module Structure
 
-The SDK exposes **14 modules** bound on `SublayClient` (camelCase accessor in
+The SDK exposes **15 modules** bound on `SublayClient` (camelCase accessor in
 parentheses). Every endpoint is reached with a **service key**; operations that
 act on behalf of a user take an explicit `userId` (or `actingUserId` on the
 nested `users` follow/connection routes and the `chat` target routes), since a
@@ -47,6 +47,7 @@ src/
 │                           #   Collection, Connection, Follow, Report, Space, …)
 ├── modules/
 │   ├── entities/           # client.entities
+│   ├── events/             # client.events
 │   ├── comments/           # client.comments
 │   ├── users/              # client.users (incl. nested follow/connection actions)
 │   ├── spaces/             # client.spaces
@@ -65,8 +66,7 @@ src/
 
 > **Not bound (unmounted):** `oauth` only. It's a browser redirect flow with no
 > meaningful server-to-server contract — the directory stays on disk but is not
-> exposed on `SublayClient`. (`chat` and `storage` were previously deferred here;
-> both are now bound — see §13 and §14 below and `plan-chat-node-sdk-parity.md`.)
+> exposed on `SublayClient`.
 >
 > The space-scoped chat endpoints (`getSpaceConversation`, `moderateSpaceChatMessage`,
 > `handleSpaceChatReport`) live on **`client.spaces`** (they're `/spaces/...` routes),
@@ -101,7 +101,7 @@ const client = await SublayClient.init({
 
 ## API Modules & Features
 
-`SublayClient` binds **14 modules**. The source of truth is `src/index.ts` (the `bindModule` calls) and each module's `index.ts`. The full public surface and per-function props/returns are documented in `docs/v7/node-sdk/`.
+`SublayClient` binds **15 modules**. The source of truth is `src/index.ts` (the `bindModule` calls) and each module's `index.ts`. The full public surface and per-function props/returns are documented in `docs/v7/node-sdk/`.
 
 **Acting on behalf of a user**: the SDK authenticates as the project (service key), not as an end user. So user-scoped functions take an explicit `userId` — the user the operation is performed as. A few routes act on one user *toward another* and take the actor as `actingUserId` while `userId` is the target: the nested follow/connection routes on the `users` module, and `chat.createDirectConversation` / `chat.addMember` / `chat.removeMember` / `chat.changeMemberRole`.
 
@@ -115,13 +115,21 @@ Core content objects (posts, articles, products, listings, etc.).
 
 `fetchManyEntities` supports rich filtering via object-shaped filters: `keywordsFilters`, `metadataFilters` (`includes`/`includesAny`/`doesNotInclude`/`exists`/`doesNotExist`), `titleFilters`, `contentFilters`, `attachmentsFilters`, `locationFilters`; plus `sortBy` (new/hot/top/controversial or `metadata.<prop>`), `sortDir`, `sortType`, `sortByReaction`, `timeFrame`, `userId`/`followedOnly`, `include`, pagination.
 
-### 2. Comments Module (10 functions)
+### 2. Events Module (14 functions)
+
+Event lifecycle, RSVPs, hosts, and invites.
+
+`createEvent`, `fetchEvent`, `fetchManyEvents`, `updateEvent`, `cancelEvent`, `deleteEvent`, `setRsvp`, `withdrawRsvp`, `addHost`, `removeHost`, `addInvite`, `removeInvite`, `fetchInvitees`, `fetchEventRsvps`
+
+`EventType` is `online`/`physical`/`hybrid`; `EventVisibility` is `public`/`members`/`invite`; `RsvpStatus` is `going`/`maybe`/`not_going`. `fetchManyEvents` filters: `timeWindow` (upcoming/ongoing/past) or an explicit `startsAfter`/`startsBefore` range, `spaceId`, `hostId`, `type`, `status` (defaults to `active`), `myRsvp` (requires `userId`), `locationFilters`, `titleFilters`/`descriptionFilters`. `fetchInvitees` (the guest list) is host-only; `fetchEventRsvps` is visible to hosts, to any viewer when `guestListVisible` is true, or to service/master keys.
+
+### 3. Comments Module (10 functions)
 
 `createComment`, `fetchComment`, `fetchCommentByForeignId`, `updateComment`, `deleteComment`, `fetchManyComments`, `addReaction`, `removeReaction`, `fetchReactions`, `getUserReaction`
 
 Threaded replies (`parentId`), quote-replies (`referencedCommentId`), GIFs, mentions, reactions, foreign IDs, soft deletes. `fetchManyComments` sorts by `sortBy` (new/old/top/controversial).
 
-### 3. Users Module (18 functions)
+### 4. Users Module (18 functions)
 
 Read/update profiles and query + act on the follow/connection graph.
 
@@ -131,25 +139,25 @@ Graph queries (by target user ID): `fetchFollowersByUserId`, `fetchFollowersCoun
 
 Graph actions (nested routes, take `actingUserId` + path `userId`): `createFollow`, `deleteFollow`, `fetchFollowStatus`, `requestConnection`, `fetchConnectionStatus`, `removeConnectionByUserId`
 
-### 4. Collections Module (8 functions)
+### 5. Collections Module (8 functions)
 
 A user's saved-content collections (replaces the old "lists"). All take `userId`.
 
 `fetchRootCollection`, `fetchSubCollections`, `createNewCollection`, `fetchCollectionEntities`, `addEntityToCollection`, `removeEntityFromCollection`, `updateCollection`, `deleteCollection`
 
-### 5. Follows Module (5 functions)
+### 6. Follows Module (5 functions)
 
 Read a user's follow graph and remove follows by record ID. All take `userId`.
 
 `fetchFollowing`, `fetchFollowers`, `fetchFollowingCount`, `fetchFollowersCount`, `deleteFollow`
 
-### 6. Connections Module (7 functions)
+### 7. Connections Module (7 functions)
 
 A user's mutual connections and pending requests. All take `userId`.
 
 `fetchConnections`, `fetchConnectionsCount`, `fetchSentPendingConnections`, `fetchReceivedPendingConnections`, `acceptConnection`, `declineConnection`, `removeConnection`
 
-### 7. Spaces Module (33 functions)
+### 8. Spaces Module (33 functions)
 
 Space lifecycle, membership, moderation, rules, and digest config — documented across three pages (`spaces`, `spaces-members`, `spaces-moderation`).
 
@@ -159,27 +167,27 @@ Members: `joinSpace`, `leaveSpace`, `checkMyMembership`, `fetchSpaceMembers`, `f
 
 Moderation/rules/digest: `handleEntityReport`, `handleCommentReport` (both take an `actions` array), `moderateSpaceEntity`, `moderateSpaceComment`, `fetchManyRules`, `fetchRule`, `createRule`, `updateRule`, `deleteRule`, `reorderRules`, `fetchDigestConfig`, `updateDigestConfig`
 
-### 8. Search Module (4 functions)
+### 9. Search Module (4 functions)
 
 `searchContent`, `searchUsers`, `searchSpaces`, `askContent` (AI Q&A). Content/ask take `query`, `sourceTypes`, `spaceId`, `conversationId`, `limit`.
 
-### 9. Reports Module (2 functions)
+### 10. Reports Module (2 functions)
 
 `createReport` (reporter is `userId`), `fetchModeratedReports` (moderator is `userId`). `ReportStatus`: `pending` | `on-hold` | `escalated` | `dismissed` | `actioned`.
 
-### 10. App Notifications Module (4 functions)
+### 11. App Notifications Module (4 functions)
 
 `fetchNotifications`, `countUnreadNotifications`, `markNotificationAsRead`, `markAllNotificationsAsRead`. All take `userId`.
 
-### 11. Auth Module (10 functions)
+### 12. Auth Module (10 functions)
 
 `signUp`, `signIn`, `signOut`, `requestNewAccessToken`, `verifyExternalUser`, `requestPasswordReset`, `resetPassword`, `verifyEmail`, `sendVerificationEmail`, `changePassword`
 
-### 12. Hosted Apps Module (1 function)
+### 13. Hosted Apps Module (1 function)
 
 `fetchHostedApp` — fetches hosted app configuration (uses the internal axios instance).
 
-### 13. Storage Module (4 functions)
+### 14. Storage Module (4 functions)
 
 File and image uploads, plus read/delete. `uploadFile`, `uploadImage`, `getFile`, `deleteFile`.
 
@@ -195,7 +203,7 @@ File and image uploads, plus read/delete. `uploadFile`, `uploadImage`, `getFile`
   owner-or-service** — a user token may only delete files it owns, service/master keys may delete any.
   Both enforced server-side in `server/src/{v7,v7-schema}/controllers/storage/`.
 
-### 14. Chat Module (20 functions)
+### 15. Chat Module (20 functions)
 
 Conversations, messages, members, reactions, read state, and reporting.
 
