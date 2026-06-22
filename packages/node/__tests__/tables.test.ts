@@ -1,4 +1,3 @@
-import { SublayHttpClient } from "../src/core/client";
 import {
   bulkCreate,
   bulkDelete,
@@ -15,22 +14,7 @@ import {
   dropColumn,
   dropTable,
 } from "../src/modules/tables-management";
-
-function makeClient() {
-  const projectInstance = {
-    get: jest.fn().mockResolvedValue({
-      data: { data: [], pagination: {}, row: { id: "1" } },
-    }),
-    post: jest.fn().mockResolvedValue({
-      data: { row: { id: "1" }, rows: [{ id: "1" }], table: "Events", added: "x" },
-    }),
-    patch: jest.fn().mockResolvedValue({ data: { row: { id: "1" } } }),
-    delete: jest.fn().mockResolvedValue({
-      data: { deleted: true, soft: true, deletedCount: 2, dropped: "x" },
-    }),
-  };
-  return { client: { projectInstance } as unknown as SublayHttpClient, projectInstance };
-}
+import { makeClient } from "./helpers/mockClient";
 
 describe("node-sdk custom-table row ops — request shaping", () => {
   it("find serializes filters to JSON and includeDeleted to a string", async () => {
