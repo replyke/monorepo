@@ -1,0 +1,73 @@
+---
+title: "Register Device"
+api: "POST /:projectId/api/v7/push-notifications/devices"
+description: "Register a device to receive push notifications for the authenticated user"
+---
+
+Registers a push device for the currently authenticated user. Re-registering the same physical device updates the existing record instead of creating a duplicate. If the device was previously registered by a different user (e.g. a shared device), it is reassigned to the calling user.
+
+Requires end-user authentication (`Authorization: Bearer <accessToken>`). Service and master keys are explicitly rejected — this endpoint has no impersonation path by design (see [Security note](#security-note)).
+
+Requires the `push` bundle.
+
+## Body Parameters
+
+<ParamField body="platform" type="string" required>
+  The device platform. One of `"ios"`, `"android"`, or `"web"`.
+</ParamField>
+
+<ParamField body="token" type="string">
+  The APNs or FCM device token. Required when `platform` is `"ios"` or `"android"`.
+</ParamField>
+
+<ParamField body="subscription" type="object">
+  The Web Push subscription object. Required when `platform` is `"web"`.
+  <Expandable title="subscription fields">
+    <ParamField body="endpoint" type="string" required>
+      The push subscription endpoint URL provided by the browser's `PushManager`.
+    </ParamField>
+    <ParamField body="keys.p256dh" type="string" required>
+      The P-256 Diffie-Hellman public key, Base64-encoded.
+    </ParamField>
+    <ParamField body="keys.auth" type="string" required>
+      The authentication secret, Base64-encoded.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+Returns `200` with an empty body on success.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 401">
+    ```json
+    { "error": "Unauthorized", "code": "push-device/unauthorized" }
+    ```
+    Returned when no valid end-user token is present, or when a service/master key is used (impersonation is not allowed on this endpoint).
+  </Accordion>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "...", "code": "push-device/invalid-body" }
+    ```
+    Returned when `platform` is unrecognized, or when the required `token` / `subscription` field is missing for the given platform.
+  </Accordion>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    { "error": "...", "code": "database/tables-not-available" }
+    ```
+    Returned when the `push` bundle is not installed for this project.
+  </Accordion>
+</AccordionGroup>
+
+## Security note
+
+Unlike most other write endpoints, this endpoint does not accept a `userId` body parameter and cannot be called with a service key. Allowing a backend to register an arbitrary token for an arbitrary user would let it redirect that user's push notifications to an attacker-controlled device. Registration must always come from the end user's own session.
+
+## See Also
+
+- [Delete Device](/api-reference/push-notifications/deregister-device)
+- [`usePushRegistration`](/hooks/push/use-push-registration)
+- [Push Notifications overview](/sdk/push-notifications/overview)
