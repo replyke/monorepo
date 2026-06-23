@@ -122,7 +122,7 @@ Returns `false` (without throwing) in environments where the Notification or Pus
 Implement `PushTokenAdapter` from `@sublay/core` to use your own push library:
 
 ```typescript
-import type { PushTokenAdapter } from "@sublay/core";
+import type { PushTokenAdapter, PushDeviceIdentifier } from "@sublay/core";
 
 const myAdapter: PushTokenAdapter = {
   async requestPermission(): Promise<boolean> {
