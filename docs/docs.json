@@ -140,6 +140,12 @@
                 ]
               },
               {
+                "group": "Push Notifications",
+                "pages": [
+                  "v7/sdk/push-notifications/overview"
+                ]
+              },
+              {
                 "group": "Search & AI",
                 "pages": [
                   "v7/sdk/search/overview",
@@ -377,6 +383,10 @@
               {
                 "group": "App Notifications",
                 "pages": ["v7/hooks/app-notifications/use-app-notifications"]
+              },
+              {
+                "group": "Push Notifications",
+                "pages": ["v7/hooks/push/use-push-registration"]
               },
               {
                 "group": "Chat — Conversations",
@@ -643,6 +653,15 @@
                 ]
               },
               {
+                "group": "Push Notification Endpoints",
+                "pages": [
+                  "v7/api-reference/push-notifications/register-device",
+                  "v7/api-reference/push-notifications/deregister-device",
+                  "v7/api-reference/push-notifications/send",
+                  "v7/api-reference/push-notifications/get-vapid-public-key"
+                ]
+              },
+              {
                 "group": "Report Endpoints",
                 "pages": [
                   "v7/api-reference/reports/create-report",
@@ -812,6 +831,7 @@
                   "v7/node-sdk/search",
                   "v7/node-sdk/reports",
                   "v7/node-sdk/app-notifications",
+                  "v7/node-sdk/push-notifications",
                   "v7/node-sdk/storage",
                   "v7/node-sdk/tables",
                   "v7/node-sdk/tables-management"
