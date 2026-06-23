@@ -33,7 +33,7 @@ pnpm publish-prod
 
 ### Module Structure
 
-The SDK exposes **15 modules** bound on `SublayClient` (camelCase accessor in
+The SDK exposes **16 modules** bound on `SublayClient` (camelCase accessor in
 parentheses). Every endpoint is reached with a **service key**; operations that
 act on behalf of a user take an explicit `userId` (or `actingUserId` on the
 nested `users` follow/connection routes and the `chat` target routes), since a
@@ -60,6 +60,7 @@ src/
 │   ├── reports/            # client.reports          (service-key userId)
 │   ├── app-notifications/  # client.appNotifications (service-key userId)
 │   ├── storage/            # client.storage          (service-key userId)
+│   ├── push/               # client.push             (service-key userIds batch)
 │   └── chat/               # client.chat             (service-key userId / actingUserId)
 └── index.ts                # Main entry point with SublayClient class
 ```
@@ -228,6 +229,14 @@ Reactions: `toggleReaction`, `listReactions` · Read state: `markAsRead`
   `moderateSpaceChatMessage`, `handleSpaceChatReport`. The two moderation routes
   are service-key god-mode (space-moderator check bypassed); their `actingUserId`
   is attribution-only. See `plan-chat-node-sdk-parity.md` at the engine root.
+
+### 16. Push Notifications Module (1 function)
+
+`send` — `{ userIds: string[], title: string, body: string, data?: Record<string, any> }`.
+Fans a push out across all of the listed users' registered devices (APNs/FCM/Web
+Push); returns per-user, per-device results (`{ results: { [userId]: { platform, success, reason? }[] } }`).
+Devices for a user with no registered devices come back as an empty array, not
+omitted. Capped at 100 `userIds` per call.
 
 ## Key Design Patterns
 

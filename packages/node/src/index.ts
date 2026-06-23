@@ -9,6 +9,7 @@ import * as Entities from "./modules/entities";
 import * as Events from "./modules/events";
 import * as Follows from "./modules/follows";
 import * as HostedApps from "./modules/hosted-apps";
+import * as Push from "./modules/push";
 import * as Reports from "./modules/reports";
 import * as Search from "./modules/search";
 import * as Spaces from "./modules/spaces";
@@ -39,6 +40,7 @@ export class SublayClient {
   public events: BoundModule<typeof Events>;
   public follows: BoundModule<typeof Follows>;
   public hostedApps: BoundModule<typeof HostedApps>;
+  public push: BoundModule<typeof Push>;
   public reports: BoundModule<typeof Reports>;
   public search: BoundModule<typeof Search>;
   public spaces: BoundModule<typeof Spaces>;
@@ -59,6 +61,7 @@ export class SublayClient {
     this.events = bindModule(Events, this.http);
     this.follows = bindModule(Follows, this.http);
     this.hostedApps = bindModule(HostedApps, this.http);
+    this.push = bindModule(Push, this.http);
     this.reports = bindModule(Reports, this.http);
     this.search = bindModule(Search, this.http);
     this.spaces = bindModule(Spaces, this.http);
@@ -150,6 +153,7 @@ export type { ChatMessage } from "./interfaces/ChatMessage";
 export type { Reaction, ReactionType, ReactionCounts } from "./interfaces/Reaction";
 export type { UnifiedAppNotification, PotentiallyPopulatedUnifiedAppNotification } from "./interfaces/AppNotification";
 export type { OAuthIdentity } from "./interfaces/OAuthIdentity";
+export type { PushDeviceResult, SendPushResult } from "./interfaces/Push";
 export type { Report, CreateReportResponse } from "./interfaces/Report";
 export type { File, FileImage, FileImageVariant } from "./interfaces/File";
 export type {
