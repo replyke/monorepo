@@ -1,0 +1,97 @@
+---
+title: "Send Push Notification"
+api: "POST /:projectId/api/v7/push-notifications/send"
+description: "Send a push notification to one or more users across all their registered devices"
+---
+
+Fans a push notification out to every registered device belonging to the listed users. The server dispatches to APNs (iOS), FCM (Android), and the Web Push protocol in parallel, using whichever platform credentials are configured for this project.
+
+Requires a service or master key (`Authorization: Bearer <serviceKey>`). End-user tokens are rejected — this endpoint is intended for your backend, not for end users calling it directly.
+
+Requires the `push` bundle.
+
+## Body Parameters
+
+<ParamField body="userIds" type="string[]" required>
+  Array of Sublay user IDs to notify. Between 1 and 100 IDs per request.
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  Notification title. Displayed as the bold heading on the device.
+</ParamField>
+
+<ParamField body="body" type="string" required>
+  Notification body text.
+</ParamField>
+
+<ParamField body="data" type="object">
+  Optional key-value data payload forwarded to the app alongside the notification. Values must be strings or serializable primitives. Use this to pass deep-link targets, IDs, or any context your app needs when the user taps the notification.
+</ParamField>
+
+## Response
+
+Returns `200` with a `results` map keyed by user ID. Every requested `userId` is present in the response — users with no registered devices get an empty array rather than being omitted.
+
+```json
+{
+  "results": {
+    "usr_abc123": [
+      { "platform": "ios", "success": true },
+      { "platform": "android", "success": true }
+    ],
+    "usr_def456": [],
+    "usr_ghi789": [
+      { "platform": "web", "success": false, "reason": "credentials_not_configured" }
+    ]
+  }
+}
+```
+
+<ResponseField name="results" type="object">
+  Map from user ID to an array of per-device delivery results.
+  <Expandable title="per-device result fields">
+    <ResponseField name="platform" type='"ios" | "android" | "web"'>
+      The platform this result is for.
+    </ResponseField>
+    <ResponseField name="success" type="boolean">
+      Whether the push was accepted by the upstream provider (APNs, FCM, or Web Push).
+    </ResponseField>
+    <ResponseField name="reason" type="string">
+      Present only when `success` is `false`. Common values:
+      - `"credentials_not_configured"` — no provider config exists for this platform (or it is disabled)
+      - Provider-specific error codes returned by APNs/FCM/Web Push
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+  Devices whose tokens or subscriptions are reported as permanently invalid by the upstream provider (e.g. APNs `BadDeviceToken`, FCM `UNREGISTERED`, Web Push HTTP 410) are automatically deleted during the send — no separate cleanup step is needed.
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "...", "code": "push-send/invalid-body" }
+    ```
+    Returned when `userIds` is empty, exceeds 100 entries, or required fields are missing.
+  </Accordion>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "Forbidden" }
+    ```
+    Returned when called with an end-user access token instead of a service/master key.
+  </Accordion>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    { "error": "...", "code": "database/tables-not-available" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Node SDK — push.send](/node-sdk/push-notifications)
+- [Register Device](/api-reference/push-notifications/register-device)
+- [Push Notifications overview](/sdk/push-notifications/overview)

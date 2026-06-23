@@ -1,0 +1,71 @@
+---
+title: "Deregister Device"
+api: "DELETE /:projectId/api/v7/push-notifications/devices"
+description: "Remove a device registration so the authenticated user stops receiving push notifications on it"
+---
+
+Removes the calling user's push device registration. The device is identified the same way it was registered — by its token (iOS/Android) or subscription endpoint (Web). If the device doesn't exist or belongs to a different user, the request is a clean no-op (returns `404`) rather than an error.
+
+Requires end-user authentication. Service and master keys are rejected for the same reason as [Register Device](/api-reference/push-notifications/register-device#security-note).
+
+Requires the `push` bundle.
+
+## Body Parameters
+
+<ParamField body="platform" type="string" required>
+  The device platform. One of `"ios"`, `"android"`, or `"web"`.
+</ParamField>
+
+<ParamField body="token" type="string">
+  The APNs or FCM device token. Required when `platform` is `"ios"` or `"android"`.
+</ParamField>
+
+<ParamField body="subscription" type="object">
+  The Web Push subscription object. Required when `platform` is `"web"`. The server uses only the `endpoint` field to identify the registration.
+  <Expandable title="subscription fields">
+    <ParamField body="endpoint" type="string" required>
+      The push subscription endpoint URL.
+    </ParamField>
+    <ParamField body="keys.p256dh" type="string" required>
+      P-256 key (Base64). Must match the original registration.
+    </ParamField>
+    <ParamField body="keys.auth" type="string" required>
+      Auth secret (Base64). Must match the original registration.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+Returns `200` with an empty body when the device was found and removed.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Device not found", "code": "push-device/not-found" }
+    ```
+    Returned when no matching device exists for this user. This includes the case where the device exists but is registered to a different user — callers cannot deregister devices they don't own.
+  </Accordion>
+  <Accordion title="Unauthorized — 401">
+    ```json
+    { "error": "Unauthorized", "code": "push-device/unauthorized" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "...", "code": "push-device/invalid-body" }
+    ```
+  </Accordion>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    { "error": "...", "code": "database/tables-not-available" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Register Device](/api-reference/push-notifications/register-device)
+- [`usePushRegistration`](/hooks/push/use-push-registration)

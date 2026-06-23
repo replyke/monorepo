@@ -1,0 +1,145 @@
+---
+title: "usePushRegistration"
+description: "Request push permission and register or unregister the current user's device"
+icon: "cube"
+---
+
+## Overview
+
+Explicit, developer-triggered hook for registering and unregistering the current user's device for push notifications. Unlike auth-token restoration, requesting OS or browser push permission is a deliberate action and should happen in response to a user gesture (for example, when they opt in to notifications in your settings screen) — not silently on mount.
+
+The hook accepts a **platform adapter** that abstracts the platform-specific permission and token-retrieval steps. Three adapters are available out of the box:
+
+| Adapter | Package | Platform |
+|---------|---------|----------|
+| `expoPushTokenAdapter` | `@sublay/expo` | Expo (iOS + Android) |
+| `reactNativePushTokenAdapter` | `@sublay/react-native` | Bare React Native (iOS + Android) |
+| `webPushTokenAdapter` | `@sublay/react-js` | Browser (Web Push) |
+
+## Usage Example
+
+```tsx
+import { usePushRegistration } from "@sublay/core";
+import { expoPushTokenAdapter } from "@sublay/expo";
+
+function NotificationOptIn() {
+  const { register, unregister, registering } = usePushRegistration(expoPushTokenAdapter);
+
+  return (
+    <Button onPress={register} disabled={registering}>
+      {registering ? "Enabling…" : "Enable push notifications"}
+    </Button>
+  );
+}
+```
+
+```tsx
+// Web (Next.js / React)
+import { usePushRegistration } from "@sublay/core";
+import { webPushTokenAdapter } from "@sublay/react-js";
+
+function NotificationSettings() {
+  const { register, unregister, registering, unregistering } =
+    usePushRegistration(webPushTokenAdapter);
+
+  return (
+    <>
+      <button onClick={register} disabled={registering}>Enable</button>
+      <button onClick={unregister} disabled={unregistering}>Disable</button>
+    </>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="adapter" type="PushTokenAdapter" required>
+  A platform adapter implementing `requestPermission()` and `getDeviceIdentifier()`. Import one of the three built-in adapters or implement your own.
+</ParamField>
+
+## Returns
+
+<ResponseField name="register" type="() => Promise<boolean>">
+  Requests OS or browser permission, retrieves the device token or subscription, and registers it with the server. Returns `true` on success, `false` if permission was denied or the adapter could not produce an identifier (both are expected outcomes, not errors). Throws when the server call fails.
+</ResponseField>
+
+<ResponseField name="unregister" type="() => Promise<void>">
+  Retrieves the current device identifier and removes the registration from the server. A no-op if the adapter returns no identifier.
+</ResponseField>
+
+<ResponseField name="registering" type="boolean">
+  `true` while `register()` is in progress.
+</ResponseField>
+
+<ResponseField name="unregistering" type="boolean">
+  `true` while `unregister()` is in progress.
+</ResponseField>
+
+<Note>
+  The hook requires an authenticated user — `register()` and `unregister()` throw immediately if no user session is available.
+</Note>
+
+## Platform Adapters
+
+### `expoPushTokenAdapter` (`@sublay/expo`)
+
+Uses `expo-notifications` to request permission and retrieve the raw APNs/FCM device token directly (not the Expo relay token — Sublay dispatches to APNs and FCM using the project's own credentials).
+
+```tsx
+import { expoPushTokenAdapter } from "@sublay/expo";
+
+const { register } = usePushRegistration(expoPushTokenAdapter);
+```
+
+Works in Expo managed and bare workflow. Requires `expo-notifications` in your project.
+
+### `reactNativePushTokenAdapter` (`@sublay/react-native`)
+
+Uses `@react-native-firebase/messaging` for both iOS and Android. On iOS, `getAPNSToken()` returns the raw APNs token; on Android, `getToken()` returns the FCM registration token.
+
+```tsx
+import { reactNativePushTokenAdapter } from "@sublay/react-native";
+
+const { register } = usePushRegistration(reactNativePushTokenAdapter);
+```
+
+Requires `@react-native-firebase/messaging` and the native Firebase setup for your platform (GoogleService-Info.plist / google-services.json).
+
+### `webPushTokenAdapter` (`@sublay/react-js`)
+
+Uses the browser's Notification permission API and Push API. Fetches the project's VAPID public key from the server (unauthenticated), then calls `PushManager.subscribe()` to create a Web Push subscription. Requires a service worker registered on your page.
+
+```tsx
+import { webPushTokenAdapter } from "@sublay/react-js";
+
+const { register } = usePushRegistration(webPushTokenAdapter);
+```
+
+Returns `false` (without throwing) in environments where the Notification or Push APIs are unavailable (for example, SSR).
+
+## Custom Adapters
+
+Implement `PushTokenAdapter` from `@sublay/core` to use your own push library:
+
+```typescript
+import type { PushTokenAdapter, PushDeviceIdentifier } from "@sublay/core";
+
+const myAdapter: PushTokenAdapter = {
+  async requestPermission(): Promise<boolean> {
+    // ask the OS or browser for permission
+    return true;
+  },
+  async getDeviceIdentifier(context): Promise<PushDeviceIdentifier | null> {
+    // return { platform: "ios", token: "..." }
+    // return { platform: "android", token: "..." }
+    // return { platform: "web", subscription: { endpoint, keys: { p256dh, auth } } }
+    return null;
+  },
+};
+```
+
+## See Also
+
+- [Push Notifications overview](/sdk/push-notifications/overview)
+- [Register Device endpoint](/api-reference/push-notifications/register-device)
+- [Node SDK — push.send](/node-sdk/push-notifications)

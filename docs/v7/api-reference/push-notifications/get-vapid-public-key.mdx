@@ -1,0 +1,38 @@
+---
+title: "Get VAPID Public Key"
+api: "GET /:projectId/api/v7/push-notifications/vapid-public-key"
+description: "Retrieve the project's VAPID public key for Web Push subscriptions"
+---
+
+Returns the VAPID (Voluntary Application Server Identification) public key for this project. The browser's `PushManager.subscribe()` requires this key as `applicationServerKey` when creating a Web Push subscription.
+
+This endpoint is intentionally **unauthenticated** — a VAPID public key is not a secret (only the matching private key, which is never returned by any endpoint, provides security). The `webPushTokenAdapter` calls this automatically before the user has signed in, which is a common browser pattern.
+
+Returns `{ publicKey: null }` if the `web-push` provider has not been configured for the project.
+
+Requires the `push` bundle.
+
+## Response
+
+<ResponseField name="publicKey" type="string | null">
+  The Base64url-encoded VAPID public key, or `null` if Web Push is not configured.
+</ResponseField>
+
+```json
+{ "publicKey": "BGE1YqnfxcY...Bm7uB4" }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    { "error": "...", "code": "database/tables-not-available" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Push Notifications overview](/sdk/push-notifications/overview)
+- [`usePushRegistration`](/hooks/push/use-push-registration)
