@@ -78,6 +78,10 @@ function UserComments({ userId }: { userId: string }) {
   Initial sort order. Default: `"createdAt"`. `"new"`/`"old"` are deprecated aliases for `"createdAt"` (removed in v8).
 </ParamField>
 
+<ParamField body="defaultSortDir" type='"asc" | "desc"' optional>
+  Initial sort direction for `sortBy: "createdAt"`. Default: `"desc"` (newest first).
+</ParamField>
+
 <ParamField body="include" type="CommentIncludeParam" optional>
   Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`.
 </ParamField>
@@ -102,6 +106,14 @@ function UserComments({ userId }: { userId: string }) {
 
 <ResponseField name="setSortBy" type="(sortBy: CommentsSortByOptions) => void">
   Change the sort order. Resets the comment list and re-fetches from page 1.
+</ResponseField>
+
+<ResponseField name="sortDir" type='"asc" | "desc"'>
+  Current sort direction for `sortBy: "createdAt"`.
+</ResponseField>
+
+<ResponseField name="setSortDir" type='(sortDir: "asc" | "desc") => void'>
+  Change the sort direction. Resets the comment list and re-fetches from page 1.
 </ResponseField>
 
 <ResponseField name="loadMore" type="() => void">

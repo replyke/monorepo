@@ -43,6 +43,10 @@ function CommentTree({ entityId }: { entityId: string }) {
   Initial sort: `"createdAt"`, `"top"`, or `"controversial"`. Default: `"createdAt"`. `"new"`/`"old"` are deprecated aliases for `"createdAt"` (removed in v8).
 </ParamField>
 
+<ParamField path="defaultSortDir" type='"asc" | "desc"'>
+  Initial sort direction for `sortBy: "createdAt"`. Default: `"desc"` (newest first).
+</ParamField>
+
 <ParamField path="include" type="string | string[]">
   Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`.
 </ParamField>
@@ -75,6 +79,14 @@ function CommentTree({ entityId }: { entityId: string }) {
 
 <ResponseField name="setSortBy" type="(newSortBy: CommentsSortByOptions) => void">
   Changes sort order and resets to page 1.
+</ResponseField>
+
+<ResponseField name="sortDir" type='"asc" | "desc"'>
+  Current sort direction for `sortBy: "createdAt"`.
+</ResponseField>
+
+<ResponseField name="setSortDir" type='(newSortDir: "asc" | "desc") => void'>
+  Changes sort direction and resets to page 1.
 </ResponseField>
 
 <ResponseField name="loadMore" type="() => void">

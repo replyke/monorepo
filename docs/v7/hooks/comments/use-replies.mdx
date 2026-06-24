@@ -44,6 +44,10 @@ function CommentItem({ commentId }: { commentId: string }) {
   Sort order for replies: `"createdAt"` or `"top"`. `"new"`/`"old"` are deprecated aliases for `"createdAt"` (removed in v8).
 </ParamField>
 
+<ParamField path="sortDir" type='"asc" | "desc"'>
+  Sort direction for `sortBy: "createdAt"`. Default: `"desc"` (newest first).
+</ParamField>
+
 ## Return Values
 
 <ResponseField name="replies" type="(Comment & { new: boolean })[]">
