@@ -9,7 +9,20 @@ export interface FetchManyCommentsProps extends SpaceReputationContextParams {
   parentId?: string;
   page?: number;
   limit?: number;
-  sortBy?: "new" | "old" | "top" | "controversial";
+  sortBy?:
+    | "createdAt"
+    | "top"
+    | "controversial"
+    /** @deprecated Use "createdAt" instead. "new" is a directional alias for
+     * createdAt DESC, removed in v8; the server still accepts it (identical
+     * behavior) but responds with deprecation headers. */
+    | "new"
+    /** @deprecated Use "createdAt" with sortDir:"asc" instead. "old" is a
+     * directional alias for createdAt ASC, removed in v8; the server still
+     * accepts it (identical behavior) but responds with deprecation headers. */
+    | "old";
+  /** Sort direction for `sortBy: "createdAt"`. Defaults to "desc". */
+  sortDir?: "asc" | "desc";
   include?: string;
   sourceId?: string;
 }
