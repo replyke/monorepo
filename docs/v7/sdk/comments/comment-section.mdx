@@ -63,6 +63,10 @@ import { CommentSectionProvider } from "@sublay/react-js";
   Initial sort order: `"top"` (default), `"createdAt"`, or `"controversial"`. `"new"`/`"old"` are deprecated aliases for `"createdAt"` (removed in v8).
 </ParamField>
 
+<ParamField path="defaultSortDir" type='"asc" | "desc"'>
+  Initial sort direction for `sortBy: "createdAt"`. Default: `"desc"` (newest first).
+</ParamField>
+
 <ParamField path="highlightedCommentId" type="string">
   If provided, fetches this comment and its parent and injects it into the tree. Useful for deep-linking to a specific comment.
 </ParamField>
@@ -155,6 +159,14 @@ function CommentList() {
 
 <ResponseField name="setSortBy" type="(newSortBy: CommentsSortByOptions) => void">
   Changes the sort order and resets to page 1.
+</ResponseField>
+
+<ResponseField name="sortDir" type='"asc" | "desc"'>
+  Current sort direction for `sortBy: "createdAt"`.
+</ResponseField>
+
+<ResponseField name="setSortDir" type='(newSortDir: "asc" | "desc") => void'>
+  Changes the sort direction and resets to page 1.
 </ResponseField>
 
 <ResponseField name="createComment" type="(props) => Promise<Comment | undefined>">
