@@ -23,11 +23,12 @@ function CommentThread({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
 
-  const { sortBy } = useCommentSection();
+  const { sortBy, sortDir } = useCommentSection();
 
   const { replies, newReplies, loading, page, setPage } = useReplies({
     commentId: comment.id,
-    sortBy: sortBy || "new", // Add fallback instead of assertion
+    sortBy: sortBy || "createdAt", // Add fallback instead of assertion
+    sortDir,
   });
 
   useEffect(() => {
