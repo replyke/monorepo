@@ -38,7 +38,16 @@ export interface FetchManyEntitiesProps extends SpaceReputationContextParams {
 
   // Sorting & Pagination
   // `metadata.<prop>` is also accepted by the server for metadata-based sorting.
-  sortBy?: "new" | "hot" | "top" | "controversial" | (string & {});
+  sortBy?:
+    | "createdAt"
+    | "hot"
+    | "top"
+    | "controversial"
+    /** @deprecated Use "createdAt" instead. "new" is a directional alias removed
+     * in v8; the server still accepts it (identical behavior) but responds with
+     * deprecation headers. */
+    | "new"
+    | (string & {});
   sortDir?: "asc" | "desc";
   sortType?: "auto" | "numeric" | "text" | "boolean" | "timestamp";
   sortByReaction?:
