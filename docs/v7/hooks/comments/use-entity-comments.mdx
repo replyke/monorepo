@@ -40,7 +40,7 @@ function CommentTree({ entityId }: { entityId: string }) {
 </ParamField>
 
 <ParamField path="defaultSortBy" type="string">
-  Initial sort: `"top"`, `"new"`, or `"controversial"`. Default: `"new"`.
+  Initial sort: `"createdAt"`, `"top"`, or `"controversial"`. Default: `"createdAt"`. `"new"`/`"old"` are deprecated aliases for `"createdAt"` (removed in v8).
 </ParamField>
 
 <ParamField path="include" type="string | string[]">

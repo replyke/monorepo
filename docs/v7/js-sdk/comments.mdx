@@ -181,7 +181,7 @@ const { data, pagination } = await sublay.comments.fetchManyComments({
 </ParamField>
 
 <ParamField body="sortBy" type="string">
-  Sort order: `"new"`, `"old"`, `"top"`, or `"controversial"`.
+  Sort order: `"createdAt"` (newest first; honors `sortDir`), `"top"`, or `"controversial"`. `"new"` and `"old"` are deprecated aliases for `"createdAt"` (removed in v8) — the server still accepts them but responds with a deprecation header.
 </ParamField>
 
 <ParamField body="include" type="string">

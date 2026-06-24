@@ -20,7 +20,7 @@ import { useReplies } from "@sublay/react-js";
 function CommentItem({ commentId }: { commentId: string }) {
   const { replies, newReplies, loading, setPage } = useReplies({
     commentId,
-    sortBy: "new",
+    sortBy: "createdAt",
   });
 
   return (
@@ -41,7 +41,7 @@ function CommentItem({ commentId }: { commentId: string }) {
 </ParamField>
 
 <ParamField path="sortBy" type="CommentsSortByOptions" required>
-  Sort order for replies: `"top"`, `"new"`, or `"controversial"`.
+  Sort order for replies: `"createdAt"` or `"top"`. `"new"`/`"old"` are deprecated aliases for `"createdAt"` (removed in v8).
 </ParamField>
 
 ## Return Values
