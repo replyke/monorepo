@@ -6,12 +6,13 @@ import Comment from "../comment";
 import ShowHideButton from "./show-hide-button";
 
 export function Replies({ commentId }: { commentId: string }) {
-  const { sortBy, entityCommentsTree, highlightedComment } =
+  const { sortBy, sortDir, entityCommentsTree, highlightedComment } =
     useCommentSection();
 
   const { replies, newReplies, page, setPage, loading } = useReplies({
     commentId,
     sortBy: sortBy!,
+    sortDir,
   });
 
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);

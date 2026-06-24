@@ -5,9 +5,9 @@
   "description": "Component registry for Sublay CLI - development dependencies only",
   "devDependencies": {
     "@gorhom/bottom-sheet": "^5.2.9",
-    "@sublay/expo": "^7.0.0",
-    "@sublay/react-js": "^7.0.0",
-    "@sublay/react-native": "^7.0.0",
+    "@sublay/expo": "^7.6.1",
+    "@sublay/react-js": "^7.6.1",
+    "@sublay/react-native": "^7.6.1",
     "@sublay/ui-core-react-js": "7.0.0",
     "@sublay/ui-core-react-native": "7.0.0",
     "@types/react": "^19.2.14",

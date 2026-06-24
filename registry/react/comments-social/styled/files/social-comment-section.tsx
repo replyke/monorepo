@@ -43,7 +43,7 @@
  * - #8E8E8E → #9CA3AF (empty heart)
  */
 import React from "react";
-import { Entity } from "@sublay/react-js";
+import { CommentsSortByOptions, Entity } from "@sublay/react-js";
 import useSocialComments from "../hooks/use-social-comments";
 import { SortByButton } from "./sort-by-button";
 import CommentsFeed from "./comments-feed/comments-feed";
@@ -107,8 +107,18 @@ function SocialCommentSectionInner({
   const { theme } = useUIState();
 
   // 🔧 CUSTOMIZE: Sort options for comments
-  // Remove or reorder these options as needed
-  const sortOptions: Array<"top" | "new" | "old"> = ["top", "new", "old"];
+  // "New" and "Old" are both the `createdAt` sort, differing only by direction.
+  // Remove or reorder these options as needed.
+  const sortOptions: Array<{
+    label: string;
+    sortBy: CommentsSortByOptions;
+    sortDir?: "asc" | "desc";
+  }> = [
+    { label: "Top", sortBy: "top" },
+    { label: "New", sortBy: "createdAt", sortDir: "desc" },
+    { label: "Old", sortBy: "createdAt", sortDir: "asc" },
+    { label: "Controversial", sortBy: "controversial" },
+  ];
 
   const buttonStyles = {
     active: {
@@ -130,21 +140,12 @@ function SocialCommentSectionInner({
   };
 
   const renderSortButtons = () => {
-    const optionsMap: Record<
-      "top" | "new" | "old",
-      { label: string; priority: "top" | "new" | "old" }
-    > = {
-      top: { label: "Top", priority: "top" },
-      new: { label: "New", priority: "new" },
-      old: { label: "Old", priority: "old" },
-    };
-
-    return sortOptions.map((option) => {
-      const { label, priority } = optionsMap[option];
+    return sortOptions.map(({ label, sortBy, sortDir }) => {
       return (
         <SortByButton
-          key={priority}
-          priority={priority}
+          key={`${sortBy}:${sortDir ?? ""}`}
+          priority={sortBy}
+          sortDir={sortDir}
           activeView={<div style={buttonStyles.active}>{label}</div>}
           nonActiveView={<div style={buttonStyles.inactive}>{label}</div>}
         />
