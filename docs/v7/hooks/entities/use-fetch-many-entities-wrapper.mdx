@@ -26,14 +26,14 @@ function UserFeed({ userId }: { userId: string }) {
   } = useFetchManyEntitiesWrapper({
     userId,
     limit: 15,
-    defaultSortBy: "new",
+    defaultSortBy: "createdAt",
     include: ["user"],
   });
 
   return (
     <div>
       <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
-        <option value="new">Newest</option>
+        <option value="createdAt">Newest</option>
         <option value="top">Top</option>
         <option value="hot">Hot</option>
       </select>
@@ -79,7 +79,7 @@ function UserFeed({ userId }: { userId: string }) {
 </ParamField>
 
 <ParamField body="defaultSortBy" type="EntityListSortByOptions" optional>
-  Initial sort field. Default: `"new"`.
+  Initial sort field. Default: `"createdAt"`.
 </ParamField>
 
 <ParamField body="defaultSortByReaction" type="SortByReaction" optional>
