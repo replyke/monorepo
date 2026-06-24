@@ -26,14 +26,14 @@ function UserComments({ userId }: { userId: string }) {
   } = useFetchManyCommentsWrapper({
     userId,
     limit: 10,
-    defaultSortBy: "new",
+    defaultSortBy: "createdAt",
     include: ["entity"],
   });
 
   return (
     <div>
       <select value={sortBy ?? ""} onChange={(e) => setSortBy(e.target.value as any)}>
-        <option value="new">Newest</option>
+        <option value="createdAt">Newest</option>
         <option value="top">Top</option>
         <option value="controversial">Controversial</option>
       </select>
@@ -74,8 +74,8 @@ function UserComments({ userId }: { userId: string }) {
   Number of comments per page. Default: `10`.
 </ParamField>
 
-<ParamField body="defaultSortBy" type='"new" | "top" | "controversial"' optional>
-  Initial sort order. Default: `"new"`.
+<ParamField body="defaultSortBy" type='"createdAt" | "top" | "controversial"' optional>
+  Initial sort order. Default: `"createdAt"`. `"new"`/`"old"` are deprecated aliases for `"createdAt"` (removed in v8).
 </ParamField>
 
 <ParamField body="include" type="CommentIncludeParam" optional>

@@ -51,7 +51,7 @@ function UserComments({ userId }: { userId: string }) {
 </ParamField>
 
 <ParamField path="sortBy" type="string">
-  Sort order: `"top"`, `"new"`, or `"controversial"`.
+  Sort order: `"createdAt"` or `"top"`. `"new"`/`"old"` are deprecated aliases for `"createdAt"` (removed in v8). A `sortDir` (`"asc"`/`"desc"`) controls `"createdAt"` direction.
 </ParamField>
 
 <ParamField path="limit" type="number">

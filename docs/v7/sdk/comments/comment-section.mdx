@@ -60,7 +60,7 @@ import { CommentSectionProvider } from "@sublay/react-js";
 </ParamField>
 
 <ParamField path="defaultSortBy" type="string">
-  Initial sort order: `"top"` (default), `"new"`, or `"controversial"`.
+  Initial sort order: `"top"` (default), `"createdAt"`, or `"controversial"`. `"new"`/`"old"` are deprecated aliases for `"createdAt"` (removed in v8).
 </ParamField>
 
 <ParamField path="highlightedCommentId" type="string">
@@ -99,7 +99,7 @@ function CommentList() {
     <>
       <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
         <option value="top">Top</option>
-        <option value="new">New</option>
+        <option value="createdAt">New</option>
       </select>
       {loading && <p>Loading...</p>}
       {[...newComments, ...comments].map((c) => (
@@ -150,7 +150,7 @@ function CommentList() {
 </ResponseField>
 
 <ResponseField name="sortBy" type="CommentsSortByOptions | null">
-  Current sort: `"top"`, `"new"`, or `"controversial"`.
+  Current sort: `"createdAt"`, `"top"`, or `"controversial"`. (`"new"`/`"old"` are deprecated aliases for `"createdAt"`.)
 </ResponseField>
 
 <ResponseField name="setSortBy" type="(newSortBy: CommentsSortByOptions) => void">
