@@ -188,7 +188,7 @@ const { data, pagination } = await sublay.entities.fetchManyEntities({
 </ParamField>
 
 <ParamField body="sortBy" type="string">
-  Sort order: `"new"`, `"hot"` (trending), `"top"` (highest scored), or `"controversial"`. A `"metadata.<prop>"` value is also accepted to sort by a metadata field.
+  Sort order: `"createdAt"` (chronological — honors `sortDir`), `"hot"` (trending), `"top"` (highest scored), or `"controversial"`. A `"metadata.<prop>"` value is also accepted to sort by a metadata field.
 </ParamField>
 
 <ParamField body="sortDir" type="string">

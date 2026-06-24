@@ -12,7 +12,7 @@ fetchEntities(
     keywordsFilters: { includes: ["react"] },
     metadataFilters: { includes: { category: "tutorial" } },
   },
-  { sortBy: "new" }
+  { sortBy: "createdAt" }
 );
 ```
 
@@ -40,7 +40,7 @@ fetchEntities({ timeFrame: "week" }, { sortBy: "top" });
 Filters to entities created by a specific user.
 
 ```tsx
-fetchEntities({ userId: "user_abc123" }, { sortBy: "new" });
+fetchEntities({ userId: "user_abc123" }, { sortBy: "createdAt" });
 ```
 
 ---
@@ -68,7 +68,7 @@ interface KeywordsFilters {
 
 ```tsx
 // Entities tagged with both "react" and "typescript"
-fetchEntities({ keywordsFilters: { includes: ["react", "typescript"] } }, { sortBy: "new" });
+fetchEntities({ keywordsFilters: { includes: ["react", "typescript"] } }, { sortBy: "createdAt" });
 
 // Exclude entities tagged "archived"
 fetchEntities({ keywordsFilters: { doesNotInclude: ["archived"] } }, { sortBy: "hot" });
@@ -89,7 +89,7 @@ interface TitleFilters {
 ```
 
 ```tsx
-fetchEntities({ titleFilters: { includes: "product launch" } }, { sortBy: "new" });
+fetchEntities({ titleFilters: { includes: "product launch" } }, { sortBy: "createdAt" });
 ```
 
 ---
@@ -120,7 +120,7 @@ interface AttachmentsFilters {
 
 ```tsx
 // Only entities with attachments
-fetchEntities({ attachmentsFilters: { hasAttachments: true } }, { sortBy: "new" });
+fetchEntities({ attachmentsFilters: { hasAttachments: true } }, { sortBy: "createdAt" });
 ```
 
 ---
@@ -146,7 +146,7 @@ fetchEntities(
       radius: 10000, // 10 km
     },
   },
-  { sortBy: "new" }
+  { sortBy: "createdAt" }
 );
 ```
 
@@ -176,7 +176,7 @@ fetchEntities(
 // Entities that have a "price" metadata key
 fetchEntities(
   { metadataFilters: { exists: ["price"] } },
-  { sortBy: "new" }
+  { sortBy: "createdAt" }
 );
 
 // Entities in either "news" or "announcements" category

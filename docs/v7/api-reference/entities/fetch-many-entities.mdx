@@ -20,14 +20,20 @@ Returns a paginated list of entities for the project. Supports rich filtering by
 
 ### Sorting
 
-<ParamField query="sortBy" type="string" default="new">
+<ParamField query="sortBy" type="string" default="createdAt">
   Sort algorithm. One of:
-  - `new` — chronological (newest first)
+  - `createdAt` — chronological by creation time (honors `sortDir`; newest first by default)
   - `top` — by reaction count (use `sortByReaction` to specify which type)
   - `hot` — by computed engagement score (decays over time)
-  - `controversial` — high total votes with close up/down split
+  - `controversial` — high total votes with a close up/down split (entities with no votes sort last)
   - `metadata.<property>` — sort by a metadata field (e.g. `metadata.memberCount`)
 </ParamField>
+
+<Note>
+  `new` is a deprecated alias for `createdAt` (removed in v8). It still works and
+  behaves identically, but requests using it receive a non-blocking `Deprecation`
+  response header — switch to `createdAt`.
+</Note>
 
 <ParamField query="sortDir" type="string" default="DESC">
   Sort direction. `ASC` or `DESC`.
