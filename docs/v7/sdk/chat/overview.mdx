@@ -16,7 +16,7 @@ Sublay Chat lets you embed full-featured messaging directly into your applicatio
     Add `ChatProvider` to your component tree to initialize the socket connection
   </Card>
   <Card title="Conversations" href="/sdk/chat/conversations">
-    Create direct and group conversations, list conversations, manage members
+    Create direct and group conversations, manage members, and render a live conversation list that reorders, inserts, and removes in real time
   </Card>
   <Card title="Messages" href="/sdk/chat/messages">
     Send, edit, delete, and react to messages with optimistic UI updates
@@ -38,7 +38,7 @@ ChatProvider          — one per app; owns the socket connection
   └── Your UI         — conversation list, conversation views, etc.
 ```
 
-`ChatProvider` establishes the Socket.io connection and maintains global state (unread counts, message store). Individual components then use the hooks directly — there is no second-level context required for basic usage.
+`ChatProvider` establishes the Socket.io connection and maintains global state (unread counts, message store, and the live conversation list). Individual components then use the hooks directly — there is no second-level context required for basic usage. The conversation list stays current in real time and reconciles with the server on reconnect, so consumers never have to poll or refetch it manually.
 
 For space chat, use `useFetchSpaceConversation` to retrieve the conversation associated with a space, then interact with it using the same hooks used for any other conversation.
 
