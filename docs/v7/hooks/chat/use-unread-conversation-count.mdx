@@ -34,6 +34,6 @@ function InboxBadge() {
 
 ## Notes
 
-- When a new message arrives from a conversation not yet loaded in the conversation list (e.g. paginated out), this count may not be incremented for that edge case. It re-syncs on the next `ChatProvider` mount.
+- When an event touches a conversation not currently loaded in the list (e.g. paginated out), this count reconciles automatically against the server's authoritative unread summary — no remount required. It also reconciles on socket reconnect.
 - To get the total number of unread messages (not conversations), use [`useTotalUnreadCount`](/hooks/chat/use-total-unread-count).
 - For integration guidance, see [Chat: Real-time](/sdk/chat/real-time).

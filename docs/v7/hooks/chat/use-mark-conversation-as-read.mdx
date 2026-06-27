@@ -56,5 +56,5 @@ The hook returns a function. That function accepts:
 
 ## Notes
 
-- The failure to mark as read on the server (e.g. network error) is non-critical. The local Redux count is already cleared and will re-sync on the next `ChatProvider` mount.
+- The failure to mark as read on the server (e.g. network error) is non-critical. The local Redux count is already cleared and reconciles against the server on the next reconnect or `ChatProvider` mount.
 - For integration guidance, see [Chat: Real-time](/sdk/chat/real-time).

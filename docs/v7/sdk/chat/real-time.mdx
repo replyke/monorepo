@@ -13,7 +13,7 @@ description: "Typing indicators, unread counts, and marking conversations as rea
 
 | Event | What the SDK does |
 |-------|------------------|
-| `message:created` | Appends message to the conversation's store; increments unread count if the conversation is not currently active |
+| `message:created` | Appends message to the conversation's store; reorders the conversation to the top of the list and increments unread if the conversation is not currently active. If the conversation isn't in the loaded list (e.g. paginated out, or brand new), it's fetched and inserted automatically |
 | `message:updated` | Updates the message's content in the store |
 | `message:deleted` | Marks the message as soft-deleted in the store |
 | `message:removed` | Sets `moderationStatus: "removed"` on the message |
@@ -22,6 +22,18 @@ description: "Typing indicators, unread counts, and marking conversations as rea
 | `typing:start` | Adds the user to the typing list for that conversation |
 | `typing:stop` | Removes the user from the typing list |
 | `conversation:updated` | Merges the updated conversation fields into the store |
+| `conversation:created` | Inserts a newly created conversation (a new DM, group, or one you were added to) into the conversation list |
+| `member:left` | When it's the current user leaving or being removed, removes the conversation from the list |
+| `conversation:deleted` | Removes the conversation from the list |
+
+## Live Conversation List
+
+The conversation list returned by `useConversations` is fully live — you do not need to refetch it manually:
+
+- **Reorders** to the top when a new message arrives in any conversation, across direct, group, and space chats.
+- **Inserts** new conversations as they appear — a DM someone starts with you, a group you're added to, or a paginated-out conversation that just received a message.
+- **Removes** conversations you leave, are removed from, or that are deleted.
+- **Self-heals on reconnect.** After a dropped socket reconnects, the list and unread counts reconcile against the server automatically, correcting anything missed while offline (deep pagination resets to the first page).
 
 ## Connection State
 
@@ -40,7 +52,7 @@ See [`useChatSocket`](/hooks/chat/use-chat-socket).
 
 ## Unread Counts
 
-`ChatProvider` fetches unread counts on mount and keeps them in sync via socket events.
+`ChatProvider` fetches unread counts on mount and keeps them in sync via socket events, including for conversations not currently loaded in the list. Counts also reconcile against the server on socket reconnect.
 
 ```tsx
 import { useTotalUnreadCount, useUnreadConversationCount } from "@sublay/react-js";
@@ -62,7 +74,7 @@ function ChatBadge() {
 - [`useUnreadConversationCount`](/hooks/chat/use-unread-conversation-count) — number of conversations that have at least one unread message
 
 <Note>
-  When a new message arrives from a conversation not yet loaded in the conversation list (e.g. paginated out), only `useTotalUnreadCount` is bumped. `useUnreadConversationCount` re-syncs on the next `ChatProvider` mount.
+  When an event touches a conversation not currently loaded in the list (e.g. paginated out), both `useTotalUnreadCount` and `useUnreadConversationCount` reconcile automatically against the server's authoritative unread summary — no manual refresh or remount is required.
 </Note>
 
 ## Read Receipts

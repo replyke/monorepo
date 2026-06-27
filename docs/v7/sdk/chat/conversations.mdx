@@ -42,6 +42,10 @@ const { conversations } = useConversations({ types: ["direct", "group"] });
 
 Each item in the list is a `ConversationPreview` — a `Conversation` extended with `unreadCount` and a truncated `lastMessage`.
 
+<Note>
+  The list is **live**. It reorders on new messages, inserts conversations as they're created or added (including ones paginated out that receive a new message), removes conversations you leave or that are deleted, and self-heals on socket reconnect — across direct, group, and space chats. You don't need to refetch it manually. See [Real-time › Live Conversation List](/sdk/chat/real-time#live-conversation-list).
+</Note>
+
 See [`useConversations`](/hooks/chat/conversations/use-conversations) for the full API.
 
 ## Creating a Direct Conversation
