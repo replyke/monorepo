@@ -25,6 +25,7 @@
                   "v7/integration-options",
                   "v7/authentication",
                   "v7/webhooks",
+                  "v7/push-notifications",
                   "v7/custom-tables",
                   "v7/semantic-search-ai",
                   "v7/mcp-server"

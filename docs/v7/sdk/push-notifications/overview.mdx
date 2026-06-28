@@ -1,53 +1,15 @@
 ---
 title: "Push Notifications"
-description: "Send native push notifications to your users on iOS, Android, and Web"
+description: "Register the current user's device for native push from your client app"
 ---
 
-Push Notifications lets your app deliver native OS push notifications to users on iOS (via APNs), Android (via FCM), and the browser (via Web Push) — all from a single server-side call.
+This page covers **registering devices from your client SDK**. For the full feature overview — dashboard setup, server-side sending, and device lifecycle — see [Push Notifications](/push-notifications).
 
 <Note>
-  **Requires the `push` bundle.** Install it from your project's **Database** page in the [dashboard](https://dash.sublay.io) before using any push feature. See [Bundles](/bundles) for details.
+  **Requires the `push` bundle** and configured provider credentials (APNs, FCM, or Web Push) in the dashboard. See the [feature overview](/push-notifications#dashboard-setup) for setup.
 </Note>
 
-## How It Works
-
-1. **Configure credentials** in the dashboard — paste your APNs `.p8` key, FCM service account JSON, or enable Web Push (keypair generated server-side).
-2. **Register devices** — your client app calls `register()` from `usePushRegistration` at a moment that makes sense for your UX (settings screen, first-run prompt, etc.). The SDK handles permission, token retrieval, and server registration.
-3. **Send notifications** — your backend calls `sublay.push.send({ userIds, title, body, data })`. Sublay fans the message out to every registered device for those users across all platforms.
-
-## Dashboard Setup
-
-### Installing the bundle
-
-Open **Database → Bundles** in the [dashboard](https://dash.sublay.io) and install `push`. Once provisioning completes, the **Push Notifications** settings page becomes active.
-
-### Configuring providers
-
-Go to **Settings → Push Notifications** in the dashboard. Configure each platform you want to support:
-
-**APNs (iOS)**
-
-| Field | Description |
-|-------|-------------|
-| Key ID | The 10-character key identifier from your Apple Developer account |
-| Team ID | Your Apple Developer team ID |
-| Bundle ID | Your app's bundle identifier (e.g. `com.example.myapp`) |
-| .p8 key | Contents of the `.p8` private key file downloaded from Apple |
-| Production | Toggle for sandbox vs. production APNs gateway (defaults to production) |
-
-**FCM (Android)**
-
-Upload or paste your Firebase service account JSON. This is the file downloaded from the Firebase console under **Project Settings → Service Accounts → Generate new private key**.
-
-**Web Push**
-
-No credentials to paste — click **Enable**. Sublay generates a VAPID EC keypair server-side and stores the private key encrypted. Only the public key is returned and displayed; it is also available via the unauthenticated [`GET /vapid-public-key`](/api-reference/push-notifications/get-vapid-public-key) endpoint for use in your service worker.
-
-### Test-send UI
-
-Each provider card in the dashboard includes a **Send Test Push** panel. Supply a platform, a device token or subscription, a title, and a body, then click **Send Test Push** to verify credentials before shipping.
-
-## Client SDK — Registering Devices
+## Registering Devices
 
 Use `usePushRegistration` with the adapter for your platform. Call `register()` in response to a deliberate user action — not on mount — because requesting OS push permission is a one-shot prompt that users cannot undo.
 
@@ -78,66 +40,28 @@ import { webPushTokenAdapter } from "@sublay/react-js";
 const { register, unregister } = usePushRegistration(webPushTokenAdapter);
 ```
 
-The web adapter requires a service worker. Register one before calling `register()`. See [`usePushRegistration`](/hooks/push/use-push-registration) for the full API.
+The web adapter requires a service worker. Register one before calling `register()`. The public VAPID key your service worker needs is available from the unauthenticated [`GET /vapid-public-key`](/api-reference/push-notifications/get-vapid-public-key) endpoint.
 
-## Server SDK — Sending Notifications
+## Unregistering on Logout
 
-Call `client.push.send()` from your backend whenever you want to notify users:
+Call `unregister()` in your logout flow so the device stops receiving notifications after sign-out:
 
-```typescript
-import { SublayClient } from "@sublay/node";
+```tsx
+const { unregister } = usePushRegistration(webPushTokenAdapter);
 
-const sublay = await SublayClient.init({
-  projectId: process.env.SUBLAY_PROJECT_ID!,
-  apiKey: process.env.SUBLAY_SERVICE_KEY!,
-});
-
-const result = await sublay.push.send({
-  userIds: ["usr_abc123", "usr_def456"],
-  title: "You have a new match!",
-  body: "Tap to see who liked your post.",
-  data: { screen: "matches" },
-});
-
-for (const [userId, devices] of Object.entries(result.results)) {
-  if (devices.length === 0) {
-    console.log(`${userId} has no registered devices`);
-  } else {
-    console.log(`${userId}:`, devices);
-  }
+async function handleLogout() {
+  await unregister();
+  // ...clear session
 }
 ```
 
-A single call fans the notification out to all platforms. Capped at **100 user IDs per request**. See [Node SDK — Push Notifications](/node-sdk/push-notifications) for the full module reference.
-
-## Device Lifecycle
-
-- **Re-registration:** registering the same physical device again (same token or endpoint) updates the existing record instead of duplicating it.
-- **Device reassignment:** if the same device is registered by a different user (e.g. a shared device after logout/login), the record is reassigned to the new user.
-- **Stale token cleanup:** tokens or subscriptions permanently rejected by APNs, FCM, or Web Push during a send are automatically deleted — no separate cleanup pass is needed.
-- **Explicit logout:** call `unregister()` in your logout flow so the device stops receiving notifications after sign-out.
-
-## Hooks
-
-<CardGroup cols={1}>
-  <Card title="usePushRegistration" href="/hooks/push/use-push-registration">
-    Request permission, register a device, and unregister it on logout — with built-in adapters for Expo, React Native, and Web
-  </Card>
-</CardGroup>
-
-## API Endpoints
+## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Register Device" href="/api-reference/push-notifications/register-device">
-    `POST /push-notifications/devices`
+  <Card title="Feature Overview" icon="bell" href="/push-notifications">
+    Dashboard setup, sending, and device lifecycle
   </Card>
-  <Card title="Deregister Device" href="/api-reference/push-notifications/deregister-device">
-    `DELETE /push-notifications/devices`
-  </Card>
-  <Card title="Send Push" href="/api-reference/push-notifications/send">
-    `POST /push-notifications/send`
-  </Card>
-  <Card title="Get VAPID Public Key" href="/api-reference/push-notifications/get-vapid-public-key">
-    `GET /push-notifications/vapid-public-key`
+  <Card title="usePushRegistration" icon="cube" href="/hooks/push/use-push-registration">
+    The full hook API and platform adapters
   </Card>
 </CardGroup>
