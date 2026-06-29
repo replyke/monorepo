@@ -28,6 +28,54 @@ Requires the `push` bundle.
   Optional key-value data payload forwarded to the app alongside the notification. Values must be strings or serializable primitives. Use this to pass deep-link targets, IDs, or any context your app needs when the user taps the notification.
 </ParamField>
 
+### Rich payload fields
+
+All optional. Each is mapped to whichever platform(s) support it at dispatch time and silently ignored on platforms that have no equivalent. See the [Push Notifications guide](/push-notifications#rich-notification-payloads) for the client-side setup some of these require (Android channels, the iOS Notification Service Extension, your web service worker).
+
+<ParamField body="sound" type="string">
+  Sound file to play. iOS: APNs `sound`. Android: governed by the channel on 8+ — pair with `channelId`. Web: forwarded to the service worker.
+</ParamField>
+
+<ParamField body="badge" type="number">
+  iOS app-icon badge count (APNs `badge`). No Android equivalent. The caller supplies the number; Sublay tracks no unread state.
+</ParamField>
+
+<ParamField body="channelId" type="string">
+  Android notification channel id (FCM `android.notification.channel_id`). The channel must be created client-side; on Android 8+ it owns sound/importance/vibration.
+</ParamField>
+
+<ParamField body="priority" type="string">
+  `"high"` or `"normal"`. iOS: APNs `apns-priority` (10/5). Android: FCM `android.priority`. `high` wakes the device for time-sensitive pushes.
+</ParamField>
+
+<ParamField body="subtitle" type="string">
+  iOS subtitle line under the title (APNs `alert.subtitle`).
+</ParamField>
+
+<ParamField body="imageUrl" type="string">
+  Rich/big-picture image URL. Android (FCM `image`) and Web work out of the box. iOS additionally requires a Notification Service Extension in the app — the URL is forwarded in the payload and `mutable-content` is set automatically.
+</ParamField>
+
+<ParamField body="tag" type="string">
+  Display-replace key so notifications collapse in the UI (FCM `android.notification.tag`, Web `tag`).
+</ParamField>
+
+<ParamField body="collapseId" type="string">
+  Transport-level collapse identifier (APNs `apns-collapse-id`, FCM `collapse_key`) — supersedes an undelivered push with the same id.
+</ParamField>
+
+<ParamField body="threadId" type="string">
+  iOS notification grouping (APNs `thread-id`).
+</ParamField>
+
+<ParamField body="ttl" type="number">
+  Time-to-live in seconds for offline devices (APNs `apns-expiration` computed from now, FCM `android.ttl`).
+</ParamField>
+
+<ParamField body="mutableContent" type="boolean">
+  iOS `mutable-content` flag, enabling the app's Notification Service Extension to modify the payload (e.g. attach `imageUrl`). Set implicitly when `imageUrl` is provided.
+</ParamField>
+
 ## Response
 
 Returns `200` with a `results` map keyed by user ID. Every requested `userId` is present in the response — users with no registered devices get an empty array rather than being omitted.

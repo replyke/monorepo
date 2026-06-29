@@ -21,6 +21,10 @@ const result = await sublay.push.send({
   title: "New message",
   body: "You have a new message from Alice.",
   data: { conversationId: "conv_xyz789" },
+  sound: "notification.wav",
+  channelId: "messages",
+  badge: 3,
+  tag: "conv_xyz789",
 });
 ```
 
@@ -38,6 +42,54 @@ const result = await sublay.push.send({
 
 <ParamField body="data" type="Record<string, any>">
   Optional key-value payload forwarded to the app alongside the notification. Use for deep links, entity IDs, or any context your app needs when the user taps.
+</ParamField>
+
+#### Rich payload fields
+
+All optional. Each maps to whichever platform(s) support it and is silently ignored elsewhere (e.g. `subtitle`/`threadId` are iOS-only, `channelId` is Android-only). See [Rich notification payloads](/push-notifications#rich-notification-payloads) for the platform setup each one needs.
+
+<ParamField body="sound" type="string">
+  Sound file to play. **iOS:** APNs `sound`. **Android:** on 8+ the sound is owned by the notification channel — pair this with `channelId` and create that channel client-side with the sound set. **Web:** forwarded to your service worker.
+</ParamField>
+
+<ParamField body="badge" type="number">
+  iOS app-icon badge count (APNs `badge`). No Android equivalent. Your backend supplies the number — Sublay does not track per-user unread counts.
+</ParamField>
+
+<ParamField body="channelId" type="string">
+  Android notification channel id (FCM). The channel must be created client-side; on Android 8+ it governs sound, importance, and vibration.
+</ParamField>
+
+<ParamField body="priority" type='"high" | "normal"'>
+  Delivery priority. `high` wakes the device for time-sensitive pushes; `normal` is power-considerate. Maps to APNs `apns-priority` and FCM `android.priority`.
+</ParamField>
+
+<ParamField body="subtitle" type="string">
+  iOS subtitle line shown under the title (APNs `alert.subtitle`).
+</ParamField>
+
+<ParamField body="imageUrl" type="string">
+  Rich/big-picture image URL. Works out of the box on **Android** (FCM) and **Web**. On **iOS** it additionally requires a [Notification Service Extension](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension) in your app; the URL is forwarded in the payload and `mutable-content` is set automatically.
+</ParamField>
+
+<ParamField body="tag" type="string">
+  Display-replace key so notifications collapse in the UI instead of stacking (FCM `android.notification.tag`, Web `tag`). Use a per-conversation value to keep one entry per thread.
+</ParamField>
+
+<ParamField body="collapseId" type="string">
+  Transport-level collapse identifier (APNs `apns-collapse-id`, FCM `collapse_key`) — a newer push supersedes an undelivered one with the same id.
+</ParamField>
+
+<ParamField body="threadId" type="string">
+  iOS notification grouping (APNs `thread-id`).
+</ParamField>
+
+<ParamField body="ttl" type="number">
+  Time-to-live in **seconds** for offline devices (APNs `apns-expiration`, FCM `android.ttl`). After this window the provider stops retrying.
+</ParamField>
+
+<ParamField body="mutableContent" type="boolean">
+  iOS `mutable-content` flag, letting your Notification Service Extension modify the payload (e.g. attach `imageUrl`). Set implicitly when `imageUrl` is provided.
 </ParamField>
 
 **Returns** — `Promise<SendPushResult>`
