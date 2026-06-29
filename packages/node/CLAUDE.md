@@ -232,7 +232,17 @@ Reactions: `toggleReaction`, `listReactions` · Read state: `markAsRead`
 
 ### 16. Push Notifications Module (1 function)
 
-`send` — `{ userIds: string[], title: string, body: string, data?: Record<string, any> }`.
+`send` — `{ userIds: string[], title: string, body: string, data?: Record<string, any> }`
+plus optional rich-payload fields, each mapped to whichever platform(s) support
+it and ignored elsewhere: `sound`, `badge` (iOS), `channelId` (Android),
+`priority` (`high`/`normal`), `subtitle` (iOS), `imageUrl`, `tag`, `collapseId`,
+`threadId` (iOS), `ttl` (seconds), `mutableContent` (iOS). `imageUrl` works
+out-of-the-box on Android/Web; on iOS it also needs a Notification Service
+Extension in the app (and auto-sets `mutable-content`). Android sound on 8+ is
+owned by the channel, so pair `sound` with a client-created `channelId`. The
+SDK forwards the whole body unreshaped — the server zod schema
+(`server/src/v7/validation/push-notifications/push-notifications.schema.ts`) is
+the source of truth.
 Fans a push out across all of the listed users' registered devices (APNs/FCM/Web
 Push); returns per-user, per-device results (`{ results: { [userId]: { platform, success, reason? }[] } }`).
 Devices for a user with no registered devices come back as an empty array, not
