@@ -115,6 +115,66 @@ A single call fans the notification out to all platforms. Capped at **100 user I
   A common pattern is to bridge Sublay's in-app notifications to push: subscribe to the `notification.created` webhook and call `push.send()` when it fires. See [Webhooks → Push Notification Bridge](/webhooks#push-notification-bridge).
 </Tip>
 
+## Rich Notification Payloads
+
+Beyond `title`, `body`, and `data`, `push.send()` accepts optional fields for sound, badges, images, grouping, priority, and lifetime. Each maps to the native APNs / FCM / Web Push capability and is **silently ignored on platforms that don't support it** — so you can set `subtitle` (iOS-only) and `channelId` (Android-only) in the same call without branching.
+
+```typescript
+await sublay.push.send({
+  userIds: ["usr_abc123"],
+  title: "New message",
+  body: "Alice sent you a message",
+  data: { conversationId: "conv_xyz789" },
+  sound: "notification.wav",   // custom sound
+  channelId: "messages",       // Android channel (see below)
+  badge: 3,                    // iOS app-icon badge
+  tag: "conv_xyz789",          // collapse a conversation into one notification
+  priority: "high",
+});
+```
+
+| Field | Platforms | Notes |
+|-------|-----------|-------|
+| `sound` | iOS, Android, Web | Filename of a bundled sound. On Android 8+ the **channel** owns the sound — see below. |
+| `badge` | iOS | App-icon badge count. Your backend supplies the number; Sublay tracks no unread state. |
+| `channelId` | Android | Notification channel id. Created client-side. |
+| `priority` | iOS, Android | `"high"` (default) wakes the device; `"normal"` is power-considerate. |
+| `subtitle` | iOS | Line under the title. |
+| `imageUrl` | iOS, Android, Web | Big-picture image. iOS needs a Notification Service Extension — see below. |
+| `tag` | Android, Web | Display-replace key so notifications collapse instead of stacking. |
+| `collapseId` | iOS, Android | Transport-level collapse — a newer push supersedes an undelivered one. |
+| `threadId` | iOS | Notification grouping. |
+| `ttl` | iOS, Android | Time-to-live in **seconds** for offline devices. |
+| `mutableContent` | iOS | Enables your Notification Service Extension. Set automatically when `imageUrl` is present. |
+
+### Client-side requirements
+
+Three of these need setup in **your app** — Sublay forwards the field but cannot do this part for you:
+
+<AccordionGroup>
+  <Accordion title="Android sound → notification channels">
+    On Android 8+ the **notification channel** owns the sound, importance, and vibration — the payload can't override it. Create the channel once in your app (with the bundled sound) and pass its id as `channelId`:
+
+    ```ts
+    import * as Notifications from "expo-notifications";
+
+    await Notifications.setNotificationChannelAsync("messages", {
+      name: "Messages",
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: "notification.wav", // bundled in the app
+    });
+    ```
+
+    Then `push.send({ ..., channelId: "messages", sound: "notification.wav" })`. The `sound` field alone is only a pre-Android-8 fallback. Sublay does **not** create channels for you.
+  </Accordion>
+  <Accordion title="iOS images → Notification Service Extension">
+    iOS does not download remote images from the payload on its own. To show `imageUrl` on iOS, add a [Notification Service Extension](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension) to your app that reads the URL from the notification payload, downloads it, and attaches it. Sublay sets `mutable-content` automatically whenever `imageUrl` is present so the extension is allowed to run. Android and Web render `imageUrl` with no extra work.
+  </Accordion>
+  <Accordion title="Web rendering → your service worker">
+    Sublay ships no service worker — your app's own SW renders web notifications. The server forwards the web-renderable fields (`sound`, `image`, `tag`) in the push JSON; your `push` event handler decides how to display them via `registration.showNotification(...)`.
+  </Accordion>
+</AccordionGroup>
+
 ## Device Lifecycle
 
 - **Re-registration:** registering the same physical device again (same token or endpoint) updates the existing record instead of duplicating it.
