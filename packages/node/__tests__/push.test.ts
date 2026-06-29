@@ -19,6 +19,31 @@ describe("node-sdk push — request shaping", () => {
     });
   });
 
+  it("send forwards the rich payload fields verbatim (no reshaping or dropping)", async () => {
+    const { client, projectInstance } = makeClient();
+    const props = {
+      userIds: ["u1"],
+      title: "New message",
+      body: "You have a new message",
+      data: { conversationId: "c1" },
+      sound: "notification.wav",
+      badge: 3,
+      channelId: "messages",
+      priority: "high" as const,
+      subtitle: "from Alice",
+      imageUrl: "https://ex.com/img.png",
+      tag: "conv-c1",
+      collapseId: "conv-c1",
+      threadId: "conv-c1",
+      ttl: 3600,
+      mutableContent: true,
+    };
+
+    await send(client, props);
+
+    expect(projectInstance.post).toHaveBeenCalledWith("/push-notifications/send", props);
+  });
+
   it("send returns the typed response passed through as-is", async () => {
     const { client, projectInstance } = makeClient();
     const responseBody = {
