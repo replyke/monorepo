@@ -22,6 +22,10 @@ Answers a natural language question using content from your project as context. 
   Restrict the context lookup to a specific space.
 </ParamField>
 
+<ParamField body="includeChildSpaces" type="boolean" default="false">
+  Only applies with a `spaceId`. When `true`, the context lookup also includes every space nested under it — children, grandchildren, the whole subtree at any depth — not just the named space. Use it to ask across a community and all of its channels at once. Ignored without a `spaceId`.
+</ParamField>
+
 <ParamField body="conversationId" type="string">
   Restrict message context lookup to a specific conversation.
 </ParamField>

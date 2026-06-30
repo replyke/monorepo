@@ -22,6 +22,10 @@ Performs vector-similarity search over project content (entities, comments, and 
   Restrict search to a specific space.
 </ParamField>
 
+<ParamField body="includeChildSpaces" type="boolean" default="false">
+  Only applies with a `spaceId`. When `true`, the search also includes every space nested under it — children, grandchildren, the whole subtree at any depth — not just the named space. Ignored without a `spaceId`.
+</ParamField>
+
 <ParamField body="conversationId" type="string">
   Restrict message search to a specific conversation.
 </ParamField>

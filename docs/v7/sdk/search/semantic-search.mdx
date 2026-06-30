@@ -50,6 +50,10 @@ function ContentSearch() {
   Scope results to a specific space.
 </ParamField>
 
+<ParamField path="includeChildSpaces" type="boolean" default="false">
+  Only applies with `spaceId`. When `true`, results also cover every space nested under it — the whole subtree at any depth — not just the named space. Ignored without `spaceId`.
+</ParamField>
+
 <ParamField path="conversationId" type="string">
   Scope results to a specific conversation (for messages).
 </ParamField>
