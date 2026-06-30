@@ -4,6 +4,8 @@ description: "Fetch a single comment by its ID"
 icon: "plug"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 ## Overview
 
 `useFetchComment` returns a function that fetches a single comment by ID. The response wraps the comment in a `{ comment }` object to allow future expansion of the response shape.
@@ -38,16 +40,10 @@ function DeepLinkComment({ commentId }: { commentId: string }) {
   Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`.
 </ParamField>
 
-<ParamField path="spaceReputationId" type="string">
-  Optional. Resolves the embedded author's reputation into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField path="spaceReputationDescendants" type="boolean">
-  Optional. When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
-</ParamField>
+<SpaceReputationParams variant="context" field="path" />
 
 ## Returns
 
 <ResponseField name="comment" type="Comment">
-  The fetched comment. When `"parent"` is included, `comment.parentComment` is populated. When `spaceReputationId` is set, the embedded author carries an added `spaceReputation` number. See [Comment data model](/data-models/comment) and [Reputation](/data-models/reputation).
+  The fetched comment. When `"parent"` is included, `comment.parentComment` is populated. When `spaceReputation` is requested, the embedded author carries an added `spaceReputation` number. See [Comment data model](/data-models/comment) and [Reputation](/data-models/reputation).
 </ResponseField>

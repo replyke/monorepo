@@ -4,6 +4,8 @@ api: "GET /:projectId/api/v7/entities"
 description: "Get a paginated, filtered list of entities"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 Returns a paginated list of entities for the project. Supports rich filtering by source, space, user, keywords, metadata, title, content, location, and time. Excludes drafts — use [Fetch Drafts](/api-reference/entities/fetch-drafts) for those.
 
 ## Query Parameters
@@ -142,13 +144,7 @@ Returns a paginated list of entities for the project. Supports rich filtering by
 
 This endpoint has a space in context, so it accepts the opt-in reputation params. They add a `spaceReputation` field to each populated author `user`, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation) for the full contract.
 
-<ParamField query="spaceReputationId" type="string">
-  Adds `spaceReputation` to each populated author. One of: a space **`<uuid>`** (that space's bucket), **`none`** (the project-general bucket), or **`context`** (per-row — each author scored in the space that row's entity belongs to). The empty string and the legacy `general` / `null` aliases are rejected (400). Missing buckets read as `0`.
-</ParamField>
-
-<ParamField query="spaceReputationDescendants" type="boolean">
-  Only honored with an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the space plus all of its descendants (the root space's own bucket included). Ignored for `none`; not allowed with `context`.
-</ParamField>
+<SpaceReputationParams variant="context" field="query" />
 
 ## Response
 
@@ -175,5 +171,5 @@ Each item in `data` is an [Entity](/data-models/entity) object. File URLs are si
 
 ## See Also
 
-- [Reputation data model](/data-models/reputation) — the `spaceReputationId` / `spaceReputationDescendants` contract
+- [Reputation data model](/data-models/reputation) — the `spaceReputation` object contract
 - [Entity data model](/data-models/entity)

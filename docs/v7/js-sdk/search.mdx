@@ -3,6 +3,8 @@ title: "Search"
 description: "Semantic search across content, users, and spaces, plus streaming AI Q&A"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 The `search` module runs semantic (vector) search over your project's content and powers a streaming, RAG-style question-answering endpoint.
 
 <Note>
@@ -57,13 +59,7 @@ for (const { sourceType, similarity, record } of results) {
   Maximum number of results to return.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each result record's author into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the space derived from the request context). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<ContentSearchResult[]>`, where each element is
 `{ sourceType: "entity" | "comment" | "message"; similarity: number; record: Entity | Comment | ChatMessage }`.
@@ -182,13 +178,7 @@ for await (const event of stream) {
   Maximum number of sources to draw from.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each cited source record's author into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the space derived from the request context). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 <ParamField body="signal" type="AbortSignal">
   Aborts the in-flight stream (e.g. when the user navigates away). You can also

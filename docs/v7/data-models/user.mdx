@@ -27,7 +27,7 @@ The `User` type is returned when fetching another user's public profile. Sensiti
 | `location` | `GeoPoint \| null` | GeoJSON point representing the user's location. |
 | `metadata` | `Record<string, any>` | Custom key-value data for your project (max 10 KB). |
 | `reputation` | `number` | The user's overall reputation total — the sum of all their reputation buckets across every space. Always present. See [Reputation](/data-models/reputation). |
-| `spaceReputation` | `number` | Opt-in. The user's reputation in a specific space, added only when an endpoint is called with the `spaceReputationId` query param. See [Reputation](/data-models/reputation). |
+| `spaceReputation` | `number` | Opt-in. The user's reputation in a specific space, added only when an endpoint is called with the `spaceReputation` object (or the deprecated `spaceReputationId` param). See [Reputation](/data-models/reputation). |
 | `createdAt` | `Date` | Timestamp when the account was created. |
 
 ### GeoPoint
@@ -67,7 +67,7 @@ Some endpoints accept an `include` parameter that populates additional fields. P
 
 ## Reputation
 
-Every user object always carries `reputation` — the maintained sum of the user's reputation across all spaces. When the optional `reputation` bundle is installed, you can additionally read a user's reputation in a specific space via the `spaceReputationId` query param, which adds a `spaceReputation` field to each returned user. See the [Reputation data model](/data-models/reputation) for the full opt-in read contract.
+Every user object always carries `reputation` — the maintained sum of the user's reputation across all spaces. When the optional `reputation` bundle is installed, you can additionally read a user's reputation in a specific space via the `spaceReputation` object (deprecating the older `spaceReputationId` param), which adds a `spaceReputation` field to each returned user. See the [Reputation data model](/data-models/reputation) for the full opt-in read contract.
 
 ## See Also
 

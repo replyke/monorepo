@@ -3,6 +3,8 @@ title: "Reports"
 description: "File content reports against entities and comments, and read the moderation queue"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 The `reports` module lets end users file reports against entities and comments, and lets moderators read the moderated reports queue.
 
 ---
@@ -77,13 +79,7 @@ const { data, pagination } = await sublay.reports.fetchModeratedReports({
   The number of reports to return per page.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each reported target's author into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the space derived from the request context — per-row from the space each report belongs to). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<PaginatedResponse<Report>>`
 

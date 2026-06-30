@@ -3,6 +3,8 @@ title: "Chat"
 description: "Conversations, messages, members, reactions, and read state"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 The `chat` module powers direct, group, and space conversations — sending and
 editing messages (with file attachments), managing members, reacting, and tracking
 read state. All actions are performed as the logged-in user.
@@ -217,13 +219,7 @@ const { data, pagination } = await sublay.chat.listMembers({
   Filter members by role.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each returned member into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the conversation's space). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<PaginatedResponse<ConversationMember>>`
 
@@ -382,13 +378,7 @@ const withReplies = await sublay.chat.listMessages({
   always returns an empty list — the response's `notice` field explains why.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each message sender into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the conversation's space). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<{ messages: ChatMessage[]; hasMore: boolean; oldestCreatedAt: string | null; newestCreatedAt: string | null }>`.
 
@@ -448,13 +438,7 @@ const message = await sublay.chat.sendMessage({
   `multipart/form-data` upload.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts the created message's sender into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the conversation's space). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<ChatMessage>`
 
@@ -479,13 +463,7 @@ const message = await sublay.chat.getMessage({
   The message ID.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts the message sender into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the conversation's space). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<ChatMessage>`
 
@@ -648,13 +626,7 @@ const { data, pagination } = await sublay.chat.listReactions({
   Results per page. Defaults to `50`, max `100`.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each returned reactor into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the conversation's space). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<{ data: MessageReaction[]; pagination: { page: number; limit: number; total: number; hasMore: boolean } }>`,
 where `MessageReaction` is `{ user: User; emoji: string; createdAt: Date }`.

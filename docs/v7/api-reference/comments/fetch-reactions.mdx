@@ -4,6 +4,8 @@ api: "GET /:projectId/api/v7/comments/:commentId/reactions"
 description: "Get a paginated list of reactions on a comment"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 Returns a paginated list of reactions for a comment, each with the reacting user's profile. Useful for displaying "reacted by" lists or per-type reaction breakdowns.
 
 No authentication required.
@@ -36,13 +38,7 @@ No authentication required.
 
 This endpoint has a space in context, so it accepts the opt-in reputation params. They add a `spaceReputation` field to each reactor's `user`, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation) for the full contract.
 
-<ParamField query="spaceReputationId" type="string">
-  Adds `spaceReputation` to each returned user. One of: a space **`<uuid>`** (that space's bucket), **`none`** (the project-general bucket), or **`context`** (the space derived from this request's context — per-row on lists). The empty string and the legacy `general` / `null` aliases are rejected (400). Missing buckets read as `0`.
-</ParamField>
-
-<ParamField query="spaceReputationDescendants" type="boolean">
-  Only honored with an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the space plus all of its descendants (the root space's own bucket included). Ignored for `none`; not allowed with `context`.
-</ParamField>
+<SpaceReputationParams variant="context" field="query" />
 
 ## Response
 

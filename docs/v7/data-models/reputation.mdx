@@ -28,31 +28,66 @@ Every user object still carries a `reputation` field, and default API responses 
 
 ## Reading space-scoped reputation
 
-Every user-returning endpoint accepts an opt-in `spaceReputationId` query param that adds a `spaceReputation` number to each returned user. The `reputation` total is always included regardless; `spaceReputation` is purely additive and only appears when you ask for it.
+Every user-returning endpoint accepts an opt-in **`spaceReputation`** object that adds a `spaceReputation` number to each returned user. The `reputation` total is always included regardless; the per-space `spaceReputation` field is purely additive and only appears when you ask for it.
 
-<ParamField query="spaceReputationId" type="string">
-  Adds a `spaceReputation` field to each returned user. One of:
+### The `spaceReputation` object (primary form)
 
-  - a space **`<uuid>`** — that user's reputation in that specific space;
-  - **`none`** — the project-general (space-less) bucket;
-  - **`context`** — the space derived from the request context. On lists this is **per-row** (each author scored in the space *that row* belongs to); on single-space surfaces — space members/team, a chat conversation — it's that one space. Only valid where a space is in context, so it is **rejected (400) on bare user lookups**.
+Pass a single object. Its two fields express which bucket to read and whether to sum descendants:
 
-  A bucket that doesn't exist reads as `0`. The empty string and the legacy `general` / `null` aliases are **rejected (400)** — use `none` for the space-less bucket.
+```ts
+spaceReputation: {
+  spaceId: string | "none" | "context"; // "context" only on context endpoints
+  includeDescendants?: boolean;
+}
+```
+
+<ParamField path="spaceReputation" type="object">
+  Opt-in. Adds a `spaceReputation` number to each returned user, scoped to a single space.
+
+  <Expandable title="spaceReputation">
+    <ParamField name="spaceId" type='string | "none" | "context"' required>
+      Which bucket to read:
+
+      - a space **`<uuid>`** — that user's reputation in that specific space;
+      - **`"none"`** — the project-general (space-less) bucket;
+      - **`"context"`** — the space derived from the request context. On lists this is **per-row** (each author scored in the space *that row* belongs to); on single-space surfaces — space members/team, a chat conversation — it's that one space. **Only valid on context endpoints** (see below); user-direct endpoints **reject `"context"` with a 400**.
+
+      A bucket that doesn't exist reads as `0`. The empty string and the legacy `general` / `null` aliases are **rejected (400)** — use `"none"` for the space-less bucket.
+    </ParamField>
+    <ParamField name="includeDescendants" type="boolean">
+      Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the **subtree sum** — the named space plus all of its descendant spaces (the root space's own bucket is included). Ignored for `"none"`; not allowed with `"context"`.
+    </ParamField>
+  </Expandable>
 </ParamField>
 
-<ParamField query="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the **subtree sum** — the named space plus all of its descendant spaces (the root space's own bucket is included). Ignored for `none`; not allowed with `context`.
+The object has **two variants** depending on the endpoint class — they differ only in whether `spaceId` accepts `"context"`:
+
+| Variant | `spaceId` accepts | Used by |
+|---------|-------------------|---------|
+| **Context** | `<uuid>` · `"none"` · `"context"` | Entities, comments, reactions, chat, space members/team, moderated reports, content search & ask |
+| **User-direct** | `<uuid>` · `"none"` | Fetch user (by ID / foreign ID / username), user suggestions, followers/following/connections by user ID |
+
+### Deprecated flat props
+
+The object **replaces** two flat props that travelled together. They still work — passing the object **wins** if both forms are supplied — but they are deprecated and will be removed in a later major version. Prefer the object.
+
+<ParamField path="spaceReputationId" type="string" deprecated>
+  **Deprecated** — use `spaceReputation.spaceId`. Same value set as the object's `spaceId` for the matching endpoint variant (`<uuid>` / `"none"`, plus `"context"` on context endpoints only).
+</ParamField>
+
+<ParamField path="spaceReputationDescendants" type="boolean" deprecated>
+  **Deprecated** — use `spaceReputation.includeDescendants`. Only honored alongside an explicit `spaceReputationId` `<uuid>`.
 </ParamField>
 
 The resulting field appears on each user object as:
 
 <ResponseField name="spaceReputation" type="number">
-  The user's reputation in the requested space (or the space-less bucket). Present only when `spaceReputationId` was supplied. Missing buckets read as `0`.
+  The user's reputation in the requested space (or the space-less bucket). Present only when the `spaceReputation` object (or the deprecated `spaceReputationId`) was supplied. Missing buckets read as `0`.
 </ResponseField>
 
 ### Where the params apply
 
-`spaceReputationId` is accepted on **every** user-returning endpoint, but the allowed values depend on whether the endpoint has a space in context.
+The `spaceReputation` object is accepted on **every** user-returning endpoint, but the allowed values for `spaceId` depend on whether the endpoint has a space in context.
 
 **Context endpoints** accept `<uuid>`, `none`, **and** `context`:
 

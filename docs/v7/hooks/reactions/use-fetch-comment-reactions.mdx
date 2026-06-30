@@ -4,6 +4,8 @@ description: "Fetch a paginated list of users who reacted to a comment"
 icon: "plug"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 ## Overview
 
 `useFetchCommentReactions` returns a function that fetches individual reaction records for a comment. Use this to show "who reacted" lists, optionally filtered by a specific reaction type.
@@ -49,18 +51,12 @@ function CommentLikers({ commentId }: { commentId: string }) {
   Sort direction by creation date. Default: `"desc"`.
 </ParamField>
 
-<ParamField path="spaceReputationId" type="string">
-  Resolves each reactor's reputation into a `spaceReputation` number on the embedded `user`. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField path="spaceReputationDescendants" type="boolean">
-  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
-</ParamField>
+<SpaceReputationParams variant="context" field="path" />
 
 ## Returns
 
 <ResponseField name="data" type="Reaction[]">
-  Array of reaction records. Each includes `id`, `userId`, `reactionType`, `targetId`, `targetType`, `createdAt`. The `user` field is populated when user data is available; when `spaceReputationId` is set it carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
+  Array of reaction records. Each includes `id`, `userId`, `reactionType`, `targetId`, `targetType`, `createdAt`. The `user` field is populated when user data is available; when `spaceReputation` is requested it carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
 </ResponseField>
 
 <ResponseField name="pagination" type="PaginationMetadata">

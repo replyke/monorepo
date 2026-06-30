@@ -3,6 +3,8 @@ title: "Comments"
 description: "Create and manage threaded comments and reactions"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 Comments are threaded discussions attached to entities. The `comments` module lets you create, fetch, update, and delete comments, and manage reactions on them. All actions are performed on behalf of the logged-in user.
 
 ---
@@ -74,13 +76,7 @@ const comment = await sublay.comments.fetchComment({ commentId: "cmt_abc123" });
   Comma-separated list of associations to populate.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts the returned comment's author into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the space derived from the request context). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<Comment>`
 
@@ -192,13 +188,7 @@ const { data, pagination } = await sublay.comments.fetchManyComments({
   Filter by source ID.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each returned comment's author into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the space derived from the request context — resolved per-row from the space each comment belongs to). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<PaginatedResponse<Comment>>`
 
@@ -278,13 +268,7 @@ const { data, pagination } = await sublay.comments.fetchReactions({
   Sort direction: `"asc"` or `"desc"`.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each returned reactor into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the space derived from the request context). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<{ data: Reaction[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasMore: boolean } }>`
 
