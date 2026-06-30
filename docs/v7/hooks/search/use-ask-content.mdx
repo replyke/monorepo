@@ -93,5 +93,17 @@ Call `ask` with:
 </ResponseField>
 
 <Note>
-  In React Native, SSE streaming requires polyfills. Install `react-native-fetch-api`, `web-streams-polyfill`, and `react-native-polyfill-globals`, then call `polyfillGlobals()` at app startup before using this hook.
+  In React Native, SSE streaming requires polyfills for `fetch`, `ReadableStream`, and `TextDecoder`. Install `react-native-fetch-api`, `web-streams-polyfill@^3`, `react-native-polyfill-globals`, and `text-encoding`, then call the targeted sub-polyfills once at app startup, before using this hook:
+
+  ```ts
+  import { polyfill as polyfillEncoding } from "react-native-polyfill-globals/src/encoding";
+  import { polyfill as polyfillReadableStream } from "react-native-polyfill-globals/src/readable-stream";
+  import { polyfill as polyfillFetch } from "react-native-polyfill-globals/src/fetch";
+
+  polyfillEncoding();
+  polyfillReadableStream();
+  polyfillFetch(); // last, so it wins over the built-in fetch
+  ```
+
+  Prefer these targeted polyfills over the all-in-one `polyfillGlobals()`: that helper also pulls in `react-native-get-random-values`, a native module that forces a development-client rebuild. The three above are pure JavaScript, so a Metro reload is enough. Pin `web-streams-polyfill` to v3 — v4 removed the `ponyfill/es6` subpath that `react-native-polyfill-globals` requires.
 </Note>
