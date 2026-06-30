@@ -3,6 +3,7 @@ import { Entity } from "../../interfaces/Entity";
 import { Comment } from "../../interfaces/Comment";
 import { ChatMessage } from "../../interfaces/ChatMessage";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 
 export interface SearchContentProps extends SpaceReputationContextParams {
   query: string;
@@ -29,12 +30,24 @@ export async function searchContent(
   data: SearchContentProps
 ): Promise<ContentSearchResult[]> {
   // The server reads the space-reputation options from `req.query`, not the
-  // request body, so they are forwarded as query params.
-  const { spaceReputationId, spaceReputationDescendants, ...body } = data;
+  // request body, so they are forwarded as query params (flattened via the
+  // helper so the `spaceReputation` object never reaches the serializer).
+  const {
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+    ...body
+  } = data;
   const response = await client.projectInstance.post<ContentSearchResult[]>(
     "/search/content",
     body,
-    { params: { spaceReputationId, spaceReputationDescendants } }
+    {
+      params: buildSpaceReputationParams({
+        spaceReputation,
+        spaceReputationId,
+        spaceReputationDescendants,
+      }),
+    }
   );
   return response.data;
 }

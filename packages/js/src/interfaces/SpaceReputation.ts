@@ -21,18 +21,37 @@
  */
 export interface SpaceReputationContextParams {
   /**
+   * Opt into space-scoped reputation enrichment. The primary form: an object
+   * describing the space and whether to include descendants.
+   *
+   * - `spaceId` — a space `<uuid>` (reputation within that specific space),
+   *   `"none"` (no space context — global reputation only), or `"context"`
+   *   (derive the space from each record's own context, e.g. a feed enriches
+   *   each row's author with reputation in that row's space).
+   * - `includeDescendants` — whether to include descendant spaces when
+   *   computing space-scoped reputation. Only honored with an explicit space
+   *   `<uuid>` (ignored for `"none"` / `"context"`).
+   */
+  spaceReputation?: {
+    spaceId: string | "none" | "context";
+    includeDescendants?: boolean;
+  };
+  /**
+   * @deprecated Pass the `spaceReputation` object instead. Retained for
+   * back-compat; removal is a later major version.
+   *
    * Opt into space-scoped reputation enrichment. Accepted forms:
    * - a space `<uuid>` — reputation within that specific space;
    * - `"none"` — no space context (global reputation only);
    * - `"context"` — derive the space from each record's own context
    *   (e.g. a feed enriches each row's author with reputation in that row's
    *   space).
-   *
-   * Plain `string` — a `string | "none" | "context"` union adds no safety
-   * since a uuid is already a string.
    */
   spaceReputationId?: string;
   /**
+   * @deprecated Pass the `spaceReputation` object (`includeDescendants`)
+   * instead. Retained for back-compat; removal is a later major version.
+   *
    * Whether to include descendant spaces when computing space-scoped
    * reputation. Only honored with an explicit space `<uuid>` (ignored for
    * `"none"` / `"context"`).
@@ -45,18 +64,37 @@ export interface SpaceReputationContextParams {
  */
 export interface SpaceReputationUserParams {
   /**
+   * Opt into space-scoped reputation enrichment. The primary form: an object
+   * describing the space and whether to include descendants.
+   *
+   * - `spaceId` — a space `<uuid>` (reputation within that specific space) or
+   *   `"none"` (no space context — global reputation only). `"context"` is
+   *   **rejected by the server (400)** on user-direct endpoints — there is no
+   *   per-record context to derive a space from.
+   * - `includeDescendants` — whether to include descendant spaces when
+   *   computing space-scoped reputation. Only honored with an explicit space
+   *   `<uuid>`.
+   */
+  spaceReputation?: {
+    spaceId: string | "none";
+    includeDescendants?: boolean;
+  };
+  /**
+   * @deprecated Pass the `spaceReputation` object instead. Retained for
+   * back-compat; removal is a later major version.
+   *
    * Opt into space-scoped reputation enrichment. Accepted forms:
    * - a space `<uuid>` — reputation within that specific space;
    * - `"none"` — no space context (global reputation only).
    *
    * `"context"` is **rejected by the server (400)** on user-direct endpoints —
    * there is no per-record context to derive a space from.
-   *
-   * Plain `string` — a `string | "none"` union adds no safety since a uuid is
-   * already a string.
    */
   spaceReputationId?: string;
   /**
+   * @deprecated Pass the `spaceReputation` object (`includeDescendants`)
+   * instead. Retained for back-compat; removal is a later major version.
+   *
    * Whether to include descendant spaces when computing space-scoped
    * reputation. Only honored with an explicit space `<uuid>`.
    */

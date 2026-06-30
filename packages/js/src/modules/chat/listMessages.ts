@@ -1,6 +1,7 @@
 import { SublayHttpClient } from "../../core/client";
 import { ChatMessage } from "../../interfaces/ChatMessage";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 
 export interface MessageFilters {
   /**
@@ -45,7 +46,21 @@ export async function listMessages(
   client: SublayHttpClient,
   data: ListMessagesProps
 ): Promise<ListMessagesResponse> {
-  const { conversationId, ...params } = data;
+  const {
+    conversationId,
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+    ...rest
+  } = data;
+  const params = {
+    ...rest,
+    ...buildSpaceReputationParams({
+      spaceReputation,
+      spaceReputationId,
+      spaceReputationDescendants,
+    }),
+  };
   const response = await client.projectInstance.get<ListMessagesResponse>(
     `/chat/conversations/${conversationId}/messages`,
     { params }

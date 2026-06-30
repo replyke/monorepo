@@ -1,6 +1,7 @@
 import { SublayHttpClient } from "../../core/client";
 import { ContentSearchResult } from "./searchContent";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 
 export interface AskContentProps extends SpaceReputationContextParams {
   query: string;
@@ -91,9 +92,17 @@ export async function* askContent(
   data: AskContentProps
 ): AsyncGenerator<AskContentEvent, void, unknown> {
   // The server reads the space-reputation options from `req.query`, not the
-  // request body, so they are appended to the URL as query params.
-  const { signal, spaceReputationId, spaceReputationDescendants, ...body } =
-    data;
+  // request body, so they are appended to the URL as query params. The helper
+  // flattens the `spaceReputation` object (or the deprecated flat props) to the
+  // flat pair — never the nested object, which would stringify to
+  // `[object Object]` on a `URLSearchParams` and be silently ignored.
+  const {
+    signal,
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+    ...body
+  } = data;
 
   const baseURL = client.projectInstance.defaults.baseURL ?? "";
   const authHeader = await client.getAuthHeader();
@@ -103,13 +112,18 @@ export async function* askContent(
   };
   if (authHeader) headers.Authorization = authHeader;
 
+  const flatParams = buildSpaceReputationParams({
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+  });
   const search = new URLSearchParams();
-  if (spaceReputationId != null)
-    search.set("spaceReputationId", spaceReputationId);
-  if (spaceReputationDescendants != null)
+  if (flatParams.spaceReputationId != null)
+    search.set("spaceReputationId", flatParams.spaceReputationId);
+  if (flatParams.spaceReputationDescendants != null)
     search.set(
       "spaceReputationDescendants",
-      String(spaceReputationDescendants)
+      String(flatParams.spaceReputationDescendants)
     );
   const queryString = search.toString();
   const url = `${baseURL}/search/ask${queryString ? `?${queryString}` : ""}`;
