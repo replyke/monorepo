@@ -112,7 +112,19 @@ function AskBox() {
 </ResponseField>
 
 <Note>
-  `useAskContent` uses the Fetch API with `ReadableStream` for SSE. In React Native, install `react-native-fetch-api`, `web-streams-polyfill`, and `react-native-polyfill-globals`, then call `polyfillGlobals()` at app startup.
+  `useAskContent` uses the Fetch API with `ReadableStream` and `TextDecoder` for SSE. In React Native, install `react-native-fetch-api`, `web-streams-polyfill@^3`, `react-native-polyfill-globals`, and `text-encoding`, then call the targeted sub-polyfills once at app startup:
+
+  ```ts
+  import { polyfill as polyfillEncoding } from "react-native-polyfill-globals/src/encoding";
+  import { polyfill as polyfillReadableStream } from "react-native-polyfill-globals/src/readable-stream";
+  import { polyfill as polyfillFetch } from "react-native-polyfill-globals/src/fetch";
+
+  polyfillEncoding();
+  polyfillReadableStream();
+  polyfillFetch(); // last, so it wins over the built-in fetch
+  ```
+
+  Prefer these over the all-in-one `polyfillGlobals()`, which also pulls in the native `react-native-get-random-values` and forces a development-client rebuild. Pin `web-streams-polyfill` to v3 — v4 removed the `ponyfill/es6` subpath `react-native-polyfill-globals` requires.
 </Note>
 
 ## Related
