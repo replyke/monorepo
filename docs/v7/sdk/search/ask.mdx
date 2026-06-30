@@ -58,6 +58,10 @@ function AskBox() {
   Scope the context lookup to a specific space.
 </ParamField>
 
+<ParamField path="includeChildSpaces" type="boolean" default="false">
+  Only applies with `spaceId`. When `true`, the context lookup also covers every space nested under it — the whole subtree at any depth — so you can ask across a community and all of its channels at once. Ignored without `spaceId`.
+</ParamField>
+
 <ParamField path="conversationId" type="string">
   Scope the context lookup to a specific conversation.
 </ParamField>

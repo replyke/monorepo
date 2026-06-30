@@ -32,6 +32,10 @@ const { data, pagination } = await sublay.search.searchContent({
   Scope the search to a specific space.
 </ParamField>
 
+<ParamField body="includeChildSpaces" type="boolean" default="false">
+  Only applies with `spaceId`. When `true`, the search also covers every space nested under it — the whole subtree at any depth — not just the named space. Ignored without `spaceId`.
+</ParamField>
+
 <ParamField body="conversationId" type="string">
   Scope the search to a specific conversation.
 </ParamField>
@@ -126,6 +130,10 @@ const { answer, sources } = await sublay.search.askContent({
 
 <ParamField body="spaceId" type="string">
   Scope the search to content within a specific space.
+</ParamField>
+
+<ParamField body="includeChildSpaces" type="boolean" default="false">
+  Only applies with `spaceId`. When `true`, the context lookup also covers every space nested under it — the whole subtree at any depth — so you can ask across a community and all of its channels at once. Ignored without `spaceId`.
 </ParamField>
 
 <ParamField body="conversationId" type="string">
