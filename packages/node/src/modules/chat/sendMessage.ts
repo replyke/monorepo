@@ -4,6 +4,7 @@ import { ChatMessage } from "../../interfaces/ChatMessage";
 import { GifData } from "../../interfaces/Comment";
 import { Mention } from "../../interfaces/Mention";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 
 export interface ChatMessageFile {
   file: Uint8Array | Blob;
@@ -34,6 +35,7 @@ export async function sendMessage(
   const {
     conversationId,
     files,
+    spaceReputation,
     spaceReputationId,
     spaceReputationDescendants,
     ...body
@@ -42,7 +44,11 @@ export async function sendMessage(
 
   // Space-reputation opts go as query params (never body fields), so they
   // travel the same way for both the JSON and multipart variants.
-  const params = { spaceReputationId, spaceReputationDescendants };
+  const params = buildSpaceReputationParams({
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+  });
 
   // With attachments, send multipart: object fields are JSON-stringified (the
   // server parses them back) and the files are appended. Otherwise send JSON.
