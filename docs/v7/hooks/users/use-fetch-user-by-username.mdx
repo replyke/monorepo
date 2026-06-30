@@ -4,6 +4,8 @@ description: "Fetch a user's public profile by their username"
 icon: "plug"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 ## Overview
 
 `useFetchUserByUsername` returns a function that fetches a user's public profile by their username. Use this for public profile pages where the URL contains a username slug.
@@ -40,16 +42,10 @@ The hook returns a function. That function accepts:
   Optional. Pass `"files"` to populate `avatarFile` and `bannerFile` with full `File` objects.
 </ParamField>
 
-<ParamField path="spaceReputationId" type="string">
-  Optional. Resolves the returned user's reputation into a `spaceReputation` number. Accepts a space `<uuid>` or `"none"` (project-general bucket) only — `"context"` is rejected with a `400` on this endpoint. Empty string, `"general"`, and `null` are also rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField path="spaceReputationDescendants" type="boolean">
-  Optional. When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
-</ParamField>
+<SpaceReputationParams variant="user" field="path" />
 
 ## Returns
 
 <ResponseField name="User" type="User">
-  The user's public profile. When `spaceReputationId` is set, it carries an added `spaceReputation` number. See [User data model](/data-models/user) and [Reputation](/data-models/reputation).
+  The user's public profile. When `spaceReputation` is requested, it carries an added `spaceReputation` number. See [User data model](/data-models/user) and [Reputation](/data-models/reputation).
 </ResponseField>

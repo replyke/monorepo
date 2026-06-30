@@ -4,6 +4,8 @@ description: "Fetch all admins and moderators of a space"
 icon: "plug"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 ## Overview
 
 `useFetchSpaceTeam` returns a callable function that fetches all admins and moderators of a space in a single non-paginated response. This is useful for displaying the space's leadership team.
@@ -31,16 +33,10 @@ function SpaceTeam({ spaceId }: { spaceId: string }) {
   UUID of the space.
 </ParamField>
 
-<ParamField path="spaceReputationId" type="string">
-  Resolves each team member's reputation into a `spaceReputation` number on the embedded `user`. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField path="spaceReputationDescendants" type="boolean">
-  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
-</ParamField>
+<SpaceReputationParams variant="context" field="path" />
 
 ## Returns
 
 <ResponseField name="data" type="SpaceMemberWithUser[]">
-  All admins and moderators with active status, including embedded user details. When `spaceReputationId` is set, each embedded user carries an added `spaceReputation` number. See [SpaceMember](/data-models/space-member) and [Reputation](/data-models/reputation).
+  All admins and moderators with active status, including embedded user details. When `spaceReputation` is requested, each embedded user carries an added `spaceReputation` number. See [SpaceMember](/data-models/space-member) and [Reputation](/data-models/reputation).
 </ResponseField>

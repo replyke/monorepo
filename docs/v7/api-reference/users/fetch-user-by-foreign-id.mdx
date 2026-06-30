@@ -4,6 +4,8 @@ api: "GET /:projectId/api/v7/users/by-foreign-id"
 description: "Look up a user by your own system's external user ID"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 Finds a user within the project by their `foreignId` — the external identifier you provided when creating or syncing the user. Optionally creates the user if not found (requires service or master token).
 
 ## Query Parameters
@@ -50,15 +52,9 @@ Finds a user within the project by their `foreignId` — the external identifier
 
 ### Space-scoped reputation
 
-This endpoint has no space in context, so `spaceReputationId` accepts a space **`<uuid>`** or **`none`** only — `context` is rejected (400). It adds a `spaceReputation` field to each returned user, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation).
+This endpoint has no space in context, so the opt-in `spaceReputation` object accepts a `spaceId` of a space **`<uuid>`** or **`none`** only — `context` is rejected (400). It adds a `spaceReputation` field to each returned user, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation).
 
-<ParamField query="spaceReputationId" type="string">
-  Adds `spaceReputation` to each returned user. Either a space **`<uuid>`** (that space's bucket) or **`none`** (the project-general bucket). `context`, the empty string, and the legacy `general` / `null` aliases are rejected (400). Missing buckets read as `0`.
-</ParamField>
-
-<ParamField query="spaceReputationDescendants" type="boolean">
-  Only honored with an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the space plus all of its descendants. Ignored for `none`.
-</ParamField>
+<SpaceReputationParams variant="user" field="query" />
 
 ## Response
 

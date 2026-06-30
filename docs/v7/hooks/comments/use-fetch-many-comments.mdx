@@ -4,6 +4,8 @@ description: "Fetch a paginated list of comments with filters"
 icon: "plug"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 ## Overview
 
 `useFetchManyComments` returns a function that fetches a paginated list of comments. This is the underlying fetch function used by `useEntityComments` and `useReplies`. Use it directly when you need a custom comment list outside of those hooks.
@@ -66,18 +68,12 @@ function UserComments({ userId }: { userId: string }) {
   Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`.
 </ParamField>
 
-<ParamField path="spaceReputationId" type="string">
-  Resolves each row's embedded author reputation into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived per row from the request context). Empty string, `"general"`, and `null` are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField path="spaceReputationDescendants" type="boolean">
-  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
-</ParamField>
+<SpaceReputationParams variant="context" field="path" />
 
 ## Returns
 
 <ResponseField name="data" type="Comment[]">
-  Comments for the current page. When `spaceReputationId` is set, each embedded author carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
+  Comments for the current page. When `spaceReputation` is requested, each embedded author carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
 </ResponseField>
 
 <ResponseField name="pagination.hasMore" type="boolean">

@@ -3,6 +3,8 @@ title: "Search"
 description: "Full-text search across content, users, and spaces, plus AI-powered Q&A"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 The `search` module provides server-side access to Sublay's search and AI capabilities. Use it to build search APIs, power recommendation engines, or answer natural-language questions about your content.
 
 ---
@@ -44,13 +46,7 @@ const { data, pagination } = await sublay.search.searchContent({
   Maximum number of results to return.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each result's author into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the space derived from the request context). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<PaginatedResponse<Entity>>`
 
@@ -144,12 +140,6 @@ const { answer, sources } = await sublay.search.askContent({
   Maximum number of sources to draw from.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each source's author into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (the space derived from the request context). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<{ answer: string; sources?: Array<{ entityId: string; title: string | null }> }>`

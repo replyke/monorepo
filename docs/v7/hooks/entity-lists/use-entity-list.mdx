@@ -50,14 +50,27 @@ function Feed() {
 
 ## Reputation
 
-The `config` object passed to `fetchEntities` accepts two optional reputation fields that opt each row's embedded author into an added `spaceReputation` number. See [Reputation](/data-models/reputation).
+The `config` object passed to `fetchEntities` accepts an optional `spaceReputation` object that opts each row's embedded author into an added `spaceReputation` number. See [Reputation](/data-models/reputation).
 
-<ParamField path="config.spaceReputationId" type="string">
-  Resolves each row's embedded author reputation into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (project-general bucket), or `"context"` (server-derived per row from the request context — useful for mixed-space feeds). Empty string, `"general"`, and `null` are rejected.
+<ParamField path="config.spaceReputation" type="object">
+  Opt-in. Adds a `spaceReputation` number to each row's embedded author. **This object is the primary form** — it replaces the deprecated flat config props below. This is a context surface, so `spaceId` accepts `"context"`.
+
+  <Expandable title="spaceReputation">
+    <ParamField name="spaceId" type='string | "none" | "context"' required>
+      Which bucket to read: a space **`<uuid>`** (that space's bucket), **`"none"`** (the project-general bucket), or **`"context"`** (server-derived per row from the request context — useful for mixed-space feeds). The empty string and the legacy `general` / `null` aliases are rejected (400). Missing buckets read as `0`.
+    </ParamField>
+    <ParamField name="includeDescendants" type="boolean">
+      Only honored when `spaceId` is an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum (the named space plus all of its descendants). Ignored for `"none"`; not allowed with `"context"`.
+    </ParamField>
+  </Expandable>
 </ParamField>
 
-<ParamField path="config.spaceReputationDescendants" type="boolean">
-  When `true`, `spaceReputation` is the subtree sum (the space plus all its descendants). Only honored when `spaceReputationId` is an explicit `<uuid>`.
+<ParamField path="config.spaceReputationId" type="string" deprecated>
+  **Deprecated** — use `config.spaceReputation.spaceId`. The flat form; still accepted (the object wins if both are passed). Accepts a space `<uuid>`, `"none"`, or `"context"`.
+</ParamField>
+
+<ParamField path="config.spaceReputationDescendants" type="boolean" deprecated>
+  **Deprecated** — use `config.spaceReputation.includeDescendants`. Only honored alongside an explicit `config.spaceReputationId` `<uuid>`.
 </ParamField>
 
 ## Return Values

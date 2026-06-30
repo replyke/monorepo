@@ -1,0 +1,64 @@
+export const SpaceReputationParams = ({ variant = "context", field = "path" }) => {
+  const isUser = variant === "user";
+  return (
+    <>
+      <ParamField {...{ [field]: "spaceReputation", type: "object" }}>
+        Opt-in. Adds a `spaceReputation` number to each returned user, scoped to a
+        single space. Requires the `reputation` bundle. The `reputation` total is
+        always present regardless; `spaceReputation` is purely additive and only
+        appears when you pass this object. **This object is the primary form** —
+        it replaces the deprecated flat props below. See the
+        [Reputation data model](/data-models/reputation) for the full contract.
+
+        <Expandable title="spaceReputation">
+          {isUser ? (
+            <ParamField name="spaceId" type='string | "none"' required>
+              Which bucket to read. A space **`<uuid>`** reads that space's bucket;
+              **`"none"`** reads the project-general (space-less) bucket.
+              **`"context"` is rejected (400)** on this endpoint — there is no
+              space context to derive. The empty string and the legacy `general` /
+              `null` aliases are also rejected. Missing buckets read as `0`.
+            </ParamField>
+          ) : (
+            <ParamField name="spaceId" type='string | "none" | "context"' required>
+              Which bucket to read. One of: a space **`<uuid>`** (that space's
+              bucket), **`"none"`** (the project-general, space-less bucket), or
+              **`"context"`** (the space derived from the request context —
+              resolved per-row on lists, or the single space on
+              member/team/conversation surfaces). The empty string and the legacy
+              `general` / `null` aliases are rejected (400). Missing buckets read
+              as `0`.
+            </ParamField>
+          )}
+          <ParamField name="includeDescendants" type="boolean">
+            Only honored when `spaceId` is an explicit space `<uuid>`. When `true`,
+            `spaceReputation` is the **subtree sum** — the named space plus all of
+            its descendant spaces (the root space's own bucket included). Ignored
+            for `"none"`; not allowed with `"context"`.
+          </ParamField>
+        </Expandable>
+      </ParamField>
+
+      {isUser ? (
+        <ParamField {...{ [field]: "spaceReputationId", type: "string", deprecated: true }}>
+          **Deprecated** — use the `spaceReputation` object instead. The flat form
+          of `spaceReputation.spaceId`. Still accepted (the object wins if both are
+          passed); removal is a later major version. Accepts a space `<uuid>` or
+          `"none"` only — `"context"` is rejected (400) on this endpoint.
+        </ParamField>
+      ) : (
+        <ParamField {...{ [field]: "spaceReputationId", type: "string", deprecated: true }}>
+          **Deprecated** — use the `spaceReputation` object instead. The flat form
+          of `spaceReputation.spaceId`. Still accepted (the object wins if both are
+          passed); removal is a later major version. Accepts a space `<uuid>`,
+          `"none"`, or `"context"`.
+        </ParamField>
+      )}
+
+      <ParamField {...{ [field]: "spaceReputationDescendants", type: "boolean", deprecated: true }}>
+        **Deprecated** — use `spaceReputation.includeDescendants` instead. The flat
+        form, only honored alongside an explicit `spaceReputationId` `<uuid>`.
+      </ParamField>
+    </>
+  );
+};

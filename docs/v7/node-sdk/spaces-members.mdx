@@ -3,6 +3,8 @@ title: "Space Members"
 description: "Manage space membership — joining, leaving, approvals, role assignments, and bans"
 ---
 
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
 The `spaces` module includes a full set of membership management functions. Use these to build admin tools, automate onboarding flows, or enforce membership policies server-side.
 
 ---
@@ -108,13 +110,7 @@ const result = await sublay.spaces.fetchSpaceMembers({
   Filter by membership status: `"pending"`, `"active"`, `"banned"`, or `"rejected"`.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each returned member into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (this space). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<SpaceMembersResponse>`
 
@@ -132,13 +128,7 @@ const result = await sublay.spaces.fetchSpaceTeam({ spaceId: "spc_abc123" });
   The Sublay space ID.
 </ParamField>
 
-<ParamField body="spaceReputationId" type="string">
-  Opts each returned team member into a `spaceReputation` number. Accepts a space `<uuid>`, `"none"` (the project-general bucket), or `"context"` (this space). The empty string and the legacy `general` / `null` aliases are rejected. See [Reputation](/data-models/reputation).
-</ParamField>
-
-<ParamField body="spaceReputationDescendants" type="boolean">
-  Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum — the named space plus all of its descendants.
-</ParamField>
+<SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<SpaceTeamResponse>`
 
