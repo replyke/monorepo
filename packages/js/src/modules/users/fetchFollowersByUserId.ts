@@ -2,6 +2,7 @@ import { SublayHttpClient } from "../../core/client";
 import { FollowListItem } from "../../interfaces/Follow";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 import { SpaceReputationUserParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 
 export interface FetchFollowersByUserIdProps extends SpaceReputationUserParams {
   userId: string;
@@ -13,7 +14,21 @@ export async function fetchFollowersByUserId(
   client: SublayHttpClient,
   data: FetchFollowersByUserIdProps
 ): Promise<PaginatedResponse<FollowListItem>> {
-  const { userId, ...params } = data;
+  const {
+    userId,
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+    ...rest
+  } = data;
+  const params = {
+    ...rest,
+    ...buildSpaceReputationParams({
+      spaceReputation,
+      spaceReputationId,
+      spaceReputationDescendants,
+    }),
+  };
   const response = await client.projectInstance.get<
     PaginatedResponse<FollowListItem>
   >(`/users/${userId}/followers`, { params });

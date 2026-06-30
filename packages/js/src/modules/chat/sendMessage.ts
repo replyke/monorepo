@@ -4,6 +4,7 @@ import { GifData } from "../../interfaces/Comment";
 import { Mention } from "../../interfaces/Mention";
 import { appendFields, appendFile } from "../../core/multipart";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 
 export interface SendMessageProps extends SpaceReputationContextParams {
   conversationId: string;
@@ -30,13 +31,20 @@ export async function sendMessage(
     conversationId,
     files,
     // The server reads these from `req.query`, not the body, so they are
-    // forwarded as query params (in both the JSON and multipart branches).
+    // forwarded as query params (in both the JSON and multipart branches),
+    // flattened via the helper so the `spaceReputation` object never reaches
+    // the serializer.
+    spaceReputation,
     spaceReputationId,
     spaceReputationDescendants,
     ...body
   } = data;
   const path = `/chat/conversations/${conversationId}/messages`;
-  const params = { spaceReputationId, spaceReputationDescendants };
+  const params = buildSpaceReputationParams({
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+  });
 
   if (files && files.length > 0) {
     const formData = new FormData();

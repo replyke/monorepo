@@ -1,6 +1,7 @@
 import { SublayHttpClient } from "../../core/client";
 import { User } from "../../interfaces/User";
 import { SpaceReputationUserParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 
 export interface FetchUserByForeignIdProps extends SpaceReputationUserParams {
   foreignId: string;
@@ -15,9 +16,24 @@ export async function fetchUserByForeignId(
   client: SublayHttpClient,
   data: FetchUserByForeignIdProps
 ): Promise<User> {
+  const {
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+    ...rest
+  } = data;
   const response = await client.projectInstance.get<User>(
     "/users/by-foreign-id",
-    { params: data }
+    {
+      params: {
+        ...rest,
+        ...buildSpaceReputationParams({
+          spaceReputation,
+          spaceReputationId,
+          spaceReputationDescendants,
+        }),
+      },
+    }
   );
   return response.data;
 }

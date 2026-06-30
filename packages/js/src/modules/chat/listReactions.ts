@@ -2,6 +2,7 @@ import { SublayHttpClient } from "../../core/client";
 import { User } from "../../interfaces/User";
 import { PaginationMetadata } from "../../interfaces/IPaginatedResponse";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 
 export interface ListReactionsProps extends SpaceReputationContextParams {
   conversationId: string;
@@ -29,7 +30,22 @@ export async function listReactions(
   client: SublayHttpClient,
   data: ListReactionsProps
 ): Promise<ListReactionsResponse> {
-  const { conversationId, messageId, ...params } = data;
+  const {
+    conversationId,
+    messageId,
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+    ...rest
+  } = data;
+  const params = {
+    ...rest,
+    ...buildSpaceReputationParams({
+      spaceReputation,
+      spaceReputationId,
+      spaceReputationDescendants,
+    }),
+  };
   const response = await client.projectInstance.get<ListReactionsResponse>(
     `/chat/conversations/${conversationId}/messages/${messageId}/reactions`,
     { params }

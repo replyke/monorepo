@@ -2,6 +2,7 @@ import { SublayHttpClient } from "../../core/client";
 import { Reaction, ReactionType } from "../../interfaces/Reaction";
 import { PaginationMetadata } from "../../interfaces/IPaginatedResponse";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 
 export interface FetchCommentReactionsProps
   extends SpaceReputationContextParams {
@@ -21,7 +22,21 @@ export async function fetchReactions(
   client: SublayHttpClient,
   data: FetchCommentReactionsProps
 ): Promise<FetchCommentReactionsResponse> {
-  const { commentId, ...params } = data;
+  const {
+    commentId,
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+    ...rest
+  } = data;
+  const params = {
+    ...rest,
+    ...buildSpaceReputationParams({
+      spaceReputation,
+      spaceReputationId,
+      spaceReputationDescendants,
+    }),
+  };
   const response =
     await client.projectInstance.get<FetchCommentReactionsResponse>(
       `/comments/${commentId}/reactions`,
