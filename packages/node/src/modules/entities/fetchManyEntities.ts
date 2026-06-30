@@ -2,6 +2,7 @@ import { SublayHttpClient } from "../../core/client";
 import { Entity } from "../../interfaces/Entity";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 
 export interface KeywordsFilters {
   includes?: string[];
@@ -99,10 +100,19 @@ export async function fetchManyEntities(
   data: FetchManyEntitiesProps
 ): Promise<PaginatedResponse<Entity>> {
   const path = `/entities`;
+  const { spaceReputation, spaceReputationId, spaceReputationDescendants, ...rest } =
+    data;
   const response = await client.projectInstance.get<PaginatedResponse<Entity>>(
     path,
     {
-      params: data,
+      params: {
+        ...rest,
+        ...buildSpaceReputationParams({
+          spaceReputation,
+          spaceReputationId,
+          spaceReputationDescendants,
+        }),
+      },
     }
   );
   return response.data;
