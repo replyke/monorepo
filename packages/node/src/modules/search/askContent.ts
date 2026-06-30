@@ -5,6 +5,12 @@ export interface AskContentProps extends SpaceReputationContextParams {
   query: string;
   sourceTypes?: ("entity" | "comment" | "message")[];
   spaceId?: string;
+  /**
+   * With a `spaceId`, also search every space nested under it (children,
+   * grandchildren — the whole subtree, any depth). Ignored without a `spaceId`.
+   * Defaults to false (exact-space search).
+   */
+  includeChildSpaces?: boolean;
   conversationId?: string;
   limit?: number;
 }
