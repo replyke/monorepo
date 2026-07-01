@@ -16,11 +16,18 @@ export interface MatchFacetRef {
   hotness: number;
 }
 
+export interface SampleContent {
+  sourceType: "entity" | "comment" | "message";
+  recordId: string;
+  content: string;
+  similarity: number;
+}
+
 export interface MatchedFacet {
   similarity: number;
   askerFacet?: MatchFacetRef;
   candidateFacet: MatchFacetRef;
-  sampleContent?: any[];
+  sampleContent?: SampleContent[];
 }
 
 export interface UserMatchResult {
