@@ -198,3 +198,52 @@ type AskContentEvent =
 
 Completion and errors are signalled **in-band** as `done` / `error` events — the
 generator itself returns `void` and does not throw on a server-reported error.
+
+---
+
+### matchUsers
+
+Matches people by **activity-derived interest facets**, in `passive` mode (against the current user's own facets) or `directed` mode (against a free-text topic). See the [Interest Matching](/v7/interest-matching) guide for setup and the model.
+
+<Note>
+  Requires a paid plan, the `ai-search` and `interest-matching` bundles, and `interestMatching.enabled` on the project. `passive` requires an identified user; `directed` requires one too.
+</Note>
+
+```typescript
+const { results } = await sublay.search.matchUsers({
+  mode: "passive",
+  limit: 10,
+});
+
+// results: [{ user, score, matchedFacets: [{ similarity, candidateFacet, askerFacet?, sampleContent? }] }]
+```
+
+<ParamField body="mode" type="string" required>
+  `"passive"` or `"directed"`.
+</ParamField>
+
+<ParamField body="query" type="string">
+  The topic to match against. Required in `directed` mode; rejected in `passive` mode.
+</ParamField>
+
+<ParamField body="limit" type="number" default="20">
+  Maximum number of matched users. Maximum `50`.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Restrict candidates to users active in this space.
+</ParamField>
+
+<ParamField body="includeChildSpaces" type="boolean" default="false">
+  With `spaceId`, also include users active in the space's subtree.
+</ParamField>
+
+<ParamField body="includeSampleContent" type="boolean" default="false">
+  Request illustrative sample content per matched facet. Only honored when the project has `interestMatching.exposeSampleContent` on; otherwise returns `403 match/sample-content-disabled`.
+</ParamField>
+
+<ParamField body="excludeSelf" type="boolean" default="true">
+  Exclude the current user from results.
+</ParamField>
+
+**Returns** — `Promise<{ results: UserMatchResult[] }>`. Unlike `searchContent`/`searchUsers`/`searchSpaces` (which return bare arrays), match returns the `{ results }` envelope, ordered by descending `score`.
