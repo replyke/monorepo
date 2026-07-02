@@ -2,10 +2,12 @@ import { SublayHttpClient } from "../../core/client";
 import { EstablishedConnection } from "../../interfaces/Connection";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 import { SpaceReputationUserParams } from "../../interfaces/SpaceReputation";
+import { UserSearchParams } from "../../interfaces/UserSearch";
 import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 
 export interface FetchConnectionsByUserIdProps
-  extends SpaceReputationUserParams {
+  extends SpaceReputationUserParams,
+    UserSearchParams {
   userId: string;
   page?: number;
   limit?: number;
