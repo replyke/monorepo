@@ -242,6 +242,14 @@ const { data, pagination } = await sublay.users.fetchFollowersByUserId({
   Results per page. Defaults to `20`.
 </ParamField>
 
+<ParamField body="query" type="string">
+  Optional search term. Filters the list to users whose username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField body="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
 <SpaceReputationParams variant="user" field="body" />
 
 **Returns** — `Promise<PaginatedResponse<User>>`
@@ -290,6 +298,14 @@ const { data, pagination } = await sublay.users.fetchFollowingByUserId({
   Results per page. Defaults to `20`.
 </ParamField>
 
+<ParamField body="query" type="string">
+  Optional search term. Filters the list to users whose username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField body="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
 <SpaceReputationParams variant="user" field="body" />
 
 **Returns** — `Promise<PaginatedResponse<User>>`
@@ -336,6 +352,14 @@ const { data, pagination } = await sublay.users.fetchConnectionsByUserId({
 
 <ParamField body="limit" type="number">
   Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="query" type="string">
+  Optional search term. Filters the list to connections whose connected user's username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField body="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
 </ParamField>
 
 <SpaceReputationParams variant="user" field="body" />

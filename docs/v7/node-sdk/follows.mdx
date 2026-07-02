@@ -43,6 +43,14 @@ const { data, pagination } = await sublay.follows.fetchFollowing({
   Results per page. Defaults to `20`.
 </ParamField>
 
+<ParamField body="query" type="string">
+  Optional search term. Filters the list to users whose username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField body="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
 **Returns** — `Promise<PaginatedResponse<Follow>>`
 
 ---
@@ -69,6 +77,14 @@ const { data, pagination } = await sublay.follows.fetchFollowers({
 
 <ParamField body="limit" type="number">
   Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="query" type="string">
+  Optional search term. Filters the list to users whose username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField body="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
 </ParamField>
 
 **Returns** — `Promise<PaginatedResponse<Follow>>`

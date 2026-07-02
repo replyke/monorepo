@@ -16,6 +16,14 @@ Returns a paginated list of users that the authenticated user is following. Unli
   Number of results per page. Defaults to `20`. Max `100`.
 </ParamField>
 
+<ParamField query="query" type="string">
+  Optional search term. Filters the list to users whose username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField query="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
 ## Response
 
 On success, returns HTTP `200` with a paginated response:

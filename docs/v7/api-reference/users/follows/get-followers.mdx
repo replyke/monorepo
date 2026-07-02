@@ -24,6 +24,14 @@ Returns a paginated list of users who follow the specified user. This endpoint i
   Number of results per page. Defaults to `20`, maximum `100`.
 </ParamField>
 
+<ParamField query="query" type="string">
+  Optional search term. Filters the list to users whose username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField query="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
 ### Space-scoped reputation
 
 This endpoint has no space in context, so the opt-in `spaceReputation` object accepts a `spaceId` of a space **`<uuid>`** or **`none`** only — `context` is rejected (400). It adds a `spaceReputation` field to each returned user, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation).
