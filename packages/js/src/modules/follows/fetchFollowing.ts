@@ -1,8 +1,9 @@
 import { SublayHttpClient } from "../../core/client";
 import { FollowListItem } from "../../interfaces/Follow";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
+import { UserSearchParams } from "../../interfaces/UserSearch";
 
-export interface FetchFollowingProps {
+export interface FetchFollowingProps extends UserSearchParams {
   page?: number;
   limit?: number;
 }
