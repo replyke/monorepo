@@ -1,0 +1,132 @@
+---
+title: "Match Users"
+api: "POST /:projectId/api/v7/match/users"
+description: "Match people by activity-derived interest facets"
+---
+
+Ranks other users against an asker's interests, using **activity-derived interest facets** — clusters of what each user has actually engaged with over time, not a static profile. The endpoint returns a structured match breakdown (who, how strongly, and on which facets), optionally with sample content that illustrates each overlap.
+
+Matching runs in two modes:
+
+- **`passive`** — match against the *asker's own* interest facets. Answers "who is like me?" No free-text; the asker's top facets are the query.
+- **`directed`** — match against a free-text `query` topic. Answers "who is into biotech?" The query is embedded and ranked against candidate facets.
+
+<Note>
+  Requires a **paid plan**, the **`ai-search`** bundle, the **`interest-matching`** bundle, and `interestMatching.enabled` set on the project. See the [Interest Matching](/v7/interest-matching) guide for setup.
+</Note>
+
+## Authentication
+
+The endpoint uses optional user auth, but each mode enforces its own requirement in the controller:
+
+- **`passive`** requires an **identified user** (the asker) — their facets are the query. No user → `401`.
+- **`directed`** also requires an identified user. A bare client token with no user session → `401`.
+
+## Body Parameters
+
+<ParamField body="mode" type="string" required>
+  `"passive"` or `"directed"`.
+</ParamField>
+
+<ParamField body="query" type="string">
+  The free-text topic to match against. **Required in `directed` mode; rejected in `passive` mode.**
+</ParamField>
+
+<ParamField body="limit" type="number" default="20">
+  Maximum number of matched users to return. Maximum `50`.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Restrict candidates to users active in this space.
+</ParamField>
+
+<ParamField body="includeChildSpaces" type="boolean" default="false">
+  Only applies with `spaceId`. When `true`, candidates active anywhere in the space's subtree are eligible. Ignored without `spaceId`.
+</ParamField>
+
+<ParamField body="includeSampleContent" type="boolean" default="false">
+  Gate 2 of the two-gate sample exposure. When `true` **and** the project setting `interestMatching.exposeSampleContent` is on, each matched facet includes a few illustrative content snippets from the candidate. Requesting samples while the project setting is off returns `403 match/sample-content-disabled`.
+</ParamField>
+
+<ParamField body="excludeSelf" type="boolean" default="true">
+  Exclude the asker from the results.
+</ParamField>
+
+## Response
+
+Returns the `{ results: [...] }` envelope (a deliberate divergence from `search/*`, which return bare arrays). Results are ordered by descending `score`.
+
+```json
+{
+  "results": [
+    {
+      "user": { "id": "usr_...", "name": "..." },
+      "score": 3.14,
+      "matchedFacets": [
+        {
+          "similarity": 0.62,
+          "askerFacet": { "id": "fac_...", "hotness": 4.2 },
+          "candidateFacet": { "id": "fac_...", "hotness": 3.8 },
+          "sampleContent": [
+            {
+              "sourceType": "entity",
+              "recordId": "ent_...",
+              "content": "…",
+              "similarity": 0.71
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Breakdown fields**
+
+- `score` — the aggregate match score. In `passive` mode this is additive over the top matched facet-pairs (two moderate overlaps can outrank one very strong overlap); in `directed` mode it is the single best facet's `similarity · weight(hotness)`.
+- `matchedFacets[].similarity` — cosine similarity of the facet pair.
+- `matchedFacets[].askerFacet` — the asker's side of the pair. Present in `passive` mode; **omitted in `directed` mode** (there is no asker facet — the query is the anchor) and for the cold-start bio fallback.
+- `matchedFacets[].candidateFacet` — the candidate's facet: its `id` and lazily-decayed `hotness`.
+- `matchedFacets[].sampleContent` — present **only** when both sample gates are satisfied. Never contains moderation-removed, soft-deleted, or private-DM content.
+
+The always-returned breakdown (users, scores, facet ids, similarities, hotness) carries **no readable content** — raw content appears only behind the two gates.
+
+## Cold-start fallback
+
+In `passive` mode, if the asker has no facet above the significance threshold, the endpoint falls back to the asker's **bio embedding** (from `UserEmbeddings`) as a single pseudo-facet, so a brand-new user can still get matches. Cold-start matches omit `askerFacet` on the breakdown.
+
+## Candidate exclusions
+
+Candidates are excluded when they are: the asker (unless `excludeSelf: false`), users with an **active** suspension (a future-dated suspension does *not* count as active), and — for a space-scoped match — users **banned** in that space.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="User Required — 401">
+    ```json
+    { "error": "Passive match requires an identified user", "code": "auth/user-required" }
+    ```
+  </Accordion>
+  <Accordion title="Plan Required — 403">
+    ```json
+    { "error": "Interest matching requires a paid plan", "code": "project/plan-required" }
+    ```
+  </Accordion>
+  <Accordion title="Interest Matching Disabled — 403">
+    ```json
+    { "error": "Interest matching is not enabled for this project", "code": "project/interest-matching-disabled" }
+    ```
+  </Accordion>
+  <Accordion title="Sample Content Disabled — 403">
+    ```json
+    { "error": "Sample content is not enabled for this project", "code": "match/sample-content-disabled" }
+    ```
+  </Accordion>
+  <Accordion title="Tables Not Available — 403">
+    The `interest-matching` bundle is not installed.
+    ```json
+    { "code": "database/tables-not-available", "missingTables": ["UserInterestFacets"] }
+    ```
+  </Accordion>
+</AccordionGroup>

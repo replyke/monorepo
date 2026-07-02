@@ -28,6 +28,7 @@
                   "v7/push-notifications",
                   "v7/custom-tables",
                   "v7/semantic-search-ai",
+                  "v7/interest-matching",
                   "v7/mcp-server"
                 ]
               }
@@ -433,7 +434,8 @@
                   "v7/hooks/search/use-search-content",
                   "v7/hooks/search/use-search-users",
                   "v7/hooks/search/use-search-spaces",
-                  "v7/hooks/search/use-ask-content"
+                  "v7/hooks/search/use-ask-content",
+                  "v7/hooks/search/use-match-users"
                 ]
               },
               {
@@ -675,7 +677,8 @@
                   "v7/api-reference/search/search-content",
                   "v7/api-reference/search/search-users",
                   "v7/api-reference/search/search-spaces",
-                  "v7/api-reference/search/ask"
+                  "v7/api-reference/search/ask",
+                  "v7/api-reference/match/match-users"
                 ]
               },
               {
