@@ -32,6 +32,14 @@ const { data, pagination } = await sublay.connections.fetchConnections({
   Results per page. Defaults to `20`.
 </ParamField>
 
+<ParamField body="query" type="string">
+  Optional search term. Filters the list to connections whose connected user's username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField body="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
 **Returns** — `Promise<PaginatedResponse<EstablishedConnection>>`, where `EstablishedConnection` is `{ id, connectedUser, connectedAt }`.
 
 ---
