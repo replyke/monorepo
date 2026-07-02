@@ -1,4 +1,5 @@
-import { searchContent, searchSpaces, searchUsers } from "../src/modules/search";
+import { matchUsers, searchContent, searchSpaces, searchUsers } from "../src/modules/search";
+import type { MatchUsersResponse } from "../src/modules/search/matchUsers";
 import { makeClient } from "./helpers/client";
 
 describe("js-sdk search — request shaping", () => {
@@ -44,6 +45,36 @@ describe("js-sdk search — request shaping", () => {
       limit: 5,
     });
   });
+
+  it("matchUsers POSTs the full body to /match/users", async () => {
+    const { client, projectInstance } = makeClient();
+    await matchUsers(client, {
+      mode: "directed",
+      query: "biotech",
+      limit: 10,
+      spaceId: "space-1",
+      includeChildSpaces: true,
+      includeSampleContent: true,
+      excludeSelf: false,
+    });
+    expect(projectInstance.post).toHaveBeenCalledWith("/match/users", {
+      mode: "directed",
+      query: "biotech",
+      limit: 10,
+      spaceId: "space-1",
+      includeChildSpaces: true,
+      includeSampleContent: true,
+      excludeSelf: false,
+    });
+  });
+
+  it("matchUsers passes a minimal passive body through unchanged", async () => {
+    const { client, projectInstance } = makeClient();
+    await matchUsers(client, { mode: "passive" });
+    expect(projectInstance.post).toHaveBeenCalledWith("/match/users", {
+      mode: "passive",
+    });
+  });
 });
 
 describe("js-sdk search — response mapping (raw arrays, NOT the PaginatedResponse envelope)", () => {
@@ -81,5 +112,32 @@ describe("js-sdk search — response mapping (raw arrays, NOT the PaginatedRespo
 
     expect(response).toEqual(results);
     expect(Array.isArray(response)).toBe(true);
+  });
+
+  it("matchUsers returns the { results } envelope (NOT a bare array) from the body", async () => {
+    const { client, projectInstance } = makeClient();
+    const envelope: MatchUsersResponse = {
+      results: [
+        {
+          user: { id: "u1" } as MatchUsersResponse["results"][number]["user"],
+          score: 1.5,
+          matchedFacets: [
+            {
+              similarity: 0.7,
+              askerFacet: { id: "af", hotness: 3 },
+              candidateFacet: { id: "cf", hotness: 4 },
+            },
+          ],
+        },
+      ],
+    };
+    projectInstance.post.mockResolvedValueOnce({ data: envelope });
+
+    const response = await matchUsers(client, { mode: "passive" });
+    expect(response).toEqual(envelope);
+    // A distinguishing shape check: envelope, not the bare array the other
+    // search functions return.
+    expect(Array.isArray(response)).toBe(false);
+    expect(response.results[0].matchedFacets[0].candidateFacet.hotness).toBe(4);
   });
 });
