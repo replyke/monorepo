@@ -1,8 +1,9 @@
 import { SublayHttpClient } from "../../core/client";
 import { EstablishedConnection } from "../../interfaces/Connection";
 import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
+import { UserSearchParams } from "../../interfaces/UserSearch";
 
-export interface FetchConnectionsProps {
+export interface FetchConnectionsProps extends UserSearchParams {
   userId: string;
   page?: number;
   limit?: number;
