@@ -111,6 +111,7 @@ export type {
   SpaceReputationContextParams,
   SpaceReputationUserParams,
 } from "./interfaces/SpaceReputation";
+export type { UserSearchParams } from "./interfaces/UserSearch";
 export type {
   TableAccessor,
   TableRow,
