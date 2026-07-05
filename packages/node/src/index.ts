@@ -155,6 +155,17 @@ export type { Reaction, ReactionType, ReactionCounts } from "./interfaces/Reacti
 export type { UnifiedAppNotification, PotentiallyPopulatedUnifiedAppNotification } from "./interfaces/AppNotification";
 export type { OAuthIdentity } from "./interfaces/OAuthIdentity";
 export type { PushDeviceResult, SendPushResult } from "./interfaces/Push";
+export { PUSH_EVENT_TYPES, MUTE_DURATIONS } from "./interfaces/Push";
+export type {
+  PushEventType,
+  MuteDuration,
+  NotificationPreferences,
+} from "./interfaces/Push";
+export type { UpdateNotificationPreferencesProps } from "./modules/push/updateNotificationPreferences";
+export type {
+  MuteConversationProps,
+  MuteConversationResult,
+} from "./modules/chat/muteConversation";
 export type { Report, CreateReportResponse } from "./interfaces/Report";
 export type { File, FileImage, FileImageVariant } from "./interfaces/File";
 export type {
