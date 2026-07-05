@@ -1,0 +1,154 @@
+---
+title: "Notification Preferences & Mute"
+description: "Automatic push fan-out for in-app events, per-user type toggles, per-conversation mute, and developer-authored copy templates."
+icon: "bell-slash"
+---
+
+Beyond the manual [`push.send()`](/push-notifications) call, Sublay can **automatically** push in-app events (comments, mentions, follows, chat messages, …) to a user's registered devices. This page covers the surfaces that control that automatic delivery:
+
+- **Per-user preferences** — each user can disable push for specific event types.
+- **Per-conversation mute** — a user can silence a single conversation's push for a duration or forever.
+- **Per-event copy templates & project-level toggles** — the developer authors the push title/body per event type and can disable an event project-wide, from the dashboard.
+
+<Note>
+  **Requires the `push` bundle.** Automatic push and the preference table live in the `push` bundle. Install it from your project's **Database** page in the [dashboard](https://dash.sublay.io). Chat-message push additionally requires the `chat` bundle; app-notification push requires the `notifications` bundle. See [Bundles](/bundles).
+</Note>
+
+## The event palette
+
+Every automatic push is keyed by an **event type**. These are the server's exact type names — the full app-notification set plus the chat `message` event (which is push-only and writes no in-app notification):
+
+`entity-comment`, `comment-reply`, `entity-mention`, `comment-mention`, `entity-upvote`, `comment-upvote`, `entity-reaction`, `comment-reaction`, `entity-reaction-milestone-specific`, `entity-reaction-milestone-total`, `comment-reaction-milestone-specific`, `comment-reaction-milestone-total`, `new-follow`, `connection-request`, `connection-accepted`, `space-membership-approved`, `event-invite`, `event-updated`, `event-cancelled`, `message`.
+
+The same names are used everywhere: a user's `disabledTypes`, the project-level per-event toggle, and the template map all key on this exact list. The SDKs export the list as `PUSH_EVENT_TYPES` (`@sublay/core`, `@sublay/node`, `@sublay/js`).
+
+## Preference & mute model
+
+### Per-user preferences (`disabledTypes`)
+
+Each user has at most one preference row, holding the set of event types they've **opted out** of for push. The model is:
+
+- **Absence of a row = all-on.** A user with no preference row receives push for every enabled event type. Reading preferences for such a user returns `{ "disabledTypes": [] }`.
+- **Updating replaces the set.** The update endpoint upserts the whole `disabledTypes` array — send the complete set you want stored, not a delta.
+- **Only valid type names are accepted.** Unknown names are rejected server-side.
+
+Disabling a type only suppresses **push** — the in-app [App Notification](/sdk/app-notifications/overview) is still written, so the bell/inbox is unaffected.
+
+### Per-conversation mute (`mutedUntil` / `mutedForever`)
+
+A user can mute a single conversation for a fixed duration or forever. Mute suppresses the `message` push for that conversation only; the message is still delivered, socket-emitted, and available in the conversation as normal.
+
+The client sends a **duration choice**, never a raw timestamp — the server resolves the window from its own clock so client skew can't distort it:
+
+| Choice | Meaning |
+|--------|---------|
+| `8h` | Muted for 8 hours from now |
+| `24h` | Muted for 24 hours from now |
+| `1w` | Muted for 1 week from now |
+| `forever` | Muted indefinitely |
+| `null` | Clear the mute (unmute) |
+
+Timed mutes expire lazily — once the window passes, push resumes with no user action.
+
+<Warning>
+  **"Forever" is an explicit signal, not a magic date.** Internally the server stores "forever" as a far-future sentinel timestamp, but that value **never** reaches clients. At the API boundary the viewer's own member row carries `mutedForever: true` with `mutedUntil: null`. Read the boolean — do **not** string-match a far-future date. The SDKs mirror this exactly.
+</Warning>
+
+The viewer's own member row (`currentMember`) is serialized as:
+
+| State | `mutedForever` | `mutedUntil` |
+|-------|----------------|--------------|
+| Not muted | `false` | `null` |
+| Timed mute | `false` | real ISO timestamp |
+| Muted forever | `true` | `null` |
+
+<Info>
+  **Mute state is personal.** A member's `mutedUntil` / `mutedForever` is present **only** on that member's own row. Endpoints that return *other* members' rows (`listMembers`, `changeMemberRole`, `addMember`, the `member:joined` socket broadcast) omit both keys entirely — a user's mute state is never exposed to other participants.
+</Info>
+
+## Gating precedence
+
+When an event fires, whether a push is dispatched is decided in this order:
+
+1. **Project-level event disable** (dashboard toggle) — if the developer disabled the event, no one is pushed.
+2. **Conversation mute** (chat `message` only) — muted members are dropped.
+3. **Per-user type toggle** — users who disabled the type are dropped.
+4. **Send** to everyone remaining who has a registered device.
+
+## Copy templates & project-level toggles (dashboard)
+
+The developer authors the push **title/body copy** per event type and can **disable** an event project-wide, from **Settings → Push Notifications** in the [dashboard](https://dash.sublay.io), beside the provider configuration.
+
+- Each event type has an editable template field and a project-level enable toggle.
+- A template is a plain-text string with `{variableName}` placeholders. Substitution is plain-text only — no expressions, no markup execution. Unknown tokens render empty.
+- If a project configures no template for an event, a shipped default is used. Template edits take effect on the next send.
+
+### Template variable palette
+
+Each event exposes a fixed set of variables its template may interpolate. Values come from the notification metadata (app-notification events) or the message context (`message`). A token that isn't in the event's list renders empty.
+
+| Event type | Variables |
+|------------|-----------|
+| `entity-comment` | `initiatorName`, `initiatorUsername`, `entityTitle`, `commentContent` |
+| `comment-reply` | `initiatorName`, `initiatorUsername`, `entityTitle`, `replyContent` |
+| `entity-mention` | `initiatorName`, `initiatorUsername`, `entityTitle` |
+| `comment-mention` | `initiatorName`, `initiatorUsername`, `entityTitle`, `commentContent` |
+| `entity-upvote` | `initiatorName`, `initiatorUsername`, `entityTitle` |
+| `comment-upvote` | `initiatorName`, `initiatorUsername`, `entityTitle`, `commentContent` |
+| `entity-reaction` | `initiatorName`, `initiatorUsername`, `entityTitle`, `reactionType` |
+| `comment-reaction` | `initiatorName`, `initiatorUsername`, `entityTitle`, `commentContent`, `reactionType` |
+| `entity-reaction-milestone-specific` | `entityTitle`, `reactionType`, `milestoneCount` |
+| `entity-reaction-milestone-total` | `entityTitle`, `milestoneCount` |
+| `comment-reaction-milestone-specific` | `entityTitle`, `commentContent`, `reactionType`, `milestoneCount` |
+| `comment-reaction-milestone-total` | `entityTitle`, `commentContent`, `milestoneCount` |
+| `new-follow` | `initiatorName`, `initiatorUsername` |
+| `connection-request` | `initiatorName`, `initiatorUsername` |
+| `connection-accepted` | `initiatorName`, `initiatorUsername` |
+| `space-membership-approved` | `spaceName` |
+| `event-invite` | `initiatorName`, `initiatorUsername`, `eventTitle` |
+| `event-updated` | `initiatorName`, `initiatorUsername`, `eventTitle` |
+| `event-cancelled` | `initiatorName`, `initiatorUsername`, `eventTitle` |
+| `message` | `senderName`, `senderUsername`, `conversationTitle`, `messageContent` |
+
+Example template for `entity-comment`:
+
+```
+{initiatorName} commented on {entityTitle}: {commentContent}
+```
+
+## Privacy
+
+Muted-conversation content and disabled-type content is **simply not dispatched** — when a mute or a preference suppresses a push, the notification's title/body (which for chat/comments contains a content snippet) is never sent to APNs, FCM, or Web Push at all. Suppression happens before any provider call, so muted/opted-out content never leaves Sublay's infrastructure to a third-party push provider.
+
+## Building a settings UI
+
+The SDKs expose the read/update primitives so you can build a notification-settings screen and per-conversation mute control:
+
+<CardGroup cols={2}>
+  <Card title="useNotificationPreferences" icon="cube" href="/hooks/push/use-notification-preferences">
+    Read + update the current user's disabled types (React / RN / Expo)
+  </Card>
+  <Card title="useMuteConversation" icon="cube" href="/hooks/chat/conversations/use-mute-conversation">
+    Set / clear the current user's conversation mute
+  </Card>
+  <Card title="Node SDK — Push Notifications" icon="node-js" href="/node-sdk/push-notifications">
+    `push.getNotificationPreferences` / `updateNotificationPreferences`, `chat.muteConversation`
+  </Card>
+  <Card title="JS SDK — Push Notifications" icon="js" href="/js-sdk/push-notifications">
+    `push.getNotificationPreferences` / `updateNotificationPreferences`, `chat.muteConversation`
+  </Card>
+</CardGroup>
+
+### API endpoints
+
+<CardGroup cols={2}>
+  <Card title="Mute Conversation" href="/api-reference/chat/conversations/mute-conversation">
+    `POST /chat/conversations/:conversationId/mute`
+  </Card>
+  <Card title="Get Notification Preferences" href="/api-reference/push-notifications/get-preferences">
+    `GET /push-notifications/preferences`
+  </Card>
+  <Card title="Update Notification Preferences" href="/api-reference/push-notifications/update-preferences">
+    `PUT /push-notifications/preferences`
+  </Card>
+</CardGroup>

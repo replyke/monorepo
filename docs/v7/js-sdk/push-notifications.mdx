@@ -1,0 +1,50 @@
+---
+title: "Push Notifications"
+description: "Read and update the signed-in user's push notification preferences"
+---
+
+The `push` module lets the signed-in user manage which event types they receive as a push notification. Because `@sublay/js` authenticates as an **end user**, these acting-user-scoped endpoints fit naturally — the server derives the user from the token, so there is no `userId` parameter.
+
+<Note>
+  Requires the `push` bundle installed on the project. See [Notification Preferences & Mute](/notification-preferences) for the model and the full event palette.
+</Note>
+
+Per-conversation muting lives on the [`chat`](/js-sdk/chat#muteconversation) module (`chat.muteConversation`).
+
+---
+
+### getNotificationPreferences
+
+Reads the signed-in user's disabled push types. Returns an empty array (all-on) when no preferences are set.
+
+```typescript
+const { disabledTypes } = await sublay.push.getNotificationPreferences();
+```
+
+**Returns** — `Promise<NotificationPreferences>`
+
+```typescript
+interface NotificationPreferences {
+  disabledTypes: PushEventType[]; // e.g. ["new-follow", "message"]
+}
+```
+
+---
+
+### updateNotificationPreferences
+
+Replaces the signed-in user's disabled-types set (upsert). Send the **complete** set you want stored, not a delta; only valid event type names are accepted.
+
+```typescript
+import { PUSH_EVENT_TYPES } from "@sublay/js";
+
+await sublay.push.updateNotificationPreferences({
+  disabledTypes: ["comment-mention", "message"],
+});
+```
+
+<ParamField body="disabledTypes" type="PushEventType[]" required>
+  The complete set of event types to disable for push. Values must be from `PUSH_EVENT_TYPES` (see the [event palette](/notification-preferences#the-event-palette)); unknown names are rejected. Pass `[]` to re-enable everything.
+</ParamField>
+
+**Returns** — `Promise<NotificationPreferences>` (the stored, deduplicated set).

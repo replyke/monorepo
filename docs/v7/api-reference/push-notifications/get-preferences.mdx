@@ -1,0 +1,58 @@
+---
+title: "Get Notification Preferences"
+api: "GET /:projectId/api/v7/push-notifications/preferences"
+description: "Read the authenticated user's disabled push notification types"
+---
+
+Returns the set of notification event types the acting user has disabled for push. A user with no preference row is **all-on** — the response is an empty `disabledTypes` array.
+
+Disabling a type only suppresses **push**; the in-app notification is still written.
+
+Requires authentication. **Acting-user-scoped:** an end-user token (`Authorization: Bearer <accessToken>`) reads its own preferences. A service/master key acts on behalf of a named user via the optional `userId` query param — a service key without `userId` is rejected, and an end-user token may not name a different user. Requires the `push` bundle.
+
+## Query Parameters
+
+<ParamField query="userId" type="string">
+  The acting user whose preferences are read. **Service/master keys only** — a service key must pass it; an end-user token infers it from the auth token and may not name a different user.
+</ParamField>
+
+## Response
+
+Returns `200`.
+
+```json
+{ "disabledTypes": ["new-follow", "message"] }
+```
+
+<ResponseField name="disabledTypes" type="string[]">
+  The event types the user has opted out of. Empty when no preferences are set (all-on). Values are drawn from the [event palette](/notification-preferences#the-event-palette).
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 401 / 403">
+    ```json
+    { "error": "Unauthorized", "code": "notification-preferences/unauthorized" }
+    ```
+    `403 notification-preferences/unauthorized` when an end-user token names a `userId` other than its own. A `401` is returned when no valid credential is present.
+  </Accordion>
+  <Accordion title="Missing User ID — 400">
+    ```json
+    { "error": "Missing user ID", "code": "notification-preferences/missing-user-id" }
+    ```
+    Returned when a service/master key omits the required `userId` (it has no implicit session user).
+  </Accordion>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    { "error": "...", "code": "database/tables-not-available" }
+    ```
+    Returned when the `push` bundle is not installed for this project.
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Update Notification Preferences](/api-reference/push-notifications/update-preferences)
+- [`useNotificationPreferences`](/hooks/push/use-notification-preferences)
+- [Notification Preferences & Mute](/notification-preferences)

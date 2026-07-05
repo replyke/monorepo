@@ -26,6 +26,7 @@
                   "v7/authentication",
                   "v7/webhooks",
                   "v7/push-notifications",
+                  "v7/notification-preferences",
                   "v7/custom-tables",
                   "v7/semantic-search-ai",
                   "v7/interest-matching",
@@ -388,7 +389,10 @@
               },
               {
                 "group": "Push Notifications",
-                "pages": ["v7/hooks/push/use-push-registration"]
+                "pages": [
+                  "v7/hooks/push/use-push-registration",
+                  "v7/hooks/push/use-notification-preferences"
+                ]
               },
               {
                 "group": "Chat — Conversations",
@@ -400,7 +404,8 @@
                   "v7/hooks/chat/conversations/use-delete-conversation",
                   "v7/hooks/chat/conversations/use-create-direct-conversation",
                   "v7/hooks/chat/conversations/use-conversation-members",
-                  "v7/hooks/chat/conversations/use-fetch-space-conversation"
+                  "v7/hooks/chat/conversations/use-fetch-space-conversation",
+                  "v7/hooks/chat/conversations/use-mute-conversation"
                 ]
               },
               {
@@ -606,7 +611,8 @@
                   "v7/api-reference/chat/conversations/unread-count",
                   "v7/api-reference/chat/conversations/fetch-conversation",
                   "v7/api-reference/chat/conversations/update-conversation",
-                  "v7/api-reference/chat/conversations/delete-conversation"
+                  "v7/api-reference/chat/conversations/delete-conversation",
+                  "v7/api-reference/chat/conversations/mute-conversation"
                 ]
               },
               {
@@ -661,7 +667,9 @@
                   "v7/api-reference/push-notifications/register-device",
                   "v7/api-reference/push-notifications/deregister-device",
                   "v7/api-reference/push-notifications/send",
-                  "v7/api-reference/push-notifications/get-vapid-public-key"
+                  "v7/api-reference/push-notifications/get-vapid-public-key",
+                  "v7/api-reference/push-notifications/get-preferences",
+                  "v7/api-reference/push-notifications/update-preferences"
                 ]
               },
               {
@@ -866,6 +874,7 @@
                   "v7/js-sdk/spaces-moderation",
                   "v7/js-sdk/events",
                   "v7/js-sdk/chat",
+                  "v7/js-sdk/push-notifications",
                   "v7/js-sdk/search",
                   "v7/js-sdk/reports",
                   "v7/js-sdk/app-notifications",

@@ -1,0 +1,86 @@
+---
+title: "Use notification preferences"
+description: "Read and update the current user's disabled push notification types"
+icon: "bell-slash"
+---
+
+## Overview
+
+`useNotificationPreferences` reads and updates the signed-in user's push notification preferences — the set of event types they've disabled for push. Use it to build a notification-settings screen with a per-type toggle.
+
+Disabling a type suppresses **push only** — the in-app notification is still written, so the bell/inbox is unaffected. A user with no preferences is all-on (`disabledTypes` is `[]`).
+
+<Note>Requires an authenticated user and the `push` bundle installed on the project.</Note>
+
+## Usage Example
+
+```tsx
+import { useNotificationPreferences, PUSH_EVENT_TYPES } from "@sublay/react-js";
+
+function NotificationSettings() {
+  const { disabledTypes, loading, updating, updatePreferences } =
+    useNotificationPreferences();
+
+  if (loading || !disabledTypes) return <Spinner />;
+
+  const toggle = (type: (typeof PUSH_EVENT_TYPES)[number]) => {
+    const next = disabledTypes.includes(type)
+      ? disabledTypes.filter((t) => t !== type)
+      : [...disabledTypes, type];
+    return updatePreferences(next);
+  };
+
+  return (
+    <ul>
+      {PUSH_EVENT_TYPES.map((type) => (
+        <li key={type}>
+          <label>
+            <input
+              type="checkbox"
+              // checked = push ENABLED = NOT in disabledTypes
+              checked={!disabledTypes.includes(type)}
+              disabled={updating}
+              onChange={() => toggle(type)}
+            />
+            {type}
+          </label>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Returns
+
+The hook returns an object:
+
+<ResponseField name="disabledTypes" type="PushEventType[] | undefined">
+  The event types the user has disabled for push. `undefined` until the read resolves; `[]` when nothing is disabled (all-on).
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while the initial read is in flight.
+</ResponseField>
+
+<ResponseField name="updating" type="boolean">
+  `true` while an update is in flight.
+</ResponseField>
+
+<ResponseField name="error" type="unknown">
+  The read error, if any.
+</ResponseField>
+
+<ResponseField name="refetch" type="() => void">
+  Re-fetch the preferences.
+</ResponseField>
+
+<ResponseField name="updatePreferences" type="(disabledTypes: PushEventType[]) => Promise<void>">
+  Replace the disabled-types set (upsert). Pass the **complete** set you want stored, not a delta. Only valid event type names are accepted; unknown names are rejected server-side.
+</ResponseField>
+
+## Notes
+
+- Available on `@sublay/react-js`, `@sublay/react-native`, and `@sublay/expo` (inherited from `@sublay/core`).
+- The full list of valid type names is exported as `PUSH_EVENT_TYPES`. See the [event palette](/notification-preferences#the-event-palette).
+- For per-conversation muting, see [`useMuteConversation`](/hooks/chat/conversations/use-mute-conversation).

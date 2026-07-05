@@ -1,0 +1,69 @@
+---
+title: "Use mute conversation"
+description: "Set or clear the current user's mute on a conversation"
+icon: "bell-slash"
+---
+
+## Overview
+
+`useMuteConversation` returns a function that sets or clears the signed-in user's mute on a conversation. Muting suppresses the `message` push for that conversation only — the message is still delivered and readable. Timed mutes expire on their own; push resumes with no further action.
+
+The client passes a **duration choice**, never a raw timestamp — the server resolves the window and represents "forever" via an explicit signal on the returned member.
+
+<Note>Requires `ChatProvider` in the component tree, an authenticated user, and the `chat` bundle.</Note>
+
+## Usage Example
+
+```tsx
+import { useMuteConversation } from "@sublay/react-js";
+
+function MuteMenu({ conversationId }: { conversationId: string }) {
+  const { muteConversation, muting } = useMuteConversation();
+
+  const mute8h = () => muteConversation({ conversationId, duration: "8h" });
+  const muteForever = () => muteConversation({ conversationId, duration: "forever" });
+  const unmute = () => muteConversation({ conversationId, duration: null });
+
+  return (
+    <>
+      <button onClick={mute8h} disabled={muting}>Mute 8h</button>
+      <button onClick={muteForever} disabled={muting}>Mute forever</button>
+      <button onClick={unmute} disabled={muting}>Unmute</button>
+    </>
+  );
+}
+```
+
+## Parameters
+
+The hook returns `{ muteConversation, muting }`. `muteConversation` accepts:
+
+<ParamField body="conversationId" type="string" required>
+  The conversation to mute or unmute.
+</ParamField>
+
+<ParamField body="duration" type='"8h" | "24h" | "1w" | "forever" | null' required>
+  The mute **duration choice**, or `null` to clear the mute. Never a raw timestamp.
+</ParamField>
+
+## Returns
+
+`muteConversation` resolves to the acting user's own (self-serialized) `currentMember`. Read the resulting mute state off it:
+
+<ResponseField name="mutedForever" type="boolean">
+  `true` when the conversation is muted indefinitely (`mutedUntil` is then `null`).
+</ResponseField>
+
+<ResponseField name="mutedUntil" type="string | null">
+  Real ISO timestamp for a timed mute; `null` when not muted or muted forever.
+</ResponseField>
+
+<Warning>
+  **"Forever" is an explicit boolean, not a magic date.** Check `mutedForever` — do not string-match a far-future `mutedUntil`. The SDK never receives the storage sentinel.
+</Warning>
+
+## Notes
+
+- Available on `@sublay/react-js`, `@sublay/react-native`, and `@sublay/expo` (inherited from `@sublay/core`).
+- Mute state is personal — it's returned only on the viewer's own member row, never on other members'.
+- For per-type push toggles, see [`useNotificationPreferences`](/hooks/push/use-notification-preferences).
