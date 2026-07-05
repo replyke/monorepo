@@ -24,6 +24,20 @@ describe("node-sdk spaces (lifecycle) — request shaping", () => {
     });
   });
 
+  it("createSpace forwards visibility in the body", async () => {
+    const { client, projectInstance } = makeClient();
+    await createSpace(client, {
+      userId: "u1",
+      name: "My Space",
+      visibility: "private",
+    });
+    expect(projectInstance.post).toHaveBeenCalledWith("/spaces", {
+      userId: "u1",
+      name: "My Space",
+      visibility: "private",
+    });
+  });
+
   it("fetchManySpaces hits /spaces with the full body as params", async () => {
     const { client, projectInstance } = makeClient();
     await fetchManySpaces(client, { sortBy: "newest", page: 1 });
@@ -97,6 +111,14 @@ describe("node-sdk spaces (lifecycle) — request shaping", () => {
     await updateSpace(client, { spaceId: "s1", name: "New name" });
     expect(projectInstance.patch).toHaveBeenCalledWith("/spaces/s1", {
       name: "New name",
+    });
+  });
+
+  it("updateSpace forwards visibility in the body", async () => {
+    const { client, projectInstance } = makeClient();
+    await updateSpace(client, { spaceId: "s1", visibility: "unlisted" });
+    expect(projectInstance.patch).toHaveBeenCalledWith("/spaces/s1", {
+      visibility: "unlisted",
     });
   });
 

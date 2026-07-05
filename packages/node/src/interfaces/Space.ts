@@ -3,6 +3,7 @@ import { File } from "./File";
 
 export type ReadingPermission = "anyone" | "members";
 export type PostingPermission = "anyone" | "members" | "admins";
+export type SpaceVisibility = "public" | "unlisted" | "private";
 
 export type SpaceMemberRole = "admin" | "moderator" | "member";
 export type SpaceMemberStatus = "pending" | "active" | "banned" | "rejected";
@@ -24,6 +25,7 @@ export interface SpacePreview {
   slug: string | null;
   avatarFileId: string | null;
   readingPermission?: ReadingPermission;
+  visibility?: SpaceVisibility;
   parentSpaceId?: string | null;
   depth?: number;
   avatarFile?: File;
@@ -41,6 +43,7 @@ export interface Space {
   userId: string;
   readingPermission: ReadingPermission;
   postingPermission: PostingPermission;
+  visibility: SpaceVisibility;
   requireJoinApproval: boolean;
   parentSpaceId: string | null;
   depth: number;
