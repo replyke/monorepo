@@ -1,5 +1,10 @@
 import { SublayHttpClient } from "../../core/client";
-import { Space, ReadingPermission, PostingPermission } from "../../interfaces/Space";
+import {
+  Space,
+  ReadingPermission,
+  PostingPermission,
+  SpaceVisibility,
+} from "../../interfaces/Space";
 
 export interface UpdateSpaceProps {
   spaceId: string;
@@ -8,6 +13,7 @@ export interface UpdateSpaceProps {
   description?: string;
   readingPermission?: ReadingPermission;
   postingPermission?: PostingPermission;
+  visibility?: SpaceVisibility;
   metadata?: Record<string, any>;
 }
 
