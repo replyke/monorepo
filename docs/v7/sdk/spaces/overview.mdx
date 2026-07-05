@@ -72,6 +72,8 @@ Each space has two independent permission settings:
 
 When the current user is authenticated and is a member, `useSpace` exposes their resolved permissions (`canPost`, `canRead`, `canModerate`, `isAdmin`, `isModerator`).
 
+Separately, each space has a **`visibility`** setting — `"public"` (default), `"unlisted"`, or `"private"` — that controls whether the space is *listed and discoverable*, independent of the permission model above. `"unlisted"` hides a space from discovery and search but keeps it reachable by direct link; it is **not access control** (use `readingPermission` to gate content). `"private"` currently behaves like `"unlisted"`. See the [Space data model](/data-models/space#visibility).
+
 ## Hierarchy
 
 Spaces can be nested up to 10 levels deep. A child space is created by passing a `parentSpaceId` to `useCreateSpace`. Only admins of the parent space can create child spaces. Parent admins and moderators are automatically cascaded into new child spaces with their existing roles.

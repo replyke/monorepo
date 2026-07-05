@@ -28,6 +28,10 @@ Creates a new space. The authenticated user is automatically added as an admin. 
   Who can post entities: `"anyone"`, `"members"`, or `"admins"`. Defaults to `"members"`.
 </ParamField>
 
+<ParamField body="visibility" type="string">
+  Whether the space is listed and discoverable: `"public"`, `"unlisted"`, or `"private"`. Defaults to `"public"`. Governs discoverability only — independent of `readingPermission`, which governs content. `"unlisted"` hides the space from discovery and search but keeps it reachable by direct link; `"private"` currently behaves like `"unlisted"`. See [Space visibility](/data-models/space#visibility).
+</ParamField>
+
 <ParamField body="requireJoinApproval" type="boolean">
   Whether new joins require approval. Defaults to `true`.
 </ParamField>

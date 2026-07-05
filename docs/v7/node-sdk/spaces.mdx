@@ -47,6 +47,10 @@ const space = await sublay.spaces.createSpace({
   Who can post content: `"anyone"`, `"members"` (default), or `"admins"`.
 </ParamField>
 
+<ParamField body="visibility" type="string">
+  Listing/discoverability: `"public"` (default), `"unlisted"`, or `"private"`. Independent of `readingPermission` (which governs content). `"unlisted"` hides the space from discovery and search but keeps it reachable by direct link; `"private"` currently behaves like `"unlisted"`.
+</ParamField>
+
 <ParamField body="requireJoinApproval" type="boolean">
   When `true`, join requests must be manually approved. Defaults to `false`.
 </ParamField>
@@ -284,6 +288,10 @@ const space = await sublay.spaces.updateSpace({
 
 <ParamField body="postingPermission" type="string">
   Updated posting permission: `"anyone"`, `"members"`, or `"admins"`.
+</ParamField>
+
+<ParamField body="visibility" type="string">
+  Updated visibility: `"public"`, `"unlisted"`, or `"private"`. Controls listing/discoverability, independent of `readingPermission`.
 </ParamField>
 
 <ParamField body="metadata" type="object">
