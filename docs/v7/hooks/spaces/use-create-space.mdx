@@ -60,6 +60,10 @@ function CreateSpaceForm() {
   Who can post entities. Defaults to `"members"`.
 </ParamField>
 
+<ParamField path="visibility" type='"public" | "unlisted" | "private"'>
+  Whether the space is listed and discoverable. Defaults to `"public"`. Independent of `readingPermission` (which governs content). `"unlisted"` hides the space from discovery and search but keeps it reachable by direct link; `"private"` currently behaves like `"unlisted"`. See [Space visibility](/data-models/space#visibility).
+</ParamField>
+
 <ParamField path="requireJoinApproval" type="boolean">
   Whether new members must be approved. Defaults to `true`.
 </ParamField>

@@ -36,6 +36,10 @@ All fields are optional. Only provided fields are updated.
   `"anyone"`, `"members"`, or `"admins"`.
 </ParamField>
 
+<ParamField body="visibility" type="string">
+  `"public"`, `"unlisted"`, or `"private"`. Controls listing/discoverability, independent of `readingPermission`. Changes take effect immediately and are freely reversible. See [Space visibility](/data-models/space#visibility).
+</ParamField>
+
 <ParamField body="metadata" type="object">
   Updated metadata object.
 </ParamField>

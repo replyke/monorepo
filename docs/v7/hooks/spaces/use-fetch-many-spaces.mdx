@@ -10,6 +10,10 @@ icon: "plug"
 
 For paginated, stateful lists with load-more support, use [`useSpaceList`](/hooks/space-lists/use-space-list) instead.
 
+<Note>
+  This is a discovery surface: only `public` spaces are listed. `unlisted` and `private` spaces are excluded for non-members (they stay reachable by direct link/slug). The `memberOf=true` filter is the exception — it returns the caller's own spaces regardless of visibility. See [Space visibility](/data-models/space#visibility).
+</Note>
+
 ## Usage Example
 
 ```tsx

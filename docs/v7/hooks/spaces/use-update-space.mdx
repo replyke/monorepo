@@ -53,6 +53,9 @@ function SpaceSettings({ spaceId }: { spaceId: string }) {
     <ParamField path="postingPermission" type='"anyone" | "members" | "admins"'>
       Updated posting permission.
     </ParamField>
+    <ParamField path="visibility" type='"public" | "unlisted" | "private"'>
+      Updated visibility (listing/discoverability). Independent of `readingPermission`. See [Space visibility](/data-models/space#visibility).
+    </ParamField>
     <ParamField path="requireJoinApproval" type="boolean">
       Updated join approval requirement.
     </ParamField>

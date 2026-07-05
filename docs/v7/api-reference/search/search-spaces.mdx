@@ -8,6 +8,10 @@ Performs vector-similarity search over spaces in the project using AI embeddings
 
 **Requires a paid plan with semantic search enabled.**
 
+<Note>
+  Only `public` spaces are returned. Spaces with `visibility` of `"unlisted"` or `"private"` are never surfaced in search results for non-members. Hidden spaces stay indexed but filtered out, so re-listing a space (setting it back to `"public"`) makes it searchable again immediately with no rebuild. See [Space visibility](/data-models/space#visibility).
+</Note>
+
 ## Body Parameters
 
 <ParamField body="query" type="string" required>
