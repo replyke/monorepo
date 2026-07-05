@@ -1,5 +1,5 @@
 import { SublayHttpClient } from "../../core/client";
-import { Space, ReadingPermission, PostingPermission } from "../../interfaces/Space";
+import { Space, ReadingPermission, PostingPermission, SpaceVisibility } from "../../interfaces/Space";
 import { ImageOptions } from "../../interfaces/ImageProcessing";
 import { appendField, appendFields, appendFile } from "../../core/multipart";
 
@@ -16,6 +16,7 @@ export interface CreateSpaceProps {
   description?: string;
   readingPermission?: ReadingPermission;
   postingPermission?: PostingPermission;
+  visibility?: SpaceVisibility;
   requireJoinApproval?: boolean;
   parentSpaceId?: string;
   metadata?: Record<string, any>;
