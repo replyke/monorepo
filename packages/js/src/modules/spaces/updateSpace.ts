@@ -1,5 +1,5 @@
 import { SublayHttpClient } from "../../core/client";
-import { Space, ReadingPermission, PostingPermission } from "../../interfaces/Space";
+import { Space, ReadingPermission, PostingPermission, SpaceVisibility } from "../../interfaces/Space";
 import { appendField, appendFields, appendFile } from "../../core/multipart";
 import type { SpaceImageUpload } from "./createSpace";
 
@@ -10,6 +10,7 @@ export interface UpdateSpaceProps {
   description?: string;
   readingPermission?: ReadingPermission;
   postingPermission?: PostingPermission;
+  visibility?: SpaceVisibility;
   metadata?: Record<string, any>;
   /**
    * New avatar image. When present the request is sent as `multipart/form-data`
