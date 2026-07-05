@@ -534,32 +534,35 @@ await sublay.chat.markAsRead({
 
 ### muteConversation
 
-Sets or clears the acting user's mute on a conversation. Muting suppresses the `message` push for this conversation only; the message is still delivered. See [Notification Preferences & Mute](/notification-preferences).
+Sets or clears a user's mute on a conversation. Muting suppresses the `message` push for this conversation only; the message is still delivered. See [Notification Preferences & Mute](/notification-preferences).
 
 ```typescript
 // Mute for a week
 await sublay.chat.muteConversation({
   conversationId: "cnv_abc123",
   duration: "1w",
+  userId: "usr_abc123",
 });
 
 // Unmute
 await sublay.chat.muteConversation({
   conversationId: "cnv_abc123",
   duration: null,
+  userId: "usr_abc123",
 });
 ```
 
-<Warning>
-  Unlike the rest of `chat`, this endpoint is **acting-user-scoped** — the server derives the user from the token and rejects service/master keys. There is **no** `userId` / `actingUserId` param: a user only mutes their own membership.
-</Warning>
+<Note>
+  Like every other `chat` call, the Node SDK names the acting user with `userId` (the service key acts on that user's behalf). The user must be a member of the conversation, and the returned `currentMember` is that user's own row. End-user-token clients (the React hooks, the browser JS SDK) act on the signed-in user and omit `userId`.
+</Note>
 
 <ParamField body="conversationId" type="string" required />
 <ParamField body="duration" type='"8h" | "24h" | "1w" | "forever" | null' required>
   The mute **duration choice**, or `null` to clear the mute. Send the choice, never a raw timestamp.
 </ParamField>
+<ParamField body="userId" type="string" required>The user whose mute is set (must be a member).</ParamField>
 
-**Returns** — `Promise<{ currentMember: ConversationMember }>` — the acting user's own member row.
+**Returns** — `Promise<{ currentMember: ConversationMember }>` — that user's own member row.
 
 ```typescript
 interface ConversationMember {

@@ -6,7 +6,7 @@ description: "Set or clear the authenticated user's mute on a conversation"
 
 Sets or clears the acting user's mute on a conversation. Muting suppresses the `message` push for this conversation only — the message is still delivered, socket-emitted, and readable. Timed mutes expire lazily (push resumes once the window passes).
 
-Requires end-user authentication (`Authorization: Bearer <accessToken>`). This endpoint is **acting-user-scoped**: a user only ever mutes their own membership — there is no service-key impersonation path (service/master keys are rejected). Requires the `chat` bundle.
+Requires authentication. **Acting-user-scoped:** an end-user token (`Authorization: Bearer <accessToken>`) mutes its own membership. A service/master key acts on behalf of a named user via the optional body `userId` — a service key without `userId` is rejected, and an end-user token may not name a different user (both consistent with every other per-user write). Requires the `chat` bundle.
 
 ## Path Parameters
 
@@ -26,6 +26,10 @@ Requires end-user authentication (`Authorization: Bearer <accessToken>`). This e
   - `null` — clear the mute (unmute)
 
   The server resolves the window from its own clock, so client clock skew can't distort it.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The acting user whose membership is muted. **Service/master keys only** — a service key must pass it (there is no implicit session user); an end-user token infers it from the auth token and may not name a different user.
 </ParamField>
 
 ## Response
@@ -53,11 +57,17 @@ Returns `200` with the acting user's own (self-serialized) member row under `cur
 ## Error Responses
 
 <AccordionGroup>
-  <Accordion title="Unauthorized — 401">
+  <Accordion title="Unauthorized — 401 / 403">
     ```json
     { "error": "Unauthorized", "code": "chat/unauthorized" }
     ```
-    Returned when no valid end-user token is present, or when a service/master key is used (impersonation is not allowed on this endpoint).
+    `403 chat/unauthorized` when an end-user token names a `userId` other than its own. A `401` is returned when no valid credential is present.
+  </Accordion>
+  <Accordion title="Missing User ID — 400">
+    ```json
+    { "error": "Missing user ID", "code": "chat/missing-user-id" }
+    ```
+    Returned when a service/master key omits the required `userId` (it has no implicit session user).
   </Accordion>
   <Accordion title="Not Found — 404">
     ```json
