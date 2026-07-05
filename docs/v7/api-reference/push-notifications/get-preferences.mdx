@@ -1,0 +1,46 @@
+---
+title: "Get Notification Preferences"
+api: "GET /:projectId/api/v7/push-notifications/preferences"
+description: "Read the authenticated user's disabled push notification types"
+---
+
+Returns the set of notification event types the acting user has disabled for push. A user with no preference row is **all-on** — the response is an empty `disabledTypes` array.
+
+Disabling a type only suppresses **push**; the in-app notification is still written.
+
+Requires end-user authentication (`Authorization: Bearer <accessToken>`). **Acting-user-scoped** — there is no service-key impersonation path (service/master keys are rejected). Requires the `push` bundle.
+
+## Response
+
+Returns `200`.
+
+```json
+{ "disabledTypes": ["new-follow", "message"] }
+```
+
+<ResponseField name="disabledTypes" type="string[]">
+  The event types the user has opted out of. Empty when no preferences are set (all-on). Values are drawn from the [event palette](/notification-preferences#the-event-palette).
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 401">
+    ```json
+    { "error": "Unauthorized", "code": "notification-preferences/unauthorized" }
+    ```
+    Returned when no valid end-user token is present, or when a service/master key is used.
+  </Accordion>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    { "error": "...", "code": "database/tables-not-available" }
+    ```
+    Returned when the `push` bundle is not installed for this project.
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Update Notification Preferences](/api-reference/push-notifications/update-preferences)
+- [`useNotificationPreferences`](/hooks/push/use-notification-preferences)
+- [Notification Preferences & Mute](/notification-preferences)

@@ -131,3 +131,55 @@ Common `reason` values when `success` is `false`:
 |--------|---------|
 | `credentials_not_configured` | No provider credentials are configured (or enabled) for this platform |
 | Provider error codes | APNs, FCM, or Web Push returned a delivery error |
+
+---
+
+## Notification preferences
+
+Read and update a user's per-type push preferences — the set of event types they've disabled for push. See [Notification Preferences & Mute](/notification-preferences) for the model and the full event palette.
+
+<Warning>
+  These two endpoints are **acting-user-scoped** — the server derives the user from the token and rejects service/master keys. There is no `userId` parameter and no impersonation path; a user's own notification settings can only be read/written from that user's own session.
+</Warning>
+
+### getNotificationPreferences
+
+Reads the acting user's disabled push types. Returns an empty array (all-on) when no preferences are set.
+
+```typescript
+const { disabledTypes } = await sublay.push.getNotificationPreferences();
+```
+
+**Returns** — `Promise<NotificationPreferences>`
+
+```typescript
+interface NotificationPreferences {
+  disabledTypes: PushEventType[]; // e.g. ["new-follow", "message"]
+}
+```
+
+---
+
+### updateNotificationPreferences
+
+Replaces the acting user's disabled-types set (upsert). Send the **complete** set you want stored, not a delta; only valid event type names are accepted.
+
+```typescript
+import { PUSH_EVENT_TYPES } from "@sublay/node";
+
+await sublay.push.updateNotificationPreferences({
+  disabledTypes: ["comment-mention", "message"],
+});
+```
+
+<ParamField body="disabledTypes" type="PushEventType[]" required>
+  The complete set of event types to disable for push. Values must be from `PUSH_EVENT_TYPES` (see the [event palette](/notification-preferences#the-event-palette)); unknown names are rejected. Pass `[]` to re-enable everything.
+</ParamField>
+
+**Returns** — `Promise<NotificationPreferences>` (the stored, deduplicated set).
+
+---
+
+## Conversation mute
+
+Setting or clearing a conversation mute lives on the **`chat`** module (it's a `/chat/...` route): [`chat.muteConversation`](/node-sdk/chat#muteconversation). Like the preference endpoints it is acting-user-scoped — no `userId` param — and takes a duration **choice**, never a timestamp.

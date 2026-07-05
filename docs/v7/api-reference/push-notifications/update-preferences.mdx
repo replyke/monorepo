@@ -1,0 +1,52 @@
+---
+title: "Update Notification Preferences"
+api: "PUT /:projectId/api/v7/push-notifications/preferences"
+description: "Set the authenticated user's disabled push notification types"
+---
+
+Upserts the acting user's push notification preferences. The request **replaces** the whole disabled-types set — send the complete set you want stored, not a delta. Duplicates are collapsed; only valid event type names are accepted.
+
+Requires end-user authentication (`Authorization: Bearer <accessToken>`). **Acting-user-scoped** — there is no service-key impersonation path (service/master keys are rejected). Requires the `push` bundle.
+
+## Body Parameters
+
+<ParamField body="disabledTypes" type="string[]" required>
+  The complete set of event types to disable for push. Each value must be one of the server's exact event type names (see the [event palette](/notification-preferences#the-event-palette)) — unknown names are rejected. Pass `[]` to re-enable everything (all-on).
+</ParamField>
+
+## Response
+
+Returns `200` with the stored set (deduplicated).
+
+```json
+{ "disabledTypes": ["comment-mention"] }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 401">
+    ```json
+    { "error": "Unauthorized", "code": "notification-preferences/unauthorized" }
+    ```
+    Returned when no valid end-user token is present, or when a service/master key is used.
+  </Accordion>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "...", "code": "notification-preferences/invalid-body" }
+    ```
+    Returned when `disabledTypes` contains a value that is not a recognized event type name.
+  </Accordion>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    { "error": "...", "code": "database/tables-not-available" }
+    ```
+    Returned when the `push` bundle is not installed for this project.
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Get Notification Preferences](/api-reference/push-notifications/get-preferences)
+- [`useNotificationPreferences`](/hooks/push/use-notification-preferences)
+- [Notification Preferences & Mute](/notification-preferences)

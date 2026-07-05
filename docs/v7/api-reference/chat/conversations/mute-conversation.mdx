@@ -1,0 +1,84 @@
+---
+title: "Mute Conversation"
+api: "POST /:projectId/api/v7/conversations/:conversationId/mute"
+description: "Set or clear the authenticated user's mute on a conversation"
+---
+
+Sets or clears the acting user's mute on a conversation. Muting suppresses the `message` push for this conversation only — the message is still delivered, socket-emitted, and readable. Timed mutes expire lazily (push resumes once the window passes).
+
+Requires end-user authentication (`Authorization: Bearer <accessToken>`). This endpoint is **acting-user-scoped**: a user only ever mutes their own membership — there is no service-key impersonation path (service/master keys are rejected). Requires the `chat` bundle.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation to mute or unmute.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="duration" type="string | null" required>
+  The mute **duration choice** — send the choice, never a raw timestamp. One of:
+
+  - `"8h"` — mute for 8 hours from now
+  - `"24h"` — mute for 24 hours from now
+  - `"1w"` — mute for 1 week from now
+  - `"forever"` — mute indefinitely
+  - `null` — clear the mute (unmute)
+
+  The server resolves the window from its own clock, so client clock skew can't distort it.
+</ParamField>
+
+## Response
+
+Returns `200` with the acting user's own (self-serialized) member row under `currentMember`. The `mutedUntil` / `mutedForever` fields reflect the new state.
+
+```json
+{
+  "currentMember": {
+    "id": "mbr_abc123",
+    "conversationId": "cnv_abc123",
+    "userId": "usr_abc123",
+    "role": "member",
+    "mutedForever": true,
+    "mutedUntil": null,
+    "isActive": true
+  }
+}
+```
+
+<Warning>
+  **"Forever" is an explicit signal.** A `forever` mute returns `mutedForever: true` with `mutedUntil: null` — the far-future storage sentinel is never exposed as a date. A timed mute returns `mutedForever: false` with a real ISO `mutedUntil`. An unmuted conversation returns `mutedForever: false`, `mutedUntil: null`. Read the boolean; never string-match a date.
+</Warning>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 401">
+    ```json
+    { "error": "Unauthorized", "code": "chat/unauthorized" }
+    ```
+    Returned when no valid end-user token is present, or when a service/master key is used (impersonation is not allowed on this endpoint).
+  </Accordion>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Conversation not found.", "code": "chat/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Not a Member — 400">
+    ```json
+    { "error": "You are not an active member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "...", "code": "chat/invalid-body" }
+    ```
+    Returned when `duration` is not one of the accepted choices (or `null`).
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Notification Preferences & Mute](/notification-preferences)
+- [`useMuteConversation`](/hooks/chat/conversations/use-mute-conversation)
+- [Node SDK — `chat.muteConversation`](/node-sdk/push-notifications#muteconversation)

@@ -532,6 +532,49 @@ await sublay.chat.markAsRead({
 
 ---
 
+### muteConversation
+
+Sets or clears the acting user's mute on a conversation. Muting suppresses the `message` push for this conversation only; the message is still delivered. See [Notification Preferences & Mute](/notification-preferences).
+
+```typescript
+// Mute for a week
+await sublay.chat.muteConversation({
+  conversationId: "cnv_abc123",
+  duration: "1w",
+});
+
+// Unmute
+await sublay.chat.muteConversation({
+  conversationId: "cnv_abc123",
+  duration: null,
+});
+```
+
+<Warning>
+  Unlike the rest of `chat`, this endpoint is **acting-user-scoped** — the server derives the user from the token and rejects service/master keys. There is **no** `userId` / `actingUserId` param: a user only mutes their own membership.
+</Warning>
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="duration" type='"8h" | "24h" | "1w" | "forever" | null' required>
+  The mute **duration choice**, or `null` to clear the mute. Send the choice, never a raw timestamp.
+</ParamField>
+
+**Returns** — `Promise<{ currentMember: ConversationMember }>` — the acting user's own member row.
+
+```typescript
+interface ConversationMember {
+  // ...
+  mutedForever?: boolean;    // true when muted indefinitely
+  mutedUntil?: string | null; // ISO timestamp for a timed mute; null otherwise
+}
+```
+
+<Info>
+  **"Forever" is an explicit signal.** A `forever` mute returns `mutedForever: true` with `mutedUntil: null`. A timed mute returns `mutedForever: false` with a real ISO `mutedUntil`. Read the boolean — never string-match a far-future date.
+</Info>
+
+---
+
 ## Space conversations
 
 Each space has a single built-in conversation. These three live on **`client.spaces`** (they're `/spaces/...` routes), not on `client.chat`.
