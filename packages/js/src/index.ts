@@ -18,6 +18,7 @@ import * as Search from "./modules/search";
 import * as Storage from "./modules/storage";
 import * as OAuth from "./modules/oauth";
 import * as Chat from "./modules/chat";
+import * as Push from "./modules/push";
 import { createTableAccessor } from "./modules/tables";
 import { TableAccessor, TableRow } from "./interfaces/Table";
 
@@ -47,6 +48,7 @@ export class SublayClient {
   public storage: BoundModule<typeof Storage>;
   public oauth: BoundModule<typeof OAuth>;
   public chat: BoundModule<typeof Chat>;
+  public push: BoundModule<typeof Push>;
 
   private constructor(http: SublayHttpClient) {
     this.http = http;
@@ -65,6 +67,7 @@ export class SublayClient {
     this.storage = bindModule(Storage, this.http);
     this.oauth = bindModule(OAuth, this.http);
     this.chat = bindModule(Chat, this.http);
+    this.push = bindModule(Push, this.http);
   }
 
   static async init(config: ClientConfig): Promise<SublayClient> {
@@ -112,6 +115,17 @@ export type {
   SpaceReputationUserParams,
 } from "./interfaces/SpaceReputation";
 export type { UserSearchParams } from "./interfaces/UserSearch";
+export { PUSH_EVENT_TYPES, MUTE_DURATIONS } from "./interfaces/Push";
+export type {
+  PushEventType,
+  MuteDuration,
+  NotificationPreferences,
+} from "./interfaces/Push";
+export type { UpdateNotificationPreferencesProps } from "./modules/push/updateNotificationPreferences";
+export type {
+  MuteConversationProps,
+  MuteConversationResponse,
+} from "./modules/chat/muteConversation";
 export type {
   TableAccessor,
   TableRow,
