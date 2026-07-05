@@ -19,3 +19,4 @@ export { toggleReaction } from "./toggleReaction";
 export { listReactions } from "./listReactions";
 export { markAsRead } from "./markAsRead";
 export { reportMessage } from "./reportMessage";
+export { muteConversation } from "./muteConversation";
