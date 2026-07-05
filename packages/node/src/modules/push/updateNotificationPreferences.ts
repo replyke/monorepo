@@ -10,22 +10,28 @@ export interface UpdateNotificationPreferencesProps {
    * names only (unknown names are rejected server-side); duplicates collapse.
    */
   disabledTypes: PushEventType[];
+  /**
+   * The acting user whose preferences are written. The service key acts on this
+   * user's behalf.
+   */
+  userId: string;
 }
 
 /**
- * Upsert the acting user's push notification preferences.
+ * Upsert a user's push notification preferences.
  *
- * Mirrors `PUT /:projectId/push-notifications/preferences`. Acting-user-scoped
- * (no service-key impersonation path), so there is no `userId` parameter.
+ * Mirrors `PUT /:projectId/push-notifications/preferences`. The route is
+ * acting-user-scoped; the SDK authenticates with a service key and names the
+ * acting user via `userId` (like the other per-user operations).
  */
 export async function updateNotificationPreferences(
   client: SublayHttpClient,
   data: UpdateNotificationPreferencesProps
 ): Promise<NotificationPreferences> {
-  const { disabledTypes } = data;
+  const { disabledTypes, userId } = data;
   const response = await client.projectInstance.put<NotificationPreferences>(
     `/push-notifications/preferences`,
-    { disabledTypes }
+    { disabledTypes, userId }
   );
   return response.data;
 }
