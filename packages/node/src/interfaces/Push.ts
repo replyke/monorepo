@@ -19,8 +19,6 @@ export const PUSH_EVENT_TYPES = [
   "comment-reply",
   "entity-mention",
   "comment-mention",
-  "entity-upvote",
-  "comment-upvote",
   "entity-reaction",
   "comment-reaction",
   "entity-reaction-milestone-specific",
