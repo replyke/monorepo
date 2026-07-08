@@ -18,7 +18,7 @@ Beyond the manual [`push.send()`](/push-notifications) call, Sublay can **automa
 
 Every automatic push is keyed by an **event type**. These are the server's exact type names — the full app-notification set plus the chat `message` event (which is push-only and writes no in-app notification):
 
-`entity-comment`, `comment-reply`, `entity-mention`, `comment-mention`, `entity-upvote`, `comment-upvote`, `entity-reaction`, `comment-reaction`, `entity-reaction-milestone-specific`, `entity-reaction-milestone-total`, `comment-reaction-milestone-specific`, `comment-reaction-milestone-total`, `new-follow`, `connection-request`, `connection-accepted`, `space-membership-approved`, `event-invite`, `event-updated`, `event-cancelled`, `message`.
+`entity-comment`, `comment-reply`, `entity-mention`, `comment-mention`, `entity-reaction`, `comment-reaction`, `entity-reaction-milestone-specific`, `entity-reaction-milestone-total`, `comment-reaction-milestone-specific`, `comment-reaction-milestone-total`, `new-follow`, `connection-request`, `connection-accepted`, `space-membership-approved`, `event-invite`, `event-updated`, `event-cancelled`, `message`.
 
 The same names are used everywhere: a user's `disabledTypes`, the project-level per-event toggle, and the template map all key on this exact list. The SDKs export the list as `PUSH_EVENT_TYPES` (`@sublay/core`, `@sublay/node`, `@sublay/js`).
 
@@ -93,8 +93,6 @@ Each event exposes a fixed set of variables its template may interpolate. Values
 | `comment-reply` | `initiatorName`, `initiatorUsername`, `entityTitle`, `replyContent` |
 | `entity-mention` | `initiatorName`, `initiatorUsername`, `entityTitle` |
 | `comment-mention` | `initiatorName`, `initiatorUsername`, `entityTitle`, `commentContent` |
-| `entity-upvote` | `initiatorName`, `initiatorUsername`, `entityTitle` |
-| `comment-upvote` | `initiatorName`, `initiatorUsername`, `entityTitle`, `commentContent` |
 | `entity-reaction` | `initiatorName`, `initiatorUsername`, `entityTitle`, `reactionType` |
 | `comment-reaction` | `initiatorName`, `initiatorUsername`, `entityTitle`, `commentContent`, `reactionType` |
 | `entity-reaction-milestone-specific` | `entityTitle`, `reactionType`, `milestoneCount` |
