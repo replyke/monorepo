@@ -44,6 +44,21 @@ Upload or paste your Firebase service account JSON. This is the file downloaded 
 
 No credentials to paste — click **Enable**. Sublay generates a VAPID EC keypair server-side and stores the private key encrypted. Only the public key is returned and displayed; it is also available via the unauthenticated [`GET /vapid-public-key`](/api-reference/push-notifications/get-vapid-public-key) endpoint for use in your service worker.
 
+### Automatic push settings
+
+Sublay can fan a push out **automatically** whenever an in-app notification is created (a new comment, reply, mention, reaction, follow, connection, RSVP-event change, space-membership approval) or a chat message is sent — no `push.send()` call required. The **Settings → Push Notifications** page lets you tune what those automatic pushes look like per event type:
+
+| Setting | Scope | Description |
+|---------|-------|-------------|
+| **Body template** | Per event type | The notification body, with a `{variable}` palette specific to each event. Ships with sensible defaults. |
+| **Title template** | Per event type | An optional title line, interpolated against the **same** `{variable}` palette as the body. **Ships empty** — an unset title renders as an empty string, so titles are opt-in. |
+| **Default delivery** | Project-wide | A default `{ sound, channelId, priority }` applied to every automatic push. |
+| **Delivery override** | Per event type | Overrides the project default per field for a single event type. A present field wins; an absent one inherits the default. |
+
+These settings affect only the **automatic** path. The manual [`push.send()`](#server-sdk--sending-notifications) call already accepts `title`, `sound`, `channelId`, `priority`, and everything else directly.
+
+See [Automatic Pushes](#automatic-pushes) below for the full delivery-config, title-template, and tap-routing contract.
+
 ### Test-send UI
 
 Each provider card in the dashboard includes a **Send Test Push** panel. Supply a platform, a device token or subscription, a title, and a body, then click **Send Test Push** to verify credentials before shipping.
@@ -174,6 +189,85 @@ Three of these need setup in **your app** — Sublay forwards the field but cann
     Sublay ships no service worker — your app's own SW renders web notifications. The server forwards the web-renderable fields (`sound`, `image`, `tag`) in the push JSON; your `push` event handler decides how to display them via `registration.showNotification(...)`.
   </Accordion>
 </AccordionGroup>
+
+## Automatic Pushes
+
+Whenever Sublay writes an in-app notification (a new comment, reply, mention, reaction, milestone, follow, connection request/accept, RSVP-event invite/update/cancel, or space-membership approval) or a chat message is sent, it can fan a native push out to the recipient's registered devices **automatically** — you don't call `push.send()` for these. What each automatic push looks like is configured per project on the **Settings → Push Notifications** page.
+
+<Note>
+  Everything in this section applies to the **automatic** path only. The manual [`push.send()`](#server-sdk--sending-notifications) call takes `title`, `body`, `data`, `sound`, `channelId`, `priority`, and the [rich fields](#rich-notification-payloads) directly and is unchanged.
+</Note>
+
+### Title & body templates
+
+Each event type has a **body template** (shipped with sensible defaults) and an optional **title template**. Both are interpolated against the same per-event `{variable}` palette shown next to each row in the dashboard.
+
+The title template **ships empty** for every event type — an unset title renders as an empty string, which is the historical behavior. Set a title only for the events where you want one; leaving it blank is a no-op.
+
+```
+# Example (dashboard, entity-comment)
+Title:  New comment
+Body:   {initiatorUsername} commented on your post
+```
+
+### Delivery: sound, channel & priority
+
+You can set a project-wide **default delivery** block and, optionally, a **per-event override**:
+
+- **Default** — a single `{ sound, channelId, priority }` applied to every automatic push.
+- **Override** — a per-event-type `{ sound, channelId, priority }`. Any field you set on the override wins for that event; any field you leave unset inherits the project default. Precedence is **per-event override → project default → none**.
+
+| Field | Platforms | Notes |
+|-------|-----------|-------|
+| `sound` | iOS, Android, Web | Filename of a bundled sound. On Android 8+ the notification **channel** owns the sound — see [Android sound → notification channels](#client-side-requirements). |
+| `channelId` | Android | Notification channel id. Created client-side; omitted from the web/iOS payloads. |
+| `priority` | iOS, Android | `"high"` wakes the device; `"normal"` is power-considerate. |
+
+These are the same three fields `push.send()` accepts, wired to the automatic path. The other rich fields (`badge`, `imageUrl`, `tag`, etc.) are configurable on the manual path only.
+
+### Tap-routing `data`
+
+Every automatic push carries a flat `data` object of string identifiers so your app's tap handler can deep-link to the right screen. All `data` values are **flat top-level strings** (FCM coerces `data` values with `String()`, so nested objects are not used).
+
+Two keys are on every automatic push:
+
+| Key | Value |
+|-----|-------|
+| `type` | The event type, e.g. `entity-comment`, `new-follow`, `event-invite`, `message`. |
+| `action` | A canonical routing hint — one of `open-comment`, `open-entity`, `open-profile`, `open-space`, `open-event`, or `open-conversation` (message path). |
+
+Beyond `type` and `action`, each push forwards **every identifier form** for each object the notification references, so you can route on whichever id your app uses (UUID, short id, foreign id, slug, or username). Per referenced object:
+
+| Object | Keys forwarded |
+|--------|----------------|
+| Entity | `entityId`, `entityShortId`, `entityForeignId` |
+| Comment | `commentId`, `commentForeignId` (comments have no short id) |
+| Space | `spaceId`, `spaceShortId`, `spaceSlug` |
+| RSVP event | `eventId`, `eventShortId` |
+| Initiator (the acting user) | `initiatorId`, `initiatorUsername`, `initiatorForeignId` (users have no short id) |
+| Connection | `connectionId` |
+
+Which of those apply depends on the event type:
+
+| Event type(s) | `action` | `data` identifiers (beyond `type`/`action`) |
+|---------------|----------|---------------------------------------------|
+| `entity-comment`, `comment-reply`, `comment-mention`, `comment-reaction`, `comment-reaction-milestone-specific`, `comment-reaction-milestone-total` | `open-comment` | Entity + Comment + Space keys (+ Initiator, except on milestones) |
+| `entity-mention`, `entity-reaction`, `entity-reaction-milestone-specific`, `entity-reaction-milestone-total` | `open-entity` | Entity + Space keys (+ Initiator, except on milestones) |
+| `new-follow` | `open-profile` | Initiator keys |
+| `connection-request`, `connection-accepted` | `open-profile` | `connectionId` + Initiator keys |
+| `space-membership-approved` | `open-space` | Space keys |
+| `event-invite`, `event-updated`, `event-cancelled` | `open-event` | RSVP-event + parent-Space keys + Initiator keys |
+| `message` (chat) | `open-conversation` | `conversationId`, `messageId` |
+
+<Note>
+  **Content and RSVP-event notifications also carry the parent space.** A notification *about* an Entity or Comment (a "content notification") or an RSVP-event notification additionally forwards the parent **Space** id set (`spaceId`, `spaceShortId`, `spaceSlug`) when the subject lives in a space, so you can route within a space. Don't confuse the `message` **event type** or an RSVP **Event** (the data model) with the generic idea of a "notification event."
+</Note>
+
+<Note>
+  **These `data` keys are additive and non-breaking.** Existing tap handlers that ignore unknown keys are unaffected — nothing that was present before was removed or renamed. A key whose underlying value is absent (e.g. a user with no `foreignId`, a space with no `slug`) is simply omitted rather than sent empty.
+</Note>
+
+The chat-message path builds its `data` from the send context rather than notification metadata, so it always carries exactly `{ type: "message", action: "open-conversation", conversationId, messageId }`.
 
 ## Device Lifecycle
 
