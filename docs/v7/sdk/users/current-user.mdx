@@ -34,3 +34,5 @@ The `useUser` hook returns an `AuthUser` object which contains the complete prof
 <Note>
   The `AuthUser` type includes `authMethods` (e.g., `["password", "google"]`) and `suspensions` — fields only available for the authenticated user's own profile.
 </Note>
+
+`useUser` also derives `isSuspended` and `activeSuspension` from the user's suspensions, so you can render a suspended state ambiently. See [Suspensions](/sdk/moderation/suspensions) for the full enforcement behavior and the catchable `SuspendedError`.

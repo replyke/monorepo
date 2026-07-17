@@ -162,7 +162,10 @@
               },
               {
                 "group": "Moderation",
-                "pages": ["v7/sdk/moderation/overview"]
+                "pages": [
+                  "v7/sdk/moderation/overview",
+                  "v7/sdk/moderation/suspensions"
+                ]
               },
               {
                 "group": "Custom Tables",
