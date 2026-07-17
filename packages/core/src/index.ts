@@ -1,5 +1,10 @@
 // Helpers & Utilities
 export { handleError } from "./utils/handleError";
+export {
+  SuspendedError,
+  isSuspendedError,
+  SUSPENDED_ERROR_CODE,
+} from "./errors/SuspendedError";
 export { keywordHelpers } from "./utils/keywordHelpers";
 export { safeMergeStyleProps } from "./helpers/safeMergeStyleProps";
 export { getUserName } from "./helpers/getUserName";
@@ -131,6 +136,7 @@ export {
   useUserActions,
   type UseUserProps,
   type UseUserValues,
+  type ActiveSuspension,
   type UpdateUserParams,
 } from "./hooks/user";
 

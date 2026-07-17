@@ -17,17 +17,68 @@ import type { UpdateUserParams } from "../../store/api/userApi";
 
 export interface UseUserProps {}
 
+/**
+ * The furthest-reaching active suspension for the current user, or null.
+ * Mirrors the server's "effective suspension" definition.
+ */
+export type ActiveSuspension = {
+  reason: string | null;
+  startDate: string;
+  endDate: string | null;
+};
+
 export interface UseUserValues {
   user: AuthUser | null;
   loading: boolean;
   updating: boolean;
   error: string | null;
 
+  // Derived suspension state (matches the server's effective-suspension definition)
+  isSuspended: boolean;
+  activeSuspension: ActiveSuspension | null;
+
   // Current user management actions
   updateUser: (update: UpdateUserParams) => Promise<AuthUser>;
 
   // Error handling
   clearError: () => void;
+}
+
+/**
+ * Compute the effective active suspension from a user's `suspensions` array,
+ * using the SAME definition as the server:
+ *   - active = startDate <= now <= (endDate || infinity)
+ *   - the effective row is the furthest-reaching active row, where a `null`
+ *     endDate (indefinite) wins the tie (matches server `endDate DESC NULLS FIRST`).
+ */
+function computeActiveSuspension(
+  suspensions: AuthUser["suspensions"] | undefined | null,
+): ActiveSuspension | null {
+  if (!suspensions || suspensions.length === 0) return null;
+
+  const now = Date.now();
+
+  const active = suspensions.filter((s) => {
+    const start = new Date(s.startDate).getTime();
+    if (Number.isNaN(start) || start > now) return false;
+    if (s.endDate == null) return true; // indefinite
+    const end = new Date(s.endDate).getTime();
+    if (Number.isNaN(end)) return false;
+    return end >= now;
+  });
+
+  if (active.length === 0) return null;
+
+  // Pick the furthest-reaching row: a null endDate is furthest (wins),
+  // otherwise the largest endDate wins.
+  return active.reduce((furthest, current) => {
+    if (furthest.endDate == null) return furthest;
+    if (current.endDate == null) return current;
+    return new Date(current.endDate).getTime() >
+      new Date(furthest.endDate).getTime()
+      ? current
+      : furthest;
+  });
 }
 
 /**
@@ -93,19 +144,26 @@ function useUser(_: UseUserProps = {}): UseUserValues {
   );
 
   // Return focused interface for current user management
-  return useMemo(
-    () => ({
-      user: user || authUser, // Fallback to auth user if user slice is empty
+  return useMemo(() => {
+    const effectiveUser = user || authUser; // Fallback to auth user if user slice is empty
+    const activeSuspension = computeActiveSuspension(
+      effectiveUser?.suspensions,
+    );
+
+    return {
+      user: effectiveUser,
       loading,
       updating,
       error,
 
+      isSuspended: activeSuspension !== null,
+      activeSuspension,
+
       updateUser: handleUpdateUser,
 
       clearError,
-    }),
-    [user, authUser, loading, updating, error, handleUpdateUser, clearError],
-  );
+    };
+  }, [user, authUser, loading, updating, error, handleUpdateUser, clearError]);
 }
 
 export default useUser;
