@@ -6,7 +6,7 @@ icon: "cube"
 
 ## Overview
 
-`useUser` is the primary hook for interacting with the currently authenticated user's profile. It provides the user's full data (as an `AuthUser`), loading and error states, and an `updateUser` action.
+`useUser` is the primary hook for interacting with the currently authenticated user's profile. It provides the user's full data (as an `AuthUser`), loading and error states, an `updateUser` action, and derived [suspension](/sdk/moderation/suspensions) state (`isSuspended` / `activeSuspension`).
 
 Updates are applied optimistically — the UI reflects changes immediately, and reverts automatically if the server request fails.
 
@@ -72,6 +72,14 @@ function AvatarUpload({ file }: { file: File }) {
 
 <ResponseField name="error" type="string | null">
   Error message if an `updateUser` call fails. `null` when there is no error.
+</ResponseField>
+
+<ResponseField name="isSuspended" type="boolean">
+  `true` while the authenticated user has an active [suspension](/sdk/moderation/suspensions). Derived from the user's `suspensions` using the same effective definition as the server.
+</ResponseField>
+
+<ResponseField name="activeSuspension" type="{ reason: string | null; startDate: string; endDate: string | null } | null">
+  The user's effective (furthest-reaching) active suspension, or `null` when they aren't suspended. `endDate: null` means the suspension is indefinite. Bind a "suspended until X" banner or a disabled composer to this. See [Suspensions](/sdk/moderation/suspensions).
 </ResponseField>
 
 <ResponseField name="updateUser" type="(update: UpdateUserParams) => Promise<AuthUser>">

@@ -13,6 +13,8 @@ Sublay provides a two-tier moderation system:
 
 Both tiers share the same reporting flow. The difference is in who can act on reports and what scope they have access to.
 
+Beyond acting on individual pieces of content, moderators can also **[suspend a user](/sdk/moderation/suspensions)** — an enforced, platform-wide timeout that blocks all participation writes while leaving reads, sign-in, and account self-management open.
+
 <Note>
   **Requires the `moderation` bundle.** Reports and suspensions are only available when the `moderation` bundle is installed on your project. See [Bundles](/bundles) to add it.
 </Note>
@@ -100,5 +102,6 @@ The hooks below are used for **space-level moderation** integrated in your app. 
 
 ## Related
 
+- [Suspensions](/sdk/moderation/suspensions) — Platform-wide user timeouts that block participation writes
 - [Space Moderation](/sdk/spaces/moderation) — Direct moderation of entities and comments within a space (without the reporting flow)
 - [Space Rules](/sdk/spaces/rules) — Define community rules that appear alongside moderation decisions

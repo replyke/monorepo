@@ -51,9 +51,11 @@ All `User` fields above are included, plus:
 | `lastActive` | `Date` | Timestamp of the user's last activity. |
 | `updatedAt` | `Date` | Timestamp when the account was last modified. |
 | `authMethods` | `string[]` | Authentication methods linked to this account (e.g. `["password", "google"]`). |
-| `suspensions` | `Suspension[]` | Array of active or past suspensions. |
+| `suspensions` | `Suspension[]` | Array of active or past suspensions. See [Suspensions](/sdk/moderation/suspensions). |
 
 ### Suspension
+
+An active suspension is an enforced, platform-wide timeout: it blocks all participation and content writes while leaving reads, sign-in, and account self-management open. Multiple active suspensions can coexist; the "effective" one is the furthest-reaching active row (an indefinite `endDate` of `null` reaches furthest). The [`useUser`](/hooks/user/use-user) hook derives `isSuspended` and `activeSuspension` from this array. See [Suspensions](/sdk/moderation/suspensions) for the full behavior and response contract.
 
 | Property | Type | Description |
 |----------|------|-------------|
