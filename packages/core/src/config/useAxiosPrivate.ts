@@ -2,6 +2,10 @@ import { useEffect } from "react";
 import type { AxiosInstance } from "axios";
 import { axiosPrivate } from "./axios";
 import { useAuth } from "../hooks/auth";
+import {
+  SUSPENDED_ERROR_CODE,
+  SuspendedError,
+} from "../errors/SuspendedError";
 
 // Module-level mutex: prevents concurrent token rotations from racing
 let refreshPromise: Promise<string | undefined> | null = null;
@@ -23,6 +27,25 @@ const useAxiosPrivate = (): AxiosInstance => {
       (response) => response,
       async (error) => {
         const prevRequest = error?.config;
+
+        // A suspension 403 must be discriminated BEFORE the generic
+        // 403 → token-refresh branch below. Otherwise a blocked write would
+        // spuriously rotate the token and silently retry the request. Reject
+        // with a typed, catchable error carrying reason/endDate instead.
+        if (
+          error?.response?.status === 403 &&
+          error?.response?.data?.code === SUSPENDED_ERROR_CODE
+        ) {
+          const data = error.response.data;
+          return Promise.reject(
+            new SuspendedError({
+              message: data?.error,
+              reason: data?.reason ?? null,
+              endDate: data?.endDate ?? null,
+            })
+          );
+        }
+
         if (error?.response?.status === 403 && !prevRequest?.sent) {
           prevRequest.sent = true;
 

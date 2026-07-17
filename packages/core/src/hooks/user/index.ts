@@ -4,6 +4,7 @@ export {
   default as useUser,
   type UseUserProps,
   type UseUserValues,
+  type ActiveSuspension,
 } from "./useUser";
 
 // Re-export types from userApi for consumers
