@@ -61,7 +61,128 @@ See [Automatic Pushes](#automatic-pushes) below for the full delivery-config, ti
 
 ### Test-send UI
 
-Each provider card in the dashboard includes a **Send Test Push** panel. Supply a platform, a device token or subscription, a title, and a body, then click **Send Test Push** to verify credentials before shipping.
+The **Push Notifications** settings page includes a **Send Test Push** panel for firing a one-off notification at a single device — the fastest way to verify a provider's credentials before wiring up the SDK. Pick a platform, paste a device token (iOS/Android) or a web push subscription, set a title and body, and click **Send Test Push**.
+
+The catch is getting the token/subscription to paste in. It isn't shown anywhere in the dashboard — it's produced on the receiving device. Here's how to obtain each.
+
+<Warning>
+  **"Test push sent successfully" verifies *credentials*, not *delivery*.** A success result means the provider (APNs / FCM / Web Push) *accepted* the message — your keys are valid. It does **not** mean a notification appeared on screen. Rendering is a separate step that depends on the receiving device (a web service worker's `push` handler, and the OS notification settings). If the send is green but nothing shows, see [Troubleshooting](#troubleshooting-a-test-push) below — the problem is almost never the credentials at that point.
+</Warning>
+
+#### Web: generating a Subscription JSON
+
+The **Subscription JSON** is created by a browser subscribing to the Push API. You generate it from the DevTools console of a page that (a) is served over HTTPS or `localhost` and (b) has a **service worker registered** (`await navigator.serviceWorker.ready` hangs forever otherwise).
+
+<Steps>
+  <Step title="Copy the VAPID public key">
+    In the dashboard, go to **Settings → Push Notifications → Push Providers**. The **Web Push** row shows your project's VAPID public key with a copy button. (It's also available programmatically from the unauthenticated [`GET /vapid-public-key`](/api-reference/push-notifications/get-vapid-public-key) endpoint.) The subscription **must** be created with this exact key, or the send fails.
+  </Step>
+  <Step title="Run the subscribe snippet">
+    Open DevTools → Console on your service-worker-enabled page and run:
+
+    ```js
+    // Paste the EXACT public key from Settings → Push Notifications → Push Providers
+    const VAPID_PUBLIC_KEY = 'PASTE_YOUR_VAPID_PUBLIC_KEY';
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const raw = atob(base64);
+      return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+    }
+
+    const reg = await navigator.serviceWorker.ready;
+
+    // Drop any stale subscription bound to a previous key first
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) await existing.unsubscribe();
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+
+    console.log(JSON.stringify(sub.toJSON(), null, 2));
+    ```
+
+    The browser prompts for notification permission — click **Allow**. The snippet prints an object like:
+
+    ```json
+    {
+      "endpoint": "https://fcm.googleapis.com/fcm/send/...",
+      "keys": { "p256dh": "...", "auth": "..." }
+    }
+    ```
+  </Step>
+  <Step title="Paste it into the panel">
+    Copy the printed object into **Subscription JSON**, set Platform to **Web (Web Push)**, and send. (`expirationTime` is harmless if included; only `endpoint` and `keys` are read.)
+  </Step>
+</Steps>
+
+<Note>
+  This manual console flow is a **debugging convenience** for the test panel. In a real app you never do this by hand — the SDK's [`usePushRegistration`](/hooks/push/use-push-registration) creates and registers the subscription for you. See the [Web section of the SDK reference](/sdk/push-notifications/overview) for service-worker setup.
+</Note>
+
+#### iOS / Android: obtaining a device token
+
+Native device tokens come from the OS (APNs / FCM), surfaced by the SDK's push-token adapter. To capture one for a test, wrap the built-in adapter so it logs the identifier it produces, then register as usual:
+
+```tsx
+import { usePushRegistration } from "@sublay/core";
+import type { PushTokenAdapter } from "@sublay/core";
+import { expoPushTokenAdapter } from "@sublay/expo"; // or reactNativePushTokenAdapter
+
+// Wraps the built-in adapter to log the token it retrieves
+const debugAdapter: PushTokenAdapter = {
+  requestPermission: expoPushTokenAdapter.requestPermission,
+  async getDeviceIdentifier(context) {
+    const id = await expoPushTokenAdapter.getDeviceIdentifier(context);
+    console.log("Push device identifier:", id); // { platform: "ios", token: "..." }
+    return id;
+  },
+};
+
+function DebugRegister() {
+  const { register } = usePushRegistration(debugAdapter);
+  return <Button title="Register (debug)" onPress={register} />;
+}
+```
+
+Run the app on a **real device** (simulators/emulators don't receive push on iOS), trigger registration, copy the `token` from the logs, then paste it into the panel with Platform set to **iOS** or **Android**.
+
+<Warning>
+  **APNs sandbox vs. production.** A development/debug iOS build talks to the APNs **sandbox** gateway; a TestFlight/App Store build talks to **production**. The **Production** toggle on your APNs provider config must match the build the token came from, or the send is rejected. This is the most common iOS test-push failure.
+</Warning>
+
+#### Troubleshooting a test push
+
+<AccordionGroup>
+  <Accordion title="Send is green but no notification appears (Web)">
+    "Sent successfully" only means Web Push accepted the message. Rendering happens in **your service worker's `push` handler** — Sublay ships no service worker. Check, in order:
+
+    1. **Does your SW render pushes?** Its `push` handler must call `registration.showNotification(...)`. Isolate the rendering step by running this in the page console — it calls `showNotification` directly, bypassing the network:
+       ```js
+       const reg = await navigator.serviceWorker.ready;
+       await reg.showNotification("Direct test", { body: "does the OS show this?" });
+       ```
+       If **this** shows nothing, the problem is OS-level (next point), not your code. If it shows but real pushes don't, your `push` handler is missing or not calling `showNotification`.
+    2. **OS notification settings.** Even with `Notification.permission === "granted"`, the OS can suppress everything. On macOS: **System Settings → Notifications → [your browser]** must be allowed (alert style not "None"), and **Focus / Do Not Disturb** must be off. This silently swallows notifications and is the single most common cause of "green but nothing."
+    3. **DevTools "Push" button throws a JSON error.** The DevTools Application → Service Workers "Push" tool sends *plain text*; a handler that calls `event.data.json()` will throw on it. That's a test-tool artifact — real Sublay pushes are JSON. Test with a real send instead.
+  </Accordion>
+  <Accordion title="permanently_invalid / the subscription is rejected (Web)">
+    The push service returned HTTP 410 (Gone). Usual causes:
+
+    - **VAPID key mismatch** — the subscription was created with a different public key than the project's. Re-copy the key from Settings → Push Providers and re-subscribe. Chrome caches the old subscription, so `unsubscribe()` first (the snippet above already does).
+    - **Truncated endpoint** — make sure you pasted the *full* `endpoint`, not an abbreviated `https://.../...` copy.
+    - **Stale subscription** — regenerate a fresh one if it was minted a while ago.
+  </Accordion>
+  <Accordion title="Nothing arrives on iOS/Android">
+    - Test on a **real device**, not a simulator/emulator.
+    - Confirm the **APNs Production toggle matches the build** (sandbox for dev builds, production for TestFlight/App Store).
+    - Verify the provider credentials: APNs `bundleId` must match the app exactly; FCM service account must belong to the same Firebase project as the app's `google-services.json` / config.
+    - Re-copy the token — device tokens rotate and can go stale.
+  </Accordion>
+</AccordionGroup>
 
 ## Client SDK — Registering Devices
 
