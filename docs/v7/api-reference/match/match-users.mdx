@@ -17,10 +17,12 @@ Matching runs in two modes:
 
 ## Authentication
 
-The endpoint uses optional user auth, but each mode enforces its own requirement in the controller:
+The endpoint **requires an authenticated user**. A missing token is rejected with a bare `401` before the controller runs; an invalid or expired token is rejected with `403` (refresh and retry). Both modes act on behalf of that user:
 
-- **`passive`** requires an **identified user** (the asker) — their facets are the query. No user → `401`.
-- **`directed`** also requires an identified user. A bare client token with no user session → `401`.
+- **`passive`** ranks candidates against the asker's own facets — the authenticated user *is* the query.
+- **`directed`** ranks candidates against a free-text `query`, still on behalf of the authenticated user.
+
+A master or service key passes the auth layer without binding to a specific user; when acting that way the controller still needs an identified user and returns `401 auth/user-required` if none is resolved.
 
 ## Body Parameters
 

@@ -10,6 +10,8 @@ Answers a natural language question using content from your project as context. 
 
 **Requires a paid plan with semantic search enabled.**
 
+**Requires an authenticated user.** Send the user's access token as `Authorization: Bearer <token>`. Requests without a valid token are rejected before any work is done — missing token → `401`, invalid/expired token → `403` (refresh the access token and retry).
+
 ## Body Parameters
 
 <ParamField body="query" type="string" required>
@@ -78,6 +80,9 @@ data: {}
 ## Error Responses
 
 <AccordionGroup>
+  <Accordion title="Authentication Required — 401 / 403">
+    The endpoint requires an authenticated user. A missing token returns a bare `401`; an invalid or expired token returns a bare `403` — refresh the access token and retry. These are returned before streaming starts.
+  </Accordion>
   <Accordion title="Plan Required — 403">
     ```json
     { "error": "Semantic search requires a paid plan", "code": "project/plan-required" }

@@ -29,6 +29,7 @@ This endpoint takes no body parameters.
 | Code | Status | Description |
 |------|--------|-------------|
 | `auth/no-email-on-file` | 400 | The authenticated account has no email address, so a confirmation code cannot be delivered. Use a service key to delete it instead. |
+| `auth/no-user-found` | 403 | The access token is valid but no matching user record exists (e.g. the account was already deleted). |
 
 <Note>
   Each call generates a fresh code and overwrites any pending one for that user.

@@ -11,6 +11,8 @@ When semantic search is enabled for your project, Sublay automatically generates
 
 <Note>
   Semantic search and AI features require a paid plan. Projects on the free tier cannot use embedding-based endpoints.
+
+  The search and ask endpoints also **require an authenticated user** — call them with a user access token. Requests without a valid token are rejected (`401` when missing, `403` when expired — refresh and retry). The SDK hooks handle this for you.
 </Note>
 
 ---
