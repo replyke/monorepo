@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import useProject from "../projects/useProject";
-import { useSublaySelector } from "../../store/hooks";
-import { selectAccessToken } from "../../store/slices/authSlice";
+import useAuth from "../auth/useAuth";
 import { BASE_URL } from "../../config/axios";
+import { refreshAccessToken } from "../../config/refreshAccessToken";
 import { ContentSearchResult } from "./useSearchContent";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
+
+function safeParseJson(text: string): { error?: string; code?: string } | null {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
 
 export interface UseAskContentProps extends SpaceReputationContextParams {
   query: string;
@@ -69,7 +77,7 @@ function parseSseChunk(buffer: string): { events: SseEvent[]; remainder: string 
 
 export default function useAskContent(): UseAskContentReturn {
   const { projectId } = useProject();
-  const accessToken = useSublaySelector(selectAccessToken);
+  const { accessToken, requestNewAccessToken } = useAuth();
 
   const [answer, setAnswer] = useState("");
   const [sources, setSources] = useState<ContentSearchResult[]>([]);
@@ -123,14 +131,6 @@ export default function useAskContent(): UseAskContentReturn {
         ...(limit && { limit }),
       });
 
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "text/event-stream",
-      };
-      if (accessToken) {
-        headers["Authorization"] = `Bearer ${accessToken}`;
-      }
-
       // Run async without blocking the render cycle — errors are surfaced via state
       // spaceReputation opt-in is read from the query string by the server,
       // not the request body — append it to the URL.
@@ -157,17 +157,55 @@ export default function useAskContent(): UseAskContentReturn {
       // than a buffered blob resolved only at completion. It's an unknown key to
       // standard/web `fetch`, which ignores extra RequestInit fields, so we send
       // it unconditionally instead of branching on platform.
-      const init: RequestInit & { reactNative?: { textStreaming?: boolean } } = {
-        method: "POST",
-        headers,
-        body,
-        signal: controller.signal,
-        reactNative: { textStreaming: true },
+      const doFetch = (token: string | null | undefined) => {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+        };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const init: RequestInit & { reactNative?: { textStreaming?: boolean } } = {
+          method: "POST",
+          headers,
+          body,
+          signal: controller.signal,
+          reactNative: { textStreaming: true },
+        };
+        return fetch(`${BASE_URL}/${projectId}/search/ask${queryString}`, init);
       };
 
       (async () => {
         try {
-          const response = await fetch(`${BASE_URL}/${projectId}/search/ask${queryString}`, init);
+          let response = await doFetch(accessToken);
+
+          // A *bare* 403 (no error code) means the access token expired/invalid
+          // — the same signal `requireUserAuth` emits. Unlike the axios hooks,
+          // this raw-fetch stream can't lean on the interceptor, so refresh once
+          // (coalesced with the interceptor via the shared single-flight) and
+          // retry. Coded 403s (project/plan-required, user/suspended, …) are
+          // semantic and unrecoverable by refresh, so surface them as-is. A 401
+          // (no token at all) is likewise unrecoverable and falls through below.
+          if (response.status === 403) {
+            const text = await response.text().catch(() => "");
+            const parsed = safeParseJson(text);
+            if (parsed?.code) {
+              setError(parsed.error ?? "Request failed (403)");
+              setLoading(false);
+              return;
+            }
+            const newToken = await refreshAccessToken(requestNewAccessToken);
+            if (!newToken) {
+              setError("Your session has expired. Please sign in again.");
+              setLoading(false);
+              return;
+            }
+            response = await doFetch(newToken);
+          }
+
+          if (response.status === 401) {
+            setError("You must be signed in to use AI search.");
+            setLoading(false);
+            return;
+          }
 
           if (!response.ok) {
             const text = await response.text().catch(() => "");
@@ -239,7 +277,7 @@ export default function useAskContent(): UseAskContentReturn {
         }
       })();
     },
-    [projectId, accessToken]
+    [projectId, accessToken, requestNewAccessToken]
   );
 
   return { answer, sources, streaming, loading, error, ask, reset };

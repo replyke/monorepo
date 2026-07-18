@@ -4,8 +4,17 @@ import { act, waitFor } from "@testing-library/react";
 import { renderHookWithAxios, makeEntity } from "../../test-utils";
 import useAskContent from "./useAskContent";
 
+// Isolate the hook's 403 refresh-retry logic from the auth thunk/store: the
+// shared single-flight is exercised in refreshAccessToken's own coverage.
+vi.mock("../../config/refreshAccessToken", () => ({
+  refreshAccessToken: vi.fn(),
+}));
+import { refreshAccessToken } from "../../config/refreshAccessToken";
+const mockedRefresh = vi.mocked(refreshAccessToken);
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  mockedRefresh.mockReset();
 });
 
 function sse(event: string, data: unknown): string {
@@ -174,6 +183,100 @@ describe("useAskContent", () => {
     expect(result.current.answer).toBe("");
     expect(result.current.loading).toBe(false);
     expect(result.current.streaming).toBe(false);
+  });
+
+  it("refreshes once and retries on a bare 403 (expired token), then streams", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("Forbidden", { status: 403 }))
+      .mockResolvedValueOnce(
+        makeStreamResponse([sse("token", { content: "hi" }), sse("done", {})]),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    mockedRefresh.mockResolvedValue("fresh-token");
+
+    const { result } = renderHookWithAxios(() => useAskContent(), {
+      accessToken: "stale-token",
+      refreshToken: "r",
+    });
+
+    act(() => {
+      result.current.ask({ query: "hello" });
+    });
+
+    await waitFor(() => expect(result.current.answer).toBe("hi"));
+    expect(mockedRefresh).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // The retry carries the freshly rotated token.
+    expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe(
+      "Bearer fresh-token",
+    );
+    expect(result.current.error).toBeNull();
+  });
+
+  it("does not refresh on a coded 403 (plan-required) and surfaces the error", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: "Semantic search requires a paid plan",
+          code: "project/plan-required",
+        }),
+        { status: 403 },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHookWithAxios(() => useAskContent(), {
+      accessToken: "tok",
+    });
+
+    act(() => {
+      result.current.ask({ query: "hello" });
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBe("Semantic search requires a paid plan");
+    expect(mockedRefresh).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not refresh on a 401 and surfaces a sign-in message", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("Unauthorized", { status: 401 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHookWithAxios(() => useAskContent());
+
+    act(() => {
+      result.current.ask({ query: "hello" });
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBe("You must be signed in to use AI search.");
+    expect(mockedRefresh).not.toHaveBeenCalled();
+  });
+
+  it("surfaces a session-expired error when the refresh yields no token", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("Forbidden", { status: 403 }));
+    vi.stubGlobal("fetch", fetchMock);
+    mockedRefresh.mockResolvedValue(undefined);
+
+    const { result } = renderHookWithAxios(() => useAskContent(), {
+      accessToken: "stale-token",
+    });
+
+    act(() => {
+      result.current.ask({ query: "hello" });
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBe(
+      "Your session has expired. Please sign in again.",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("does not call fetch for a blank query or a missing project", async () => {

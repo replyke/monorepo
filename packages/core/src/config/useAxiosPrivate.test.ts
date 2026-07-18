@@ -89,6 +89,30 @@ describe("useAxiosPrivate", () => {
     expect(requestNewAccessToken).toHaveBeenCalledTimes(1);
   });
 
+  it("does not refresh on a coded 403 (semantic rejection) and rejects as-is", async () => {
+    const requestNewAccessToken = vi.fn();
+    mockedUseAuth.mockReturnValue({
+      accessToken: "token-a",
+      requestNewAccessToken,
+    } as never);
+    const adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
+      throw axiosErrorWithStatus(
+        403,
+        { code: "project/plan-required", error: "Paid plan required" },
+        config,
+      );
+    });
+    stubAxiosAdapter(axiosPrivate, adapter);
+
+    renderHook(() => useAxiosPrivate());
+
+    await expect(axiosPrivate.get("/a")).rejects.toMatchObject({
+      response: { status: 403, data: { code: "project/plan-required" } },
+    });
+    expect(requestNewAccessToken).not.toHaveBeenCalled();
+    expect(adapter).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects the original error when the refresh fails to produce a token", async () => {
     const requestNewAccessToken = vi.fn().mockResolvedValue(undefined);
     mockedUseAuth.mockReturnValue({
