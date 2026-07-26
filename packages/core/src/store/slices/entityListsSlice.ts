@@ -14,6 +14,7 @@ import { TitleFilters } from "../../interfaces/entity-filters/TitleFilters";
 import { ContentFilters } from "../../interfaces/entity-filters/ContentFilters";
 import { AttachmentsFilters } from "../../interfaces/entity-filters/AttachmentsFilters";
 import { KeywordsFilters } from "../../interfaces/entity-filters/KeywordsFilters";
+import { NsfwFilter } from "../../interfaces/NsfwFilter";
 import { SpaceReputationContextObject } from "../../interfaces/SpaceReputation";
 import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
@@ -48,6 +49,7 @@ export interface EntityListState {
   attachmentsFilters: AttachmentsFilters | null;
   locationFilters: LocationFilters | null;
   metadataFilters: MetadataFilters | null;
+  nsfwFilter: NsfwFilter | null;
 }
 
 // Root state for all entity lists
@@ -86,6 +88,7 @@ const createDefaultEntityListState = (): EntityListState => ({
   attachmentsFilters: null,
   locationFilters: null,
   metadataFilters: null,
+  nsfwFilter: null,
 });
 
 // Initial state
@@ -113,6 +116,7 @@ export interface EntityListFilters {
   attachmentsFilters?: AttachmentsFilters | null;
   locationFilters?: LocationFilters | null;
   metadataFilters?: MetadataFilters | null;
+  nsfwFilter?: NsfwFilter | null;
 }
 
 // Configuration for entity list operations
@@ -232,6 +236,7 @@ export const entityListsSlice = createSlice({
         list.attachmentsFilters = defaultState.attachmentsFilters;
         list.locationFilters = defaultState.locationFilters;
         list.metadataFilters = defaultState.metadataFilters;
+        list.nsfwFilter = defaultState.nsfwFilter;
       }
 
       // Handle resetSort flag - reset only sort properties

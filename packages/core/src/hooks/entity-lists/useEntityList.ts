@@ -198,6 +198,7 @@ function useEntityList({
           attachmentsFilters: null,
           locationFilters: null,
           metadataFilters: null,
+          nsfwFilter: null,
         };
         const finalFilters = { ...currentState };
 
@@ -212,6 +213,7 @@ function useEntityList({
           finalFilters.attachmentsFilters = null;
           finalFilters.locationFilters = null;
           finalFilters.metadataFilters = null;
+          finalFilters.nsfwFilter = null;
         }
 
         // Apply resetSort flag - reset only sort properties
@@ -259,6 +261,7 @@ function useEntityList({
             titleFilters: finalFilters.titleFilters,
             contentFilters: finalFilters.contentFilters,
             attachmentsFilters: finalFilters.attachmentsFilters,
+            nsfwFilter: finalFilters.nsfwFilter,
             // Configuration parameters from current config
             limit: currentConfig.limit,
             sourceId: currentConfig.sourceId,
@@ -333,6 +336,7 @@ function useEntityList({
         titleFilters: entityList.titleFilters,
         contentFilters: entityList.contentFilters,
         attachmentsFilters: entityList.attachmentsFilters,
+        nsfwFilter: entityList.nsfwFilter,
         // Configuration parameters from state (single source of truth)
         limit: config.limit,
         sourceId: config.sourceId,

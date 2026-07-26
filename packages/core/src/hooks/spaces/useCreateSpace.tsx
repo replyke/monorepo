@@ -26,6 +26,7 @@ export interface CreateSpaceProps {
   visibility?: SpaceVisibility;
   requireJoinApproval?: boolean;
   metadata?: Record<string, any>;
+  nsfw?: boolean;
   parentSpaceId?: string | null;
 }
 
@@ -72,6 +73,9 @@ function useCreateSpace(): (props: CreateSpaceProps) => Promise<Space> {
         if (props.metadata) {
           formData.append("metadata", JSON.stringify(props.metadata));
         }
+        if (props.nsfw !== undefined) {
+          formData.append("nsfw", String(props.nsfw));
+        }
         if (props.parentSpaceId) {
           formData.append("parentSpaceId", props.parentSpaceId);
         }
@@ -104,6 +108,7 @@ function useCreateSpace(): (props: CreateSpaceProps) => Promise<Space> {
           visibility: props.visibility,
           requireJoinApproval: props.requireJoinApproval,
           metadata: props.metadata,
+          nsfw: props.nsfw,
           parentSpaceId: props.parentSpaceId,
         });
 

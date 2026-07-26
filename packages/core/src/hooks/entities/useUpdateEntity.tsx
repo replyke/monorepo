@@ -18,6 +18,7 @@ export interface UpdateEntityProps {
     };
     metadata?: Record<string, any>;
     mentions?: Mention[];
+    nsfw?: boolean;
   };
 }
 
@@ -37,6 +38,7 @@ function useUpdateEntity(): (props: UpdateEntityProps) => Promise<Entity> {
         location,
         metadata,
         mentions,
+        nsfw,
       } = update;
 
       if (!projectId) {
@@ -53,6 +55,7 @@ function useUpdateEntity(): (props: UpdateEntityProps) => Promise<Entity> {
           location,
           metadata,
           mentions,
+          nsfw,
         },
       );
 

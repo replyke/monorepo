@@ -10,6 +10,7 @@ import type { TitleFilters } from "../../interfaces/entity-filters/TitleFilters"
 import type { ContentFilters } from "../../interfaces/entity-filters/ContentFilters";
 import type { AttachmentsFilters } from "../../interfaces/entity-filters/AttachmentsFilters";
 import type { KeywordsFilters } from "../../interfaces/entity-filters/KeywordsFilters";
+import type { NsfwFilter } from "../../interfaces/NsfwFilter";
 
 // Helper function to serialize objects using bracket notation (like Axios does)
 const serializeObject = (obj: any, prefix = ''): Record<string, any> => {
@@ -92,6 +93,7 @@ interface FetchEntitiesParams {
   titleFilters?: TitleFilters | null;
   contentFilters?: ContentFilters | null;
   attachmentsFilters?: AttachmentsFilters | null;
+  nsfwFilter?: NsfwFilter | null;
 
   // Configuration parameters
   sourceId?: string | null;
@@ -162,6 +164,7 @@ export const entityListsApi = baseApi.injectEndpoints({
         titleFilters,
         contentFilters,
         attachmentsFilters,
+        nsfwFilter,
         include,
         spaceReputationId,
         spaceReputationDescendants
@@ -197,6 +200,7 @@ export const entityListsApi = baseApi.injectEndpoints({
             contentFilters,
             attachmentsFilters,
             locationFilters,
+            nsfwFilter,
             include: include
               ? Array.isArray(include) ? include.join(',') : include
               : undefined,
