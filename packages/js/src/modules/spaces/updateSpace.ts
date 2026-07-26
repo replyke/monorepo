@@ -12,6 +12,7 @@ export interface UpdateSpaceProps {
   postingPermission?: PostingPermission;
   visibility?: SpaceVisibility;
   metadata?: Record<string, any>;
+  nsfw?: boolean;
   /**
    * New avatar image. When present the request is sent as `multipart/form-data`
    * and the server processes the image per `options`, replacing the old avatar.

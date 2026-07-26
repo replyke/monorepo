@@ -29,6 +29,7 @@ export { reorderRules } from "./reorderRules";
 export { handleEntityReport } from "./handleEntityReport";
 export { handleCommentReport } from "./handleCommentReport";
 export { moderateSpaceEntity } from "./moderateSpaceEntity";
+export { setSpaceEntityNsfw } from "./setSpaceEntityNsfw";
 export { moderateSpaceComment } from "./moderateSpaceComment";
 export { fetchDigestConfig } from "./fetchDigestConfig";
 export { updateDigestConfig } from "./updateDigestConfig";
