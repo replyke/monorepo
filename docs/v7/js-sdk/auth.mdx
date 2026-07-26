@@ -211,6 +211,24 @@ const { success, message } = await sublay.auth.changePassword({
 
 ---
 
+### setPassword
+
+Sets an **initial** password for an OAuth-only user who has no password yet. Unlike `changePassword`, there is no current password to verify. Use this to let an OAuth-only user add a password (for example, so they can sign in with email/password, or unlink their last OAuth identity). If the user already has a password, this fails with `auth/already-password-authenticated` — use `changePassword` instead.
+
+```typescript
+const { success, message } = await sublay.auth.setPassword({
+  newPassword: "newS3cur3P@ss",
+});
+```
+
+<ParamField body="newPassword" type="string" required>
+  The password to set for the account.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean; message: string }>`
+
+---
+
 ### sendVerificationEmail
 
 Sends (or re-sends) an email-verification message to the authenticated user, delivered as a code or a link.

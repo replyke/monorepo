@@ -6,7 +6,7 @@ icon: "cube"
 
 ## Overview
 
-`useAuth` is the primary authentication hook. It returns current token state and functions for all built-in auth operations: sign-up, sign-in, sign-out, password change, and manual token refresh.
+`useAuth` is the primary authentication hook. It returns current token state and functions for all built-in auth operations: sign-up, sign-in, sign-out, password change, setting an initial password, and manual token refresh.
 
 ## Usage Example
 
@@ -117,6 +117,13 @@ function SignInButton() {
   Change the password for the currently authenticated user. Accepts
   `{ password: string; newPassword: string }`. The current password must be
   correct. Throws if verification fails.
+</ResponseField>
+
+<ResponseField name="setPassword" type="function">
+  Set an **initial** password for an OAuth-only user who has no password yet.
+  Accepts `{ newPassword: string }`. Unlike `changePassword`, there is no
+  current password to verify. Throws if the user already has a password
+  (`auth/already-password-authenticated`) — use `changePassword` in that case.
 </ResponseField>
 
 <ResponseField name="requestNewAccessToken" type="function">
