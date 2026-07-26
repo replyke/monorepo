@@ -20,6 +20,7 @@ export interface CreateSpaceProps {
   requireJoinApproval?: boolean;
   parentSpaceId?: string;
   metadata?: Record<string, any>;
+  nsfw?: boolean;
   /**
    * Avatar image. When present the request is sent as `multipart/form-data` and
    * the server processes the image per `options`.

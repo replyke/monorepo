@@ -12,6 +12,7 @@ export interface FetchManySpacesProps {
   searchAny?: string;
   memberOf?: "true";
   parentSpaceId?: string | "null";
+  nsfwFilter?: "include-all" | "exclude" | "only";
   include?: string;
 }
 
