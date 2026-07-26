@@ -54,6 +54,10 @@ export interface Space {
   visibility: SpaceVisibility;
   requireJoinApproval: boolean;
 
+  // NSFW
+  nsfw: boolean; // The space's own NSFW flag
+  nsfwEffective: boolean; // Denormalized: own nsfw OR any ancestor space's nsfw
+
   // Hierarchy
   parentSpaceId: string | null;
   depth: number;

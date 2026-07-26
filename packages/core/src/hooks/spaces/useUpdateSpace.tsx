@@ -29,6 +29,7 @@ export interface UpdateSpaceProps {
     visibility: SpaceVisibility;
     requireJoinApproval: boolean;
     metadata: Record<string, any>;
+    nsfw: boolean;
   }>;
 }
 
@@ -80,6 +81,9 @@ function useUpdateSpace(): (props: UpdateSpaceProps) => Promise<SpaceDetailed> {
         }
         if (update.metadata !== undefined) {
           formData.append("metadata", JSON.stringify(update.metadata));
+        }
+        if (update.nsfw !== undefined) {
+          formData.append("nsfw", String(update.nsfw));
         }
 
         // Append avatar file and options

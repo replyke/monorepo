@@ -45,6 +45,8 @@ export interface Entity {
     coordinates: [number, number]; // [longitude, latitude]
   } | null; // Optional location stored as GeoJSON. For example, if the entity is used to represent hotel listings
   metadata: Record<string, any>; // JSON object that could contain any other data about the entity which is relevant to the project. Limited to 10KB size.
+  nsfw: boolean; // The entity's own NSFW flag
+  nsfwEffective: boolean; // Computed live: entity.nsfw OR the entity's space's effective NSFW
   topComment: TopComment | null; // Optional field for top comment. As long as there is at least one comment it will be populated
   isSaved?: boolean; // Optional field populated when include contains "saved" - indicates if current user saved this entity
   createdAt: string; // Use camelCase for `created_at`

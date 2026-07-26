@@ -48,6 +48,7 @@ export interface CreateEntityProps {
     longitude: number;
   };
   metadata?: Record<string, any>;
+  nsfw?: boolean;
   excludeUserId?: boolean;
   requireUser?: boolean;
   isDraft?: boolean;
@@ -72,6 +73,7 @@ function useCreateEntity(): (props: CreateEntityProps) => Promise<Entity> {
         mentions,
         location,
         metadata,
+        nsfw,
         excludeUserId,
         requireUser,
         isDraft,
@@ -102,6 +104,7 @@ function useCreateEntity(): (props: CreateEntityProps) => Promise<Entity> {
         if (mentions !== undefined) formData.append("mentions", JSON.stringify(mentions));
         if (location !== undefined) formData.append("location", JSON.stringify(location));
         if (metadata !== undefined) formData.append("metadata", JSON.stringify(metadata));
+        if (nsfw !== undefined) formData.append("nsfw", nsfw.toString());
         if (excludeUserId !== undefined) formData.append("excludeUserId", excludeUserId.toString());
         if (requireUser !== undefined) formData.append("requireUser", requireUser.toString());
         if (isDraft !== undefined) formData.append("isDraft", isDraft.toString());
@@ -169,6 +172,7 @@ function useCreateEntity(): (props: CreateEntityProps) => Promise<Entity> {
             mentions,
             location,
             metadata,
+            nsfw,
             excludeUserId,
             requireUser,
             isDraft,

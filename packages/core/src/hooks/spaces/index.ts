@@ -58,6 +58,8 @@ export { default as useModerateSpaceEntity } from "./useModerateSpaceEntity";
 export type { ModerateSpaceEntityProps } from "./useModerateSpaceEntity";
 export { default as useModerateSpaceComment } from "./useModerateSpaceComment";
 export type { ModerateSpaceCommentProps } from "./useModerateSpaceComment";
+export { default as useSetSpaceEntityNsfw } from "./useSetSpaceEntityNsfw";
+export type { SetSpaceEntityNsfwProps } from "./useSetSpaceEntityNsfw";
 
 // Mention hooks
 export { default as useSpaceMentions } from "./useSpaceMentions";

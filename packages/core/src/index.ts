@@ -301,6 +301,7 @@ export {
   useUnbanMember,
   useModerateSpaceEntity,
   useModerateSpaceComment,
+  useSetSpaceEntityNsfw,
   useSpacePermissions,
   useSpaceMentions,
   useCheckMyMembership,
@@ -340,6 +341,7 @@ export {
   type UnbanMemberProps,
   type ModerateSpaceEntityProps,
   type ModerateSpaceCommentProps,
+  type SetSpaceEntityNsfwProps,
   type UseSpacePermissionsProps,
   type UseSpacePermissionsValues,
   type UseSpaceMentionsProps,
@@ -675,6 +677,7 @@ export {
   validateSortType,
 } from "./interfaces/EntityListSortByOptions";
 export type { TimeFrame } from "./interfaces/TimeFrame";
+export type { NsfwFilter } from "./interfaces/NsfwFilter";
 export type {
   Connection,
   EstablishedConnection,

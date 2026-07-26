@@ -24,6 +24,7 @@ import type { TitleFilters } from "../../interfaces/entity-filters/TitleFilters"
 import type { ContentFilters } from "../../interfaces/entity-filters/ContentFilters";
 import type { AttachmentsFilters } from "../../interfaces/entity-filters/AttachmentsFilters";
 import type { KeywordsFilters } from "../../interfaces/entity-filters/KeywordsFilters";
+import type { NsfwFilter } from "../../interfaces/NsfwFilter";
 import type { SpaceReputationContextObject } from "../../interfaces/SpaceReputation";
 import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
@@ -46,6 +47,7 @@ interface FetchEntitiesOptions {
   titleFilters?: TitleFilters | null;
   contentFilters?: ContentFilters | null;
   attachmentsFilters?: AttachmentsFilters | null;
+  nsfwFilter?: NsfwFilter | null;
 
   // Configuration
   sourceId?: string | null;
@@ -149,6 +151,7 @@ export function useEntityListActions(): UseEntityListActionsValues {
           titleFilters: options.titleFilters,
           contentFilters: options.contentFilters,
           attachmentsFilters: options.attachmentsFilters,
+          nsfwFilter: options.nsfwFilter,
           include: options.include,
           spaceReputationId: reputationParams.spaceReputationId,
           spaceReputationDescendants: reputationParams.spaceReputationDescendants,

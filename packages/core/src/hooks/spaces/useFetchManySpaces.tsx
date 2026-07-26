@@ -4,6 +4,7 @@ import useAxiosPrivate from "../../config/useAxiosPrivate";
 import { Space, SpaceIncludeParam } from "../../interfaces/models/Space";
 import { PaginatedResponse } from "../../interfaces/PaginatedResponse";
 import { SpaceListSortByOptions } from "../../interfaces/SpaceListSortByOptions";
+import { NsfwFilter } from "../../interfaces/NsfwFilter";
 
 export interface FetchManySpacesProps {
   page?: number;
@@ -15,6 +16,7 @@ export interface FetchManySpacesProps {
   searchAny?: string | null;
   memberOf?: boolean;
   parentSpaceId?: string | null;
+  nsfwFilter?: NsfwFilter | null;
   include?: SpaceIncludeParam;
 }
 
@@ -43,6 +45,7 @@ function useFetchManySpaces(): (params?: FetchManySpacesProps) => Promise<Pagina
       // be coerced into wrongly opting in.
       if (params?.memberOf === true) queryParams.memberOf = true;
       if (params?.parentSpaceId !== undefined) queryParams.parentSpaceId = params.parentSpaceId || "null";
+      if (params?.nsfwFilter) queryParams.nsfwFilter = params.nsfwFilter;
       if (params?.include) {
         queryParams.include = Array.isArray(params.include)
           ? params.include.join(",")

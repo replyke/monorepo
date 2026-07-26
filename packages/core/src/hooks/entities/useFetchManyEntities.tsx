@@ -11,6 +11,7 @@ import { ContentFilters } from "../../interfaces/entity-filters/ContentFilters";
 import { AttachmentsFilters } from "../../interfaces/entity-filters/AttachmentsFilters";
 import { LocationFilters } from "../../interfaces/entity-filters/LocationFilters";
 import { MetadataFilters } from "../../interfaces/entity-filters/MetadataFilters";
+import { NsfwFilter } from "../../interfaces/NsfwFilter";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
@@ -66,6 +67,7 @@ interface FetchManyEntitiesParams extends SpaceReputationContextParams {
   attachmentsFilters?: AttachmentsFilters | null;
   locationFilters?: LocationFilters | null;
   metadataFilters?: MetadataFilters | null;
+  nsfwFilter?: NsfwFilter | null;
   include?: EntityIncludeParam;
 }
 
@@ -92,6 +94,7 @@ function useFetchManyEntities(): (params?: FetchManyEntitiesParams) => Promise<P
       if (params?.spaceId) queryParams.spaceId = params.spaceId;
       if (params?.userId) queryParams.userId = params.userId;
       if (params?.followedOnly !== undefined) queryParams.followedOnly = params.followedOnly;
+      if (params?.nsfwFilter) queryParams.nsfwFilter = params.nsfwFilter;
       Object.assign(
         queryParams,
         buildSpaceReputationParams({
