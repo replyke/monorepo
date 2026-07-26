@@ -83,6 +83,10 @@ const entity = await createEntity({
   Arbitrary project-specific data. Limited to 10 KB.
 </ParamField>
 
+<ParamField path="nsfw" type="boolean">
+  Marks the entity's own NSFW flag. Defaults to `false`. This is only the entity's own flag — its effective NSFW status also inherits from its space. Sublay labels and filters NSFW content but does not blur or age-gate it. See [Entity NSFW flagging](/data-models/entity#nsfw-flagging).
+</ParamField>
+
 <ParamField path="isDraft" type="boolean">
   If `true`, creates the entity as a draft (not publicly visible). Default `false`.
 </ParamField>

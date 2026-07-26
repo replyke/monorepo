@@ -64,6 +64,10 @@ function CreateSpaceForm() {
   Whether the space is listed and discoverable. Defaults to `"public"`. Independent of `readingPermission` (which governs content). `"unlisted"` hides the space from discovery and search but keeps it reachable by direct link; `"private"` currently behaves like `"unlisted"`. See [Space visibility](/data-models/space#visibility).
 </ParamField>
 
+<ParamField path="nsfw" type="boolean">
+  The space's own NSFW flag. Defaults to `false`. If the space is created under an NSFW parent, its effective NSFW status is `true` regardless of this value (a live rollup — see [Space NSFW flagging](/data-models/space#nsfw-flagging)). Sublay labels and filters NSFW content; it does not blur or age-gate it.
+</ParamField>
+
 <ParamField path="requireJoinApproval" type="boolean">
   Whether new members must be approved. Defaults to `true`.
 </ParamField>

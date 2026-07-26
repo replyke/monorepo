@@ -269,6 +269,7 @@
                   "v7/hooks/spaces/use-update-member-role",
                   "v7/hooks/spaces/use-unban-member",
                   "v7/hooks/spaces/use-moderate-space-entity",
+                  "v7/hooks/spaces/use-set-space-entity-nsfw",
                   "v7/hooks/spaces/use-moderate-space-comment",
                   "v7/hooks/spaces/use-space-mentions",
                   "v7/hooks/spaces/use-space-permissions",
