@@ -11,4 +11,5 @@ export interface OAuthIdentity {
 
 export interface ListIdentitiesResponse {
   identities: OAuthIdentity[];
+  hasPassword: boolean;
 }

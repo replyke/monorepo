@@ -7,6 +7,7 @@ import {
   requestPasswordReset,
   resetPassword,
   sendVerificationEmail,
+  setPassword,
   signIn,
   signOut,
   signUp,
@@ -142,6 +143,16 @@ describe("js-sdk auth — request shaping", () => {
       "/auth/change-password",
       { password: "old-pw", newPassword: "new-pw" }
     );
+    const [, body] = projectInstance.post.mock.calls[0];
+    expect(body).not.toHaveProperty("userId");
+  });
+
+  it("setPassword posts newPassword with no userId (actor derived from token)", async () => {
+    const { client, projectInstance } = makeClient();
+    await setPassword(client, { newPassword: "new-pw" });
+    expect(projectInstance.post).toHaveBeenCalledWith("/auth/set-password", {
+      newPassword: "new-pw",
+    });
     const [, body] = projectInstance.post.mock.calls[0];
     expect(body).not.toHaveProperty("userId");
   });
@@ -302,6 +313,15 @@ describe("js-sdk auth — response mapping", () => {
     projectInstance.post.mockResolvedValueOnce({ data: result });
     await expect(
       changePassword(client, { password: "old-pw", newPassword: "new-pw" })
+    ).resolves.toEqual(result);
+  });
+
+  it("setPassword returns response.data", async () => {
+    const { client, projectInstance } = makeClient();
+    const result = { success: true, message: "Password set successfully." };
+    projectInstance.post.mockResolvedValueOnce({ data: result });
+    await expect(
+      setPassword(client, { newPassword: "new-pw" })
     ).resolves.toEqual(result);
   });
 
