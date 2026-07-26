@@ -11,6 +11,7 @@ import {
   signInWithEmailAndPasswordThunk,
   signOutThunk,
   changePasswordThunk,
+  setPasswordThunk,
   requestNewAccessTokenThunk
 } from '../../store/slices/authThunks';
 import useProject from '../projects/useProject';
@@ -45,6 +46,10 @@ export interface ChangePasswordProps {
   newPassword: string;
 }
 
+export interface SetPasswordProps {
+  newPassword: string;
+}
+
 // Define the interface to match the original useAuth hook
 export interface UseAuthValues {
   initialized: boolean;
@@ -55,6 +60,7 @@ export interface UseAuthValues {
   signInWithEmailAndPassword: (props: SignInWithEmailAndPasswordProps) => Promise<void>;
   signOut: () => Promise<void>;
   changePassword: (props: ChangePasswordProps) => Promise<void>;
+  setPassword: (props: SetPasswordProps) => Promise<void>;
   requestNewAccessToken: () => Promise<string | undefined>;
 }
 
@@ -134,6 +140,24 @@ export default function useAuth(): UseAuthValues {
     [dispatch, projectId]
   );
 
+  const handleSetPassword = useCallback(
+    async (props: SetPasswordProps) => {
+      if (!projectId) {
+        throw new Error("No projectId available.");
+      }
+
+      const result = await dispatch(setPasswordThunk({
+        projectId,
+        ...props,
+      }));
+
+      if (setPasswordThunk.rejected.match(result)) {
+        throw new Error(result.payload as string);
+      }
+    },
+    [dispatch, projectId]
+  );
+
   const handleRequestNewAccessToken = useCallback(async () => {
     if (!projectId) return;
 
@@ -164,6 +188,7 @@ export default function useAuth(): UseAuthValues {
     signInWithEmailAndPassword: handleSignInWithEmailAndPassword,
     signOut: handleSignOut,
     changePassword: handleChangePassword,
+    setPassword: handleSetPassword,
     requestNewAccessToken: handleRequestNewAccessToken,
   };
 }

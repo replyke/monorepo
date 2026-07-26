@@ -27,13 +27,16 @@ describe("useOAuthIdentities", () => {
     const { result, axiosPrivate } = renderHookWithAxios(() => useOAuthIdentities());
 
     const identities = [makeIdentity()];
-    axiosPrivate.mockResponse("get", { identities });
+    axiosPrivate.mockResponse("get", { identities, hasPassword: true });
+
+    expect(result.current.hasPassword).toBe(false);
 
     await act(async () => {
       await result.current.fetchIdentities();
     });
 
     expect(result.current.identities).toEqual(identities);
+    expect(result.current.hasPassword).toBe(true);
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
 
