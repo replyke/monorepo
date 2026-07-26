@@ -140,6 +140,13 @@ const authService = {
     await axios.post(`/${projectId}/auth/change-password`, data);
   },
 
+  async setPassword(
+    projectId: string,
+    data: { newPassword: string }
+  ) {
+    await axios.post(`/${projectId}/auth/set-password`, data);
+  },
+
   async confirmAccountDeletion(projectId: string, code: string) {
     await axios.post(`/${projectId}/auth/confirm-account-deletion`, { code });
   },
@@ -461,6 +468,35 @@ export const changePasswordThunk = createAsyncThunk(
       return;
     } catch (error) {
       handleError(error, "Failed to change password:");
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    } finally {
+      dispatch(setAuthenticating(false));
+    }
+  }
+);
+
+export const setPasswordThunk = createAsyncThunk(
+  "auth/setPassword",
+  async (
+    data: { projectId: string; newPassword: string },
+    { dispatch, getState, rejectWithValue }
+  ) => {
+    const state = getState() as RootState;
+
+    if (!state.sublay.auth.user) {
+      throw new Error("No user is authenticated");
+    }
+
+    try {
+      dispatch(setAuthenticating(true));
+
+      await authService.setPassword(data.projectId, data);
+
+      return;
+    } catch (error) {
+      handleError(error, "Failed to set password:");
       return rejectWithValue(
         error instanceof Error ? error.message : "Unknown error"
       );

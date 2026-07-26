@@ -74,6 +74,7 @@ export {
   type SignUpWithEmailAndPasswordProps,
   type SignInWithEmailAndPasswordProps,
   type ChangePasswordProps,
+  type SetPasswordProps,
   type RequestPasswordResetProps,
   type SendVerificationEmailProps,
   type VerifyEmailProps,

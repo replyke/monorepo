@@ -7,6 +7,7 @@ import {
   signOutThunk,
   requestNewAccessTokenThunk,
   changePasswordThunk,
+  setPasswordThunk,
   initializeAuthThunk,
 } from "./authThunks";
 import { setTokens, setUser } from "./authSlice";
@@ -209,6 +210,34 @@ describe("changePasswordThunk", () => {
 
     expect(changePasswordThunk.fulfilled.match(result)).toBe(true);
     expect(store.getState().sublay.auth.isAuthenticating).toBe(false);
+  });
+});
+
+describe("setPasswordThunk", () => {
+  it("throws a guard error when no user is authenticated", async () => {
+    const store = makeSublayStore();
+
+    const result = await store.dispatch(
+      setPasswordThunk({ projectId: "project-1", newPassword: "new" }),
+    );
+
+    expect(setPasswordThunk.rejected.match(result)).toBe(true);
+    expect(result.error.message).toBe("No user is authenticated");
+  });
+
+  it("succeeds when a user is authenticated", async () => {
+    const store = makeSublayStore();
+    store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {});
+
+    const result = await store.dispatch(
+      setPasswordThunk({ projectId: "project-1", newPassword: "new" }),
+    );
+
+    expect(setPasswordThunk.fulfilled.match(result)).toBe(true);
+    expect(store.getState().sublay.auth.isAuthenticating).toBe(false);
+    expect(axios.calls("post")[0].url).toBe("/project-1/auth/set-password");
   });
 });
 

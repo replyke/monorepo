@@ -1,4 +1,4 @@
-export { default as useAuth, type UseAuthValues, type SignUpWithEmailAndPasswordProps, type SignInWithEmailAndPasswordProps, type ChangePasswordProps } from './useAuth';
+export { default as useAuth, type UseAuthValues, type SignUpWithEmailAndPasswordProps, type SignInWithEmailAndPasswordProps, type ChangePasswordProps, type SetPasswordProps } from './useAuth';
 export { default as useAccountSync } from './useAccountSync';
 export { default as useAccounts, type UseAccountsReturn } from './useAccounts';
 export { default as useSwitchAccount, type UseSwitchAccountReturn } from './useSwitchAccount';
