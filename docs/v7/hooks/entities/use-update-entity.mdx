@@ -62,6 +62,10 @@ function EditPost({ entityId }: { entityId: string }) {
   Updated mentions array.
 </ParamField>
 
+<ParamField path="update.nsfw" type="boolean">
+  Updated NSFW own-flag. Subject to the same owner / service / master authorization as the rest of the update. To flag another user's entity, a space moderator uses [useSetSpaceEntityNsfw](/hooks/spaces/use-set-space-entity-nsfw) instead. See [Entity NSFW flagging](/data-models/entity#nsfw-flagging).
+</ParamField>
+
 ## Returns
 
 <ResponseField name="Entity" type="Entity">

@@ -110,6 +110,10 @@ function EntityFeed() {
   Filter by metadata fields. See [Entity List Filters](/sdk/entity-lists/filters).
 </ParamField>
 
+<ParamField path="nsfwFilter" type='"include-all" | "exclude" | "only"'>
+  Filter by **effective** NSFW status (`entity.nsfw OR its space's nsfwEffective`). `"include-all"` (default) adds no predicate; `"exclude"` drops effective-NSFW entities; `"only"` returns only effective-NSFW entities. On projects without the spaces bundle it applies against the entity's own `nsfw` flag alone. See [Entity NSFW flagging](/data-models/entity#nsfw-flagging).
+</ParamField>
+
 <ParamField path="include" type="string | string[]">
   Populate related fields. Accepted values: `"user"`, `"space"`, `"topComment"`, `"saved"`, `"files"`.
 </ParamField>

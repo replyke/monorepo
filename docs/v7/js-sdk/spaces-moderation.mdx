@@ -188,6 +188,34 @@ const result = await sublay.spaces.moderateSpaceEntity({
 
 ---
 
+### setSpaceEntityNsfw
+
+Sets the NSFW own-flag on an entity within a space — including other users' entities. Separate from `moderateSpaceEntity`: it **labels** the entity (`nsfw`), it does not approve/remove it. Requires the acting user to be an admin or moderator of the space.
+
+```typescript
+const result = await sublay.spaces.setSpaceEntityNsfw({
+  spaceId: "spc_abc123",
+  entityId: "ent_222",
+  nsfw: true,
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID containing the entity.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The ID of the entity to flag or unflag.
+</ParamField>
+
+<ParamField body="nsfw" type="boolean" required>
+  The NSFW own-flag to set on the entity.
+</ParamField>
+
+**Returns** — `Promise<{ message: string; nsfw: boolean }>`
+
+---
+
 ### moderateSpaceComment
 
 Approves or removes a comment in a space.

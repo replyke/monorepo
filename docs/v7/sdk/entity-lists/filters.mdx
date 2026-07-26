@@ -192,6 +192,25 @@ fetchEntities(
 
 ---
 
+## `nsfwFilter`
+
+Filters by an entity's **effective** NSFW status — `entity.nsfw OR its space's nsfwEffective` (which itself folds in the space's whole ancestor chain). On projects without the spaces bundle it applies against the entity's own `nsfw` flag alone.
+
+| Value | Description |
+|-------|-------------|
+| `"include-all"` | **Default.** No NSFW predicate — all entities returned regardless of NSFW status. |
+| `"exclude"` | Drops effective-NSFW entities. |
+| `"only"` | Returns only effective-NSFW entities. |
+
+```tsx
+// Hide NSFW content from the feed
+fetchEntities({ nsfwFilter: "exclude" }, { sortBy: "hot" });
+```
+
+Sublay only labels (`nsfw`) and filters (`nsfwFilter`) NSFW content — it does not blur, age-gate, or store a per-viewer preference. Presentation is your app's responsibility. See [Entity NSFW flagging](/data-models/entity#nsfw-flagging).
+
+---
+
 ## Combining Filters
 
 All filters can be combined. An entity must satisfy all specified conditions.

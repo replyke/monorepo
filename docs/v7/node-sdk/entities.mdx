@@ -68,6 +68,10 @@ const entity = await sublay.entities.createEntity({
   The Sublay user ID to set as the entity's author.
 </ParamField>
 
+<ParamField body="nsfw" type="boolean">
+  The entity's own NSFW flag. Defaults to `false`. Effective NSFW also inherits from the entity's space. See [Entity NSFW flagging](/data-models/entity#nsfw-flagging).
+</ParamField>
+
 <ParamField body="isDraft" type="boolean">
   When `true`, the entity is created as an unpublished draft. Defaults to `false`.
 </ParamField>
@@ -247,6 +251,10 @@ const { data, pagination } = await sublay.entities.fetchManyEntities({
   Filter within a geographic radius: `{ latitude: string; longitude: string; radius: string }`.
 </ParamField>
 
+<ParamField body="nsfwFilter" type='"include-all" | "exclude" | "only"'>
+  Filter by effective NSFW (`entity.nsfw OR its space's nsfwEffective`). `"include-all"` (default) adds no predicate; `"exclude"` drops effective-NSFW entities; `"only"` returns only them. See [Entity NSFW flagging](/data-models/entity#nsfw-flagging).
+</ParamField>
+
 <SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<PaginatedResponse<Entity>>`
@@ -295,6 +303,10 @@ const entity = await sublay.entities.updateEntity({
 
 <ParamField body="mentions" type="array">
   Updated user mentions list.
+</ParamField>
+
+<ParamField body="nsfw" type="boolean">
+  Updated NSFW own-flag (owner / service / master). A space moderator flagging another user's entity uses `spaces.setSpaceEntityNsfw` instead. See [Entity NSFW flagging](/data-models/entity#nsfw-flagging).
 </ParamField>
 
 **Returns** — `Promise<Entity>`

@@ -37,6 +37,8 @@ An entity is the core content unit in Sublay — it can represent a post, articl
 | `topComment` | `TopComment \| null` | The highest-voted comment. Populated when `include` contains `"topComment"`. |
 | `isSaved` | `boolean` | Whether the current user has saved this entity to a collection. Populated when `include` contains `"saved"`. |
 | `isDraft` | `boolean \| null` | Whether this entity is in draft state. |
+| `nsfw` | `boolean` | The entity's **own** NSFW flag. `false` by default. Set on create/update by the owner (or a service/master key), or by a space moderator via the [set-NSFW endpoint](/hooks/spaces/use-set-space-entity-nsfw). See [NSFW flagging](#nsfw-flagging). |
+| `nsfwEffective` | `boolean` | **Computed live, read-only.** `true` when the entity's own `nsfw` is `true` **or** its space is effectively NSFW: `entity.nsfw OR (space?.nsfwEffective ?? false)`. This is the value the `nsfwFilter` query param keys off. See [NSFW flagging](#nsfw-flagging). |
 | `moderationStatus` | `"approved" \| "removed" \| null` | Current space moderation status. |
 | `moderatedAt` | `Date \| null` | When the moderation action was taken. |
 | `moderatedById` | `string \| null` | ID of the moderator who took the action. |
@@ -67,6 +69,27 @@ Included when the entity has at least one comment.
 | `type` | `"Point"` | GeoJSON geometry type. Always `"Point"`. |
 | `coordinates` | `[number, number]` | Longitude and latitude, in that order. |
 
+## NSFW flagging
+
+An entity carries its own `nsfw` boolean and exposes a live-computed `nsfwEffective`:
+
+- **`nsfw`** — the entity's own flag. It defaults to `false` and is what the owner, a service/master key, or a space moderator toggles.
+- **`nsfwEffective`** — never stored on the entity. It is computed on **every** read as:
+
+  ```
+  nsfwEffective = entity.nsfw OR COALESCE(space.nsfwEffective, false)
+  ```
+
+  So an entity reads as effectively NSFW when either its own flag is set **or** the space it lives in is effectively NSFW (which itself folds in the space's whole ancestor chain — see [Space → NSFW flagging](/data-models/space#nsfw-flagging)). A space-less entity (`spaceId` is `null`) falls back to its own flag; on a project without the spaces bundle, the space contribution is simply absent and `nsfwEffective` equals `entity.nsfw`.
+
+The effect is a live OR: clearing an entity's own `nsfw` **cannot** make it read safe while its space chain is still NSFW, and flagging a space instantly cascades to every entity inside it without stamping or backfilling entity rows.
+
+To filter a list by effective NSFW, pass `nsfwFilter` to [Fetch many entities](/hooks/entities/use-fetch-many-entities) (`include-all` default / `exclude` / `only`).
+
+<Note>
+  Sublay only **labels** (`nsfw`) and **filters** (`nsfwFilter`) content. It does **not** blur, age-gate, add interstitials, or store a per-viewer "show mature content" preference — how NSFW-flagged content is presented is entirely the consuming app's responsibility.
+</Note>
+
 ## Includes
 
 Pass an `include` array to populate optional fields:
@@ -86,3 +109,4 @@ Pass an `include` array to populate optional fields:
 - [Space](/data-models/space)
 - [Fetch Entity](/api-reference/entities/fetch-entity)
 - [useEntity hook](/hooks/entities/use-entity)
+- [Set space entity NSFW hook](/hooks/spaces/use-set-space-entity-nsfw)
