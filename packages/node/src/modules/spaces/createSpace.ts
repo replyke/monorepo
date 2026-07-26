@@ -17,6 +17,7 @@ export interface CreateSpaceProps {
   requireJoinApproval?: boolean;
   parentSpaceId?: string;
   metadata?: Record<string, any>;
+  nsfw?: boolean;
 }
 
 export async function createSpace(

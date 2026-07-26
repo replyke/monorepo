@@ -45,6 +45,8 @@ export interface Space {
   postingPermission: PostingPermission;
   visibility: SpaceVisibility;
   requireJoinApproval: boolean;
+  nsfw: boolean; // The space's own NSFW flag
+  nsfwEffective: boolean; // Denormalized: own nsfw OR any ancestor space's nsfw
   parentSpaceId: string | null;
   depth: number;
   metadata: Record<string, any>;

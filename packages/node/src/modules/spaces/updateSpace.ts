@@ -15,6 +15,7 @@ export interface UpdateSpaceProps {
   postingPermission?: PostingPermission;
   visibility?: SpaceVisibility;
   metadata?: Record<string, any>;
+  nsfw?: boolean;
 }
 
 export async function updateSpace(

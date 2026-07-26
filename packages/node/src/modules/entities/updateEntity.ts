@@ -14,6 +14,7 @@ export interface UpdateEntityProps {
     longitude: number;
   };
   metadata?: Record<string, any>;
+  nsfw?: boolean;
 }
 
 export async function updateEntity(

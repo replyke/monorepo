@@ -93,6 +93,9 @@ export interface FetchManyEntitiesProps extends SpaceReputationContextParams {
 
   // Location filtering
   locationFilters?: LocationFilters;
+
+  // NSFW filtering (keyed off effective NSFW)
+  nsfwFilter?: "include-all" | "exclude" | "only";
 }
 
 export async function fetchManyEntities(
