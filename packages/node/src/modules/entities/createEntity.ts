@@ -16,6 +16,7 @@ export interface CreateEntityProps {
     longitude: number;
   };
   metadata?: Record<string, any>;
+  nsfw?: boolean;
   userId?: string;
   isDraft?: boolean;
   excludeUserId?: boolean;

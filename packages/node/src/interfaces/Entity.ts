@@ -41,6 +41,8 @@ export interface Entity {
     coordinates: [number, number]; // [longitude, latitude]
   } | null;
   metadata: Record<string, any>;
+  nsfw: boolean; // The entity's own NSFW flag
+  nsfwEffective: boolean; // Computed live: entity.nsfw OR the entity's space's effective NSFW
   topComment: TopComment | null;
   isSaved?: boolean; // Populated when include contains "saved"
   isDraft: boolean | null;
