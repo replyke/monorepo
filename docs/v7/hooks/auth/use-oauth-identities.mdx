@@ -47,6 +47,13 @@ function LinkedIdentities() {
   `fetchIdentities` to populate.
 </ResponseField>
 
+<ResponseField name="hasPassword" type="boolean">
+  Whether the user has a password set. `false` for OAuth-only accounts, and
+  until `fetchIdentities` has run. Use it to prompt the user to
+  [set an initial password](/hooks/auth/use-auth) (via `useAuth().setPassword`)
+  before they unlink their last identity.
+</ResponseField>
+
 <ResponseField name="fetchIdentities" type="function">
   Async function that fetches the identities list from the server and updates
   local state. Returns `void`.

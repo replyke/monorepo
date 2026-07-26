@@ -495,6 +495,7 @@
                   "v7/api-reference/auth/sign-in",
                   "v7/api-reference/auth/sign-out",
                   "v7/api-reference/auth/change-password",
+                  "v7/api-reference/auth/set-password",
                   "v7/api-reference/auth/request-access-token",
                   "v7/api-reference/auth/verify-external-user",
                   "v7/api-reference/auth/request-password-reset",

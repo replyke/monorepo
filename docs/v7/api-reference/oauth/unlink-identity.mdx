@@ -48,7 +48,9 @@ Requires a valid access token. The identity must belong to the authenticated use
     }
     ```
     Returned when this is the only identity on the account and the user
-    has no password set. Unlinking would lock the user out.
+    has no password set. Unlinking would lock the user out. Have the user
+    [set a password](/api-reference/auth/set-password) or link another
+    provider first.
   </Accordion>
   <Accordion title="User Not Found — 404">
     ```json
@@ -64,4 +66,5 @@ Requires a valid access token. The identity must belong to the authenticated use
 
 - [`useOAuthIdentities` hook](/hooks/auth/use-oauth-identities)
 - [List Identities](/api-reference/oauth/list-identities)
+- [Set Password](/api-reference/auth/set-password)
 - [OAuth integration guide](/sdk/authentication/oauth)
