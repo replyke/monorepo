@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import axios from "../../config/axios";
+import useAxiosPrivate from "../../config/useAxiosPrivate";
 import useProject from "../projects/useProject";
 
 /**
@@ -13,6 +13,7 @@ import useProject from "../projects/useProject";
  */
 function useRequestAccountDeletion(): () => Promise<{ success: boolean }> {
   const { projectId } = useProject();
+  const axios = useAxiosPrivate();
 
   const requestAccountDeletion = useCallback(async () => {
     if (!projectId) {
@@ -25,7 +26,7 @@ function useRequestAccountDeletion(): () => Promise<{ success: boolean }> {
     );
 
     return response.data;
-  }, [projectId]);
+  }, [projectId, axios]);
 
   return requestAccountDeletion;
 }

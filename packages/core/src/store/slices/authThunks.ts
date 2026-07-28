@@ -17,6 +17,15 @@ import {
 import { removeAccount, clearAllAccounts } from "./accountsSlice";
 import { baseApi } from "../api/baseApi";
 
+// Account-management endpoints (change/set password, confirm account deletion)
+// run behind requireUserAuth on the server. The shared default axios instance
+// carries no token — only axiosPrivate (via useAxiosPrivate) and the RTK baseApi
+// attach the bearer — so these thunk-driven calls must attach it explicitly.
+const withAuth = (accessToken: string | null) =>
+  accessToken
+    ? { headers: { Authorization: `Bearer ${accessToken}` } }
+    : undefined;
+
 // Auth service functions - calling existing API patterns directly
 const authService = {
   async signUpWithEmailAndPassword(
@@ -135,20 +144,38 @@ const authService = {
 
   async changePassword(
     projectId: string,
-    data: { password: string; newPassword: string }
+    data: { password: string; newPassword: string },
+    accessToken: string | null
   ) {
-    await axios.post(`/${projectId}/auth/change-password`, data);
+    await axios.post(
+      `/${projectId}/auth/change-password`,
+      data,
+      withAuth(accessToken)
+    );
   },
 
   async setPassword(
     projectId: string,
-    data: { newPassword: string }
+    data: { newPassword: string },
+    accessToken: string | null
   ) {
-    await axios.post(`/${projectId}/auth/set-password`, data);
+    await axios.post(
+      `/${projectId}/auth/set-password`,
+      data,
+      withAuth(accessToken)
+    );
   },
 
-  async confirmAccountDeletion(projectId: string, code: string) {
-    await axios.post(`/${projectId}/auth/confirm-account-deletion`, { code });
+  async confirmAccountDeletion(
+    projectId: string,
+    code: string,
+    accessToken: string | null
+  ) {
+    await axios.post(
+      `/${projectId}/auth/confirm-account-deletion`,
+      { code },
+      withAuth(accessToken)
+    );
   },
 };
 
@@ -326,7 +353,11 @@ export const confirmAccountDeletionThunk = createAsyncThunk(
 
       // Permanently delete the account on the server (verifies the emailed
       // code). The user's tokens are destroyed as part of the cascade.
-      await authService.confirmAccountDeletion(data.projectId, data.code);
+      await authService.confirmAccountDeletion(
+        data.projectId,
+        data.code,
+        state.sublay.auth.accessToken
+      );
 
       // Tear down the local session exactly like sign-out: drop the deleted
       // account from the multi-account map, then either switch to a remaining
@@ -463,7 +494,11 @@ export const changePasswordThunk = createAsyncThunk(
     try {
       dispatch(setAuthenticating(true));
 
-      await authService.changePassword(data.projectId, data);
+      await authService.changePassword(
+        data.projectId,
+        data,
+        state.sublay.auth.accessToken
+      );
 
       return;
     } catch (error) {
@@ -492,7 +527,11 @@ export const setPasswordThunk = createAsyncThunk(
     try {
       dispatch(setAuthenticating(true));
 
-      await authService.setPassword(data.projectId, data);
+      await authService.setPassword(
+        data.projectId,
+        data,
+        state.sublay.auth.accessToken
+      );
 
       return;
     } catch (error) {

@@ -8,6 +8,7 @@ import {
   requestNewAccessTokenThunk,
   changePasswordThunk,
   setPasswordThunk,
+  confirmAccountDeletionThunk,
   initializeAuthThunk,
 } from "./authThunks";
 import { setTokens, setUser } from "./authSlice";
@@ -201,6 +202,7 @@ describe("changePasswordThunk", () => {
   it("succeeds when a user is authenticated", async () => {
     const store = makeSublayStore();
     store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    store.dispatch(setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }));
     const axios = mockAxiosPublic();
     axios.mockResponse("post", {});
 
@@ -210,6 +212,12 @@ describe("changePasswordThunk", () => {
 
     expect(changePasswordThunk.fulfilled.match(result)).toBe(true);
     expect(store.getState().sublay.auth.isAuthenticating).toBe(false);
+    // Regression: change-password runs behind requireUserAuth and must carry the
+    // bearer even though it goes through the default (tokenless) axios instance.
+    expect(axios.calls("post")[0].url).toBe("/project-1/auth/change-password");
+    expect(axios.calls("post")[0].config?.headers?.Authorization).toBe(
+      "Bearer access-1",
+    );
   });
 });
 
@@ -228,6 +236,7 @@ describe("setPasswordThunk", () => {
   it("succeeds when a user is authenticated", async () => {
     const store = makeSublayStore();
     store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    store.dispatch(setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }));
     const axios = mockAxiosPublic();
     axios.mockResponse("post", {});
 
@@ -238,6 +247,39 @@ describe("setPasswordThunk", () => {
     expect(setPasswordThunk.fulfilled.match(result)).toBe(true);
     expect(store.getState().sublay.auth.isAuthenticating).toBe(false);
     expect(axios.calls("post")[0].url).toBe("/project-1/auth/set-password");
+    // Regression: set-password runs behind requireUserAuth and must carry the
+    // bearer even though it goes through the default (tokenless) axios instance.
+    expect(axios.calls("post")[0].config?.headers?.Authorization).toBe(
+      "Bearer access-1",
+    );
+  });
+});
+
+describe("confirmAccountDeletionThunk", () => {
+  it("sends the confirmation code with the bearer, then tears down the session", async () => {
+    const store = makeSublayStore();
+    store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    store.dispatch(setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }));
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {});
+
+    const result = await store.dispatch(
+      confirmAccountDeletionThunk({ projectId: "project-1", code: "123456" }),
+    );
+
+    expect(confirmAccountDeletionThunk.fulfilled.match(result)).toBe(true);
+    expect(axios.calls("post")[0].url).toBe(
+      "/project-1/auth/confirm-account-deletion",
+    );
+    expect(axios.calls("post")[0].body).toEqual({ code: "123456" });
+    // Regression: confirm-account-deletion runs behind requireUserAuth and must
+    // carry the bearer even though it goes through the default axios instance.
+    expect(axios.calls("post")[0].config?.headers?.Authorization).toBe(
+      "Bearer access-1",
+    );
+    // Session is torn down after a successful deletion.
+    expect(store.getState().sublay.auth.accessToken).toBeNull();
+    expect(store.getState().sublay.auth.user).toBeNull();
   });
 });
 
