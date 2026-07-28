@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import axios from "../../config/axios";
+import useAxiosPrivate from "../../config/useAxiosPrivate";
 import useProject from "../projects/useProject";
 
 export interface SendVerificationEmailProps {
@@ -11,6 +11,7 @@ export interface SendVerificationEmailProps {
 
 function useSendVerificationEmail(): (props?: SendVerificationEmailProps) => Promise<{ success: boolean }> {
   const { projectId } = useProject();
+  const axios = useAxiosPrivate();
 
   const sendVerificationEmail = useCallback(
     async (props?: SendVerificationEmailProps) => {
@@ -25,7 +26,7 @@ function useSendVerificationEmail(): (props?: SendVerificationEmailProps) => Pro
 
       return response.data;
     },
-    [projectId]
+    [projectId, axios]
   );
 
   return sendVerificationEmail;

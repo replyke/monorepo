@@ -9,27 +9,27 @@ afterEach(() => {
 
 describe("useSendVerificationEmail", () => {
   it("sends a verification email with default (empty) options", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useSendVerificationEmail(),
     );
 
-    axiosPublic.mockResponse("post", { success: true });
+    axiosPrivate.mockResponse("post", { success: true });
 
     const returned = await result.current();
 
     expect(returned).toEqual({ success: true });
 
-    const [call] = axiosPublic.calls("post");
+    const [call] = axiosPrivate.calls("post");
     expect(call.url).toBe("/test-project/auth/send-verification-email");
     expect(call.body).toEqual({});
   });
 
   it("passes mode/tokenFormat/tokenLength/redirectUrl through", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useSendVerificationEmail(),
     );
 
-    axiosPublic.mockResponse("post", { success: true });
+    axiosPrivate.mockResponse("post", { success: true });
 
     await result.current({
       mode: "link",
@@ -38,7 +38,7 @@ describe("useSendVerificationEmail", () => {
       redirectUrl: "https://app.example.com/verify",
     });
 
-    const [call] = axiosPublic.calls("post");
+    const [call] = axiosPrivate.calls("post");
     expect(call.body).toEqual({
       mode: "link",
       tokenFormat: "alphanumeric",
@@ -48,11 +48,11 @@ describe("useSendVerificationEmail", () => {
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useSendVerificationEmail(),
     );
 
-    axiosPublic.mockError("post", 500, { message: "Internal error" });
+    axiosPrivate.mockError("post", 500, { message: "Internal error" });
 
     await expect(result.current()).rejects.toMatchObject({
       response: { status: 500 },
@@ -60,12 +60,12 @@ describe("useSendVerificationEmail", () => {
   });
 
   it("throws before making a request when there is no project", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(
+    const { result, axiosPrivate } = renderHookWithAxios(
       () => useSendVerificationEmail(),
       { projectId: "" },
     );
 
     await expect(result.current()).rejects.toThrow("No projectId available.");
-    expect(axiosPublic.calls("post")).toHaveLength(0);
+    expect(axiosPrivate.calls("post")).toHaveLength(0);
   });
 });
