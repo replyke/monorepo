@@ -497,6 +497,23 @@ export {
   type ConnectionData,
 } from "./hooks/relationships/connections";
 
+// -- blocks
+export {
+  useBlockUser,
+  useUnblockUser,
+  useFetchBlockStatus,
+  useFetchBlockedUsers,
+  useBlockManager,
+  type BlockUserProps,
+  type UnblockUserProps,
+  type FetchBlockStatusProps,
+  type BlockStatusResponse,
+  type FetchBlockedUsersParams,
+  type BlockedUser,
+  type UseBlockManagerProps,
+  type UseBlockManagerValues,
+} from "./hooks/relationships/blocks";
+
 // -- reports
 export {
   useCreateReport,
@@ -679,6 +696,7 @@ export {
 } from "./interfaces/EntityListSortByOptions";
 export type { TimeFrame } from "./interfaces/TimeFrame";
 export type { NsfwFilter } from "./interfaces/NsfwFilter";
+export type { BlockedFilter } from "./interfaces/BlockedFilter";
 export type {
   Connection,
   EstablishedConnection,
