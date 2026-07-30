@@ -17,3 +17,7 @@ export { fetchFollowStatus } from "./fetchFollowStatus";
 export { requestConnection } from "./requestConnection";
 export { fetchConnectionStatus } from "./fetchConnectionStatus";
 export { removeConnectionByUserId } from "./removeConnectionByUserId";
+export { createBlock } from "./createBlock";
+export { deleteBlock } from "./deleteBlock";
+export { fetchBlockStatus } from "./fetchBlockStatus";
+export { fetchBlockedUsers } from "./fetchBlockedUsers";

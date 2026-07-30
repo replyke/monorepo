@@ -96,6 +96,12 @@ export interface FetchManyEntitiesProps extends SpaceReputationContextParams {
 
   // NSFW filtering (keyed off effective NSFW)
   nsfwFilter?: "include-all" | "exclude" | "only";
+
+  // Block filtering: entities authored by users the viewer is block-edged with
+  // are hidden by default ("exclude"). "include-outbound-blocked" re-includes
+  // ONLY the viewer's own outbound-blocked authors (their "view anyway" choice);
+  // it never surfaces content from users who blocked the viewer.
+  blockedFilter?: "exclude" | "include-outbound-blocked";
 }
 
 export async function fetchManyEntities(
