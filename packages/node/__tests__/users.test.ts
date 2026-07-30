@@ -1,7 +1,11 @@
 import {
   checkUsernameAvailability,
+  createBlock,
   createFollow,
+  deleteBlock,
   deleteFollow,
+  fetchBlockStatus,
+  fetchBlockedUsers,
   deleteUser,
   fetchConnectionStatus,
   fetchConnectionsByUserId,
@@ -196,6 +200,38 @@ describe("node-sdk users — graph actions — request shaping (actingUserId vs 
       params: { actingUserId: "requester1" },
     });
   });
+
+  it("createBlock posts actingUserId in the body, userId (target) in the path", async () => {
+    const { client, projectInstance } = makeClient();
+    await createBlock(client, { userId: "target1", actingUserId: "blocker1" });
+    expect(projectInstance.post).toHaveBeenCalledWith("/users/target1/block", {
+      actingUserId: "blocker1",
+    });
+  });
+
+  it("deleteBlock sends actingUserId as a param, userId (target) in the path", async () => {
+    const { client, projectInstance } = makeClient();
+    await deleteBlock(client, { userId: "target1", actingUserId: "blocker1" });
+    expect(projectInstance.delete).toHaveBeenCalledWith("/users/target1/block", {
+      params: { actingUserId: "blocker1" },
+    });
+  });
+
+  it("fetchBlockStatus sends actingUserId as a param, userId (target) in the path", async () => {
+    const { client, projectInstance } = makeClient();
+    await fetchBlockStatus(client, { userId: "target1", actingUserId: "blocker1" });
+    expect(projectInstance.get).toHaveBeenCalledWith("/users/target1/block", {
+      params: { actingUserId: "blocker1" },
+    });
+  });
+
+  it("fetchBlockedUsers hits /blocks with the actor as the userId query param", async () => {
+    const { client, projectInstance } = makeClient();
+    await fetchBlockedUsers(client, { actingUserId: "blocker1", page: 2 });
+    expect(projectInstance.get).toHaveBeenCalledWith("/blocks", {
+      params: { userId: "blocker1", page: 2 },
+    });
+  });
 });
 
 describe("node-sdk users — response mapping", () => {
@@ -338,5 +374,42 @@ describe("node-sdk users — response mapping", () => {
         actingUserId: "requester1",
       }),
     ).resolves.toEqual(result);
+  });
+
+  it("createBlock returns response.data", async () => {
+    const { client, projectInstance } = makeClient();
+    const block = { id: "blk1", blockerId: "blocker1", blockedId: "target1" };
+    projectInstance.post.mockResolvedValueOnce({ data: block });
+    await expect(
+      createBlock(client, { userId: "target1", actingUserId: "blocker1" }),
+    ).resolves.toEqual(block);
+  });
+
+  it("deleteBlock resolves to undefined", async () => {
+    const { client } = makeClient();
+    await expect(
+      deleteBlock(client, { userId: "target1", actingUserId: "blocker1" }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("fetchBlockStatus returns response.data", async () => {
+    const { client, projectInstance } = makeClient();
+    const result = { blocked: true, blockId: "blk1" };
+    projectInstance.get.mockResolvedValueOnce({ data: result });
+    await expect(
+      fetchBlockStatus(client, { userId: "target1", actingUserId: "blocker1" }),
+    ).resolves.toEqual(result);
+  });
+
+  it("fetchBlockedUsers returns the full PaginatedResponse envelope", async () => {
+    const { client, projectInstance } = makeClient();
+    const envelope = {
+      data: [{ id: "blk1", blockedUser: { id: "target1" }, createdAt: "now" }],
+      pagination: { page: 1, limit: 10, total: 1 },
+    };
+    projectInstance.get.mockResolvedValueOnce({ data: envelope });
+    await expect(
+      fetchBlockedUsers(client, { actingUserId: "blocker1" }),
+    ).resolves.toEqual(envelope);
   });
 });
