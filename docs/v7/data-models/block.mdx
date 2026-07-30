@@ -1,0 +1,28 @@
+---
+title: "Block"
+description: "The Block interface shape representing one user blocking another"
+---
+
+A block record represents a directed edge where one user (the blocker) has blocked another (the blocked). A block simply exists or doesn't — there is no status column. Blocks are part of the trust & safety [moderation bundle](/sdk/moderation/overview#blocking); the table is provisioned only in projects that have that bundle installed.
+
+Blocks are **private to the blocker** — only the blocker can read their own block list, and the block-status read is outbound-only, so the block is never disclosed to the blocked user.
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique block identifier (UUID). |
+| `blockerId` | `string` | The ID of the user who created the block. |
+| `blockedId` | `string` | The ID of the user being blocked. |
+| `createdAt` | `Date` | When the block was created. |
+
+<Note>
+  The pair `(blockerId, blockedId)` is unique. Blocking someone already blocked is an idempotent no-op. Deleting either user removes their block edges in both directions.
+</Note>
+
+## See Also
+
+- [Moderation — Blocking](/sdk/moderation/overview#blocking) — enforcement behavior
+- [useBlockManager hook](/hooks/blocks/use-block-manager)
+- [Block User](/api-reference/users/blocks/block-user)
+- [Fetch Blocked Users](/api-reference/blocks/fetch-blocks)

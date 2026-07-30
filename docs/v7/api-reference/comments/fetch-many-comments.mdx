@@ -28,6 +28,10 @@ Deleted comments in thread view appear as stripped placeholders to preserve tree
   Filter by the `sourceId` of the entity. Only effective when `include` contains `entity`.
 </ParamField>
 
+<ParamField query="blockedFilter" type="string" default="exclude">
+  Controls how comments authored by users the viewer is [block-edged](/sdk/moderation/overview#blocking) with are treated. `"exclude"` (default) hides those comments. `"include-outbound-blocked"` re-includes comments authored **only** by users the viewer themselves blocked (their own "view anyway" choice); it never surfaces content from users who blocked the viewer. Counts reflect what the viewer sees (computed post-filter). Has no effect when the `moderation` bundle is not installed.
+</ParamField>
+
 <ParamField query="sortBy" type="string" default="createdAt">
   Sort order. One of:
   - `createdAt` — chronological by creation time (honors `sortDir`; newest first by default)

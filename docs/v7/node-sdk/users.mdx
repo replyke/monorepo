@@ -543,3 +543,108 @@ const result = await sublay.users.removeConnectionByUserId({
 </ParamField>
 
 **Returns** — `Promise<RemoveConnectionByUserIdResponse>`
+
+## Acting on a user's blocks
+
+User-to-user **blocking** is part of the trust & safety [moderation bundle](/sdk/moderation/overview#blocking). These functions require that bundle; a project without it returns `403 database/tables-not-available`. Each acts on behalf of one user (the blocker) — pass that user's ID as `actingUserId`.
+
+<Note>
+  Blocking severs interaction between two users across every Sublay surface and is **non-disclosing** — the blocked user is never notified. See [Moderation — Blocking](/sdk/moderation/overview#blocking) for the full enforcement behavior.
+</Note>
+
+---
+
+### createBlock
+
+Blocks one user on behalf of another. On a new block, existing follows and connections between the pair are torn down (both directions) in one transaction. Idempotent — re-blocking succeeds. Self-block is rejected.
+
+```typescript
+const block = await sublay.users.createBlock({
+  userId: "usr_target",
+  actingUserId: "usr_blocker",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user being blocked (the target).
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  The user performing the block (the blocker).
+</ParamField>
+
+**Returns** — `Promise<Block>` — `{ id, blockerId, blockedId, createdAt }`.
+
+---
+
+### deleteBlock
+
+Removes a block on behalf of the blocker. Idempotent; restores nothing.
+
+```typescript
+await sublay.users.deleteBlock({
+  userId: "usr_target",
+  actingUserId: "usr_blocker",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user being unblocked (the target).
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  The user performing the unblock (the blocker).
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### fetchBlockStatus
+
+Checks whether the acting user blocks the target user. **Outbound-only** — it never reveals whether the target has blocked the acting user.
+
+```typescript
+const { blocked, blockId } = await sublay.users.fetchBlockStatus({
+  userId: "usr_target",
+  actingUserId: "usr_blocker",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user whose block relationship is being checked (the target).
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  The user whose outbound perspective the status is from (the blocker).
+</ParamField>
+
+**Returns** — `Promise<{ blocked: boolean; blockId?: string; createdAt?: string }>`
+
+---
+
+### fetchBlockedUsers
+
+Returns a paginated list of the users the acting user has blocked (their outbound blocks), each row carrying a public profile summary. This block list is **private** to the blocker.
+
+```typescript
+const { data, pagination } = await sublay.users.fetchBlockedUsers({
+  actingUserId: "usr_blocker",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="actingUserId" type="string" required>
+  The user whose own block list to read (the blocker).
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`. Max `100`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<BlockedUser>>`, where each `BlockedUser` is `{ id, blockedUser, createdAt }`.
