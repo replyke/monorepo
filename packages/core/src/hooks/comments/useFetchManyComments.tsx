@@ -6,6 +6,7 @@ import useProject from "../projects/useProject";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
+import { BlockedFilter } from "../../interfaces/BlockedFilter";
 
 export interface FetchManyCommentsProps extends SpaceReputationContextParams {
   entityId?: string | null | undefined;
@@ -18,6 +19,7 @@ export interface FetchManyCommentsProps extends SpaceReputationContextParams {
   limit?: number;
   include?: CommentIncludeParam;
   sourceId?: string | null | undefined;
+  blockedFilter?: BlockedFilter | null;
 }
 
 function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<PaginatedResponse<Comment>> {
@@ -36,6 +38,7 @@ function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<Pagi
         limit,
         include,
         sourceId,
+        blockedFilter,
         spaceReputation,
         spaceReputationId,
         spaceReputationDescendants,
@@ -69,6 +72,7 @@ function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<Pagi
       if (userId) params.userId = userId;
       if (parentId) params.parentId = parentId;
       if (sourceId) params.sourceId = sourceId;
+      if (blockedFilter) params.blockedFilter = blockedFilter;
 
       if (include) {
         params.include = Array.isArray(include) ? include.join(',') : include;

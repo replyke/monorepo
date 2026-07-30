@@ -9,6 +9,7 @@ import { AttachmentsFilters } from "../../interfaces/entity-filters/AttachmentsF
 import { LocationFilters } from "../../interfaces/entity-filters/LocationFilters";
 import { MetadataFilters } from "../../interfaces/entity-filters/MetadataFilters";
 import { NsfwFilter } from "../../interfaces/NsfwFilter";
+import { BlockedFilter } from "../../interfaces/BlockedFilter";
 import useFetchManyEntities from "./useFetchManyEntities";
 import { handleError } from "../../utils/handleError";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
@@ -32,6 +33,7 @@ export interface UseFetchManyEntitiesWrapperProps extends SpaceReputationContext
   locationFilters?: LocationFilters | null;
   metadataFilters?: MetadataFilters | null;
   nsfwFilter?: NsfwFilter | null;
+  blockedFilter?: BlockedFilter | null;
 }
 
 export interface UseFetchManyEntitiesWrapperValues {
@@ -71,6 +73,7 @@ function useFetchManyEntitiesWrapper(
     locationFilters,
     metadataFilters,
     nsfwFilter,
+    blockedFilter,
     spaceReputation,
     spaceReputationId,
     spaceReputationDescendants,
@@ -126,6 +129,7 @@ function useFetchManyEntitiesWrapper(
         locationFilters,
         metadataFilters,
         nsfwFilter,
+        blockedFilter,
         ...reputation,
       });
 
@@ -161,6 +165,7 @@ function useFetchManyEntitiesWrapper(
     locationFilters,
     metadataFilters,
     nsfwFilter,
+    blockedFilter,
     reputationKey,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -243,6 +248,7 @@ function useFetchManyEntitiesWrapper(
     locationFilters,
     metadataFilters,
     nsfwFilter,
+    blockedFilter,
     reputationKey,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 

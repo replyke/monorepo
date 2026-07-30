@@ -71,6 +71,25 @@ describe("useFetchManyComments", () => {
     });
   });
 
+  it("forwards the blockedFilter opt-in param to the request", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchManyComments());
+
+    axiosPrivate.mockResponse("get", makePage([], false));
+
+    await act(async () => {
+      await result.current({
+        entityId: "entity-1",
+        page: 1,
+        blockedFilter: "include-outbound-blocked",
+      });
+    });
+
+    const [call] = axiosPrivate.calls("get");
+    expect(call.config?.params).toMatchObject({
+      blockedFilter: "include-outbound-blocked",
+    });
+  });
+
   it("rejects when the server returns an error response", async () => {
     const { result, axiosPrivate } = renderHookWithAxios(() => useFetchManyComments());
 

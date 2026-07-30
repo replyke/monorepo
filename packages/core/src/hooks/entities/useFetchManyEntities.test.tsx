@@ -74,6 +74,21 @@ describe("useFetchManyEntities", () => {
     });
   });
 
+  it("forwards the blockedFilter opt-in param to the request", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchManyEntities());
+
+    axiosPrivate.mockResponse("get", makePage([]));
+
+    await act(async () => {
+      await result.current({ blockedFilter: "include-outbound-blocked" });
+    });
+
+    const [call] = axiosPrivate.calls("get");
+    expect(call.config?.params).toMatchObject({
+      blockedFilter: "include-outbound-blocked",
+    });
+  });
+
   it("rejects when the server returns an error response", async () => {
     const { result, axiosPrivate } = renderHookWithAxios(() => useFetchManyEntities());
 

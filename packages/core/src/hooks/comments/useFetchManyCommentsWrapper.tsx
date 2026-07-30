@@ -4,6 +4,7 @@ import { Comment, CommentIncludeParam } from "../../interfaces/models/Comment";
 import useFetchManyComments from "./useFetchManyComments";
 import { handleError } from "../../utils/handleError";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { BlockedFilter } from "../../interfaces/BlockedFilter";
 
 export interface UseFetchManyCommentsWrapperProps extends SpaceReputationContextParams {
   entityId?: string | null;
@@ -15,6 +16,7 @@ export interface UseFetchManyCommentsWrapperProps extends SpaceReputationContext
   defaultSortBy?: CommentsSortByOptions;
   /** Initial sort direction for `sortBy: "createdAt"`. Defaults to `"desc"`. */
   defaultSortDir?: "asc" | "desc";
+  blockedFilter?: BlockedFilter | null;
 }
 
 export interface UseFetchManyCommentsWrapperValues {
@@ -41,6 +43,7 @@ function useFetchManyCommentsWrapper(
     defaultSortBy = "createdAt",
     defaultSortDir = "desc",
     include,
+    blockedFilter,
     spaceReputation,
     spaceReputationId,
     spaceReputationDescendants,
@@ -88,6 +91,7 @@ function useFetchManyCommentsWrapper(
         sortDir,
         limit,
         include,
+        blockedFilter,
         ...reputation,
       });
 
@@ -113,6 +117,7 @@ function useFetchManyCommentsWrapper(
     parentId,
     sourceId,
     include,
+    blockedFilter,
     reputationKey,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -175,6 +180,7 @@ function useFetchManyCommentsWrapper(
     sortDir,
     limit,
     include,
+    blockedFilter,
     reputationKey,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
