@@ -91,6 +91,17 @@ describe("js-sdk entities — request shaping", () => {
     });
   });
 
+  it("fetchManyEntities forwards blockedFilter into the query params", async () => {
+    const { client, projectInstance } = makeClient();
+    await fetchManyEntities(client, {
+      blockedFilter: "include-outbound-blocked",
+    });
+    const [, config] = projectInstance.get.mock.calls[0];
+    expect(config.params).toEqual(
+      expect.objectContaining({ blockedFilter: "include-outbound-blocked" })
+    );
+  });
+
   it("fetchManyEntities serializes keywordsFilters as a raw nested params object", async () => {
     const { client, projectInstance } = makeClient();
     const data = {

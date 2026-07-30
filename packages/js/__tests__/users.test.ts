@@ -1,7 +1,11 @@
 import {
   checkUsernameAvailability,
+  createBlock,
   createFollow,
+  deleteBlock,
   deleteFollow,
+  fetchBlockStatus,
+  fetchBlockedUsers,
   fetchConnectionStatus,
   fetchConnectionsByUserId,
   fetchConnectionsCountByUserId,
@@ -308,6 +312,45 @@ describe("js-sdk users — graph actions (arbitrary target user) — request sha
     );
     expect(projectInstance.delete.mock.calls[0]).toHaveLength(1);
   });
+
+  it("createBlock posts an empty body to /users/:userId/block, no actingUserId", async () => {
+    const { client, projectInstance } = makeClient();
+    await createBlock(client, { userId: "target1" });
+    expect(projectInstance.post).toHaveBeenCalledWith(
+      "/users/target1/block",
+      {}
+    );
+  });
+
+  it("deleteBlock deletes /users/:userId/block with no body/params", async () => {
+    const { client, projectInstance } = makeClient();
+    await deleteBlock(client, { userId: "target1" });
+    expect(projectInstance.delete).toHaveBeenCalledWith(
+      "/users/target1/block"
+    );
+    expect(projectInstance.delete.mock.calls[0]).toHaveLength(1);
+  });
+
+  it("fetchBlockStatus gets /users/:userId/block with no params (outbound-only)", async () => {
+    const { client, projectInstance } = makeClient();
+    await fetchBlockStatus(client, { userId: "target1" });
+    expect(projectInstance.get).toHaveBeenCalledWith("/users/target1/block");
+    expect(projectInstance.get.mock.calls[0]).toHaveLength(1);
+  });
+
+  it("fetchBlockedUsers gets /blocks (own list — no userId in path/params) with pagination", async () => {
+    const { client, projectInstance } = makeClient();
+    await fetchBlockedUsers(client, { page: 2, limit: 10 });
+    expect(projectInstance.get).toHaveBeenCalledWith("/blocks", {
+      params: { page: 2, limit: 10 },
+    });
+  });
+
+  it("fetchBlockedUsers defaults to an empty params object when called with no args", async () => {
+    const { client, projectInstance } = makeClient();
+    await fetchBlockedUsers(client);
+    expect(projectInstance.get).toHaveBeenCalledWith("/blocks", { params: {} });
+  });
 });
 
 describe("js-sdk users — response mapping", () => {
@@ -531,5 +574,58 @@ describe("js-sdk users — response mapping", () => {
     });
 
     expect(result).toEqual(removal);
+  });
+
+  it("createBlock returns the created block", async () => {
+    const { client, projectInstance } = makeClient();
+    const block = {
+      id: "blk1",
+      blockerId: "me",
+      blockedId: "target1",
+      createdAt: "now",
+    };
+    projectInstance.post.mockResolvedValueOnce({ data: block });
+
+    const result = await createBlock(client, { userId: "target1" });
+
+    expect(result).toEqual(block);
+  });
+
+  it("deleteBlock resolves to undefined (void)", async () => {
+    const { client, projectInstance } = makeClient();
+    projectInstance.delete.mockResolvedValueOnce({ data: undefined });
+
+    const result = await deleteBlock(client, { userId: "target1" });
+
+    expect(result).toBeUndefined();
+  });
+
+  it("fetchBlockStatus returns the outbound-only block-status wrapper", async () => {
+    const { client, projectInstance } = makeClient();
+    const status = { blocked: true, blockId: "blk1", createdAt: "now" };
+    projectInstance.get.mockResolvedValueOnce({ data: status });
+
+    const result = await fetchBlockStatus(client, { userId: "target1" });
+
+    expect(result).toEqual(status);
+  });
+
+  it("fetchBlockedUsers returns the full PaginatedResponse envelope", async () => {
+    const { client, projectInstance } = makeClient();
+    const envelope = {
+      data: [{ id: "blk1", blockedUser: { id: "u2" }, createdAt: "now" }],
+      pagination: {
+        page: 1,
+        pageSize: 20,
+        totalPages: 1,
+        totalItems: 1,
+        hasMore: false,
+      },
+    };
+    projectInstance.get.mockResolvedValueOnce({ data: envelope });
+
+    const result = await fetchBlockedUsers(client, { page: 1 });
+
+    expect(result).toEqual(envelope);
   });
 });

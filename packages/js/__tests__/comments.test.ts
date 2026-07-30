@@ -79,6 +79,18 @@ describe("js-sdk comments — request shaping", () => {
     });
   });
 
+  it("fetchManyComments forwards blockedFilter into the query params", async () => {
+    const { client, projectInstance } = makeClient();
+    await fetchManyComments(client, {
+      entityId: "e1",
+      blockedFilter: "include-outbound-blocked",
+    });
+    const [, config] = projectInstance.get.mock.calls[0];
+    expect(config.params).toEqual(
+      expect.objectContaining({ blockedFilter: "include-outbound-blocked" })
+    );
+  });
+
   it("addReaction posts only reactionType to /comments/:commentId/reactions (no userId)", async () => {
     const { client, projectInstance } = makeClient();
     await addReaction(client, { commentId: "c1", reactionType: "upvote" });

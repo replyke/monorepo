@@ -26,6 +26,11 @@ export interface FetchManyCommentsProps extends SpaceReputationContextParams {
   sortDir?: "asc" | "desc";
   include?: string;
   sourceId?: string;
+
+  // Block filtering: comments authored by users the viewer is block-edged with
+  // are hidden by default ("exclude"). "include-outbound-blocked" re-includes
+  // ONLY the viewer's own outbound-blocked authors; never inbound.
+  blockedFilter?: "exclude" | "include-outbound-blocked";
 }
 
 export async function fetchManyComments(
