@@ -1,0 +1,35 @@
+---
+title: "Unblock User"
+api: "DELETE /:projectId/api/v7/users/:userId/block"
+description: "Unblock a user by their ID"
+---
+
+Removes the block edge from the acting user (the blocker) to the specified user (the target). The barrier lifts immediately.
+
+Unblocking is **idempotent** — unblocking a user who isn't blocked is a success no-op. Nothing that the block tore down is restored: removed follows and connections stay gone and the two users must re-establish them from scratch. A previously frozen 1:1 conversation becomes usable again (the conversation record still exists).
+
+<Note>
+  **Requires the `moderation` bundle.** A project without the moderation bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Sublay user ID (UUID) of the user to unblock (the target).
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="actingUserId" type="string">
+  The user performing the unblock (the blocker). Only service/master keys may supply an `actingUserId` other than the caller's own; with a user token the blocker is derived from the token.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `204` with no body.
+
+## See Also
+
+- [`useBlockManager` hook](/hooks/blocks/use-block-manager)
+- [Block User](/api-reference/users/blocks/block-user)
+- [Block data model](/data-models/block)

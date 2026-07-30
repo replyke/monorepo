@@ -130,7 +130,8 @@
                 "pages": [
                   "v7/sdk/relationships/overview",
                   "v7/sdk/relationships/use-follow-manager",
-                  "v7/sdk/relationships/use-connection-manager"
+                  "v7/sdk/relationships/use-connection-manager",
+                  "v7/sdk/relationships/use-block-manager"
                 ]
               },
               {
@@ -380,6 +381,16 @@
                 ]
               },
               {
+                "group": "Blocks",
+                "pages": [
+                  "v7/hooks/blocks/use-block-manager",
+                  "v7/hooks/blocks/use-block-user",
+                  "v7/hooks/blocks/use-unblock-user",
+                  "v7/hooks/blocks/use-fetch-block-status",
+                  "v7/hooks/blocks/use-fetch-blocked-users"
+                ]
+              },
+              {
                 "group": "Collections",
                 "pages": [
                   "v7/hooks/collections/use-collections",
@@ -548,6 +559,15 @@
                   "v7/api-reference/users/connections/get-connections",
                   "v7/api-reference/users/connections/get-connections-count",
                   "v7/api-reference/users/connections/remove-connection"
+                ]
+              },
+              {
+                "group": "User Block Operations",
+                "pages": [
+                  "v7/api-reference/users/blocks/block-user",
+                  "v7/api-reference/users/blocks/unblock-user",
+                  "v7/api-reference/users/blocks/get-block-status",
+                  "v7/api-reference/blocks/fetch-blocks"
                 ]
               },
               {
@@ -817,6 +837,7 @@
                   "v7/data-models/file",
                   "v7/data-models/follow",
                   "v7/data-models/connection",
+                  "v7/data-models/block",
                   "v7/data-models/app-notification"
                 ]
               }

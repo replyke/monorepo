@@ -1,0 +1,42 @@
+---
+title: "Use block user"
+description: "Block another user"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that blocks a user by their ID. On a new block, the server retroactively removes any existing follows and connections between the two users (both directions). Blocking is idempotent — re-blocking an already-blocked user succeeds.
+
+<Note>
+  Requires the `moderation` bundle. See [Moderation — Blocking](/sdk/moderation/overview#blocking).
+</Note>
+
+## Usage Example
+
+```tsx
+import { useBlockUser } from "@sublay/react-js";
+
+function BlockAction({ userId }: { userId: string }) {
+  const blockUser = useBlockUser();
+
+  return <button onClick={() => blockUser({ userId })}>Block</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user to block (the target).
+</ParamField>
+
+## Returns
+
+The returned function resolves to `void` on success.
+
+## Related
+
+- [useUnblockUser](/hooks/blocks/use-unblock-user)
+- [useBlockManager](/hooks/blocks/use-block-manager) — combines block/unblock with status loading

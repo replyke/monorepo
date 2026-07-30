@@ -71,6 +71,10 @@ Returns a paginated list of entities for the project. Supports rich filtering by
   When `"true"`, only returns entities from users the authenticated user follows. Requires authentication.
 </ParamField>
 
+<ParamField query="blockedFilter" type="string" default="exclude">
+  Controls how entities authored by users the viewer is [block-edged](/sdk/moderation/overview#blocking) with are treated. `"exclude"` (default) hides those entities. `"include-outbound-blocked"` re-includes entities authored **only** by users the viewer themselves blocked (their own "view anyway" choice); it never surfaces content from users who blocked the viewer. Counts reflect what the viewer sees (computed post-filter). Has no effect when the `moderation` bundle is not installed.
+</ParamField>
+
 <ParamField query="keywordsFilters" type="object">
   Filter by keywords. Pass as a JSON string or bracket-notation query params:
   ```json

@@ -188,6 +188,10 @@ const { data, pagination } = await sublay.comments.fetchManyComments({
   Filter by source ID.
 </ParamField>
 
+<ParamField body="blockedFilter" type='"exclude" | "include-outbound-blocked"'>
+  How to treat comments authored by users the viewer is [block-edged](/sdk/moderation/overview#blocking) with. `"exclude"` (default) hides them; `"include-outbound-blocked"` re-includes only the viewer's own outbound-blocked authors — never content from users who blocked the viewer. No effect without the `moderation` bundle.
+</ParamField>
+
 <SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<PaginatedResponse<Comment>>`
