@@ -1,7 +1,6 @@
 import {
   createRule,
   deleteRule,
-  fetchDigestConfig,
   fetchManyRules,
   fetchRule,
   getSpaceConversation,
@@ -12,7 +11,6 @@ import {
   moderateSpaceComment,
   moderateSpaceEntity,
   reorderRules,
-  updateDigestConfig,
   updateRule,
 } from "../src/modules/spaces";
 import { makeClient } from "./helpers/mockClient";
@@ -161,20 +159,6 @@ describe("node-sdk spaces (moderation/reports) — request shaping", () => {
       ruleIds: ["r2", "r1"],
     });
   });
-
-  it("fetchDigestConfig hits the digest-config route with no params", async () => {
-    const { client, projectInstance } = makeClient();
-    await fetchDigestConfig(client, { spaceId: "s1" });
-    expect(projectInstance.get).toHaveBeenCalledWith("/spaces/s1/digest-config");
-  });
-
-  it("updateDigestConfig strips spaceId into the path and patches the rest", async () => {
-    const { client, projectInstance } = makeClient();
-    await updateDigestConfig(client, { spaceId: "s1", digestEnabled: true });
-    expect(projectInstance.patch).toHaveBeenCalledWith("/spaces/s1/digest-config", {
-      digestEnabled: true,
-    });
-  });
 });
 
 describe("node-sdk spaces (moderation/reports) — response mapping", () => {
@@ -309,21 +293,5 @@ describe("node-sdk spaces (moderation/reports) — response mapping", () => {
     await expect(
       reorderRules(client, { spaceId: "s1", ruleIds: ["r2", "r1"] }),
     ).resolves.toEqual(rules);
-  });
-
-  it("fetchDigestConfig returns response.data", async () => {
-    const { client, projectInstance } = makeClient();
-    const config = { digestEnabled: true };
-    projectInstance.get.mockResolvedValueOnce({ data: config });
-    await expect(fetchDigestConfig(client, { spaceId: "s1" })).resolves.toEqual(config);
-  });
-
-  it("updateDigestConfig returns response.data", async () => {
-    const { client, projectInstance } = makeClient();
-    const config = { digestEnabled: false };
-    projectInstance.patch.mockResolvedValueOnce({ data: config });
-    await expect(
-      updateDigestConfig(client, { spaceId: "s1", digestEnabled: false }),
-    ).resolves.toEqual(config);
   });
 });

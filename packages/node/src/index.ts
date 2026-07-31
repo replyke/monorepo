@@ -143,7 +143,7 @@ export type {
 } from "./interfaces/SpaceReputation";
 export type { UserSearchParams } from "./interfaces/UserSearch";
 export type { Collection } from "./interfaces/Collection";
-export type { Space, SpaceDetailed, SpacePreview, DigestConfig, SpaceBreadcrumb } from "./interfaces/Space";
+export type { Space, SpaceDetailed, SpacePreview, SpaceBreadcrumb } from "./interfaces/Space";
 export type { SpaceMember, SpaceMemberWithUser } from "./interfaces/SpaceMember";
 export type { Rule } from "./interfaces/Rule";
 export type { Follow } from "./interfaces/Follow";
