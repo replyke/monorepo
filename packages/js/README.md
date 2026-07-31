@@ -42,7 +42,7 @@ One `SublayClient` with 14 module namespaces (call them as `sublay.<module>.<fn>
 | `users` | profiles, username lookup, suggestions, updates, and the per-user follow/connection graph |
 | `entities` | content CRUD, drafts, feeds (`fetchManyEntities`), reactions, saves |
 | `comments` | threaded comments CRUD, reactions |
-| `spaces` | communities: lifecycle, membership, roles, rules, digests, moderation |
+| `spaces` | communities: lifecycle, membership, roles, rules, moderation |
 | `collections` | saved-entity collections |
 | `follows` / `connections` | the logged-in user's own follow graph and mutual connections |
 | `appNotifications` | in-app notifications and unread counts |
