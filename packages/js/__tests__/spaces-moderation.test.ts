@@ -1,7 +1,6 @@
 import {
   createRule,
   deleteRule,
-  fetchDigestConfig,
   fetchManyRules,
   fetchRule,
   getSpaceConversation,
@@ -12,7 +11,6 @@ import {
   moderateSpaceComment,
   moderateSpaceEntity,
   reorderRules,
-  updateDigestConfig,
   updateRule,
 } from "../src/modules/spaces";
 import { makeClient } from "./helpers/client";
@@ -242,28 +240,6 @@ describe("js-sdk spaces (moderation/reports) — request shaping", () => {
       { ruleIds: ["r2", "r1"] }
     );
   });
-
-  it("fetchDigestConfig hits the digest-config route with no params", async () => {
-    const { client, projectInstance } = makeClient();
-    await fetchDigestConfig(client, { spaceId: "s1" });
-    expect(projectInstance.get).toHaveBeenCalledWith(
-      "/spaces/s1/digest-config"
-    );
-    expect(projectInstance.get.mock.calls[0]).toHaveLength(1);
-  });
-
-  it("updateDigestConfig strips spaceId into the path and patches the rest", async () => {
-    const { client, projectInstance } = makeClient();
-    await updateDigestConfig(client, {
-      spaceId: "s1",
-      digestEnabled: true,
-      digestScheduleHour: 9,
-    });
-    expect(projectInstance.patch).toHaveBeenCalledWith(
-      "/spaces/s1/digest-config",
-      { digestEnabled: true, digestScheduleHour: 9 }
-    );
-  });
 });
 
 describe("js-sdk spaces (moderation/reports) — response mapping", () => {
@@ -431,40 +407,5 @@ describe("js-sdk spaces (moderation/reports) — response mapping", () => {
     });
 
     expect(response).toEqual(rules);
-  });
-
-  it("fetchDigestConfig returns the DigestConfig", async () => {
-    const { client, projectInstance } = makeClient();
-    const config = {
-      digestEnabled: true,
-      digestWebhookUrl: "https://example.com/hook",
-      digestWebhookSecret: "••••••••",
-      digestScheduleHour: 9,
-      digestTimezone: "UTC",
-    };
-    projectInstance.get.mockResolvedValueOnce({ data: config });
-
-    const response = await fetchDigestConfig(client, { spaceId: "s1" });
-
-    expect(response).toEqual(config);
-  });
-
-  it("updateDigestConfig returns the updated DigestConfig", async () => {
-    const { client, projectInstance } = makeClient();
-    const config = {
-      digestEnabled: false,
-      digestWebhookUrl: null,
-      digestWebhookSecret: null,
-      digestScheduleHour: null,
-      digestTimezone: null,
-    };
-    projectInstance.patch.mockResolvedValueOnce({ data: config });
-
-    const response = await updateDigestConfig(client, {
-      spaceId: "s1",
-      digestEnabled: false,
-    });
-
-    expect(response).toEqual(config);
   });
 });
