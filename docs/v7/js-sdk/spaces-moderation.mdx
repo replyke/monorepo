@@ -1,9 +1,9 @@
 ---
 title: "Space Moderation"
-description: "Resolve reports, moderate content, and manage rules and digest delivery"
+description: "Resolve reports, moderate content, and manage rules"
 ---
 
-The space moderation functions let admins and moderators resolve reports, moderate entities, comments, and chat messages, manage community rules, and configure digest delivery within a space.
+The space moderation functions let admins and moderators resolve reports, moderate entities, comments, and chat messages, and manage community rules within a space.
 
 ---
 
@@ -423,63 +423,3 @@ const rules = await sublay.spaces.reorderRules({
 </ParamField>
 
 **Returns** — `Promise<Rule[]>`
-
----
-
-### fetchDigestConfig
-
-Fetches the digest configuration for a space.
-
-```typescript
-const config = await sublay.spaces.fetchDigestConfig({
-  spaceId: "spc_abc123",
-});
-```
-
-<ParamField body="spaceId" type="string" required>
-  The Sublay space ID.
-</ParamField>
-
-**Returns** — `Promise<DigestConfig>`
-
----
-
-### updateDigestConfig
-
-Updates the digest configuration.
-
-```typescript
-const config = await sublay.spaces.updateDigestConfig({
-  spaceId: "spc_abc123",
-  digestEnabled: true,
-  digestWebhookUrl: "https://example.com/digest",
-  digestScheduleHour: 9,
-  digestTimezone: "America/New_York",
-});
-```
-
-<ParamField body="spaceId" type="string" required>
-  The Sublay space ID.
-</ParamField>
-
-<ParamField body="digestEnabled" type="boolean">
-  Whether digest delivery is enabled.
-</ParamField>
-
-<ParamField body="digestWebhookUrl" type="string">
-  The webhook URL to deliver the digest to.
-</ParamField>
-
-<ParamField body="digestWebhookSecret" type="string">
-  The secret used to sign digest webhook deliveries.
-</ParamField>
-
-<ParamField body="digestScheduleHour" type="number">
-  The hour of day at which the digest is delivered.
-</ParamField>
-
-<ParamField body="digestTimezone" type="string">
-  The timezone used to interpret the schedule hour.
-</ParamField>
-
-**Returns** — `Promise<DigestConfig>`

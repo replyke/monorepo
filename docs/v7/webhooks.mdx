@@ -4,12 +4,7 @@ description: "How Sublay calls your server — event notifications, validation h
 icon: "webhook"
 ---
 
-Sublay can call your server when things happen in your project. There are two webhook systems:
-
-- **Project webhooks** — broadcast and validation events for the project as a whole, configured once in the project dashboard.
-- **Space digest webhooks** — a separate per-space delivery system that sends a daily activity digest to a URL you configure on each space individually.
-
-Both use HTTP POST with HMAC-SHA256 signatures, but they are configured and behave independently.
+Sublay can call your server when things happen in your project. **Project webhooks** deliver broadcast and validation events for the project as a whole, configured once in the project dashboard. They use HTTP POST with HMAC-SHA256 signatures.
 
 ---
 
@@ -198,37 +193,3 @@ Subscribe to `comment.created` or `entity.created` (validation events). In your 
 ### Audit Logging
 
 Subscribe to broadcast complete events (`user.created.complete`, `entity.created.complete`, etc.) to maintain an external audit log or pipe activity into an analytics system or data warehouse.
-
----
-
-## Space Digest Webhooks
-
-The space digest system is separate from project webhooks. Each space can be configured with its own digest webhook URL and secret, independent of the project-level webhook settings.
-
-When the digest is enabled for a space, Sublay sends a daily summary of the past 24 hours of activity to that space's digest webhook URL. The cron runs hourly and delivers the digest at the configured schedule hour in the space's timezone.
-
-The digest payload uses the `space.digest` event type:
-
-```json
-{
-  "type": "space.digest",
-  "projectId": "your-project-id",
-  "spaceId": "the-space-id",
-  "data": { ... }
-}
-```
-
-The `data` object contains the assembled digest — new entities, new members, and summary counts for the period.
-
-**Configuration** is per space (not per project). Each space has:
-- `digestEnabled` — whether the digest is active
-- `digestWebhookUrl` — where to POST the digest
-- `digestWebhookSecret` — used for HMAC-SHA256 signing (same mechanism as project webhooks)
-- `digestScheduleHour` — the hour of day to send (0–23)
-- `digestTimezone` — the timezone for the schedule
-
-<Note>
-  Space digests are available on Pro and Growth plans only. If there is no new activity in the 24-hour window, the digest is skipped for that day.
-</Note>
-
-The digest webhook is the hook point for forwarding summaries to an email provider, Slack, or any other notification channel for space members.

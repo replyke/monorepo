@@ -1,9 +1,9 @@
 ---
 title: "Space Moderation"
-description: "Handle reports, moderate content, manage community rules, and configure digest newsletters"
+description: "Handle reports, moderate content, and manage community rules"
 ---
 
-This page covers the moderation and administrative functions on the `spaces` module: report handling, content moderation actions, community rules management, and digest newsletter configuration.
+This page covers the moderation and administrative functions on the `spaces` module: report handling, content moderation actions, and community rules management.
 
 ---
 
@@ -342,66 +342,3 @@ const rules = await sublay.spaces.reorderRules({
 </ParamField>
 
 **Returns** — `Promise<Rule[]>` — the full list of rules in their new order.
-
----
-
-## Digest Newsletter
-
-The digest feature allows a space to send a periodic newsletter-style webhook payload summarizing recent activity.
-
-### fetchDigestConfig
-
-Fetches the current digest configuration for a space.
-
-```typescript
-const config = await sublay.spaces.fetchDigestConfig({ spaceId: "spc_abc123" });
-```
-
-<ParamField body="spaceId" type="string" required>
-  The Sublay space ID.
-</ParamField>
-
-**Returns** — `Promise<DigestConfig>`
-
----
-
-### updateDigestConfig
-
-Updates the digest configuration for a space.
-
-```typescript
-const config = await sublay.spaces.updateDigestConfig({
-  spaceId: "spc_abc123",
-  digestEnabled: true,
-  digestWebhookUrl: "https://example.com/webhooks/digest",
-  digestWebhookSecret: "whsec_mySecret",
-  digestScheduleHour: 9,
-  digestTimezone: "America/New_York",
-});
-```
-
-<ParamField body="spaceId" type="string" required>
-  The Sublay space ID.
-</ParamField>
-
-<ParamField body="digestEnabled" type="boolean">
-  Enable or disable the digest webhook.
-</ParamField>
-
-<ParamField body="digestWebhookUrl" type="string">
-  The URL that will receive the digest payload.
-</ParamField>
-
-<ParamField body="digestWebhookSecret" type="string">
-  Secret used to sign the webhook payload for verification.
-</ParamField>
-
-<ParamField body="digestScheduleHour" type="number">
-  Hour of day (0–23) at which the digest fires, in the configured timezone.
-</ParamField>
-
-<ParamField body="digestTimezone" type="string">
-  IANA timezone identifier (e.g., `"America/New_York"`, `"Europe/London"`).
-</ParamField>
-
-**Returns** — `Promise<DigestConfig>`
