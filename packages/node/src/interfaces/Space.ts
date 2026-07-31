@@ -150,14 +150,6 @@ export interface DeleteSpaceResponse {
   };
 }
 
-export interface DigestConfig {
-  digestEnabled: boolean;
-  digestWebhookUrl: string | null;
-  digestWebhookSecret: string | null; // Masked as "••••••••" when set
-  digestScheduleHour: number | null;
-  digestTimezone: string | null;
-}
-
 export interface SpaceBreadcrumb {
   breadcrumb: SpacePreview[];
   depth: number;

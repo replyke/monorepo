@@ -206,8 +206,6 @@ Base path: `/v7/:projectId/`
 | GET | `/spaces/:spaceId` | no key needed | `spaces.fetchSpace` | yes |
 | PATCH | `/spaces/:spaceId` | can access with a key | `spaces.updateSpace` | yes |
 | DELETE | `/spaces/:spaceId` | can access with a key | `spaces.deleteSpace` | yes |
-| GET | `/spaces/:spaceId/digest-config` | can access with a key | `spaces.fetchDigestConfig` | yes |
-| PATCH | `/spaces/:spaceId/digest-config` | can access with a key | `spaces.updateDigestConfig` | yes |
 | POST | `/spaces/:spaceId/join` | can access with a key | `spaces.joinSpace` | yes |
 | GET | `/spaces/:spaceId/members` | no key needed | `spaces.fetchSpaceMembers` | yes |
 | GET | `/spaces/:spaceId/team` | no key needed | `spaces.fetchSpaceTeam` | yes |
