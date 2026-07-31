@@ -96,7 +96,6 @@
                   "v7/sdk/spaces/membership",
                   "v7/sdk/spaces/moderation",
                   "v7/sdk/spaces/rules",
-                  "v7/sdk/spaces/digest-newsletter",
                   "v7/sdk/spaces/space-lists"
                 ]
               },
@@ -273,9 +272,7 @@
                   "v7/hooks/spaces/use-set-space-entity-nsfw",
                   "v7/hooks/spaces/use-moderate-space-comment",
                   "v7/hooks/spaces/use-space-mentions",
-                  "v7/hooks/spaces/use-space-permissions",
-                  "v7/hooks/spaces/use-fetch-digest-config",
-                  "v7/hooks/spaces/use-update-digest-config"
+                  "v7/hooks/spaces/use-space-permissions"
                 ]
               },
               {
@@ -728,9 +725,7 @@
                   "v7/api-reference/spaces/update-space",
                   "v7/api-reference/spaces/delete-space",
                   "v7/api-reference/spaces/fetch-children",
-                  "v7/api-reference/spaces/fetch-breadcrumb",
-                  "v7/api-reference/spaces/digest/fetch-digest-config",
-                  "v7/api-reference/spaces/digest/update-digest-config"
+                  "v7/api-reference/spaces/fetch-breadcrumb"
                 ]
               },
               {
