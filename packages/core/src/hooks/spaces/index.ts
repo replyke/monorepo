@@ -77,12 +77,6 @@ export type {
 export { default as useCheckSlugAvailability } from "./useCheckSlugAvailability";
 export type { CheckSlugAvailabilityProps } from "./useCheckSlugAvailability";
 
-// Digest config hooks
-export { default as useFetchDigestConfig } from "./useFetchDigestConfig";
-export type { FetchDigestConfigProps } from "./useFetchDigestConfig";
-export { default as useUpdateDigestConfig } from "./useUpdateDigestConfig";
-export type { UpdateDigestConfigProps } from "./useUpdateDigestConfig";
-
 // Rule management hooks
 export {
   useCreateRule,
