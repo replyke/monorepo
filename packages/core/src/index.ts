@@ -306,9 +306,6 @@ export {
   useSpacePermissions,
   useSpaceMentions,
   useCheckMyMembership,
-  // Digest config hooks
-  useFetchDigestConfig,
-  useUpdateDigestConfig,
   // Rule hooks
   useCreateRule,
   useUpdateRule,
@@ -347,8 +344,6 @@ export {
   type UseSpacePermissionsValues,
   type UseSpaceMentionsProps,
   type UseSpaceMentionsValues,
-  type FetchDigestConfigProps,
-  type UpdateDigestConfigProps,
   type CreateRuleProps,
   type UpdateRuleProps,
   type DeleteRuleProps,
@@ -651,8 +646,6 @@ export type {
   ApproveMemberResponse,
   DeclineMemberResponse,
   DeleteSpaceResponse,
-  DigestConfig,
-  UpdateDigestConfigProps as UpdateDigestConfigBody,
   SpaceInclude,
   SpaceIncludeArray,
   SpaceIncludeParam,

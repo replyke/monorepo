@@ -177,23 +177,6 @@ export interface DeleteSpaceResponse {
   };
 }
 
-// Digest config types
-export interface DigestConfig {
-  digestEnabled: boolean;
-  digestWebhookUrl: string | null;
-  digestWebhookSecret: string | null; // Masked as "••••••••" when set
-  digestScheduleHour: number | null;
-  digestTimezone: string | null;
-}
-
-export interface UpdateDigestConfigProps {
-  digestEnabled?: boolean;
-  digestWebhookUrl?: string | null;
-  digestWebhookSecret?: string | null;
-  digestScheduleHour?: number | null;
-  digestTimezone?: string | null;
-}
-
 // Space include types (following Entity/User pattern)
 export type SpaceInclude = "files";
 export type SpaceIncludeArray = SpaceInclude[];
