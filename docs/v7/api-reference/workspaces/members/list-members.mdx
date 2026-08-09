@@ -24,10 +24,6 @@ Returns the roster as a **single unified array, one entry per distinct user**, e
   When `true`, returns per-reason counts + a distinct-user total instead of the array (never materializes the roster). Honors the same includes.
 </ParamField>
 
-<ParamField query="userId" type="string">
-  Service/master keys only — the user to act as (must have roster visibility).
-</ParamField>
-
 ## Reasons
 
 Each entry's `reasons[]` contains `{ type, ...detail }` objects. A user present for several reasons is **one** entry carrying multiple reasons.

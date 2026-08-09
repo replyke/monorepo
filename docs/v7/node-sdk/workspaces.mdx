@@ -138,19 +138,16 @@ Returns the [unified roster](/api-reference/workspaces/members/list-members) (`W
 ```typescript
 const roster = await sublay.workspaces.fetchMembers({
   workspaceId: "ws_abc",
-  userId: "usr_admin",
   include: "ancestorOwners,descendants",
 });
 
 const counts = await sublay.workspaces.fetchMembers({
   workspaceId: "ws_abc",
-  userId: "usr_admin",
   countOnly: true,
 });
 ```
 
 <ParamField body="workspaceId" type="string" required />
-<ParamField body="userId" type="string" required>The acting user (must have roster visibility).</ParamField>
 <ParamField body="include" type="string">`ancestorOwners`, `reachHolders`, `descendants`.</ParamField>
 <ParamField body="countOnly" type="boolean" />
 
@@ -160,13 +157,11 @@ const counts = await sublay.workspaces.fetchMembers({
 const standing = await sublay.workspaces.fetchMemberStanding({
   workspaceId: "ws_abc",
   targetUserId: "usr_pat",
-  userId: "usr_admin",
 });
 ```
 
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="targetUserId" type="string" required>The user whose standing to read.</ParamField>
-<ParamField body="userId" type="string" required>The acting user (must have roster visibility).</ParamField>
 
 ### updateMember
 

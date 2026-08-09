@@ -11,7 +11,7 @@ The invited `capabilities`/`permissions` are validated against the inviter's own
 **Duplicate handling:**
 - Inviting an **existing member** → `409` (change the grant via [Update Member](/api-reference/workspaces/members/update-member)).
 - A **live** invite (`pending` and not past `expiresAt`) for the same target → **idempotent refresh** (updates the grant, resets a 14-day expiry).
-- A **terminal** (`declined`/`revoked`) or **effectively-expired** invite does **not** block — a fresh `pending` is created.
+- A **terminal** (`accepted`/`declined`/`revoked`) or **effectively-expired** invite does **not** block — a fresh `pending` is created. (An `accepted` invite means the user is already a member, so re-inviting them returns `409` instead.)
 
 Invite-by-email to an address that already has an account resolves and stores the `userId` at creation.
 
