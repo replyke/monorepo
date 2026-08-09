@@ -352,6 +352,33 @@ export {
   type ReorderRulesProps,
 } from "./hooks/spaces";
 
+// -- workspaces
+export {
+  useCreateWorkspace,
+  useFetchWorkspace,
+  useFetchManyWorkspaces,
+  useFetchManyWorkspacesWrapper,
+  useFetchWorkspaceMembers,
+  useInviteMember,
+  useFetchMyWorkspaceInvites,
+  useAcceptInvite,
+  useDeclineInvite,
+  useFetchWorkspaceAuthority,
+  type CreateWorkspaceProps,
+  type FetchWorkspaceProps,
+  type FetchManyWorkspacesParams,
+  type UseFetchManyWorkspacesWrapperProps,
+  type UseFetchManyWorkspacesWrapperValues,
+  type FetchWorkspaceMembersProps,
+  type InviteMemberProps,
+  type FetchMyWorkspaceInvitesResponse,
+  type AcceptInviteProps,
+  type AcceptInviteResponse,
+  type DeclineInviteProps,
+  type DeclineInviteResponse,
+  type FetchWorkspaceAuthorityProps,
+} from "./hooks/workspaces";
+
 // -- space lists
 export {
   useSpaceList,
@@ -650,6 +677,21 @@ export type {
   SpaceIncludeArray,
   SpaceIncludeParam,
 } from "./interfaces/models/Space";
+export type {
+  Workspace,
+  WorkspaceInvitation,
+  WorkspaceCapability,
+  WorkspaceInvitationStatus,
+  WorkspaceAuthorityReason,
+  WorkspaceInclude,
+  WorkspaceIncludeArray,
+  WorkspaceIncludeParam,
+  WorkspaceRosterReason,
+  WorkspaceRosterEntry,
+  WorkspaceRosterResponse,
+  WorkspaceRosterCountsResponse,
+  WorkspaceAuthority,
+} from "./interfaces/models/Workspace";
 export type {
   SpaceMember,
   SpaceMemberRole,
