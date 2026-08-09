@@ -37,7 +37,7 @@ function InviteForm({ workspaceId }: { workspaceId: string }) {
 <ParamField path="username" type="string">Invitee username (existing users only).</ParamField>
 <ParamField path="capabilities" type="string[]">Capabilities to apply on accept. Subject to no-escalation.</ParamField>
 <ParamField path="permissions" type="string[]">Opaque permissions to apply on accept.</ParamField>
-<ParamField path="rank" type="number" required>Initial rank (strictly larger than the inviter's).</ParamField>
+<ParamField path="rank" type="number" required>Initial rank. For a direct-member inviter it must be strictly larger (less senior) than their own; a reach-holder inviter (no direct row) may set any rank.</ParamField>
 <ParamField path="title" type="string | null">Optional cosmetic title.</ParamField>
 
 ## Returns
