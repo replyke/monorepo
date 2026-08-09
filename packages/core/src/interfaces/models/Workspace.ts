@@ -76,6 +76,9 @@ export interface WorkspaceRosterReason {
     | "descendant-member";
   rank?: number;
   capabilities?: string[];
+  permissions?: string[];
+  title?: string | null;
+  metadata?: Record<string, any>;
   viaWorkspaceId?: string;
   workspaceId?: string;
 }
