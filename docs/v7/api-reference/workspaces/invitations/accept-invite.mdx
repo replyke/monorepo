@@ -41,12 +41,15 @@ On accept, the stored grant is applied and the `WorkspaceMember` is created **tr
     { "error": "A verified email is required to accept an invitation.", "code": "workspace/email-not-verified" }
     ```
   </Accordion>
-  <Accordion title="Not the Target — 403">
+  <Accordion title="Not the Target — 404">
+    A caller who is not the invitation's target receives the **same** `404` as a
+    non-existent invitation — knowing an invite id must never confirm to a
+    non-target that it exists.
     ```json
-    { "error": "You are not the target of this invitation.", "code": "workspace/unauthorized" }
+    { "error": "Invitation not found.", "code": "workspace/invite-not-found" }
     ```
   </Accordion>
-  <Accordion title="Invite Expired — 410">
+  <Accordion title="Invite Expired — 409">
     ```json
     { "error": "This invitation has expired.", "code": "workspace/invite-expired" }
     ```
