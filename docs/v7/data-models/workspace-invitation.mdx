@@ -47,7 +47,7 @@ Invitations **bind to a `userId`**: at invite time if the user already exists, a
 
 External / developer-managed-auth users have **no verified-email signal** in v1. Consequently, on a purely external-auth project:
 
-- They **cannot accept email-addressed invites** — invite them by `userId` instead.
+- They **cannot accept any invite** — email- *or* `userId`-addressed — because acceptance is hard-gated on a verified email, which they lack. Inviting by `userId` lets the invite bind to the user and surface in their pending list, but they still cannot complete acceptance in v1 until a verified-email signal exists.
 - They **cannot create a root workspace at all** (root creation is hard-gated on a verified email, with no `userId` workaround), so **root-creation is effectively unavailable on a purely external-auth project in v1.**
 
 This is a documented v1 limitation. A future dev-flippable project flag (treat the project's asserted emails as verified) would lift both restrictions.

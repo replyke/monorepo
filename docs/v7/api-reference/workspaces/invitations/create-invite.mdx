@@ -6,7 +6,7 @@ description: "Invite a user by email, userId, or username"
 
 Creates an invitation, addressed by **exactly one** of `email`, `userId`, or `username`. Requires the `invite` capability. Always sends an email (no toggle). Fires `workspace.invite.created`.
 
-The invited `capabilities`/`permissions`/`rank` are validated against the inviter's own — no-escalation on both arrays, and rank must be strictly larger (less senior) than the inviter's.
+The invited `capabilities`/`permissions` are validated against the inviter's own resolved set on the workspace — no-escalation on both arrays. The `rank` floor applies **only when the inviter has a direct member row** on the workspace: then the invited rank must be strictly larger (less senior) than the inviter's own. A **reach-holder** inviter (holding `invite` via an open inherit chain, with no direct row) is not in the workspace's rank ladder and may invite at any rank.
 
 **Duplicate handling:**
 - Inviting an **existing member** → `409` (change the grant via [Update Member](/api-reference/workspaces/members/update-member)).
@@ -44,7 +44,7 @@ Invite-by-email to an address that already has an account resolves and stores th
 </ParamField>
 
 <ParamField body="rank" type="number" required>
-  Initial rank to apply on accept (must be strictly larger than the inviter's).
+  Initial rank to apply on accept. For a direct-member inviter it must be strictly larger (less senior) than their own; a reach-holder inviter (no direct row) may set any rank.
 </ParamField>
 
 <ParamField body="title" type="string">
