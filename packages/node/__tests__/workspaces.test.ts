@@ -137,25 +137,22 @@ describe("node-sdk workspaces (membership) — request shaping", () => {
     const { client, projectInstance } = makeClient();
     await fetchMembers(client, {
       workspaceId: "w1",
-      userId: "u1",
       include: "descendants",
       countOnly: true,
     });
     expect(projectInstance.get).toHaveBeenCalledWith("/workspaces/w1/members", {
-      params: { userId: "u1", include: "descendants", countOnly: true },
+      params: { include: "descendants", countOnly: true },
     });
   });
 
-  it("fetchMemberStanding puts target in the path, acting userId as a param", async () => {
+  it("fetchMemberStanding puts target in the path (no query params)", async () => {
     const { client, projectInstance } = makeClient();
     await fetchMemberStanding(client, {
       workspaceId: "w1",
       targetUserId: "target1",
-      userId: "actor1",
     });
     expect(projectInstance.get).toHaveBeenCalledWith(
-      "/workspaces/w1/members/target1",
-      { params: { userId: "actor1" } }
+      "/workspaces/w1/members/target1"
     );
   });
 
@@ -339,7 +336,7 @@ describe("node-sdk workspaces — response mapping", () => {
     };
     projectInstance.get.mockResolvedValueOnce({ data: counts });
     await expect(
-      fetchMembers(client, { workspaceId: "w1", userId: "u1", countOnly: true })
+      fetchMembers(client, { workspaceId: "w1", countOnly: true })
     ).resolves.toEqual(counts);
   });
 

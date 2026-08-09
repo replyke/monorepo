@@ -6,8 +6,6 @@ import {
 
 export interface FetchMembersProps {
   workspaceId: string;
-  // The acting user (must have roster visibility). Required for the service key.
-  userId: string;
   // Comma-separated add-on buckets: `ancestorOwners`, `reachHolders`,
   // `descendants`. Default returns owner + direct members only.
   include?: string;
