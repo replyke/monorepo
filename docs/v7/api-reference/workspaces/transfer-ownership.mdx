@@ -59,9 +59,9 @@ Returns the updated [Workspace](/data-models/workspace) object with the new `own
     { "error": "The new owner must have a verified email.", "code": "workspace/email-not-verified" }
     ```
   </Accordion>
-  <Accordion title="Invalid Target — 400">
+  <Accordion title="Invalid Target — 404">
     ```json
-    { "error": "The new owner could not be resolved.", "code": "workspace/invalid-target" }
+    { "error": "Target user not found.", "code": "workspace/invalid-target" }
     ```
   </Accordion>
 </AccordionGroup>
