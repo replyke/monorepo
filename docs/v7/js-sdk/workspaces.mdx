@@ -1,0 +1,127 @@
+---
+title: "Workspaces"
+description: "Framework-agnostic client surface for workspaces — create, read, invite, accept/decline"
+---
+
+The `workspaces` module in `@sublay/js` is the **client-side** surface of the [Workspaces bundle](/data-models/workspace). The actor is always derived from the **bearer token** — **no** actor `userId` is ever sent from the client (for management operations that need to act on another user's behalf, use the [node SDK](/node-sdk/workspaces) with a service key).
+
+<Note>
+  **Requires the `workspaces` bundle.** See [Bundles](/bundles) to install it.
+</Note>
+
+Read the concepts first: [capabilities vs permissions](/data-models/workspace-member#the-two-arrays-capabilities-vs-permissions), [reach & ownership](/data-models/workspace#reach--the-wall-door-rule), and the [identity-matched, no-token invite model](/data-models/workspace-invitation#acceptance-model).
+
+---
+
+### createWorkspace
+
+The bearer-token user becomes the owner. Root creation requires a verified email.
+
+```typescript
+const workspace = await sublay.workspaces.createWorkspace({
+  name: "Acme Inc",
+  parentWorkspaceId: null,   // omit/null → root; set → child
+});
+```
+
+<ParamField body="name" type="string" required>Display name (1–100 characters).</ParamField>
+<ParamField body="metadata" type="object">Opaque developer data.</ParamField>
+<ParamField body="parentWorkspaceId" type="string">Parent for child creation.</ParamField>
+
+### fetchWorkspace
+
+```typescript
+const workspace = await sublay.workspaces.fetchWorkspace({
+  workspaceId: "ws_abc",
+  include: "memberCount",
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="include" type="string">`memberCount` adds the direct member count.</ParamField>
+
+### fetchManyWorkspaces
+
+Lists the bearer-token user's direct-membership + owned workspaces.
+
+```typescript
+const { data, pagination } = await sublay.workspaces.fetchManyWorkspaces({ page: 1, limit: 20 });
+```
+
+<ParamField body="page" type="number" />
+<ParamField body="limit" type="number" />
+<ParamField body="include" type="string" />
+
+### fetchMembers
+
+The [unified roster](/api-reference/workspaces/members/list-members) — `WorkspaceRosterResponse`, or `WorkspaceRosterCountsResponse` with `countOnly`.
+
+```typescript
+const roster = await sublay.workspaces.fetchMembers({ workspaceId: "ws_abc" });
+const counts = await sublay.workspaces.fetchMembers({ workspaceId: "ws_abc", countOnly: true });
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="include" type="string">`ancestorOwners`, `reachHolders`, `descendants`.</ParamField>
+<ParamField body="countOnly" type="boolean" />
+
+### createInvite
+
+Requires the `invite` capability on the workspace; the inviter is the bearer-token user. The `userId`/`username` fields (if used) address the invite **target**.
+
+```typescript
+const invite = await sublay.workspaces.createInvite({
+  workspaceId: "ws_abc",
+  email: "pat@example.com",
+  capabilities: ["view"],
+  rank: 5,
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="email" type="string">One of `email`/`userId`/`username`.</ParamField>
+<ParamField body="userId" type="string">Invite target user id.</ParamField>
+<ParamField body="username" type="string">Invite target username.</ParamField>
+<ParamField body="capabilities" type="string[]" />
+<ParamField body="permissions" type="string[]" />
+<ParamField body="rank" type="number" required />
+<ParamField body="title" type="string" />
+
+### acceptInvite
+
+Identity-matched to the bearer-token user + verified email required. Idempotent when already a member/owner.
+
+```typescript
+const { workspaceId } = await sublay.workspaces.acceptInvite({ inviteId: "inv_1" });
+```
+
+<ParamField body="inviteId" type="string" required />
+
+### declineInvite
+
+Identity-matched (not verification-gated).
+
+```typescript
+await sublay.workspaces.declineInvite({ inviteId: "inv_1" });
+```
+
+<ParamField body="inviteId" type="string" required />
+
+### fetchMyInvites
+
+The bearer-token user's live pending invites (matched by `userId` from the token). Not verification-gated.
+
+```typescript
+const { data } = await sublay.workspaces.fetchMyInvites();
+```
+
+### getAuthority
+
+The bearer-token user's resolved standing on a workspace. A permission check is a one-line `.includes()` on the result.
+
+```typescript
+const authority = await sublay.workspaces.getAuthority({ workspaceId: "ws_abc" });
+if (authority.capabilities.includes("invite")) { /* show the invite button */ }
+```
+
+<ParamField body="workspaceId" type="string" required />

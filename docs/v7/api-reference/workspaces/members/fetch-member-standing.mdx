@@ -1,0 +1,43 @@
+---
+title: "Fetch Member Standing"
+api: "GET /:projectId/api/v7/workspaces/:id/members/:userId"
+description: "A user's full resolved standing on a workspace, addressed by userId"
+---
+
+Returns a single user's full standing on a workspace, addressed by **`userId`** (not a membership-row id, so it works for users with no direct row). Returns the same unified shape as one roster row, computed on demand for **any** relation — direct `member`, this workspace's `owner`, an `ancestor-owner`, or a `reach-holder`. Returns empty/none **only** if the user has no relation at all.
+
+Requires roster visibility.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  The target user whose standing to read.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="userId" type="string">
+  Service/master keys only — the **acting** user (must have roster visibility). Note the path `:userId` is the target; the query `userId` is the actor.
+</ParamField>
+
+## Response
+
+```json
+{
+  "user": { "id": "u_pat" },
+  "reasons": ["member", "ancestor-owner"],
+  "capabilities": ["view", "invite", "remove-member"],
+  "permissions": ["deploy"],
+  "rank": 5,
+  "title": "Frontend Lead",
+  "metadata": {}
+}
+```
+
+- `capabilities` is the **resolved** set (direct + reach + ownership).
+- `permissions` is **per-node** (the direct membership on this workspace only; may be empty).
+- `rank` is the direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders (they sit outside the numbered ladder).

@@ -1,0 +1,41 @@
+---
+title: "Delete Workspace"
+api: "DELETE /:projectId/api/v7/workspaces/:id"
+description: "Owner-only delete that cascades the subtree"
+---
+
+Deletes a workspace. **Owner-only** (the workspace's own owner, or an ancestor owner via the god path). **There is no `delete-workspace` capability.**
+
+Deletion **cascades** the entire subtree in one transaction, bottom-up: invitations → members → workspaces. Every workspace actually deleted fires a `workspace.deleted` webhook (one per workspace); every membership row torn down fires `workspace.member.removed`.
+
+<Warning>
+  Your own data tagged with a workspace id (docs, issues, etc.) is **not** deleted by Sublay — Sublay doesn't know about it. React to the `workspace.deleted` webhook to clean up your own workspace-tagged data.
+</Warning>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string">
+  Service/master keys only — the user to act as (must be own owner or an ancestor owner). Sent in the request body so the act-as-user path works on `DELETE`.
+</ParamField>
+
+## Response
+
+```json
+{ "message": "Workspace deleted." }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    { "error": "Only the owner or an ancestor owner may delete a workspace.", "code": "workspace/unauthorized" }
+    ```
+  </Accordion>
+</AccordionGroup>

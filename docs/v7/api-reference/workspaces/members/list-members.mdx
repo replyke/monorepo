@@ -1,0 +1,72 @@
+---
+title: "List Members"
+api: "GET /:projectId/api/v7/workspaces/:id/members"
+description: "The unified roster — one entry per distinct user, each with a reasons array"
+---
+
+Returns the roster as a **single unified array, one entry per distinct user**, each carrying a `reasons` array explaining *why* the user appears. Requires **roster visibility** (a member, an ancestor owner, or a holder of a people-operating capability that reaches the node).
+
+**Always returned in full — never paginated.** `include` flags only *add* entries; they never change the shape. `countOnly` is the numbers-only escape hatch.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="include" type="string">
+  Comma-separated add-on buckets. Default returns `owner` + direct `member`s. Options: `ancestorOwners`, `reachHolders`, `descendants`.
+</ParamField>
+
+<ParamField query="countOnly" type="boolean">
+  When `true`, returns per-reason counts + a distinct-user total instead of the array (never materializes the roster). Honors the same includes.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  Service/master keys only — the user to act as (must have roster visibility).
+</ParamField>
+
+## Reasons
+
+Each entry's `reasons[]` contains `{ type, ...detail }` objects. A user present for several reasons is **one** entry carrying multiple reasons.
+
+| `type` | Detail | Counted as a seat? |
+|--------|--------|--------------------|
+| `owner` | — | **Yes** |
+| `member` | `rank`, `capabilities` | **Yes** |
+| `ancestor-owner` | `viaWorkspaceId` | No (informational) |
+| `reach-holder` | `viaWorkspaceId`, `capabilities` | No (informational) |
+| `descendant-member` | `workspaceId` | Counted under the `descendants` include |
+
+## Response (array mode)
+
+```json
+{
+  "data": [
+    {
+      "user": { "id": "u_pat" },
+      "reasons": [
+        { "type": "member", "rank": 5, "capabilities": ["view", "invite"] },
+        { "type": "ancestor-owner", "viaWorkspaceId": "ws_root" }
+      ]
+    }
+  ],
+  "total": 1
+}
+```
+
+## Response (`countOnly=true`)
+
+```json
+{
+  "counts": { "owner": 1, "member": 12, "ancestorOwner": 2, "reachHolder": 3, "descendantMember": 40 },
+  "total": 13,
+  "distinctUsers": 52
+}
+```
+
+`total` is the **distinct-user seat number** (owner + direct members), **not** the sum of buckets (buckets overlap). Ancestor-owners and reach-holders are never counted as seats.
+
+See also: [useFetchWorkspaceMembers](/hooks/workspaces/use-fetch-workspace-members)

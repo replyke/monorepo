@@ -1,0 +1,27 @@
+---
+title: "Decline Invite"
+api: "POST /:projectId/api/v7/workspace-invites/:inviteId/decline"
+description: "Decline an invitation — identity-matched (not verification-gated)"
+---
+
+Declines an invitation. Identity-matched (the caller must be the invite's target) but **not** verification-gated. Marks the invite `declined` and fires `workspace.invite.declined`.
+
+## Path Parameters
+
+<ParamField path="inviteId" type="string" required>
+  The invitation UUID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string">
+  Service/master keys only — the declining user (must be the invite's target).
+</ParamField>
+
+## Response
+
+```json
+{ "success": true }
+```
+
+See also: [useDeclineInvite](/hooks/workspaces/use-decline-invite)

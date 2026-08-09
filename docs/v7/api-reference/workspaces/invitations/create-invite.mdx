@@ -1,0 +1,73 @@
+---
+title: "Create Invite"
+api: "POST /:projectId/api/v7/workspaces/:id/invites"
+description: "Invite a user by email, userId, or username"
+---
+
+Creates an invitation, addressed by **exactly one** of `email`, `userId`, or `username`. Requires the `invite` capability. Always sends an email (no toggle). Fires `workspace.invite.created`.
+
+The invited `capabilities`/`permissions`/`rank` are validated against the inviter's own — no-escalation on both arrays, and rank must be strictly larger (less senior) than the inviter's.
+
+**Duplicate handling:**
+- Inviting an **existing member** → `409` (change the grant via [Update Member](/api-reference/workspaces/members/update-member)).
+- A **live** invite (`pending` and not past `expiresAt`) for the same target → **idempotent refresh** (updates the grant, resets a 14-day expiry).
+- A **terminal** (`declined`/`revoked`) or **effectively-expired** invite does **not** block — a fresh `pending` is created.
+
+Invite-by-email to an address that already has an account resolves and stores the `userId` at creation.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="email" type="string">
+  Invitee email (trimmed + lowercased server-side). One of `email`/`userId`/`username` is required.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Invitee user id (existing users only). Here `userId` is the invite **target**, not an acting user.
+</ParamField>
+
+<ParamField body="username" type="string">
+  Invitee username (existing users only).
+</ParamField>
+
+<ParamField body="capabilities" type="string[]">
+  Capabilities to apply on accept. Defaults to `[]`. Subject to no-escalation.
+</ParamField>
+
+<ParamField body="permissions" type="string[]">
+  Opaque permissions to apply on accept. Defaults to `[]`. Subject to no-escalation.
+</ParamField>
+
+<ParamField body="rank" type="number" required>
+  Initial rank to apply on accept (must be strictly larger than the inviter's).
+</ParamField>
+
+<ParamField body="title" type="string">
+  Optional initial cosmetic title.
+</ParamField>
+
+## Response
+
+Returns the created [WorkspaceInvitation](/data-models/workspace-invitation) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Already a Member — 409">
+    ```json
+    { "error": "That user is already a member.", "code": "workspace/already-member" }
+    ```
+  </Accordion>
+  <Accordion title="No Escalation — 403">
+    ```json
+    { "error": "You may only grant capabilities/permissions you hold.", "code": "workspace/no-escalation" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useInviteMember](/hooks/workspaces/use-invite-member)

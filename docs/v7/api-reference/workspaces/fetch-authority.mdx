@@ -1,0 +1,47 @@
+---
+title: "Read Authority"
+api: "GET /:projectId/api/v7/workspaces/:id/authority/me"
+description: "The resolved standing of a user on a workspace — permissions as a service"
+---
+
+Returns the caller's **resolved standing** on a workspace: `{ reasons, capabilities, permissions, rank }`, computed via the [authority resolver](/data-models/workspace#reach--the-wall-door-rule) (fast-path + bounded ancestor climb). This is the endpoint your authorization server reads (via the [node SDK](/node-sdk/workspaces)) to make its own app-level decisions.
+
+`reasons` distinguishes **`owner` / `ancestor-owner` / `member` / `reach-holder`** — so you always know *why* a user has what they have.
+
+<Note>
+  There is **no** convenience `?permission=` check and **no** `can()` middleware. Sublay never consumes your opaque `permissions`, so a permission check is a one-line `.includes()` on the returned record:
+
+  ```ts
+  const authority = await sublay.workspaces.getAuthority({ workspaceId, userId });
+  if (authority.permissions.includes("deploy")) { /* allow */ }
+  ```
+</Note>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="userId" type="string">
+  Service/master keys only — the target user whose standing to resolve (the service-key variant). With a client token the actor is derived from the token and this is ignored.
+</ParamField>
+
+## Response
+
+```json
+{
+  "reasons": ["member", "ancestor-owner"],
+  "capabilities": ["view", "invite", "remove-member"],
+  "permissions": ["deploy"],
+  "rank": 5
+}
+```
+
+- `capabilities` — the fully-resolved set (direct + reach + ownership).
+- `permissions` — **per-node** (the direct membership on this workspace only; may be empty). Does not cascade.
+- `rank` — the direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders.
+
+See also: [useFetchWorkspaceAuthority](/hooks/workspaces/use-fetch-workspace-authority) · [getAuthority (node-sdk)](/node-sdk/workspaces)

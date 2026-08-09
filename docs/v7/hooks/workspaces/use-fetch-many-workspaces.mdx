@@ -1,0 +1,40 @@
+---
+title: "Fetch many workspaces"
+description: "Leaf fetcher for the caller's direct-membership + owned workspaces"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchManyWorkspaces` returns a callable that fetches one page of the caller's **direct-membership + owned** workspaces. The actor is derived from the bearer token — no `userId` is sent. For a managed paginated list with load-more, prefer [`useFetchManyWorkspacesWrapper`](/hooks/workspaces/use-fetch-many-workspaces-wrapper).
+
+## Usage Example
+
+```tsx
+import { useFetchManyWorkspaces } from "@sublay/react-js";
+
+function useMyWorkspaces() {
+  const fetchManyWorkspaces = useFetchManyWorkspaces();
+
+  return async () => {
+    const { data, pagination } = await fetchManyWorkspaces({ page: 1, limit: 20 });
+    return data;
+  };
+}
+```
+
+## Parameters
+
+The callable takes an optional params object:
+
+<ParamField path="page" type="number">Page number.</ParamField>
+<ParamField path="limit" type="number">Page size.</ParamField>
+<ParamField path="include" type="string">Include flags (comma-separated).</ParamField>
+
+## Returns
+
+Returns a `PaginatedResponse<Workspace>` (`{ data, pagination }`).
+
+## Related
+
+- [List Workspaces API](/api-reference/workspaces/fetch-workspaces)

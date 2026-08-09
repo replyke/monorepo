@@ -1,0 +1,45 @@
+---
+title: "Flip Inherit Flag"
+api: "PATCH /:projectId/api/v7/workspaces/:id/inherit-flag"
+description: "Owner-only flip of the reach/inherit flag"
+---
+
+Flips the workspace's `inheritsFromParent` flag — the switch controlling whether authority from above reaches into this node. See [Reach & the wall/door rule](/data-models/workspace#reach--the-wall-door-rule).
+
+- **Owner-only in both directions** (the workspace's own owner or an ancestor owner). **Not a capability.**
+- Subject to the **enforced-default lock**: if the project marks its inherit default enforced, the flip is rejected with `403 workspace/inherit-enforced`.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="inheritsFromParent" type="boolean" required>
+  The new flag value (`true` = open/door, `false` = sealed/wall).
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Service/master keys only — the user to act as (must be own owner or an ancestor owner).
+</ParamField>
+
+## Response
+
+Returns the updated [Workspace](/data-models/workspace) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    { "error": "Only the owner or an ancestor owner may flip the inherit flag.", "code": "workspace/unauthorized" }
+    ```
+  </Accordion>
+  <Accordion title="Inherit Enforced — 403">
+    ```json
+    { "error": "The project enforces its inherit default; the flag cannot be changed.", "code": "workspace/inherit-enforced" }
+    ```
+  </Accordion>
+</AccordionGroup>

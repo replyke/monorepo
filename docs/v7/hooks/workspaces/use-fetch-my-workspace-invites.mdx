@@ -1,0 +1,36 @@
+---
+title: "Fetch my workspace invites"
+description: "The current user's live pending workspace invitations"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchMyWorkspaceInvites` returns a callable for the signed-in user's **live** pending invites (`status='pending' AND expiresAt > now`), matched by `userId` from the token. **Surfacing is not verification-gated** — a user sees invites right after signup; the verified check applies only at accept.
+
+## Usage Example
+
+```tsx
+import { useFetchMyWorkspaceInvites } from "@sublay/react-js";
+
+function PendingInvites() {
+  const fetchMyWorkspaceInvites = useFetchMyWorkspaceInvites();
+
+  const load = async () => {
+    const { data } = await fetchMyWorkspaceInvites();
+    return data; // WorkspaceInvitation[]
+  };
+}
+```
+
+## Parameters
+
+None — the user is derived from the token.
+
+## Returns
+
+`{ data: WorkspaceInvitation[] }`.
+
+## Related
+
+- [List My Invites API](/api-reference/workspaces/invitations/list-my-invites)

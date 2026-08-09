@@ -1,0 +1,59 @@
+---
+title: "Workspace Invitation"
+description: "The shape of a WorkspaceInvitation object, plus the identity-matched, no-token acceptance model"
+---
+
+A **WorkspaceInvitation** is a persistent record inviting a person into a [workspace](/data-models/workspace) with a pre-chosen grant (capabilities, permissions, rank, title) applied atomically on accept. Every invite **always sends an email** (there is no developer toggle).
+
+Acceptance is **identity-matched + verified-email, with no token** — see [Acceptance model](#acceptance-model).
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique invitation identifier (UUID). **Non-secret** — knowing it does not let a non-target accept. |
+| `workspaceId` | `string` | The target workspace. |
+| `invitedBy` | `string` | User id of the inviter. |
+| `userId` | `string \| null` | The resolved invitee's user id. Set at invite time when the email/username matches an existing user, and bound at signup for email-only invites. `null` only while no account exists for the address. |
+| `email` | `string \| null` | The invitee email, stored **normalized** (lowercase + trim). `null` for `userId`/`username`-addressed invites. |
+| `capabilities` | `string[]` | The [capabilities](/data-models/workspace-member#capabilities-the-closed-vocabulary) to apply on accept. |
+| `permissions` | `string[]` | The opaque [permissions](/data-models/workspace-member#permissions-opaque) to apply on accept. |
+| `rank` | `number` | The initial [rank](/data-models/workspace-member#rank-semantics) to apply on accept. |
+| `title` | `string \| null` | Optional initial cosmetic title. |
+| `status` | `"pending" \| "accepted" \| "declined" \| "revoked"` | Invitation status. **There is no `expired` status** — expiry is lazy (see below). |
+| `expiresAt` | `string` | Absolute expiry timestamp (ISO). Set to now + **14 days**. |
+| `createdAt` | `string` | Creation timestamp. |
+| `updatedAt` | `string` | Last-update timestamp. |
+
+## Lazy expiry
+
+Expiry is **lazy** — there is no background sweep and no `expired` status or webhook. A `pending` invite past `expiresAt` is **effectively expired**: it won't accept, and "live" reads filter on `status = 'pending' AND expiresAt > now`. A capability-holder can **resend** to refresh a lapsed invite (resets a fresh 14-day expiry).
+
+## Acceptance model
+
+Acceptance is an authenticated, in-app action gated by **identity**, not a token:
+
+- **No secret token** is minted or emailed. The email link is a non-secret pointer to your app (a per-project accept URL) with a `?workspaceInviteId=<id>` appended for deep-linking.
+- On accept, Sublay verifies the caller **is** the invite's target (by `userId` or normalized `email`) **and has a verified email**.
+- **A verified email is required to accept _any_ invite** — userId- or email-addressed. An unverified accept returns the distinct `workspace/email-not-verified` code so your app can prompt verification specifically. A squatter who signed up with someone else's address can never accept (they can't verify it). Declining is **not** verification-gated.
+
+Combined with the verified-email gate on root-workspace creation, **every workspace participant (member or owner) has a confirmed email.**
+
+### Binding to `userId`
+
+Invitations **bind to a `userId`**: at invite time if the user already exists, and via a **signup-attach step** for new users (on signup, pending invites matching the new user's normalized email get their `userId`). So surfacing and matching are always by `userId`, and a deleted user never leaves an orphaned email-invite.
+
+### v1 external-auth limitation
+
+External / developer-managed-auth users have **no verified-email signal** in v1. Consequently, on a purely external-auth project:
+
+- They **cannot accept email-addressed invites** — invite them by `userId` instead.
+- They **cannot create a root workspace at all** (root creation is hard-gated on a verified email, with no `userId` workaround), so **root-creation is effectively unavailable on a purely external-auth project in v1.**
+
+This is a documented v1 limitation. A future dev-flippable project flag (treat the project's asserted emails as verified) would lift both restrictions.
+
+## Related
+
+- [Workspace data model](/data-models/workspace)
+- [Create Invite API](/api-reference/workspaces/invitations/create-invite)
+- [Accept Invite API](/api-reference/workspaces/invitations/accept-invite)

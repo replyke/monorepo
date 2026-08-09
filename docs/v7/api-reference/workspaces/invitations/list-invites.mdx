@@ -1,0 +1,21 @@
+---
+title: "List Workspace Invites"
+api: "GET /:projectId/api/v7/workspaces/:id/invites"
+description: "List a workspace's live pending invites"
+---
+
+Returns the workspace's **live** pending invites (`status = 'pending' AND expiresAt > now` — effectively-expired rows are excluded). Requires the `invite` capability (or owner).
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Response
+
+```json
+{ "data": [ /* WorkspaceInvitation[] */ ] }
+```
+
+Each item is a [WorkspaceInvitation](/data-models/workspace-invitation) object.
