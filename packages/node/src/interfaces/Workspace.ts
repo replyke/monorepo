@@ -13,6 +13,7 @@ import { User } from "./User";
  */
 
 export type WorkspaceCapability =
+  | "view"
   | "invite"
   | "remove-member"
   | "edit-member-access"
