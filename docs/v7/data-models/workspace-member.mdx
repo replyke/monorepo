@@ -48,7 +48,7 @@ The four **people-operating** capabilities (`invite`, `remove-member`, `edit-mem
 
 **Owner-only, deliberately NOT capabilities:** deleting a workspace, transferring ownership, and flipping the inherit flag. **Self-service, no capability needed:** accepting/declining your own invite, leaving, and editing your own `title`.
 
-Capabilities are **resolved across the tree** — a member's effective set includes their direct capabilities, plus any reaching in from ancestors via an open inherit-chain, plus the full vocabulary if they are an owner/ancestor-owner. See [reach](/data-models/workspace#reach--the-wall-door-rule) and the [authority read](/api-reference/workspaces/fetch-authority).
+Capabilities are **resolved across the tree** — a member's effective set includes their direct capabilities, plus any reaching in from ancestors via an open inherit-chain, plus the full vocabulary if they are an owner/ancestor-owner. See [reach](/data-models/workspace#reach-and-the-wall-door-rule) and the [authority read](/api-reference/workspaces/fetch-authority).
 
 ### `permissions` (opaque)
 

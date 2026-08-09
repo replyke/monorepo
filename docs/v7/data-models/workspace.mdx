@@ -25,7 +25,7 @@ A workspace can optionally contain copies of itself:
 | `ownerId` | `string` | The apex user id — the workspace's owner. The creator of a workspace becomes its owner. See [Ownership](#ownership). |
 | `parentWorkspaceId` | `string \| null` | The parent workspace id, or `null` for a root workspace. **Immutable** — set at creation; there is no re-parenting in v1. |
 | `depth` | `number` | Denormalized nesting depth (0 for a root workspace, `parent.depth + 1` for a child). Maximum depth is 10. |
-| `inheritsFromParent` | `boolean` | Whether capabilities held on an ancestor **reach** into this node. **Off by default (strict).** Server-set at creation from the project default; owner-only to flip afterwards. See [Reach & the wall/door rule](#reach--the-wall-door-rule). |
+| `inheritsFromParent` | `boolean` | Whether capabilities held on an ancestor **reach** into this node. **Off by default (strict).** Server-set at creation from the project default; owner-only to flip afterwards. See [Reach & the wall/door rule](#reach-and-the-wall-door-rule). |
 | `createdAt` | `string` | ISO timestamp when the workspace was created. |
 | `updatedAt` | `string` | ISO timestamp when the workspace was last updated. |
 | `memberCount` | `number \| undefined` | The workspace's **direct** member count. Present only when `include=memberCount` is requested on a single-workspace read. |
@@ -41,7 +41,7 @@ A workspace can optionally contain copies of itself:
 
 **Owner-only actions (never capabilities):** deleting a workspace, transferring ownership, and flipping the inherit flag — doable by the workspace's own owner **or any ancestor owner**, never via a capability or reach.
 
-## Reach & the wall/door rule
+## Reach and the wall-door rule
 
 Authority is **strict per-node by default**: a capability applies only to the workspace it is held on. Downward "reach" is opt-in via the child-owned `inheritsFromParent` flag.
 

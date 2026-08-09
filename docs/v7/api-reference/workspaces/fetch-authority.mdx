@@ -4,7 +4,7 @@ api: "GET /:projectId/api/v7/workspaces/:id/authority/me"
 description: "The resolved standing of a user on a workspace — permissions as a service"
 ---
 
-Returns the caller's **resolved standing** on a workspace: `{ reasons, capabilities, permissions, rank }`, computed via the [authority resolver](/data-models/workspace#reach--the-wall-door-rule) (fast-path + bounded ancestor climb). This is the endpoint your authorization server reads (via the [node SDK](/node-sdk/workspaces)) to make its own app-level decisions.
+Returns the caller's **resolved standing** on a workspace: `{ reasons, capabilities, permissions, rank }`, computed via the [authority resolver](/data-models/workspace#reach-and-the-wall-door-rule) (fast-path + bounded ancestor climb). This is the endpoint your authorization server reads (via the [node SDK](/node-sdk/workspaces)) to make its own app-level decisions.
 
 `reasons` distinguishes **`owner` / `ancestor-owner` / `member` / `reach-holder`** — so you always know *why* a user has what they have.
 
