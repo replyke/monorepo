@@ -19,6 +19,7 @@ import * as Storage from "./modules/storage";
 import * as OAuth from "./modules/oauth";
 import * as Chat from "./modules/chat";
 import * as Push from "./modules/push";
+import * as Workspaces from "./modules/workspaces";
 import { createTableAccessor } from "./modules/tables";
 import { TableAccessor, TableRow } from "./interfaces/Table";
 
@@ -49,6 +50,7 @@ export class SublayClient {
   public oauth: BoundModule<typeof OAuth>;
   public chat: BoundModule<typeof Chat>;
   public push: BoundModule<typeof Push>;
+  public workspaces: BoundModule<typeof Workspaces>;
 
   private constructor(http: SublayHttpClient) {
     this.http = http;
@@ -68,6 +70,7 @@ export class SublayClient {
     this.oauth = bindModule(OAuth, this.http);
     this.chat = bindModule(Chat, this.http);
     this.push = bindModule(Push, this.http);
+    this.workspaces = bindModule(Workspaces, this.http);
   }
 
   static async init(config: ClientConfig): Promise<SublayClient> {
@@ -115,6 +118,18 @@ export type {
   SpaceReputationUserParams,
 } from "./interfaces/SpaceReputation";
 export type { UserSearchParams } from "./interfaces/UserSearch";
+export type {
+  Workspace,
+  WorkspaceInvitation,
+  WorkspaceCapability,
+  WorkspaceInvitationStatus,
+  WorkspaceAuthorityReason,
+  WorkspaceRosterReason,
+  WorkspaceRosterEntry,
+  WorkspaceRosterResponse,
+  WorkspaceRosterCountsResponse,
+  WorkspaceAuthority,
+} from "./interfaces/Workspace";
 export { PUSH_EVENT_TYPES, MUTE_DURATIONS } from "./interfaces/Push";
 export type {
   PushEventType,
