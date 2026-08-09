@@ -91,11 +91,15 @@ export interface WorkspaceRosterReason {
     | "ancestor-owner"
     | "reach-holder"
     | "descendant-member";
-  // `member` carries `rank`/`capabilities`; `ancestor-owner`/`reach-holder`
-  // carry `viaWorkspaceId` (reach-holder also `capabilities`);
-  // `descendant-member` carries `workspaceId`. `owner` carries none.
+  // `member` carries `rank`/`capabilities`/`permissions`/`title`/`metadata`;
+  // `ancestor-owner`/`reach-holder` carry `viaWorkspaceId` (reach-holder also
+  // `capabilities`); `descendant-member` carries `workspaceId` + `rank`/
+  // `capabilities`. `owner` carries none.
   rank?: number;
   capabilities?: string[];
+  permissions?: string[];
+  title?: string | null;
+  metadata?: Record<string, any>;
   viaWorkspaceId?: string;
   workspaceId?: string;
 }
