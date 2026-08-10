@@ -51,7 +51,7 @@ export interface WorkspaceInvitation {
   invitedBy: string;
   userId: string | null;
   email: string | null;
-  capabilities: string[];
+  capabilities: WorkspaceCapability[];
   permissions: string[];
   rank: number;
   title: string | null;
@@ -71,7 +71,7 @@ export interface WorkspaceRosterReason {
     | "reach-holder"
     | "descendant-member";
   rank?: number;
-  capabilities?: string[];
+  capabilities?: WorkspaceCapability[];
   permissions?: string[];
   title?: string | null;
   metadata?: Record<string, any>;
@@ -104,7 +104,7 @@ export interface WorkspaceRosterCountsResponse {
 // The authority-as-a-service read (`GET /workspaces/:id/authority/me`).
 export interface WorkspaceAuthority {
   reasons: WorkspaceAuthorityReason[];
-  capabilities: string[];
+  capabilities: WorkspaceCapability[];
   permissions: string[];
   rank: number | null;
 }

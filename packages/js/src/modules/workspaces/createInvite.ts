@@ -1,5 +1,8 @@
 import { SublayHttpClient } from "../../core/client";
-import { WorkspaceInvitation } from "../../interfaces/Workspace";
+import {
+  WorkspaceCapability,
+  WorkspaceInvitation,
+} from "../../interfaces/Workspace";
 
 export interface CreateInviteProps {
   workspaceId: string;
@@ -9,7 +12,7 @@ export interface CreateInviteProps {
   email?: string;
   userId?: string;
   username?: string;
-  capabilities?: string[];
+  capabilities?: WorkspaceCapability[];
   permissions?: string[];
   rank: number;
   title?: string | null;
