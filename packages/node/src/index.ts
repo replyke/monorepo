@@ -16,6 +16,7 @@ import * as Spaces from "./modules/spaces";
 import * as Storage from "./modules/storage";
 import * as TablesManagement from "./modules/tables-management";
 import * as Users from "./modules/users";
+import * as Workspaces from "./modules/workspaces";
 import { createTableAccessor } from "./modules/tables";
 import { TableAccessor, TableRow } from "./interfaces/Table";
 
@@ -46,6 +47,7 @@ export class SublayClient {
   public spaces: BoundModule<typeof Spaces>;
   public storage: BoundModule<typeof Storage>;
   public users: BoundModule<typeof Users>;
+  public workspaces: BoundModule<typeof Workspaces>;
   /** Table-management (DDL) — service-key only. */
   public tables: BoundModule<typeof TablesManagement>;
 
@@ -67,6 +69,7 @@ export class SublayClient {
     this.spaces = bindModule(Spaces, this.http);
     this.storage = bindModule(Storage, this.http);
     this.users = bindModule(Users, this.http);
+    this.workspaces = bindModule(Workspaces, this.http);
     this.tables = bindModule(TablesManagement, this.http);
   }
 
@@ -145,6 +148,21 @@ export type { UserSearchParams } from "./interfaces/UserSearch";
 export type { Collection } from "./interfaces/Collection";
 export type { Space, SpaceDetailed, SpacePreview, SpaceBreadcrumb } from "./interfaces/Space";
 export type { SpaceMember, SpaceMemberWithUser } from "./interfaces/SpaceMember";
+export type {
+  Workspace,
+  WorkspaceMember,
+  WorkspaceInvitation,
+  WorkspaceCapability,
+  WorkspaceInvitationStatus,
+  WorkspaceAuthorityReason,
+  WorkspaceRosterReason,
+  WorkspaceRosterEntry,
+  WorkspaceRosterResponse,
+  WorkspaceRosterCountsResponse,
+  WorkspaceMemberStanding,
+  WorkspaceAuthority,
+  RemoveFromSubtreeResponse,
+} from "./interfaces/Workspace";
 export type { Rule } from "./interfaces/Rule";
 export type { Follow } from "./interfaces/Follow";
 export type { Connection, EstablishedConnection, PendingConnection, ConnectionStatusResponse } from "./interfaces/Connection";
