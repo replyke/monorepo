@@ -1,0 +1,74 @@
+---
+title: "Update Member"
+api: "PATCH /:projectId/api/v7/workspaces/:id/members/:userId"
+description: "Edit a member's access or profile fields, with two capability tiers"
+---
+
+Edits a member, with **two capability tiers by field sensitivity**:
+
+- **Powerful fields** (`capabilities`, `permissions`, `rank`) require **`edit-member-access`**, plus the [rank rule](/data-models/workspace-member#rank-semantics) and the [no-escalation](/data-models/workspace-member#no-privilege-escalation) guard.
+- **Cosmetic fields** (`title`, `metadata`) require only **`edit-member-profile`**. A member editing **their own `title`** needs no capability.
+
+**Grant vs strip asymmetry:** you may only *add* a capability/permission you hold on the target node (resolved set, including via reach); *stripping* is governed by **rank alone**. **Cross-node rank is not compared** — the rank guard runs only when actor and target share a member row on the same workspace.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  The target member's user id.
+</ParamField>
+
+## Body Parameters
+
+All optional; the controller enforces which tier each touched field belongs to. At least one must be provided.
+
+<ParamField body="capabilities" type="string[]">
+  New capability set (powerful — `edit-member-access`).
+</ParamField>
+
+<ParamField body="permissions" type="string[]">
+  New permission set (powerful — `edit-member-access`).
+</ParamField>
+
+<ParamField body="rank" type="number">
+  New rank (powerful — `edit-member-access` + rank rules).
+</ParamField>
+
+<ParamField body="title" type="string">
+  New cosmetic title (`edit-member-profile`, or self for own title). Nullable.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  New cosmetic metadata (`edit-member-profile`).
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Service/master keys only — the **acting** user (sent in the body; the path `:userId` is the target).
+</ParamField>
+
+## Response
+
+Returns the updated [WorkspaceMember](/data-models/workspace-member) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    { "error": "You do not have the required capability.", "code": "workspace/unauthorized" }
+    ```
+  </Accordion>
+  <Accordion title="Insufficient Rank — 403">
+    ```json
+    { "error": "You may only act on members ranked strictly below you.", "code": "workspace/insufficient-rank" }
+    ```
+  </Accordion>
+  <Accordion title="No Escalation — 403">
+    ```json
+    { "error": "You may only grant capabilities/permissions you hold on the target node.", "code": "workspace/no-escalation" }
+    ```
+  </Accordion>
+</AccordionGroup>

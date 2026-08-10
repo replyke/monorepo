@@ -1,0 +1,49 @@
+---
+title: "Invite member"
+description: "Create a workspace invitation by email, userId, or username"
+icon: "plug"
+---
+
+## Overview
+
+`useInviteMember` returns a callable that creates an [invitation](/data-models/workspace-invitation). Requires the `invite` capability on the workspace; the inviter is the signed-in user. Address the invitee by **exactly one** of `email`, `userId`, or `username` (here `userId`/`username` is the invite **target**, not the actor).
+
+## Usage Example
+
+```tsx
+import { useInviteMember } from "@sublay/react-js";
+
+function InviteForm({ workspaceId }: { workspaceId: string }) {
+  const inviteMember = useInviteMember();
+
+  const handleInvite = async (email: string) => {
+    const invite = await inviteMember({
+      workspaceId,
+      email,
+      capabilities: ["view"],
+      permissions: ["deploy"],
+      rank: 5,
+    });
+    console.log("Invited:", invite.id);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>The workspace UUID.</ParamField>
+<ParamField path="email" type="string">Invitee email. One of `email`/`userId`/`username`.</ParamField>
+<ParamField path="userId" type="string">Invitee user id (existing users only).</ParamField>
+<ParamField path="username" type="string">Invitee username (existing users only).</ParamField>
+<ParamField path="capabilities" type="string[]">Capabilities to apply on accept. Subject to no-escalation.</ParamField>
+<ParamField path="permissions" type="string[]">Opaque permissions to apply on accept.</ParamField>
+<ParamField path="rank" type="number" required>Initial rank. For a direct-member inviter it must be strictly larger (less senior) than their own; a reach-holder inviter (no direct row) may set any rank.</ParamField>
+<ParamField path="title" type="string | null">Optional cosmetic title.</ParamField>
+
+## Returns
+
+Returns the created [WorkspaceInvitation](/data-models/workspace-invitation) object.
+
+## Related
+
+- [Create Invite API](/api-reference/workspaces/invitations/create-invite)

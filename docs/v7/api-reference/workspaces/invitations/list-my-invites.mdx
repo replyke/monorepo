@@ -1,0 +1,27 @@
+---
+title: "List My Invites"
+api: "GET /:projectId/api/v7/me/workspace-invites"
+description: "The authenticated user's live pending invites"
+---
+
+Returns the authenticated user's **live** pending invites (`status = 'pending' AND expiresAt > now`), matched by **`userId`** (no email-string matching at query time — invitations bind to `userId` at invite time or via the signup-attach step).
+
+<Note>
+  **Surfacing is NOT verification-gated** — a user sees pending invites right after signup (which nudges them to verify). The verified-email check applies only at **accept**.
+</Note>
+
+## Query Parameters
+
+<ParamField query="userId" type="string">
+  Service/master keys only — the user whose invites to read.
+</ParamField>
+
+## Response
+
+```json
+{ "data": [ /* WorkspaceInvitation[] */ ] }
+```
+
+Each item is a [WorkspaceInvitation](/data-models/workspace-invitation) object.
+
+See also: [useFetchMyWorkspaceInvites](/hooks/workspaces/use-fetch-my-workspace-invites)

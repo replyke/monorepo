@@ -1,0 +1,64 @@
+---
+title: "Accept Invite"
+api: "POST /:projectId/api/v7/workspace-invites/:inviteId/accept"
+description: "Accept an invitation — identity-matched + verified-email, no token"
+---
+
+Accepts an invitation. Note the path is **not** `:id`-scoped — it is addressed by the (non-secret) invitation id.
+
+**Acceptance is identity-matched + verified-email, no token:**
+- The caller must **be** the invite's target (by `userId` or normalized `email`).
+- The caller must have a **verified email** — required to accept **any** invite (userId- or email-addressed). An unverified accept returns `workspace/email-not-verified` so your app can prompt verification.
+- Knowing the `inviteId` does **not** let a non-target accept.
+
+On accept, the stored grant is applied and the `WorkspaceMember` is created **transactionally**; the invite is marked `accepted`. Fires **both** `workspace.invite.accepted` **and** `workspace.member.added` (invitation-lifecycle vs roster-sync — intentionally two streams).
+
+**Idempotence:** if the caller is already a member (or owner), accept is a **no-op** — the invite is marked `accepted`, no duplicate row is created, the existing grant is **not** overwritten, and **no** `workspace.member.added` fires.
+
+## Path Parameters
+
+<ParamField path="inviteId" type="string" required>
+  The (non-secret) invitation UUID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string">
+  Service/master keys only — the accepting user (must be the invite's target and verified).
+</ParamField>
+
+## Response
+
+```json
+{ "success": true, "workspaceId": "ws_abc" }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Email Not Verified — 403">
+    ```json
+    { "error": "A verified email is required to accept an invitation.", "code": "workspace/email-not-verified" }
+    ```
+  </Accordion>
+  <Accordion title="Not the Target — 404">
+    A caller who is not the invitation's target receives the **same** `404` as a
+    non-existent invitation — knowing an invite id must never confirm to a
+    non-target that it exists.
+    ```json
+    { "error": "Invitation not found.", "code": "workspace/invite-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Invite Expired — 409">
+    ```json
+    { "error": "This invitation has expired.", "code": "workspace/invite-expired" }
+    ```
+  </Accordion>
+  <Accordion title="Invite Not Found — 404">
+    ```json
+    { "error": "Invitation not found.", "code": "workspace/invite-not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useAcceptInvite](/hooks/workspaces/use-accept-invite)

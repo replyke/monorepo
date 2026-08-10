@@ -1,0 +1,52 @@
+---
+title: "Fetch many workspaces (wrapper)"
+description: "Paginated workspace list with accumulation and load-more"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchManyWorkspacesWrapper` follows the **Wrapper pattern** (mirroring `useFetchManyEntitiesWrapper`). It manages page state, accumulates results, and exposes a `loadMore`. There is **no** Redux slice — this is the house-style list hook for workspaces.
+
+## Usage Example
+
+```tsx
+import { useFetchManyWorkspacesWrapper } from "@sublay/react-js";
+
+function WorkspaceList() {
+  const { workspaces, loading, hasMore, loadMore } =
+    useFetchManyWorkspacesWrapper({ limit: 10 });
+
+  return (
+    <div>
+      {workspaces.map((w) => (
+        <div key={w.id}>{w.name}</div>
+      ))}
+      {hasMore && <button disabled={loading} onClick={loadMore}>Load more</button>}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="limit" type="number">
+  Page size. Defaults to `10`.
+</ParamField>
+
+<ParamField path="include" type="string">
+  Include flags (comma-separated).
+</ParamField>
+
+## Returns
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `workspaces` | `Workspace[]` | Accumulated list. |
+| `loading` | `boolean` | Whether a fetch is in flight. |
+| `hasMore` | `boolean` | Whether more pages remain. |
+| `loadMore` | `() => void` | Fetch the next page. |
+
+## Related
+
+- [List Workspaces API](/api-reference/workspaces/fetch-workspaces)

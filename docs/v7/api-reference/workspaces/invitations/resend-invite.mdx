@@ -1,0 +1,35 @@
+---
+title: "Resend Invite"
+api: "POST /:projectId/api/v7/workspaces/:id/invites/:inviteId/resend"
+description: "Refresh a lapsed pending invitation and resend the email"
+---
+
+Refreshes a pending invitation — sets `expiresAt = now + 14 days` and resends the email. **Valid on any `pending` invite, including one past `expiresAt`** (resend = refresh a lapsed invite). A **terminal** invite (`accepted`/`declined`/`revoked`) → `409`. Requires the `invite` capability (or owner).
+
+<Note>
+  Resend **emits no webhook** — the status stays `pending`, so there is no lifecycle transition.
+</Note>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="inviteId" type="string" required>
+  The invitation UUID.
+</ParamField>
+
+## Response
+
+Returns the refreshed [WorkspaceInvitation](/data-models/workspace-invitation) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Terminal Invite — 409">
+    ```json
+    { "error": "Cannot resend a terminal invitation.", "code": "workspace/invite-terminal" }
+    ```
+  </Accordion>
+</AccordionGroup>

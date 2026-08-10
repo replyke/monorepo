@@ -1,0 +1,45 @@
+---
+title: "Update Workspace"
+api: "PATCH /:projectId/api/v7/workspaces/:id"
+description: "Edit a workspace's name and metadata"
+---
+
+Edits a workspace's own `name` and/or `metadata`. Gated by the `edit-workspace` capability (or owner).
+
+<Note>
+  This does **not** flip `inheritsFromParent` — that is a separate [owner-only action](/api-reference/workspaces/update-inherit-flag).
+</Note>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="name" type="string">
+  New display name. 1–100 characters.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  New metadata (opaque JSON).
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Service/master keys only — the user to act as.
+</ParamField>
+
+## Response
+
+Returns the updated [Workspace](/data-models/workspace) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    { "error": "You do not have the edit-workspace capability.", "code": "workspace/unauthorized" }
+    ```
+  </Accordion>
+</AccordionGroup>

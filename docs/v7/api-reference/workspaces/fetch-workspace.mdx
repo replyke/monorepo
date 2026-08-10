@@ -1,0 +1,35 @@
+---
+title: "Fetch Workspace"
+api: "GET /:projectId/api/v7/workspaces/:id"
+description: "Read a single workspace, visibility-filtered"
+---
+
+Returns a single [Workspace](/data-models/workspace), filtered by the caller's reach-visibility — a caller never sees a node their authority doesn't reach.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="include" type="string">
+  Comma-separated include flags. `memberCount` adds the workspace's **direct** member count as `memberCount` on the object.
+</ParamField>
+
+## Response
+
+Returns the [Workspace](/data-models/workspace) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found / Not Visible — 404">
+    ```json
+    { "error": "Workspace not found.", "code": "workspace/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchWorkspace](/hooks/workspaces/use-fetch-workspace)

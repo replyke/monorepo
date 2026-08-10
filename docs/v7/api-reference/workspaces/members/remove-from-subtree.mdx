@@ -1,0 +1,57 @@
+---
+title: "Remove From Subtree"
+api: "POST /:projectId/api/v7/workspaces/:id/members/:userId/remove-from-subtree"
+description: "Offboarding convenience — remove a user from this workspace and the descendants you can reach"
+---
+
+Removes the target user's **direct** memberships on this workspace and every descendant **you can reach**, in one action. An **owner** (or ancestor owner, and any master/service key) reaches the whole subtree via the god-path; a **non-owner** actor only reaches descendants through an unbroken open inherit chain, so a **sealed** sub-workspace (`inheritsFromParent = false`) is left untouched for a non-owner. Reach-based access auto-revokes with the relevant ancestor membership. Each membership-row deletion fires `workspace.member.removed`. Rank rules apply **per node** — the sweep is refused (`403 workspace/insufficient-rank`) if you are outranked by the target at any node where you both hold a direct member row.
+
+**Owned-descendant handling — block + report.** Because owners have no member row, this sweep does **not** cover descendant workspaces the user *owns*. Instead it **blocks and reports** them (`409 workspace/owns-descendants`) rather than silently orphaning ownership. An admin or any ancestor owner then reassigns each via [transfer-ownership](/api-reference/workspaces/transfer-ownership) or deletes it. **No silent ownership change.**
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID (subtree root).
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  The user to offboard.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string">
+  Service/master keys only — the **acting** user (must hold `remove-member`, rank-bounded per node).
+</ParamField>
+
+## Response
+
+```json
+{
+  "removedCount": 3,
+  "removed": [
+    { "workspaceId": "ws_a", "userId": "u_pat" },
+    { "workspaceId": "ws_b", "userId": "u_pat" },
+    { "workspaceId": "ws_c", "userId": "u_pat" }
+  ]
+}
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Owns Descendants — 409">
+    ```json
+    {
+      "error": "The user owns workspaces in this subtree. Transfer or delete them first.",
+      "code": "workspace/owns-descendants",
+      "ownedWorkspaces": [{ "id": "ws_d", "name": "Client X" }]
+    }
+    ```
+  </Accordion>
+  <Accordion title="Insufficient Rank — 403">
+    ```json
+    { "error": "You may only remove members ranked strictly below you.", "code": "workspace/insufficient-rank" }
+    ```
+  </Accordion>
+</AccordionGroup>

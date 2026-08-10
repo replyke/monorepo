@@ -1,0 +1,46 @@
+---
+title: "Create workspace"
+description: "Create a root or child workspace; the caller becomes the owner"
+icon: "plug"
+---
+
+## Overview
+
+`useCreateWorkspace` returns a callable that creates a [workspace](/data-models/workspace). The signed-in caller becomes the owner. Omit `parentWorkspaceId` for a root workspace (requires a **verified email**); pass it for a child (requires the `create-sub-workspace` capability on the parent).
+
+## Usage Example
+
+```tsx
+import { useCreateWorkspace } from "@sublay/react-js";
+
+function CreateTeam() {
+  const createWorkspace = useCreateWorkspace();
+
+  const handleCreate = async () => {
+    const workspace = await createWorkspace({ name: "Acme Inc" });
+    console.log("Created:", workspace.id, "owner:", workspace.ownerId);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="name" type="string" required>
+  Display name. 1–100 characters.
+</ParamField>
+
+<ParamField path="metadata" type="Record<string, any>">
+  Optional opaque developer data.
+</ParamField>
+
+<ParamField path="parentWorkspaceId" type="string | null">
+  Optional parent for child creation. Absent/`null` → root.
+</ParamField>
+
+## Returns
+
+Returns the created [Workspace](/data-models/workspace) object.
+
+## Related
+
+- [Create Workspace API](/api-reference/workspaces/create-workspace)

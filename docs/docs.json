@@ -100,6 +100,13 @@
                 ]
               },
               {
+                "group": "Workspaces",
+                "pages": [
+                  "v7/sdk/workspaces/overview",
+                  "v7/sdk/workspaces/webhooks"
+                ]
+              },
+              {
                 "group": "Events",
                 "pages": [
                   "v7/sdk/events/overview",
@@ -291,6 +298,21 @@
                 "pages": [
                   "v7/hooks/space-lists/use-space-list",
                   "v7/hooks/space-lists/use-space-list-actions"
+                ]
+              },
+              {
+                "group": "Workspaces",
+                "pages": [
+                  "v7/hooks/workspaces/use-create-workspace",
+                  "v7/hooks/workspaces/use-fetch-workspace",
+                  "v7/hooks/workspaces/use-fetch-many-workspaces",
+                  "v7/hooks/workspaces/use-fetch-many-workspaces-wrapper",
+                  "v7/hooks/workspaces/use-fetch-workspace-members",
+                  "v7/hooks/workspaces/use-invite-member",
+                  "v7/hooks/workspaces/use-fetch-my-workspace-invites",
+                  "v7/hooks/workspaces/use-accept-invite",
+                  "v7/hooks/workspaces/use-decline-invite",
+                  "v7/hooks/workspaces/use-fetch-workspace-authority"
                 ]
               },
               {
@@ -770,6 +792,42 @@
                 "pages": ["v7/api-reference/spaces/chat/get-space-conversation"]
               },
               {
+                "group": "Workspace Endpoints",
+                "pages": [
+                  "v7/api-reference/workspaces/create-workspace",
+                  "v7/api-reference/workspaces/fetch-workspaces",
+                  "v7/api-reference/workspaces/fetch-workspace",
+                  "v7/api-reference/workspaces/update-workspace",
+                  "v7/api-reference/workspaces/update-inherit-flag",
+                  "v7/api-reference/workspaces/delete-workspace",
+                  "v7/api-reference/workspaces/transfer-ownership",
+                  "v7/api-reference/workspaces/fetch-authority"
+                ]
+              },
+              {
+                "group": "Workspace — Membership",
+                "pages": [
+                  "v7/api-reference/workspaces/members/list-members",
+                  "v7/api-reference/workspaces/members/fetch-member-standing",
+                  "v7/api-reference/workspaces/members/update-member",
+                  "v7/api-reference/workspaces/members/remove-member",
+                  "v7/api-reference/workspaces/members/leave-workspace",
+                  "v7/api-reference/workspaces/members/remove-from-subtree"
+                ]
+              },
+              {
+                "group": "Workspace — Invitations",
+                "pages": [
+                  "v7/api-reference/workspaces/invitations/create-invite",
+                  "v7/api-reference/workspaces/invitations/list-invites",
+                  "v7/api-reference/workspaces/invitations/revoke-invite",
+                  "v7/api-reference/workspaces/invitations/resend-invite",
+                  "v7/api-reference/workspaces/invitations/accept-invite",
+                  "v7/api-reference/workspaces/invitations/decline-invite",
+                  "v7/api-reference/workspaces/invitations/list-my-invites"
+                ]
+              },
+              {
                 "group": "Event Endpoints",
                 "pages": [
                   "v7/api-reference/events/create-event",
@@ -833,7 +891,10 @@
                   "v7/data-models/follow",
                   "v7/data-models/connection",
                   "v7/data-models/block",
-                  "v7/data-models/app-notification"
+                  "v7/data-models/app-notification",
+                  "v7/data-models/workspace",
+                  "v7/data-models/workspace-member",
+                  "v7/data-models/workspace-invitation"
                 ]
               }
             ]
@@ -859,6 +920,7 @@
                   "v7/node-sdk/spaces",
                   "v7/node-sdk/spaces-members",
                   "v7/node-sdk/spaces-moderation",
+                  "v7/node-sdk/workspaces",
                   "v7/node-sdk/events",
                   "v7/node-sdk/chat",
                   "v7/node-sdk/search",
@@ -893,6 +955,7 @@
                   "v7/js-sdk/spaces",
                   "v7/js-sdk/spaces-members",
                   "v7/js-sdk/spaces-moderation",
+                  "v7/js-sdk/workspaces",
                   "v7/js-sdk/events",
                   "v7/js-sdk/chat",
                   "v7/js-sdk/push-notifications",

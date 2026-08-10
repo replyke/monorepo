@@ -1,0 +1,42 @@
+---
+title: "Fetch workspace"
+description: "Read a single workspace, visibility-filtered"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchWorkspace` returns a callable that reads one [workspace](/data-models/workspace), filtered by the caller's reach-visibility.
+
+## Usage Example
+
+```tsx
+import { useFetchWorkspace } from "@sublay/react-js";
+
+function WorkspaceHeader({ workspaceId }: { workspaceId: string }) {
+  const fetchWorkspace = useFetchWorkspace();
+
+  const load = async () => {
+    const workspace = await fetchWorkspace({ workspaceId, include: "memberCount" });
+    console.log(workspace.name, workspace.memberCount);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Include flags; `memberCount` adds the direct member count. An array is joined with commas.
+</ParamField>
+
+## Returns
+
+Returns the [Workspace](/data-models/workspace) object.
+
+## Related
+
+- [Fetch Workspace API](/api-reference/workspaces/fetch-workspace)

@@ -1,0 +1,61 @@
+---
+title: "Overview"
+description: "Build SaaS/team workspaces with invitations, per-member authority, and self-nesting"
+---
+
+[Workspaces](/data-models/workspace) give your app the B2B/SaaS collaboration layer: an account/team that people are invited into, with granular per-member authority and optional self-nesting (org → client → project). Unlike [Spaces](/sdk/spaces/overview) (a community shape), Workspaces is **invite-only** with an owner apex and a capability/permission model.
+
+<Note>
+  **Requires the `workspaces` bundle.** See [Bundles](/bundles) to add it.
+</Note>
+
+The React/React Native surface is a set of plain hooks re-exported from `@sublay/core` (there is **no** `WorkspaceProvider` and **no** Redux slice — the list uses the [Wrapper pattern](/hooks/workspaces/use-fetch-many-workspaces-wrapper), matching house style).
+
+## Key concepts
+
+- **[capabilities vs permissions](/data-models/workspace-member#the-two-arrays-capabilities-vs-permissions)** — Sublay enforces the closed `capabilities` vocabulary; it is blind to your opaque `permissions`.
+- **[Ownership](/data-models/workspace#ownership)** — one owner per workspace (the creator); ancestor owners are gods over descendants.
+- **[Reach & the wall/door rule](/data-models/workspace#reach-and-the-wall-door-rule)** — strict per-node by default; opt-in downward reach via the child-owned `inheritsFromParent` flag.
+- **[Invitations](/data-models/workspace-invitation#acceptance-model)** — identity-matched + verified-email, **no token**.
+
+## Quick start
+
+```tsx
+import {
+  useCreateWorkspace,
+  useFetchWorkspace,
+  useInviteMember,
+  useFetchMyWorkspaceInvites,
+  useAcceptInvite,
+} from "@sublay/react-js";
+
+function CreateTeam() {
+  const createWorkspace = useCreateWorkspace();
+
+  async function onCreate() {
+    const workspace = await createWorkspace({ name: "Acme Inc" });
+    console.log("owner:", workspace.ownerId);
+  }
+
+  return <button onClick={onCreate}>Create workspace</button>;
+}
+```
+
+## Hooks
+
+| Hook | Purpose |
+|------|---------|
+| [`useCreateWorkspace`](/hooks/workspaces/use-create-workspace) | Create a root or child workspace |
+| [`useFetchWorkspace`](/hooks/workspaces/use-fetch-workspace) | Read a single workspace |
+| [`useFetchManyWorkspaces`](/hooks/workspaces/use-fetch-many-workspaces) | Leaf fetcher for the caller's workspaces |
+| [`useFetchManyWorkspacesWrapper`](/hooks/workspaces/use-fetch-many-workspaces-wrapper) | Paginated list with load-more |
+| [`useFetchWorkspaceMembers`](/hooks/workspaces/use-fetch-workspace-members) | The unified roster read |
+| [`useInviteMember`](/hooks/workspaces/use-invite-member) | Create an invitation |
+| [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) | The current user's pending invites |
+| [`useAcceptInvite`](/hooks/workspaces/use-accept-invite) | Accept an invitation |
+| [`useDeclineInvite`](/hooks/workspaces/use-decline-invite) | Decline an invitation |
+| [`useFetchWorkspaceAuthority`](/hooks/workspaces/use-fetch-workspace-authority) | Resolve the current user's standing |
+
+<Note>
+  Management operations that need to act on **another** user's behalf (edit a member, transfer ownership, delete, remove) live on the [node SDK](/node-sdk/workspaces) service-key surface, not the client hooks — the client actor is always the signed-in user.
+</Note>

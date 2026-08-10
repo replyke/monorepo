@@ -1,0 +1,49 @@
+---
+title: "Fetch workspace members"
+description: "The unified roster read — one entry per distinct user"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchWorkspaceMembers` returns a callable for the [unified roster](/api-reference/workspaces/members/list-members): one entry per distinct user, each with a `reasons` array. Always returned in full (never paginated). With `countOnly`, the shape is `WorkspaceRosterCountsResponse` instead.
+
+## Usage Example
+
+```tsx
+import { useFetchWorkspaceMembers } from "@sublay/react-js";
+
+function Roster({ workspaceId }: { workspaceId: string }) {
+  const fetchWorkspaceMembers = useFetchWorkspaceMembers();
+
+  const load = async () => {
+    const roster = await fetchWorkspaceMembers({
+      workspaceId,
+      include: "ancestorOwners,descendants",
+    });
+    // roster.data: WorkspaceRosterEntry[]
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="include" type="string">
+  Comma-separated add-on buckets: `ancestorOwners`, `reachHolders`, `descendants`.
+</ParamField>
+
+<ParamField path="countOnly" type="boolean">
+  Return per-reason counts + a distinct-user total instead of the array.
+</ParamField>
+
+## Returns
+
+`WorkspaceRosterResponse` (`{ data, total }`), or `WorkspaceRosterCountsResponse` (`{ counts, total, distinctUsers }`) when `countOnly` is set.
+
+## Related
+
+- [List Members API](/api-reference/workspaces/members/list-members)

@@ -1,0 +1,78 @@
+---
+title: "Workspace Member"
+description: "The shape of a WorkspaceMember object, plus the capability vocabulary, permissions, and rank semantics"
+---
+
+A **WorkspaceMember** record represents a user's membership in a specific [workspace](/data-models/workspace). One row exists per user per workspace, and it exists **only once an invite is accepted** — there is **no `status` column** (the "pending" state lives entirely on the [invitation](/data-models/workspace-invitation)). A member row always means "this user actually works here."
+
+The workspace's **owner never has a member row** — owner and member rows are disjoint (see [Workspace → Ownership](/data-models/workspace#ownership)).
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique membership record identifier (UUID). |
+| `workspaceId` | `string` | ID of the workspace this membership is for. |
+| `userId` | `string` | ID of the member user. |
+| `capabilities` | `string[]` | The member's [capabilities](#capabilities-the-closed-vocabulary) — a **closed, Sublay-enforced vocabulary** governing workspace plumbing. |
+| `permissions` | `string[]` | The member's [permissions](#permissions-opaque) — **free-form, developer-defined, opaque** strings. Sublay stores and returns them but never consumes them. |
+| `rank` | `number` | The member's management [rank](#rank-semantics) (smaller = more senior). |
+| `title` | `string \| null` | Optional cosmetic label (e.g. "Frontend Team Leader"). **No authority.** |
+| `metadata` | `Record<string, any>` | Arbitrary developer-defined data (opaque JSON). |
+| `joinedAt` | `string` | ISO timestamp when the membership was created. |
+| `createdAt` | `string` | Record creation timestamp. |
+
+## The two arrays: `capabilities` vs `permissions`
+
+The single most important sentence for developers:
+
+> **Sublay understands and enforces `capabilities`; Sublay is blind to `permissions`.**
+
+They never mix. `capabilities` is a fixed set Sublay uses to gate its own workspace plumbing (who can invite, who can remove members, etc.). `permissions` is whatever *your* app means by "can deploy," "can edit," etc. — Sublay stores, grants, revokes, and returns them, but never validates or interprets which strings you use.
+
+### `capabilities` (the closed vocabulary)
+
+There are exactly **7** capabilities. Sublay ships **no** built-in `owner`/`admin`/`member` role presets — you compose your own role concepts from these keys (the "keyring" model).
+
+| Capability | Grants |
+|------------|--------|
+| `view` | See the workspace's existence + name/metadata. The auditor floor — **implied by every other capability** (you cannot manage what you cannot see). |
+| `invite` | The **whole** invitation lifecycle on this workspace: send, revoke, resend, and list pending invites. |
+| `remove-member` | Remove an existing member (subject to the [rank rule](#rank-semantics)). |
+| `edit-member-access` | Edit a member's **powerful** fields: `capabilities`, `permissions`, and `rank` (fenced by no-escalation + rank). |
+| `edit-member-profile` | Edit a member's **cosmetic** fields: `title` and `metadata`. Carries no authority. |
+| `create-sub-workspace` | Create a child workspace (the creator becomes its owner). |
+| `edit-workspace` | Edit this workspace's own name and metadata. Does **not** include the inherit flag. |
+
+The four **people-operating** capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) additionally grant **roster visibility**.
+
+**Owner-only, deliberately NOT capabilities:** deleting a workspace, transferring ownership, and flipping the inherit flag. **Self-service, no capability needed:** accepting/declining your own invite, leaving, and editing your own `title`.
+
+Capabilities are **resolved across the tree** — a member's effective set includes their direct capabilities, plus any reaching in from ancestors via an open inherit-chain, plus the full vocabulary if they are an owner/ancestor-owner. See [reach](/data-models/workspace#reach-and-the-wall-door-rule) and the [authority read](/api-reference/workspaces/fetch-authority).
+
+### `permissions` (opaque)
+
+A free-form array of developer-defined strings, opaque to Sublay. Unlike capabilities, **permissions do NOT cascade** down the tree — they are strictly per-node. A read of a user's standing returns the `permissions` stored on their **direct** membership on the target workspace only; an ancestor membership's permissions never appear. If you want a parent permission to imply a child one, that is your app logic to add.
+
+## Rank semantics
+
+`rank` is a **per-workspace integer where a smaller number = more senior.** The **owner is the apex, above rank 0** (not a numbered rank).
+
+- The owner mints rank **0** (only an owner can mint rank 0); each level appointed below gets the next number up (1, 2, 3, …). The top is anchored at 0 and the ladder extends downward without a ceiling.
+- **Act rule:** a member may only strip capabilities from, remove, or re-rank members who are **strictly less senior** (a strictly larger rank number). Equals cannot act on equals.
+- **Assign rule:** you may only set another member's rank to a number **strictly larger than your own**.
+- **Initial rank** is chosen on the [invitation](/data-models/workspace-invitation).
+
+**Cross-node rank is not compared.** When authority reaches into a *descendant* via an open chain, the actor and target sit in different, non-comparable rosters — so cross-node actions are **not** rank-checked; they are authorized by capability + open chain + ownership. The rank guard runs **only** when actor and target share a member row on the **same** workspace. A cross-node reacher may therefore set any rank in the descendant. The owner (god path) is always the backstop able to re-rank or remove any member.
+
+## No privilege escalation
+
+- **Granting** a capability or permission string requires the actor to already hold it **on the target node** (their resolved set there, including via reach).
+- **Stripping/removing** a capability or permission is governed by **rank alone** (strip anything from a lower-ranked member; you need not hold it yourself).
+
+## Related
+
+- [Workspace data model](/data-models/workspace)
+- [Workspace Invitation data model](/data-models/workspace-invitation)
+- [Update Member API](/api-reference/workspaces/members/update-member)
+- [List Members API](/api-reference/workspaces/members/list-members)

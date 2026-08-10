@@ -1,0 +1,63 @@
+---
+title: "Create Workspace"
+api: "POST /:projectId/api/v7/workspaces"
+description: "Create a root or child workspace"
+---
+
+Creates a workspace. The authenticated caller becomes the `ownerId`. Omit `parentWorkspaceId` to create a **root** workspace; pass it to create a **child**.
+
+- **Root creation** requires the creator to have a **verified email** (else `403 workspace/email-not-verified`). On a purely external-auth project this makes root creation unavailable — see [the external-auth limitation](/data-models/workspace-invitation#v1-external-auth-limitation).
+- **Child creation** requires the `create-sub-workspace` capability on the parent (held directly or via reach). The creator becomes the **child's** owner. No separate verified-email gate (the capability-holder is already a verified member up-tree).
+
+<Note>
+  `inheritsFromParent` is **never** accepted from client input — it is server-set from the project default at creation, and cannot be overridden when the project's default is enforced. `depth` is likewise server-computed.
+</Note>
+
+## Body Parameters
+
+<ParamField body="name" type="string" required>
+  Display name for the workspace. 1–100 characters.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional arbitrary developer-defined data (opaque JSON). Defaults to `{}`.
+</ParamField>
+
+<ParamField body="parentWorkspaceId" type="string">
+  Optional UUID of a parent workspace. Absent → root workspace. Requires the `create-sub-workspace` capability on the parent.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Service/master keys only — the user to act as (the created workspace's owner). A plain user token may only act as itself and this field is ignored.
+</ParamField>
+
+## Response
+
+Returns the created [Workspace](/data-models/workspace) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Email Not Verified — 403">
+    ```json
+    { "error": "A verified email is required to create a root workspace.", "code": "workspace/email-not-verified" }
+    ```
+  </Accordion>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    { "error": "You do not have the create-sub-workspace capability on the parent.", "code": "workspace/unauthorized" }
+    ```
+  </Accordion>
+  <Accordion title="Parent Not Found — 404">
+    ```json
+    { "error": "Parent workspace not found.", "code": "workspace/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Max Depth Exceeded — 400">
+    ```json
+    { "error": "Maximum nesting depth (10) exceeded.", "code": "workspace/max-depth-exceeded" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useCreateWorkspace](/hooks/workspaces/use-create-workspace) · [createWorkspace (node-sdk)](/node-sdk/workspaces)

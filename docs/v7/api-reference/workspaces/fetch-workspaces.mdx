@@ -1,0 +1,35 @@
+---
+title: "List Workspaces"
+api: "GET /:projectId/api/v7/workspaces"
+description: "List the caller's direct-membership + owned workspaces"
+---
+
+Returns a paginated list of workspaces scoped to the caller's **direct memberships + owned workspaces** (both index-backed, no ancestor climb).
+
+<Note>
+  This is deliberately **not** an "everything I can reach" tree listing — that per-row reach resolution is deferred. Use this for the common "my workspaces" UI call.
+</Note>
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number for pagination.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Page size.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated include flags. `memberCount` adds each workspace's direct member count.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  Service/master keys only — the user whose workspaces to list.
+</ParamField>
+
+## Response
+
+Returns a paginated response of [Workspace](/data-models/workspace) objects.
+
+See also: [useFetchManyWorkspaces](/hooks/workspaces/use-fetch-many-workspaces) · [useFetchManyWorkspacesWrapper](/hooks/workspaces/use-fetch-many-workspaces-wrapper)

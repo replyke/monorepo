@@ -1,0 +1,42 @@
+---
+title: "Leave Workspace"
+api: "DELETE /:projectId/api/v7/workspaces/:id/members/me"
+description: "Remove your own membership on this node"
+---
+
+Removes the caller's own membership on **this node only** (self-service, no capability). Leaving a parent while still owning a child is fine — ownership is independent of membership. Fires `workspace.member.removed`.
+
+<Note>
+  An **owner** has no member row and cannot leave via this path — an owner exits by transferring ownership or deleting the workspace. Sole-owner protection blocks a sole owner from leaving without transferring first. If the caller has **no direct member row here** (only reaches in from an ancestor), leave is a no-op / 404.
+</Note>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string">
+  Service/master keys only — the user whose membership to remove (sent in the body so the act-as-user path works on `DELETE`).
+</ParamField>
+
+## Response
+
+`204 No Content` on success.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not a Member — 404">
+    ```json
+    { "error": "You have no direct membership on this workspace.", "code": "workspace/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Sole Owner — 409">
+    ```json
+    { "error": "The sole owner must transfer ownership before leaving.", "code": "workspace/sole-owner" }
+    ```
+  </Accordion>
+</AccordionGroup>

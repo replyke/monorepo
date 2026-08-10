@@ -1,0 +1,33 @@
+---
+title: "Revoke Invite"
+api: "POST /:projectId/api/v7/workspaces/:id/invites/:inviteId/revoke"
+description: "Revoke a pending invitation"
+---
+
+Marks a pending invitation `revoked`. Requires the `invite` capability (or owner). Fires `workspace.invite.revoked`.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="inviteId" type="string" required>
+  The invitation UUID.
+</ParamField>
+
+## Response
+
+```json
+{ "success": true }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invite Not Found — 404">
+    ```json
+    { "error": "Invitation not found.", "code": "workspace/invite-not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

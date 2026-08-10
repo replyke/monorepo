@@ -1,0 +1,46 @@
+---
+title: "Remove Member"
+api: "DELETE /:projectId/api/v7/workspaces/:id/members/:userId"
+description: "Remove a member (rank-bounded; sole-owner protected)"
+---
+
+Removes a member from a workspace. Requires the `remove-member` capability and is **rank-bounded** (act only on strictly-lower ranks). Fires `workspace.member.removed`.
+
+<Note>
+  Owners have no member row, so removal targets member rows only. **Sole-owner protection:** the owner cannot be removed while sole owner — they must transfer ownership first.
+</Note>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  The member to remove.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string">
+  Service/master keys only — the **acting** user (sent in the body so the act-as-user path works on `DELETE`; the path `:userId` is the target).
+</ParamField>
+
+## Response
+
+`204 No Content` on success.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Insufficient Rank — 403">
+    ```json
+    { "error": "You may only remove members ranked strictly below you.", "code": "workspace/insufficient-rank" }
+    ```
+  </Accordion>
+  <Accordion title="Sole Owner — 409">
+    ```json
+    { "error": "The sole owner must transfer ownership before being removed.", "code": "workspace/sole-owner" }
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,67 @@
+---
+title: "Transfer Ownership"
+api: "POST /:projectId/api/v7/workspaces/:id/transfer-ownership"
+description: "Owner-only ownership transfer, keeping ownerId and member rows disjoint"
+---
+
+Reassigns a workspace's `ownerId`. Doable by the workspace's **own owner OR any ancestor owner** (owners only — never a capability or reach). Runs in one transaction with a row lock to serialize concurrent transfers.
+
+- The new owner must be a **verified** user (any verified user in the tenant — need not already be a member).
+- The new owner's existing member row (if any) is **removed** to keep `ownerId` and member rows disjoint (fires `workspace.member.removed`).
+- The previous owner is either **demoted** into a fresh member row (fires `workspace.member.added`) or **removed**. It **defaults to removed** when an *ancestor* owner reassigns; on a voluntary self-transfer the outgoing owner chooses. On demote, rank defaults to **0** unless specified.
+
+<Note>
+  Ancestor-owner transfer is what makes offboarding resolvable — a manager can reassign a fired member's owned sub-workspace without that member's access.
+</Note>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="newOwnerId" type="string" required>
+  The new owner — any **verified** user in the tenant.
+</ParamField>
+
+<ParamField body="previousOwnerDisposition" type="string">
+  `"demote"` or `"remove"`. Defaults server-side (ancestor-owner reassign → `remove`; self-transfer → chosen).
+</ParamField>
+
+<ParamField body="previousOwnerRank" type="number">
+  On demote, the ex-owner's rank. Defaults to `0`.
+</ParamField>
+
+<ParamField body="previousOwnerCapabilities" type="string[]">
+  On demote, the ex-owner's capabilities.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  Service/master keys only — the user to act as (must be own owner or an ancestor owner).
+</ParamField>
+
+## Response
+
+Returns the updated [Workspace](/data-models/workspace) object with the new `ownerId`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    { "error": "Only the owner or an ancestor owner may transfer ownership.", "code": "workspace/unauthorized" }
+    ```
+  </Accordion>
+  <Accordion title="New Owner Not Verified — 403">
+    ```json
+    { "error": "The new owner must have a verified email.", "code": "workspace/email-not-verified" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Target — 404">
+    ```json
+    { "error": "Target user not found.", "code": "workspace/invalid-target" }
+    ```
+  </Accordion>
+</AccordionGroup>
