@@ -1,7 +1,10 @@
 import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
-import { WorkspaceInvitation } from "../../interfaces/models/Workspace";
+import {
+  WorkspaceInvitation,
+  WorkspaceCapability,
+} from "../../interfaces/models/Workspace";
 
 export interface InviteMemberProps {
   workspaceId: string;
@@ -11,7 +14,7 @@ export interface InviteMemberProps {
   email?: string;
   userId?: string;
   username?: string;
-  capabilities?: string[];
+  capabilities?: WorkspaceCapability[];
   permissions?: string[];
   rank: number;
   title?: string | null;
