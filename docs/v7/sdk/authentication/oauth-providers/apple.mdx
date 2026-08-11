@@ -1,0 +1,141 @@
+---
+title: "Apple"
+description: "Set up Sign in with Apple: Services ID, key, Team ID, and Key ID"
+---
+
+Apple is the most involved of the four providers because it doesn't hand you a simple client secret. Instead you create a **Services ID** (your client ID) and a **Sign in with Apple key** (a `.p8` file), and Sublay uses that key — together with your Team ID and Key ID — to generate and rotate Apple's short-lived client secret for you.
+
+<Note>
+  New to the overall flow? Read [Configuring OAuth
+  Providers](/sdk/authentication/oauth-providers/overview) first — it explains
+  the redirect chain and the Sublay callback URL that every step below refers to.
+</Note>
+
+By the end you'll have four values to paste into the Sublay dashboard:
+
+| Sublay field | Comes from |
+| --- | --- |
+| **Client ID** | Your Services ID identifier |
+| **Team ID** | Your Apple Developer team |
+| **Key ID** | Your Sign in with Apple key |
+| **Private Key (.p8 contents)** | The key file you download |
+
+Everything happens in [developer.apple.com](https://developer.apple.com) under **Certificates, Identifiers & Profiles**. You need a paid Apple Developer account.
+
+## Step 1 — Note your Team ID
+
+Your **Team ID** is the 10-character string shown in the top-right of the Apple Developer portal (next to your team name), and on the **Membership** page. Keep it handy — it goes straight into the Sublay form.
+
+## Step 2 — Enable Sign in with Apple on your App ID
+
+<Steps>
+  <Step title="Open your App ID">
+    Under **Identifiers**, select your app's App ID (the one matching your app's bundle identifier). If you don't have one yet, create it with the **+** button.
+  </Step>
+  <Step title="Enable the capability">
+    Check the **Sign in with Apple** capability, then **Save**. You can ignore the "Edit / Configure" button next to it — that's only for grouping multiple App IDs under one primary, which a standard setup doesn't need.
+  </Step>
+</Steps>
+
+## Step 3 — Create a Services ID (your Client ID)
+
+The Services ID is a separate identifier from your App ID, and its identifier string becomes your **Client ID** in Sublay.
+
+<Steps>
+  <Step title="Register a new Services ID">
+    Go to **Identifiers**, click the **+**, choose **Services IDs**, and continue.
+  </Step>
+  <Step title="Name and identify it">
+    Give it a description (e.g. `MyApp Sign in with Apple`) and an identifier in reverse-domain style. It **must be different** from your App ID — for example, if your App ID is `com.example.myapp`, use `com.example.myapp.signin`.
+
+    <Warning>
+      Whatever you enter as the **Identifier** is your Sublay **Client ID**. Copy
+      it down.
+    </Warning>
+  </Step>
+  <Step title="Register">
+    Click **Continue**, then **Register**. This only creates the Services ID — you configure Sign in with Apple on it in the next step.
+  </Step>
+</Steps>
+
+## Step 4 — Configure web authentication on the Services ID
+
+<Steps>
+  <Step title="Open the Services ID and enable the capability">
+    Switch the Identifiers filter (top-right) to **Services IDs**, open the one you just created, check the **Sign in with Apple** checkbox, and click **Configure**.
+  </Step>
+  <Step title="Set the primary App ID">
+    In the **Web Authentication Configuration** dialog, set **Primary App ID** to the App ID from Step 2.
+  </Step>
+  <Step title="Register the Sublay domain and return URL">
+    Fill in the two boxes:
+
+    - **Domains and Subdomains:** `api.sublay.io`
+    - **Return URLs:** `https://api.sublay.io/v7/oauth/callback`
+
+    Click **Next**, then **Done**, then **Continue**, then **Save**.
+  </Step>
+</Steps>
+
+<Note>
+  Apple may prompt you to verify the domain by hosting a file on it. Because the
+  return URL lives on Sublay's domain (`api.sublay.io`), not yours, you can't host
+  that file — and for the basic sign-in redirect you don't need to. If Apple
+  blocks the save with a verification error rather than saving cleanly, stop and
+  contact Sublay support, since that's on the Sublay side.
+</Note>
+
+## Step 5 — Create a Sign in with Apple key
+
+This produces the `.p8` private key and its Key ID.
+
+<Steps>
+  <Step title="Register a new key">
+    Go to **Keys**, click the **+**, and give the key a name (e.g. `MyApp Sign in with Apple Key`).
+  </Step>
+  <Step title="Enable Sign in with Apple only">
+    Check the **Enable** box on the **Sign in with Apple** row, click its **Configure** button, and select your App ID as the primary. Do **not** enable APNs on this key.
+
+    <Note>
+      Apple's "maximum of 2" limit applies only to **APNs (push) keys** — a Sign
+      in with Apple key does not count against it, as long as you leave the APNs
+      box unchecked. Keep auth and push keys separate so you can rotate or revoke
+      one without affecting the other.
+    </Note>
+  </Step>
+  <Step title="Download the key and note the Key ID">
+    Click **Continue**, then **Register**, then **Download**. The `.p8` file can only be downloaded **once** — store it securely. Note the **Key ID** (a 10-character string) shown on the key's page.
+  </Step>
+</Steps>
+
+## Step 6 — Fill in the Sublay dashboard
+
+In your project dashboard, open **Settings → OAuth Providers → Add Provider → Apple**, and complete the modal:
+
+| Field | Value |
+| --- | --- |
+| **Client ID** | Your Services ID identifier (e.g. `com.example.myapp.signin`) — **not** the App ID |
+| **Team ID** | The 10-character Team ID from Step 1 |
+| **Key ID** | The 10-character Key ID from Step 5 |
+| **Private Key (.p8 contents)** | The **full** contents of the `.p8` file, including the `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` lines |
+| **Allowed Redirect URIs** | Your app's return URL(s) — the `redirectAfterAuth` you pass in code (e.g. `https://yourapp.com/auth/callback` for web, or `myapp://auth/callback` for Expo/native) |
+| **Scopes** | Leave the defaults (`name`, `email`) |
+
+Click **Add Provider** to save and enable it.
+
+<Warning>
+  Open the `.p8` in a plain text editor and paste the **entire** file, including
+  the `BEGIN`/`END` lines. If you lose the file you can't re-download it — you'd
+  have to create a new key and update the Key ID and Private Key here.
+</Warning>
+
+## Common pitfalls
+
+- **Services ID vs. App ID** — the Client ID is the **Services ID**, not the App ID. They must be different identifiers.
+- **Redirect URI mismatch** — the value in your code, in Allowed Redirect URIs, and (on Apple's side) the Return URL must all agree exactly.
+- **Name only arrives once** — Apple returns the user's name only on their **first** authorization, never again. Sublay captures it then; there's nothing to configure, but don't be surprised if a re-auth carries no name.
+
+## See Also
+
+- [Configuring OAuth Providers](/sdk/authentication/oauth-providers/overview) — the shared setup overview
+- [OAuth](/sdk/authentication/oauth) — the runtime sign-in code

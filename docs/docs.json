@@ -50,6 +50,11 @@
                   "v7/sdk/authentication/built-in",
                   "v7/sdk/authentication/external",
                   "v7/sdk/authentication/oauth",
+                  "v7/sdk/authentication/oauth-providers/overview",
+                  "v7/sdk/authentication/oauth-providers/apple",
+                  "v7/sdk/authentication/oauth-providers/google",
+                  "v7/sdk/authentication/oauth-providers/github",
+                  "v7/sdk/authentication/oauth-providers/facebook",
                   "v7/sdk/authentication/multi-account"
                 ]
               },
