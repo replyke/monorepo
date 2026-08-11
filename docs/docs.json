@@ -30,7 +30,8 @@
                   "v7/custom-tables",
                   "v7/semantic-search-ai",
                   "v7/interest-matching",
-                  "v7/mcp-server"
+                  "v7/mcp-server",
+                  "v7/claude-code"
                 ]
               }
             ]
