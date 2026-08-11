@@ -4,6 +4,10 @@ api: "GET /:projectId/api/v7/entities/drafts"
 description: "Get the authenticated user's draft entities"
 ---
 
+<Note>
+  **Requires the `entities` bundle.** A project without the entities bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
 Returns a paginated list of draft entities belonging to the authenticated user. Drafts are invisible to all other users and excluded from all other entity list endpoints until published.
 
 **Authentication required.**

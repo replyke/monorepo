@@ -4,6 +4,10 @@ description: "Fetch a single entity by its auto-generated short ID"
 icon: "plug"
 ---
 
+<Note>
+  **Requires the `entities` bundle.** A project without the entities bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
 ## Overview
 
 `useFetchEntityByShortId` returns a function that fetches an entity by its `shortId` — the auto-generated short identifier that Sublay assigns to every entity. Short IDs are useful for building readable sharing URLs.

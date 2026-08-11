@@ -4,6 +4,10 @@ api: "POST /:projectId/api/v7/entities/:entityId/reactions"
 description: "Add or update a reaction on an entity"
 ---
 
+<Note>
+  **Requires the `entities` bundle.** A project without the entities bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
 Adds a reaction of the specified type to an entity. If the user already has a reaction on this entity, it is replaced with the new type. The entity's `reactionCounts` map is updated accordingly.
 
 **Authentication required.**

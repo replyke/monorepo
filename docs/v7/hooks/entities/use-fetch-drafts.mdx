@@ -4,6 +4,10 @@ description: "Fetch the authenticated user's draft entities"
 icon: "plug"
 ---
 
+<Note>
+  **Requires the `entities` bundle.** A project without the entities bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
 ## Overview
 
 `useFetchDrafts` returns a function that retrieves the authenticated user's unpublished draft entities in a paginated response.

@@ -4,6 +4,10 @@ api: "GET /:projectId/api/v7/entities/by-foreign-id"
 description: "Get an entity by its foreign ID, optionally creating it if not found"
 ---
 
+<Note>
+  **Requires the `entities` bundle.** A project without the entities bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
 Returns an entity matching the given `foreignId` within the project. Optionally creates a blank entity if none exists — useful for automatically bootstrapping entities when a user first visits a page or URL in your application.
 
 ## Query Parameters

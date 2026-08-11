@@ -3,7 +3,11 @@ title: "Entity"
 description: "The Entity interface shape returned by the API and SDK"
 ---
 
-An entity is the core content unit in Sublay — it can represent a post, article, product listing, video, or any other piece of content in your application. Entities support reactions, comments, votes, file attachments, geo-location, and more.
+An entity is the central content unit in Sublay — it can represent a post, article, product listing, video, or any other piece of content in your application. Entities support reactions, comments, votes, file attachments, geo-location, and more.
+
+<Note>
+  Entities are provided by the optional **`entities`** bundle. A project without it returns `403 database/tables-not-available` for entity endpoints. See [Bundles](/bundles).
+</Note>
 
 ## Properties
 

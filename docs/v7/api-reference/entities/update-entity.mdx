@@ -4,6 +4,10 @@ api: "PATCH /:projectId/api/v7/entities/:entityId"
 description: "Update an entity's content and metadata"
 ---
 
+<Note>
+  **Requires the `entities` bundle.** A project without the entities bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
 Updates the fields of an existing entity. Only the fields you include in the request body are updated — omitted fields are left unchanged. Only the entity's author, or a request with a service or master key, can update an entity.
 
 **Authentication required.**
