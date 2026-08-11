@@ -4,6 +4,10 @@ api: "GET /:projectId/api/v7/entities/is-entity-saved"
 description: "Check whether an entity is saved in any of the current user's collections"
 ---
 
+<Note>
+  **Requires the `entities` bundle.** A project without the entities bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
 Returns whether the specified entity is saved in any collection belonging to the authenticated user, along with the list of matching collections.
 
 ## Query Parameters

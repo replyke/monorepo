@@ -5,7 +5,11 @@ description: "Create and manage content entities, reactions, drafts, and view co
 
 import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
 
-Entities are the core content objects in Sublay — posts, articles, products, or any item in your application that users interact with. The `entities` module gives you full server-side control over their lifecycle.
+<Note>
+  **Requires the `entities` bundle.** A project without the entities bundle returns `403 database/tables-not-available` for entity calls. See [Bundles](/bundles).
+</Note>
+
+Entities are the central content objects in Sublay — posts, articles, products, or any item in your application that users interact with. The `entities` module gives you full server-side control over their lifecycle.
 
 ---
 

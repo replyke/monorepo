@@ -4,6 +4,10 @@ api: "GET /:projectId/api/v7/entities/:entityId"
 description: "Get a single entity by its Sublay ID"
 ---
 
+<Note>
+  **Requires the `entities` bundle.** A project without the entities bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
 import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
 
 Returns a single entity by its Sublay UUID. Always returns the entity regardless of moderation status, so the client can display the appropriate moderation state. Drafts are only returned to their author (or with a service/master key).
