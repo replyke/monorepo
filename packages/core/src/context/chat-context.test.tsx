@@ -326,3 +326,176 @@ describe("ChatProvider — unread accounting", () => {
     expect(selectConversationList(store.getState()).some((c) => c.id === "c1")).toBe(false);
   });
 });
+
+describe("ChatProvider — message-scoped socket events", () => {
+  /** Seed one loaded message into conversation-1 so the events have a target. */
+  async function renderWithLoadedMessage(currentUserId = "user-me") {
+    const rendered = renderChatProvider("token-1", currentUserId);
+    await waitFor(() => expect(rendered.axiosPrivate.calls("get")).toHaveLength(1));
+
+    act(() => {
+      rendered.store.dispatch(
+        setConversationList([makeConversationPreview({ id: "conversation-1" })]),
+      );
+      // upsertMessage via the socket path — same route the app uses.
+      fakeSocket.trigger(
+        "message:created",
+        makeChatMessage({ id: "message-1", conversationId: "conversation-1" }),
+      );
+    });
+
+    return rendered;
+  }
+
+  it("applies another user's reaction to the loaded message without touching my userReactions", async () => {
+    const { store } = await renderWithLoadedMessage();
+
+    act(() => {
+      fakeSocket.trigger("message:reaction", {
+        messageId: "message-1",
+        conversationId: "conversation-1",
+        emoji: "🔥",
+        userId: "user-other",
+        delta: 1,
+        reactionCounts: { "🔥": 1 },
+      });
+    });
+
+    const [message] = selectMessages("conversation-1")(store.getState());
+    expect(message.reactionCounts).toEqual({ "🔥": 1 });
+    expect(message.userReactions).toEqual([]);
+  });
+
+  it("adds the emoji to userReactions when the reaction is my own (echo from another device)", async () => {
+    const { store } = await renderWithLoadedMessage("user-me");
+
+    act(() => {
+      fakeSocket.trigger("message:reaction", {
+        messageId: "message-1",
+        conversationId: "conversation-1",
+        emoji: "🔥",
+        userId: "user-me",
+        delta: 1,
+        reactionCounts: { "🔥": 1 },
+      });
+    });
+
+    const [message] = selectMessages("conversation-1")(store.getState());
+    expect(message.userReactions).toEqual(["🔥"]);
+  });
+
+  it("falls back to the loaded message when the server omits conversationId", async () => {
+    // Regression: the server used to emit message:reaction without a
+    // conversationId, so the handler keyed into state.messages[undefined] and
+    // silently dropped every reaction from other members.
+    const { store } = await renderWithLoadedMessage();
+
+    act(() => {
+      fakeSocket.trigger("message:reaction", {
+        messageId: "message-1",
+        emoji: "🔥",
+        userId: "user-other",
+        delta: 1,
+        reactionCounts: { "🔥": 1 },
+      });
+    });
+
+    const [message] = selectMessages("conversation-1")(store.getState());
+    expect(message.reactionCounts).toEqual({ "🔥": 1 });
+  });
+
+  // The remaining message-scoped events use conversationId to scope the lookup
+  // to one bucket instead of scanning every loaded conversation. Each is
+  // checked both ways: with the field, and without it (older server).
+  it("applies message:updated scoped by conversationId", async () => {
+    const { store } = await renderWithLoadedMessage();
+
+    act(() => {
+      fakeSocket.trigger("message:updated", {
+        messageId: "message-1",
+        conversationId: "conversation-1",
+        content: "edited",
+        gif: null,
+        mentions: [],
+        metadata: {},
+        editedAt: "2024-01-02T00:00:00.000Z",
+      });
+    });
+
+    const [message] = selectMessages("conversation-1")(store.getState());
+    expect(message.content).toBe("edited");
+    expect(message.editedAt).toBe("2024-01-02T00:00:00.000Z");
+  });
+
+  it("still applies message:updated when the server omits conversationId", async () => {
+    const { store } = await renderWithLoadedMessage();
+
+    act(() => {
+      fakeSocket.trigger("message:updated", {
+        messageId: "message-1",
+        content: "edited",
+        gif: null,
+        mentions: [],
+        metadata: {},
+        editedAt: "2024-01-02T00:00:00.000Z",
+      });
+    });
+
+    expect(selectMessages("conversation-1")(store.getState())[0].content).toBe("edited");
+  });
+
+  it("applies message:deleted and message:removed scoped by conversationId", async () => {
+    const { store } = await renderWithLoadedMessage();
+
+    act(() => {
+      fakeSocket.trigger("message:deleted", {
+        messageId: "message-1",
+        conversationId: "conversation-1",
+        userDeletedAt: "2024-01-02T00:00:00.000Z",
+      });
+    });
+    expect(selectMessages("conversation-1")(store.getState())[0].content).toBeNull();
+
+    act(() => {
+      fakeSocket.trigger("message:removed", {
+        messageId: "message-1",
+        conversationId: "conversation-1",
+      });
+    });
+    expect(selectMessages("conversation-1")(store.getState())[0].moderationStatus).toBe(
+      "removed",
+    );
+  });
+
+  it("applies thread:reply_count scoped by conversationId", async () => {
+    const { store } = await renderWithLoadedMessage();
+
+    act(() => {
+      fakeSocket.trigger("thread:reply_count", {
+        messageId: "message-1",
+        conversationId: "conversation-1",
+        threadReplyCount: 3,
+      });
+    });
+
+    expect(selectMessages("conversation-1")(store.getState())[0].threadReplyCount).toBe(3);
+  });
+
+  it("ignores an event for a conversation whose messages aren't loaded", async () => {
+    const { store } = await renderWithLoadedMessage();
+
+    act(() => {
+      fakeSocket.trigger("message:updated", {
+        messageId: "message-1",
+        conversationId: "conversation-unloaded",
+        content: "should not apply",
+        gif: null,
+        mentions: [],
+        metadata: {},
+        editedAt: null,
+      });
+    });
+
+    expect(selectMessages("conversation-1")(store.getState())[0].content).toBe("hello");
+  });
+});

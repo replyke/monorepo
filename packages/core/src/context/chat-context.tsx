@@ -168,14 +168,23 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Helper: find a message by id across all loaded conversation buckets
-  const findMessage = useCallback((messageId: string): ChatMessage | null => {
-    for (const bucket of Object.values(messagesRef.current)) {
-      const found = bucket.items?.find((m) => m.id === messageId);
-      if (found) return found;
-    }
-    return null;
-  }, []);
+  // Helper: find a loaded message by id. Message-scoped socket events carry the
+  // conversationId, which narrows the search to that one bucket; the full scan
+  // is the fallback for servers predating that field on the payload.
+  const findMessage = useCallback(
+    (messageId: string, conversationId?: string): ChatMessage | null => {
+      if (conversationId) {
+        const bucket = messagesRef.current[conversationId];
+        return bucket?.items?.find((m) => m.id === messageId) ?? null;
+      }
+      for (const bucket of Object.values(messagesRef.current)) {
+        const found = bucket.items?.find((m) => m.id === messageId);
+        if (found) return found;
+      }
+      return null;
+    },
+    []
+  );
 
   // Helper: remove a userId from the Redux typing list for a conversation
   const removeTypingUser = useCallback(
@@ -352,7 +361,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     // ── message:updated ─────────────────────────────────────────────────────
     socket.on("message:updated", (payload) => {
-      const existing = findMessage(payload.messageId);
+      const existing = findMessage(payload.messageId, payload.conversationId);
       if (existing) {
         dispatch(
           upsertMessage({
@@ -369,7 +378,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     // ── message:deleted ─────────────────────────────────────────────────────
     socket.on("message:deleted", (payload) => {
-      const existing = findMessage(payload.messageId);
+      const existing = findMessage(payload.messageId, payload.conversationId);
       if (existing) {
         dispatch(
           upsertMessage({
@@ -387,7 +396,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     // ── message:removed ─────────────────────────────────────────────────────
     socket.on("message:removed", (payload) => {
-      const existing = findMessage(payload.messageId);
+      const existing = findMessage(payload.messageId, payload.conversationId);
       if (existing) {
         dispatch(
           upsertMessage({
@@ -400,9 +409,17 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     // ── message:reaction ────────────────────────────────────────────────────
     socket.on("message:reaction", (payload) => {
+      // Servers before the conversationId fix omit it from this payload; fall
+      // back to the loaded message so the event isn't silently dropped (an
+      // undefined conversationId misses the message bucket entirely).
+      const conversationId =
+        payload.conversationId ??
+        findMessage(payload.messageId)?.conversationId;
+      if (!conversationId) return;
+
       dispatch(
         updateReactions({
-          conversationId: payload.conversationId,
+          conversationId,
           messageId: payload.messageId,
           reactionCounts: payload.reactionCounts,
           userId: payload.userId,
@@ -415,7 +432,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     // ── thread:reply_count ──────────────────────────────────────────────────
     socket.on("thread:reply_count", (payload) => {
-      const existing = findMessage(payload.messageId);
+      const existing = findMessage(payload.messageId, payload.conversationId);
       if (existing) {
         dispatch(
           upsertMessage({
