@@ -7,6 +7,11 @@ import type { ConversationMember } from "../interfaces/models/ConversationMember
 
 // ─── Server → Client events ────────────────────────────────────────────────
 
+// This is a hand-maintained mirror of the server's own copy (server
+// src/types/socket.ts) — nothing typechecks the two against each other, so a
+// field declared here that the server never sends compiles cleanly and fails
+// silently at runtime. Message-scoped events all carry `conversationId`;
+// handlers tolerate its absence so an SDK ahead of its server still works.
 export interface ServerToClientEvents {
   "message:created": (message: ChatMessage) => void;
   "message:updated": (payload: {
