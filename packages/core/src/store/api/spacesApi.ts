@@ -1,5 +1,17 @@
 import { baseApi } from "./baseApi";
-import type { Space, SpaceDetailed, SpacePreview } from "../../interfaces/models/Space";
+import type {
+  Space,
+  SpaceDetailed,
+  SpacePreview,
+  ApproveMemberResponse,
+  BanMemberResponse,
+  DeclineMemberResponse,
+  DeleteSpaceResponse,
+  JoinSpaceResponse,
+  LeaveSpaceResponse,
+  UnbanMemberResponse,
+  UpdateMemberRoleResponse,
+} from "../../interfaces/models/Space";
 import type { SpaceMember } from "../../interfaces/models/SpaceMember";
 import type { SpaceBreadcrumb } from "../../interfaces/SpaceBreadcrumb";
 import type { SpaceListSortByOptions } from "../../interfaces/SpaceListSortByOptions";
@@ -71,15 +83,6 @@ interface UpdateSpaceParams {
 interface DeleteSpaceParams {
   projectId: string;
   spaceId: string;
-}
-
-interface DeleteSpaceResponse {
-  message: string;
-  deletedCounts: {
-    entities: number;
-    members: number;
-    childSpaces: number;
-  };
 }
 
 interface FetchSpaceChildrenParams {
@@ -324,7 +327,7 @@ export const spacesApi = baseApi.injectEndpoints({
     // ===== Membership Operations =====
 
     // Join a space
-    joinSpace: builder.mutation<SpaceMember, JoinSpaceParams>({
+    joinSpace: builder.mutation<JoinSpaceResponse, JoinSpaceParams>({
       query: ({ projectId, spaceId }) => ({
         url: `/${projectId}/spaces/${spaceId}/join`,
         method: "POST",
@@ -351,7 +354,11 @@ export const spacesApi = baseApi.injectEndpoints({
         );
 
         try {
-          const { data: member } = await queryFulfilled;
+          // The endpoint replies with `{ message, membership }`, not a bare
+          // membership — reading the wrapper as one left every field
+          // `undefined` and wrote a non-member permission set into the cache.
+          const { data } = await queryFulfilled;
+          const member = data.membership;
 
           // Update with actual member data
           dispatch(
@@ -359,15 +366,16 @@ export const spacesApi = baseApi.injectEndpoints({
               "fetchSpace",
               { projectId, spaceId },
               (draft) => {
-                // Filter out "rejected" status as it's not valid for memberPermissions
-                const status = member.status === "rejected" ? null : member.status;
+                // Joining always yields role "member" with status "pending" or
+                // "active" (the server hardcodes both on every success path), so
+                // no elevated permission can be granted here.
                 draft.memberPermissions = {
-                  isAdmin: member.role === "admin",
-                  isModerator: member.role === "moderator" || member.role === "admin",
+                  isAdmin: false,
+                  isModerator: false,
                   isMember: member.status === "active",
-                  status,
+                  status: member.status,
                   canPost: member.status === "active",
-                  canModerate: member.role === "moderator" || member.role === "admin",
+                  canModerate: false,
                   canRead: true,
                 };
               }
@@ -385,7 +393,7 @@ export const spacesApi = baseApi.injectEndpoints({
     }),
 
     // Leave a space
-    leaveSpace: builder.mutation<void, LeaveSpaceParams>({
+    leaveSpace: builder.mutation<LeaveSpaceResponse, LeaveSpaceParams>({
       query: ({ projectId, spaceId }) => ({
         url: `/${projectId}/spaces/${spaceId}/leave`,
         method: "DELETE",
@@ -471,7 +479,10 @@ export const spacesApi = baseApi.injectEndpoints({
     }),
 
     // Update member role (admin only)
-    updateMemberRole: builder.mutation<SpaceMember, UpdateMemberRoleParams>({
+    updateMemberRole: builder.mutation<
+      UpdateMemberRoleResponse,
+      UpdateMemberRoleParams
+    >({
       query: ({ projectId, spaceId, memberId, role }) => ({
         url: `/${projectId}/spaces/${spaceId}/members/${memberId}/role`,
         method: "PATCH",
@@ -484,7 +495,7 @@ export const spacesApi = baseApi.injectEndpoints({
     }),
 
     // Approve pending member (moderator+)
-    approveMember: builder.mutation<SpaceMember, ApproveMemberParams>({
+    approveMember: builder.mutation<ApproveMemberResponse, ApproveMemberParams>({
       query: ({ projectId, spaceId, memberId }) => ({
         url: `/${projectId}/spaces/${spaceId}/members/${memberId}/approve`,
         method: "PATCH",
@@ -496,7 +507,7 @@ export const spacesApi = baseApi.injectEndpoints({
     }),
 
     // Decline pending member (moderator+)
-    declineMember: builder.mutation<SpaceMember, DeclineMemberParams>({
+    declineMember: builder.mutation<DeclineMemberResponse, DeclineMemberParams>({
       query: ({ projectId, spaceId, memberId }) => ({
         url: `/${projectId}/spaces/${spaceId}/members/${memberId}/decline`,
         method: "PATCH",
@@ -508,7 +519,7 @@ export const spacesApi = baseApi.injectEndpoints({
     }),
 
     // Ban member (moderator+)
-    banMember: builder.mutation<SpaceMember, BanMemberParams>({
+    banMember: builder.mutation<BanMemberResponse, BanMemberParams>({
       query: ({ projectId, spaceId, memberId }) => ({
         url: `/${projectId}/spaces/${spaceId}/members/${memberId}/ban`,
         method: "PATCH",
@@ -521,7 +532,7 @@ export const spacesApi = baseApi.injectEndpoints({
     }),
 
     // Unban a banned member (moderator+)
-    unbanMember: builder.mutation<SpaceMember, UnbanMemberParams>({
+    unbanMember: builder.mutation<UnbanMemberResponse, UnbanMemberParams>({
       query: ({ projectId, spaceId, memberId }) => ({
         url: `/${projectId}/spaces/${spaceId}/members/${memberId}/unban`,
         method: "PATCH",

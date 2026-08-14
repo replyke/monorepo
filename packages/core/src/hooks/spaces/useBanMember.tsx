@@ -1,16 +1,11 @@
 import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
-import type { SpaceMember } from "../../interfaces/models/SpaceMember";
+import type { BanMemberResponse } from "../../interfaces/models/Space";
 
 export interface BanMemberProps {
   spaceId: string;
   memberId: string;
-}
-
-interface BanMemberResponse {
-  message: string;
-  membership: SpaceMember;
 }
 
 function useBanMember(): (props: BanMemberProps) => Promise<BanMemberResponse> {

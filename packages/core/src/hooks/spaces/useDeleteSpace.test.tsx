@@ -10,13 +10,11 @@ afterEach(() => {
 });
 
 describe("useDeleteSpace", () => {
-  it("deletes the space and returns the deletion summary", async () => {
+  it("deletes the space and returns the confirmation message", async () => {
     const { result, axiosPrivate } = renderHookWithAxios(() => useDeleteSpace());
 
     const response: DeleteSpaceResponse = {
-      message: "Space deleted",
-      deletedSpace: { id: "space-1", name: "Design" },
-      counts: { entities: 3, members: 2, childSpaces: 0 },
+      message: "Space deleted successfully.",
     };
     axiosPrivate.mockResponse("delete", response);
 
