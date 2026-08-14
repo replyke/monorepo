@@ -137,17 +137,10 @@ export interface CheckMyMembershipResponse {
   };
 }
 
+// The server replies with `{ message }` only — it does not echo the deleted
+// space or any per-table counts.
 export interface DeleteSpaceResponse {
   message: string;
-  deletedSpace: {
-    id: string;
-    name: string;
-  };
-  counts: {
-    entities: number;
-    members: number;
-    childSpaces: number;
-  };
 }
 
 export interface SpaceBreadcrumb {
