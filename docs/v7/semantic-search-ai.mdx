@@ -95,7 +95,7 @@ The ask endpoint responds with `Content-Type: text/event-stream`. Events are del
 | `error` | `{ "error": "..." }` | Only sent if an error occurs after streaming starts |
 
 ```ts
-const response = await fetch("/:projectId/api/v7/search/ask", {
+const response = await fetch("/v7/:projectId/search/ask", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

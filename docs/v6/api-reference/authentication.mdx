@@ -37,7 +37,7 @@ When integrating with Replyke, developers must handle two types of tokens:
 
 ```http
 GET /posts/{postId}/comments
-Host: api.replyke.com
+Host: api.sublay.io
 Authorization: Bearer YOUR_ACCESS_TOKEN
 
 ```
@@ -56,7 +56,7 @@ Below is an example of how to set up automatic token refreshing using **Axios**.
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'https://api.replyke.com',
+  baseURL: 'https://api.sublay.io',
 });
 
 apiClient.interceptors.request.use(
