@@ -71,7 +71,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
       if (!projectId || !conversationId) return;
       try {
         const response = await axios.get(
-          `/${projectId}/v7/chat/conversations/${conversationId}/messages`,
+          `/${projectId}/chat/conversations/${conversationId}/messages`,
           { params: { after: afterTimestamp, limit: 100, sort: "asc" } },
         );
         const { messages } = response.data as { messages: ChatMessage[] };

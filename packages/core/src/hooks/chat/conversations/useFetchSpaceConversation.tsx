@@ -32,7 +32,7 @@ function useFetchSpaceConversation({
       setLoading(true);
       try {
         const response = await axios.get(
-          `/${projectId}/chat/spaces/${spaceId}/conversation`
+          `/${projectId}/spaces/${spaceId}/conversation`
         );
         const data = response.data as Conversation;
         dispatch(setConversation(data));

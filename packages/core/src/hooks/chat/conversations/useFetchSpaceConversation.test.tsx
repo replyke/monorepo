@@ -25,7 +25,7 @@ describe("useFetchSpaceConversation", () => {
     expect(selectConversation(conversation.id)(store.getState())).toEqual(conversation);
 
     const [call] = axiosPrivate.calls("get");
-    expect(call.url).toBe("/test-project/chat/spaces/space-1/conversation");
+    expect(call.url).toBe("/test-project/spaces/space-1/conversation");
   });
 
   it("does not throw and leaves conversation unset when the fetch fails", async () => {
