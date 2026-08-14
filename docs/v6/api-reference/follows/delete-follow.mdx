@@ -1,6 +1,6 @@
 ---
 title: "Delete Follow"
-api: "DELETE /:projectId/follows/:followId"
+api: "DELETE /api/v6/:projectId/follows/:followId"
 description: "Remove a follow relationship by its ID"
 auth: "bearer"
 ---
@@ -67,5 +67,5 @@ Remove a specific follow relationship by its ID.
 - User can only remove their own follow relationships
 - Returns success message on successful removal
 - Use this endpoint when you have the specific follow ID
-- Alternative: Use `DELETE api.replyke.com/api/v6/:projectId/users/:userId/follow` when you know the user ID
+- Alternative: Use `DELETE api.sublay.io/api/v6/:projectId/users/:userId/follow` when you know the user ID
 - Rate limiting: 75 requests per 5 minutes

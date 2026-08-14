@@ -1541,13 +1541,13 @@
   },
   "api": {
     "mdx": {
-      "server": "https://api.sublay.io/api/v6",
-      "playground": {
-        "mode": "interactive"
+      "server": "https://api.sublay.io",
+      "auth": {
+        "method": "bearer"
       }
     },
-    "auth": {
-      "method": "bearer"
+    "playground": {
+      "display": "none"
     }
   }
 }

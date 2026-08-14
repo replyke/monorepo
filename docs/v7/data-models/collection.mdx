@@ -45,7 +45,7 @@ Collections are private — each collection belongs to one user and is not visib
 
 ## Notes
 
-- The root collection is created lazily on the first call to `GET /:projectId/api/v7/collections/root`.
+- The root collection is created lazily on the first call to `GET /v7/:projectId/collections/root`.
 - The root collection cannot be renamed or deleted.
 - Sub-collections can be nested to any depth.
 - Entities are linked to collections via a junction table — the same entity can be saved in multiple collections.
