@@ -150,6 +150,22 @@ export interface DeclineMemberResponse {
   };
 }
 
+export interface BanMemberResponse {
+  message: string;
+  membership: {
+    id: string;
+    status: "banned";
+  };
+}
+
+export interface UnbanMemberResponse {
+  message: string;
+  membership: {
+    id: string;
+    status: "active";
+  };
+}
+
 export interface CheckMyMembershipResponse {
   isMember: boolean;
   role: "admin" | "moderator" | "member" | null;
@@ -164,17 +180,10 @@ export interface CheckMyMembershipResponse {
   };
 }
 
+// The server replies with `{ message }` only — it does not echo the deleted
+// space or any per-table counts.
 export interface DeleteSpaceResponse {
   message: string;
-  deletedSpace: {
-    id: string;
-    name: string;
-  };
-  counts: {
-    entities: number;
-    members: number;
-    childSpaces: number;
-  };
 }
 
 // Space include types (following Entity/User pattern)

@@ -1,22 +1,19 @@
 import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
+import type { BanMemberResponse } from "../../interfaces/models/Space";
 
-export interface RemoveMemberProps {
+export interface BanMemberProps {
   spaceId: string;
   memberId: string;
 }
 
-interface RemoveMemberResponse {
-  message: string;
-}
-
-function useRemoveMember(): (props: RemoveMemberProps) => Promise<RemoveMemberResponse> {
+function useBanMember(): (props: BanMemberProps) => Promise<BanMemberResponse> {
   const { projectId } = useProject();
   const axios = useAxiosPrivate();
 
-  const removeMember = useCallback(
-    async ({ spaceId, memberId }: RemoveMemberProps) => {
+  const banMember = useCallback(
+    async ({ spaceId, memberId }: BanMemberProps) => {
       if (!projectId) {
         throw new Error("No projectId available.");
       }
@@ -25,16 +22,16 @@ function useRemoveMember(): (props: RemoveMemberProps) => Promise<RemoveMemberRe
         throw new Error("spaceId and memberId are required");
       }
 
-      const response = await axios.delete(
-        `/${projectId}/spaces/${spaceId}/members/${memberId}`
+      const response = await axios.patch(
+        `/${projectId}/spaces/${spaceId}/members/${memberId}/ban`
       );
 
-      return response.data as RemoveMemberResponse;
+      return response.data as BanMemberResponse;
     },
     [projectId]
   );
 
-  return removeMember;
+  return banMember;
 }
 
-export default useRemoveMember;
+export default useBanMember;

@@ -187,9 +187,7 @@ describe("useSpaceData", () => {
     await waitFor(() => expect(axiosPrivate.calls("get")).toHaveLength(1));
 
     axiosPrivate.mockResponse("delete", {
-      message: "Deleted",
-      deletedSpace: { id: "space-1", name: "Design" },
-      counts: { entities: 0, members: 0, childSpaces: 0 },
+      message: "Space deleted successfully.",
     });
 
     await act(async () => {
