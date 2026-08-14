@@ -278,7 +278,7 @@
                   "v7/hooks/spaces/use-leave-space",
                   "v7/hooks/spaces/use-approve-member",
                   "v7/hooks/spaces/use-decline-member",
-                  "v7/hooks/spaces/use-remove-member",
+                  "v7/hooks/spaces/use-ban-member",
                   "v7/hooks/spaces/use-update-member-role",
                   "v7/hooks/spaces/use-unban-member",
                   "v7/hooks/spaces/use-moderate-space-entity",
