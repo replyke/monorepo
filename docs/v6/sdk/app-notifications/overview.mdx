@@ -10,7 +10,7 @@ When building social platforms, interactions between users play a vital role in 
 
 To keep users informed and engaged, notifying them about these interactions is crucial. This is where **app notifications** come into play.
 
-**App notifications** are visible within the app itself, typically in a designated notification page or box. These notifications provide users with updates about events related to their activity or content, ensuring they stay connected to the platform's social interactions. Replyke handles app notifications automatically, requiring no additional setup from developers for them to be generated. Moreover, the notification messages shown to users can be easily customized, which will be covered in later chapters.
+**App notifications** are visible within the app itself, typically in a designated notification page or box. These notifications provide users with updates about events related to their activity or content, ensuring they stay connected to the platform's social interactions. Sublay handles app notifications automatically, requiring no additional setup from developers for them to be generated. Moreover, the notification messages shown to users can be easily customized, which will be covered in later chapters.
 
 ---
 
@@ -39,7 +39,7 @@ While app notifications are displayed within the app, **push notifications** go 
     </Tr>
     <Tr>
       <Td>Implementation</Td>
-      <Td>Handled entirely by Replyke.</Td>
+      <Td>Handled entirely by Sublay.</Td>
       <Td>Requires external services or custom setup.</Td>
     </Tr>
   </tbody>
@@ -48,16 +48,16 @@ While app notifications are displayed within the app, **push notifications** go 
 
 Although app notifications and push notifications often work together, they are not the same. Typically, when an event occurs:
 
-1.  Replyke generates an **app notification**.
+1.  Sublay generates an **app notification**.
 2.  A **push notification** may be sent simultaneously to alert the user.
 
-Replyke provides comprehensive support for app notifications but leaves push notifications for developers to implement using external tools or services.
+Sublay provides comprehensive support for app notifications but leaves push notifications for developers to implement using external tools or services.
 
 ---
 
 ### Integrating Push Notifications
 
-To connect app notifications with push notifications, Replyke offers a **webhook** mechanism. Developers can supply Replyke with a webhook URL that is triggered whenever a notification is created. This webhook provides detailed event data, allowing developers to:
+To connect app notifications with push notifications, Sublay offers a **webhook** mechanism. Developers can supply Sublay with a webhook URL that is triggered whenever a notification is created. This webhook provides detailed event data, allowing developers to:
 
 - Use the data to generate push notifications via third-party services or custom solutions.
 - Customize how the event data is processed for user alerts.

@@ -5,11 +5,11 @@ title: "Authentication"
 
 ## Authentication Setup
 
-Authentication is a crucial part of integrating Replyke's API, as many features require a valid user identity. This guide will walk you through the necessary steps to manage authentication properly in your application.
+Authentication is a crucial part of integrating Sublay's API, as many features require a valid user identity. This guide will walk you through the necessary steps to manage authentication properly in your application.
 
 #### Managing Tokens
 
-When integrating with Replyke, developers must handle two types of tokens:
+When integrating with Sublay, developers must handle two types of tokens:
 
 -   **Access Token:** A short-lived token used to authenticate API requests. Expires every 30 minutes.
 -   **Refresh Token:** A long-lived token used to obtain new access tokens when they expire.
@@ -21,7 +21,7 @@ When integrating with Replyke, developers must handle two types of tokens:
 -   The refresh token is automatically stored in an **HTTP-only cookie**.
 -   No additional setup is required.
 -   It is automatically sent with requests, and developers do not need to handle it manually.
--   When the user logs out, the token is invalidated automatically by Replyke.
+-   When the user logs out, the token is invalidated automatically by Sublay.
 
 #### Mobile Applications
 

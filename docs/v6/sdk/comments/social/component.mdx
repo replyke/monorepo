@@ -4,7 +4,7 @@ title: "Component"
 
 # Comment Section: Using the SocialCommentSection Component
 
-The `SocialCommentSection` component offers the simplest way to integrate a fully functional, social-style comment section into your application. It encapsulates the core Replyke comment components and allows basic customization via props.
+The `SocialCommentSection` component offers the simplest way to integrate a fully functional, social-style comment section into your application. It encapsulates the core Sublay comment components and allows basic customization via props.
 
 This component is ideal for developers who want to implement a complete comment section with minimal code while retaining flexibility.
 
@@ -17,7 +17,7 @@ If your app already wraps its content in a `ReplykeProvider`, you can use the co
 ```tsx
 const DUMMY_POST = {
   id: "post_1234",
-  title: "Replyke Demo",
+  title: "Sublay Demo",
   content: "Adding comment sections has never been so easy!",
 };
 
@@ -31,13 +31,13 @@ import { useEffect, useState } from "react";
 import { ReplykeProvider, useSignTestingJwt } from "@replyke/react-js";
 import { SocialCommentSection } from "@replyke/comments-social-react-js";
 
-const PROJECT_ID = import.meta.env.VITE_PUBLIC_REPLYKE_PROJECT_ID;
-const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_REPLYKE_SECRET_KEY;
+const PROJECT_ID = import.meta.env.VITE_PUBLIC_SUBLAY_PROJECT_ID;
+const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_SUBLAY_SECRET_KEY;
 
 const DUMMY_USER = { id: "user1", username: "lionel_messi10" };
 const DUMMY_POST = {
   id: "post_1234",
-  title: "Replyke Demo",
+  title: "Sublay Demo",
   content: "Adding comment sections has never been so easy!",
 };
 
@@ -77,7 +77,7 @@ _Required_
 Used to identify the entity (e.g., a post or item) for which comments are rendered. None are mandatory individually, but at least one must be provided:
 
 - `entity`: A complete `Entity` object.
-- `entityId`: The internal Replyke ID for the entity.
+- `entityId`: The internal Sublay ID for the entity.
 - `foreignId`: An external ID if integrating with your own dataset.
 - `shortId`: A short, human-readable identifier.
 

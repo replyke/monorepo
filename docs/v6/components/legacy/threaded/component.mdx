@@ -8,7 +8,7 @@ title: "Component"
 
 # Comment Section: Using the ThreadedCommentSection Component
 
-The `ThreadedCommentSection` component offers the simplest way to integrate a fully functional, threaded-style comment section into your application. It encapsulates the core Replyke comment components with unlimited nesting levels and a Reddit-style interface, allowing extensive customization via props.
+The `ThreadedCommentSection` component offers the simplest way to integrate a fully functional, threaded-style comment section into your application. It encapsulates the core Sublay comment components with unlimited nesting levels and a Reddit-style interface, allowing extensive customization via props.
 
 This component is ideal for developers who want to implement a complete threaded comment section with minimal code while retaining flexibility for forums, discussions, and detailed conversations.
 
@@ -35,8 +35,8 @@ import { useEffect, useState } from "react";
 import { ReplykeProvider, useSignTestingJwt } from "@replyke/react-js";
 import { ThreadedCommentSection } from "@replyke/comments-threaded-react-js";
 
-const PROJECT_ID = import.meta.env.VITE_PUBLIC_REPLYKE_PROJECT_ID;
-const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_REPLYKE_SECRET_KEY;
+const PROJECT_ID = import.meta.env.VITE_PUBLIC_SUBLAY_PROJECT_ID;
+const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_SUBLAY_SECRET_KEY;
 
 const DUMMY_USER = { id: "user1", username: "tech_developer" };
 const DISCUSSION_TOPIC = {
@@ -81,7 +81,7 @@ _Required_
 Used to identify the entity (e.g., a discussion topic or article) for which comments are rendered. None are mandatory individually, but at least one must be provided:
 
 - `entity`: A complete `Entity` object.
-- `entityId`: The internal Replyke ID for the entity.
+- `entityId`: The internal Sublay ID for the entity.
 - `foreignId`: An external ID if integrating with your own dataset.
 - `shortId`: A short, human-readable identifier.
 

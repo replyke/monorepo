@@ -4,7 +4,7 @@ title: "Provider And Hook"
 
 ### Comment Section: Implementation Guide
 
-The Replyke comment section is designed to deliver a rich, social-media-style user experience with minimal setup. By using the components and hooks provided, you can quickly integrate a fully functional comment system into your application.
+The Sublay comment section is designed to deliver a rich, social-media-style user experience with minimal setup. By using the components and hooks provided, you can quickly integrate a fully functional comment system into your application.
 
 ---
 
@@ -41,9 +41,9 @@ The `useSocialComments` hook provides these components and ensures they work tog
 
 1.  In order for the comment section to function properly, it need to be aware of the entity it related to. Therefore, the hook expects at least one of the following properties. None are mandatory individually, but at least one must be provided:
 
-  - `entityId`: The ID of the entity in Replyke's system.
+  - `entityId`: The ID of the entity in Sublay's system.
 
-  - `foreignId`: The foreign/external ID of the entity. Only relevant when Replyke is integrated on top of an external dataset, or a static value (e.g., "about-page").
+  - `foreignId`: The foreign/external ID of the entity. Only relevant when Sublay is integrated on top of an external dataset, or a static value (e.g., "about-page").
 
   - `shortId`: The unique short ID of the entity.
 
@@ -59,7 +59,7 @@ The `useSocialComments` hook provides these components and ensures they work tog
 4.  **highlightedCommentId**: Highlights a specific comment. This is particularly useful when directing users to a comment via notifications. For instance:
     - If a user is notified that someone liked their comment, set `highlightedCommentId` to the ID of the liked comment when opening the comment section from their notifications.
     - If a user is notified about a reply to their comment, set `highlightedCommentId` to the ID of the **reply**, not the original comment. This distinction ensures that users are directed to the most relevant interaction in the thread.
-5. **createIfNotFound**: An optional flag which instructs Replyke to create an entity if one isn’t found.
+5. **createIfNotFound**: An optional flag which instructs Sublay to create an entity if one isn’t found.
 
 ---
 
@@ -188,7 +188,7 @@ export default CommentsSection;
 4.  **`SortByButton`**: Adds sorting options for comments (optional).
 5.  **Keyboard Interaction**: Demonstrates how to handle focus and navigation for comment interactions.
 
-This example showcases the ease of integrating Replyke's comment system while still allowing you to make meaningful customizations.
+This example showcases the ease of integrating Sublay's comment system while still allowing you to make meaningful customizations.
 
 ---
 

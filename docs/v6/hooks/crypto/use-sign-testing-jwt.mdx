@@ -9,7 +9,7 @@ The `useSignTestingJwt` hook is a development-only utility that allows you to si
 
 > ⚠️ **Warning:** This method is **insecure for production** use. Exposing your private key in client-side code introduces serious security risks. For production scenarios, JWTs must be signed securely on your backend.
 
-If you are integrating Replyke with your own authentication system, see the section on **Authentication with External User Systems** for guidance on implementing secure token generation.
+If you are integrating Sublay with your own authentication system, see the section on **Authentication with External User Systems** for guidance on implementing secure token generation.
 
 ## Usage Example
 
@@ -17,8 +17,8 @@ If you are integrating Replyke with your own authentication system, see the sect
 import { useEffect, useState } from "react";
 import { useSignTestingJwt } from "@replyke/react-js";
 
-const PROJECT_ID = import.meta.env.VITE_PUBLIC_REPLYKE_PROJECT_ID;
-const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_REPLYKE_SECRET_KEY;
+const PROJECT_ID = import.meta.env.VITE_PUBLIC_SUBLAY_PROJECT_ID;
+const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_SUBLAY_SECRET_KEY;
 
 function ExampleComponent() {
   const signTestingJwt = useSignTestingJwt();
@@ -51,7 +51,7 @@ The `signTestingJwt` function returned by the hook accepts a single object with 
 
 
 <ParamField path="projectId" type="string">
-  The Replyke project ID for which the JWT is being signed.
+  The Sublay project ID for which the JWT is being signed.
 </ParamField>
 
 <ParamField path="privateKey" type="string">

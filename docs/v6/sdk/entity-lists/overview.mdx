@@ -4,7 +4,7 @@ title: "Overview"
 
 ## Entity Lists
 
-Entity lists in Replyke provide powerful feed and list management functionality using Redux state management. The `useEntityList` hook allows you to create, manage, and filter lists of entities with built-in pagination, caching, and real-time updates.
+Entity lists in Sublay provide powerful feed and list management functionality using Redux state management. The `useEntityList` hook allows you to create, manage, and filter lists of entities with built-in pagination, caching, and real-time updates.
 
 ## Quick Start
 
@@ -64,7 +64,7 @@ const trending = useEntityList({ listId: "trending-posts" });
 - Search/filters: `"search-${query}"`, `"category-${categoryId}"`
 - Temporary lists: `"modal-feed"`, `"drawer-content"`
 
-**Important:** The `listId` is purely for client-side state management and doesn't affect which entities are fetched from the server. Use `sourceId` in your fetch configuration to control which entities are returned from Replyke.
+**Important:** The `listId` is purely for client-side state management and doesn't affect which entities are fetched from the server. Use `sourceId` in your fetch configuration to control which entities are returned from Sublay.
 
 ### Source IDs (Critical Concept)
 
@@ -222,7 +222,7 @@ const entityList = useEntityList({
 
 // Access merged data
 entityList.infusedEntities.forEach(entity => {
-  console.log(entity.title); // From Replyke
+  console.log(entity.title); // From Sublay
   console.log(entity.infusion?.stock); // From external API (under 'infusion')
 });
 ```
