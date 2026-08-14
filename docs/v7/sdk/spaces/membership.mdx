@@ -86,12 +86,12 @@ await updateRole({ spaceId, memberId, role: "moderator" });
 Moderators can ban and unban members:
 
 ```tsx
-import { useRemoveMember, useUnbanMember } from "@sublay/react-js";
+import { useBanMember, useUnbanMember } from "@sublay/react-js";
 
-const removeMember = useRemoveMember();
+const banMember = useBanMember();
 const unban = useUnbanMember();
 
-await removeMember({ spaceId, memberId });
+await banMember({ spaceId, memberId });
 await unban({ spaceId, memberId });
 ```
 
@@ -111,7 +111,7 @@ When a child space is created, all admins and moderators of the parent space are
 | [`useApproveMember`](/hooks/spaces/use-approve-member) | Approve a pending join request |
 | [`useDeclineMember`](/hooks/spaces/use-decline-member) | Decline a pending join request |
 | [`useUpdateMemberRole`](/hooks/spaces/use-update-member-role) | Change a member's role |
-| [`useRemoveMember`](/hooks/spaces/use-remove-member) | Ban/remove a member |
+| [`useBanMember`](/hooks/spaces/use-ban-member) | Ban a member from the space |
 | [`useUnbanMember`](/hooks/spaces/use-unban-member) | Unban a banned member |
 | [`useJoinSpace`](/hooks/spaces/use-join-space) | Join a space |
 | [`useLeaveSpace`](/hooks/spaces/use-leave-space) | Leave a space |
