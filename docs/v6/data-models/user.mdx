@@ -4,7 +4,7 @@ title: "User"
 
 ## User Object
 
-The **User** object is the public-facing user model returned by the Replyke API to client apps. It contains identity, profile, and activity-relevant fields but excludes private or admin-only information.
+The **User** object is the public-facing user model returned by the Sublay API to client apps. It contains identity, profile, and activity-relevant fields but excludes private or admin-only information.
 
 ### Properties
 
@@ -19,7 +19,7 @@ The **User** object is the public-facing user model returned by the Replyke API 
 | `bio`        | `string \| null`                                           | Optional short bio (max 300 characters).                       |
 | `birthdate`  | `Date \| null`                                             | User's birthdate.                                              |
 | `metadata`   | `Record<string, any>`                                      | Public metadata, available in shared content (max size: 10KB). |
-| `reputation` | `number`                                                   | Activity-based score managed by Replyke.                       |
+| `reputation` | `number`                                                   | Activity-based score managed by Sublay.                       |
 | `createdAt`  | `Date`                                                     | Timestamp when the user was created.                           |
 
 ---
@@ -43,7 +43,7 @@ The **AuthUser** object represents the authenticated user's own profile data del
 | `bio`            | `string \| null`                                           | Optional short bio (max 300 characters).                       |
 | `birthdate`      | `Date \| null`                                             | User's birthdate.                                              |
 | `metadata`       | `Record<string, any>`                                      | Public metadata, available in shared content (max size: 10KB). |
-| `reputation`     | `number`                                                   | Activity-based score managed by Replyke.                       |
+| `reputation`     | `number`                                                   | Activity-based score managed by Sublay.                       |
 | `isVerified`     | `boolean`                                                  | Whether the user is verified.                                  |
 | `isActive`       | `boolean`                                                  | Whether the account is currently active.                       |
 | `lastActive`     | `Date`                                                     | Timestamp of most recent user activity.                        |
@@ -53,7 +53,7 @@ The **AuthUser** object represents the authenticated user's own profile data del
 
 ## UserFull Object
 
-The **UserFull** object is an internal model used within Replyke’s administrative interfaces. It contains the full user record, including sensitive, private, or backoffice-only fields.
+The **UserFull** object is an internal model used within Sublay’s administrative interfaces. It contains the full user record, including sensitive, private, or backoffice-only fields.
 
 ### Properties
 

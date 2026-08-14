@@ -4,13 +4,13 @@ title: "External"
 
 ## Example Implementation
 
-This guide explains how to integrate an external user system with Replyke. For demonstration purposes, we'll use Clerk as the authentication provider. However, the logic can be adapted for other systems, with slight variations based on their specific requirements.
+This guide explains how to integrate an external user system with Sublay. For demonstration purposes, we'll use Clerk as the authentication provider. However, the logic can be adapted for other systems, with slight variations based on their specific requirements.
 
 ### Client-Side Integration
 
 #### Overview
 
-In this example, we check for a logged-in user from the external authentication system (Clerk). If a user is logged in, a request is made to the backend to retrieve a signed token, which is then consumed by the Replyke `AuthProvider`.
+In this example, we check for a logged-in user from the external authentication system (Clerk). If a user is logged in, a request is made to the backend to retrieve a signed token, which is then consumed by the Sublay `AuthProvider`.
 
 #### Implementation
 
@@ -65,14 +65,14 @@ export default ContextProvider;
 
 1.  **Token Management**: The Clerk session token is retrieved using `getToken`.
 2.  **API Call**: A `GET` request is sent to the server with the token included in the `Authorization` header. For other systems, ensure their tokens are passed as required.
-3.  **State Management**: The signed token received from the server is stored in the component state and consumed by the Replyke `AuthProvider`.
+3.  **State Management**: The signed token received from the server is stored in the component state and consumed by the Sublay `AuthProvider`.
 
 ### Server-Side Integration
 
 On the server, we:
 
 1.  Use Clerk middleware to handle authentication.
-2.  Implement an endpoint to issue a signed token for Replyke.
+2.  Implement an endpoint to issue a signed token for Sublay.
 
 #### Middleware Setup
 
@@ -123,16 +123,16 @@ export default async (req: ExReq, res: ExRes) => {
       (email) => email.id === user.primaryEmailAddressId
     )?.emailAddress;
 
-    const projectId = process.env.REPLYKE_PROJECT_ID;
+    const projectId = process.env.SUBLAY_PROJECT_ID;
     const privateKeyPem = Buffer.from(
-      process.env.REPLYKE_JWT_SIGN_PRIVATE_KEY!,
+      process.env.SUBLAY_JWT_SIGN_PRIVATE_KEY!,
       "base64"
     ).toString("utf-8");
 
     const payload = {
       sub: userId, // External user's ID
       iss: projectId, // Project ID
-      aud: "replyke.com", // Audience
+      aud: "sublay.io", // Audience
       userData: {
         email,
       },
@@ -159,7 +159,7 @@ export default async (req: ExReq, res: ExRes) => {
 3.  **JWT Payload**:
     -   `sub`: User ID.
     -   `iss`: Project ID.
-    -   `aud`: Always set to `replyke.com`.
+    -   `aud`: Set to `sublay.io`. This claim is not currently verified on the server, so existing integrations that still send the legacy value continue to work.
     -   `userData`: Optional user details. In this example we pass the email only, but we can pass all properties that are avaialable on the User object (e.g. name, username, location, metadata etc.)
 4.  **Token Signing**: The JWT is signed using `RS256` with a short expiration time (5 minutes).
 
@@ -169,8 +169,8 @@ To adapt this integration for other authentication systems:
 
 1.  Replace Clerk-specific logic (e.g., `getToken`, `requireAuth`, and user details extraction) with equivalent methods from your chosen system.
 2.  Ensure your authentication middleware populates the request with user data.
-3.  Follow Replyke’s JWT payload structure for compatibility.
+3.  Follow Sublay’s JWT payload structure for compatibility.
 
 ## Conclusion
 
-This example demonstrates a secure and modular approach to integrating an external user system with Replyke. While we used Clerk for demonstration, the same principles apply to other systems with minor adjustments. This flexibility ensures seamless integration with your existing authentication setup.
+This example demonstrates a secure and modular approach to integrating an external user system with Sublay. While we used Clerk for demonstration, the same principles apply to other systems with minor adjustments. This flexibility ensures seamless integration with your existing authentication setup.

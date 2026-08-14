@@ -6,7 +6,7 @@ icon: "rocket"
 
 # Quick Start Guide
 
-This guide will have you up and running with Replyke comment components in under 5 minutes.
+This guide will have you up and running with Sublay comment components in under 5 minutes.
 
 ---
 
@@ -16,7 +16,7 @@ Make sure you have:
 
 - ✅ Node.js 18+ installed
 - ✅ A React, React Native, or Expo project
-- ✅ A [Replyke project](https://dash.replyke.com) created
+- ✅ A [Sublay project](https://dash.sublay.io) created
 
 ---
 
@@ -69,7 +69,7 @@ The CLI will create a `replyke.json` configuration file and check for dependenci
 
 ## Step 2: Install Dependencies (if needed)
 
-If you haven't already, install the required Replyke packages:
+If you haven't already, install the required Sublay packages:
 
 <Tabs>
   <Tab title="React (Web)">
@@ -257,8 +257,8 @@ Here's a minimal end-to-end example:
     import { ReplykeProvider, useSignTestingJwt } from '@replyke/react-js';
     import { ThreadedCommentSection } from './components/comments-threaded';
 
-    const PROJECT_ID = import.meta.env.VITE_PUBLIC_REPLYKE_PROJECT_ID;
-    const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_REPLYKE_SECRET_KEY;
+    const PROJECT_ID = import.meta.env.VITE_PUBLIC_SUBLAY_PROJECT_ID;
+    const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_SUBLAY_SECRET_KEY;
 
     const DUMMY_USER = { id: 'user1', username: 'tech_developer' };
 
@@ -301,8 +301,8 @@ Here's a minimal end-to-end example:
     import { ReplykeProvider, useSignTestingJwt } from '@replyke/react-js';
     import { SocialCommentSection } from './components/comments-social';
 
-    const PROJECT_ID = import.meta.env.VITE_PUBLIC_REPLYKE_PROJECT_ID;
-    const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_REPLYKE_SECRET_KEY;
+    const PROJECT_ID = import.meta.env.VITE_PUBLIC_SUBLAY_PROJECT_ID;
+    const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_SUBLAY_SECRET_KEY;
 
     const DUMMY_USER = { id: 'user1', username: 'social_user' };
 
@@ -466,5 +466,5 @@ See the [Customization Guide](/components/customization/overview) for detailed e
 </AccordionGroup>
 
 <Info>
-Need more help? Check the [full documentation](/components/overview) or ask in our [Discord community](https://discord.gg/replyke).
+Need more help? Check the [full documentation](/components/overview) or ask in our [Discord community](https://discord.gg/REKxnCJzPz).
 </Info>

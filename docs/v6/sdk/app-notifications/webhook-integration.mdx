@@ -5,7 +5,7 @@ title: "Webhook Integration"
 
 ## Setting Up a Webhook for App Notifications
 
-When a new app notification is created by Replyke, developers can configure their server to be notified about the event. This is achieved by setting up a webhook endpoint on the developer’s server. A webhook is essentially an HTTP endpoint that is triggered by Replyke whenever a notification is generated. The webhook will receive a payload containing all the relevant details about the notification, enabling developers to send corresponding push notifications or perform other actions.
+When a new app notification is created by Sublay, developers can configure their server to be notified about the event. This is achieved by setting up a webhook endpoint on the developer’s server. A webhook is essentially an HTTP endpoint that is triggered by Sublay whenever a notification is generated. The webhook will receive a payload containing all the relevant details about the notification, enabling developers to send corresponding push notifications or perform other actions.
 
 ---
 
@@ -29,13 +29,13 @@ The payload sent to the webhook contains the following details:
 Verifying the integrity of a notification - covered in more detail below - is similar to verifying other webhooks, such as those triggered when an entity or user is created or updated, as discussed in the security section of this documentation.
 </Info>
 
-To ensure the integrity of the data received by your webhook, Replyke uses a secure signing mechanism:
+To ensure the integrity of the data received by your webhook, Sublay uses a secure signing mechanism:
 
 1. **Generate a Secret Key:** Developers must generate a secret key in their project’s dashboard and store it securely as an environment variable on their server.
 
-2. **Payload Signing:** Before sending the notification details to the webhook, Replyke signs the payload using the HMAC-SHA256 algorithm. This process uses the secret key to create a signature.
+2. **Payload Signing:** Before sending the notification details to the webhook, Sublay signs the payload using the HMAC-SHA256 algorithm. This process uses the secret key to create a signature.
 
-3. **Verification:** The webhook server must verify the payload using the same secret key to confirm that the request originated from Replyke. Any request with an invalid signature should be rejected.
+3. **Verification:** The webhook server must verify the payload using the same secret key to confirm that the request originated from Sublay. Any request with an invalid signature should be rejected.
 
 ---
 
@@ -50,7 +50,7 @@ import { Request, Response } from "express";
 import { validateIncomingHmac } from "./utility-functions";
 
 export default async (req: Request, res: Response) => {
-  const sharedSecret = process.env.REPLYKE_WEBHOOKS_SECRET;
+  const sharedSecret = process.env.SUBLAY_WEBHOOKS_SECRET;
   try {
     // Step 1: Validate the incoming HMAC signature
     validateIncomingHmac(req, sharedSecret!);
@@ -109,7 +109,7 @@ export function validateIncomingHmac(req: Request, secret: string): void {
 
 1. **Set Up Your Webhook Endpoint:** Create an HTTP endpoint on your server to receive the notification payloads.
 
-2. **Generate and Store Your Secret Key:** Go to the Replyke project dashboard to generate a secret key and store it securely as an environment variable.
+2. **Generate and Store Your Secret Key:** Go to the Sublay project dashboard to generate a secret key and store it securely as an environment variable.
 
 3. **Implement Payload Validation:** Use the provided example to validate incoming requests using the secret key, or implement a similar HMAC validation logic in your preferred programming language if you are not using Node.js.
 
@@ -117,5 +117,5 @@ export function validateIncomingHmac(req: Request, secret: string): void {
 
 5. **Monitor and Debug** (*Optional*): Log incoming requests and errors to ensure the webhook is functioning correctly.
 
-By following these steps, you can reliably integrate a secure webhook into your system, ensuring trusted communication between your server and Replyke.
+By following these steps, you can reliably integrate a secure webhook into your system, ensuring trusted communication between your server and Sublay.
 

@@ -8,7 +8,7 @@ title: "Provider And Hook"
 
 ### Threaded Comment Section: Implementation Guide
 
-The Replyke threaded comment section is designed to deliver a rich, discussion-focused user experience with unlimited nesting levels. By using the components and hooks provided, you can quickly integrate a fully functional Reddit-style comment system into your application.
+The Sublay threaded comment section is designed to deliver a rich, discussion-focused user experience with unlimited nesting levels. By using the components and hooks provided, you can quickly integrate a fully functional Reddit-style comment system into your application.
 
 ---
 
@@ -42,9 +42,9 @@ The `useThreadedComments` hook provides these components and ensures they work t
 
 1.  In order for the comment section to function properly, it needs to be aware of the entity it relates to. Therefore, the hook expects at least one of the following properties. None are mandatory individually, but at least one must be provided:
 
-  - `entityId`: The ID of the entity in Replyke's system.
+  - `entityId`: The ID of the entity in Sublay's system.
 
-  - `foreignId`: The foreign/external ID of the entity. Only relevant when Replyke is integrated on top of an external dataset, or a static value (e.g., "discussion-thread").
+  - `foreignId`: The foreign/external ID of the entity. Only relevant when Sublay is integrated on top of an external dataset, or a static value (e.g., "discussion-thread").
 
   - `shortId`: The unique short ID of the entity.
 
@@ -60,7 +60,7 @@ The `useThreadedComments` hook provides these components and ensures they work t
 4.  **highlightedCommentId**: Highlights a specific comment. This is particularly useful when directing users to a comment via notifications or direct links. For instance:
     - If a user is notified that someone upvoted their comment, set `highlightedCommentId` to the ID of the upvoted comment.
     - If a user is notified about a reply to their comment, set `highlightedCommentId` to the ID of the **reply**, not the original comment.
-5. **createIfNotFound**: An optional flag which instructs Replyke to create an entity if one isn't found.
+5. **createIfNotFound**: An optional flag which instructs Sublay to create an entity if one isn't found.
 
 ---
 
@@ -183,7 +183,7 @@ export default ThreadedCommentsSection;
 4.  **Voting Callbacks**: Handle upvote and downvote interactions specific to threaded discussions.
 5.  **Layout Structure**: Demonstrates a typical forum-style layout with header, scrollable content, and fixed input area.
 
-This example showcases the ease of integrating Replyke's threaded comment system while providing maximum flexibility for customization.
+This example showcases the ease of integrating Sublay's threaded comment system while providing maximum flexibility for customization.
 
 ---
 

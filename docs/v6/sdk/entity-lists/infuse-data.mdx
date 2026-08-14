@@ -4,7 +4,7 @@ title: "Infuse Data"
 
 # External Data Integration (infuseData)
 
-The `infuseData` callback allows you to merge external data with entities fetched by Replyke. This is useful when your entities need additional information from external APIs or databases.
+The `infuseData` callback allows you to merge external data with entities fetched by Sublay. This is useful when your entities need additional information from external APIs or databases.
 
 ## How It Works
 
@@ -15,7 +15,7 @@ When you provide an `infuseData` function to `useEntityList`, it:
 3. Adds the external data under an `infusion` property
 4. Returns the combined data in the `infusedEntities` array
 
-The original `entities` array remains unchanged, containing only Replyke's data. External data is safely nested under the `infusion` property to prevent key conflicts.
+The original `entities` array remains unchanged, containing only Sublay's data. External data is safely nested under the `infusion` property to prevent key conflicts.
 
 ## Usage
 
@@ -115,16 +115,16 @@ const infuseData = async (foreignId) => {
 
 ## Data Structure
 
-External data is safely nested under the `infusion` property to prevent conflicts with Replyke's entity properties:
+External data is safely nested under the `infusion` property to prevent conflicts with Sublay's entity properties:
 
 ```typescript
-// Original entity from Replyke
+// Original entity from Sublay
 const entity = {
   id: "123",
   foreignId: "product-456",
   title: "Amazing Widget",
   content: "A great product...",
-  // ... other Replyke fields
+  // ... other Sublay fields
 };
 
 // External data returned by infuseData
