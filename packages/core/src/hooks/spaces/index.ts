@@ -48,8 +48,8 @@ export { default as useApproveMember } from "./useApproveMember";
 export type { ApproveMemberProps } from "./useApproveMember";
 export { default as useDeclineMember } from "./useDeclineMember";
 export type { DeclineMemberProps } from "./useDeclineMember";
-export { default as useRemoveMember } from "./useRemoveMember";
-export type { RemoveMemberProps } from "./useRemoveMember";
+export { default as useBanMember } from "./useBanMember";
+export type { BanMemberProps } from "./useBanMember";
 export { default as useUnbanMember } from "./useUnbanMember";
 export type { UnbanMemberProps } from "./useUnbanMember";
 

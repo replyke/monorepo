@@ -141,7 +141,7 @@ interface DeclineMemberParams {
   memberId: string;
 }
 
-interface RemoveMemberParams {
+interface BanMemberParams {
   projectId: string;
   spaceId: string;
   memberId: string;
@@ -507,11 +507,11 @@ export const spacesApi = baseApi.injectEndpoints({
       ],
     }),
 
-    // Remove/ban member (moderator+)
-    removeMember: builder.mutation<void, RemoveMemberParams>({
+    // Ban member (moderator+)
+    banMember: builder.mutation<SpaceMember, BanMemberParams>({
       query: ({ projectId, spaceId, memberId }) => ({
-        url: `/${projectId}/spaces/${spaceId}/members/${memberId}`,
-        method: "DELETE",
+        url: `/${projectId}/spaces/${spaceId}/members/${memberId}/ban`,
+        method: "PATCH",
       }),
       invalidatesTags: (result, error, { spaceId, memberId }) => [
         { type: "SpaceMember", id: spaceId },
@@ -560,7 +560,7 @@ export const {
   useUpdateMemberRoleMutation,
   useApproveMemberMutation,
   useDeclineMemberMutation,
-  useRemoveMemberMutation,
+  useBanMemberMutation,
   useUnbanMemberMutation,
 } = spacesApi;
 
@@ -582,6 +582,6 @@ export const {
   updateMemberRole,
   approveMember,
   declineMember,
-  removeMember,
+  banMember,
   unbanMember,
 } = spacesApi.endpoints;
