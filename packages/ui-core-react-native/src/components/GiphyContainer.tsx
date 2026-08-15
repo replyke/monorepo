@@ -46,8 +46,10 @@ interface GiphyContainerProps {
     url: string;
     gifUrl: string;
     gifPreviewUrl: string;
-    altText: string | undefined;
-    aspectRatio: number;
+    // The API's GifData requires both of these as strings, and rejects the
+    // payload otherwise — so emit the shape the server accepts.
+    altText: string;
+    aspectRatio: string;
   }) => void;
   visible: boolean; // determines if this screen should be shown or hidden
 }
@@ -228,13 +230,17 @@ export default function GiphyContainer({
         {columns.map((column, colIndex) => (
           <View key={colIndex} style={{ flex: 1, marginHorizontal: 4 }}>
             {column.map((item) => {
-              const aspectRatio =
-                parseInt(item.images.fixed_width.height) /
-                parseInt(item.images.fixed_width.width);
+              const gifWidth = parseInt(item.images.fixed_width.width);
+              const gifHeight = parseInt(item.images.fixed_width.height);
+
+              // The grid lays out fixed-width columns, so it sizes by
+              // height / width. This is local to the picker — the value handed
+              // to onSelectGif below is width / height, see the note there.
+              const heightOverWidth = gifHeight / gifWidth;
 
               const imageStyle = {
                 width: columnWidth,
-                height: columnWidth * aspectRatio,
+                height: columnWidth * heightOverWidth,
                 borderRadius: 4,
               };
 
@@ -263,10 +269,14 @@ export default function GiphyContainer({
                     onSelectGif({
                       id: item.id,
                       url: item.url,
-                      aspectRatio,
+                      // Canonically width / height, matching the react-js
+                      // picker — so a stored GIF means the same thing whichever
+                      // platform wrote it. (The grid above uses the inverse for
+                      // its own layout; don't reuse that value here.)
+                      aspectRatio: String(gifWidth / gifHeight),
                       gifUrl: item.images.fixed_width.webp,
                       gifPreviewUrl: item.images.preview_gif.webp,
-                      altText: item.title,
+                      altText: item.title ?? "",
                     });
                   }}
                 >
