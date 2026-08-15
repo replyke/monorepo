@@ -8,6 +8,13 @@ import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
 
 Returns a single comment by its Sublay UUID.
 
+<Note>
+  If the comment author is block-edged with the signed-in caller, in either
+  direction, this returns `404` with `comment/not-found` — identical to a
+  comment that does not exist. An embedded `parentComment` is nulled under the
+  same rule. Requires the `moderation` bundle.
+</Note>
+
 ## Path Parameters
 
 <ParamField path="commentId" type="string" required>

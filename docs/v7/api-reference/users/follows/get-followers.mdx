@@ -6,7 +6,7 @@ description: "Get a paginated list of users who follow a specific user"
 
 import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
 
-Returns a paginated list of users who follow the specified user. Authentication is optional. The endpoint works without a token, but when the caller is signed in, users they have blocked are excluded from the results.
+Returns a paginated list of users who follow the specified user. Authentication is optional — the endpoint works without a token. When the caller is signed in, any user with a block between them and the caller, in either direction, is excluded from the results. Block filtering requires the `moderation` bundle.
 
 ## Path Parameters
 

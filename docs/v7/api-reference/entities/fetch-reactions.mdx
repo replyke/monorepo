@@ -12,7 +12,7 @@ import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
 
 Returns a paginated list of reactions for an entity, each with the reacting user's profile. Useful for displaying "liked by" lists or reaction breakdowns.
 
-Authentication is optional. The endpoint works without a token, but when the caller is signed in, reactions from users they have blocked are excluded from both the results and the count.
+Authentication is optional — the endpoint works without a token. When the caller is signed in, reactions from users with a block between them and the caller, in either direction, are excluded from both the results and the count. Block filtering requires the `moderation` bundle.
 
 ## Path Parameters
 

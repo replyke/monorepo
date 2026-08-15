@@ -10,6 +10,13 @@ import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
 
 `useFetchComment` returns a function that fetches a single comment by ID. The response wraps the comment in a `{ comment }` object to allow future expansion of the response shape.
 
+<Note>
+  If the comment author is block-edged with the signed-in caller, in either
+  direction, this returns `404` with `comment/not-found` — identical to a
+  comment that does not exist. An embedded `parentComment` is nulled under the
+  same rule. Requires the `moderation` bundle.
+</Note>
+
 ## Usage Example
 
 ```tsx

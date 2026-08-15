@@ -8,6 +8,12 @@ icon: "plug"
 
 `useFetchSpaceChildren` returns a callable function that fetches the immediate child spaces of a given space. Results are paginated.
 
+<Note>
+  Authentication is optional. When the caller is signed in, each child carries
+  an `isMember` flag. Only children with `visibility: "public"` are listed for
+  every caller — signing in does not surface unlisted or private children.
+</Note>
+
 ## Usage Example
 
 ```tsx

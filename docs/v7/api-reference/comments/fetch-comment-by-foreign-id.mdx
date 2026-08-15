@@ -6,6 +6,13 @@ description: "Get a comment by its foreign ID"
 
 Returns a single comment matching the given `foreignId` within the project. Useful for looking up comments using your own application's identifiers.
 
+<Note>
+  If the comment author is block-edged with the signed-in caller, in either
+  direction, this returns `404` with `comment/not-found` — identical to a
+  comment that does not exist. An embedded `parentComment` is nulled under the
+  same rule. Requires the `moderation` bundle.
+</Note>
+
 ## Query Parameters
 
 <ParamField query="foreignId" type="string" required>
