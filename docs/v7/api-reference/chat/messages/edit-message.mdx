@@ -26,8 +26,8 @@ All fields are optional. Only provided fields are updated.
   New text content. After editing, the message must still have at least one of: content, GIF, or an attached file.
 </ParamField>
 
-<ParamField body="gif" type="string">
-  Updated GIF URL. Set to `null` to remove the GIF.
+<ParamField body="gif" type="object">
+  Updated GIF attachment. See [GifData](/data-models/chat-message#gifdata) for the expected shape. Set to `null` to remove the GIF.
 </ParamField>
 
 <ParamField body="mentions" type="array">

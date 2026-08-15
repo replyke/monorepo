@@ -57,8 +57,10 @@ The `gif` field uses this shape when a GIF is attached:
 | `url` | `string` | Landing page URL for the GIF. |
 | `gifUrl` | `string` | Direct URL to the animated GIF. |
 | `gifPreviewUrl` | `string` | URL to a static preview image. |
-| `altText` | `string \| undefined` | Accessibility description. |
-| `aspectRatio` | `number` | Width / height ratio for layout purposes. |
+| `altText` | `string` | Accessibility description. Required. |
+| `aspectRatio` | `string` | Width / height ratio for layout purposes, as a string — e.g. `"1.5"`, not `1.5`. |
+
+All six fields are required when a GIF is attached.
 
 ### Mention
 

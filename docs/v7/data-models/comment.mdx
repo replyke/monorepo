@@ -47,8 +47,10 @@ A comment represents a user-authored response to an entity. Comments support nes
 | `url` | `string` | URL to the GIF page or canonical source. |
 | `gifUrl` | `string` | Direct URL to the animated GIF file. |
 | `gifPreviewUrl` | `string` | URL to a lower-quality preview of the GIF. |
-| `altText` | `string \| undefined` | Accessible description of the GIF. |
-| `aspectRatio` | `number` | Width-to-height ratio for rendering. |
+| `altText` | `string` | Accessible description of the GIF. Required. |
+| `aspectRatio` | `string` | Width-to-height ratio for rendering, as a string — e.g. `"1.5"`, not `1.5`. |
+
+All six fields are required when a GIF is attached.
 
 ## Includes
 

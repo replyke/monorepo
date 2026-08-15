@@ -408,7 +408,7 @@ const message = await sublay.chat.editMessage({
 <ParamField body="messageId" type="string" required />
 <ParamField body="userId" type="string" required>The acting user (must be the message author).</ParamField>
 <ParamField body="content" type="string" />
-<ParamField body="gif" type="string | null">A GIF URL, or `null` to clear it.</ParamField>
+<ParamField body="gif" type="GifData | null">A [GifData](/data-models/chat-message#gifdata) attachment, or `null` to clear it.</ParamField>
 <ParamField body="mentions" type="Mention[]" />
 <ParamField body="metadata" type="object | null" />
 

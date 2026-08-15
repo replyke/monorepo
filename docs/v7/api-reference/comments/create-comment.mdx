@@ -28,9 +28,11 @@ Creates a new comment on an entity, or a reply to an existing comment. The comme
     "gifUrl": "https://media.giphy.com/...",
     "gifPreviewUrl": "https://media.giphy.com/...",
     "url": "https://giphy.com/...",
-    "aspectRatio": "16:9"
+    "aspectRatio": "1.5"
   }
   ```
+
+  `aspectRatio` is width ÷ height as a decimal string. Colon notation like `"16:9"` is rejected by clients that compute layout from it.
 </ParamField>
 
 <ParamField body="attachments" type="object[]">

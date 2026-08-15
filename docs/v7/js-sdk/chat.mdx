@@ -493,8 +493,8 @@ const message = await sublay.chat.editMessage({
   New message text.
 </ParamField>
 
-<ParamField body="gif" type="string | null">
-  A GIF URL, or `null` to clear it.
+<ParamField body="gif" type="GifData | null">
+  A [GifData](/data-models/chat-message#gifdata) attachment, or `null` to clear it.
 </ParamField>
 
 <ParamField body="mentions" type="Mention[]">
