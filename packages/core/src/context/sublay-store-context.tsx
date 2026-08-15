@@ -8,6 +8,7 @@ import {
   selectAccountsReady,
   selectAccountManagerRegistered,
 } from "../store/slices/accountsSlice";
+import useAuthGate from "../hooks/auth/useAuthGate";
 
 export interface SublayStoreProviderProps {
   children: ReactNode;
@@ -28,6 +29,10 @@ const AuthInitializer: React.FC<{
   const accountsReady = useSublaySelector(selectAccountsReady);
   const accountManagerRegistered = useSublaySelector(selectAccountManagerRegistered);
   const [hasWaitedForManager, setHasWaitedForManager] = useState(false);
+
+  // Holds outbound requests until the bootstrap below settles. `children` still
+  // render immediately — only the requests wait.
+  useAuthGate(projectId);
 
   // Give AccountManager one microtask to register itself
   useEffect(() => {
