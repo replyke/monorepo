@@ -15,6 +15,7 @@ import type {
 } from "axios";
 
 import axiosPublic, { axiosPrivate } from "../config/axios";
+import { resetAuthGate } from "../config/authGate";
 import { sublayReducers } from "../store/sublayReducers";
 import { setTokens, setUser, setInitialized } from "../store/slices/authSlice";
 import {
@@ -152,6 +153,9 @@ export const axiosErrorWithStatus = toAxiosError;
  */
 export function resetAxiosMocks(): void {
   vi.restoreAllMocks();
+  // Module-level too: an armed gate leaking into the next test file would make
+  // its requests wait on a bootstrap that never comes.
+  resetAuthGate();
   axiosPrivate.interceptors.request.clear();
   axiosPrivate.interceptors.response.clear();
   axiosPublic.interceptors.request.clear();
