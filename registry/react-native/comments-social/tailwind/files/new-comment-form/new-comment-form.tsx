@@ -118,8 +118,8 @@ function NewCommentForm({
       url: string;
       gifUrl: string;
       gifPreviewUrl: string;
-      altText: string | undefined;
-      aspectRatio: number;
+      altText: string;
+      aspectRatio: string;
     }) => {
       setContent("");
       resetMentions();
