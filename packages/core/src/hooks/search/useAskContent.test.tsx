@@ -240,10 +240,53 @@ describe("useAskContent", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("does not refresh on a 401 and surfaces a sign-in message", async () => {
+  it("refreshes once and retries on a bare 401, then streams", async () => {
+    // 401 was previously terminal here, on the reasoning that it meant "no
+    // token, nothing to refresh". Wrong whenever a refresh token is present but
+    // the access token is not — a failed bootstrap, or the auth gate's ready
+    // timeout — where it told a signed-in user they were signed out. It also
+    // contradicted the axios interceptor, which treats a bare 401 as
+    // refreshable.
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(new Response("Unauthorized", { status: 401 }));
+      .mockResolvedValueOnce(new Response("Unauthorized", { status: 401 }))
+      .mockResolvedValueOnce(
+        makeStreamResponse([sse("token", { content: "hi" }), sse("done", {})]),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    mockedRefresh.mockResolvedValue("fresh-token");
+
+    // A refresh token but no access token — the failed-bootstrap / ready-timeout
+    // shape, where the old code told a signed-in user they were signed out.
+    const { result } = renderHookWithAxios(() => useAskContent(), {
+      refreshToken: "r",
+    });
+
+    act(() => {
+      result.current.ask({ query: "hello" });
+    });
+
+    await waitFor(() => expect(result.current.answer).toBe("hi"));
+    expect(mockedRefresh).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.current.error).toBeNull();
+    expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe(
+      "Bearer fresh-token",
+    );
+  });
+
+  it("does not refresh on a coded 401 and surfaces the error", async () => {
+    // Controllers raise coded 401s (space/auth-required, entity/user-required,
+    // auth/user-required, …). No refresh can fix those.
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: "Authentication required to filter by membership.",
+          code: "space/auth-required",
+        }),
+        { status: 401 },
+      ),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     const { result } = renderHookWithAxios(() => useAskContent());
@@ -253,8 +296,66 @@ describe("useAskContent", () => {
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.error).toBe("You must be signed in to use AI search.");
+    expect(result.current.error).toBe(
+      "Authentication required to filter by membership.",
+    );
     expect(mockedRefresh).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("surfaces a coded 401 returned by the RETRY instead of the generic message", async () => {
+    // The retry carries a fresh token, so a 401 here is the server saying
+    // something specific. Flattening it to "you must be signed in" loses that,
+    // and left 401 asymmetric with 403 — a coded 403 on the retry falls through
+    // to the generic !ok handler, which surfaces the server's own message.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("Unauthorized", { status: 401 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: "Authentication required to filter by membership.",
+            code: "space/auth-required",
+          }),
+          { status: 401 },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    mockedRefresh.mockResolvedValue("fresh-token");
+
+    const { result } = renderHookWithAxios(() => useAskContent(), {
+      refreshToken: "r",
+    });
+
+    act(() => {
+      result.current.ask({ query: "hello" });
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.current.error).toBe(
+      "Authentication required to filter by membership.",
+    );
+  });
+
+  it("still tells a genuinely signed-out caller to sign in", async () => {
+    // Bare 401 with nothing to refresh with: the message must stay the
+    // signed-out one, not the session-expired one the 403 path uses.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("Unauthorized", { status: 401 }));
+    vi.stubGlobal("fetch", fetchMock);
+    mockedRefresh.mockResolvedValue(undefined);
+
+    const { result } = renderHookWithAxios(() => useAskContent());
+
+    act(() => {
+      result.current.ask({ query: "hello" });
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBe("You must be signed in to use AI search.");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("surfaces a session-expired error when the refresh yields no token", async () => {

@@ -165,6 +165,100 @@ describe("useAxiosPrivate", () => {
     expect(adapter.mock.calls[1][0].headers.Authorization).toBeUndefined();
   });
 
+  describe("bare 401 recovery (replaces what `Bearer null` used to buy)", () => {
+    /** Any request not yet retried gets `status`; retries succeed. */
+    function stubStatusThenSuccess(status: number, data?: unknown) {
+      return vi.fn(async (config: InternalAxiosRequestConfig) => {
+        if (config.sent) return okAxiosResponse({ ok: true }, 200, config);
+        throw axiosErrorWithStatus(status, data, config);
+      });
+    }
+
+    it("refreshes and retries on a bare 401, as it does on a bare 403", async () => {
+      // With no header sent, `requireUserAuth` answers 401 where it used to
+      // answer 403 for `Bearer null`. That recovery path has to survive.
+      const requestNewAccessToken = vi.fn().mockResolvedValue("fresh-token");
+      mockedUseAuth.mockReturnValue({
+        accessToken: null,
+        requestNewAccessToken,
+      } as never);
+      const adapter = stubStatusThenSuccess(401);
+      stubAxiosAdapter(axiosPrivate, adapter);
+
+      renderHook(() => useAxiosPrivate());
+
+      await expect(axiosPrivate.get("/x")).resolves.toMatchObject({
+        status: 200,
+      });
+      expect(requestNewAccessToken).toHaveBeenCalledTimes(1);
+      expect(adapter.mock.calls[1][0].headers.Authorization).toBe(
+        "Bearer fresh-token",
+      );
+    });
+
+    it("does NOT refresh on a 401 that carries a semantic code", async () => {
+      // Controllers raise coded 401s (space/auth-required, entity/user-required,
+      // auth/user-required, push-device/unauthorized, auth/token-reuse-detected).
+      // A refresh cannot fix any of them, and rotating on each would burn the
+      // refresh token — the same trap the 403 branch already avoids.
+      const requestNewAccessToken = vi.fn().mockResolvedValue("fresh-token");
+      mockedUseAuth.mockReturnValue({
+        accessToken: "token-a",
+        requestNewAccessToken,
+      } as never);
+      stubAxiosAdapter(
+        axiosPrivate,
+        stubStatusThenSuccess(401, { code: "space/auth-required" }),
+      );
+
+      renderHook(() => useAxiosPrivate());
+
+      await expect(axiosPrivate.get("/x")).rejects.toMatchObject({
+        response: { status: 401 },
+      });
+      expect(requestNewAccessToken).not.toHaveBeenCalled();
+    });
+
+    it("rejects a bare 401 when there is nothing to refresh with", async () => {
+      // Genuinely signed out: one refresh attempt, then the original error —
+      // the same outcome and the same round-trip count as the old sentinel.
+      const requestNewAccessToken = vi.fn().mockResolvedValue(undefined);
+      mockedUseAuth.mockReturnValue({
+        accessToken: null,
+        requestNewAccessToken,
+      } as never);
+      stubAxiosAdapter(axiosPrivate, stubStatusThenSuccess(401));
+
+      renderHook(() => useAxiosPrivate());
+
+      await expect(axiosPrivate.get("/x")).rejects.toMatchObject({
+        response: { status: 401 },
+      });
+      expect(requestNewAccessToken).toHaveBeenCalledTimes(1);
+    });
+
+    it("retries a bare 401 only once", async () => {
+      const requestNewAccessToken = vi.fn().mockResolvedValue("fresh-token");
+      mockedUseAuth.mockReturnValue({
+        accessToken: null,
+        requestNewAccessToken,
+      } as never);
+      // Always 401, even on the retry.
+      const adapter = vi.fn(async (config: InternalAxiosRequestConfig) => {
+        throw axiosErrorWithStatus(401, undefined, config);
+      });
+      stubAxiosAdapter(axiosPrivate, adapter);
+
+      renderHook(() => useAxiosPrivate());
+
+      await expect(axiosPrivate.get("/x")).rejects.toMatchObject({
+        response: { status: 401 },
+      });
+      expect(requestNewAccessToken).toHaveBeenCalledTimes(1);
+      expect(adapter).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe("with the auth gate armed", () => {
     it("holds a mount-time request until the bootstrap lands, then sends the ARRIVED token", async () => {
       // The exact cold-start shape: the interceptor is registered while
@@ -200,10 +294,10 @@ describe("useAxiosPrivate", () => {
       );
     });
 
-    it("still sends `Bearer null` when signed out, keeping 403-driven recovery intact", async () => {
-      // requireUserAuth answers 401 to a MISSING header and a bare 403 to a bad
-      // one, and only the 403 drives refresh-and-retry. Dropping the header for
-      // a null token would silently break that path.
+    it("sends NO Authorization header when signed out", async () => {
+      // Previously emitted the literal `Bearer null`. That sentinel blocked
+      // tightening `optionalUserAuth` server-side: a signed-out visitor sending
+      // it to a public route would get a 403 instead of public content.
       mockedUseAuth.mockReturnValue({
         accessToken: null,
         requestNewAccessToken: vi.fn(),
@@ -219,7 +313,9 @@ describe("useAxiosPrivate", () => {
       renderHook(() => useAxiosPrivate());
       await axiosPrivate.get("/x");
 
-      expect(adapter.mock.calls[0][0].headers.Authorization).toBe("Bearer null");
+      // Verified non-vacuous: restoring the unconditional header fails this
+      // with `expected 'Bearer null' to be undefined`.
+      expect(adapter.mock.calls[0][0].headers.Authorization).toBeUndefined();
     });
 
     it("rotates a near-expiry token before the request leaves", async () => {

@@ -24,12 +24,28 @@ const useAxiosPrivate = (): AxiosInstance => {
         // provider armed it), so this costs nothing after cold start.
         const token = await getAuthorizedToken(accessToken);
 
-        // Deliberately still `Bearer null` when signed out. `requireUserAuth`
-        // answers 401 to a MISSING header and a bare 403 to a bad one, and only
-        // the 403 drives the refresh-and-retry below. Dropping the header here
-        // would silently break cold-load recovery on every route that relies on
-        // it. `optionalUserAuth` ignores an unparseable token either way.
-        config.headers["Authorization"] = `Bearer ${token}`;
+        // No token means genuinely signed out, so send no header at all.
+        //
+        // This used to emit the literal string `Bearer null`, which was
+        // load-bearing before the auth gate existed: a cold-load request left
+        // before the token was known, and `requireUserAuth` answers a bare 403
+        // to a BAD header but 401 to a MISSING one — and only the 403 drove the
+        // refresh-and-retry below. The sentinel was what made recovery fire.
+        //
+        // The gate removed the premise (requests now wait, so a null token
+        // means signed out rather than not-yet-known), and the response
+        // interceptor below now treats a bare 401 exactly like a bare 403, so
+        // the recovery path survives without it. This also matches what
+        // `baseApi.prepareHeaders` has always done on the RTK Query side.
+        //
+        // Emitting it blocked a server-side fix: `optionalUserAuth` currently
+        // tolerates any unverifiable token, which is why an expired one degrades
+        // silently to stranger-data. It can only be tightened to reject bad
+        // tokens once clients stop sending `null` on public routes, or every
+        // signed-out visitor would get a 403 instead of public content.
+        if (token) {
+          config.headers["Authorization"] = `Bearer ${token}`;
+        }
         return config;
       },
       (error) => Promise.reject(error)
@@ -56,16 +72,29 @@ const useAxiosPrivate = (): AxiosInstance => {
           );
         }
 
-        // A *bare* 403 (no error code) signals an expired/invalid access token:
-        // on the data plane that's emitted only by the auth middlewares
-        // (requireUserAuth/requireAdminAuth/requireClientAuth) via
-        // `sendStatus(403)` — every semantic 403 the controllers raise carries a
-        // `code` (project/plan-required, project/owner-required, space-permission,
-        // user/suspended, auth/no-user-found, …). Those are rejections a refresh
-        // cannot fix, so we must not rotate the token or retry — doing so would
-        // waste a rotation on every such response (e.g. every AI call on a free
-        // plan).
-        if (status === 403 && !data?.code && !prevRequest?.sent) {
+        // A *bare* 401/403 (no error code) signals a missing or expired access
+        // token: on the data plane those are emitted only by the auth
+        // middlewares (requireUserAuth/requireAdminAuth/requireClientAuth) via
+        // `sendStatus(401)` for an absent header and `sendStatus(403)` for one
+        // that fails verification. Every semantic 401/403 the controllers raise
+        // carries a `code` — 403: project/plan-required, project/owner-required,
+        // space-permission, user/suspended, auth/no-user-found; 401:
+        // space/auth-required, entity/user-required, auth/user-required,
+        // push-device/unauthorized, auth/token-reuse-detected, auth/wrong-password.
+        // Those are
+        // rejections a refresh cannot fix, so we must not rotate the token or
+        // retry — doing so would waste a rotation on every such response (e.g.
+        // every AI call on a free plan).
+        //
+        // 401 joins 403 here because the request interceptor above no longer
+        // sends `Bearer null`. A signed-out-but-recoverable caller (one holding
+        // a refresh token) now produces a bare 401 where it used to produce a
+        // bare 403, and that path must still recover. When there is nothing to
+        // refresh with, `refreshAccessToken` resolves undefined and the original
+        // error is rejected — same outcome as before, one round trip either way.
+        const isBareAuthFailure =
+          (status === 401 || status === 403) && !data?.code;
+        if (isBareAuthFailure && !prevRequest?.sent) {
           prevRequest.sent = true;
 
           const newAccessToken = await refreshAccessToken(requestNewAccessToken);
