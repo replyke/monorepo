@@ -80,7 +80,8 @@ const useAxiosPrivate = (): AxiosInstance => {
         // carries a `code` — 403: project/plan-required, project/owner-required,
         // space-permission, user/suspended, auth/no-user-found; 401:
         // space/auth-required, entity/user-required, auth/user-required,
-        // push-device/unauthorized, auth/token-reuse-detected. Those are
+        // push-device/unauthorized, auth/token-reuse-detected, auth/wrong-password.
+        // Those are
         // rejections a refresh cannot fix, so we must not rotate the token or
         // retry — doing so would waste a rotation on every such response (e.g.
         // every AI call on a free plan).
@@ -91,7 +92,9 @@ const useAxiosPrivate = (): AxiosInstance => {
         // bare 403, and that path must still recover. When there is nothing to
         // refresh with, `refreshAccessToken` resolves undefined and the original
         // error is rejected — same outcome as before, one round trip either way.
-        if ((status === 401 || status === 403) && !data?.code && !prevRequest?.sent) {
+        const isBareAuthFailure =
+          (status === 401 || status === 403) && !data?.code;
+        if (isBareAuthFailure && !prevRequest?.sent) {
           prevRequest.sent = true;
 
           const newAccessToken = await refreshAccessToken(requestNewAccessToken);

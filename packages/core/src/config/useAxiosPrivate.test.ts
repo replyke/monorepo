@@ -313,10 +313,9 @@ describe("useAxiosPrivate", () => {
       renderHook(() => useAxiosPrivate());
       await axiosPrivate.get("/x");
 
-      const sent = adapter.mock.calls[0][0].headers.Authorization;
-      expect(sent).toBeUndefined();
-      // Guard the regression specifically — an empty-ish header is not enough.
-      expect(String(sent)).not.toContain("null");
+      // Verified non-vacuous: restoring the unconditional header fails this
+      // with `expected 'Bearer null' to be undefined`.
+      expect(adapter.mock.calls[0][0].headers.Authorization).toBeUndefined();
     });
 
     it("rotates a near-expiry token before the request leaves", async () => {

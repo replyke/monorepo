@@ -3,6 +3,7 @@ import useProject from "../projects/useProject";
 import useAuth from "../auth/useAuth";
 import { BASE_URL } from "../../config/axios";
 import { refreshAccessToken } from "../../config/refreshAccessToken";
+import { getAuthorizedToken } from "../../config/authGate";
 import { ContentSearchResult } from "./useSearchContent";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
@@ -175,26 +176,44 @@ export default function useAskContent(): UseAskContentReturn {
 
       (async () => {
         try {
-          let response = await doFetch(accessToken);
+          // Routed through the auth gate like every other token attachment, so
+          // a call made before the bootstrap settles waits rather than going
+          // out unauthenticated.
+          let response = await doFetch(await getAuthorizedToken(accessToken));
 
-          // A *bare* 403 (no error code) means the access token expired/invalid
-          // — the same signal `requireUserAuth` emits. Unlike the axios hooks,
-          // this raw-fetch stream can't lean on the interceptor, so refresh once
-          // (coalesced with the interceptor via the shared single-flight) and
-          // retry. Coded 403s (project/plan-required, user/suspended, …) are
-          // semantic and unrecoverable by refresh, so surface them as-is. A 401
-          // (no token at all) is likewise unrecoverable and falls through below.
-          if (response.status === 403) {
+          // A *bare* 401/403 (no error code) means the access token is missing
+          // or expired — the signals `requireUserAuth` emits for an absent and
+          // an unverifiable header respectively. Unlike the axios hooks, this
+          // raw-fetch stream can't lean on the interceptor, so refresh once
+          // (coalesced with it via the shared single-flight) and retry. Coded
+          // responses (project/plan-required, user/suspended, space/auth-required,
+          // …) are semantic and unrecoverable by refresh, so surface them as-is.
+          //
+          // 401 was previously treated as terminal, on the reasoning that it
+          // meant "no token at all" and so nothing to refresh. That was wrong
+          // whenever a refresh token was present but the access token was not
+          // — a failed bootstrap, or the auth gate's ready timeout — and it
+          // told a signed-in user they were signed out. It also contradicted
+          // the axios interceptor, which treats a bare 401 as refreshable.
+          const authFailureStatus = response.status;
+          if (authFailureStatus === 401 || authFailureStatus === 403) {
             const text = await response.text().catch(() => "");
             const parsed = safeParseJson(text);
             if (parsed?.code) {
-              setError(parsed.error ?? "Request failed (403)");
+              setError(parsed.error ?? `Request failed (${authFailureStatus})`);
               setLoading(false);
               return;
             }
             const newToken = await refreshAccessToken(requestNewAccessToken);
             if (!newToken) {
-              setError("Your session has expired. Please sign in again.");
+              // Nothing to refresh with. A 401 means no credentials were ever
+              // presented, so the caller is genuinely signed out; a 403 means
+              // one was presented and rejected, i.e. a session that lapsed.
+              setError(
+                authFailureStatus === 401
+                  ? "You must be signed in to use AI search."
+                  : "Your session has expired. Please sign in again.",
+              );
               setLoading(false);
               return;
             }
