@@ -12,7 +12,7 @@ import {
 } from "../store/slices/accountsSlice";
 import useAxiosPrivate from "../config/useAxiosPrivate";
 import axiosPublic, { axiosPrivate } from "../config/axios";
-import { resetAuthGate } from "../config/authGate";
+import { resetAuthGate, getAuthorizedToken } from "../config/authGate";
 import { stubAxiosAdapter, okAxiosResponse, resetAxiosMocks } from "../test-utils";
 
 /**
@@ -124,6 +124,53 @@ describe("auth gate — provider integration", () => {
     expect(dataAdapter.mock.calls[0][0].headers.Authorization).toBe(
       `Bearer ${BOOTSTRAPPED_TOKEN}`,
     );
+  });
+
+  it("is already armed by the time a child's mount effect runs", async () => {
+    // Locks the placement of `armAuthGate()` in the provider's RENDER body.
+    //
+    // React runs child effects before parent effects, so arming from the
+    // provider's own effect would happen after this child's effect has already
+    // asked for a token. Today that is survivable by accident — axios consults
+    // the gate a microtask later, by which point the parent effect has run —
+    // but the margin is invisible, so moving the call would silently remove it
+    // and nothing else in the suite would notice.
+    //
+    // The observable difference: an armed gate makes `getAuthorizedToken` WAIT
+    // while the bootstrap is pending; a disarmed one resolves immediately with
+    // the caller's own fallback.
+    axiosPublic.defaults.adapter = (() => new Promise(() => {})) as never;
+
+    let resolvedDuringChildEffect: string | null | undefined = "unset";
+    function ProbeChild() {
+      React.useEffect(() => {
+        const probe = getAuthorizedToken("fallback-token");
+        void Promise.race([
+          probe,
+          Promise.resolve("__still-waiting__" as const),
+        ]).then((value) => {
+          resolvedDuringChildEffect = value;
+        });
+      }, []);
+      return null;
+    }
+
+    act(() => {
+      sublayStore.dispatch(setRefreshToken("stored-refresh"));
+    });
+
+    render(
+      <SublayStoreProvider projectId="test-project">
+        <ProbeChild />
+      </SublayStoreProvider>,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // Armed: the gate held the request instead of handing back the fallback.
+    expect(resolvedDuringChildEffect).toBe("__still-waiting__");
   });
 
   it("releases held requests even when the bootstrap fails, degrading to anonymous", async () => {

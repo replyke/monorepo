@@ -17,36 +17,15 @@ import { selectRefreshToken, setRefreshToken } from "../../store/slices/authSlic
 import { selectUser } from "../../store/slices/userSlice";
 import { handleError } from "../../utils/handleError";
 import type { AccountStorage } from "../../interfaces/AccountStorage";
+import { readJwtExp, readJwtSub } from "../../utils/jwt";
 
-function base64UrlDecode(str: string): string {
-  // Convert base64url to standard base64
-  const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
-  if (typeof atob === "function") return atob(base64);
-  // Fallback for React Native (Buffer available via Node.js polyfill or hermes)
-  const GlobalBuffer = (globalThis as any).Buffer;
-  if (typeof GlobalBuffer === "function") return GlobalBuffer.from(base64, "base64").toString("utf-8");
-  return "";
-}
-
+// An unreadable `exp` is persisted as 0 — i.e. "already expired" — so a token
+// we can't make sense of gets treated as stale rather than trusted. That is the
+// OPPOSITE of the auth gate's policy for the same claim, deliberately: there,
+// "unknown" must not trigger a rotation. The shared reader in `utils/jwt`
+// returns null and leaves the choice to each call site.
 function extractExpFromJwt(jwt: string): number {
-  try {
-    const payload = JSON.parse(base64UrlDecode(jwt.split(".")[1]));
-    return (payload.exp ?? 0) * 1000;
-  } catch {
-    return 0;
-  }
-}
-
-// A JWT's `sub` claim — the user id it was minted for. Used to detect a transient token/user
-// desync before we persist an account entry.
-function extractSubFromJwt(jwt: string | null | undefined): string | null {
-  if (!jwt) return null;
-  try {
-    const payload = JSON.parse(base64UrlDecode(jwt.split(".")[1]));
-    return typeof payload.sub === "string" ? payload.sub : null;
-  } catch {
-    return null;
-  }
+  return readJwtExp(jwt) ?? 0;
 }
 
 export default function useAccountSync(
@@ -112,7 +91,7 @@ export default function useAccountSync(
     // token can be staler than the refresh token, e.g. case 2, so it isn't a reliable signal here).
     // Only persist once they agree; otherwise skip and wait — the effect re-runs (deps: refreshToken,
     // user) when they catch up.
-    const sub = extractSubFromJwt(refreshToken);
+    const sub = readJwtSub(refreshToken);
     if (sub && sub !== user.id) return;
 
     const summary: AccountSummary = {
