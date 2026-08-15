@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import type { AxiosInstance } from "axios";
 import { axiosPrivate } from "./axios";
 import { refreshAccessToken } from "./refreshAccessToken";
+import { getAuthorizedToken } from "./authGate";
 import { useAuth } from "../hooks/auth";
 import {
   SUSPENDED_ERROR_CODE,
@@ -13,9 +14,22 @@ const useAxiosPrivate = (): AxiosInstance => {
 
   useEffect(() => {
     const requestIntercept = axiosPrivate.interceptors.request.use(
-      (config) => {
+      async (config) => {
         if (config.headers["Authorization"]) return config;
-        config.headers["Authorization"] = `Bearer ${accessToken}`;
+
+        // Awaited, not read from this closure. A request fired on mount runs
+        // through an interceptor registered before the bootstrap resolved, so
+        // `accessToken` here is null and stays null — see authGate.ts. The gate
+        // resolves immediately once auth is ready (and instantly when no
+        // provider armed it), so this costs nothing after cold start.
+        const token = await getAuthorizedToken(accessToken);
+
+        // Deliberately still `Bearer null` when signed out. `requireUserAuth`
+        // answers 401 to a MISSING header and a bare 403 to a bad one, and only
+        // the 403 drives the refresh-and-retry below. Dropping the header here
+        // would silently break cold-load recovery on every route that relies on
+        // it. `optionalUserAuth` ignores an unparseable token either way.
+        config.headers["Authorization"] = `Bearer ${token}`;
         return config;
       },
       (error) => Promise.reject(error)

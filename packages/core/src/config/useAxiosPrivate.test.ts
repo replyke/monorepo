@@ -13,8 +13,23 @@ import {
   axiosErrorWithStatus,
   resetAxiosMocks,
 } from "../test-utils";
+import { armAuthGate, syncAuthGate, setAuthGateRefresher } from "./authGate";
 
 const mockedUseAuth = vi.mocked(useAuth);
+
+/** Minimal unsigned JWT — only `exp` is ever read from it. */
+function jwtExpiringIn(seconds: number) {
+  const encode = (value: object) =>
+    Buffer.from(JSON.stringify(value))
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  return `${encode({ alg: "HS256" })}.${encode({
+    sub: "user-1",
+    exp: Math.floor((Date.now() + seconds * 1000) / 1000),
+  })}.sig`;
+}
 
 /** Any request not yet retried (no `.sent` flag) gets a 403; retries succeed. */
 function stubRefreshableAdapter() {
@@ -148,5 +163,114 @@ describe("useAxiosPrivate", () => {
 
     await axiosPrivate.get("/y");
     expect(adapter.mock.calls[1][0].headers.Authorization).toBeUndefined();
+  });
+
+  describe("with the auth gate armed", () => {
+    it("holds a mount-time request until the bootstrap lands, then sends the ARRIVED token", async () => {
+      // The exact cold-start shape: the interceptor is registered while
+      // `accessToken` is still null, and that closure is the one still running
+      // when the token arrives. Reading the closure would send `Bearer null` to
+      // an optionalUserAuth route, which answers 200-as-a-stranger with no
+      // error for anything to react to.
+      mockedUseAuth.mockReturnValue({
+        accessToken: null,
+        requestNewAccessToken: vi.fn(),
+      } as never);
+      const adapter = vi.fn(async (config: InternalAxiosRequestConfig) =>
+        okAxiosResponse({ ok: true }, 200, config),
+      );
+      stubAxiosAdapter(axiosPrivate, adapter);
+
+      armAuthGate();
+      syncAuthGate({ accessToken: null, initialized: false });
+
+      renderHook(() => useAxiosPrivate());
+
+      const inFlight = axiosPrivate.get("/feed");
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(adapter).not.toHaveBeenCalled();
+
+      syncAuthGate({ accessToken: "arrived-token", initialized: true });
+      await inFlight;
+
+      expect(adapter).toHaveBeenCalledTimes(1);
+      expect(adapter.mock.calls[0][0].headers.Authorization).toBe(
+        "Bearer arrived-token",
+      );
+    });
+
+    it("still sends `Bearer null` when signed out, keeping 403-driven recovery intact", async () => {
+      // requireUserAuth answers 401 to a MISSING header and a bare 403 to a bad
+      // one, and only the 403 drives refresh-and-retry. Dropping the header for
+      // a null token would silently break that path.
+      mockedUseAuth.mockReturnValue({
+        accessToken: null,
+        requestNewAccessToken: vi.fn(),
+      } as never);
+      const adapter = vi.fn(async (config: InternalAxiosRequestConfig) =>
+        okAxiosResponse({ ok: true }, 200, config),
+      );
+      stubAxiosAdapter(axiosPrivate, adapter);
+
+      armAuthGate();
+      syncAuthGate({ accessToken: null, initialized: true });
+
+      renderHook(() => useAxiosPrivate());
+      await axiosPrivate.get("/x");
+
+      expect(adapter.mock.calls[0][0].headers.Authorization).toBe("Bearer null");
+    });
+
+    it("rotates a near-expiry token before the request leaves", async () => {
+      // The 30-minute-idle case: optionalUserAuth ignores an expired token
+      // rather than rejecting it, so there is no 403 to recover from.
+      const fresh = jwtExpiringIn(1800);
+      const requestNewAccessToken = vi.fn(async () => fresh);
+      mockedUseAuth.mockReturnValue({
+        accessToken: null,
+        requestNewAccessToken,
+      } as never);
+      const adapter = vi.fn(async (config: InternalAxiosRequestConfig) =>
+        okAxiosResponse({ ok: true }, 200, config),
+      );
+      stubAxiosAdapter(axiosPrivate, adapter);
+
+      armAuthGate();
+      setAuthGateRefresher(requestNewAccessToken);
+      syncAuthGate({ accessToken: jwtExpiringIn(-60), initialized: true });
+
+      renderHook(() => useAxiosPrivate());
+      await axiosPrivate.get("/x");
+
+      expect(requestNewAccessToken).toHaveBeenCalledTimes(1);
+      expect(adapter.mock.calls[0][0].headers.Authorization).toBe(
+        `Bearer ${fresh}`,
+      );
+    });
+
+    it("leaves an explicit Authorization header untouched without waiting", async () => {
+      mockedUseAuth.mockReturnValue({
+        accessToken: null,
+        requestNewAccessToken: vi.fn(),
+      } as never);
+      const adapter = vi.fn(async (config: InternalAxiosRequestConfig) =>
+        okAxiosResponse({ ok: true }, 200, config),
+      );
+      stubAxiosAdapter(axiosPrivate, adapter);
+
+      armAuthGate();
+      syncAuthGate({ accessToken: null, initialized: false });
+
+      renderHook(() => useAxiosPrivate());
+
+      await axiosPrivate.get("/x", {
+        headers: { Authorization: "Bearer explicit" },
+      });
+
+      expect(adapter.mock.calls[0][0].headers.Authorization).toBe(
+        "Bearer explicit",
+      );
+    });
   });
 });
