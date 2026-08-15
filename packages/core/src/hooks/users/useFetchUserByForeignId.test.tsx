@@ -10,12 +10,12 @@ afterEach(() => {
 
 describe("useFetchUserByForeignId", () => {
   it("fetches a user by foreign ID", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchUserByForeignId(),
     );
 
     const user = makeUser({ foreignId: "ext-1" });
-    axiosPublic.mockResponse("get", user);
+    axiosPrivate.mockResponse("get", user);
 
     let returned: typeof user | undefined;
     await act(async () => {
@@ -24,17 +24,17 @@ describe("useFetchUserByForeignId", () => {
 
     expect(returned).toEqual(user);
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/test-project/users/by-foreign-id");
     expect(call.config?.params).toMatchObject({ foreignId: "ext-1" });
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchUserByForeignId(),
     );
 
-    axiosPublic.mockError("get", 404, { message: "Not found" });
+    axiosPrivate.mockError("get", 404, { message: "Not found" });
 
     await expect(
       result.current({ foreignId: "ext-1" }),
@@ -42,13 +42,13 @@ describe("useFetchUserByForeignId", () => {
   });
 
   it("throws before making a request when no foreign ID is passed", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchUserByForeignId(),
     );
 
     await expect(result.current({ foreignId: "" })).rejects.toThrow(
       "Please specify a foreign ID",
     );
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 });

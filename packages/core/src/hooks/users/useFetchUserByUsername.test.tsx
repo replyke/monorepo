@@ -10,12 +10,12 @@ afterEach(() => {
 
 describe("useFetchUserByUsername", () => {
   it("fetches a user by username", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchUserByUsername(),
     );
 
     const user = makeUser({ username: "alice" });
-    axiosPublic.mockResponse("get", user);
+    axiosPrivate.mockResponse("get", user);
 
     let returned: typeof user | undefined;
     await act(async () => {
@@ -24,17 +24,17 @@ describe("useFetchUserByUsername", () => {
 
     expect(returned).toEqual(user);
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/test-project/users/by-username");
     expect(call.config?.params).toMatchObject({ username: "alice" });
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchUserByUsername(),
     );
 
-    axiosPublic.mockError("get", 404, { message: "Not found" });
+    axiosPrivate.mockError("get", 404, { message: "Not found" });
 
     await expect(
       result.current({ username: "alice" }),
@@ -42,13 +42,13 @@ describe("useFetchUserByUsername", () => {
   });
 
   it("throws before making a request when no username is passed", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchUserByUsername(),
     );
 
     await expect(result.current({ username: "" })).rejects.toThrow(
       "Please specify a username",
     );
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 });

@@ -10,11 +10,11 @@ afterEach(() => {
 
 describe("useFetchFollowingCountByUserId", () => {
   it("fetches another user's following count", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchFollowingCountByUserId(),
     );
 
-    axiosPublic.mockResponse("get", { count: 4 });
+    axiosPrivate.mockResponse("get", { count: 4 });
 
     let returned;
     await act(async () => {
@@ -23,16 +23,16 @@ describe("useFetchFollowingCountByUserId", () => {
 
     expect(returned).toEqual({ count: 4 });
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/test-project/users/user-2/following-count");
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchFollowingCountByUserId(),
     );
 
-    axiosPublic.mockError("get", 500, { message: "Internal error" });
+    axiosPrivate.mockError("get", 500, { message: "Internal error" });
 
     await expect(
       result.current({ userId: "user-2" }),
@@ -40,13 +40,13 @@ describe("useFetchFollowingCountByUserId", () => {
   });
 
   it("throws before making a request when no user ID is passed", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchFollowingCountByUserId(),
     );
 
     await expect(result.current({ userId: "" })).rejects.toThrow(
       "No userId provided.",
     );
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 });

@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import { Comment, CommentIncludeParam } from "../../interfaces/models/Comment";
-import axios from "../../config/axios";
+import useAxiosPrivate from "../../config/useAxiosPrivate";
 
 export interface FetchCommentByForeignIdProps {
   foreignId: string;
@@ -10,6 +10,7 @@ export interface FetchCommentByForeignIdProps {
 
 function useFetchCommentByForeignId(): (props: FetchCommentByForeignIdProps) => Promise<{ comment: Comment }> {
   const { projectId } = useProject();
+  const axios = useAxiosPrivate();
 
   const fetchCommentByForeignId = useCallback(
     async ({ foreignId, include }: FetchCommentByForeignIdProps) => {
@@ -37,7 +38,7 @@ function useFetchCommentByForeignId(): (props: FetchCommentByForeignIdProps) => 
         comment: Comment;
       };
     },
-    [projectId]
+    [axios, projectId]
   );
 
   return fetchCommentByForeignId;

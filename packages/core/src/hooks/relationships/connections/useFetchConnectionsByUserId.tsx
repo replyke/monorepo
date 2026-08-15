@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import useProject from "../../projects/useProject";
 import { EstablishedConnection } from "../../../interfaces/models/Connection";
 import { PaginatedResponse } from "../../../interfaces/PaginatedResponse";
-import axios from "../../../config/axios";
+import useAxiosPrivate from "../../../config/useAxiosPrivate";
 import { SpaceReputationUserParams } from "../../../interfaces/SpaceReputation";
 import { UserSearchParams } from "../../../interfaces/UserSearch";
 import { buildSpaceReputationParams } from "../../../utils/spaceReputationParams";
@@ -17,6 +17,7 @@ export interface FetchConnectionsByUserIdParams
 
 function useFetchConnectionsByUserId(): (props: FetchConnectionsByUserIdParams) => Promise<PaginatedResponse<EstablishedConnection>> {
   const { projectId } = useProject();
+  const axios = useAxiosPrivate();
 
   const fetchConnectionsByUserId = useCallback(
     async (
@@ -52,7 +53,7 @@ function useFetchConnectionsByUserId(): (props: FetchConnectionsByUserIdParams) 
 
       return response.data;
     },
-    [projectId]
+    [axios, projectId]
   );
 
   return fetchConnectionsByUserId;

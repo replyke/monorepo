@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 
 import useProject from "../projects/useProject";
-import axios from "../../config/axios";
+import useAxiosPrivate from "../../config/useAxiosPrivate";
 import { User, UserIncludeParam } from "../../interfaces/models/User";
 import { SpaceReputationUserParams } from "../../interfaces/SpaceReputation";
 import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
@@ -13,6 +13,7 @@ export interface FetchUserProps extends SpaceReputationUserParams {
 
 function useFetchUser(): (props: FetchUserProps) => Promise<User> {
   const { projectId } = useProject();
+  const axios = useAxiosPrivate();
 
   const fetchUser = useCallback(
     async ({
@@ -45,7 +46,7 @@ function useFetchUser(): (props: FetchUserProps) => Promise<User> {
 
       return response.data as User;
     },
-    [projectId]
+    [axios, projectId]
   );
 
   return fetchUser;

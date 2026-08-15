@@ -19,12 +19,12 @@ function makePage(reactions: Reaction[]): PaginatedResponse<Reaction> {
 
 describe("useFetchCommentReactions", () => {
   it("fetches a page of reactions for a comment", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchCommentReactions());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchCommentReactions());
 
     const page = makePage([
       makeReaction({ targetType: "comment", targetId: "comment-1" }),
     ]);
-    axiosPublic.mockResponse("get", page);
+    axiosPrivate.mockResponse("get", page);
 
     let returned: PaginatedResponse<Reaction> | undefined;
     await act(async () => {
@@ -33,28 +33,28 @@ describe("useFetchCommentReactions", () => {
 
     expect(returned).toEqual(page);
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/test-project/comments/comment-1/reactions");
     expect(call.config?.params).toMatchObject({ page: 1, limit: 20, sortDir: "desc" });
   });
 
   it("filters by reactionType when provided", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchCommentReactions());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchCommentReactions());
 
-    axiosPublic.mockResponse("get", makePage([]));
+    axiosPrivate.mockResponse("get", makePage([]));
 
     await act(async () => {
       await result.current({ commentId: "comment-1", page: 1, reactionType: "love" });
     });
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.config?.params).toMatchObject({ reactionType: "love" });
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchCommentReactions());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchCommentReactions());
 
-    axiosPublic.mockError("get", 500, { message: "Internal error" });
+    axiosPrivate.mockError("get", 500, { message: "Internal error" });
 
     await expect(
       result.current({ commentId: "comment-1", page: 1 }),
@@ -62,20 +62,20 @@ describe("useFetchCommentReactions", () => {
   });
 
   it("throws before making a request when page is 0", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchCommentReactions());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchCommentReactions());
 
     await expect(
       result.current({ commentId: "comment-1", page: 0 }),
     ).rejects.toThrow("Can't fetch reactions with page 0");
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 
   it("throws before making a request when no comment ID is passed", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchCommentReactions());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchCommentReactions());
 
     await expect(
       result.current({ commentId: "", page: 1 }),
     ).rejects.toThrow("No comment ID provided");
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 });

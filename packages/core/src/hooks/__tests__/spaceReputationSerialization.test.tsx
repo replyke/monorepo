@@ -124,9 +124,9 @@ describe("spaceReputation serialization regression guard (core hooks)", () => {
   });
 
   it("a users-variant hook (useFetchUser) serializes the OBJECT form to flat params", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchUser());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchUser());
 
-    axiosPublic.mockResponse("get", { id: "user-1" });
+    axiosPrivate.mockResponse("get", { id: "user-1" });
 
     await act(async () => {
       await result.current({
@@ -135,7 +135,7 @@ describe("spaceReputation serialization regression guard (core hooks)", () => {
       });
     });
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     const params = (call.config?.params ?? {}) as Record<string, unknown>;
 
     expect(params).toMatchObject({ spaceReputationId: "none" });

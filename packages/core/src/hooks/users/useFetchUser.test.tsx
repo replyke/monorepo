@@ -10,10 +10,10 @@ afterEach(() => {
 
 describe("useFetchUser", () => {
   it("fetches a user by ID", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchUser());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchUser());
 
     const user = makeUser();
-    axiosPublic.mockResponse("get", user);
+    axiosPrivate.mockResponse("get", user);
 
     let returned: typeof user | undefined;
     await act(async () => {
@@ -22,27 +22,27 @@ describe("useFetchUser", () => {
 
     expect(returned).toEqual(user);
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/test-project/users/user-1");
   });
 
   it("passes the spaceReputationId param through", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchUser());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchUser());
 
-    axiosPublic.mockResponse("get", makeUser());
+    axiosPrivate.mockResponse("get", makeUser());
 
     await act(async () => {
       await result.current({ userId: "user-1", spaceReputationId: "none" });
     });
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.config?.params).toMatchObject({ spaceReputationId: "none" });
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchUser());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchUser());
 
-    axiosPublic.mockError("get", 404, { message: "Not found" });
+    axiosPrivate.mockError("get", 404, { message: "Not found" });
 
     await expect(
       result.current({ userId: "user-1" }),
@@ -50,11 +50,11 @@ describe("useFetchUser", () => {
   });
 
   it("throws before making a request when no user ID is passed", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchUser());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchUser());
 
     await expect(result.current({ userId: "" })).rejects.toThrow(
       "Please specify a user ID",
     );
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 });

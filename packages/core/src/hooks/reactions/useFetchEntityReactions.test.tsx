@@ -19,10 +19,10 @@ function makePage(reactions: Reaction[]): PaginatedResponse<Reaction> {
 
 describe("useFetchEntityReactions", () => {
   it("fetches a page of reactions for an entity", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchEntityReactions());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchEntityReactions());
 
     const page = makePage([makeReaction()]);
-    axiosPublic.mockResponse("get", page);
+    axiosPrivate.mockResponse("get", page);
 
     let returned: PaginatedResponse<Reaction> | undefined;
     await act(async () => {
@@ -31,15 +31,15 @@ describe("useFetchEntityReactions", () => {
 
     expect(returned).toEqual(page);
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/test-project/entities/entity-1/reactions");
     expect(call.config?.params).toMatchObject({ page: 1, limit: 20, sortDir: "desc" });
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchEntityReactions());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchEntityReactions());
 
-    axiosPublic.mockError("get", 500, { message: "Internal error" });
+    axiosPrivate.mockError("get", 500, { message: "Internal error" });
 
     await expect(
       result.current({ entityId: "entity-1", page: 1 }),
@@ -47,20 +47,20 @@ describe("useFetchEntityReactions", () => {
   });
 
   it("throws before making a request when limit is 0", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchEntityReactions());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchEntityReactions());
 
     await expect(
       result.current({ entityId: "entity-1", page: 1, limit: 0 }),
     ).rejects.toThrow("Can't fetch with limit 0");
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 
   it("throws before making a request when no entity ID is passed", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchEntityReactions());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchEntityReactions());
 
     await expect(
       result.current({ entityId: "", page: 1 }),
     ).rejects.toThrow("No entity ID provided");
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 });

@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import useProject from "../../projects/useProject";
 import type { User } from "../../../interfaces/models/User";
 import { PaginatedResponse } from "../../../interfaces/PaginatedResponse";
-import axios from "../../../config/axios";
+import useAxiosPrivate from "../../../config/useAxiosPrivate";
 import { SpaceReputationUserParams } from "../../../interfaces/SpaceReputation";
 import { UserSearchParams } from "../../../interfaces/UserSearch";
 import { buildSpaceReputationParams } from "../../../utils/spaceReputationParams";
@@ -23,6 +23,7 @@ export interface FetchFollowingByUserIdParams
 
 function useFetchFollowingByUserId(): (params: FetchFollowingByUserIdParams) => Promise<PaginatedResponse<FollowingWithFollowInfo>> {
   const { projectId } = useProject();
+  const axios = useAxiosPrivate();
 
   const fetchFollowingByUserId = useCallback(
     async ({ userId, page = 1, limit = 20, query, searchFields, spaceReputation, spaceReputationId, spaceReputationDescendants }: FetchFollowingByUserIdParams) => {
@@ -55,7 +56,7 @@ function useFetchFollowingByUserId(): (params: FetchFollowingByUserIdParams) => 
 
       return response.data;
     },
-    [projectId]
+    [axios, projectId]
   );
 
   return fetchFollowingByUserId;

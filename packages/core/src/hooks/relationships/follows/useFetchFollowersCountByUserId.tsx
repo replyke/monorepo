@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import useProject from "../../projects/useProject";
-import axios from "../../../config/axios";
+import useAxiosPrivate from "../../../config/useAxiosPrivate";
 
 export interface FetchFollowersCountByUserIdProps {
   userId: string;
@@ -8,6 +8,7 @@ export interface FetchFollowersCountByUserIdProps {
 
 function useFetchFollowersCountByUserId(): (props: FetchFollowersCountByUserIdProps) => Promise<{ count: number }> {
   const { projectId } = useProject();
+  const axios = useAxiosPrivate();
 
   const fetchFollowersCountByUserId = useCallback(
     async ({ userId }: FetchFollowersCountByUserIdProps) => {
@@ -25,7 +26,7 @@ function useFetchFollowersCountByUserId(): (props: FetchFollowersCountByUserIdPr
 
       return response.data as { count: number };
     },
-    [projectId]
+    [axios, projectId]
   );
 
   return fetchFollowersCountByUserId;

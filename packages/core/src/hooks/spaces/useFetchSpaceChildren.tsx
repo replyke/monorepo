@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import { Space, SpaceIncludeParam } from "../../interfaces/models/Space";
 import { PaginatedResponse } from "../../interfaces/PaginatedResponse";
-import axios from "../../config/axios";
+import useAxiosPrivate from "../../config/useAxiosPrivate";
 
 export interface FetchSpaceChildrenProps {
   spaceId: string;
@@ -13,6 +13,7 @@ export interface FetchSpaceChildrenProps {
 
 function useFetchSpaceChildren(): (props: FetchSpaceChildrenProps) => Promise<PaginatedResponse<Space>> {
   const { projectId } = useProject();
+  const axios = useAxiosPrivate();
 
   const fetchSpaceChildren = useCallback(
     async ({ spaceId, page = 1, limit = 20, include }: FetchSpaceChildrenProps) => {
@@ -37,7 +38,7 @@ function useFetchSpaceChildren(): (props: FetchSpaceChildrenProps) => Promise<Pa
 
       return response.data;
     },
-    [projectId]
+    [axios, projectId]
   );
 
   return fetchSpaceChildren;

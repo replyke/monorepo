@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import useProject from "../../projects/useProject";
 import { ConnectionCountResponse } from "../../../interfaces/models/Connection";
-import axios from "../../../config/axios";
+import useAxiosPrivate from "../../../config/useAxiosPrivate";
 
 export interface FetchConnectionsCountByUserIdParams {
   userId: string;
@@ -9,6 +9,7 @@ export interface FetchConnectionsCountByUserIdParams {
 
 function useFetchConnectionsCountByUserId(): (props: FetchConnectionsCountByUserIdParams) => Promise<ConnectionCountResponse> {
   const { projectId } = useProject();
+  const axios = useAxiosPrivate();
 
   const fetchConnectionsCountByUserId = useCallback(
     async (
@@ -27,7 +28,7 @@ function useFetchConnectionsCountByUserId(): (props: FetchConnectionsCountByUser
 
       return response.data as ConnectionCountResponse;
     },
-    [projectId]
+    [axios, projectId]
   );
 
   return fetchConnectionsCountByUserId;
