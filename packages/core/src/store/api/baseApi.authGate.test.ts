@@ -45,15 +45,25 @@ function jwtExpiringIn(seconds: number) {
   })}.sig`;
 }
 
+/**
+ * Throws rather than returning null when the call shape is unreadable — a
+ * silent null here would make every `toBeNull()` assertion below pass
+ * vacuously, which is exactly the green-but-wrong shape this suite is guarding
+ * against.
+ */
 function authHeaderOfCall(index: number): string | null {
-  const req = fetchHandle.fetchMock.mock.calls[index]?.[0] as {
-    headers?: Headers;
-  };
-  const headers = req?.headers;
-  if (!headers) return null;
-  return typeof headers.get === "function"
-    ? headers.get("Authorization")
-    : null;
+  const call = fetchHandle.fetchMock.mock.calls[index];
+  if (!call) throw new Error(`No fetch call at index ${index}`);
+
+  const headers = (call[0] as { headers?: Headers })?.headers;
+  if (!headers || typeof headers.get !== "function") {
+    throw new Error(
+      `Request at index ${index} carried no readable Headers — the harness's ` +
+        `Request shim or prepareHeaders wiring changed.`,
+    );
+  }
+
+  return headers.get("Authorization");
 }
 
 function dispatchFetchUser() {

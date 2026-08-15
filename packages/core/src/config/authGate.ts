@@ -65,12 +65,39 @@ let currentRefresher: Refresher | undefined;
 let readyTimeoutMs = READY_TIMEOUT_MS;
 
 /**
+ * The token value a pre-emptive rotation already failed on. Without this, a
+ * revoked refresh token turns every single outbound request into an extra
+ * failed rotation round trip plus an error log, because the held token still
+ * reads as expiring. The reactive 403 path was damped by `prevRequest.sent`;
+ * this is the gate's equivalent.
+ */
+let rotationFailedFor: string | null = null;
+
+/**
+ * Set when a rotation returns a token that ALREADY reads as near-expiry. A
+ * freshly minted 30-minute token can only look stale if the local clock is off
+ * by ~29 minutes, so the fault is the clock, not the token. Pre-emptive
+ * rotation is abandoned at that point — otherwise every request would rotate a
+ * perfectly valid token, and the server rotates the refresh token on every use
+ * with reuse detection. The reactive 403 path stays as the backstop.
+ */
+let clockUnreliable = false;
+
+/**
  * Marks the gate active. Called from a provider's render body (via a lazy
  * `useState` initializer) so it runs strictly before any child renders or
  * fires a mount effect — otherwise the very requests this exists to catch
  * would slip past while the gate was still disarmed.
  */
 export function armAuthGate(options?: { timeoutMs?: number }): void {
+  // Never arm during SSR. This module's state is process-global on a Node
+  // server, and effects never run there — so `syncAuthGate` could never open
+  // what render armed, and every later request in that process would stall for
+  // the full ready timeout. There is no session to wait for server-side anyway:
+  // tokens live in the browser. Guarded here rather than at the call site so
+  // any future caller inherits it.
+  if (typeof window === "undefined") return;
+
   armed = true;
   if (options?.timeoutMs !== undefined) readyTimeoutMs = options.timeoutMs;
 }
@@ -87,9 +114,25 @@ export function syncAuthGate(state: {
   initialized: boolean;
 }): void {
   currentAccessToken = state.accessToken;
+
   if (state.initialized && !opened) {
     opened = true;
     deferred.resolve();
+    return;
+  }
+
+  // Re-close when `initialized` goes back to false. `signOutThunk` and
+  // `confirmAccountDeletionThunk` deliberately drive
+  // setTokens(accessToken: null) -> setInitialized(false) -> rotate ->
+  // setInitialized(true) when another account remains, and `useSwitchAccount`
+  // dispatches `resetApiState()` across that window — which forces every
+  // mounted RTK query to refetch. A latch that only ever opened would let those
+  // refetches out with no token and cache the OUTGOING account's stranger-data
+  // against the incoming one. This is the same bug the gate exists to close, in
+  // the one place the store explicitly announces "bootstrapping again".
+  if (!state.initialized && opened) {
+    opened = false;
+    deferred = createDeferred();
   }
 }
 
@@ -106,14 +149,27 @@ export function resetAuthGate(): void {
   currentAccessToken = null;
   currentRefresher = undefined;
   readyTimeoutMs = READY_TIMEOUT_MS;
+  rotationFailedFor = null;
+  clockUnreliable = false;
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    const timer = setTimeout(resolve, ms);
-    // Don't hold a Node process (or a Jest/Vitest worker) open on this timer.
+/**
+ * Races the gate against a timeout, clearing the timer when the gate wins so a
+ * burst of held requests doesn't leave one dangling timer each.
+ */
+async function waitForOpen(): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, readyTimeoutMs);
+    // Don't hold a Node process (or a Vitest worker) open on this timer.
     (timer as unknown as { unref?: () => void }).unref?.();
   });
+
+  try {
+    await Promise.race([deferred.promise, timeout]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
 }
 
 /**
@@ -180,19 +236,33 @@ export async function getAuthorizedToken(
   if (!armed) return fallbackToken;
 
   if (!opened) {
-    await Promise.race([deferred.promise, delay(readyTimeoutMs)]);
+    await waitForOpen();
   }
 
   const token = currentAccessToken;
-  if (!token || !isExpiringSoon(token)) return token;
+  if (!token || clockUnreliable || !isExpiringSoon(token)) return token;
+
+  // One pre-emptive attempt per stale token value, not one per request.
+  if (token === rotationFailedFor) return token;
 
   // Shares the single-flight lock with the response interceptor's 403 path.
   // The server rotates the refresh token on every use with reuse detection, so
   // a burst of waking requests must produce exactly one rotation.
   const refreshed = await refreshAccessToken(currentRefresher);
 
-  // On failure keep going with the stale token rather than dropping the header:
-  // `requireUserAuth` will 403 and the response interceptor still gets its
-  // chance to recover.
-  return refreshed ?? currentAccessToken;
+  if (!refreshed) {
+    rotationFailedFor = token;
+    // Keep going with the stale token rather than dropping the header:
+    // `requireUserAuth` will 403 and the response interceptor still gets its
+    // chance to recover.
+    return currentAccessToken;
+  }
+
+  if (isExpiringSoon(refreshed)) {
+    clockUnreliable = true;
+    return refreshed;
+  }
+
+  rotationFailedFor = null;
+  return refreshed;
 }

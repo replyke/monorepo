@@ -97,6 +97,59 @@ describe("authGate — cold start", () => {
   });
 });
 
+describe("authGate — re-bootstrap (account switch / partial sign-out)", () => {
+  it("re-closes when `initialized` goes back to false", async () => {
+    // `signOutThunk`/`confirmAccountDeletionThunk` drive
+    // setTokens(accessToken: null) -> setInitialized(false) -> rotate ->
+    // setInitialized(true) when another account remains, and
+    // `useSwitchAccount` dispatches `resetApiState()` across that window, which
+    // forces every mounted RTK query to refetch. Those refetches must wait, or
+    // they cache the outgoing account's stranger-data against the incoming one.
+    armAuthGate();
+    syncAuthGate({ accessToken: jwtExpiringIn(1800), initialized: true });
+
+    // Re-bootstrap begins: token cleared, initialized withdrawn.
+    syncAuthGate({ accessToken: null, initialized: false });
+
+    const settled = vi.fn();
+    const pending = getAuthorizedToken(null);
+    void pending.then(settled);
+
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(settled).not.toHaveBeenCalled();
+
+    const incoming = jwtExpiringIn(1800);
+    syncAuthGate({ accessToken: incoming, initialized: true });
+
+    await expect(pending).resolves.toBe(incoming);
+  });
+
+  it("still bounds a re-closed gate by the timeout", async () => {
+    armAuthGate({ timeoutMs: 10 });
+    syncAuthGate({ accessToken: "first", initialized: true });
+    syncAuthGate({ accessToken: "second", initialized: false });
+
+    await expect(getAuthorizedToken(null)).resolves.toBe("second");
+  });
+});
+
+describe("authGate — SSR", () => {
+  it("refuses to arm when there is no window", async () => {
+    // Module state is process-global on a Node server and effects never run
+    // there, so an armed-but-never-opened gate would stall every subsequent
+    // request in that process for the full timeout.
+    vi.stubGlobal("window", undefined);
+    try {
+      armAuthGate();
+      // Disarmed: returns the caller's own token, immediately.
+      await expect(getAuthorizedToken("ssr-token")).resolves.toBe("ssr-token");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
 describe("authGate — pre-emptive expiry refresh", () => {
   it("rotates a token that is about to expire before the request goes out", async () => {
     const fresh = jwtExpiringIn(1800);
@@ -184,6 +237,57 @@ describe("authGate — pre-emptive expiry refresh", () => {
 
     await expect(getAuthorizedToken(null)).resolves.toBe("not-a-jwt");
     expect(refresher).not.toHaveBeenCalled();
+  });
+
+  it("attempts a stale token only once, not once per request", async () => {
+    // A revoked refresh token would otherwise turn every outbound request into
+    // an extra failed rotation round trip plus an error log, because the held
+    // token still reads as expiring.
+    const refresher = vi.fn(async () => undefined);
+    const stale = jwtExpiringIn(10);
+
+    armAuthGate();
+    setAuthGateRefresher(refresher);
+    syncAuthGate({ accessToken: stale, initialized: true });
+
+    for (let i = 0; i < 5; i++) {
+      await expect(getAuthorizedToken(null)).resolves.toBe(stale);
+    }
+
+    expect(refresher).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries once a new token arrives after a failed rotation", async () => {
+    const refresher = vi.fn(async () => undefined);
+    const stale = jwtExpiringIn(10);
+
+    armAuthGate();
+    setAuthGateRefresher(refresher);
+    syncAuthGate({ accessToken: stale, initialized: true });
+    await getAuthorizedToken(null);
+    expect(refresher).toHaveBeenCalledTimes(1);
+
+    // A different stale token (e.g. after a manual sign-in) is a fresh subject.
+    syncAuthGate({ accessToken: jwtExpiringIn(20), initialized: true });
+    await getAuthorizedToken(null);
+    expect(refresher).toHaveBeenCalledTimes(2);
+  });
+
+  it("stops rotating when a freshly minted token still reads as expiring", async () => {
+    // A skewed local clock makes every valid 30-minute token look stale. Left
+    // undamped, every request would rotate a perfectly good refresh token
+    // against a server that does reuse detection.
+    const refresher = vi.fn(async () => jwtExpiringIn(10));
+
+    armAuthGate();
+    setAuthGateRefresher(refresher);
+    syncAuthGate({ accessToken: jwtExpiringIn(10), initialized: true });
+
+    for (let i = 0; i < 5; i++) {
+      await getAuthorizedToken(null);
+    }
+
+    expect(refresher).toHaveBeenCalledTimes(1);
   });
 
   it("does not attempt a refresh when nobody is signed in", async () => {

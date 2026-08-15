@@ -29,14 +29,8 @@ export default function useAuthGate(projectId: string): void {
 
   // Lazy initializer: runs once, during this component's render, which is
   // strictly before any child renders or schedules an effect.
+  // `armAuthGate` is itself a no-op during SSR — see its own guard.
   useState(() => {
-    // Never arm during SSR. `authGate` holds module-level state, which on a
-    // Node server is process-global and shared across concurrent requests —
-    // and effects never run there, so `syncAuthGate` would never open what
-    // render armed. Every subsequent request in that process would then stall
-    // for the full ready timeout. There is no session to wait for server-side
-    // anyway: tokens live in the browser.
-    if (typeof window === "undefined") return null;
     armAuthGate();
     return null;
   });
@@ -69,6 +63,10 @@ export default function useAuthGate(projectId: string): void {
       return undefined;
     });
 
-    return () => setAuthGateRefresher(undefined);
+    // Deliberately no cleanup. Clearing on unmount is worse than leaving a
+    // stale closure: with two providers mounted, unmounting one would strip the
+    // survivor's refresher (this effect's deps wouldn't re-run to restore it),
+    // silently dropping pre-emptive rotation back to the reactive 403 path. A
+    // later mount overwrites this registration anyway.
   }, [projectId, dispatch]);
 }
