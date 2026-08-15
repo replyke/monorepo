@@ -23,7 +23,7 @@ describe("useRequestConnection", () => {
     expect(returned).toEqual(response);
 
     const [call] = axiosPrivate.calls("post");
-    expect(call.url).toBe("/users/user-2/connection");
+    expect(call.url).toBe("/test-project/users/user-2/connection");
     expect(call.body).toEqual({ message: "Let's connect" });
   });
 

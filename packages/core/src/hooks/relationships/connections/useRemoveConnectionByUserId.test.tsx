@@ -27,7 +27,7 @@ describe("useRemoveConnectionByUserId", () => {
     expect(returned).toEqual(response);
 
     const [call] = axiosPrivate.calls("delete");
-    expect(call.url).toBe("/users/user-2/connection");
+    expect(call.url).toBe("/test-project/users/user-2/connection");
   });
 
   it("rejects when the server returns an error response", async () => {

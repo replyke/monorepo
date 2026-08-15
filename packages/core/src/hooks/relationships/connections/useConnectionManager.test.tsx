@@ -38,7 +38,7 @@ describe("useConnectionManager", () => {
     expect(result.current.connectionId).toBe("connection-1");
 
     const [call] = axiosPrivate.calls("post");
-    expect(call.url).toBe("/users/user-2/connection");
+    expect(call.url).toBe("/test-project/users/user-2/connection");
     expect(call.body).toEqual({ message: "Hi there" });
   });
 
@@ -76,7 +76,7 @@ describe("useConnectionManager", () => {
     await waitFor(() => expect(result.current.connectionStatus).toBe("connected"));
 
     const patchCall = axiosPrivate.calls("patch")[0];
-    expect(patchCall.url).toBe("/connections/connection-1/accept");
+    expect(patchCall.url).toBe("/test-project/connections/connection-1/accept");
   });
 
   it("declines a received pending request", async () => {

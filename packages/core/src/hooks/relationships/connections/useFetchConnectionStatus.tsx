@@ -33,7 +33,7 @@ function useFetchConnectionStatus(): (props: FetchConnectionStatusProps) => Prom
       }
 
       const response = await axios.get(
-        `/users/${userId}/connection`
+        `/${projectId}/users/${userId}/connection`
       );
 
       return response.data as ConnectionStatusResponse;

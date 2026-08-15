@@ -24,7 +24,7 @@ function useFetchConnectionsCountByUserId(): (props: FetchConnectionsCountByUser
         throw new Error("No user ID was provided");
       }
 
-      const response = await axios.get(`/users/${userId}/connections-count`);
+      const response = await axios.get(`/${projectId}/users/${userId}/connections-count`);
 
       return response.data as ConnectionCountResponse;
     },

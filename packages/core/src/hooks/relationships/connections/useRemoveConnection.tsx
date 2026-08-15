@@ -29,7 +29,7 @@ function useRemoveConnection(): (props: RemoveConnectionProps) => Promise<Connec
       }
 
       const response = await axios.delete(
-        `/connections/${connectionId}`
+        `/${projectId}/connections/${connectionId}`
       );
 
       return response.data as ConnectionWithdrawResponse;

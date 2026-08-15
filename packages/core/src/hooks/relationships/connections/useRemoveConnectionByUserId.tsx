@@ -33,7 +33,7 @@ function useRemoveConnectionByUserId(): (props: RemoveConnectionByUserIdProps) =
       }
 
       const response = await axios.delete(
-        `/users/${userId}/connection`
+        `/${projectId}/users/${userId}/connection`
       );
 
       return response.data as RemoveConnectionByUserIdResponse;

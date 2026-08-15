@@ -29,7 +29,7 @@ function useDeclineConnection(): (props: DeclineConnectionProps) => Promise<Conn
       }
 
       const response = await axios.patch(
-        `/connections/${connectionId}/decline`,
+        `/${projectId}/connections/${connectionId}/decline`,
         {}
       );
 

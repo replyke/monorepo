@@ -45,7 +45,7 @@ function useFetchConnectionsByUserId(): (props: FetchConnectionsByUserIdParams) 
       };
 
       const response = await axios.get<PaginatedResponse<EstablishedConnection>>(
-        `/users/${userId}/connections`,
+        `/${projectId}/users/${userId}/connections`,
         {
           params,
         }

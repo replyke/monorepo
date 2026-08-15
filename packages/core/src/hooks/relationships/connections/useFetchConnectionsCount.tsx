@@ -20,7 +20,7 @@ function useFetchConnectionsCount(): () => Promise<ConnectionCountResponse> {
       }
 
       const response = await axios.get(
-        "/connections/count"
+        `/${projectId}/connections/count`
       );
 
       return response.data as ConnectionCountResponse;

@@ -38,7 +38,7 @@ describe("useFetchSentPendingConnections", () => {
     expect(returned).toEqual(page);
 
     const [call] = axiosPrivate.calls("get");
-    expect(call.url).toBe("/connections/pending/sent");
+    expect(call.url).toBe("/test-project/connections/pending/sent");
     expect(call.config?.params).toEqual({ page: 1, limit: 10 });
   });
 
