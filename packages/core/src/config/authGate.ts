@@ -29,6 +29,7 @@
 // this is inert unless a real app mounted a real provider.
 
 import { refreshAccessToken } from "./refreshAccessToken";
+import { readJwtExp } from "../utils/jwt";
 
 /** How close to `exp` a token may get before we rotate it pre-emptively. */
 const EXPIRY_SKEW_MS = 60_000;
@@ -172,48 +173,12 @@ async function waitForOpen(): Promise<void> {
   }
 }
 
-/**
- * Reads `exp` out of a JWT payload without verifying it — we only need to know
- * whether it is stale, and the server is still the authority on validity.
- * Returns null for anything unparseable, which callers treat as "don't know",
- * leaving the reactive 403 path as the backstop.
- */
-function readExpiry(token: string): number | null {
-  try {
-    const payload = token.split(".")[1];
-    if (!payload) return null;
-
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64.padEnd(
-      base64.length + ((4 - (base64.length % 4)) % 4),
-      "=",
-    );
-
-    let json: string;
-    if (typeof atob === "function") {
-      // atob yields a binary string; re-decode so non-ASCII claims (names,
-      // bios) don't corrupt JSON.parse.
-      const binary = atob(padded);
-      json = decodeURIComponent(
-        Array.from(binary, (char) =>
-          `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`,
-        ).join(""),
-      );
-    } else if (typeof Buffer !== "undefined") {
-      json = Buffer.from(padded, "base64").toString("utf8");
-    } else {
-      return null;
-    }
-
-    const exp = JSON.parse(json)?.exp;
-    return typeof exp === "number" ? exp * 1000 : null;
-  } catch {
-    return null;
-  }
-}
-
 function isExpiringSoon(token: string): boolean {
-  const expiresAt = readExpiry(token);
+  const expiresAt = readJwtExp(token);
+  // An unreadable `exp` means "don't know" here, NOT "expired": pre-emptively
+  // rotating on it would spend the refresh token for nothing. The reactive 403
+  // path stays as the backstop. (`useAccountSync` reads the same claim with the
+  // opposite policy — see utils/jwt.)
   if (expiresAt === null) return false;
   return expiresAt - Date.now() < EXPIRY_SKEW_MS;
 }
