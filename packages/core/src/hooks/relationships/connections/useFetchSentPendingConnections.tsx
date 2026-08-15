@@ -29,7 +29,7 @@ function useFetchSentPendingConnections(): (props?: FetchSentPendingConnectionsP
       }
 
       const response = await axios.get<PaginatedResponse<PendingConnection>>(
-        "/connections/pending/sent",
+        `/${projectId}/connections/pending/sent`,
         {
           params: {
             page,

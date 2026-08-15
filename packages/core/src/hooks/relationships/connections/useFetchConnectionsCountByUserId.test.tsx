@@ -24,7 +24,7 @@ describe("useFetchConnectionsCountByUserId", () => {
     expect(returned).toEqual({ count: 3 });
 
     const [call] = axiosPrivate.calls("get");
-    expect(call.url).toBe("/users/user-2/connections-count");
+    expect(call.url).toBe("/test-project/users/user-2/connections-count");
   });
 
   it("rejects when the server returns an error response", async () => {

@@ -24,7 +24,7 @@ describe("useDeclineConnection", () => {
     expect(returned).toEqual(response);
 
     const [call] = axiosPrivate.calls("patch");
-    expect(call.url).toBe("/connections/connection-1/decline");
+    expect(call.url).toBe("/test-project/connections/connection-1/decline");
   });
 
   it("rejects when the server returns an error response", async () => {

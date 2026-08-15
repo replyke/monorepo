@@ -32,7 +32,7 @@ describe("useFetchConnectionsByUserId", () => {
     expect(returned).toEqual(page);
 
     const [call] = axiosPrivate.calls("get");
-    expect(call.url).toBe("/users/user-2/connections");
+    expect(call.url).toBe("/test-project/users/user-2/connections");
     expect(call.config?.params).toMatchObject({ page: 1, limit: 20 });
   });
 

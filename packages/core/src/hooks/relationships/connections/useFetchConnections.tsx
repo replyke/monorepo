@@ -30,7 +30,7 @@ function useFetchConnections(): (props?: FetchConnectionsParams) => Promise<Pagi
       }
 
       const response = await axios.get<PaginatedResponse<EstablishedConnection>>(
-        `/connections`,
+        `/${projectId}/connections`,
         {
           params: {
             page,

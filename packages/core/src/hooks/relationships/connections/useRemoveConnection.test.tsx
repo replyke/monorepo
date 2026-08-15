@@ -23,7 +23,7 @@ describe("useRemoveConnection", () => {
     expect(returned).toEqual({ message: "Connection removed" });
 
     const [call] = axiosPrivate.calls("delete");
-    expect(call.url).toBe("/connections/connection-1");
+    expect(call.url).toBe("/test-project/connections/connection-1");
   });
 
   it("rejects when the server returns an error response", async () => {

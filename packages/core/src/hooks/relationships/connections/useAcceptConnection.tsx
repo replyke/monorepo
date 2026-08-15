@@ -29,7 +29,7 @@ function useAcceptConnection(): (props: AcceptConnectionProps) => Promise<Connec
       }
 
       const response = await axios.patch(
-        `/connections/${connectionId}/accept`,
+        `/${projectId}/connections/${connectionId}/accept`,
         {}
       );
 

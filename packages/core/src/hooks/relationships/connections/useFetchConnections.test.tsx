@@ -33,7 +33,7 @@ describe("useFetchConnections", () => {
     expect(returned).toEqual(page);
 
     const [call] = axiosPrivate.calls("get");
-    expect(call.url).toBe("/connections");
+    expect(call.url).toBe("/test-project/connections");
     expect(call.config?.params).toEqual({ page: 1, limit: 20 });
   });
 

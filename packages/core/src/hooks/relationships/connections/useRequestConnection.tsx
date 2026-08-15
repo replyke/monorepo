@@ -19,7 +19,7 @@ function useRequestConnection(): (props: ConnectionRequestParams) => Promise<Con
       }
 
       const response = await axios.post(
-        `/users/${userId}/connection`,
+        `/${projectId}/users/${userId}/connection`,
         { message }
       );
 

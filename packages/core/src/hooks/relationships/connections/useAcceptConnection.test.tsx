@@ -24,7 +24,7 @@ describe("useAcceptConnection", () => {
     expect(returned).toEqual(response);
 
     const [call] = axiosPrivate.calls("patch");
-    expect(call.url).toBe("/connections/connection-1/accept");
+    expect(call.url).toBe("/test-project/connections/connection-1/accept");
     expect(call.body).toEqual({});
   });
 
