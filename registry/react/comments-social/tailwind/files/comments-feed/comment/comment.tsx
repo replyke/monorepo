@@ -78,6 +78,10 @@ const Comment = React.memo(
 
     const userUpvotedComment = currentReaction === "like";
 
+    // The API sends aspectRatio as a string (e.g. "1.5"), so coerce before doing
+    // math with it. Falls back to 1 (square) if it's missing or unparsable.
+    const gifAspectRatio = Number(comment.gif?.aspectRatio) || 1;
+
     return (
       <div
         className={cn(
@@ -171,14 +175,8 @@ const Comment = React.memo(
                   alt={comment.gif.altText}
                   className="rounded overflow-hidden object-cover"
                   style={{
-                    width:
-                      comment.gif.aspectRatio > 1
-                        ? 200
-                        : 200 * comment.gif.aspectRatio,
-                    height:
-                      comment.gif.aspectRatio < 1
-                        ? 200
-                        : 200 / comment.gif.aspectRatio,
+                    width: gifAspectRatio > 1 ? 200 : 200 * gifAspectRatio,
+                    height: gifAspectRatio < 1 ? 200 : 200 / gifAspectRatio,
                   }}
                 />
               )}

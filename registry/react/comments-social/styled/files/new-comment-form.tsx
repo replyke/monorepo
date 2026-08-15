@@ -106,8 +106,8 @@ function NewCommentForm() {
       url: string;
       gifUrl: string;
       gifPreviewUrl: string;
-      altText: string | undefined;
-      aspectRatio: number;
+      altText: string;
+      aspectRatio: string;
     }) => {
       // Even though createComment checks for user and triggers the loginRequiredCallback - we will regard it as backup and check here too before clearing the textarea for better UX
       if (!user) {

@@ -49,6 +49,10 @@ function SingleComment({
   // Calculate progressive indentation using inline styles for reliability
   const indentationPx = actualDepth * 24; // 24px per level (same as ml-10 = 2.5rem = 40px)
 
+  // The API sends aspectRatio as a string (e.g. "1.5"), so coerce before doing
+  // math with it. Falls back to 1 (square) if it's missing or unparsable.
+  const gifAspectRatio = Number(comment.gif?.aspectRatio) || 1;
+
   return (
     <div
       style={{
@@ -217,14 +221,8 @@ function SingleComment({
                     src={comment.gif.gifUrl}
                     alt={comment.gif.altText}
                     style={{
-                      width:
-                        comment.gif.aspectRatio > 1
-                          ? 200
-                          : 200 * comment.gif.aspectRatio,
-                      height:
-                        comment.gif.aspectRatio < 1
-                          ? 200
-                          : 200 / comment.gif.aspectRatio,
+                      width: gifAspectRatio > 1 ? 200 : 200 * gifAspectRatio,
+                      height: gifAspectRatio < 1 ? 200 : 200 / gifAspectRatio,
                       borderRadius: "0.25rem",
                       overflow: "hidden",
                       objectFit: "cover",

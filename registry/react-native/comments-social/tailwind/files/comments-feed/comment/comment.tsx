@@ -81,15 +81,13 @@ const Comment = React.memo(
     const userUpvotedComment = currentReaction === "like";
     const isOwner = comment.userId === user?.id;
 
+    // The API sends aspectRatio as a string (e.g. "1.5"), so coerce before
+    // doing math with it. Falls back to 1 (square) if it's missing or unparsable.
+    const gifAspectRatio = Number(comment.gif?.aspectRatio) || 1;
+
     const imageStyle = {
-      width:
-        (comment.gif?.aspectRatio || 1) < 1
-          ? 200
-          : 200 * (comment.gif?.aspectRatio || 1),
-      height:
-        (comment.gif?.aspectRatio || 1) > 1
-          ? 200
-          : 200 * (comment.gif?.aspectRatio || 1),
+      width: gifAspectRatio > 1 ? 200 : 200 * gifAspectRatio,
+      height: gifAspectRatio < 1 ? 200 : 200 / gifAspectRatio,
       borderRadius: 4,
       overflow: "hidden" as const,
     };
