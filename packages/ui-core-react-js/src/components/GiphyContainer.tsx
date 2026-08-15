@@ -15,8 +15,10 @@ function GiphyContainer({
     url: string;
     gifUrl: string;
     gifPreviewUrl: string;
-    altText: string | undefined;
-    aspectRatio: number;
+    // The API's GifData requires both of these as strings, and rejects the
+    // payload otherwise — so emit the shape the server accepts.
+    altText: string;
+    aspectRatio: string;
   }) => void;
   giphyApiKey: string;
   visible: boolean; // Determines if the component is visible or not
@@ -105,8 +107,9 @@ function GiphyContainer({
               url: gifData.url,
               gifUrl: gifData.images.fixed_width.url,
               gifPreviewUrl: gifData.images.preview_gif.url,
-              altText: gifData.alt_text,
-              aspectRatio,
+              // Giphy often has no alt_text, and the API requires a string.
+              altText: gifData.alt_text ?? "",
+              aspectRatio: String(aspectRatio),
             };
             onSelectGif(selectedGif);
           }}
