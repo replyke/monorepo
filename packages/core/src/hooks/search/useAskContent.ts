@@ -220,8 +220,22 @@ export default function useAskContent(): UseAskContentReturn {
             response = await doFetch(newToken);
           }
 
+          // Post-retry 401. Respect a `code` here for the same reason the
+          // pre-retry branch does: a coded 401 is the server explaining
+          // something specific, and swallowing it behind the generic
+          // signed-out message loses that. A bare 401 keeps the friendly text.
+          //
+          // Without this, 401 and 403 were asymmetric after a retry — a coded
+          // 403 falls through to the `!response.ok` handler below, which
+          // surfaces the server's message, while every 401 was flattened here.
           if (response.status === 401) {
-            setError("You must be signed in to use AI search.");
+            const text = await response.text().catch(() => "");
+            const parsed = safeParseJson(text);
+            setError(
+              parsed?.code
+                ? (parsed.error ?? "Request failed (401)")
+                : "You must be signed in to use AI search.",
+            );
             setLoading(false);
             return;
           }

@@ -303,6 +303,41 @@ describe("useAskContent", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("surfaces a coded 401 returned by the RETRY instead of the generic message", async () => {
+    // The retry carries a fresh token, so a 401 here is the server saying
+    // something specific. Flattening it to "you must be signed in" loses that,
+    // and left 401 asymmetric with 403 — a coded 403 on the retry falls through
+    // to the generic !ok handler, which surfaces the server's own message.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("Unauthorized", { status: 401 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: "Authentication required to filter by membership.",
+            code: "space/auth-required",
+          }),
+          { status: 401 },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    mockedRefresh.mockResolvedValue("fresh-token");
+
+    const { result } = renderHookWithAxios(() => useAskContent(), {
+      refreshToken: "r",
+    });
+
+    act(() => {
+      result.current.ask({ query: "hello" });
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.current.error).toBe(
+      "Authentication required to filter by membership.",
+    );
+  });
+
   it("still tells a genuinely signed-out caller to sign in", async () => {
     // Bare 401 with nothing to refresh with: the message must stay the
     // signed-out one, not the session-expired one the 403 path uses.
