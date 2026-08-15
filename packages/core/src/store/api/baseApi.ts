@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { getApiBaseUrl } from "../../utils/env";
+import { getAuthorizedToken } from "../../config/authGate";
 
 // Type for state that includes sublay namespace
 // Used by prepareHeaders to access auth token from namespaced state
@@ -15,13 +16,22 @@ interface StateWithSublay {
 const createBaseQuery = () => {
   return fetchBaseQuery({
     baseUrl: getApiBaseUrl(),
-    prepareHeaders: (headers, { getState }) => {
+    prepareHeaders: async (headers, { getState }) => {
       // Add Content-Type header
       headers.set('Content-Type', 'application/json');
 
       // Get access token from namespaced Redux state
       const state = getState() as StateWithSublay;
-      const accessToken = state.sublay?.auth?.accessToken;
+      const stateToken = state.sublay?.auth?.accessToken ?? null;
+
+      // Wait for the auth bootstrap before deciding whether there is a token,
+      // and rotate one that is about to expire. Without this, a query firing on
+      // mount is cached under an args-only key with whatever the server returns
+      // to a stranger — and RTK Query has no reason to refetch when the token
+      // lands, since the args never changed. Resolves immediately once auth is
+      // ready, and instantly when no provider armed the gate (unit tests,
+      // direct `baseApi` dispatches).
+      const accessToken = await getAuthorizedToken(stateToken);
 
       // Add Authorization header if we have a token
       if (accessToken) {
