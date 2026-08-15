@@ -165,7 +165,7 @@ export type {
 } from "./interfaces/Workspace";
 export type { Rule } from "./interfaces/Rule";
 export type { Follow } from "./interfaces/Follow";
-export type { Connection, EstablishedConnection, PendingConnection, ConnectionStatusResponse } from "./interfaces/Connection";
+export type { Connection, ConnectionRequestResponse, EstablishedConnection, PendingConnection, ConnectionStatusResponse } from "./interfaces/Connection";
 export type { Conversation, ConversationPreview } from "./interfaces/Conversation";
 export type { ConversationMember, ConversationMemberRole } from "./interfaces/ConversationMember";
 export type { ChatMessage } from "./interfaces/ChatMessage";

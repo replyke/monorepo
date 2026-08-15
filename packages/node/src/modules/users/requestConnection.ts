@@ -1,5 +1,5 @@
 import { SublayHttpClient } from "../../core/client";
-import { Connection } from "../../interfaces/Connection";
+import { ConnectionRequestResponse } from "../../interfaces/Connection";
 
 export interface RequestConnectionProps {
   /** The user the connection is requested with (the target). */
@@ -12,9 +12,9 @@ export interface RequestConnectionProps {
 export async function requestConnection(
   client: SublayHttpClient,
   data: RequestConnectionProps
-): Promise<Connection> {
+): Promise<ConnectionRequestResponse> {
   const { userId, ...body } = data;
-  const response = await client.projectInstance.post<Connection>(
+  const response = await client.projectInstance.post<ConnectionRequestResponse>(
     `/users/${userId}/connection`,
     body
   );

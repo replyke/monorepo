@@ -6,6 +6,13 @@ export interface Connection {
   createdAt: string;
 }
 
+/** Returned by `POST /users/:userId/connection` (requestConnection). */
+export interface ConnectionRequestResponse {
+  id: string;
+  status: string;
+  createdAt: string;
+}
+
 export interface EstablishedConnection {
   id: string;
   connectedUser: User;
