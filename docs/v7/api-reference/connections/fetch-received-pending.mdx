@@ -6,6 +6,11 @@ description: "Get connection requests received by the authenticated user that ar
 
 Returns a paginated list of connection requests that other users have sent to the authenticated user and that have not yet been responded to.
 
+<Note>
+  Users with a block between them and you, in either direction, are excluded
+  from the results. Requires the `moderation` bundle.
+</Note>
+
 ## Query Parameters
 
 <ParamField query="page" type="number">

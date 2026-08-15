@@ -6,6 +6,11 @@ description: "Get connection requests sent by the authenticated user that are st
 
 Returns a paginated list of connection requests that the authenticated user has sent and that have not yet been accepted, declined, or withdrawn.
 
+<Note>
+  Users with a block between them and you, in either direction, are excluded
+  from the results. Requires the `moderation` bundle.
+</Note>
+
 ## Query Parameters
 
 <ParamField query="page" type="number">

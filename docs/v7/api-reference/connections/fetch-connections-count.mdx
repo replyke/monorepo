@@ -6,6 +6,11 @@ description: "Get the number of accepted connections for the authenticated user"
 
 Returns the total number of accepted connections for the authenticated user.
 
+<Note>
+  Users with a block between them and you, in either direction, are excluded
+  from the count. Requires the `moderation` bundle.
+</Note>
+
 ## Response
 
 On success, returns HTTP `200`:

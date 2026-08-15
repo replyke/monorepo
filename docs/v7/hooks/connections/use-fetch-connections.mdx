@@ -10,6 +10,11 @@ Returns a function that fetches the paginated list of accepted connections for t
 
 For fetching another user's connections, see `useFetchConnectionsByUserId`.
 
+<Note>
+  Users with a block between them and you, in either direction, are excluded
+  from the results. Requires the `moderation` bundle.
+</Note>
+
 ## Usage Example
 
 ```tsx

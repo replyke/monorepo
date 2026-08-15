@@ -10,6 +10,11 @@ Returns a function that fetches the total follower count of the currently authen
 
 For getting another user's follower count, see `useFetchFollowersCountByUserId`.
 
+<Note>
+  Users with a block between them and you, in either direction, are excluded
+  from the count. Requires the `moderation` bundle.
+</Note>
+
 ## Usage Example
 
 ```tsx

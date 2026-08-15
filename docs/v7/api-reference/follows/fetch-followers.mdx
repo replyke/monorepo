@@ -6,6 +6,11 @@ description: "Get a paginated list of the authenticated user's followers"
 
 Returns a paginated list of users who follow the authenticated user. Unlike the [user-scoped endpoint](/api-reference/users/follows/get-followers), this route always returns data for the current authenticated user.
 
+<Note>
+  Users with a block between them and you, in either direction, are excluded
+  from the results. Requires the `moderation` bundle.
+</Note>
+
 ## Query Parameters
 
 <ParamField query="page" type="number">

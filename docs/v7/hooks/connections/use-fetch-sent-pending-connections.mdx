@@ -8,6 +8,11 @@ icon: "plug"
 
 Returns a function that fetches the paginated list of connection requests the current authenticated user has sent that have not yet been accepted or declined.
 
+<Note>
+  Users with a block between them and you, in either direction, are excluded
+  from the results. Requires the `moderation` bundle.
+</Note>
+
 ## Usage Example
 
 ```tsx

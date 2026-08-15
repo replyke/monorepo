@@ -8,6 +8,11 @@ icon: "plug"
 
 Returns a function that fetches the total count of accepted connections for the currently authenticated user.
 
+<Note>
+  Users with a block between them and you, in either direction, are excluded
+  from the count. Requires the `moderation` bundle.
+</Note>
+
 ## Usage Example
 
 ```tsx
