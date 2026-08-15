@@ -13,6 +13,14 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/**
+ * Bounded microtask flush. Used both to prove a call settled immediately and to
+ * prove one did not — same budget on both sides, so the pair is comparable.
+ */
+async function flushMicrotasks(ticks = 2): Promise<void> {
+  for (let i = 0; i < ticks; i++) await Promise.resolve();
+}
+
 /** Minimal unsigned JWT — only the payload is ever read, and only for `exp`. */
 function jwtExpiringIn(seconds: number, claims: Record<string, unknown> = {}) {
   const payload = {
@@ -37,7 +45,13 @@ describe("authGate — disarmed", () => {
 
   it("does not wait, even though no bootstrap ever ran", async () => {
     const settled = vi.fn();
-    await getAuthorizedToken("token-a").then(settled);
+    // Must NOT await: awaiting the chained promise makes `settled` run by
+    // definition, and the assertion holds however long the gate blocked. The
+    // same two-flush budget the "holds" tests use to prove the opposite.
+    void getAuthorizedToken("token-a").then(settled);
+
+    await flushMicrotasks();
+
     expect(settled).toHaveBeenCalled();
   });
 });
@@ -50,9 +64,8 @@ describe("authGate — cold start", () => {
     const settled = vi.fn();
     const pending = getAuthorizedToken(null).then(settled);
 
-    // Flush pending microtasks — the gate must still be closed.
-    await Promise.resolve();
-    await Promise.resolve();
+    // Same budget as the immediacy tests above — the gate must still be closed.
+    await flushMicrotasks();
     expect(settled).not.toHaveBeenCalled();
 
     syncAuthGate({ accessToken: jwtExpiringIn(1800), initialized: true });
@@ -85,7 +98,10 @@ describe("authGate — cold start", () => {
     syncAuthGate({ accessToken: jwtExpiringIn(1800), initialized: true });
 
     const settled = vi.fn();
-    await getAuthorizedToken(null).then(settled);
+    void getAuthorizedToken(null).then(settled);
+
+    await flushMicrotasks();
+
     expect(settled).toHaveBeenCalled();
   });
 
@@ -115,8 +131,7 @@ describe("authGate — re-bootstrap (account switch / partial sign-out)", () => 
     const pending = getAuthorizedToken(null);
     void pending.then(settled);
 
-    await Promise.resolve();
-    await Promise.resolve();
+    await flushMicrotasks();
     expect(settled).not.toHaveBeenCalled();
 
     const incoming = jwtExpiringIn(1800);
@@ -288,6 +303,68 @@ describe("authGate — pre-emptive expiry refresh", () => {
     }
 
     expect(refresher).toHaveBeenCalledTimes(1);
+  });
+
+  it("treats a REJECTING refresher as a failed rotation, not a failed request", async () => {
+    // Unguarded, the rejection propagates out of `getAuthorizedToken` and
+    // rejects the axios REQUEST interceptor — killing the request before it is
+    // sent, which is strictly worse than the pre-gate behaviour where a refresh
+    // failure only cost one retry. No refresher rejects today, but all three
+    // callers share this single-flight promise, so one `.unwrap()` added
+    // anywhere would fail every request in the app.
+    const refresher = vi.fn(async () => {
+      throw new Error("refresh endpoint exploded");
+    });
+    const stale = jwtExpiringIn(10);
+
+    armAuthGate();
+    setAuthGateRefresher(refresher);
+    syncAuthGate({ accessToken: stale, initialized: true });
+
+    await expect(getAuthorizedToken(null)).resolves.toBe(stale);
+    expect(refresher).toHaveBeenCalledTimes(1);
+  });
+
+  it("damps a rejecting refresher the same way it damps a failing one", async () => {
+    const refresher = vi.fn(async () => {
+      throw new Error("refresh endpoint exploded");
+    });
+
+    armAuthGate();
+    setAuthGateRefresher(refresher);
+    syncAuthGate({ accessToken: jwtExpiringIn(10), initialized: true });
+
+    for (let i = 0; i < 3; i++) await getAuthorizedToken(null);
+
+    expect(refresher).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-enables rotation once a healthy token proves the clock is right again", async () => {
+    // `clockUnreliable` otherwise latches for the process lifetime, so a device
+    // whose clock was wrong at launch and has since been corrected would stay
+    // on the reactive-403 path — the one path that does not work on
+    // `optionalUserAuth` routes.
+    const skewed = vi.fn(async () => jwtExpiringIn(10));
+
+    armAuthGate();
+    setAuthGateRefresher(skewed);
+    syncAuthGate({ accessToken: jwtExpiringIn(10), initialized: true });
+
+    await getAuthorizedToken(null);
+    await getAuthorizedToken(null);
+    expect(skewed).toHaveBeenCalledTimes(1); // latched off
+
+    // Clock corrected: a new token now reads as healthy.
+    syncAuthGate({ accessToken: jwtExpiringIn(1800), initialized: true });
+
+    // ...and rotation works again for the next token that genuinely ages out.
+    const fresh = jwtExpiringIn(1800);
+    const healthy = vi.fn(async () => fresh);
+    setAuthGateRefresher(healthy);
+    syncAuthGate({ accessToken: jwtExpiringIn(10), initialized: true });
+
+    await expect(getAuthorizedToken(null)).resolves.toBe(fresh);
+    expect(healthy).toHaveBeenCalledTimes(1);
   });
 
   it("does not attempt a refresh when nobody is signed in", async () => {
