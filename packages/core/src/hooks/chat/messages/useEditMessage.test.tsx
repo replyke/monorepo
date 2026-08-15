@@ -58,6 +58,33 @@ describe("useEditMessage", () => {
     });
   });
 
+  it("sends a gif as an object, matching the shape the server stores", async () => {
+    // The server's edit schema once expected a bare URL string here, so every
+    // edit carrying a GIF 400'd. Lock the object shape from this side too.
+    const gif = {
+      id: "gif-1",
+      url: "https://media.example.com/watch/gif-1",
+      gifUrl: "https://media.example.com/gif-1.gif",
+      gifPreviewUrl: "https://media.example.com/gif-1-preview.gif",
+      altText: "a cat waving",
+      aspectRatio: "1.5",
+    };
+
+    const { result, axiosPrivate } = renderHookWithAxios(() => useEditMessage());
+    axiosPrivate.mockResponse("patch", makeChatMessage());
+
+    await act(async () => {
+      await result.current({
+        conversationId: "conversation-1",
+        messageId: "message-1",
+        gif,
+      });
+    });
+
+    const [call] = axiosPrivate.calls("patch");
+    expect(call.body).toMatchObject({ gif });
+  });
+
   it("rejects when the server returns an error response", async () => {
     const { result, axiosPrivate } = renderHookWithAxios(() => useEditMessage());
 
