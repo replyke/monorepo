@@ -114,7 +114,25 @@ export function syncAuthGate(state: {
   accessToken: string | null;
   initialized: boolean;
 }): void {
+  const tokenChanged = state.accessToken !== currentAccessToken;
   currentAccessToken = state.accessToken;
+
+  // Self-heal the clock-skew latch. `clockUnreliable` disables pre-emptive
+  // rotation for the process, so a device whose clock was wrong at launch and
+  // has since been corrected (NTP, manual fix) would otherwise stay on the
+  // reactive-403 path for the rest of the session — which is exactly the path
+  // that does not work on `optionalUserAuth` routes. A newly arrived token that
+  // does NOT read as near-expiry is evidence the clock agrees with the server
+  // again. Gated on the token actually changing so the decode cost lands only
+  // while degraded, not on every store action.
+  if (
+    clockUnreliable &&
+    tokenChanged &&
+    state.accessToken &&
+    !isExpiringSoon(state.accessToken)
+  ) {
+    clockUnreliable = false;
+  }
 
   if (state.initialized && !opened) {
     opened = true;
@@ -213,7 +231,25 @@ export async function getAuthorizedToken(
   // Shares the single-flight lock with the response interceptor's 403 path.
   // The server rotates the refresh token on every use with reuse detection, so
   // a burst of waking requests must produce exactly one rotation.
-  const refreshed = await refreshAccessToken(currentRefresher);
+  //
+  // A refresher that REJECTS is a failed rotation, not a failed request. Left
+  // unguarded, the rejection would propagate out of `getAuthorizedToken` and
+  // reject the axios REQUEST interceptor (and RTK's `prepareHeaders`), killing
+  // the request before it is even sent — strictly worse than the pre-gate
+  // behaviour, where a refresh failure only cost one retry.
+  //
+  // No refresher rejects today: all three callers bottom out in
+  // `await dispatch(requestNewAccessTokenThunk(...))` without `.unwrap()`,
+  // which resolves even for a rejected thunk. But `.unwrap()` is the idiomatic
+  // way to surface thunk errors, and this single-flight promise is shared
+  // across all three call sites — so adding it in one place would fail every
+  // request in the app. Guarded rather than documented.
+  let refreshed: string | undefined;
+  try {
+    refreshed = await refreshAccessToken(currentRefresher);
+  } catch {
+    refreshed = undefined;
+  }
 
   if (!refreshed) {
     rotationFailedFor = token;
