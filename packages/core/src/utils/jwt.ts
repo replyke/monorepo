@@ -15,7 +15,21 @@
  * `atob`'s byte-wise output so non-ASCII claims survive `JSON.parse`.
  */
 function base64UrlDecode(value: string): string | null {
-  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  // Validate before decoding, so both branches below agree on what is
+  // unreadable. `atob` throws on a stray character, but `Buffer.from(.., "base64")`
+  // silently DISCARDS invalid characters — verified: "eyJhIjoxfQ!!!" and
+  // "eyJhIjoxfQ" decode identically. Without this, a corrupted token would be
+  // rejected on web and quietly accepted on React Native, which is exactly the
+  // platform divergence this shared reader exists to remove.
+  //
+  // Trailing `=` is tolerated: JWS specifies base64url without padding, but
+  // some encoders emit it anyway and `atob` accepts it.
+  const unpadded = value.replace(/=+$/, "");
+  if (!/^[A-Za-z0-9_-]*$/.test(unpadded) || unpadded.length % 4 === 1) {
+    return null;
+  }
+
+  const base64 = unpadded.replace(/-/g, "+").replace(/_/g, "/");
   const padded = base64.padEnd(
     base64.length + ((4 - (base64.length % 4)) % 4),
     "=",
@@ -70,7 +84,17 @@ export function decodeJwtPayload(
  */
 export function readJwtExp(token: string | null | undefined): number | null {
   const exp = decodeJwtPayload(token)?.exp;
-  return typeof exp === "number" ? exp * 1000 : null;
+
+  // `typeof Infinity === "number"`, and `JSON.parse('{"exp":1e400}')` yields
+  // exactly that. An infinite expiry would read as "never expiring" in the auth
+  // gate, and `useAccountSync`'s `?? 0` would not catch it either — it only
+  // maps null — so `tokenExpiresAt: Infinity` would reach storage, where
+  // `JSON.stringify` rewrites it to null and breaks the `number` contract on
+  // read-back. NaN is caught by the same check.
+  if (typeof exp !== "number" || !Number.isFinite(exp)) return null;
+
+  const expiresAt = exp * 1000;
+  return Number.isFinite(expiresAt) ? expiresAt : null;
 }
 
 /** The `sub` claim — the user id a token was minted for. */
