@@ -4,7 +4,7 @@ api: "GET /v7/:projectId/users/:userId/followers-count"
 description: "Get the number of followers for a specific user"
 ---
 
-Returns the total number of users following the specified user. This endpoint is public — no authentication required.
+Returns the total number of users following the specified user. Authentication is optional. The endpoint works without a token, but when the caller is signed in, users they have blocked are excluded from the count.
 
 ## Path Parameters
 

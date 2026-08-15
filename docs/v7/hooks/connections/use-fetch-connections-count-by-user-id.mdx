@@ -6,7 +6,7 @@ icon: "plug"
 
 ## Overview
 
-Returns a function that fetches the total number of accepted connections for any user, identified by `userId`. This is a public endpoint — authentication is not required.
+Returns a function that fetches the total number of accepted connections for any user, identified by `userId`. Authentication is optional. The endpoint works without a token, but when the caller is signed in, users they have blocked are excluded from the count.
 
 ## Usage Example
 

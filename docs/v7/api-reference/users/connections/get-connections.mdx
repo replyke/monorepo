@@ -6,7 +6,7 @@ description: "Get a paginated list of a user's accepted connections"
 
 import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
 
-Returns a paginated list of accepted connections for the specified user. Each entry includes the connected user's public profile. This endpoint is public — no authentication required.
+Returns a paginated list of accepted connections for the specified user. Each entry includes the connected user's public profile. Authentication is optional. The endpoint works without a token, but when the caller is signed in, users they have blocked are excluded from the results.
 
 ## Path Parameters
 

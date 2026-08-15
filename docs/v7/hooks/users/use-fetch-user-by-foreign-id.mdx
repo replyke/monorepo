@@ -12,6 +12,12 @@ import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
 
 Use this when you have your own user ID and need to look up the corresponding Sublay user profile.
 
+<Note>
+  If the profile owner has blocked the signed-in caller, this returns `404` — the
+  same response as a user who does not exist. The reverse is not true: a user
+  *you* have blocked stays visible, so you keep a way to find and unblock them.
+</Note>
+
 ## Usage Example
 
 ```tsx
