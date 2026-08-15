@@ -11,10 +11,10 @@ afterEach(() => {
 
 describe("useFetchComment", () => {
   it("fetches a comment by ID", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchComment());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchComment());
 
     const comment = makeComment();
-    axiosPublic.mockResponse("get", { comment });
+    axiosPrivate.mockResponse("get", { comment });
 
     let returned: { comment: typeof comment } | undefined;
     await act(async () => {
@@ -23,27 +23,27 @@ describe("useFetchComment", () => {
 
     expect(returned).toEqual({ comment });
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/test-project/comments/comment-1");
   });
 
   it("joins an include array into a comma-separated param", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchComment());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchComment());
 
-    axiosPublic.mockResponse("get", { comment: makeComment() });
+    axiosPrivate.mockResponse("get", { comment: makeComment() });
 
     await act(async () => {
       await result.current({ commentId: "comment-1", include: ["user", "parent"] });
     });
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.config?.params).toMatchObject({ include: "user,parent" });
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchComment());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchComment());
 
-    axiosPublic.mockError("get", 404, { message: "Not found" });
+    axiosPrivate.mockError("get", 404, { message: "Not found" });
 
     await expect(
       result.current({ commentId: "comment-1" }),
@@ -51,11 +51,11 @@ describe("useFetchComment", () => {
   });
 
   it("throws before making a request when no comment ID is passed", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchComment());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchComment());
 
     await expect(result.current({ commentId: "" })).rejects.toThrow(
       "No comment ID passed",
     );
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 });

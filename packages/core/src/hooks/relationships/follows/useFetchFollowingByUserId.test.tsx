@@ -19,10 +19,10 @@ function makePage(items: FollowingWithFollowInfo[]): PaginatedResponse<Following
 
 describe("useFetchFollowingByUserId", () => {
   it("fetches another user's following list", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchFollowingByUserId());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchFollowingByUserId());
 
     const page = makePage([{ followId: "follow-1", user: makeUser(), followedAt: "2024-01-01T00:00:00.000Z" }]);
-    axiosPublic.mockResponse("get", page);
+    axiosPrivate.mockResponse("get", page);
 
     let returned: PaginatedResponse<FollowingWithFollowInfo> | undefined;
     await act(async () => {
@@ -31,15 +31,15 @@ describe("useFetchFollowingByUserId", () => {
 
     expect(returned).toEqual(page);
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/test-project/users/user-2/following");
     expect(call.config?.params).toMatchObject({ page: 1, limit: 20 });
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchFollowingByUserId());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchFollowingByUserId());
 
-    axiosPublic.mockError("get", 500, { message: "Internal error" });
+    axiosPrivate.mockError("get", 500, { message: "Internal error" });
 
     await expect(
       result.current({ userId: "user-2" }),
@@ -47,11 +47,11 @@ describe("useFetchFollowingByUserId", () => {
   });
 
   it("throws before making a request when no user ID is passed", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchFollowingByUserId());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchFollowingByUserId());
 
     await expect(result.current({ userId: "" })).rejects.toThrow(
       "No userId provided.",
     );
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 });

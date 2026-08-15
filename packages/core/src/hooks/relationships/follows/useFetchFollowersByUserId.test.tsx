@@ -19,10 +19,10 @@ function makePage(items: FollowerWithFollowInfo[]): PaginatedResponse<FollowerWi
 
 describe("useFetchFollowersByUserId", () => {
   it("fetches another user's followers list", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchFollowersByUserId());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchFollowersByUserId());
 
     const page = makePage([{ followId: "follow-1", user: makeUser(), followedAt: "2024-01-01T00:00:00.000Z" }]);
-    axiosPublic.mockResponse("get", page);
+    axiosPrivate.mockResponse("get", page);
 
     let returned: PaginatedResponse<FollowerWithFollowInfo> | undefined;
     await act(async () => {
@@ -31,14 +31,14 @@ describe("useFetchFollowersByUserId", () => {
 
     expect(returned).toEqual(page);
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/test-project/users/user-2/followers");
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchFollowersByUserId());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchFollowersByUserId());
 
-    axiosPublic.mockError("get", 500, { message: "Internal error" });
+    axiosPrivate.mockError("get", 500, { message: "Internal error" });
 
     await expect(
       result.current({ userId: "user-2" }),
@@ -46,11 +46,11 @@ describe("useFetchFollowersByUserId", () => {
   });
 
   it("throws before making a request when no user ID is passed", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchFollowersByUserId());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchFollowersByUserId());
 
     await expect(result.current({ userId: "" })).rejects.toThrow(
       "No userId provided.",
     );
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 });

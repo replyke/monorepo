@@ -19,10 +19,10 @@ function makePage(connections: EstablishedConnection[]): PaginatedResponse<Estab
 
 describe("useFetchConnectionsByUserId", () => {
   it("fetches another user's established connections", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchConnectionsByUserId());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchConnectionsByUserId());
 
     const page = makePage([{ id: "connection-1", connectedUser: makeUser(), connectedAt: "2024-01-01T00:00:00.000Z" }]);
-    axiosPublic.mockResponse("get", page);
+    axiosPrivate.mockResponse("get", page);
 
     let returned: PaginatedResponse<EstablishedConnection> | undefined;
     await act(async () => {
@@ -31,15 +31,15 @@ describe("useFetchConnectionsByUserId", () => {
 
     expect(returned).toEqual(page);
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/users/user-2/connections");
     expect(call.config?.params).toMatchObject({ page: 1, limit: 20 });
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchConnectionsByUserId());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchConnectionsByUserId());
 
-    axiosPublic.mockError("get", 500, { message: "Internal error" });
+    axiosPrivate.mockError("get", 500, { message: "Internal error" });
 
     await expect(
       result.current({ userId: "user-2" }),
@@ -47,11 +47,11 @@ describe("useFetchConnectionsByUserId", () => {
   });
 
   it("throws before making a request when no user ID is passed", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() => useFetchConnectionsByUserId());
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchConnectionsByUserId());
 
     await expect(result.current({ userId: "" })).rejects.toThrow(
       "No user ID was provided",
     );
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 });

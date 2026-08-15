@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { Reaction, ReactionType } from "../../interfaces/models/Reaction";
 import { PaginatedResponse } from "../../interfaces/PaginatedResponse";
 import useProject from "../projects/useProject";
-import axios from "../../config/axios";
+import useAxiosPrivate from "../../config/useAxiosPrivate";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
@@ -16,6 +16,7 @@ export interface FetchCommentReactionsProps extends SpaceReputationContextParams
 
 function useFetchCommentReactions(): (props: FetchCommentReactionsProps) => Promise<PaginatedResponse<Reaction>> {
   const { projectId } = useProject();
+  const axios = useAxiosPrivate();
 
   const fetchCommentReactions = useCallback(
     async (props: FetchCommentReactionsProps): Promise<PaginatedResponse<Reaction>> => {
@@ -59,7 +60,7 @@ function useFetchCommentReactions(): (props: FetchCommentReactionsProps) => Prom
 
       return response.data;
     },
-    [projectId]
+    [axios, projectId]
   );
 
   return fetchCommentReactions;

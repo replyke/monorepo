@@ -216,11 +216,11 @@ describe("useCommentSectionData", () => {
   it("fetches and exposes a highlighted comment by ID", async () => {
     const targetComment = makeComment({ id: "comment-1" });
 
-    const { result, axiosPublic } = renderHookWithAxios(
+    const { result, axiosPrivate } = renderHookWithAxios(
       () => useCommentSectionData({ highlightedCommentId: "comment-1" }),
       {
-        beforeRender: ({ axiosPublic }) =>
-          axiosPublic.mockResponse("get", { comment: targetComment }),
+        beforeRender: ({ axiosPrivate }) =>
+          axiosPrivate.mockResponse("get", { comment: targetComment }),
       },
     );
 
@@ -231,7 +231,7 @@ describe("useCommentSectionData", () => {
       }),
     );
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/test-project/comments/comment-1");
   });
 });

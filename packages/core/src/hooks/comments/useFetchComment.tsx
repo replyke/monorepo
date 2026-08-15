@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import { Comment, CommentIncludeParam } from "../../interfaces/models/Comment";
-import axios from "../../config/axios";
+import useAxiosPrivate from "../../config/useAxiosPrivate";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
@@ -12,6 +12,7 @@ export interface FetchCommentProps extends SpaceReputationContextParams {
 
 function useFetchComment(): (props: FetchCommentProps) => Promise<{ comment: Comment }> {
   const { projectId } = useProject();
+  const axios = useAxiosPrivate();
 
   const fetchComment = useCallback(
     async ({ commentId, include, spaceReputation, spaceReputationId, spaceReputationDescendants }: FetchCommentProps) => {
@@ -43,7 +44,7 @@ function useFetchComment(): (props: FetchCommentProps) => Promise<{ comment: Com
         comment: Comment;
       };
     },
-    [projectId]
+    [axios, projectId]
   );
 
   return fetchComment;

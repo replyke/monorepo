@@ -11,12 +11,12 @@ afterEach(() => {
 
 describe("useFetchCommentByForeignId", () => {
   it("fetches a comment by foreign ID", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchCommentByForeignId(),
     );
 
     const comment = makeComment({ foreignId: "ext-1" });
-    axiosPublic.mockResponse("get", { comment });
+    axiosPrivate.mockResponse("get", { comment });
 
     let returned: { comment: typeof comment } | undefined;
     await act(async () => {
@@ -25,17 +25,17 @@ describe("useFetchCommentByForeignId", () => {
 
     expect(returned).toEqual({ comment });
 
-    const [call] = axiosPublic.calls("get");
+    const [call] = axiosPrivate.calls("get");
     expect(call.url).toBe("/test-project/comments/by-foreign-id");
     expect(call.config?.params).toMatchObject({ foreignId: "ext-1" });
   });
 
   it("rejects when the server returns an error response", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchCommentByForeignId(),
     );
 
-    axiosPublic.mockError("get", 404, { message: "Not found" });
+    axiosPrivate.mockError("get", 404, { message: "Not found" });
 
     await expect(
       result.current({ foreignId: "ext-1" }),
@@ -43,13 +43,13 @@ describe("useFetchCommentByForeignId", () => {
   });
 
   it("throws before making a request when no foreign ID is passed", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchCommentByForeignId(),
     );
 
     await expect(result.current({ foreignId: "" })).rejects.toThrow(
       "No foreign ID passed",
     );
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 });

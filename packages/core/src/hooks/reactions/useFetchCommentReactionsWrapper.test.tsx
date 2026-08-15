@@ -25,30 +25,30 @@ function makePage(reactions: Reaction[], hasMore: boolean): PaginatedResponse<Re
 
 describe("useFetchCommentReactionsWrapper", () => {
   it("does not fetch on mount when autoFetch is false (the default)", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchCommentReactionsWrapper({ commentId: "comment-1" }),
     );
 
     expect(result.current.loading).toBe(false);
-    expect(axiosPublic.calls("get")).toHaveLength(0);
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 
   it("fetches on mount when autoFetch is true, and loads more on demand", async () => {
     const firstReaction = makeReaction({ id: "reaction-1", targetType: "comment", targetId: "comment-1" });
     const secondReaction = makeReaction({ id: "reaction-2", targetType: "comment", targetId: "comment-1" });
 
-    const { result, axiosPublic } = renderHookWithAxios(
+    const { result, axiosPrivate } = renderHookWithAxios(
       () => useFetchCommentReactionsWrapper({ commentId: "comment-1", autoFetch: true }),
       {
-        beforeRender: ({ axiosPublic }) =>
-          axiosPublic.mockResponse("get", makePage([firstReaction], true)),
+        beforeRender: ({ axiosPrivate }) =>
+          axiosPrivate.mockResponse("get", makePage([firstReaction], true)),
       },
     );
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.reactions).toEqual([firstReaction]);
 
-    axiosPublic.mockResponse("get", makePage([secondReaction], false));
+    axiosPrivate.mockResponse("get", makePage([secondReaction], false));
 
     act(() => {
       result.current.loadMore();
@@ -59,11 +59,11 @@ describe("useFetchCommentReactionsWrapper", () => {
   });
 
   it("refetch() re-runs the query from page 1", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchCommentReactionsWrapper({ commentId: "comment-1" }),
     );
 
-    axiosPublic.mockResponse(
+    axiosPrivate.mockResponse(
       "get",
       makePage([makeReaction({ targetType: "comment", targetId: "comment-1" })], false),
     );
@@ -76,11 +76,11 @@ describe("useFetchCommentReactionsWrapper", () => {
   });
 
   it("stops loading without throwing when the request fails", async () => {
-    const { result, axiosPublic } = renderHookWithAxios(() =>
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchCommentReactionsWrapper({ commentId: "comment-1" }),
     );
 
-    axiosPublic.mockError("get", 500, { message: "Internal error" });
+    axiosPrivate.mockError("get", 500, { message: "Internal error" });
 
     act(() => {
       result.current.refetch();
