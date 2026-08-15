@@ -1,13 +1,14 @@
 import { SublayHttpClient } from "../../core/client";
 import { ChatMessage } from "../../interfaces/ChatMessage";
+import { GifData } from "../../interfaces/Comment";
 import { Mention } from "../../interfaces/Mention";
 
 export interface EditMessageProps {
   conversationId: string;
   messageId: string;
   content?: string;
-  /** A GIF URL, or null to clear it. */
-  gif?: string | null;
+  /** A GIF attachment, or null to clear it. */
+  gif?: GifData | null;
   mentions?: Mention[];
   metadata?: Record<string, any> | null;
 }
