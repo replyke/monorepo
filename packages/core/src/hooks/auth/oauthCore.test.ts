@@ -14,6 +14,7 @@ import {
   unstubFetchMock,
   jsonResponse,
 } from "../../test-utils";
+import { armAuthGate, syncAuthGate, resetAuthGate } from "../../config/authGate";
 
 describe("parseOAuthRedirectUrl", () => {
   it("extracts tokens from the fragment and ignores the query", () => {
@@ -53,6 +54,9 @@ describe("parseOAuthRedirectUrl", () => {
 describe("requestOAuthAuthorizationUrl", () => {
   afterEach(() => {
     unstubFetchMock();
+    // The gate's latches are module-level and shared across the whole run, so an
+    // armed gate would leak into every test after this block.
+    resetAuthGate();
   });
 
   it("POSTs to the authorize endpoint without an Authorization header", async () => {
@@ -92,6 +96,83 @@ describe("requestOAuthAuthorizationUrl", () => {
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer token-a");
+  });
+
+  // `link` runs behind requireUserAuth and posts via raw `fetch`, so there is no
+  // interceptor to recover a rejected token. It resolves through the auth gate
+  // for the same reason the account-management thunks do — see authGate.ts.
+  it("holds a link request until the bootstrap settles, then sends the token that arrived", async () => {
+    const { fetchMock } = stubFetchMock(async () =>
+      jsonResponse({ authorizationUrl: "https://provider/link" }),
+    );
+
+    armAuthGate();
+    syncAuthGate({ accessToken: null, initialized: false });
+
+    // The caller reads null from Redux on a cold start — this used to be
+    // rejected outright by the platform hooks before anything could wait.
+    const pending = requestOAuthAuthorizationUrl({
+      projectId: "project-1",
+      endpoint: "link",
+      provider: "github",
+      redirectAfterAuth: "https://app.example.com/done",
+      accessToken: null,
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    syncAuthGate({ accessToken: "arrived-token", initialized: true });
+    await pending;
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>).Authorization).toBe(
+      "Bearer arrived-token",
+    );
+  });
+
+  it("throws the signed-in message once the bootstrap confirms nobody is signed in", async () => {
+    const { fetchMock } = stubFetchMock(async () =>
+      jsonResponse({ authorizationUrl: "https://provider/link" }),
+    );
+
+    armAuthGate();
+    syncAuthGate({ accessToken: null, initialized: true });
+
+    await expect(
+      requestOAuthAuthorizationUrl({
+        projectId: "project-1",
+        endpoint: "link",
+        provider: "github",
+        redirectAfterAuth: "https://app.example.com/done",
+        accessToken: null,
+      }),
+    ).rejects.toThrow("Must be authenticated to link an OAuth provider.");
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does not attach a gated token to the authorize endpoint", async () => {
+    // `authorize` is the sign-IN call. An armed gate returns whatever token is
+    // current rather than the null passed in, so consulting it here would send
+    // the already-signed-in user's bearer on a request that must be anonymous.
+    const { fetchMock } = stubFetchMock(async () =>
+      jsonResponse({ authorizationUrl: "https://provider/auth" }),
+    );
+
+    armAuthGate();
+    syncAuthGate({ accessToken: "someone-elses-token", initialized: true });
+
+    await requestOAuthAuthorizationUrl({
+      projectId: "project-1",
+      endpoint: "authorize",
+      provider: "google",
+      redirectAfterAuth: "https://app.example.com/done",
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>).Authorization).toBeUndefined();
   });
 
   it("throws the server's error message on a non-ok response", async () => {

@@ -101,16 +101,27 @@ describe("useOAuthSignIn (react-js)", () => {
   });
 
   describe("linkOAuthProvider", () => {
-    it("requires an existing access token", async () => {
+    it("delegates the signed-in check to the gated core call rather than short-circuiting", async () => {
+      // The `!accessToken` guard used to live here and reject outright. That
+      // failed a cold start, where the token is still null while the bootstrap
+      // is in flight. `requestOAuthAuthorizationUrl` now waits for the auth gate
+      // and throws the same message only once the bootstrap says nobody is
+      // signed in — so the hook must let the call through and surface the throw.
       useSublaySelector.mockReturnValue(null);
+      requestOAuthAuthorizationUrl.mockRejectedValue(
+        new Error("Must be authenticated to link an OAuth provider."),
+      );
       const { result } = renderHook(() => useOAuthSignIn());
 
       await act(async () => {
         await result.current.linkOAuthProvider({ provider: "github" });
       });
 
-      expect(requestOAuthAuthorizationUrl).not.toHaveBeenCalled();
+      expect(requestOAuthAuthorizationUrl).toHaveBeenCalledWith(
+        expect.objectContaining({ endpoint: "link", accessToken: null }),
+      );
       expect(result.current.error).toBe("Must be authenticated to link an OAuth provider.");
+      expect(result.current.isLoading).toBe(false);
     });
 
     it("attaches the current access token when linking a provider", async () => {

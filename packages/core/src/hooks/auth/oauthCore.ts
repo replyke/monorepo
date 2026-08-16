@@ -1,6 +1,7 @@
 import type { AppDispatch } from "../../store/types";
 import { setTokens, setInitialized } from "../../store/slices/authSlice";
 import { requestNewAccessTokenThunk } from "../../store/slices/authThunks";
+import { getAuthorizedToken } from "../../config/authGate";
 
 /**
  * Platform-agnostic OAuth helpers shared by the web (`@sublay/react-js`) and
@@ -25,6 +26,18 @@ export const OAUTH_BASE_URL = "https://api.sublay.io/v7";
  * - `authorize` is unauthenticated; `link` requires the caller's access token,
  *   passed via `accessToken` (sent as a Bearer header only when present).
  * - Throws an `Error` carrying the server's `error` body on a non-ok response.
+ *
+ * `link` resolves its token through the auth gate rather than trusting the
+ * value the caller read, which is what makes it survive a cold start (the
+ * caller's `accessToken` is still null while the bootstrap is in flight) and an
+ * idle stretch (a token at or past `exp` is rotated before it goes out). This
+ * is a raw `fetch`, so there is no interceptor to recover if the token is
+ * rejected anyway — same limitation as the account-management thunks.
+ *
+ * `authorize` deliberately does NOT consult the gate: it is the sign-IN call,
+ * and an armed gate returns whatever token is current rather than the null the
+ * caller passed — which would attach the already-signed-in user's bearer to a
+ * request that must go out unauthenticated.
  */
 export async function requestOAuthAuthorizationUrl({
   projectId,
@@ -45,8 +58,15 @@ export async function requestOAuthAuthorizationUrl({
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (accessToken) {
-    headers["Authorization"] = `Bearer ${accessToken}`;
+
+  if (endpoint === "link") {
+    // Owned here rather than in the platform hooks: they read `accessToken`
+    // from Redux and would reject a cold start before anything could wait.
+    const token = await getAuthorizedToken(accessToken ?? null);
+    if (!token) {
+      throw new Error("Must be authenticated to link an OAuth provider.");
+    }
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   const response = await fetch(`${baseUrl}/${projectId}/oauth/${endpoint}`, {

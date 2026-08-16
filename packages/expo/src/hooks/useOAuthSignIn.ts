@@ -66,10 +66,11 @@ function useOAuthSignIn(): UseOAuthSignInReturn {
         return;
       }
 
-      if (endpoint === "link" && !accessToken) {
-        setError("Must be authenticated to link an OAuth provider.");
-        return;
-      }
+      // No `!accessToken` check here: on a cold start the token is still null
+      // while the bootstrap is in flight, and rejecting on that killed a
+      // perfectly valid link attempt. `requestOAuthAuthorizationUrl` waits for
+      // the gate and throws the same message if nobody is signed in — the catch
+      // below surfaces it identically.
 
       setIsLoading(true);
       setError(null);
