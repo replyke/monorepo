@@ -14,11 +14,31 @@ import {
 import { setTokens, setUser } from "./authSlice";
 import { setAccountMap } from "./accountsSlice";
 import { selectUser as selectUserSliceUser } from "./userSlice";
+import {
+  armAuthGate,
+  syncAuthGate,
+  setAuthGateRefresher,
+} from "../../config/authGate";
 import type { AuthUser } from "../../interfaces/models/User";
 
 afterEach(() => {
+  // Also resets the auth gate — the module-level latches are shared across a run.
   resetAxiosMocks();
 });
+
+/** Minimal unsigned JWT — only `exp` is ever read. Negative = already expired. */
+function jwtExpiringIn(seconds: number) {
+  const encode = (value: object) =>
+    Buffer.from(JSON.stringify(value))
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  return `${encode({ alg: "HS256" })}.${encode({
+    sub: "user-1",
+    exp: Math.floor((Date.now() + seconds * 1000) / 1000),
+  })}.sig`;
+}
 
 describe("signUpWithEmailAndPasswordThunk", () => {
   it("stores the returned tokens/user and syncs the user slice", async () => {
@@ -280,6 +300,78 @@ describe("confirmAccountDeletionThunk", () => {
     // Session is torn down after a successful deletion.
     expect(store.getState().sublay.auth.accessToken).toBeNull();
     expect(store.getState().sublay.auth.user).toBeNull();
+  });
+
+  // These three account-management endpoints post through the default axios
+  // instance, which carries no interceptors — so unlike every other authed
+  // call they get their token from the gate directly. The two tests below lock
+  // in the guarantees that buys; see the `withAuth` comment in authThunks.ts.
+  it("holds the request until the bootstrap settles, then sends the token that arrived", async () => {
+    // A deletion-code deep link cold-boots the app straight onto the confirm
+    // screen: the thunk fires while `accessToken` is still null. Before the
+    // gate, that posted with no Authorization header at all and took a bare
+    // 401 with nothing to retry it.
+    const store = makeSublayStore();
+    store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {});
+
+    armAuthGate();
+    syncAuthGate({ accessToken: null, initialized: false });
+
+    const pending = store.dispatch(
+      confirmAccountDeletionThunk({ projectId: "project-1", code: "123456" }),
+    );
+
+    // Bounded flush — enough for the request to have gone out if nothing held it.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(axios.calls("post")).toHaveLength(0);
+
+    const arrived = jwtExpiringIn(1800);
+    syncAuthGate({ accessToken: arrived, initialized: true });
+
+    const result = await pending;
+    expect(confirmAccountDeletionThunk.fulfilled.match(result)).toBe(true);
+    expect(axios.calls("post")[0].config?.headers?.Authorization).toBe(
+      `Bearer ${arrived}`,
+    );
+  });
+});
+
+describe("account-management thunks — idle expiry", () => {
+  it("rotates an expired token before sending rather than posting the stale one", async () => {
+    // Access tokens live 30 minutes. A settings screen opened after an idle
+    // stretch holds an expired-but-non-null token in Redux; the `user` guard
+    // passes, so nothing upstream catches it. The default axios instance has no
+    // response interceptor, so the resulting bare 403 was unrecoverable — the
+    // retry button re-read the same dead token and failed identically.
+    const store = makeSublayStore();
+    store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    const expired = jwtExpiringIn(-60);
+    store.dispatch(
+      setTokens({ accessToken: expired, refreshToken: "refresh-1" }),
+    );
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {});
+
+    const rotated = jwtExpiringIn(1800);
+    armAuthGate();
+    setAuthGateRefresher(async () => rotated);
+    syncAuthGate({ accessToken: expired, initialized: true });
+
+    const result = await store.dispatch(
+      changePasswordThunk({
+        projectId: "project-1",
+        password: "old",
+        newPassword: "new",
+      }),
+    );
+
+    expect(changePasswordThunk.fulfilled.match(result)).toBe(true);
+    expect(axios.calls("post")[0].config?.headers?.Authorization).toBe(
+      `Bearer ${rotated}`,
+    );
   });
 });
 
