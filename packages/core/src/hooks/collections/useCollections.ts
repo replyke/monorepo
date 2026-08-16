@@ -24,7 +24,7 @@ export interface CreateCollectionProps {
 
 export interface UpdateCollectionProps {
   collectionId: string;
-  update: Partial<{ name: string }>;
+  update: { name: string };
 }
 
 export interface DeleteCollectionProps {
