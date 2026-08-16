@@ -37,8 +37,8 @@ export interface SpaceListCreateSpaceProps {
   name: string;
   slug?: string | null;
   description?: string | null;
-  avatar?: string | null;
-  banner?: string | null;
+  // Space images are multipart-only on the server; set them with
+  // `useCreateSpace` / `useUpdateSpace`.
   readingPermission?: ReadingPermission;
   postingPermission?: PostingPermission;
   requireJoinApproval?: boolean;
@@ -62,7 +62,6 @@ export interface UseSpaceListValues {
   searchName: string | null;
   searchDescription: string | null;
   searchAny: string | null;
-  readingPermission: "anyone" | "members" | null;
   memberOf: boolean;
   parentSpaceId: string | null;
 
@@ -147,7 +146,6 @@ function useSpaceList({ listId }: UseSpaceListProps): UseSpaceListValues {
           searchName: null,
           searchDescription: null,
           searchAny: null,
-          readingPermission: null,
           memberOf: false,
           parentSpaceId: null,
         };
@@ -160,7 +158,6 @@ function useSpaceList({ listId }: UseSpaceListProps): UseSpaceListValues {
           finalFilters.searchName = null;
           finalFilters.searchDescription = null;
           finalFilters.searchAny = null;
-          finalFilters.readingPermission = null;
           finalFilters.memberOf = false;
           finalFilters.parentSpaceId = null;
         }
@@ -186,7 +183,6 @@ function useSpaceList({ listId }: UseSpaceListProps): UseSpaceListValues {
             searchName: finalFilters.searchName,
             searchDescription: finalFilters.searchDescription,
             searchAny: finalFilters.searchAny,
-            readingPermission: finalFilters.readingPermission,
             memberOf: finalFilters.memberOf,
             parentSpaceId: finalFilters.parentSpaceId,
             // Configuration parameters from current config
@@ -248,7 +244,6 @@ function useSpaceList({ listId }: UseSpaceListProps): UseSpaceListValues {
         searchName: spaceList.searchName,
         searchDescription: spaceList.searchDescription,
         searchAny: spaceList.searchAny,
-        readingPermission: spaceList.readingPermission,
         memberOf: spaceList.memberOf,
         parentSpaceId: spaceList.parentSpaceId,
         // Configuration parameters from state (single source of truth)
@@ -305,7 +300,6 @@ function useSpaceList({ listId }: UseSpaceListProps): UseSpaceListValues {
       searchName: filters?.searchName || null,
       searchDescription: filters?.searchDescription || null,
       searchAny: filters?.searchAny || null,
-      readingPermission: filters?.readingPermission || null,
       memberOf: filters?.memberOf || false,
       parentSpaceId: filters?.parentSpaceId || null,
 

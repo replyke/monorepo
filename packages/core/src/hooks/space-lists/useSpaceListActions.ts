@@ -29,7 +29,6 @@ export interface FetchSpacesOptions {
   searchName?: string | null;
   searchDescription?: string | null;
   searchAny?: string | null;
-  readingPermission?: "anyone" | "members" | null;
   memberOf?: boolean;
   parentSpaceId?: string | null;
   limit: number;
@@ -39,8 +38,8 @@ export interface CreateSpaceOptions {
   name: string;
   slug?: string | null;
   description?: string | null;
-  avatar?: string | null;
-  banner?: string | null;
+  // Space images are multipart-only on the server; set them with
+  // `useCreateSpace` / `useUpdateSpace` rather than through the list actions.
   readingPermission?: ReadingPermission;
   postingPermission?: PostingPermission;
   requireJoinApproval?: boolean;
@@ -90,7 +89,6 @@ export function useSpaceListActions() {
           searchName: options.searchName,
           searchDescription: options.searchDescription,
           searchAny: options.searchAny,
-          readingPermission: options.readingPermission,
           memberOf: options.memberOf,
           parentSpaceId: options.parentSpaceId,
           limit: options.limit,

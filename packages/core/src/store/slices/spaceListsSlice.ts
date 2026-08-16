@@ -21,7 +21,6 @@ export interface SpaceListState {
   searchName: string | null;
   searchDescription: string | null;
   searchAny: string | null;
-  readingPermission: "anyone" | "members" | null;
   memberOf: boolean;
   parentSpaceId: string | null;
 }
@@ -49,7 +48,6 @@ const createDefaultSpaceListState = (): SpaceListState => ({
   searchName: null,
   searchDescription: null,
   searchAny: null,
-  readingPermission: null,
   memberOf: false,
   parentSpaceId: undefined as any, // Will be set when fetchSpaces is called
 });
@@ -66,7 +64,6 @@ export interface SpaceListFilters {
   searchName?: string | null;
   searchDescription?: string | null;
   searchAny?: string | null;
-  readingPermission?: "anyone" | "members" | null;
   memberOf?: boolean;
   parentSpaceId?: string | null;
 }
@@ -153,7 +150,6 @@ export const spaceListsSlice = createSlice({
         list.searchName = defaultState.searchName;
         list.searchDescription = defaultState.searchDescription;
         list.searchAny = defaultState.searchAny;
-        list.readingPermission = defaultState.readingPermission;
         list.memberOf = defaultState.memberOf;
         list.parentSpaceId = defaultState.parentSpaceId;
       }
@@ -362,7 +358,6 @@ export const selectSpaceListFilters = createSelector(
       searchName: spaceList.searchName,
       searchDescription: spaceList.searchDescription,
       searchAny: spaceList.searchAny,
-      readingPermission: spaceList.readingPermission,
       memberOf: spaceList.memberOf,
       parentSpaceId: spaceList.parentSpaceId,
     };
