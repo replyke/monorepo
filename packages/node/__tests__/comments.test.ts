@@ -47,6 +47,26 @@ describe("node-sdk comments — request shaping", () => {
     });
   });
 
+  it("updateComment forwards metadata, with or without content", async () => {
+    const { client, projectInstance } = makeClient();
+
+    await updateComment(client, {
+      commentId: "c1",
+      content: "edited",
+      metadata: { revision: 2 },
+    });
+    expect(projectInstance.patch).toHaveBeenCalledWith("/comments/c1", {
+      content: "edited",
+      metadata: { revision: 2 },
+    });
+
+    // Metadata-only edits are valid server-side; content must not be injected.
+    await updateComment(client, { commentId: "c1", metadata: { pinned: true } });
+    expect(projectInstance.patch).toHaveBeenLastCalledWith("/comments/c1", {
+      metadata: { pinned: true },
+    });
+  });
+
   it("deleteComment deletes /comments/:id", async () => {
     const { client, projectInstance } = makeClient();
     await deleteComment(client, { commentId: "c1" });
