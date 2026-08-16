@@ -3,13 +3,15 @@ import { ReportReasonKey } from "../../constants/reportReasons";
 import useProject from "../projects/useProject";
 import { useUser } from "../user";
 
+export type ReportTargetType = "comment" | "entity" | "message";
+
 export interface UseCreateReportProps {
-  type: "comment" | "entity";
+  type: ReportTargetType;
 }
 
 export interface CreateReportProps {
   targetId: string;
-  targetType: "comment" | "entity";
+  targetType: ReportTargetType;
   reason: ReportReasonKey;
   details?: string;
 }
@@ -26,7 +28,21 @@ export interface CreateEntityReportProps {
   details?: string;
 }
 
-function useCreateReport({ type }: UseCreateReportProps): ((props: CreateCommentReportProps) => Promise<void>) | ((props: CreateEntityReportProps) => Promise<void>) {
+/**
+ * `targetId` is the message id. The conversation is resolved server-side, so
+ * no conversationId is needed. The reporter must be a member of the
+ * conversation, and may not report their own message.
+ */
+export interface CreateMessageReportProps {
+  targetId: string;
+  reason: ReportReasonKey;
+  details?: string;
+}
+
+function useCreateReport({ type }: UseCreateReportProps):
+  | ((props: CreateCommentReportProps) => Promise<void>)
+  | ((props: CreateEntityReportProps) => Promise<void>)
+  | ((props: CreateMessageReportProps) => Promise<void>) {
   const axios = useAxiosPrivate();
   const { projectId } = useProject();
   const { user } = useUser();
@@ -82,10 +98,25 @@ function useCreateReport({ type }: UseCreateReportProps): ((props: CreateComment
     });
   };
 
+  const createMessageReport = async ({
+    targetId,
+    reason,
+    details,
+  }: CreateMessageReportProps) => {
+    await createReport({
+      targetId,
+      targetType: "message",
+      reason,
+      details,
+    });
+  };
+
   if (type === "comment") {
     return createCommentReport;
   } else if (type === "entity") {
     return createEntityReport;
+  } else if (type === "message") {
+    return createMessageReport;
   }
 
   throw new Error("Invalid report type");
