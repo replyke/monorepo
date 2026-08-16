@@ -4,7 +4,7 @@ import { Collection } from "../../interfaces/Collection";
 export interface UpdateCollectionProps {
   collectionId: string;
   userId: string;
-  name?: string;
+  name: string;
 }
 
 export async function updateCollection(
