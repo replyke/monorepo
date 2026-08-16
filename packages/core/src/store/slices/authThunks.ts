@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../config/axios";
+import { getAuthorizedToken } from "../../config/authGate";
 
 import { handleError } from "../../utils/handleError";
 import type { RootState } from "../index";
@@ -21,10 +22,29 @@ import { baseApi } from "../api/baseApi";
 // run behind requireUserAuth on the server. The shared default axios instance
 // carries no token — only axiosPrivate (via useAxiosPrivate) and the RTK baseApi
 // attach the bearer — so these thunk-driven calls must attach it explicitly.
-const withAuth = (accessToken: string | null) =>
-  accessToken
-    ? { headers: { Authorization: `Bearer ${accessToken}` } }
-    : undefined;
+//
+// The token comes from the auth gate rather than from the Redux value the thunk
+// read, which buys these calls the two guarantees every gated caller already
+// has (see config/authGate.ts):
+//
+//   - COLD START. The gate holds the request until the auth bootstrap settles.
+//     Without it a screen mounted before the bootstrap resolved posts with no
+//     Authorization header at all and takes a bare 401 — reachable today via a
+//     deletion-code deep link that cold-boots the app onto the confirm screen.
+//   - IDLE EXPIRY. Access tokens live 30 minutes; the gate rotates one at or
+//     near `exp` before it goes out. Without it a settings screen opened after
+//     an idle stretch posts an expired token and takes a bare 403.
+//
+// What these calls still lack is the reactive 401/403 refresh-and-retry, which
+// lives on axiosPrivate's response interceptor. A token the gate could not
+// rotate pre-emptively — clock skew latches `clockUnreliable`, a prior rotation
+// latched `rotationFailedFor`, or the server revoked it — still fails hard here
+// with no second attempt. Closing that gap means registering those interceptors
+// at the provider level so a thunk can post through axiosPrivate safely.
+const withAuth = async (accessToken: string | null) => {
+  const token = await getAuthorizedToken(accessToken);
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
+};
 
 // Auth service functions - calling existing API patterns directly
 const authService = {
@@ -150,7 +170,7 @@ const authService = {
     await axios.post(
       `/${projectId}/auth/change-password`,
       data,
-      withAuth(accessToken)
+      await withAuth(accessToken)
     );
   },
 
@@ -162,7 +182,7 @@ const authService = {
     await axios.post(
       `/${projectId}/auth/set-password`,
       data,
-      withAuth(accessToken)
+      await withAuth(accessToken)
     );
   },
 
@@ -174,7 +194,7 @@ const authService = {
     await axios.post(
       `/${projectId}/auth/confirm-account-deletion`,
       { code },
-      withAuth(accessToken)
+      await withAuth(accessToken)
     );
   },
 };
