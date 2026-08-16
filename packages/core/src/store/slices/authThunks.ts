@@ -41,7 +41,17 @@ import { baseApi } from "../api/baseApi";
 // latched `rotationFailedFor`, or the server revoked it — still fails hard here
 // with no second attempt. Closing that gap means registering those interceptors
 // at the provider level so a thunk can post through axiosPrivate safely.
-const withAuth = async (accessToken: string | null) => {
+//
+// Callers await this BEFORE deciding whether anyone is signed in: on a cold
+// start `auth.user` is still null while the bootstrap is in flight, so checking
+// first rejects a request that is about to become perfectly valid.
+type AuthorizedConfig =
+  | { headers: { Authorization: string } }
+  | undefined;
+
+const withAuth = async (
+  accessToken: string | null
+): Promise<AuthorizedConfig> => {
   const token = await getAuthorizedToken(accessToken);
   return token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
 };
@@ -165,36 +175,28 @@ const authService = {
   async changePassword(
     projectId: string,
     data: { password: string; newPassword: string },
-    accessToken: string | null
+    authorization: AuthorizedConfig
   ) {
-    await axios.post(
-      `/${projectId}/auth/change-password`,
-      data,
-      await withAuth(accessToken)
-    );
+    await axios.post(`/${projectId}/auth/change-password`, data, authorization);
   },
 
   async setPassword(
     projectId: string,
     data: { newPassword: string },
-    accessToken: string | null
+    authorization: AuthorizedConfig
   ) {
-    await axios.post(
-      `/${projectId}/auth/set-password`,
-      data,
-      await withAuth(accessToken)
-    );
+    await axios.post(`/${projectId}/auth/set-password`, data, authorization);
   },
 
   async confirmAccountDeletion(
     projectId: string,
     code: string,
-    accessToken: string | null
+    authorization: AuthorizedConfig
   ) {
     await axios.post(
       `/${projectId}/auth/confirm-account-deletion`,
       { code },
-      await withAuth(accessToken)
+      authorization
     );
   },
 };
@@ -376,7 +378,7 @@ export const confirmAccountDeletionThunk = createAsyncThunk(
       await authService.confirmAccountDeletion(
         data.projectId,
         data.code,
-        state.sublay.auth.accessToken
+        await withAuth(state.sublay.auth.accessToken)
       );
 
       // Tear down the local session exactly like sign-out: drop the deleted
@@ -507,18 +509,20 @@ export const changePasswordThunk = createAsyncThunk(
   ) => {
     const state = getState() as RootState;
 
-    if (!state.sublay.auth.user) {
-      throw new Error("No user is authenticated");
-    }
-
     try {
       dispatch(setAuthenticating(true));
 
-      await authService.changePassword(
-        data.projectId,
-        data,
-        state.sublay.auth.accessToken
-      );
+      // Gate first, signed-in check second — see `withAuth`. Rejected via
+      // `rejectWithValue` rather than a bare throw so the message survives as
+      // `action.payload`, which is what `useAuth` rethrows to the caller.
+      const authorization = await withAuth(state.sublay.auth.accessToken);
+
+      // Re-read: the bootstrap we just waited on is what populates `user`.
+      if (!(getState() as RootState).sublay.auth.user) {
+        return rejectWithValue("No user is authenticated");
+      }
+
+      await authService.changePassword(data.projectId, data, authorization);
 
       return;
     } catch (error) {
@@ -540,18 +544,17 @@ export const setPasswordThunk = createAsyncThunk(
   ) => {
     const state = getState() as RootState;
 
-    if (!state.sublay.auth.user) {
-      throw new Error("No user is authenticated");
-    }
-
     try {
       dispatch(setAuthenticating(true));
 
-      await authService.setPassword(
-        data.projectId,
-        data,
-        state.sublay.auth.accessToken
-      );
+      // Same ordering as changePasswordThunk above.
+      const authorization = await withAuth(state.sublay.auth.accessToken);
+
+      if (!(getState() as RootState).sublay.auth.user) {
+        return rejectWithValue("No user is authenticated");
+      }
+
+      await authService.setPassword(data.projectId, data, authorization);
 
       return;
     } catch (error) {

@@ -208,7 +208,7 @@ describe("requestNewAccessTokenThunk", () => {
 });
 
 describe("changePasswordThunk", () => {
-  it("throws a guard error when no user is authenticated", async () => {
+  it("rejects with a readable payload when no user is authenticated", async () => {
     const store = makeSublayStore();
 
     const result = await store.dispatch(
@@ -216,7 +216,10 @@ describe("changePasswordThunk", () => {
     );
 
     expect(changePasswordThunk.rejected.match(result)).toBe(true);
-    expect(result.error.message).toBe("No user is authenticated");
+    // Regression: this guard used to `throw`, which leaves `payload` undefined —
+    // and `useAuth` rethrows `new Error(result.payload)`, so the caller saw
+    // literally "Error: undefined" instead of the reason.
+    expect(result.payload).toBe("No user is authenticated");
   });
 
   it("succeeds when a user is authenticated", async () => {
@@ -242,7 +245,7 @@ describe("changePasswordThunk", () => {
 });
 
 describe("setPasswordThunk", () => {
-  it("throws a guard error when no user is authenticated", async () => {
+  it("rejects with a readable payload when no user is authenticated", async () => {
     const store = makeSublayStore();
 
     const result = await store.dispatch(
@@ -250,7 +253,7 @@ describe("setPasswordThunk", () => {
     );
 
     expect(setPasswordThunk.rejected.match(result)).toBe(true);
-    expect(result.error.message).toBe("No user is authenticated");
+    expect(result.payload).toBe("No user is authenticated");
   });
 
   it("succeeds when a user is authenticated", async () => {
@@ -336,6 +339,85 @@ describe("confirmAccountDeletionThunk", () => {
     expect(axios.calls("post")[0].config?.headers?.Authorization).toBe(
       `Bearer ${arrived}`,
     );
+  });
+});
+
+describe("account-management thunks — cold start", () => {
+  // The signed-in check used to run BEFORE the gate, so a screen opened while
+  // the bootstrap was still in flight rejected instantly with "No user is
+  // authenticated" — even though the user was signed in and a refresh token was
+  // sitting in storage. Both thunks must wait, then judge.
+  it.each([
+    [
+      "changePasswordThunk",
+      changePasswordThunk,
+      { projectId: "project-1", password: "old", newPassword: "new" },
+      "/project-1/auth/change-password",
+    ],
+    [
+      "setPasswordThunk",
+      setPasswordThunk,
+      { projectId: "project-1", newPassword: "new" },
+      "/project-1/auth/set-password",
+    ],
+  ] as const)(
+    "%s waits for the bootstrap instead of rejecting on a null user",
+    async (_name, thunk, args, url) => {
+      const store = makeSublayStore();
+      const axios = mockAxiosPublic();
+      axios.mockResponse("post", {});
+
+      armAuthGate();
+      syncAuthGate({ accessToken: null, initialized: false });
+
+      // Note: no setUser / setTokens yet — that is exactly the cold-start state.
+      const pending = store.dispatch(thunk(args as never));
+
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(axios.calls("post")).toHaveLength(0);
+
+      // The bootstrap lands: user and token arrive together.
+      const arrived = jwtExpiringIn(1800);
+      store.dispatch(setUser({ id: "user-1" } as AuthUser));
+      store.dispatch(
+        setTokens({ accessToken: arrived, refreshToken: "refresh-1" }),
+      );
+      syncAuthGate({ accessToken: arrived, initialized: true });
+
+      const result = await pending;
+      expect(thunk.fulfilled.match(result)).toBe(true);
+      expect(axios.calls("post")[0].url).toBe(url);
+      expect(axios.calls("post")[0].config?.headers?.Authorization).toBe(
+        `Bearer ${arrived}`,
+      );
+    },
+  );
+
+  it("still rejects once the bootstrap confirms nobody is signed in", async () => {
+    // The wait must not turn into a blanket allow: if the bootstrap settles with
+    // no user, the local error is still the right answer.
+    const store = makeSublayStore();
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {});
+
+    armAuthGate();
+    syncAuthGate({ accessToken: null, initialized: false });
+
+    const pending = store.dispatch(
+      changePasswordThunk({
+        projectId: "project-1",
+        password: "old",
+        newPassword: "new",
+      }),
+    );
+
+    syncAuthGate({ accessToken: null, initialized: true });
+
+    const result = await pending;
+    expect(changePasswordThunk.rejected.match(result)).toBe(true);
+    expect(result.payload).toBe("No user is authenticated");
+    expect(axios.calls("post")).toHaveLength(0);
   });
 });
 
