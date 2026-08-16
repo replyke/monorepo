@@ -15,7 +15,7 @@ Updates the name of a sub-collection. The root collection cannot be renamed (it 
 ## Body Parameters
 
 <ParamField body="name" type="string" required>
-  The new name for the collection.
+  The new name for the collection. Must be a non-empty string.
 </ParamField>
 
 ## Response
@@ -25,6 +25,12 @@ Returns the updated [Collection](/data-models/collection) object.
 ## Error Responses
 
 <AccordionGroup>
+  <Accordion title="Invalid Body — 400">
+    Returned when `name` is missing or an empty string. The `error` message names the offending field.
+    ```json
+    { "error": "name: Invalid input: expected string, received undefined", "code": "collection/invalid-body" }
+    ```
+  </Accordion>
   <Accordion title="Collection Not Found — 404">
     Returned when the collection doesn't exist, doesn't belong to the user, or is the root collection (which cannot be renamed).
     ```json

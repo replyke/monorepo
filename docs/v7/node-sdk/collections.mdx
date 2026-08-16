@@ -204,8 +204,8 @@ const collection = await sublay.collections.updateCollection({
   The Sublay user ID who owns the collection.
 </ParamField>
 
-<ParamField body="name" type="string">
-  The new collection name.
+<ParamField body="name" type="string" required>
+  The new collection name. Must be a non-empty string.
 </ParamField>
 
 **Returns** — `Promise<Collection>`
