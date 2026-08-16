@@ -3,7 +3,10 @@ import { Comment } from "../../interfaces/Comment";
 
 export interface UpdateCommentProps {
   commentId: string;
-  content: string;
+  /** New text content. Cannot be empty. Omit to leave the content untouched. */
+  content?: string;
+  /** Replaces the comment's metadata wholesale (not merged). */
+  metadata?: Record<string, any>;
 }
 
 export async function updateComment(
