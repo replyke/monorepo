@@ -1,6 +1,7 @@
 import { SublayHttpClient } from "../../core/client";
 import {
   CreateReportResponse,
+  ReportReason,
   ReportTargetType,
 } from "../../interfaces/Report";
 
@@ -8,7 +9,7 @@ export interface CreateReportProps {
   userId: string;
   targetType: ReportTargetType;
   targetId: string;
-  reason: string;
+  reason: ReportReason;
   details?: string;
 }
 

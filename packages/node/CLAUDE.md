@@ -210,7 +210,8 @@ Conversations, messages, members, reactions, read state, and reporting.
 
 Conversations: `listConversations`, `createDirectConversation`, `createGroupConversation`, `getConversation`, `updateConversation`, `deleteConversation`, `getUnreadCount`
 Members: `listMembers`, `addMember`, `removeMember`, `changeMemberRole`, `leaveConversation`
-Messages: `listMessages`, `sendMessage`, `getMessage`, `editMessage`, `deleteMessage`, `reportMessage`
+Messages: `listMessages`, `sendMessage`, `getMessage`, `editMessage`, `deleteMessage`
+(Reporting a message is not a chat fn — use `reports.createReport` with `targetType: "message"`.)
 Reactions: `toggleReaction`, `listReactions` · Read state: `markAsRead`
 
 - **Acting user — resolve-then-check.** Every call takes the acting user (`userId`,

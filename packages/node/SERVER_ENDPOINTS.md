@@ -95,7 +95,6 @@ Base path: `/v7/:projectId/`
 | Method | Path | Service Key Access | SDK Function | SDK Call Valid |
 |--------|------|--------------------|--------------|----------------|
 | POST | `/chat/conversations/:conversationId/read` | can access with a key | `chat.markAsRead` | yes |
-| POST | `/chat/conversations/:conversationId/messages/:messageId/report` | can access with a key | `chat.reportMessage` | yes |
 
 ---
 

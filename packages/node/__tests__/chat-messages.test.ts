@@ -5,7 +5,6 @@ import {
   listMessages,
   listReactions,
   markAsRead,
-  reportMessage,
   sendMessage,
   toggleReaction,
 } from "../src/modules/chat";
@@ -98,15 +97,6 @@ describe("node-sdk chat (messages) — request shaping", () => {
     );
   });
 
-  it("reportMessage strips conversationId/messageId into the path and posts the rest", async () => {
-    const { client, projectInstance } = makeClient();
-    await reportMessage(client, { conversationId: "conv1", messageId: "msg1", userId: "u1", reason: "spam" });
-    expect(projectInstance.post).toHaveBeenCalledWith(
-      "/chat/conversations/conv1/messages/msg1/report",
-      { userId: "u1", reason: "spam" },
-    );
-  });
-
   it("toggleReaction posts emoji + userId to the reactions route", async () => {
     const { client, projectInstance } = makeClient();
     await toggleReaction(client, { conversationId: "conv1", messageId: "msg1", emoji: "👍", userId: "u1" });
@@ -196,15 +186,6 @@ describe("node-sdk chat (messages) — response mapping", () => {
     await expect(
       deleteMessage(client, { conversationId: "conv1", messageId: "msg1", userId: "u1" }),
     ).resolves.toBeUndefined();
-  });
-
-  it("reportMessage returns response.data", async () => {
-    const { client, projectInstance } = makeClient();
-    const result = { message: "reported", code: "ok" };
-    projectInstance.post.mockResolvedValueOnce({ data: result });
-    await expect(
-      reportMessage(client, { conversationId: "conv1", messageId: "msg1", userId: "u1", reason: "spam" }),
-    ).resolves.toEqual(result);
   });
 
   it("toggleReaction returns response.data", async () => {
