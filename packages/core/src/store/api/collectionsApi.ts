@@ -42,7 +42,7 @@ interface CreateCollectionParams {
 interface UpdateCollectionParams {
   projectId: string;
   collectionId: string;
-  update: Partial<{ name: string }>;
+  update: { name: string };
 }
 
 interface DeleteCollectionParams {
