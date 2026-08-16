@@ -100,11 +100,15 @@ Space-level moderation must be **integrated in your application**. Users with an
 
 - Built into your app using the provided hooks
 - Can only view reports for content within their space
-- Can remove entities and comments within their space
+- Can remove entities, comments, and chat messages within their space
 - Can ban users from their space only
 - Cannot access reports or take action in other spaces
 
 ## Report Reasons
+
+Reports must use one of these keys — the API rejects anything else with
+`report/invalid-body`. Use `other` together with the free-text `details` field
+for anything the list doesn't cover.
 
 | Key | Label |
 |-----|-------|
@@ -131,7 +135,7 @@ The hooks below are used for **space-level moderation** integrated in your app. 
 
 <CardGroup cols={2}>
   <Card title="useCreateReport" href="/hooks/reports/use-create-report">
-    Submit a report against an entity or comment.
+    Submit a report against an entity, comment, or chat message.
   </Card>
   <Card title="useFetchModeratedReports" href="/hooks/reports/use-fetch-moderated-reports">
     Fetch pending reports for spaces the current user moderates.
@@ -141,6 +145,9 @@ The hooks below are used for **space-level moderation** integrated in your app. 
   </Card>
   <Card title="useHandleSpaceCommentReport" href="/hooks/reports/use-handle-space-comment-report">
     Action a comment report as a space moderator.
+  </Card>
+  <Card title="useHandleSpaceChatReport" href="/hooks/reports/use-handle-space-chat-report">
+    Action a chat message report as a space moderator.
   </Card>
 </CardGroup>
 

@@ -45,7 +45,7 @@ function ModerationQueue({ spaceId }: { spaceId: string }) {
   Filter reports to a specific space. If omitted, returns reports from all spaces the user moderates.
 </ParamField>
 
-<ParamField body="targetType" type='"comment" | "entity"'>
+<ParamField body="targetType" type='"comment" | "entity" | "message"'>
   Filter by target type.
 </ParamField>
 
@@ -89,14 +89,18 @@ Returns `Promise<PaginatedResponse<Report>>`:
 <ResponseField name="id" type="string">UUID of the report record.</ResponseField>
 <ResponseField name="projectId" type="string">Project the report belongs to.</ResponseField>
 <ResponseField name="spaceId" type="string | null">Space the reported content belongs to.</ResponseField>
-<ResponseField name="targetId" type="string">ID of the reported entity or comment.</ResponseField>
-<ResponseField name="targetType" type='"comment" | "entity"'>Type of the reported content.</ResponseField>
+<ResponseField name="targetId" type="string">ID of the reported entity, comment, or chat message.</ResponseField>
+<ResponseField name="targetType" type='"comment" | "entity" | "message"'>Type of the reported content.</ResponseField>
 <ResponseField name="reporterCount" type="number">Total number of users who have reported this target.</ResponseField>
 <ResponseField name="userReports" type="array">Individual user report entries. Each includes `id`, `userId`, `reason`, `details`, and `createdAt`.</ResponseField>
 <ResponseField name="status" type="string">Current moderation status: `pending`, `on-hold`, `escalated`, `dismissed`, or `actioned`.</ResponseField>
 <ResponseField name="actionTaken" type="string | null">Free-text description of action taken, if any.</ResponseField>
-<ResponseField name="target" type="Entity | Comment | null">The reported content record (includes the author user object). Populated even if the content was soft-deleted. When `spaceReputation` is requested, the embedded author carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
+<ResponseField name="target" type="Entity | Comment | ChatMessage | null">The reported content record (includes the author user object). Populated even if the content was soft-deleted. When `spaceReputation` is requested, the embedded author carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
 <ResponseField name="space" type="Space | null">The space the reported content belongs to.</ResponseField>
 <ResponseField name="createdAt" type="Date">When the first report for this target was submitted.</ResponseField>
 <ResponseField name="updatedAt" type="Date">When the report record was last updated.</ResponseField>
 <ResponseField name="deletedAt" type="Date | null">Soft-delete timestamp. `null` if the report has not been deleted.</ResponseField>
+
+## Notes
+
+- Message reports appear in this queue only for conversations attached to a space. DM and group chat reports have no space, so they are project-level and appear only in the Sublay dashboard — see [`useCreateReport`](/hooks/reports/use-create-report).

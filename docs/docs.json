@@ -467,7 +467,6 @@
                 "pages": [
                   "v7/hooks/chat/use-chat-socket",
                   "v7/hooks/chat/use-mark-conversation-as-read",
-                  "v7/hooks/chat/use-report-message",
                   "v7/hooks/chat/use-total-unread-count",
                   "v7/hooks/chat/use-typing-indicator",
                   "v7/hooks/chat/use-unread-conversation-count"
@@ -489,7 +488,8 @@
                   "v7/hooks/reports/use-create-report",
                   "v7/hooks/reports/use-fetch-moderated-reports",
                   "v7/hooks/reports/use-handle-space-entity-report",
-                  "v7/hooks/reports/use-handle-space-comment-report"
+                  "v7/hooks/reports/use-handle-space-comment-report",
+                  "v7/hooks/reports/use-handle-space-chat-report"
                 ]
               },
               {
@@ -685,8 +685,7 @@
                   "v7/api-reference/chat/messages/delete-message",
                   "v7/api-reference/chat/messages/toggle-reaction",
                   "v7/api-reference/chat/messages/fetch-reaction-users",
-                  "v7/api-reference/chat/messages/mark-as-read",
-                  "v7/api-reference/chat/messages/report-message"
+                  "v7/api-reference/chat/messages/mark-as-read"
                 ]
               },
               {

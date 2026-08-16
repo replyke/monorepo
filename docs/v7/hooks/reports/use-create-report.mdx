@@ -1,12 +1,12 @@
 ---
 title: "Create report"
-description: "Submit a report against an entity or comment"
+description: "Submit a report against an entity, comment, or chat message"
 icon: "plug"
 ---
 
 ## Overview
 
-Returns a function to submit a content report on behalf of the authenticated user. Pass `type: "comment"` or `type: "entity"` when calling the hook — the returned function is pre-configured for that target type.
+Returns a function to submit a content report on behalf of the authenticated user. Pass `type: "comment"`, `type: "entity"`, or `type: "message"` when calling the hook — the returned function is pre-configured for that target type.
 
 If the same target has already been reported, the user's report is appended to the existing report record (the system deduplicates reports per-user). Reporting the same target twice has no additional effect.
 
@@ -34,16 +34,18 @@ function ReportEntityButton({ entityId }: { entityId: string }) {
 
 ## Parameters
 
-<ParamField path="type" type='"comment" | "entity"' required>
+<ParamField path="type" type='"comment" | "entity" | "message"' required>
   The target type this hook instance will report against. Determines the shape of the returned function.
 </ParamField>
 
 ## Returned Function
 
-The hook returns either `createCommentReport` or `createEntityReport` depending on the `type` argument. Both functions accept the same parameters:
+The hook returns `createCommentReport`, `createEntityReport`, or `createMessageReport` depending on the `type` argument. All three accept the same parameters:
 
 <ParamField body="targetId" type="string" required>
-  The ID of the comment or entity being reported.
+  The ID of the comment, entity, or chat message being reported. For messages
+  this is the message id — the conversation is resolved server-side, so no
+  `conversationId` is needed.
 </ParamField>
 
 <ParamField body="reason" type="ReportReasonKey" required>
@@ -60,6 +62,10 @@ The hook returns either `createCommentReport` or `createEntityReport` depending 
   | `illegalActivity` | Promotes illegal activity |
   | `selfHarm` | Promotes self-harm or suicide |
   | `other` | Other |
+
+  These are enforced by the API: any other value is rejected with
+  `report/invalid-body`. Use `other` plus `details` for anything the taxonomy
+  doesn't cover.
 </ParamField>
 
 <ParamField body="details" type="string">
@@ -73,4 +79,7 @@ The returned function returns `Promise<void>`. It resolves when the report is ac
 ## Notes
 
 - If the target has already been reported by this user, the server returns `200` with code `report/already-reported` without error. The hook function resolves normally in this case.
+- You cannot report your own content — the API rejects it with `report/self-report`.
+- Reporting a message requires membership of its conversation; a non-member gets `chat/not-a-member`.
+- Where a message report lands depends on the conversation: reports on **space** conversations reach space moderators via [`useFetchModeratedReports`](/hooks/reports/use-fetch-moderated-reports); reports on **DMs and group chats** have no space, so they are project-level and appear only in the Sublay dashboard.
 - Reports are scoped to the space the content belongs to, enabling space moderators to action them. See [`useFetchModeratedReports`](/hooks/reports/use-fetch-moderated-reports).

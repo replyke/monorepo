@@ -142,17 +142,20 @@ See [`useTypingIndicator`](/hooks/chat/use-typing-indicator).
 Users can report messages for moderation review:
 
 ```tsx
-import { useReportMessage } from "@sublay/react-js";
+import { useCreateReport } from "@sublay/react-js";
 
-function MessageMenu({ conversationId, messageId }) {
-  const report = useReportMessage();
+function MessageMenu({ messageId }) {
+  const report = useCreateReport({ type: "message" });
 
   return (
-    <button onClick={() => report({ conversationId, messageId, reason: "spam" })}>
+    <button onClick={() => report({ targetId: messageId, reason: "spam" })}>
       Report
     </button>
   );
 }
 ```
 
-See [`useReportMessage`](/hooks/chat/use-report-message).
+Message reports use the same hook as entity and comment reports. `targetId` is
+the message id — the conversation is resolved server-side.
+
+See [`useCreateReport`](/hooks/reports/use-create-report).

@@ -17,7 +17,10 @@ Returns a paginated list of reports for spaces where the authenticated user has 
 </ParamField>
 
 <ParamField query="targetType" type="string">
-  Filter by content type. One of: `entity`, `comment`.
+  Filter by content type. One of: `entity`, `comment`, `message`. Message
+  reports appear in this queue only for conversations attached to a space —
+  DM and group reports have no space, so they are project-level and surface in
+  the Sublay dashboard instead.
 </ParamField>
 
 <ParamField query="status" type="string">

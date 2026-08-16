@@ -1,25 +1,30 @@
 ---
 title: "Create Report"
 api: "POST /v7/:projectId/reports"
-description: "Submit a content report for an entity or comment"
+description: "Submit a content report for an entity, comment, or chat message"
 ---
 
-Submits a report on an entity or comment. If a report already exists for the target, the authenticated user's report is added to it (increments `reporterCount`). If the same user has already reported the same target, a `200` is returned without creating a duplicate.
+Submits a report on an entity, comment, or chat message. If a report already exists for the target, the authenticated user's report is added to it (increments `reporterCount`). If the same user has already reported the same target, a `200` is returned without creating a duplicate.
 
-**Authentication required.**
+**Authentication required.** **Rate limit**: 25 requests per 5 minutes.
 
 ## Body Parameters
 
 <ParamField body="targetId" type="string" required>
-  The UUID of the entity or comment being reported.
+  The UUID of the entity, comment, or chat message being reported. For a
+  message this is the message id — the conversation is resolved server-side,
+  so no `conversationId` is needed.
 </ParamField>
 
 <ParamField body="targetType" type="string" required>
-  The type of content being reported. One of: `entity`, `comment`.
+  The type of content being reported. One of: `entity`, `comment`, `message`.
 </ParamField>
 
 <ParamField body="reason" type="string" required>
-  The reason for the report (e.g., "spam", "harassment", "misinformation"). Must not be empty.
+  The reason for the report. Must be one of: `spam`, `inappropriateContent`,
+  `harassment`, `misinformation`, `hateSpeech`, `violence`, `illegalActivity`,
+  `selfHarm`, `other`. Any other value is rejected with `report/invalid-body` —
+  use `other` plus `details` for anything the taxonomy doesn't cover.
 </ParamField>
 
 <ParamField body="details" type="string">
@@ -54,5 +59,28 @@ Returns `200 OK` when the user has already reported this target:
     { "error": "<targetType> not found", "code": "report/target-not-found" }
     ```
     The error message reflects the reported type, e.g. `"entity not found"` or `"comment not found"`.
+  </Accordion>
+
+  <Accordion title="Self Report — 400">
+    ```json
+    { "error": "You cannot report your own <targetType>.", "code": "report/self-report" }
+    ```
+    A user cannot report content they authored.
+  </Accordion>
+
+  <Accordion title="Not a Conversation Member — 403">
+    ```json
+    { "error": "You are not a member of this conversation.", "code": "chat/not-a-member" }
+    ```
+    Only members of a conversation may report a message in it. Applies to
+    `targetType: "message"` only.
+  </Accordion>
+
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "...", "code": "report/invalid-body" }
+    ```
+    Returned for a malformed `targetId`, an unknown `targetType`, or a `reason`
+    outside the accepted set.
   </Accordion>
 </AccordionGroup>

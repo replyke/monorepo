@@ -11,7 +11,7 @@ The `reports` module lets end users file reports against entities and comments, 
 
 ### createReport
 
-Files a report against an entity or comment. Repeat reports of the same target are deduplicated.
+Files a report against an entity, comment, or chat message. Repeat reports of the same target are deduplicated.
 
 ```typescript
 const { message, code } = await sublay.reports.createReport({
@@ -22,21 +22,31 @@ const { message, code } = await sublay.reports.createReport({
 });
 ```
 
-<ParamField body="targetType" type='"entity" | "comment"' required>
+<ParamField body="targetType" type='"entity" | "comment" | "message"' required>
   The kind of content being reported.
 </ParamField>
 
 <ParamField body="targetId" type="string" required>
-  The ID of the entity or comment being reported.
+  The ID of the entity, comment, or chat message being reported.
 </ParamField>
 
-<ParamField body="reason" type="string" required>
-  The reason for the report.
+<ParamField body="reason" type="ReportReason" required>
+  One of `spam`, `inappropriateContent`, `harassment`, `misinformation`,
+  `hateSpeech`, `violence`, `illegalActivity`, `selfHarm`, `other`. The API
+  rejects anything else — use `other` plus `details` for the rest.
 </ParamField>
 
 <ParamField body="details" type="string">
   Additional context about the report.
 </ParamField>
+
+
+<Note>
+  Reporting a chat message uses `targetType: "message"` with the **message id**
+  as `targetId` — the conversation is resolved server-side. Reports on space
+  conversations reach space moderators; reports on DMs and group chats are
+  project-level and appear only in the Sublay dashboard.
+</Note>
 
 **Returns** — `Promise<{ message: string; code: "report/created" | "report/updated" | "report/already-reported" }>`
 
@@ -59,8 +69,10 @@ const { data, pagination } = await sublay.reports.fetchModeratedReports({
   Restrict results to reports within a specific space.
 </ParamField>
 
-<ParamField body="targetType" type='"entity" | "comment"'>
-  Restrict results to reports of a specific target type.
+<ParamField body="targetType" type='"entity" | "comment" | "message"'>
+  Restrict results to reports of a specific target type. Message reports appear
+  in this queue only for space conversations — DM and group reports are
+  project-level and surface in the dashboard.
 </ParamField>
 
 <ParamField body="status" type='"pending" | "on-hold" | "escalated" | "dismissed" | "actioned"'>

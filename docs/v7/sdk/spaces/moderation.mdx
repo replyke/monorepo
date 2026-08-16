@@ -3,7 +3,7 @@ title: "Moderation"
 description: "Moderate content and handle reports within a space"
 ---
 
-Space moderators and admins can review and act on content in their space. Moderation includes directly approving or removing entities and comments, as well as handling reports submitted by members.
+Space moderators and admins can review and act on content in their space. Moderation includes directly approving or removing entities and comments, as well as handling reports submitted by members — on entities, comments, and chat messages in space conversations.
 
 ## Direct Moderation
 
@@ -34,18 +34,48 @@ When members report content, moderators receive those reports and can resolve th
 import {
   useHandleSpaceEntityReport,
   useHandleSpaceCommentReport,
+  useHandleSpaceChatReport,
 } from "@sublay/react-js";
 
 const handleEntityReport = useHandleSpaceEntityReport();
 const handleCommentReport = useHandleSpaceCommentReport();
+const handleChatReport = useHandleSpaceChatReport();
 
-// Dismiss a report or take action
-await handleEntityReport({ spaceId, reportId, action: "dismiss" });
-await handleEntityReport({ spaceId, reportId, action: "remove_content" });
+// `actions` is an array — you can combine a removal with a ban in one call.
+await handleEntityReport({
+  spaceId,
+  reportId,
+  entityId,
+  actions: ["dismiss"],
+  summary: "No violation found",
+});
 
-await handleCommentReport({ spaceId, reportId, action: "dismiss" });
-await handleCommentReport({ spaceId, reportId, action: "remove_content" });
+await handleCommentReport({
+  spaceId,
+  reportId,
+  commentId,
+  actions: ["remove-comment"],
+  summary: "Removed for harassment",
+});
+
+await handleChatReport({
+  spaceId,
+  reportId,
+  messageId,
+  actions: ["remove-message", "ban-user"],
+  userId: offendingUserId, // the ban target
+  summary: "Removed and banned",
+});
 ```
+
+Each target type has its own removal action — `remove-entity`, `remove-comment`,
+`remove-message` — alongside the shared `ban-user` and `dismiss`.
+
+<Note>
+  `ban-user` is **space-scoped**: it bans the user from this space only.
+  Project-wide suspension is a dashboard action — a space moderator cannot
+  suspend someone across the whole project.
+</Note>
 
 ## Fetching Reports
 

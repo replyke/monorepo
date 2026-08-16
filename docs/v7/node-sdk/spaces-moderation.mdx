@@ -100,6 +100,16 @@ const result = await sublay.spaces.handleCommentReport({
 
 ---
 
+<Note>
+  Chat message reports are handled by **`spaces.handleSpaceChatReport`**, which
+  is documented with the other space-conversation functions in
+  [Chat → Space conversations](/node-sdk/chat#space-conversations). Reports on
+  DM and group conversations are project-level and are resolved in the Sublay
+  dashboard, not through this SDK.
+</Note>
+
+---
+
 ## Content Moderation
 
 ### moderateSpaceEntity

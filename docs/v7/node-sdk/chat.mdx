@@ -436,27 +436,24 @@ await sublay.chat.deleteMessage({
 
 ---
 
-### reportMessage
+### Reporting a message
 
-Reports a message for moderation.
+Message reports go through the shared reports API, not a chat-specific
+function — the same call that reports entities and comments.
 
 ```typescript
-await sublay.chat.reportMessage({
-  conversationId: "cnv_abc123",
-  messageId: "msg_xyz",
+await sublay.reports.createReport({
+  targetType: "message",
+  targetId: "msg_xyz",
   userId: "usr_abc123",
   reason: "harassment",
   details: "Targeted insults",
 });
 ```
 
-<ParamField body="conversationId" type="string" required />
-<ParamField body="messageId" type="string" required />
-<ParamField body="userId" type="string" required>The reporting user (must be a member).</ParamField>
-<ParamField body="reason" type="string" required>Up to 200 characters.</ParamField>
-<ParamField body="details" type="string">Up to 1000 characters.</ParamField>
-
-**Returns** — `Promise<{ message: string; code: string }>`
+`targetId` is the message id; the conversation is resolved server-side, so no
+`conversationId` is needed. The reporter must be a member of the conversation
+and cannot report their own message. See [createReport](/node-sdk/reports).
 
 ---
 
