@@ -16,6 +16,20 @@ import {
 } from "../../test-utils";
 import { armAuthGate, syncAuthGate, resetAuthGate } from "../../config/authGate";
 
+/** Minimal unsigned JWT carrying a `sub` and a far-future `exp`. */
+function jwtFor(sub: string) {
+  const encode = (value: object) =>
+    Buffer.from(JSON.stringify(value))
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  return `${encode({ alg: "HS256" })}.${encode({
+    sub,
+    exp: Math.floor((Date.now() + 1_800_000) / 1000),
+  })}.sig`;
+}
+
 describe("parseOAuthRedirectUrl", () => {
   it("extracts tokens from the fragment and ignores the query", () => {
     const parsed = parseOAuthRedirectUrl(
@@ -150,6 +164,35 @@ describe("requestOAuthAuthorizationUrl", () => {
       }),
     ).rejects.toThrow("Must be authenticated to link an OAuth provider.");
 
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses to link when the account switched while the request waited", async () => {
+    // Linking is a permanent write. A request parked at the gate must not
+    // resume and attach the provider to whichever account is active when it
+    // reopens — the user started this flow on a different one.
+    const { fetchMock } = stubFetchMock(async () =>
+      jsonResponse({ authorizationUrl: "https://provider/link" }),
+    );
+
+    const ownToken = jwtFor("user-1");
+    armAuthGate();
+    syncAuthGate({ accessToken: ownToken, initialized: true });
+    // The switch begins: the gate re-closes, parking the request.
+    syncAuthGate({ accessToken: null, initialized: false });
+
+    const pending = requestOAuthAuthorizationUrl({
+      projectId: "project-1",
+      endpoint: "link",
+      provider: "github",
+      redirectAfterAuth: "https://app.example.com/done",
+      accessToken: ownToken,
+    });
+
+    // The switch completes — the gate reopens holding user-2's token.
+    syncAuthGate({ accessToken: jwtFor("user-2"), initialized: true });
+
+    await expect(pending).rejects.toThrow(/active account changed/i);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

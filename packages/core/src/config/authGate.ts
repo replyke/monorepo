@@ -29,7 +29,7 @@
 // this is inert unless a real app mounted a real provider.
 
 import { refreshAccessToken } from "./refreshAccessToken";
-import { readJwtExp } from "../utils/jwt";
+import { readJwtExp, readJwtSub } from "../utils/jwt";
 
 /** How close to `exp` a token may get before we rotate it pre-emptively. */
 const EXPIRY_SKEW_MS = 60_000;
@@ -266,4 +266,44 @@ export async function getAuthorizedToken(
 
   rotationFailedFor = null;
   return refreshed;
+}
+
+/**
+ * Message thrown by `getAuthorizedTokenForAccount` when the active account
+ * changed while a request was parked at the gate. Exported so callers can match
+ * on it rather than re-deriving the wording.
+ */
+export const ACCOUNT_SWITCHED_MESSAGE =
+  "The active account changed while this request was waiting. Please try again.";
+
+/**
+ * `getAuthorizedToken` for callers that must not have their request re-pointed
+ * at a different account.
+ *
+ * Waiting at the gate makes the token read and the send non-atomic: an account
+ * switch during the wait re-closes the gate and reopens it holding the INCOMING
+ * account's token, so a parked request resumes under the wrong identity. For a
+ * read that is stale data — the tradeoff `axiosPrivate` and `baseApi` already
+ * accept. For a WRITE it is worse: a password set on an account the caller never
+ * chose (with no current-password check server-side to reject it), or an OAuth
+ * provider permanently linked to the wrong account. Those callers use this.
+ *
+ * Only an actual disagreement throws. A caller that started with no token (cold
+ * start — the case the wait exists for) has no identity to compare, and an
+ * unreadable `sub` means "don't know" rather than "mismatch"; both proceed,
+ * which is the pre-wait behavior. A pre-emptive rotation mints a new token
+ * string for the same `sub`, so idle-expiry recovery is unaffected.
+ */
+export async function getAuthorizedTokenForAccount(
+  fallbackToken: string | null = null,
+): Promise<string | null> {
+  const startedAs = readJwtSub(fallbackToken);
+  const token = await getAuthorizedToken(fallbackToken);
+  const sendingAs = readJwtSub(token);
+
+  if (startedAs && sendingAs && startedAs !== sendingAs) {
+    throw new Error(ACCOUNT_SWITCHED_MESSAGE);
+  }
+
+  return token;
 }
