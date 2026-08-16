@@ -57,6 +57,31 @@ describe("useCreateReport", () => {
     });
   });
 
+  it("creates a message report against the shared reports endpoint", async () => {
+    const user = makeAuthUser();
+    const { result, axiosPrivate } = renderHookWithAxios(
+      () => useCreateReport({ type: "message" }),
+      { user },
+    );
+
+    axiosPrivate.mockResponse("post", undefined, 201);
+
+    await act(async () => {
+      await result.current({ targetId: "message-1", reason: "hateSpeech" });
+    });
+
+    const [call] = axiosPrivate.calls("post");
+    // Chat message reports go through /reports, not a chat-local route, and
+    // carry no conversationId — the server resolves it from the message.
+    expect(call.url).toBe("/test-project/reports");
+    expect(call.body).toMatchObject({
+      targetId: "message-1",
+      targetType: "message",
+      reason: "hateSpeech",
+    });
+    expect(call.body).not.toHaveProperty("conversationId");
+  });
+
   it("throws when constructed with an invalid type", () => {
     const user = makeAuthUser();
     // React + jsdom log the error to console even though it's caught below —

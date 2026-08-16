@@ -66,8 +66,6 @@ export { default as useTotalUnreadCount } from "./useTotalUnreadCount";
 export { default as useUnreadConversationCount } from "./useUnreadConversationCount";
 export { default as useMarkConversationAsRead } from "./useMarkConversationAsRead";
 export type { UseMarkConversationAsReadProps } from "./useMarkConversationAsRead";
-export { default as useReportMessage } from "./useReportMessage";
-export type { ReportMessageParams } from "./useReportMessage";
 export { default as useTypingIndicator } from "./useTypingIndicator";
 export type {
   UseTypingIndicatorProps,
