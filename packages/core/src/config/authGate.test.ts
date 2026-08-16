@@ -6,6 +6,7 @@ import {
   setAuthGateRefresher,
   resetAuthGate,
   getAuthorizedToken,
+  getAuthorizedTokenForAccount,
 } from "./authGate";
 
 afterEach(() => {
@@ -376,5 +377,67 @@ describe("authGate — pre-emptive expiry refresh", () => {
 
     await expect(getAuthorizedToken(null)).resolves.toBeNull();
     expect(refresher).not.toHaveBeenCalled();
+  });
+});
+
+describe("getAuthorizedTokenForAccount", () => {
+  // Used by callers whose request is a WRITE — the account-management thunks and
+  // the OAuth link call. Waiting at the gate makes the read and the send
+  // non-atomic, and for those callers resuming under a switched identity is a
+  // write to an account the caller never chose, not merely stale data.
+  it("throws when the token that arrives belongs to a different account", async () => {
+    const startedWith = jwtExpiringIn(1800, { sub: "user-1" });
+
+    armAuthGate();
+    syncAuthGate({ accessToken: startedWith, initialized: true });
+    syncAuthGate({ accessToken: null, initialized: false });
+
+    const pending = getAuthorizedTokenForAccount(startedWith);
+    syncAuthGate({
+      accessToken: jwtExpiringIn(1800, { sub: "user-2" }),
+      initialized: true,
+    });
+
+    await expect(pending).rejects.toThrow(/active account changed/i);
+  });
+
+  it("allows a rotation of the same account through", async () => {
+    // A pre-emptive rotation mints a new token STRING for the same `sub`. If
+    // that read as a switch, every idle-expiry recovery would break.
+    const expired = jwtExpiringIn(-60, { sub: "user-1" });
+    const rotated = jwtExpiringIn(1800, { sub: "user-1" });
+
+    armAuthGate();
+    setAuthGateRefresher(async () => rotated);
+    syncAuthGate({ accessToken: expired, initialized: true });
+
+    await expect(getAuthorizedTokenForAccount(expired)).resolves.toBe(rotated);
+  });
+
+  it("allows a cold start through, where there is no starting identity", async () => {
+    // The caller holds null while the bootstrap is in flight — the very case the
+    // wait exists for. Nothing to compare, so it must not block.
+    armAuthGate();
+    syncAuthGate({ accessToken: null, initialized: false });
+
+    const pending = getAuthorizedTokenForAccount(null);
+    const arrived = jwtExpiringIn(1800, { sub: "user-1" });
+    syncAuthGate({ accessToken: arrived, initialized: true });
+
+    await expect(pending).resolves.toBe(arrived);
+  });
+
+  it("allows an unreadable `sub` through rather than treating it as a mismatch", async () => {
+    // Consistent with the rest of the module: unreadable means "don't know".
+    armAuthGate();
+    syncAuthGate({ accessToken: "opaque-token", initialized: true });
+
+    await expect(getAuthorizedTokenForAccount("also-opaque")).resolves.toBe(
+      "opaque-token",
+    );
+  });
+
+  it("is a no-op passthrough while disarmed", async () => {
+    await expect(getAuthorizedTokenForAccount("token-a")).resolves.toBe("token-a");
   });
 });

@@ -1,7 +1,7 @@
 import type { AppDispatch } from "../../store/types";
 import { setTokens, setInitialized } from "../../store/slices/authSlice";
 import { requestNewAccessTokenThunk } from "../../store/slices/authThunks";
-import { getAuthorizedToken } from "../../config/authGate";
+import { getAuthorizedTokenForAccount } from "../../config/authGate";
 
 /**
  * Platform-agnostic OAuth helpers shared by the web (`@sublay/react-js`) and
@@ -30,9 +30,11 @@ export const OAUTH_BASE_URL = "https://api.sublay.io/v7";
  * `link` resolves its token through the auth gate rather than trusting the
  * value the caller read, which is what makes it survive a cold start (the
  * caller's `accessToken` is still null while the bootstrap is in flight) and an
- * idle stretch (a token at or past `exp` is rotated before it goes out). This
- * is a raw `fetch`, so there is no interceptor to recover if the token is
- * rejected anyway — same limitation as the account-management thunks.
+ * idle stretch (a token at or past `exp` is rotated before it goes out). It
+ * throws if the active account changed while it waited, so the provider cannot
+ * be linked to an account the caller never chose. This is a raw `fetch`, so
+ * there is no interceptor to recover if the token is rejected anyway — same
+ * limitation as the account-management thunks.
  *
  * `authorize` deliberately does NOT consult the gate: it is the sign-IN call,
  * and an armed gate returns whatever token is current rather than the null the
@@ -60,9 +62,14 @@ export async function requestOAuthAuthorizationUrl({
   };
 
   if (endpoint === "link") {
-    // Owned here rather than in the platform hooks: they read `accessToken`
-    // from Redux and would reject a cold start before anything could wait.
-    const token = await getAuthorizedToken(accessToken ?? null);
+    // `ForAccount` because linking is a WRITE, and a permanent one: a request
+    // parked at the gate across an account switch would otherwise resume and
+    // attach the provider to whichever account is active when it reopens.
+    //
+    // The signed-in check is owned here rather than in the platform hooks:
+    // they read `accessToken` from Redux and would reject a cold start before
+    // anything could wait.
+    const token = await getAuthorizedTokenForAccount(accessToken ?? null);
     if (!token) {
       throw new Error("Must be authenticated to link an OAuth provider.");
     }
