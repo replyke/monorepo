@@ -1,10 +1,10 @@
 ---
 title: "Update Comment"
 api: "PATCH /v7/:projectId/comments/:commentId"
-description: "Edit a comment's text content"
+description: "Edit a comment's content and/or metadata"
 ---
 
-Updates the text content of a comment. Only the comment's author, or a request with a service or master key, can update a comment.
+Updates a comment's content, its metadata, or both. Only the comment's author, or a request with a service or master key, can update a comment.
 
 **Authentication required.**
 
@@ -16,8 +16,14 @@ Updates the text content of a comment. Only the comment's author, or a request w
 
 ## Body Parameters
 
-<ParamField body="content" type="string" required>
-  The new text content for the comment. Cannot be empty.
+Both fields are individually optional, but **at least one must be provided**.
+
+<ParamField body="content" type="string">
+  The new text content for the comment. Cannot be empty. Omit to leave the existing content untouched.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary JSON metadata, up to 1 MB. **Replaces** the stored metadata wholesale rather than merging into it.
 </ParamField>
 
 ## Response
@@ -27,6 +33,13 @@ Returns the updated [Comment](/data-models/comment) object.
 ## Error Responses
 
 <AccordionGroup>
+  <Accordion title="Invalid Body — 400">
+    Returned when neither `content` nor `metadata` is supplied, when `content` is an empty string, or when `metadata` exceeds 1 MB.
+
+    ```json
+    { "error": "Either content or metadata must be provided", "code": "comment/invalid-body" }
+    ```
+  </Accordion>
   <Accordion title="Not Found — 404">
     ```json
     { "error": "Comment not found", "code": "comment/not-found" }

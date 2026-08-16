@@ -58,12 +58,11 @@ function SpaceDirectory() {
   ```ts
   fetchSpaces(
     filters: {
-      sortBy?: "newest" | "oldest" | "most_members" | "least_members";
+      sortBy?: "newest" | "members" | "alphabetical";
       searchSlug?: string | null;
       searchName?: string | null;
       searchDescription?: string | null;
       searchAny?: string | null;
-      readingPermission?: "anyone" | "members" | null;
       memberOf?: boolean;
       parentSpaceId?: string | null;
     },
@@ -85,8 +84,6 @@ function SpaceDirectory() {
     name: string;
     slug?: string | null;
     description?: string | null;
-    avatar?: string | null;
-    banner?: string | null;
     readingPermission?: "anyone" | "members";
     postingPermission?: "anyone" | "members" | "admins";
     visibility?: "public" | "unlisted" | "private";
@@ -96,6 +93,13 @@ function SpaceDirectory() {
     insertPosition?: "first" | "last";
   }) => Promise<Space | undefined>
   ```
+
+  <Note>
+    Space avatars and banners are uploaded as files, not URLs, so they can't be
+    set through this hook. Use [useCreateSpace](/hooks/spaces/use-create-space)
+    or [useUpdateSpace](/hooks/spaces/use-update-space), which send the image as
+    `multipart/form-data`.
+  </Note>
 </ResponseField>
 
 <ResponseField name="deleteSpace" type="function">
@@ -124,10 +128,6 @@ function SpaceDirectory() {
 
 <ResponseField name="searchAny" type="string | null">
   Current general search query from Redux state.
-</ResponseField>
-
-<ResponseField name="readingPermission" type='"anyone" | "members" | null'>
-  Current reading permission filter from Redux state.
 </ResponseField>
 
 <ResponseField name="memberOf" type="boolean">
