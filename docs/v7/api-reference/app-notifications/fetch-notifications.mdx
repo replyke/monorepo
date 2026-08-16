@@ -71,12 +71,19 @@ Returns a paginated envelope containing an array of notification objects.
 ## Error Responses
 
 <AccordionGroup>
-  <Accordion title="Unauthorized — 401">
-    ```json
-    {
-      "error": "Unauthorized",
-      "code": "auth/unauthorized"
-    }
+  <Accordion title="Missing token — 401">
+    No `Authorization` header was sent. The body is `text/plain`, not JSON:
+
+    ```text
+    Unauthorized
+    ```
+  </Accordion>
+  <Accordion title="Expired or invalid token — 403">
+    The header was sent but the token failed verification. Refresh the access
+    token and retry. The body is `text/plain`, not JSON:
+
+    ```text
+    Forbidden
     ```
   </Accordion>
   <Accordion title="Invalid Query — 400">

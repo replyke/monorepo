@@ -98,12 +98,18 @@ Some errors include an additional `field` key (e.g., validation errors on a spec
 | `200` | Success |
 | `201` | Resource created |
 | `400` | Bad request — invalid input or missing required fields |
-| `401` | Unauthorized — missing or expired token |
-| `403` | Forbidden — valid token but insufficient permissions |
+| `401` | Unauthorized — no `Authorization` header, or a request the endpoint requires a user for |
+| `403` | Forbidden — token expired or invalid, or a valid token without the required permission |
 | `404` | Not found |
 | `409` | Conflict — duplicate resource (e.g., email already in use) |
 | `429` | Rate limit exceeded |
 | `500` | Internal server error |
+
+<Note>
+  An **expired token returns `403`, not `401`** — see
+  [Authentication](/api-reference/authentication) for why that distinction
+  matters when writing your own refresh logic.
+</Note>
 
 ## Rate Limiting
 
