@@ -8,7 +8,9 @@ icon: "plug"
 
 Returns a function to submit a content report on behalf of the authenticated user. Pass `type: "comment"`, `type: "entity"`, or `type: "message"` when calling the hook — the returned function is pre-configured for that target type.
 
-If the same target has already been reported, the user's report is appended to the existing report record (the system deduplicates reports per-user). Reporting the same target twice has no additional effect.
+If the same target already has an **open** report, the user's report is appended to it (reports are deduplicated per user, so reporting the same target twice has no additional effect).
+
+Once a moderator resolves a report — dismissed or actioned — it is closed. A later report of that same target opens a **fresh** report rather than reopening the closed one, so previously-dismissed content can be re-reported and returns to the moderation queue.
 
 <Note>Requires an authenticated user.</Note>
 
@@ -78,7 +80,7 @@ The returned function returns `Promise<void>`. It resolves when the report is ac
 
 ## Notes
 
-- If the target has already been reported by this user, the server returns `200` with code `report/already-reported` without error. The hook function resolves normally in this case.
+- If the target has an open report this user already filed, the server returns `200` with code `report/already-reported` without error. The hook function resolves normally in this case. After that report is resolved, the same user may report the target again.
 - You cannot report your own content — the API rejects it with `report/self-report`.
 - Reporting a message requires membership of its conversation; a non-member gets `chat/not-a-member`.
 - Where a message report lands depends on the conversation: reports on **space** conversations reach space moderators via [`useFetchModeratedReports`](/hooks/reports/use-fetch-moderated-reports); reports on **DMs and group chats** have no space, so they are project-level and appear only in the Sublay dashboard.

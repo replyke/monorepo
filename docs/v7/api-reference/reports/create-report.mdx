@@ -4,7 +4,9 @@ api: "POST /v7/:projectId/reports"
 description: "Submit a content report for an entity, comment, or chat message"
 ---
 
-Submits a report on an entity, comment, or chat message. If a report already exists for the target, the authenticated user's report is added to it (increments `reporterCount`). If the same user has already reported the same target, a `200` is returned without creating a duplicate.
+Submits a report on an entity, comment, or chat message. If an **open** report already exists for the target, the authenticated user's report is added to it (increments `reporterCount`). If the same user already reported that open report, a `200` is returned without creating a duplicate.
+
+Resolved reports (`dismissed` / `actioned`) are closed: a later report of the same target creates a **new** report rather than reopening the old one. A target therefore has at most one open report at a time, alongside any number of resolved ones.
 
 **Authentication required.** **Rate limit**: 25 requests per 5 minutes.
 
