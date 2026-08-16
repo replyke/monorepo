@@ -9,6 +9,12 @@ export interface FetchUserSpacesProps {
   include?: string;
   role?: string; // single role or comma-separated, e.g. "admin,moderator"
   all?: "true" | "false";
+  /**
+   * Membership status to list. Defaults to `"active"` (spaces the user is in);
+   * `"pending"` returns join requests awaiting approval, `"banned"` the spaces
+   * they were removed from.
+   */
+  status?: "active" | "pending" | "banned";
 }
 
 export async function fetchUserSpaces(
