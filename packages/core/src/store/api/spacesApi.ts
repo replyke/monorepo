@@ -17,8 +17,10 @@ interface CreateSpaceParams {
   name: string;
   slug?: string | null;
   description?: string | null;
-  avatar?: string | null;
-  banner?: string | null;
+  // No avatar/banner here: the server dropped URL-string image fields in
+  // favour of multipart `avatarFile`/`bannerFile` uploads, which this RTK
+  // Query layer cannot send (baseApi pins Content-Type to application/json).
+  // Use `useCreateSpace` / `useUpdateSpace` to set space images.
   readingPermission?: "anyone" | "members";
   postingPermission?: "anyone" | "members" | "admins";
   visibility?: "public" | "unlisted" | "private";
@@ -36,7 +38,10 @@ interface FetchSpacesParams {
   searchName?: string | null;
   searchDescription?: string | null;
   searchAny?: string | null;
-  readingPermission?: "anyone" | "members" | null;
+  // No readingPermission filter: it governs who can read a space's contents,
+  // not which spaces are discoverable. The server returns all spaces
+  // regardless of it — discoverability is driven by `visibility`, which the
+  // server derives from the caller rather than accepting as a filter.
   memberOf?: boolean;
   parentSpaceId?: string | null;
 }
@@ -72,7 +77,6 @@ export const spacesApi = baseApi.injectEndpoints({
         if (params.searchName) queryParams.append("searchName", params.searchName);
         if (params.searchDescription) queryParams.append("searchDescription", params.searchDescription);
         if (params.searchAny) queryParams.append("searchAny", params.searchAny);
-        if (params.readingPermission) queryParams.append("readingPermission", params.readingPermission);
         // memberOf is an opt-in flag: the server only accepts the literal "true".
         // Sending "false" (the default) fails validation with a 400. Use a strict
         // === true check so a stray non-boolean (no runtime type enforcement) can't
