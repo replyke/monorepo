@@ -92,7 +92,7 @@ Source under [src/modules/](src/modules/); each folder has one file per function
 - **search** — `searchContent`, `searchUsers`, `searchSpaces` (return raw arrays of `{ similarity, record }`), and `askContent` — an **SSE async generator** (`for await` it; cancel via `AbortSignal` or `break`). It uses `fetch` (not axios), so it reads the token via `client.getAuthHeader()` and does NOT get the auto-refresh retry.
 - **storage** — `uploadFile`, `uploadImage`, `getFile`, `deleteFile` (browser `File`/`Blob`)
 - **oauth** — `authorize`, `linkIdentity` (both: `{ provider, redirectAfterAuth }` → `{ authorizationUrl }`, redirect flow), `listIdentities`, `unlinkIdentity`
-- **chat** (21 fns) — conversations (incl. **cursor** pagination on `listConversations`/`listMessages`), members, messages (`sendMessage` supports multipart `files`), reactions, `markAsRead` (`{ messageId }`), `reportMessage`
+- **chat** (20 fns) — conversations (incl. **cursor** pagination on `listConversations`/`listMessages`), members, messages (`sendMessage` supports multipart `files`), reactions, `markAsRead` (`{ messageId }`). Reporting a message is **not** here — use `reports.createReport` with `targetType: "message"`.
 
 ## Critical files
 

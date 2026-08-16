@@ -30,6 +30,3 @@ export { markAsRead } from "./markAsRead";
 
 // Mute
 export { muteConversation } from "./muteConversation";
-
-// Reports
-export { reportMessage } from "./reportMessage";

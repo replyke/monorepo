@@ -18,6 +18,22 @@ describe("js-sdk reports — request shaping", () => {
     });
   });
 
+  it("createReport posts a message report to /reports with no conversationId", async () => {
+    const { client, projectInstance } = makeClient();
+    await createReport(client, {
+      targetType: "message",
+      targetId: "m1",
+      reason: "harassment",
+    });
+    // Chat message reports go through the shared endpoint; the server resolves
+    // the conversation from the message id.
+    expect(projectInstance.post).toHaveBeenCalledWith("/reports", {
+      targetType: "message",
+      targetId: "m1",
+      reason: "harassment",
+    });
+  });
+
   it("fetchModeratedReports hits /reports/moderated with the query as params (moderator derived from token)", async () => {
     const { client, projectInstance } = makeClient();
     await fetchModeratedReports(client, {

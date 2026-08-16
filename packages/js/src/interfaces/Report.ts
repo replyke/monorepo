@@ -2,7 +2,23 @@ import { Entity } from "./Entity";
 import { Comment } from "./Comment";
 import { Space } from "./Space";
 
-export type ReportTargetType = "entity" | "comment";
+export type ReportTargetType = "entity" | "comment" | "message";
+
+/**
+ * The reasons the API accepts on a report. Server-enforced — anything outside
+ * this set is rejected with `report/invalid-body`. Use `other` plus `details`
+ * for anything the taxonomy doesn't cover.
+ */
+export type ReportReason =
+  | "spam"
+  | "inappropriateContent"
+  | "harassment"
+  | "misinformation"
+  | "hateSpeech"
+  | "violence"
+  | "illegalActivity"
+  | "selfHarm"
+  | "other";
 export type ReportStatus =
   | "pending"
   | "on-hold"

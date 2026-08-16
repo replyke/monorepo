@@ -5,7 +5,6 @@ import {
   listMessages,
   listReactions,
   markAsRead,
-  reportMessage,
   sendMessage,
   toggleReaction,
 } from "../src/modules/chat";
@@ -232,20 +231,6 @@ describe("js-sdk chat messages — request shaping", () => {
       { messageId: "m1" }
     );
   });
-
-  it("reportMessage strips conversationId/messageId into the path and posts the reason/details as body", async () => {
-    const { client, projectInstance } = makeClient();
-    await reportMessage(client, {
-      conversationId: "c1",
-      messageId: "m1",
-      reason: "spam",
-      details: "posted a link repeatedly",
-    });
-    expect(projectInstance.post).toHaveBeenCalledWith(
-      "/chat/conversations/c1/messages/m1/report",
-      { reason: "spam", details: "posted a link repeatedly" }
-    );
-  });
 });
 
 describe("js-sdk chat messages — response mapping", () => {
@@ -403,20 +388,6 @@ describe("js-sdk chat messages — response mapping", () => {
     projectInstance.post.mockResolvedValueOnce({ data: payload });
 
     const result = await markAsRead(client, { conversationId: "c1", messageId: "m1" });
-
-    expect(result).toEqual(payload);
-  });
-
-  it("reportMessage returns the message + code wrapper", async () => {
-    const { client, projectInstance } = makeClient();
-    const payload = { message: "Report submitted.", code: "chat/report-received" };
-    projectInstance.post.mockResolvedValueOnce({ data: payload });
-
-    const result = await reportMessage(client, {
-      conversationId: "c1",
-      messageId: "m1",
-      reason: "spam",
-    });
 
     expect(result).toEqual(payload);
   });
