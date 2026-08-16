@@ -54,7 +54,6 @@ export const baseApi = createApi({
     'User',
     'Entity',
     'Space',
-    'SpaceMember',
     'TableRow',
     'NotificationPreferences',
     // Future tag types:
