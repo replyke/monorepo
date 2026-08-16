@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../config/axios";
 import { getAuthorizedToken } from "../../config/authGate";
+import { readJwtSub } from "../../utils/jwt";
 
 import { handleError } from "../../utils/handleError";
 import type { RootState } from "../index";
@@ -53,6 +54,26 @@ const withAuth = async (
   accessToken: string | null
 ): Promise<AuthorizedConfig> => {
   const token = await getAuthorizedToken(accessToken);
+
+  // Waiting at the gate makes the read and the send non-atomic: an account
+  // switch during the wait re-closes the gate and reopens it holding the
+  // INCOMING account's token, so the request would resume and write to the
+  // wrong identity. On a read that is stale data; here it is a password set on
+  // an account the caller never chose, and `set-password` has no current-
+  // password check that would reject it server-side.
+  //
+  // Only an actual disagreement blocks: a caller that started with no token
+  // (cold start — the case the wait exists for) has no identity to compare, and
+  // an unreadable `sub` means "don't know", not "mismatch". Both proceed, which
+  // is the pre-wait behavior.
+  const startedAs = readJwtSub(accessToken);
+  const sendingAs = readJwtSub(token);
+  if (startedAs && sendingAs && startedAs !== sendingAs) {
+    throw new Error(
+      "The active account changed while this request was waiting. Please try again."
+    );
+  }
+
   return token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
 };
 
