@@ -4,9 +4,15 @@ api: "GET /v7/:projectId/spaces/user-spaces"
 description: "Get spaces the authenticated user is a member of"
 ---
 
-Returns a paginated list of spaces where the authenticated user has an active membership, along with their membership details for each space.
+Returns a paginated list of spaces the authenticated user has a membership in, along with their membership details for each space. By default only active memberships are returned; use `status` to list pending join requests or spaces the user was banned from.
 
 ## Query Parameters
+
+<ParamField query="status" type="string">
+  Membership status to list: `"active"` (default), `"pending"`, or `"banned"`.
+
+  `"pending"` surfaces join requests still awaiting admin approval — useful for a "waiting to join" screen on spaces that have `requireJoinApproval` enabled.
+</ParamField>
 
 <ParamField query="page" type="number">
   Page number. Defaults to `1`.
@@ -36,7 +42,7 @@ Returns a paginated list of spaces where the authenticated user has an active me
   <Expandable title="membership properties">
     <ResponseField name="membershipId" type="string">Membership record UUID.</ResponseField>
     <ResponseField name="role" type="string">`"admin"`, `"moderator"`, or `"member"`.</ResponseField>
-    <ResponseField name="status" type="string">`"active"` (only active memberships are returned).</ResponseField>
+    <ResponseField name="status" type="string">`"active"`, `"pending"`, or `"banned"` — matches the requested `status` filter.</ResponseField>
     <ResponseField name="joinedAt" type="Date">When the membership was created.</ResponseField>
   </Expandable>
 </ResponseField>

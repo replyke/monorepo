@@ -205,6 +205,10 @@ const userSpaces = await sublay.spaces.fetchUserSpaces({
   Filter by role. A single role or a comma-separated list, e.g. `"admin,moderator"`.
 </ParamField>
 
+<ParamField body="status" type="string">
+  Membership status to list: `"active"` (default), `"pending"`, or `"banned"`. Use `"pending"` to find join requests still awaiting approval.
+</ParamField>
+
 <ParamField body="all" type="string">
   Pass `"true"` or `"false"`.
 </ParamField>

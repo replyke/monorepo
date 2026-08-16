@@ -40,6 +40,10 @@ All fields are optional. Only provided fields are updated.
   `"public"`, `"unlisted"`, or `"private"`. Controls listing/discoverability, independent of `readingPermission`. Changes take effect immediately and are freely reversible. See [Space visibility](/data-models/space#visibility).
 </ParamField>
 
+<ParamField body="requireJoinApproval" type="boolean">
+  Whether joining the space needs admin approval. Applies to joins from this point on — memberships that are already pending or active are unaffected.
+</ParamField>
+
 <ParamField body="metadata" type="object">
   Updated metadata object.
 </ParamField>

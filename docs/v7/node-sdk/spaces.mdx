@@ -212,6 +212,10 @@ const result = await sublay.spaces.fetchUserSpaces({
   Filter by the user's role in the space. A single role or comma-separated list, e.g. `"admin,moderator"`.
 </ParamField>
 
+<ParamField body="status" type="string">
+  Membership status to list: `"active"` (default), `"pending"`, or `"banned"`. Use `"pending"` to find join requests still awaiting approval.
+</ParamField>
+
 <ParamField body="all" type='"true" | "false"'>
   When `"true"`, returns the full set of spaces rather than only the paginated page.
 </ParamField>
