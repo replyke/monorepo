@@ -704,10 +704,12 @@ export type {
   SpaceMembersResponse,
   SpaceTeamResponse,
 } from "./interfaces/models/SpaceMember";
-export type {
-  SpaceListSortByOptions,
-  SpaceListFilters,
-} from "./interfaces/SpaceListSortByOptions";
+export type { SpaceListSortByOptions } from "./interfaces/SpaceListSortByOptions";
+// `SpaceListFilters` is exported from the slice, which is the definition
+// `useSpaceList` actually accepts. A second, unused declaration used to live in
+// `interfaces/SpaceListSortByOptions.ts` and was the one exported here — its
+// shape (`search`, `visibility`) matched no real filter.
+export type { SpaceListFilters } from "./store/slices/spaceListsSlice";
 export type { SpaceBreadcrumb } from "./interfaces/SpaceBreadcrumb";
 export type {
   SpaceReputationContextParams,
