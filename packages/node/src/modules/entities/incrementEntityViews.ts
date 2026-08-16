@@ -11,7 +11,11 @@ export async function incrementEntityViews(
   data: IncrementEntityViewsProps
 ): Promise<Entity> {
   const { entityId, ...restOfProps } = data;
-  const path = `/entities/${data.entityId}/increment-views`;
-  const response = await client.projectInstance.patch<Entity>(path, restOfProps);
+  const path = `/entities/${entityId}/increment-views`;
+  // `count` is read from the query string, not the body — sending it as a body
+  // field left the server on its default of 1, silently ignoring the amount.
+  const response = await client.projectInstance.patch<Entity>(path, undefined, {
+    params: restOfProps,
+  });
   return response.data;
 }

@@ -74,12 +74,26 @@ describe("node-sdk entities — request shaping", () => {
     });
   });
 
-  it("incrementEntityViews strips entityId into the path and patches the rest", async () => {
+  it("incrementEntityViews sends count as a query param, not a body field", async () => {
     const { client, projectInstance } = makeClient();
     await incrementEntityViews(client, { entityId: "e1", count: 3 });
-    expect(projectInstance.patch).toHaveBeenCalledWith("/entities/e1/increment-views", {
-      count: 3,
-    });
+    // The server reads `count` from the query string; as a body field it was
+    // ignored and every call incremented by the default of 1.
+    expect(projectInstance.patch).toHaveBeenCalledWith(
+      "/entities/e1/increment-views",
+      undefined,
+      { params: { count: 3 } },
+    );
+  });
+
+  it("incrementEntityViews omits count when not supplied", async () => {
+    const { client, projectInstance } = makeClient();
+    await incrementEntityViews(client, { entityId: "e1" });
+    expect(projectInstance.patch).toHaveBeenCalledWith(
+      "/entities/e1/increment-views",
+      undefined,
+      { params: {} },
+    );
   });
 
   it("deleteEntity deletes /entities/:id", async () => {
