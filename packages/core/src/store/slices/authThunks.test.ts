@@ -26,8 +26,8 @@ afterEach(() => {
   resetAxiosMocks();
 });
 
-/** Minimal unsigned JWT — only `exp` is ever read. Negative = already expired. */
-function jwtExpiringIn(seconds: number) {
+/** Minimal unsigned JWT — only `exp`/`sub` are read. Negative = already expired. */
+function jwtExpiringIn(seconds: number, sub = "user-1") {
   const encode = (value: object) =>
     Buffer.from(JSON.stringify(value))
       .toString("base64")
@@ -35,7 +35,7 @@ function jwtExpiringIn(seconds: number) {
       .replace(/\//g, "_")
       .replace(/=+$/, "");
   return `${encode({ alg: "HS256" })}.${encode({
-    sub: "user-1",
+    sub,
     exp: Math.floor((Date.now() + seconds * 1000) / 1000),
   })}.sig`;
 }
@@ -418,6 +418,73 @@ describe("account-management thunks — cold start", () => {
     expect(changePasswordThunk.rejected.match(result)).toBe(true);
     expect(result.payload).toBe("No user is authenticated");
     expect(axios.calls("post")).toHaveLength(0);
+  });
+});
+
+describe("account-management thunks — account switched mid-flight", () => {
+  it("refuses to send when the token that arrives belongs to a different account", async () => {
+    const store = makeSublayStore();
+    const ownToken = jwtExpiringIn(1800, "user-1");
+    store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    store.dispatch(
+      setTokens({ accessToken: ownToken, refreshToken: "refresh-1" }),
+    );
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {});
+
+    armAuthGate();
+    syncAuthGate({ accessToken: ownToken, initialized: true });
+
+    // The switch begins after the thunk read its token: the gate re-closes,
+    // parking the request mid-flight.
+    syncAuthGate({ accessToken: null, initialized: false });
+
+    const pending = store.dispatch(
+      setPasswordThunk({ projectId: "project-1", newPassword: "new" }),
+    );
+
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(axios.calls("post")).toHaveLength(0);
+
+    // The switch completes — the gate reopens holding user-2's token.
+    const otherToken = jwtExpiringIn(1800, "user-2");
+    store.dispatch(setUser({ id: "user-2" } as AuthUser));
+    syncAuthGate({ accessToken: otherToken, initialized: true });
+
+    const result = await pending;
+
+    expect(setPasswordThunk.rejected.match(result)).toBe(true);
+    expect(result.payload).toMatch(/active account changed/i);
+    // The point of the guard: user-2's password was never touched.
+    expect(axios.calls("post")).toHaveLength(0);
+  });
+
+  it("proceeds when the arriving token is a rotation of the same account", async () => {
+    // Pre-emptive rotation mints a NEW token string for the SAME `sub`. That
+    // must not read as a switch, or every idle-expiry recovery would break.
+    const store = makeSublayStore();
+    const expired = jwtExpiringIn(-60, "user-1");
+    store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    store.dispatch(
+      setTokens({ accessToken: expired, refreshToken: "refresh-1" }),
+    );
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {});
+
+    const rotated = jwtExpiringIn(1800, "user-1");
+    armAuthGate();
+    setAuthGateRefresher(async () => rotated);
+    syncAuthGate({ accessToken: expired, initialized: true });
+
+    const result = await store.dispatch(
+      setPasswordThunk({ projectId: "project-1", newPassword: "new" }),
+    );
+
+    expect(setPasswordThunk.fulfilled.match(result)).toBe(true);
+    expect(axios.calls("post")[0].config?.headers?.Authorization).toBe(
+      `Bearer ${rotated}`,
+    );
   });
 });
 
