@@ -6,18 +6,18 @@ import {
   resetAxiosMocks,
   makeAuthUser,
 } from "../../test-utils";
-import useInviteMember from "./useInviteMember";
+import useCreateWorkspaceInvite from "./useCreateWorkspaceInvite";
 import type { WorkspaceInvitation } from "../../interfaces/models/Workspace";
 
 afterEach(() => {
   resetAxiosMocks();
 });
 
-describe("useInviteMember", () => {
+describe("useCreateWorkspaceInvite", () => {
   it("strips workspaceId into the path and posts the rest as the body", async () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, axiosPrivate } = renderHookWithAxios(
-      () => useInviteMember(),
+      () => useCreateWorkspaceInvite(),
       { projectId: "project-1", user }
     );
 
@@ -50,7 +50,7 @@ describe("useInviteMember", () => {
   it("allows a userId in the body — the invite TARGET, not the actor", async () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, axiosPrivate } = renderHookWithAxios(
-      () => useInviteMember(),
+      () => useCreateWorkspaceInvite(),
       { projectId: "project-1", user }
     );
 
@@ -68,7 +68,7 @@ describe("useInviteMember", () => {
   it("throws before requesting when workspaceId is missing", async () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, axiosPrivate } = renderHookWithAxios(
-      () => useInviteMember(),
+      () => useCreateWorkspaceInvite(),
       { projectId: "project-1", user }
     );
 

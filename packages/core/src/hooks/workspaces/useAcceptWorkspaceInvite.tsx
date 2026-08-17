@@ -2,11 +2,11 @@ import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
 
-export interface AcceptInviteProps {
+export interface AcceptWorkspaceInviteProps {
   inviteId: string;
 }
 
-export interface AcceptInviteResponse {
+export interface AcceptWorkspaceInviteResponse {
   success: boolean;
   workspaceId: string;
 }
@@ -15,14 +15,14 @@ export interface AcceptInviteResponse {
  * Accept an invitation — identity-matched to the bearer-token user + verified
  * email required. Non-secret id. Idempotent when already a member/owner.
  */
-function useAcceptInvite(): (
-  props: AcceptInviteProps
-) => Promise<AcceptInviteResponse> {
+function useAcceptWorkspaceInvite(): (
+  props: AcceptWorkspaceInviteProps
+) => Promise<AcceptWorkspaceInviteResponse> {
   const { projectId } = useProject();
   const axios = useAxiosPrivate();
 
-  const acceptInvite = useCallback(
-    async ({ inviteId }: AcceptInviteProps) => {
+  const acceptWorkspaceInvite = useCallback(
+    async ({ inviteId }: AcceptWorkspaceInviteProps) => {
       if (!projectId) {
         throw new Error("No projectId available.");
       }
@@ -30,7 +30,7 @@ function useAcceptInvite(): (
         throw new Error("Please pass an inviteId");
       }
 
-      const response = await axios.post<AcceptInviteResponse>(
+      const response = await axios.post<AcceptWorkspaceInviteResponse>(
         `/${projectId}/workspace-invites/${inviteId}/accept`,
         {}
       );
@@ -40,7 +40,7 @@ function useAcceptInvite(): (
     [projectId, axios]
   );
 
-  return acceptInvite;
+  return acceptWorkspaceInvite;
 }
 
-export default useAcceptInvite;
+export default useAcceptWorkspaceInvite;

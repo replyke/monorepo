@@ -6,7 +6,7 @@ import {
   WorkspaceCapability,
 } from "../../interfaces/models/Workspace";
 
-export interface InviteMemberProps {
+export interface CreateWorkspaceInviteProps {
   workspaceId: string;
   // Address the invitee by exactly one of: `email`, `userId`, or `username`.
   // (Here `userId` is the INVITE TARGET, not the actor — the inviter is the
@@ -24,14 +24,14 @@ export interface InviteMemberProps {
  * Create an invitation (requires the `invite` capability on the workspace). The
  * inviter is the bearer-token user.
  */
-function useInviteMember(): (
-  props: InviteMemberProps
+function useCreateWorkspaceInvite(): (
+  props: CreateWorkspaceInviteProps
 ) => Promise<WorkspaceInvitation> {
   const { projectId } = useProject();
   const axios = useAxiosPrivate();
 
-  const inviteMember = useCallback(
-    async ({ workspaceId, ...body }: InviteMemberProps) => {
+  const createWorkspaceInvite = useCallback(
+    async ({ workspaceId, ...body }: CreateWorkspaceInviteProps) => {
       if (!projectId) {
         throw new Error("No projectId available.");
       }
@@ -49,7 +49,7 @@ function useInviteMember(): (
     [projectId, axios]
   );
 
-  return inviteMember;
+  return createWorkspaceInvite;
 }
 
-export default useInviteMember;
+export default useCreateWorkspaceInvite;
