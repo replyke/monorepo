@@ -12,7 +12,7 @@ Returns the caller's **resolved standing** on a workspace: `{ reasons, capabilit
   There is **no** convenience `?permission=` check and **no** `can()` middleware. Sublay never consumes your opaque `permissions`, so a permission check is a one-line `.includes()` on the returned record:
 
   ```ts
-  const authority = await sublay.workspaces.getAuthority({ workspaceId, userId });
+  const authority = await sublay.workspaces.fetchWorkspaceAuthority({ workspaceId, userId });
   if (authority.permissions.includes("deploy")) { /* allow */ }
   ```
 </Note>
@@ -44,4 +44,4 @@ Returns the caller's **resolved standing** on a workspace: `{ reasons, capabilit
 - `permissions` — **per-node** (the direct membership on this workspace only; may be empty). Does not cascade.
 - `rank` — the direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders.
 
-See also: [useFetchWorkspaceAuthority](/hooks/workspaces/use-fetch-workspace-authority) · [getAuthority (node-sdk)](/node-sdk/workspaces)
+See also: [useFetchWorkspaceAuthority](/hooks/workspaces/use-fetch-workspace-authority) · [fetchWorkspaceAuthority (node-sdk)](/node-sdk/workspaces) · [fetchWorkspaceAuthority (js-sdk)](/js-sdk/workspaces)

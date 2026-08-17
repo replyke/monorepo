@@ -1,21 +1,29 @@
 ---
 title: "Workspaces"
-description: "Framework-agnostic client surface for workspaces — create, read, invite, accept/decline"
+description: "Framework-agnostic client surface for workspaces — the full 21-endpoint bundle"
 ---
 
-The `workspaces` module in `@sublay/js` is the **client-side** surface of the [Workspaces bundle](/data-models/workspace). The actor is always derived from the **bearer token** — **no** actor `userId` is ever sent from the client (for management operations that need to act on another user's behalf, use the [node SDK](/node-sdk/workspaces) with a service key).
+The `workspaces` module in `@sublay/js` is the **client-side** surface of the [Workspaces bundle](/data-models/workspace). It covers **all 21 endpoints** — workspace CRUD, membership management, the full invitation lifecycle, and the authority read — so a members-management UI needs no server-side code.
+
+The actor is always derived from the **bearer token**. **No actor `userId` is ever sent from the client**, and the wrappers strip one if a caller smuggles it in. Acting on behalf of a *different* user is the [node SDK](/node-sdk/workspaces) service-key capability, and it is the only difference in reach between the two SDKs for this bundle — **not** a restriction on which operations a client may perform.
 
 <Note>
   **Requires the `workspaces` bundle.** See [Bundles](/bundles) to install it.
 </Note>
 
-Read the concepts first: [capabilities vs permissions](/data-models/workspace-member#the-two-arrays-capabilities-vs-permissions), [reach & ownership](/data-models/workspace#reach-and-the-wall-door-rule), and the [identity-matched, no-token invite model](/data-models/workspace-invitation#acceptance-model).
+Every call is authorized against the **signed-in user's own standing** on the workspace: owner-only, capability-gated, rank-bounded, visibility-gated, or self-service. Each function below states which. (`fetchWorkspace` is the one read that also works without a token, returning the workspace when visibility permits.) Read the concepts first: [capabilities vs permissions](/data-models/workspace-member#the-two-arrays-capabilities-vs-permissions), [rank](/data-models/workspace-member#rank-semantics), [reach & ownership](/data-models/workspace#reach-and-the-wall-door-rule), and the [identity-matched, no-token invite model](/data-models/workspace-invitation#acceptance-model).
+
+<Tip>
+  A `userId` that names a **target** is fully available on the client — the invitee `userId` on `createWorkspaceInvite`, and the `targetUserId` path param on the member functions. Only the *actor* `userId` is node-SDK-only.
+</Tip>
 
 ---
 
+## Workspace lifecycle
+
 ### createWorkspace
 
-The bearer-token user becomes the owner. Root creation requires a verified email.
+The bearer-token user becomes the owner. Root creation requires a **verified email**; child creation requires `create-sub-workspace` on the parent.
 
 ```typescript
 const workspace = await sublay.workspaces.createWorkspace({
@@ -42,7 +50,7 @@ const workspace = await sublay.workspaces.fetchWorkspace({
 
 ### fetchManyWorkspaces
 
-Lists the bearer-token user's direct-membership + owned workspaces.
+Lists the bearer-token user's direct-membership + owned workspaces (paginated). Self-service.
 
 ```typescript
 const { data, pagination } = await sublay.workspaces.fetchManyWorkspaces({ page: 1, limit: 20 });
@@ -52,25 +60,164 @@ const { data, pagination } = await sublay.workspaces.fetchManyWorkspaces({ page:
 <ParamField body="limit" type="number" />
 <ParamField body="include" type="string" />
 
-### fetchMembers
+### updateWorkspace
 
-The [unified roster](/api-reference/workspaces/members/list-members) — `WorkspaceRosterResponse`, or `WorkspaceRosterCountsResponse` with `countOnly`.
+Edits `name`/`metadata`. Requires the **`edit-workspace`** capability (or ownership). Does **not** flip the inherit flag.
 
 ```typescript
-const roster = await sublay.workspaces.fetchMembers({ workspaceId: "ws_abc" });
-const counts = await sublay.workspaces.fetchMembers({ workspaceId: "ws_abc", countOnly: true });
+const workspace = await sublay.workspaces.updateWorkspace({
+  workspaceId: "ws_abc",
+  name: "Acme Corp",
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="name" type="string" />
+<ParamField body="metadata" type="object" />
+
+### updateWorkspaceInheritFlag
+
+Flips whether authority held on an ancestor reaches into this node. **Owner-only** in both directions (own owner or an ancestor owner) — not a capability. Blocked with `403 workspace/inherit-enforced` when the project enforces its default.
+
+```typescript
+const workspace = await sublay.workspaces.updateWorkspaceInheritFlag({
+  workspaceId: "ws_child",
+  inheritsFromParent: true,
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="inheritsFromParent" type="boolean" required>`true` = open/door, `false` = sealed/wall.</ParamField>
+
+### deleteWorkspace
+
+**Owner-only** (own owner or an ancestor owner). Cascades the whole subtree transactionally and fires `workspace.deleted` per deleted workspace.
+
+```typescript
+const { message } = await sublay.workspaces.deleteWorkspace({ workspaceId: "ws_abc" });
+```
+
+<ParamField body="workspaceId" type="string" required />
+
+### transferWorkspaceOwnership
+
+**Owner-only** (own owner or an ancestor owner). `newOwnerId` addresses the **target** — any verified user in the tenant, who need not already be a member.
+
+```typescript
+const workspace = await sublay.workspaces.transferWorkspaceOwnership({
+  workspaceId: "ws_abc",
+  newOwnerId: "usr_new",
+  previousOwnerDisposition: "demote",
+  previousOwnerRank: 0,
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="newOwnerId" type="string" required>The new owner (any verified user).</ParamField>
+<ParamField body="previousOwnerDisposition" type="string">`"demote"` or `"remove"`.</ParamField>
+<ParamField body="previousOwnerRank" type="number">On demote; defaults to `0`.</ParamField>
+<ParamField body="previousOwnerCapabilities" type="string[]" />
+
+---
+
+## Membership
+
+### fetchWorkspaceMembers
+
+The [unified roster](/api-reference/workspaces/members/list-members) — `WorkspaceRosterResponse`, or `WorkspaceRosterCountsResponse` with `countOnly`. Never paginated. Requires roster visibility.
+
+```typescript
+const roster = await sublay.workspaces.fetchWorkspaceMembers({ workspaceId: "ws_abc" });
+const counts = await sublay.workspaces.fetchWorkspaceMembers({ workspaceId: "ws_abc", countOnly: true });
 ```
 
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="include" type="string">`ancestorOwners`, `reachHolders`, `descendants`.</ParamField>
 <ParamField body="countOnly" type="boolean" />
 
-### createInvite
+### fetchWorkspaceMemberStanding
 
-Requires the `invite` capability on the workspace; the inviter is the bearer-token user. The `userId`/`username` fields (if used) address the invite **target**.
+One user's resolved standing, addressed by user id — works for any relation, including users with no direct member row. Requires roster visibility.
 
 ```typescript
-const invite = await sublay.workspaces.createInvite({
+const standing = await sublay.workspaces.fetchWorkspaceMemberStanding({
+  workspaceId: "ws_abc",
+  targetUserId: "usr_pat",
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="targetUserId" type="string" required>The **target** whose standing to read (path param, not an actor).</ParamField>
+
+### updateWorkspaceMember
+
+Two capability tiers: **powerful** fields (`capabilities`, `permissions`, `rank`) need `edit-member-access` plus the rank rule and [no-escalation](/data-models/workspace-member#no-privilege-escalation); **cosmetic** fields (`title`, `metadata`) need only `edit-member-profile`, and a member editing their own `title` needs nothing.
+
+```typescript
+const member = await sublay.workspaces.updateWorkspaceMember({
+  workspaceId: "ws_abc",
+  targetUserId: "usr_pat",
+  capabilities: ["view", "invite"],
+  rank: 3,
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="targetUserId" type="string" required>The member being edited (path param, not an actor).</ParamField>
+<ParamField body="capabilities" type="string[]" />
+<ParamField body="permissions" type="string[]" />
+<ParamField body="rank" type="number" />
+<ParamField body="title" type="string" />
+<ParamField body="metadata" type="object" />
+
+### removeWorkspaceMember
+
+Removes a member from **this node only**. Requires `remove-member` and is **rank-bounded**; sole-owner protected.
+
+```typescript
+await sublay.workspaces.removeWorkspaceMember({
+  workspaceId: "ws_abc",
+  targetUserId: "usr_pat",
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="targetUserId" type="string" required>The member to remove (path param, not an actor).</ParamField>
+
+### removeWorkspaceMemberFromSubtree
+
+Removes the target's direct memberships on this workspace and every descendant you can reach. Requires `remove-member`, rank-bounded **per node**. Blocks with `409 workspace/owns-descendants` (and reports them) if the target owns any descendant workspace.
+
+```typescript
+const { removedCount, removed } = await sublay.workspaces.removeWorkspaceMemberFromSubtree({
+  workspaceId: "ws_root",
+  targetUserId: "usr_pat",
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="targetUserId" type="string" required>The user to offboard (path param, not an actor).</ParamField>
+
+### leaveWorkspace
+
+**Self-service** — removes the bearer-token user's *own* direct membership on this node only. No capability required. An owner cannot leave (`409 workspace/sole-owner`); transfer or delete first.
+
+```typescript
+await sublay.workspaces.leaveWorkspace({ workspaceId: "ws_abc" });
+```
+
+<ParamField body="workspaceId" type="string" required />
+
+---
+
+## Invitations
+
+### createWorkspaceInvite
+
+Requires the **`invite`** capability (or ownership); the inviter is the bearer-token user. Address the invitee by **exactly one** of `email`, `userId`, or `username` — here `userId`/`username` address the invite **target**, not an actor.
+
+```typescript
+const invite = await sublay.workspaces.createWorkspaceInvite({
   workspaceId: "ws_abc",
   email: "pat@example.com",
   capabilities: ["view"],
@@ -80,48 +227,90 @@ const invite = await sublay.workspaces.createInvite({
 
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="email" type="string">One of `email`/`userId`/`username`.</ParamField>
-<ParamField body="userId" type="string">Invite target user id.</ParamField>
-<ParamField body="username" type="string">Invite target username.</ParamField>
+<ParamField body="userId" type="string">Invite **target** user id.</ParamField>
+<ParamField body="username" type="string">Invite **target** username.</ParamField>
 <ParamField body="capabilities" type="string[]" />
 <ParamField body="permissions" type="string[]" />
 <ParamField body="rank" type="number" required />
 <ParamField body="title" type="string" />
 
-### acceptInvite
+### fetchWorkspaceInvites
 
-Identity-matched to the bearer-token user + verified email required. Idempotent when already a member/owner.
+The workspace's **outbox** — the live pending invites *it has issued* (`status='pending' AND expiresAt > now`). Requires the `invite` capability (or ownership). Always returned in full; deliberately unpaginated.
 
 ```typescript
-const { workspaceId } = await sublay.workspaces.acceptInvite({ inviteId: "inv_1" });
+const { data } = await sublay.workspaces.fetchWorkspaceInvites({ workspaceId: "ws_abc" });
+```
+
+<ParamField body="workspaceId" type="string" required />
+
+<Warning>
+  Do not confuse this with [`fetchMyWorkspaceInvites`](#fetchmyworkspaceinvites). `fetchWorkspaceInvites` is scoped to **one workspace** and lists what **it sent out** (needs `invite`). `fetchMyWorkspaceInvites` is scoped to **the caller**, spans every workspace, and lists what was **addressed to them** (needs nothing).
+</Warning>
+
+### revokeWorkspaceInvite
+
+Marks a pending invitation `revoked`. Requires the `invite` capability (or ownership). Note the verb-suffixed **`POST .../revoke`** route — this is not a `DELETE`.
+
+```typescript
+await sublay.workspaces.revokeWorkspaceInvite({ workspaceId: "ws_abc", inviteId: "inv_1" });
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="inviteId" type="string" required />
+
+### resendWorkspaceInvite
+
+Refreshes a pending invite — resets a 14-day expiry and resends the email — valid even on one already past `expiresAt`. Terminal invites → `409`. Requires the `invite` capability (or ownership). Also a verb-suffixed **`POST .../resend`**.
+
+```typescript
+const invite = await sublay.workspaces.resendWorkspaceInvite({ workspaceId: "ws_abc", inviteId: "inv_1" });
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="inviteId" type="string" required />
+
+### fetchMyWorkspaceInvites
+
+The caller's **inbox** — the bearer-token user's live pending invites across every workspace, matched by `userId` from the token. **Self-service**, and surfacing is not verification-gated (the verified check applies only at accept).
+
+```typescript
+const { data } = await sublay.workspaces.fetchMyWorkspaceInvites();
+```
+
+### acceptWorkspaceInvite
+
+**Self-service** — identity-matched to the bearer-token user, and a **verified email is required**. The `inviteId` is non-secret. Idempotent when already a member/owner.
+
+```typescript
+const { workspaceId } = await sublay.workspaces.acceptWorkspaceInvite({ inviteId: "inv_1" });
 ```
 
 <ParamField body="inviteId" type="string" required />
 
-### declineInvite
+### declineWorkspaceInvite
 
-Identity-matched (not verification-gated).
+**Self-service** — identity-matched, but not verification-gated.
 
 ```typescript
-await sublay.workspaces.declineInvite({ inviteId: "inv_1" });
+await sublay.workspaces.declineWorkspaceInvite({ inviteId: "inv_1" });
 ```
 
 <ParamField body="inviteId" type="string" required />
 
-### fetchMyInvites
+---
 
-The bearer-token user's live pending invites (matched by `userId` from the token). Not verification-gated.
+## Authority-as-a-service
 
-```typescript
-const { data } = await sublay.workspaces.fetchMyInvites();
-```
+### fetchWorkspaceAuthority
 
-### getAuthority
-
-The bearer-token user's resolved standing on a workspace. A permission check is a one-line `.includes()` on the result.
+The bearer-token user's resolved standing on a workspace — `{ reasons, capabilities, permissions, rank }`. **Self-service.** Drive your UI off this rather than guessing: a permission check is a one-line `.includes()` on the result.
 
 ```typescript
-const authority = await sublay.workspaces.getAuthority({ workspaceId: "ws_abc" });
+const authority = await sublay.workspaces.fetchWorkspaceAuthority({ workspaceId: "ws_abc" });
 if (authority.capabilities.includes("invite")) { /* show the invite button */ }
 ```
 
 <ParamField body="workspaceId" type="string" required />
+
+Sublay never consumes your opaque `permissions` — there is deliberately no `?permission=` check or `can()` helper.

@@ -1,0 +1,89 @@
+---
+title: "Update workspace member"
+description: "Edit a member's access or profile fields, with two capability tiers"
+icon: "plug"
+---
+
+## Overview
+
+`useUpdateWorkspaceMember` returns a callable that edits a direct [member](/data-models/workspace-member) of a workspace.
+
+**Authorization:** capability-gated + rank-bounded, in **two tiers by field sensitivity**:
+
+- **Powerful fields** (`capabilities`, `permissions`, `rank`) require **`edit-member-access`**, plus the [rank rule](/data-models/workspace-member#rank-semantics) and the [no-escalation](/data-models/workspace-member#no-privilege-escalation) guard.
+- **Cosmetic fields** (`title`, `metadata`) require only **`edit-member-profile`**. A member editing **their own `title`** needs no capability at all.
+
+**Grant vs strip asymmetry:** you may only *add* a capability/permission you hold on the target node (resolved set, including via reach); *stripping* is governed by rank alone.
+
+## Usage Example
+
+```tsx
+import { useUpdateWorkspaceMember } from "@sublay/react-js";
+
+function MemberRow({
+  workspaceId,
+  targetUserId,
+}: {
+  workspaceId: string;
+  targetUserId: string;
+}) {
+  const updateWorkspaceMember = useUpdateWorkspaceMember();
+
+  const promote = async () => {
+    const member = await updateWorkspaceMember({
+      workspaceId,
+      targetUserId,
+      capabilities: ["view", "invite"],
+      rank: 3,
+    });
+    console.log("Updated:", member.id);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="targetUserId" type="string" required>
+  The **target** member's user id — a path param, not an acting user.
+</ParamField>
+
+<ParamField path="capabilities" type="WorkspaceCapability[]">
+  New capability set (powerful — `edit-member-access`).
+</ParamField>
+
+<ParamField path="permissions" type="string[]">
+  New opaque permission set (powerful — `edit-member-access`).
+</ParamField>
+
+<ParamField path="rank" type="number">
+  New rank (powerful — `edit-member-access` + rank rules).
+</ParamField>
+
+<ParamField path="title" type="string | null">
+  New cosmetic title (`edit-member-profile`, or self for your own title).
+</ParamField>
+
+<ParamField path="metadata" type="Record<string, any>">
+  New cosmetic metadata (`edit-member-profile`).
+</ParamField>
+
+## Returns
+
+Returns the updated [WorkspaceMember](/data-models/workspace-member) object.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/unauthorized` | 403 | You lack the capability tier for a field you touched. |
+| `workspace/insufficient-rank` | 403 | You may only act on members ranked strictly below you. |
+| `workspace/no-escalation` | 403 | You tried to grant a capability/permission you do not hold. |
+
+## Related
+
+- [`useRemoveWorkspaceMember`](/hooks/workspaces/use-remove-workspace-member)
+- [Update Member API](/api-reference/workspaces/members/update-member)

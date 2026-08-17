@@ -1,0 +1,66 @@
+---
+title: "Resend workspace invite"
+description: "Refresh a lapsed pending invitation and resend the email"
+icon: "plug"
+---
+
+## Overview
+
+`useResendWorkspaceInvite` returns a callable that refreshes a pending [invitation](/data-models/workspace-invitation) — it sets `expiresAt = now + 14 days` and resends the email. It is **valid on any `pending` invite, including one already past `expiresAt`** (resend = refresh a lapsed invite). A **terminal** invite (`accepted`/`declined`/`revoked`) fails with `409`.
+
+**Authorization:** capability-gated. Requires the `invite` capability on the workspace (owners hold it implicitly).
+
+<Note>
+  The underlying route is a verb-suffixed **`POST /workspaces/:id/invites/:inviteId/resend`**. Resend emits **no webhook** — the status stays `pending`, so there is no lifecycle transition.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useResendWorkspaceInvite } from "@sublay/react-js";
+
+function ResendButton({
+  workspaceId,
+  inviteId,
+}: {
+  workspaceId: string;
+  inviteId: string;
+}) {
+  const resendWorkspaceInvite = useResendWorkspaceInvite();
+
+  const handleResend = async () => {
+    const invite = await resendWorkspaceInvite({ workspaceId, inviteId });
+    console.log("New expiry:", invite.expiresAt);
+  };
+
+  return <button onClick={handleResend}>Resend</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="inviteId" type="string" required>
+  The invitation UUID.
+</ParamField>
+
+## Returns
+
+Returns the refreshed [WorkspaceInvitation](/data-models/workspace-invitation) object, with a reset `expiresAt`.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/unauthorized` | 403 | You lack the `invite` capability on this workspace. |
+| `workspace/invite-not-found` | 404 | No such invitation on this workspace. |
+| `workspace/invite-terminal` | 409 | The invitation is accepted / declined / revoked — create a new one instead. |
+
+## Related
+
+- [`useFetchWorkspaceInvites`](/hooks/workspaces/use-fetch-workspace-invites) — list what there is to resend
+- [`useRevokeWorkspaceInvite`](/hooks/workspaces/use-revoke-workspace-invite)
+- [Resend Invite API](/api-reference/workspaces/invitations/resend-invite)

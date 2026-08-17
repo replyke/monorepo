@@ -1,0 +1,72 @@
+---
+title: "Fetch workspace member standing"
+description: "One user's full resolved standing on a workspace, addressed by userId"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchWorkspaceMemberStanding` returns a callable that reads a single user's full standing on a workspace, addressed by **user id** (not a membership-row id, so it works even for users with no direct row). It returns the same unified shape as one roster row, computed on demand for **any** relation — direct `member`, this workspace's `owner`, an `ancestor-owner`, or a `reach-holder`.
+
+**Authorization:** requires roster visibility on the workspace (the same gate as [`useFetchWorkspaceMembers`](/hooks/workspaces/use-fetch-workspace-members)). The signed-in user is the actor; `targetUserId` names **who is being read**, not who is asking.
+
+## Usage Example
+
+```tsx
+import { useFetchWorkspaceMemberStanding } from "@sublay/react-js";
+
+function MemberDetail({
+  workspaceId,
+  targetUserId,
+}: {
+  workspaceId: string;
+  targetUserId: string;
+}) {
+  const fetchWorkspaceMemberStanding = useFetchWorkspaceMemberStanding();
+
+  const load = async () => {
+    const standing = await fetchWorkspaceMemberStanding({
+      workspaceId,
+      targetUserId,
+    });
+    // { user, reasons, capabilities, permissions, rank, title, metadata }
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="targetUserId" type="string" required>
+  The **target** user whose standing to read — a path param, not an acting user.
+</ParamField>
+
+## Returns
+
+`WorkspaceMemberStanding`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `user` | `object` | The target user. |
+| `reasons` | `("owner" \| "ancestor-owner" \| "member" \| "reach-holder")[]` | Why the user has standing. |
+| `capabilities` | `string[]` | The **resolved** capability set (direct + reach + ownership). |
+| `permissions` | `string[]` | **Per-node** permissions (direct membership on this workspace only; may be empty). |
+| `rank` | `number \| null` | Direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders. |
+| `title` | `string \| null` | Cosmetic title. |
+| `metadata` | `Record<string, any>` | Opaque member metadata. |
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/unauthorized` | 403 | You cannot see this workspace's roster. |
+| `workspace/not-found` | 404 | No such workspace in this project. |
+
+## Related
+
+- [`useFetchWorkspaceMembers`](/hooks/workspaces/use-fetch-workspace-members) — the whole roster
+- [`useFetchWorkspaceAuthority`](/hooks/workspaces/use-fetch-workspace-authority) — the same read, but for yourself
+- [Fetch Member Standing API](/api-reference/workspaces/members/fetch-member-standing)

@@ -1,0 +1,70 @@
+---
+title: "Remove workspace member from subtree"
+description: "Offboarding convenience — remove a user from this workspace and the descendants you can reach"
+icon: "plug"
+---
+
+## Overview
+
+`useRemoveWorkspaceMemberFromSubtree` returns a callable that removes a user's **direct** memberships on this workspace and every descendant **you can reach**, in one action. Each deletion fires `workspace.member.removed`.
+
+**Authorization:** capability-gated + rank-bounded, evaluated **per node**. Requires `remove-member`, and the sweep is refused if you are outranked by the target at any node where you both hold a direct member row. An **owner** (or ancestor owner) reaches the whole subtree via the god-path; a **non-owner** only reaches descendants through an unbroken open inherit chain, so a **sealed** sub-workspace (`inheritsFromParent = false`) is left untouched for a non-owner.
+
+<Warning>
+  **Owned descendants block, they do not cascade.** Because owners have no member row, this sweep does not cover descendant workspaces the target *owns*. It fails with `409 workspace/owns-descendants` and reports them, rather than silently orphaning ownership. Reassign each via [`useTransferWorkspaceOwnership`](/hooks/workspaces/use-transfer-workspace-ownership) or delete it, then retry.
+</Warning>
+
+## Usage Example
+
+```tsx
+import { useRemoveWorkspaceMemberFromSubtree } from "@sublay/react-js";
+
+function OffboardButton({
+  workspaceId,
+  targetUserId,
+}: {
+  workspaceId: string;
+  targetUserId: string;
+}) {
+  const removeWorkspaceMemberFromSubtree =
+    useRemoveWorkspaceMemberFromSubtree();
+
+  const offboard = async () => {
+    const { removedCount, removed } = await removeWorkspaceMemberFromSubtree({
+      workspaceId,
+      targetUserId,
+    });
+    console.log(`Removed from ${removedCount} workspaces`, removed);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID — the subtree root.
+</ParamField>
+
+<ParamField path="targetUserId" type="string" required>
+  The **target** user to offboard — a path param, not an acting user.
+</ParamField>
+
+## Returns
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `removedCount` | `number` | How many membership rows were torn down. |
+| `removed` | `{ workspaceId: string; userId: string }[]` | One entry per removed membership. |
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/owns-descendants` | 409 | The target owns workspaces in this subtree; the response includes `ownedWorkspaces`. |
+| `workspace/insufficient-rank` | 403 | You are outranked by the target at some node in the sweep. |
+| `workspace/unauthorized` | 403 | You lack the `remove-member` capability. |
+
+## Related
+
+- [`useRemoveWorkspaceMember`](/hooks/workspaces/use-remove-workspace-member) — this node only
+- [Remove From Subtree API](/api-reference/workspaces/members/remove-from-subtree)

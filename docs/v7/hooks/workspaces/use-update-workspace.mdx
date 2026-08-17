@@ -1,0 +1,60 @@
+---
+title: "Update workspace"
+description: "Edit a workspace's name and metadata from the client"
+icon: "plug"
+---
+
+## Overview
+
+`useUpdateWorkspace` returns a callable that edits a [workspace](/data-models/workspace)'s own `name` and/or `metadata`. The actor is the signed-in user.
+
+**Authorization:** capability-gated. Requires the `edit-workspace` capability (owners hold it implicitly).
+
+<Note>
+  This does **not** flip `inheritsFromParent` — that is a separate owner-only action, [`useUpdateWorkspaceInheritFlag`](/hooks/workspaces/use-update-workspace-inherit-flag).
+</Note>
+
+## Usage Example
+
+```tsx
+import { useUpdateWorkspace } from "@sublay/react-js";
+
+function RenameWorkspace({ workspaceId }: { workspaceId: string }) {
+  const updateWorkspace = useUpdateWorkspace();
+
+  const handleRename = async (name: string) => {
+    const workspace = await updateWorkspace({ workspaceId, name });
+    console.log("Renamed to:", workspace.name);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="name" type="string">
+  New display name. 1–100 characters.
+</ParamField>
+
+<ParamField path="metadata" type="Record<string, any>">
+  New opaque developer metadata.
+</ParamField>
+
+## Returns
+
+Returns the updated [Workspace](/data-models/workspace) object.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/unauthorized` | 403 | You lack the `edit-workspace` capability. |
+| `workspace/not-found` | 404 | No such workspace in this project. |
+
+## Related
+
+- [`useFetchWorkspaceAuthority`](/hooks/workspaces/use-fetch-workspace-authority) — check `edit-workspace` before showing the form
+- [Update Workspace API](/api-reference/workspaces/update-workspace)

@@ -1,0 +1,55 @@
+---
+title: "Update workspace inherit flag"
+description: "Owner-only flip of the reach/inherit flag"
+icon: "plug"
+---
+
+## Overview
+
+`useUpdateWorkspaceInheritFlag` returns a callable that flips a workspace's `inheritsFromParent` flag — the switch controlling whether authority held on an ancestor reaches into this node. See [Reach & the wall/door rule](/data-models/workspace#reach-and-the-wall-door-rule).
+
+**Authorization:** owner-only, in both directions. The signed-in user must be this workspace's own owner or an ancestor owner. **No capability grants this.** It is additionally blocked when the project enforces its inherit default.
+
+## Usage Example
+
+```tsx
+import { useUpdateWorkspaceInheritFlag } from "@sublay/react-js";
+
+function InheritToggle({ workspaceId }: { workspaceId: string }) {
+  const updateWorkspaceInheritFlag = useUpdateWorkspaceInheritFlag();
+
+  const seal = async () => {
+    // false = sealed (a wall); true = open (a door)
+    await updateWorkspaceInheritFlag({
+      workspaceId,
+      inheritsFromParent: false,
+    });
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="inheritsFromParent" type="boolean" required>
+  The new flag value — `true` = open/door, `false` = sealed/wall.
+</ParamField>
+
+## Returns
+
+Returns the updated [Workspace](/data-models/workspace) object.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/unauthorized` | 403 | You are not the owner or an ancestor owner. |
+| `workspace/inherit-enforced` | 403 | The project enforces its inherit default; the flag cannot be changed. |
+
+## Related
+
+- [`useUpdateWorkspace`](/hooks/workspaces/use-update-workspace) — for name/metadata
+- [Flip Inherit Flag API](/api-reference/workspaces/update-inherit-flag)

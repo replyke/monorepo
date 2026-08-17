@@ -18,15 +18,34 @@ The React/React Native surface is a set of plain hooks re-exported from `@sublay
 - **[Reach & the wall/door rule](/data-models/workspace#reach-and-the-wall-door-rule)** — strict per-node by default; opt-in downward reach via the child-owned `inheritsFromParent` flag.
 - **[Invitations](/data-models/workspace-invitation#acceptance-model)** — identity-matched + verified-email, **no token**.
 
+## What a client app can do
+
+**All 21 workspace endpoints are callable from a browser or mobile app with a normal signed-in user's bearer token** — including every management operation: editing a workspace, deleting it, transferring ownership, flipping the inherit flag, editing a member's capabilities/rank, removing a member, offboarding across a subtree, and the full invite lifecycle (create, list, revoke, resend). Every one of these is exposed as a `@sublay/core` hook and as a `@sublay/js` function. **A members-management panel needs no server-side code and no hand-rolled `fetch`.**
+
+With a client token, every endpoint in the bundle resolves the actor from that token and authorizes the action against **that user's own standing** on the workspace. Most routes enforce this in guard middleware ahead of the controller; the self-scoped ones (create a workspace, list your own, leave, accept or decline an invite, read your own invites or your own authority) carry no guard middleware and authorize inside the controller instead. The one endpoint that does not require a token at all is the single-workspace read, [`GET /workspaces/:id`](/api-reference/workspaces/fetch-workspace) — it takes an *optional* token and returns the workspace when visibility permits. Everything else requires a signed-in user, and whether the call then succeeds depends on their standing:
+
+| Rule | Meaning |
+|------|---------|
+| **Owner-only** | The caller must be the workspace's own owner, or an owner of an ancestor workspace. Not a capability — no capability grants it. |
+| **Capability-gated** | The caller's [resolved capability set](/hooks/workspaces/use-fetch-workspace-authority) (direct + reach + ownership) must contain the named capability, e.g. `invite`, `remove-member`, `edit-workspace`. |
+| **Rank-bounded** | On top of a capability, the caller may only act on members ranked strictly below them, and may only grant capabilities/permissions they themselves hold ([no-escalation](/data-models/workspace-member#no-privilege-escalation)). |
+| **Visibility** | The caller must be able to see the workspace / its roster at all. This is the gate on the reads — the single workspace, the roster, and one member's standing. |
+| **Self-service** | Anyone signed in can do it for themselves — accept/decline an invite addressed to them, leave a workspace, read their own authority. |
+
+<Note>
+  **What actually needs a service key: acting on behalf of a *different* user.** Several endpoints accept an actor `userId` so a service/master key can perform an action *as* some named user. That parameter is **[node SDK](/node-sdk/workspaces) only** — `@sublay/core` and `@sublay/js` never expose it and strip it if it is smuggled in, because a client's actor is always the token's own user. This is the *only* difference in reach between the client SDKs and the node SDK for this bundle; it is **not** a restriction on which operations a client may perform.
+
+  Note that a **target**-identifying `userId` is a different thing and is fully available on the client: the invitee `userId` on [`useCreateWorkspaceInvite`](/hooks/workspaces/use-create-workspace-invite), and the `targetUserId` path param on the member hooks.
+</Note>
+
 ## Quick start
 
 ```tsx
 import {
   useCreateWorkspace,
-  useFetchWorkspace,
-  useInviteMember,
+  useCreateWorkspaceInvite,
   useFetchMyWorkspaceInvites,
-  useAcceptInvite,
+  useAcceptWorkspaceInvite,
 } from "@sublay/react-js";
 
 function CreateTeam() {
@@ -43,19 +62,52 @@ function CreateTeam() {
 
 ## Hooks
 
-| Hook | Purpose |
-|------|---------|
-| [`useCreateWorkspace`](/hooks/workspaces/use-create-workspace) | Create a root or child workspace |
-| [`useFetchWorkspace`](/hooks/workspaces/use-fetch-workspace) | Read a single workspace |
-| [`useFetchManyWorkspaces`](/hooks/workspaces/use-fetch-many-workspaces) | Leaf fetcher for the caller's workspaces |
-| [`useFetchManyWorkspacesWrapper`](/hooks/workspaces/use-fetch-many-workspaces-wrapper) | Paginated list with load-more |
-| [`useFetchWorkspaceMembers`](/hooks/workspaces/use-fetch-workspace-members) | The unified roster read |
-| [`useInviteMember`](/hooks/workspaces/use-invite-member) | Create an invitation |
-| [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) | The current user's pending invites |
-| [`useAcceptInvite`](/hooks/workspaces/use-accept-invite) | Accept an invitation |
-| [`useDeclineInvite`](/hooks/workspaces/use-decline-invite) | Decline an invitation |
-| [`useFetchWorkspaceAuthority`](/hooks/workspaces/use-fetch-workspace-authority) | Resolve the current user's standing |
+### Workspace lifecycle & ownership
 
-<Note>
-  Management operations that need to act on **another** user's behalf (edit a member, transfer ownership, delete, remove) live on the [node SDK](/node-sdk/workspaces) service-key surface, not the client hooks — the client actor is always the signed-in user.
-</Note>
+| Hook | Purpose | Authorization |
+|------|---------|---------------|
+| [`useCreateWorkspace`](/hooks/workspaces/use-create-workspace) | Create a root or child workspace | Verified email (root) / `create-sub-workspace` on the parent (child) |
+| [`useFetchWorkspace`](/hooks/workspaces/use-fetch-workspace) | Read a single workspace | Visibility |
+| [`useFetchManyWorkspaces`](/hooks/workspaces/use-fetch-many-workspaces) | Leaf fetcher for the caller's workspaces | Self-service |
+| [`useFetchManyWorkspacesWrapper`](/hooks/workspaces/use-fetch-many-workspaces-wrapper) | Paginated list with load-more | Self-service |
+| [`useUpdateWorkspace`](/hooks/workspaces/use-update-workspace) | Edit name / metadata | `edit-workspace` (or owner) |
+| [`useUpdateWorkspaceInheritFlag`](/hooks/workspaces/use-update-workspace-inherit-flag) | Flip `inheritsFromParent` | Owner-only |
+| [`useDeleteWorkspace`](/hooks/workspaces/use-delete-workspace) | Delete a workspace (cascades the subtree) | Owner-only |
+| [`useTransferWorkspaceOwnership`](/hooks/workspaces/use-transfer-workspace-ownership) | Hand the workspace to a new owner | Owner-only |
+
+### Membership
+
+| Hook | Purpose | Authorization |
+|------|---------|---------------|
+| [`useFetchWorkspaceMembers`](/hooks/workspaces/use-fetch-workspace-members) | The unified roster read | Visibility |
+| [`useFetchWorkspaceMemberStanding`](/hooks/workspaces/use-fetch-workspace-member-standing) | One user's resolved standing | Visibility |
+| [`useUpdateWorkspaceMember`](/hooks/workspaces/use-update-workspace-member) | Edit a member's access / profile | `edit-member-access` or `edit-member-profile`, rank-bounded |
+| [`useRemoveWorkspaceMember`](/hooks/workspaces/use-remove-workspace-member) | Remove a member from this node | `remove-member`, rank-bounded |
+| [`useRemoveWorkspaceMemberFromSubtree`](/hooks/workspaces/use-remove-workspace-member-from-subtree) | Offboard a user across the subtree | `remove-member`, rank-bounded per node |
+| [`useLeaveWorkspace`](/hooks/workspaces/use-leave-workspace) | Leave a workspace yourself | Self-service |
+
+### Invitations
+
+| Hook | Purpose | Authorization |
+|------|---------|---------------|
+| [`useCreateWorkspaceInvite`](/hooks/workspaces/use-create-workspace-invite) | Create an invitation | `invite` (or owner), rank + no-escalation |
+| [`useFetchWorkspaceInvites`](/hooks/workspaces/use-fetch-workspace-invites) | **Outbox** — invites *this workspace issued* | `invite` (or owner) |
+| [`useRevokeWorkspaceInvite`](/hooks/workspaces/use-revoke-workspace-invite) | Revoke a pending invitation | `invite` (or owner) |
+| [`useResendWorkspaceInvite`](/hooks/workspaces/use-resend-workspace-invite) | Refresh + resend a pending invitation | `invite` (or owner) |
+| [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) | **Inbox** — invites *addressed to me* | Self-service |
+| [`useAcceptWorkspaceInvite`](/hooks/workspaces/use-accept-workspace-invite) | Accept an invitation | Self-service + verified email |
+| [`useDeclineWorkspaceInvite`](/hooks/workspaces/use-decline-workspace-invite) | Decline an invitation | Self-service |
+
+<Warning>
+  [`useFetchWorkspaceInvites`](/hooks/workspaces/use-fetch-workspace-invites) and [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) are the two most confusable hooks in this bundle. The first is the **outbox** of one workspace (`GET /workspaces/:id/invites`) — who *this team* has invited and not yet heard back from; it powers the "Pending invitations" section of a members panel. The second is the signed-in user's **inbox** (`GET /me/workspace-invites`) across every workspace — it powers a "You've been invited" list.
+</Warning>
+
+### Authority
+
+| Hook | Purpose | Authorization |
+|------|---------|---------------|
+| [`useFetchWorkspaceAuthority`](/hooks/workspaces/use-fetch-workspace-authority) | Resolve the current user's standing | Self-service |
+
+<Tip>
+  Drive your UI off [`useFetchWorkspaceAuthority`](/hooks/workspaces/use-fetch-workspace-authority) rather than guessing: it returns `{ reasons, capabilities, permissions, rank }`, so showing the "Remove member" button is `authority.capabilities.includes("remove-member")`.
+</Tip>

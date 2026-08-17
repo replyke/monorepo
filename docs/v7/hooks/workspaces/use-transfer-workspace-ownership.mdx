@@ -1,0 +1,74 @@
+---
+title: "Transfer workspace ownership"
+description: "Owner-only ownership transfer, keeping ownerId and member rows disjoint"
+icon: "plug"
+---
+
+## Overview
+
+`useTransferWorkspaceOwnership` returns a callable that reassigns a [workspace](/data-models/workspace)'s `ownerId`.
+
+**Authorization:** owner-only. The signed-in user must be this workspace's own owner **or any ancestor owner** — never a capability or reach. (Ancestor-owner transfer is what makes offboarding resolvable: a manager can reassign a departing member's owned sub-workspace without that member's cooperation.)
+
+- The new owner must be a **verified** user in the tenant — they need not already be a member.
+- The new owner's existing member row (if any) is removed, keeping `ownerId` and member rows disjoint.
+- The previous owner is **demoted** into a fresh member row or **removed**. It defaults to `remove` when an *ancestor* owner reassigns; on a voluntary self-transfer the outgoing owner chooses. On demote, rank defaults to `0`.
+
+## Usage Example
+
+```tsx
+import { useTransferWorkspaceOwnership } from "@sublay/react-js";
+
+function TransferOwnership({ workspaceId }: { workspaceId: string }) {
+  const transferWorkspaceOwnership = useTransferWorkspaceOwnership();
+
+  const handleTransfer = async (newOwnerId: string) => {
+    const workspace = await transferWorkspaceOwnership({
+      workspaceId,
+      newOwnerId,
+      previousOwnerDisposition: "demote",
+      previousOwnerRank: 0,
+      previousOwnerCapabilities: ["view"],
+    });
+    console.log("New owner:", workspace.ownerId);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="newOwnerId" type="string" required>
+  The new owner — any **verified** user in the tenant. This is the transfer **target**, not an acting user.
+</ParamField>
+
+<ParamField path="previousOwnerDisposition" type='"demote" | "remove"'>
+  What happens to the outgoing owner. Defaults server-side (ancestor-owner reassign → `remove`).
+</ParamField>
+
+<ParamField path="previousOwnerRank" type="number">
+  On demote, the ex-owner's rank. Defaults to `0`.
+</ParamField>
+
+<ParamField path="previousOwnerCapabilities" type="WorkspaceCapability[]">
+  On demote, the ex-owner's capabilities.
+</ParamField>
+
+## Returns
+
+Returns the updated [Workspace](/data-models/workspace) object with the new `ownerId`.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/unauthorized` | 403 | You are not the owner or an ancestor owner. |
+| `workspace/email-not-verified` | 403 | The new owner has no verified email. |
+| `workspace/invalid-target` | 404 | The target user does not exist. |
+
+## Related
+
+- [Transfer Ownership API](/api-reference/workspaces/transfer-ownership)
