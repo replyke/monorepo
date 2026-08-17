@@ -88,6 +88,23 @@ Creates a new entity in your project. Supports optional file uploads via `multip
 
 When uploading files, send the request as `multipart/form-data`. All JSON fields above are sent as form fields.
 
+Form fields can only carry strings, so the object and array fields — `attachments`, `keywords`, `mentions`, `location` and `metadata` — must be JSON-stringified. Booleans are sent as `"true"` / `"false"`. Plain strings such as `title` and `content` are sent as-is.
+
+```js
+const form = new FormData();
+form.append("title", "Sunset over the bay");
+form.append("keywords", JSON.stringify(["sunset", "bay"]));
+form.append("location", JSON.stringify({ latitude: 40.7128, longitude: -74.006 }));
+form.append("metadata", JSON.stringify({ category: "photo" }));
+form.append("nsfw", "false");
+form.append("images.files", file);
+form.append("images.options", JSON.stringify({ mode: "original-aspect", sizes: { full: 1080 } }));
+```
+
+<Note>
+  The SDKs handle this for you — [`useCreateEntity`](/hooks/entities/use-create-entity) switches to `multipart/form-data` and stringifies these fields automatically as soon as you pass `images` or `files`.
+</Note>
+
 <ParamField body="images.files" type="file[]">
   Image files to attach. Maximum 10 images, 50 MB each. Must be valid images. Requires `images.options`.
 </ParamField>
