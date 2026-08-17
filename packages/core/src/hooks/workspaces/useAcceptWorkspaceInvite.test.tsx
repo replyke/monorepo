@@ -6,17 +6,17 @@ import {
   resetAxiosMocks,
   makeAuthUser,
 } from "../../test-utils";
-import useAcceptInvite from "./useAcceptInvite";
+import useAcceptWorkspaceInvite from "./useAcceptWorkspaceInvite";
 
 afterEach(() => {
   resetAxiosMocks();
 });
 
-describe("useAcceptInvite", () => {
+describe("useAcceptWorkspaceInvite", () => {
   it("posts an EMPTY body to the non-:id-scoped accept route (actor from token)", async () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, axiosPrivate } = renderHookWithAxios(
-      () => useAcceptInvite(),
+      () => useAcceptWorkspaceInvite(),
       { projectId: "project-1", user }
     );
 
@@ -39,7 +39,7 @@ describe("useAcceptInvite", () => {
   it("throws before requesting when inviteId is missing", async () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, axiosPrivate } = renderHookWithAxios(
-      () => useAcceptInvite(),
+      () => useAcceptWorkspaceInvite(),
       { projectId: "project-1", user }
     );
 
@@ -54,7 +54,7 @@ describe("useAcceptInvite", () => {
   it("rejects when the server rejects the accept (e.g. verified-email gate)", async () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, axiosPrivate } = renderHookWithAxios(
-      () => useAcceptInvite(),
+      () => useAcceptWorkspaceInvite(),
       { projectId: "project-1", user }
     );
 

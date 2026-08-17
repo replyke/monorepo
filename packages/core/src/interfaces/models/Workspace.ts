@@ -49,6 +49,20 @@ export interface Workspace {
   memberCount?: number;
 }
 
+// A direct membership row on one workspace node.
+export interface WorkspaceMember {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  capabilities: WorkspaceCapability[];
+  permissions: string[];
+  rank: number;
+  title: string | null;
+  metadata: Record<string, any>;
+  joinedAt: string;
+  createdAt: string;
+}
+
 export interface WorkspaceInvitation {
   id: string;
   workspaceId: string;
@@ -103,6 +117,18 @@ export interface WorkspaceRosterCountsResponse {
   };
   total: number;
   distinctUsers: number;
+}
+
+// The per-user standing read (`GET /workspaces/:id/members/:userId`) — the
+// target user plus their resolved authority and their direct-row cosmetics.
+export interface WorkspaceMemberStanding {
+  user: User;
+  reasons: WorkspaceAuthorityReason[];
+  capabilities: WorkspaceCapability[];
+  permissions: string[];
+  rank: number | null;
+  title: string | null;
+  metadata: Record<string, any>;
 }
 
 // The authority-as-a-service read (`GET /workspaces/:id/authority/me`).

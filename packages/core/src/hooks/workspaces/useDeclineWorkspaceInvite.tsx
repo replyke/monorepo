@@ -2,11 +2,11 @@ import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
 
-export interface DeclineInviteProps {
+export interface DeclineWorkspaceInviteProps {
   inviteId: string;
 }
 
-export interface DeclineInviteResponse {
+export interface DeclineWorkspaceInviteResponse {
   success: boolean;
 }
 
@@ -14,14 +14,14 @@ export interface DeclineInviteResponse {
  * Decline an invitation — identity-matched to the bearer-token user (not
  * verification-gated).
  */
-function useDeclineInvite(): (
-  props: DeclineInviteProps
-) => Promise<DeclineInviteResponse> {
+function useDeclineWorkspaceInvite(): (
+  props: DeclineWorkspaceInviteProps
+) => Promise<DeclineWorkspaceInviteResponse> {
   const { projectId } = useProject();
   const axios = useAxiosPrivate();
 
-  const declineInvite = useCallback(
-    async ({ inviteId }: DeclineInviteProps) => {
+  const declineWorkspaceInvite = useCallback(
+    async ({ inviteId }: DeclineWorkspaceInviteProps) => {
       if (!projectId) {
         throw new Error("No projectId available.");
       }
@@ -29,7 +29,7 @@ function useDeclineInvite(): (
         throw new Error("Please pass an inviteId");
       }
 
-      const response = await axios.post<DeclineInviteResponse>(
+      const response = await axios.post<DeclineWorkspaceInviteResponse>(
         `/${projectId}/workspace-invites/${inviteId}/decline`,
         {}
       );
@@ -39,7 +39,7 @@ function useDeclineInvite(): (
     [projectId, axios]
   );
 
-  return declineInvite;
+  return declineWorkspaceInvite;
 }
 
-export default useDeclineInvite;
+export default useDeclineWorkspaceInvite;
