@@ -7,7 +7,7 @@ description: "Owner-only flip of the reach/inherit flag"
 Flips the workspace's `inheritsFromParent` flag — the switch controlling whether authority from above reaches into this node. See [Reach & the wall/door rule](/data-models/workspace#reach-and-the-wall-door-rule).
 
 - **Owner-only in both directions** (the workspace's own owner or an ancestor owner). **Not a capability.**
-- Subject to the **enforced-default lock**: if the project sets [`workspaceInheritEnforced`](/sdk/workspaces/overview#project-settings), the flip is rejected with `403 workspace/inherit-enforced`.
+- Subject to the **enforced-default lock**: if the project sets [`workspaces.inheritEnforced`](/sdk/workspaces/overview#project-settings), the flip is rejected with `403 workspace/inherit-enforced`.
 
 ## Path Parameters
 

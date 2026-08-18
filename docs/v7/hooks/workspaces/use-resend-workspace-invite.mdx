@@ -15,7 +15,7 @@ icon: "plug"
 </Note>
 
 <Warning>
-  **Your project must have `workspaceInviteAcceptUrl` set**, exactly as [`useCreateWorkspaceInvite`](/hooks/workspaces/use-create-workspace-invite) requires — resending an email with nowhere to deep-link is equally pointless. Without it the call fails with `409 workspace/missing-invite-accept-url` and `expiresAt` is left untouched. See [Project settings](/sdk/workspaces/overview#project-settings).
+  **Your project must have `workspaces.inviteAcceptUrl` set**, exactly as [`useCreateWorkspaceInvite`](/hooks/workspaces/use-create-workspace-invite) requires — resending an email with nowhere to deep-link is equally pointless. Without it the call fails with `409 workspace/missing-invite-accept-url` and `expiresAt` is left untouched. See [Project settings](/sdk/workspaces/overview#project-settings).
 </Warning>
 
 ## Usage Example
@@ -62,11 +62,11 @@ Returns the refreshed [WorkspaceInvitation](/data-models/workspace-invitation) o
 | `workspace/unauthorized` | 403 | You lack the `invite` capability on this workspace. |
 | `workspace/invite-not-found` | 404 | No such invitation on this workspace. |
 | `workspace/invite-terminal` | 409 | The invitation is accepted / declined / revoked — create a new one instead. |
-| `workspace/missing-invite-accept-url` | 409 | The **project** has no [`workspaceInviteAcceptUrl`](/sdk/workspaces/overview#project-settings) configured. The invitation row is not touched. |
+| `workspace/missing-invite-accept-url` | 409 | The **project** has no [`workspaces.inviteAcceptUrl`](/sdk/workspaces/overview#project-settings) configured. The invitation row is not touched. |
 
 ## Related
 
 - [`useFetchWorkspaceInvites`](/hooks/workspaces/use-fetch-workspace-invites) — list what there is to resend
 - [`useRevokeWorkspaceInvite`](/hooks/workspaces/use-revoke-workspace-invite)
-- [Project settings](/sdk/workspaces/overview#project-settings) — the required `workspaceInviteAcceptUrl`
+- [Project settings](/sdk/workspaces/overview#project-settings) — the required `workspaces.inviteAcceptUrl`
 - [Resend Invite API](/api-reference/workspaces/invitations/resend-invite)

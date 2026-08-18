@@ -275,7 +275,7 @@ const invite = await sublay.workspaces.createWorkspaceInvite({
 Requires the `invite` capability. Here `userId`/`username` (if used) address the invite **target**; the inviter is the service-key subject. Email matching against existing accounts is **case-insensitive**.
 
 <Warning>
-  **The project must have `workspaceInviteAcceptUrl` configured**, or this call fails with `409 workspace/missing-invite-accept-url` and persists nothing. It has no default, and a service key does not exempt you. Applies even when the invitee already has an account. See [Project settings](/sdk/workspaces/overview#project-settings).
+  **The project must have `workspaces.inviteAcceptUrl` configured**, or this call fails with `409 workspace/missing-invite-accept-url` and persists nothing. It has no default, and a service key does not exempt you. Applies even when the invitee already has an account. See [Project settings](/sdk/workspaces/overview#project-settings).
 </Warning>
 
 <ParamField body="workspaceId" type="string" required />
@@ -307,7 +307,7 @@ await sublay.workspaces.revokeWorkspaceInvite({ workspaceId: "ws_abc", inviteId:
 const invite = await sublay.workspaces.resendWorkspaceInvite({ workspaceId: "ws_abc", inviteId: "inv_1" });
 ```
 
-Refreshes a lapsed pending invite (14-day expiry) and resends the email. Terminal invites → `409`. Returns the refreshed `WorkspaceInvitation`, carrying the new `expiresAt`. Like `createWorkspaceInvite`, it requires [`workspaceInviteAcceptUrl`](/sdk/workspaces/overview#project-settings) on the project → otherwise `409 workspace/missing-invite-accept-url` with `expiresAt` untouched.
+Refreshes a lapsed pending invite (14-day expiry) and resends the email. Terminal invites → `409`. Returns the refreshed `WorkspaceInvitation`, carrying the new `expiresAt`. Like `createWorkspaceInvite`, it requires [`workspaces.inviteAcceptUrl`](/sdk/workspaces/overview#project-settings) on the project → otherwise `409 workspace/missing-invite-accept-url` with `expiresAt` untouched.
 
 ### acceptWorkspaceInvite
 

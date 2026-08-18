@@ -20,16 +20,26 @@ The React/React Native surface is a set of plain hooks re-exported from `@sublay
 
 ## Project settings
 
-Three project-level settings configure this bundle. They live in your project's `settings` blob — set them in the dashboard under **Settings → project settings**, or via the update-project-settings endpoint. All three are **absent by default**, and absent means the strict behavior in the table below.
+Three project-level settings configure this bundle. They live under `workspaces` in your project's `settings` blob — set them in the dashboard under **Settings → project settings**, or via the update-project-settings endpoint. All three are **absent by default**, and absent means the strict behavior in the table below.
+
+```json Project settings
+{
+  "workspaces": {
+    "inviteAcceptUrl": "https://app.example.com/invites",
+    "inheritsDefault": false,
+    "inheritEnforced": false
+  }
+}
+```
 
 | Setting | Type | Default | What it does |
 |---------|------|---------|--------------|
-| `workspaceInviteAcceptUrl` | `string` | *(none)* | The page in **your** app that surfaces workspace invitations. Invitation emails deep-link to it, with a fixed `?workspaceInviteId=<id>` appended (any query string you already have on the URL is preserved). **Required before any invitation can be created** — see the warning below. |
-| `workspaceInheritsDefault` | `boolean` | `false` | The [`inheritsFromParent`](/data-models/workspace#reach-and-the-wall-door-rule) flag new workspaces are **born with**. `false` (the default) means every workspace starts **sealed** — no downward reach. Set it to `true` if your product wants an org's authority to flow into sub-workspaces by default. This is read at create time only; it is never accepted from client input, and changing it does not retroactively alter existing workspaces. |
-| `workspaceInheritEnforced` | `boolean` | `false` | Locks `inheritsFromParent` to the project default so workspace **owners cannot flip it**. While `true`, [`useUpdateWorkspaceInheritFlag`](/hooks/workspaces/use-update-workspace-inherit-flag) fails with `403 workspace/inherit-enforced`. Use it when the wall/door policy is a product decision rather than a per-team one. |
+| `workspaces.inviteAcceptUrl` | `string` | *(none)* | The page in **your** app that surfaces workspace invitations. Invitation emails deep-link to it, with a fixed `?workspaceInviteId=<id>` appended (any query string you already have on the URL is preserved). **Required before any invitation can be created** — see the warning below. |
+| `workspaces.inheritsDefault` | `boolean` | `false` | The [`inheritsFromParent`](/data-models/workspace#reach-and-the-wall-door-rule) flag new workspaces are **born with**. `false` (the default) means every workspace starts **sealed** — no downward reach. Set it to `true` if your product wants an org's authority to flow into sub-workspaces by default. This is read at create time only; it is never accepted from client input, and changing it does not retroactively alter existing workspaces. |
+| `workspaces.inheritEnforced` | `boolean` | `false` | Locks `inheritsFromParent` to the project default so workspace **owners cannot flip it**. While `true`, [`useUpdateWorkspaceInheritFlag`](/hooks/workspaces/use-update-workspace-inherit-flag) fails with `403 workspace/inherit-enforced`. Use it when the wall/door policy is a product decision rather than a per-team one. |
 
 <Warning>
-  **Set `workspaceInviteAcceptUrl` before you ship invitations.** It has no default, so a freshly added bundle has none — and an invitation is delivered as an email whose only call to action is that deep-link.
+  **Set `workspaces.inviteAcceptUrl` before you ship invitations.** It has no default, so a freshly added bundle has none — and an invitation is delivered as an email whose only call to action is that deep-link.
 
   Because of that, [Create Invite](/api-reference/workspaces/invitations/create-invite) and [Resend Invite](/api-reference/workspaces/invitations/resend-invite) **refuse outright** when it is unset, with `409 workspace/missing-invite-accept-url`. This applies **even when the invitee already has an account** — the in-app inbox is not a substitute for the emailed link, so the invite surface behaves the same for every invitee. Nothing is persisted and no email or webhook is emitted on the refusal; configure the setting and retry the identical request.
 </Warning>

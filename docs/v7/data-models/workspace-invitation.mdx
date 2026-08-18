@@ -40,7 +40,7 @@ Acceptance is an authenticated, in-app action gated by **identity**, not a token
 Combined with the verified-email gate on root-workspace creation — which **service and master keys do not bypass** either — **every workspace participant (member or owner) has a confirmed email.**
 
 <Note>
-  **Delivery requires one project setting.** Invitation emails deep-link to your app via [`workspaceInviteAcceptUrl`](/sdk/workspaces/overview#project-settings), which has **no default**. Until it is set, creating or resending an invitation is refused with `409 workspace/missing-invite-accept-url` — including for invitees who already have an account. The link itself carries nothing secret; acceptance is identity-matched.
+  **Delivery requires one project setting.** Invitation emails deep-link to your app via [`workspaces.inviteAcceptUrl`](/sdk/workspaces/overview#project-settings), which has **no default**. Until it is set, creating or resending an invitation is refused with `409 workspace/missing-invite-accept-url` — including for invitees who already have an account. The link itself carries nothing secret; acceptance is identity-matched.
 </Note>
 
 ### Binding to `userId`

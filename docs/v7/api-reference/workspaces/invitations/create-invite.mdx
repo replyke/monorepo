@@ -7,7 +7,7 @@ description: "Invite a user by email, userId, or username"
 Creates an invitation, addressed by **exactly one** of `email`, `userId`, or `username`. Requires the `invite` capability. Always sends an email (no toggle). Fires `workspace.invite.created`.
 
 <Warning>
-  **Requires `workspaceInviteAcceptUrl` on the project.** The invitation email's only call to action is a deep-link built from that setting, and it has no default — so an unconfigured project cannot create invitations at all. Without it this endpoint returns `409 workspace/missing-invite-accept-url` and persists nothing (no invitation row, no email, no webhook).
+  **Requires `workspaces.inviteAcceptUrl` on the project.** The invitation email's only call to action is a deep-link built from that setting, and it has no default — so an unconfigured project cannot create invitations at all. Without it this endpoint returns `409 workspace/missing-invite-accept-url` and persists nothing (no invitation row, no email, no webhook).
 
   This applies **even when the invitee already has an account** — there is no special case. See [Project settings](/sdk/workspaces/overview#project-settings) for how to configure it.
 </Warning>
@@ -76,9 +76,9 @@ Returns the created [WorkspaceInvitation](/data-models/workspace-invitation) obj
   </Accordion>
   <Accordion title="Missing Invite Accept URL — 409">
     ```json
-    { "error": "This project has no workspaceInviteAcceptUrl configured...", "code": "workspace/missing-invite-accept-url" }
+    { "error": "This project has no workspaces.inviteAcceptUrl configured...", "code": "workspace/missing-invite-accept-url" }
     ```
-    A **project misconfiguration**, not a bad request — the payload is fine and the caller is authorized. Set [`workspaceInviteAcceptUrl`](/sdk/workspaces/overview#project-settings) in your project settings and retry the identical request.
+    A **project misconfiguration**, not a bad request — the payload is fine and the caller is authorized. Set [`workspaces.inviteAcceptUrl`](/sdk/workspaces/overview#project-settings) in your project settings and retry the identical request.
   </Accordion>
 </AccordionGroup>
 

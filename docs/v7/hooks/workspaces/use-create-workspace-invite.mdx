@@ -11,7 +11,7 @@ icon: "plug"
 **Authorization:** capability-gated + rank-bounded. Requires the `invite` capability (or ownership). The invited `capabilities`/`permissions` are subject to [no-escalation](/data-models/workspace-member#no-privilege-escalation), and if the inviter holds a direct member row the invited `rank` must be strictly larger (less senior) than their own.
 
 <Warning>
-  **Your project must have `workspaceInviteAcceptUrl` set before this hook can succeed.** The invitation email deep-links to that URL, and it has **no default** — so a freshly added `workspaces` bundle has none and every call fails with `409 workspace/missing-invite-accept-url` until you configure it. This holds **even when the invitee already has an account**. See [Project settings](/sdk/workspaces/overview#project-settings).
+  **Your project must have `workspaces.inviteAcceptUrl` set before this hook can succeed.** The invitation email deep-links to that URL, and it has **no default** — so a freshly added `workspaces` bundle has none and every call fails with `409 workspace/missing-invite-accept-url` until you configure it. This holds **even when the invitee already has an account**. See [Project settings](/sdk/workspaces/overview#project-settings).
 </Warning>
 
 ## Usage Example
@@ -58,11 +58,11 @@ Returns the created [WorkspaceInvitation](/data-models/workspace-invitation) obj
 | `workspace/no-escalation` | 403 | You tried to grant a capability/permission you do not hold. |
 | `workspace/insufficient-rank` | 403 | The invited rank is not strictly below your own. |
 | `workspace/unauthorized` | 403 | You lack the `invite` capability. |
-| `workspace/missing-invite-accept-url` | 409 | The **project** has no [`workspaceInviteAcceptUrl`](/sdk/workspaces/overview#project-settings) configured, so the invite email would have nowhere to link. Nothing is persisted. A misconfiguration to fix in project settings, not something the end user can act on — surface it to yourself, not to them. |
+| `workspace/missing-invite-accept-url` | 409 | The **project** has no [`workspaces.inviteAcceptUrl`](/sdk/workspaces/overview#project-settings) configured, so the invite email would have nowhere to link. Nothing is persisted. A misconfiguration to fix in project settings, not something the end user can act on — surface it to yourself, not to them. |
 
 ## Related
 
 - [`useFetchWorkspaceInvites`](/hooks/workspaces/use-fetch-workspace-invites) — the invites this workspace has issued
 - [`useRevokeWorkspaceInvite`](/hooks/workspaces/use-revoke-workspace-invite) · [`useResendWorkspaceInvite`](/hooks/workspaces/use-resend-workspace-invite)
-- [Project settings](/sdk/workspaces/overview#project-settings) — the required `workspaceInviteAcceptUrl`
+- [Project settings](/sdk/workspaces/overview#project-settings) — the required `workspaces.inviteAcceptUrl`
 - [Create Invite API](/api-reference/workspaces/invitations/create-invite)

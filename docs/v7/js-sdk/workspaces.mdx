@@ -240,7 +240,7 @@ await sublay.workspaces.leaveWorkspace({ workspaceId: "ws_abc" });
 Requires the **`invite`** capability (or ownership); the inviter is the bearer-token user. Address the invitee by **exactly one** of `email`, `userId`, or `username` — here `userId`/`username` address the invite **target**, not an actor. Email matching against existing accounts is **case-insensitive**.
 
 <Warning>
-  **The project must have `workspaceInviteAcceptUrl` configured**, or this call fails with `409 workspace/missing-invite-accept-url` and persists nothing — the invitation email would have nowhere to deep-link. It has no default. Applies even when the invitee already has an account. See [Project settings](/sdk/workspaces/overview#project-settings).
+  **The project must have `workspaces.inviteAcceptUrl` configured**, or this call fails with `409 workspace/missing-invite-accept-url` and persists nothing — the invitation email would have nowhere to deep-link. It has no default. Applies even when the invitee already has an account. See [Project settings](/sdk/workspaces/overview#project-settings).
 </Warning>
 
 ```typescript
@@ -288,7 +288,7 @@ await sublay.workspaces.revokeWorkspaceInvite({ workspaceId: "ws_abc", inviteId:
 
 ### resendWorkspaceInvite
 
-Refreshes a pending invite — resets a 14-day expiry and resends the email — valid even on one already past `expiresAt`. Terminal invites → `409`. Requires the `invite` capability (or ownership). Also a verb-suffixed **`POST .../resend`**. Returns the refreshed `WorkspaceInvitation`, carrying the new `expiresAt`. Like `createWorkspaceInvite`, it requires [`workspaceInviteAcceptUrl`](/sdk/workspaces/overview#project-settings) on the project → otherwise `409 workspace/missing-invite-accept-url` with `expiresAt` untouched.
+Refreshes a pending invite — resets a 14-day expiry and resends the email — valid even on one already past `expiresAt`. Terminal invites → `409`. Requires the `invite` capability (or ownership). Also a verb-suffixed **`POST .../resend`**. Returns the refreshed `WorkspaceInvitation`, carrying the new `expiresAt`. Like `createWorkspaceInvite`, it requires [`workspaces.inviteAcceptUrl`](/sdk/workspaces/overview#project-settings) on the project → otherwise `409 workspace/missing-invite-accept-url` with `expiresAt` untouched.
 
 ```typescript
 const invite = await sublay.workspaces.resendWorkspaceInvite({ workspaceId: "ws_abc", inviteId: "inv_1" });
