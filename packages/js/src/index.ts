@@ -120,15 +120,21 @@ export type {
 export type { UserSearchParams } from "./interfaces/UserSearch";
 export type {
   Workspace,
+  WorkspaceMember,
   WorkspaceInvitation,
   WorkspaceCapability,
   WorkspaceInvitationStatus,
   WorkspaceAuthorityReason,
+  WorkspaceAuthorityReasonDetail,
   WorkspaceRosterReason,
   WorkspaceRosterEntry,
   WorkspaceRosterResponse,
   WorkspaceRosterCountsResponse,
+  WorkspaceStandingUser,
+  WorkspaceMemberStanding,
   WorkspaceAuthority,
+  RemoveWorkspaceMemberFromSubtreeResponse,
+  SkippedWorkspace,
 } from "./interfaces/Workspace";
 export { PUSH_EVENT_TYPES, MUTE_DURATIONS } from "./interfaces/Push";
 export type {

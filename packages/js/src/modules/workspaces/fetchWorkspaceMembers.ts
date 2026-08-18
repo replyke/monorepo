@@ -4,7 +4,7 @@ import {
   WorkspaceRosterCountsResponse,
 } from "../../interfaces/Workspace";
 
-export interface FetchMembersProps {
+export interface FetchWorkspaceMembersProps {
   workspaceId: string;
   // Comma-separated add-on buckets: `ancestorOwners`, `reachHolders`,
   // `descendants`. Default returns owner + direct members only.
@@ -18,11 +18,18 @@ export interface FetchMembersProps {
  * array. Always returned in full (never paginated). With `countOnly=true` the
  * shape is `WorkspaceRosterCountsResponse` instead. Actor from the token.
  */
-export async function fetchMembers(
+export async function fetchWorkspaceMembers(
   client: SublayHttpClient,
-  data: FetchMembersProps
+  data: FetchWorkspaceMembersProps
 ): Promise<WorkspaceRosterResponse | WorkspaceRosterCountsResponse> {
-  const { workspaceId, ...params } = data;
+  const { workspaceId, ...rest } = data;
+
+  // Client SDKs never send an actor `userId` — acting on behalf of another
+  // user is the node-sdk service-key capability. Strip it defensively in
+  // case a caller casts around the props type.
+  const params: Record<string, any> = { ...rest };
+  delete params.userId;
+
   const response = await client.projectInstance.get<
     WorkspaceRosterResponse | WorkspaceRosterCountsResponse
   >(`/workspaces/${workspaceId}/members`, { params });

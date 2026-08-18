@@ -1,7 +1,7 @@
 import { SublayHttpClient } from "../../core/client";
 import { WorkspaceAuthority } from "../../interfaces/Workspace";
 
-export interface GetAuthorityProps {
+export interface FetchWorkspaceAuthorityProps {
   workspaceId: string;
 }
 
@@ -10,9 +10,9 @@ export interface GetAuthorityProps {
  * (`{ reasons, capabilities, permissions, rank }`) on the workspace. A
  * permission check is a one-line `.includes()` on the result.
  */
-export async function getAuthority(
+export async function fetchWorkspaceAuthority(
   client: SublayHttpClient,
-  data: GetAuthorityProps
+  data: FetchWorkspaceAuthorityProps
 ): Promise<WorkspaceAuthority> {
   const { workspaceId } = data;
   const response = await client.projectInstance.get<WorkspaceAuthority>(

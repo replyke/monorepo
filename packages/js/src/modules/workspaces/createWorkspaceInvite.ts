@@ -4,7 +4,7 @@ import {
   WorkspaceInvitation,
 } from "../../interfaces/Workspace";
 
-export interface CreateInviteProps {
+export interface CreateWorkspaceInviteProps {
   workspaceId: string;
   // Address the invitee by exactly one of: `email`, `userId`, or `username`.
   // (Here `userId` is the INVITE TARGET, not the actor — the inviter is the
@@ -22,9 +22,9 @@ export interface CreateInviteProps {
  * Create an invitation (requires the `invite` capability on the workspace). The
  * inviter is the bearer-token user.
  */
-export async function createInvite(
+export async function createWorkspaceInvite(
   client: SublayHttpClient,
-  data: CreateInviteProps
+  data: CreateWorkspaceInviteProps
 ): Promise<WorkspaceInvitation> {
   const { workspaceId, ...body } = data;
   const response = await client.projectInstance.post<WorkspaceInvitation>(
