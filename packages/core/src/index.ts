@@ -393,6 +393,7 @@ export {
   type LeaveWorkspaceProps,
   type RemoveWorkspaceMemberFromSubtreeProps,
   type RemoveWorkspaceMemberFromSubtreeResponse,
+  type SkippedWorkspace,
   type CreateWorkspaceInviteProps,
   type FetchWorkspaceInvitesProps,
   type FetchWorkspaceInvitesResponse,

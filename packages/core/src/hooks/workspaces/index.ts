@@ -37,6 +37,7 @@ export { default as useRemoveWorkspaceMemberFromSubtree } from "./useRemoveWorks
 export type {
   RemoveWorkspaceMemberFromSubtreeProps,
   RemoveWorkspaceMemberFromSubtreeResponse,
+  SkippedWorkspace,
 } from "./useRemoveWorkspaceMemberFromSubtree";
 
 // Invitations
