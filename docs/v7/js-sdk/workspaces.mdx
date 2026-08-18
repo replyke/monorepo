@@ -299,7 +299,7 @@ const invite = await sublay.workspaces.resendWorkspaceInvite({ workspaceId: "ws_
 
 ### fetchMyWorkspaceInvites
 
-The caller's **inbox** — the bearer-token user's live pending invites across every workspace, matched by `userId` from the token. **Self-service**, and surfacing is not verification-gated (the verified check applies only at accept).
+The caller's **inbox** — the bearer-token user's live pending invites across every workspace, matched by `userId` from the token. **Self-service**, and surfacing is not verification-gated — a user sees pending invites right after signup (which nudges them to verify). The verified check applies when they act on one (accept **or** decline).
 
 ```typescript
 const { data } = await sublay.workspaces.fetchMyWorkspaceInvites();
@@ -317,7 +317,7 @@ const { workspaceId } = await sublay.workspaces.acceptWorkspaceInvite({ inviteId
 
 ### declineWorkspaceInvite
 
-**Self-service** — identity-matched, but not verification-gated.
+**Self-service** — identity-matched, and a **verified email is required** (the same gate as accept, so an unverified squatter on someone else's address cannot burn their invite). Returns `403 workspace/email-not-verified` otherwise.
 
 ```typescript
 await sublay.workspaces.declineWorkspaceInvite({ inviteId: "inv_1" });

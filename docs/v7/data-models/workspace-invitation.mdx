@@ -34,8 +34,8 @@ Expiry is **lazy** — there is no background sweep and no `expired` status or w
 Acceptance is an authenticated, in-app action gated by **identity**, not a token:
 
 - **No secret token** is minted or emailed. The email link is a non-secret pointer to your app (a per-project accept URL) with a `?workspaceInviteId=<id>` appended for deep-linking.
-- On accept, Sublay verifies the caller **is** the invite's target (by `userId` or normalized `email`) **and has a verified email**.
-- **A verified email is required to accept _any_ invite** — userId- or email-addressed. An unverified accept returns the distinct `workspace/email-not-verified` code so your app can prompt verification specifically. A squatter who signed up with someone else's address can never accept (they can't verify it). Declining is **not** verification-gated.
+- On accept **and on decline**, Sublay verifies the caller **is** the invite's target (by `userId` or normalized `email`) **and has a verified email**.
+- **A verified email is required to accept _any_ invite** — userId- or email-addressed. An unverified accept returns the distinct `workspace/email-not-verified` code so your app can prompt verification specifically. A squatter who signed up with someone else's address can never accept (they can't verify it) — and **decline is gated the same way**, so they cannot burn the real target's invite by moving it to the terminal `declined` state either. (Squatters can still *see* the invite: surfacing is deliberately not verification-gated.)
 
 Combined with the verified-email gate on root-workspace creation — which **service and master keys do not bypass** either — **every workspace participant (member or owner) has a confirmed email.**
 
@@ -51,7 +51,7 @@ Invitations **bind to a `userId`**: at invite time if the user already exists, a
 
 External / developer-managed-auth users have **no verified-email signal** in v1. Consequently, on a purely external-auth project:
 
-- They **cannot accept any invite** — email- *or* `userId`-addressed — because acceptance is hard-gated on a verified email, which they lack. Inviting by `userId` lets the invite bind to the user and surface in their pending list, but they still cannot complete acceptance in v1 until a verified-email signal exists.
+- They **cannot act on any invite** — email- *or* `userId`-addressed — because both acceptance and decline are hard-gated on a verified email, which they lack. Inviting by `userId` lets the invite bind to the user and surface in their pending list, but they cannot accept or decline it in v1 until a verified-email signal exists.
 - They **cannot create a root workspace at all** (root creation is hard-gated on a verified email, with no `userId` workaround), so **root-creation is effectively unavailable on a purely external-auth project in v1.**
 
 This is a documented v1 limitation. A future dev-flippable project flag (treat the project's asserted emails as verified) would lift both restrictions.

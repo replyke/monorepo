@@ -329,7 +329,7 @@ Identity-matched + verified-email. Idempotent when already a member/owner.
 await sublay.workspaces.declineWorkspaceInvite({ inviteId: "inv_1", userId: "usr_pat" });
 ```
 
-Identity-matched (not verification-gated).
+Identity-matched + verified-email — the same gate as accept, so an unverified squatter on someone else's address cannot burn their invite. A service key does **not** bypass it: the `userId` you act as must itself be verified, or the call returns `403 workspace/email-not-verified`.
 
 ### fetchMyWorkspaceInvites
 

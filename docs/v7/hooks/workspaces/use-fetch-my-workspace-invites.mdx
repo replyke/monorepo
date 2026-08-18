@@ -8,7 +8,7 @@ icon: "plug"
 
 `useFetchMyWorkspaceInvites` returns a callable for the signed-in user's **live** pending invites (`status='pending' AND expiresAt > now`), matched by `userId` from the token, across **every** workspace. This is the read that powers a "You've been invited" screen.
 
-**Authorization:** self-service. No capability and no workspace scope — the caller is derived from the token. **Surfacing is not verification-gated**: a user sees invites right after signup; the verified check applies only at [accept](/hooks/workspaces/use-accept-workspace-invite).
+**Authorization:** self-service. No capability and no workspace scope — the caller is derived from the token. **Surfacing is not verification-gated**: a user sees invites right after signup; the verified check applies when they act on one — [accept](/hooks/workspaces/use-accept-workspace-invite) *and* [decline](/hooks/workspaces/use-decline-workspace-invite).
 
 <Warning>
   **Inbox, not outbox.** `useFetchMyWorkspaceInvites` (`GET /me/workspace-invites`) lists the invites **addressed to the signed-in user**, spanning every workspace, with no capability required.

@@ -1,10 +1,12 @@
 ---
 title: "Decline Invite"
 api: "POST /v7/:projectId/workspace-invites/:inviteId/decline"
-description: "Decline an invitation — identity-matched (not verification-gated)"
+description: "Decline an invitation — identity-matched and verification-gated"
 ---
 
-Declines an invitation. Identity-matched (the caller must be the invite's target) but **not** verification-gated. Marks the invite `declined` and fires `workspace.invite.declined`.
+Declines an invitation. Identity-matched (the caller must be the invite's target) **and** verification-gated — a **verified email is required**, exactly as it is to [accept](/api-reference/workspaces/invitations/accept-invite). Without that gate, someone who signed up with another person's address and never verified it could burn the real target's invite by moving it to the terminal `declined` state. This is **not** a key-bypass gate: a service or master key acting as a named `userId` still requires *that* user to be verified.
+
+Marks the invite `declined` and fires `workspace.invite.declined`.
 
 ## Path Parameters
 
@@ -23,5 +25,27 @@ Declines an invitation. Identity-matched (the caller must be the invite's target
 ```json
 { "success": true }
 ```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Email Not Verified — 403">
+    ```json
+    { "error": "A verified email is required to decline an invitation.", "code": "workspace/email-not-verified" }
+    ```
+  </Accordion>
+  <Accordion title="Not the Target — 404">
+    A caller who is not the invitation's target receives the **same** `404` as a
+    non-existent invitation.
+    ```json
+    { "error": "Invitation not found.", "code": "workspace/invite-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Invite Terminal — 409">
+    ```json
+    { "error": "This invitation is no longer pending.", "code": "workspace/invite-terminal" }
+    ```
+  </Accordion>
+</AccordionGroup>
 
 See also: [useDeclineWorkspaceInvite](/hooks/workspaces/use-decline-workspace-invite)

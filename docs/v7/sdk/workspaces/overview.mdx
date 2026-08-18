@@ -138,7 +138,7 @@ function CreateTeam() {
 | [`useResendWorkspaceInvite`](/hooks/workspaces/use-resend-workspace-invite) | Refresh + resend a pending invitation | `invite` (or owner) |
 | [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) | **Inbox** — invites *addressed to me* | Self-service |
 | [`useAcceptWorkspaceInvite`](/hooks/workspaces/use-accept-workspace-invite) | Accept an invitation | Self-service + verified email |
-| [`useDeclineWorkspaceInvite`](/hooks/workspaces/use-decline-workspace-invite) | Decline an invitation | Self-service |
+| [`useDeclineWorkspaceInvite`](/hooks/workspaces/use-decline-workspace-invite) | Decline an invitation | Self-service + verified email |
 
 <Warning>
   [`useFetchWorkspaceInvites`](/hooks/workspaces/use-fetch-workspace-invites) and [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) are the two most confusable hooks in this bundle. The first is the **outbox** of one workspace (`GET /workspaces/:id/invites`) — who *this team* has invited and not yet heard back from; it powers the "Pending invitations" section of a members panel. The second is the signed-in user's **inbox** (`GET /me/workspace-invites`) across every workspace — it powers a "You've been invited" list.
