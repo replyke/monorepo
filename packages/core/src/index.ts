@@ -715,6 +715,7 @@ export type {
   WorkspaceCapability,
   WorkspaceInvitationStatus,
   WorkspaceAuthorityReason,
+  WorkspaceAuthorityReasonDetail,
   WorkspaceInclude,
   WorkspaceIncludeArray,
   WorkspaceIncludeParam,

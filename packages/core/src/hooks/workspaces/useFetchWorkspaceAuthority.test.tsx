@@ -22,7 +22,7 @@ describe("useFetchWorkspaceAuthority", () => {
     );
 
     const authority: WorkspaceAuthority = {
-      reasons: ["member"],
+      reasons: [{ type: "member" }],
       capabilities: ["invite"],
       permissions: [],
       rank: 3,
