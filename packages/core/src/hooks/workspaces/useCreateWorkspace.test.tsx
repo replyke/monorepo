@@ -41,6 +41,28 @@ describe("useCreateWorkspace", () => {
     expect(call.body).not.toHaveProperty("userId");
   });
 
+  it("does not forward an actor userId in the body", async () => {
+    const user = makeAuthUser({ id: "user-1" });
+    const { result, axiosPrivate } = renderHookWithAxios(
+      () => useCreateWorkspace(),
+      { projectId: "project-1", user }
+    );
+
+    axiosPrivate.mockResponse("post", { id: "w1" }, 201);
+
+    await act(async () => {
+      await result.current({
+        name: "Acme",
+        // @ts-expect-error a body userId here is the ACTOR (act-as-user) — node-sdk-only
+        userId: "someone-else",
+      });
+    });
+
+    const [call] = axiosPrivate.calls("post");
+    expect(call.body).toEqual({ name: "Acme" });
+    expect(call.body).not.toHaveProperty("userId");
+  });
+
   it("throws before making a request when the workspace name is missing", async () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, axiosPrivate } = renderHookWithAxios(

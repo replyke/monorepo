@@ -7,6 +7,7 @@ import {
   makeAuthUser,
 } from "../../test-utils";
 import useFetchWorkspaceMemberStanding from "./useFetchWorkspaceMemberStanding";
+import type { WorkspaceMemberStanding } from "../../interfaces/models/Workspace";
 
 afterEach(() => {
   resetAxiosMocks();
@@ -20,7 +21,8 @@ describe("useFetchWorkspaceMemberStanding", () => {
       { projectId: "project-1", user }
     );
 
-    const standing = {
+    const standing: WorkspaceMemberStanding = {
+      // Id-only `user` — the server's fallback when the user row is gone.
       user: { id: "user-2" },
       reasons: ["member"],
       capabilities: ["view"],
@@ -31,7 +33,7 @@ describe("useFetchWorkspaceMemberStanding", () => {
     };
     axiosPrivate.mockResponse("get", standing);
 
-    let returned: typeof standing | undefined;
+    let returned: WorkspaceMemberStanding | undefined;
     await act(async () => {
       returned = await result.current({
         workspaceId: "w1",
