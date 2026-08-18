@@ -118,7 +118,9 @@ describe("useEntityData", () => {
   });
 
   it("no-ops updateEntity when there is no entity yet", async () => {
-    const { result, axiosPrivate } = renderHookWithAxios(() => useEntityData({}));
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useEntityData({} as UseEntityDataProps),
+    );
 
     let returned;
     await act(async () => {
