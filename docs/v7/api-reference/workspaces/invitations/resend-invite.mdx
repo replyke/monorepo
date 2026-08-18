@@ -27,9 +27,16 @@ Returns the refreshed [WorkspaceInvitation](/data-models/workspace-invitation) o
 ## Error Responses
 
 <AccordionGroup>
+  <Accordion title="Invite Not Found — 404">
+    ```json
+    { "error": "Invitation not found.", "code": "workspace/invite-not-found" }
+    ```
+    Returned when no invitation with that id exists on this workspace — including when the id belongs to a *different* workspace's invitation.
+  </Accordion>
   <Accordion title="Terminal Invite — 409">
     ```json
-    { "error": "Cannot resend a terminal invitation.", "code": "workspace/invite-terminal" }
+    { "error": "This invitation is no longer pending.", "code": "workspace/invite-terminal" }
     ```
+    The invitation is `accepted`, `declined`, or `revoked`. Note an invitation merely past its `expiresAt` is **not** terminal — resending one is the documented purpose of this endpoint.
   </Accordion>
 </AccordionGroup>
