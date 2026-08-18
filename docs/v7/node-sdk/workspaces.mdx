@@ -237,10 +237,20 @@ const result = await sublay.workspaces.removeWorkspaceMemberFromSubtree({
   targetUserId: "usr_pat",
   userId: "usr_admin",
 });
-// result: { removedCount, removed }
+// result: { removedCount, removed, skippedCount, skipped }
+
+if (result.skippedCount > 0) {
+  // NOT fully offboarded — memberships survived in branches the ACTING user
+  // (`userId`) cannot reach. `id`/`name` are null where they have no standing.
+  console.warn("Still a member of", result.skippedCount, "workspace(s):", result.skipped);
+}
 ```
 
 Blocks with `409 workspace/owns-descendants` (and a report) if the target owns any descendant workspace.
+
+<Note>
+  **`skippedCount` is `0` from this SDK.** The sweep is partial only for a **non-owner** actor, and a service key reaches the whole subtree via the god-path regardless of which acting `userId` you name — so a server-side sweep always clears every descendant. The field is part of the shared response shape (see the [browser SDK](/js-sdk/workspaces) and the [hook](/hooks/workspaces/use-remove-workspace-member-from-subtree), where a non-owner actor *can* get a partial sweep). Assert on it anyway if you proxy this call on behalf of an end user, rather than assuming `removedCount` means the user is fully offboarded.
+</Note>
 
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="targetUserId" type="string" required>The user to offboard.</ParamField>

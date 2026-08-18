@@ -8,6 +8,10 @@ Removes the target user's **direct** memberships on this workspace and every des
 
 **Owned-descendant handling — block + report.** Because owners have no member row, this sweep does **not** cover descendant workspaces the user *owns*. Instead it **blocks and reports** them (`409 workspace/owns-descendants`) rather than silently orphaning ownership. An admin or any ancestor owner then reassigns each via [transfer-ownership](/api-reference/workspaces/transfer-ownership) or deletes it. **No silent ownership change.**
 
+<Warning>
+  **A non-owner's sweep may be partial — check `skipped` before you call someone offboarded.** If the target still holds a membership in a descendant you cannot reach, the `200` reports it in `skippedCount` / `skipped`. `removedCount` alone does **not** mean the user is gone from the subtree: treat any `skippedCount > 0` as "still a member somewhere" and escalate to an owner or ancestor owner of that node. An owner / ancestor owner / master / service key always gets `skippedCount: 0`.
+</Warning>
+
 ## Path Parameters
 
 <ParamField path="id" type="string" required>
@@ -33,9 +37,39 @@ Removes the target user's **direct** memberships on this workspace and every des
     { "workspaceId": "ws_a", "userId": "u_pat" },
     { "workspaceId": "ws_b", "userId": "u_pat" },
     { "workspaceId": "ws_c", "userId": "u_pat" }
+  ],
+  "skippedCount": 2,
+  "skipped": [
+    { "id": "ws_d", "name": "Finance", "reason": "out-of-reach" },
+    { "id": null, "name": null, "reason": "out-of-reach" }
   ]
 }
 ```
+
+<ResponseField name="removedCount" type="number">
+  How many membership rows were torn down.
+</ResponseField>
+
+<ResponseField name="removed" type="object[]">
+  One `{ workspaceId, userId }` entry per removed membership.
+</ResponseField>
+
+<ResponseField name="skippedCount" type="number">
+  How many memberships the target **retained** because the sweep could not reach them. Always `0` for an owner, ancestor owner, master key or service key. Equals `skipped.length`.
+</ResponseField>
+
+<ResponseField name="skipped" type="object[]">
+  One entry per retained membership — the descendants where the target is *still* a member after this call.
+
+  - `id` / `name` — the workspace, mirroring the `ownedWorkspaces` shape on the 409. **Both are `null` when you have no standing on that workspace**: the sweep tells you a membership survived, but does not disclose the existence or name of a sealed sub-workspace you have no authority over. This is the same sealing fence the [roster read](/api-reference/workspaces/members/list-members) applies to `include=descendants`. Get an owner or ancestor owner of that branch to finish the offboarding.
+  - `reason` — currently always `"out-of-reach"`: your authority does not extend to removing members there.
+
+  Only descendants where the target **actually still holds a direct membership** appear. Unreachable descendants the target was never a member of are never listed — the report is scoped to what actually survived the offboarding, not to the shape of the tree.
+</ResponseField>
+
+<Note>
+  `skipped` covers surviving **memberships** only. Descendants the target *owns* are handled by the separate `409 workspace/owns-descendants` block, and an owned descendant outside a non-owner's reach is neither swept nor reported here — an owner re-running the sweep will surface it as the 409.
+</Note>
 
 ## Error Responses
 

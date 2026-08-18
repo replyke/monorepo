@@ -201,11 +201,22 @@ await sublay.workspaces.removeWorkspaceMember({
 Removes the target's direct memberships on this workspace and every descendant you can reach. Requires `remove-member`, rank-bounded **per node**. Blocks with `409 workspace/owns-descendants` (and reports them) if the target owns any descendant workspace.
 
 ```typescript
-const { removedCount, removed } = await sublay.workspaces.removeWorkspaceMemberFromSubtree({
-  workspaceId: "ws_root",
-  targetUserId: "usr_pat",
-});
+const { removedCount, removed, skippedCount, skipped } =
+  await sublay.workspaces.removeWorkspaceMemberFromSubtree({
+    workspaceId: "ws_root",
+    targetUserId: "usr_pat",
+  });
+
+if (skippedCount > 0) {
+  // NOT fully offboarded — memberships survived in branches you cannot reach.
+  // `id`/`name` are null where you have no standing on that workspace.
+  console.warn("Still a member of", skippedCount, "workspace(s):", skipped);
+}
 ```
+
+<Warning>
+  **A non-owner's sweep may be partial.** It stops at sealed sub-workspaces (`inheritsFromParent = false`), so the target can keep a membership you never saw. Always check `skippedCount` / `skipped` — `removedCount` alone does **not** mean the user is gone from the subtree. An owner or ancestor owner always gets `skippedCount: 0`. Where you have no standing on a skipped workspace its `id` and `name` come back `null`: you learn *that* a membership survived, not *where* — escalate to an owner of that branch.
+</Warning>
 
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="targetUserId" type="string" required>The user to offboard (path param, not an actor).</ParamField>
