@@ -6,7 +6,9 @@ description: "The resolved standing of a user on a workspace — permissions as 
 
 Returns the caller's **resolved standing** on a workspace: `{ reasons, capabilities, permissions, rank }`, computed via the [authority resolver](/data-models/workspace#reach-and-the-wall-door-rule) (fast-path + bounded ancestor climb). This is the endpoint your authorization server reads (via the [node SDK](/node-sdk/workspaces)) to make its own app-level decisions.
 
-`reasons` distinguishes **`owner` / `ancestor-owner` / `member` / `reach-holder`** — so you always know *why* a user has what they have.
+`reasons` is an array of **structured entries** — `{ type, viaWorkspaceId? }` — distinguishing **`owner` / `ancestor-owner` / `member` / `reach-holder`**, so you always know *why* a user has what they have **and which workspace grants it**. It is the same object shape a [roster](/api-reference/workspaces/members/list-members) entry's `reasons` carries. `viaWorkspaceId` names the granting ancestor and is present on `ancestor-owner` / `reach-holder` only (`owner` / `member` are grants on the workspace itself). A user reaching in from several ancestors carries **one entry per granting ancestor**.
+
+This read is inherently a **self** read (or a privileged-key read of a named user), so `capabilities` / `permissions` / `rank` are always returned in full here — unlike the [member-standing read](/api-reference/workspaces/members/fetch-member-standing), which fences them.
 
 <Note>
   There is **no** convenience `?permission=` check and **no** `can()` middleware. Sublay never consumes your opaque `permissions`, so a permission check is a one-line `.includes()` on the returned record:
@@ -33,14 +35,18 @@ Returns the caller's **resolved standing** on a workspace: `{ reasons, capabilit
 
 ```json
 {
-  "reasons": ["member", "ancestor-owner"],
+  "reasons": [
+    { "type": "member" },
+    { "type": "ancestor-owner", "viaWorkspaceId": "ws_root" }
+  ],
   "capabilities": ["view", "invite", "remove-member"],
   "permissions": ["deploy"],
   "rank": 5
 }
 ```
 
-- `capabilities` — the fully-resolved set (direct + reach + ownership).
+- `reasons` — structured standings; `viaWorkspaceId` is present on `ancestor-owner` / `reach-holder` only.
+- `capabilities` — the fully-resolved set (direct + reach + ownership). **`view` is implied by every other capability** — any user with standing on the workspace resolves with `view`, including a member whose stored `capabilities` array is empty. A user with no relation at all resolves to an empty set.
 - `permissions` — **per-node** (the direct membership on this workspace only; may be empty). Does not cascade.
 - `rank` — the direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders.
 

@@ -8,7 +8,11 @@ icon: "plug"
 
 `useFetchWorkspaceMemberStanding` returns a callable that reads a single user's full standing on a workspace, addressed by **user id** (not a membership-row id, so it works even for users with no direct row). It returns the same unified shape as one roster row, computed on demand for **any** relation — direct `member`, this workspace's `owner`, an `ancestor-owner`, or a `reach-holder`.
 
-**Authorization:** requires roster visibility on the workspace (the same gate as [`useFetchWorkspaceMembers`](/hooks/workspaces/use-fetch-workspace-members)). The signed-in user is the actor; `targetUserId` names **who is being read**, not who is asking.
+**Authorization:** requires roster visibility on the workspace — **any relation** (owner, ancestor-owner, member, reach-holder), the same gate as [`useFetchWorkspaceMembers`](/hooks/workspaces/use-fetch-workspace-members). The signed-in user is the actor; `targetUserId` names **who is being read**, not who is asking.
+
+<Warning>
+  **`capabilities`, `permissions` and `rank` are fenced.** They are **omitted from the response** (absent — not `null`) unless the signed-in user holds one of the four people-operating capabilities on this workspace (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`), is the `owner` / an `ancestor-owner`, or is reading **their own** standing. The three fields are optional in the SDK type — read them defensively (`standing.capabilities ?? []`). Everything else (`user`, `reasons`, `title`, `metadata`) is visible to any relation.
+</Warning>
 
 ## Usage Example
 
@@ -29,7 +33,8 @@ function MemberDetail({
       workspaceId,
       targetUserId,
     });
-    // { user, reasons, capabilities, permissions, rank, title, metadata }
+    // { user, reasons, title, metadata } — plus capabilities/permissions/rank
+    // when you may see them (see the fencing warning above).
   };
 }
 ```
@@ -51,10 +56,10 @@ function MemberDetail({
 | Field | Type | Description |
 |-------|------|-------------|
 | `user` | `WorkspaceStandingUser` | The target user. Normally the full user record, but **only `id` is guaranteed** — see the note below. |
-| `reasons` | `("owner" \| "ancestor-owner" \| "member" \| "reach-holder")[]` | Why the user has standing. |
-| `capabilities` | `string[]` | The **resolved** capability set (direct + reach + ownership). |
-| `permissions` | `string[]` | **Per-node** permissions (direct membership on this workspace only; may be empty). |
-| `rank` | `number \| null` | Direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders. |
+| `reasons` | `WorkspaceAuthorityReasonDetail[]` | Why the user has standing — structured `{ type, viaWorkspaceId? }` entries. `viaWorkspaceId` names the granting ancestor and appears on `ancestor-owner` / `reach-holder` only. |
+| `capabilities` | `string[]?` | The **resolved** capability set (direct + reach + ownership). **Fenced** — see the warning above. **`view` is implied by every other capability**, so anyone with standing carries it. |
+| `permissions` | `string[]?` | **Per-node** permissions (direct membership on this workspace only; may be empty). **Fenced.** |
+| `rank` | `number \| null` (optional) | Direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders. **Fenced.** |
 | `title` | `string \| null` | Cosmetic title. |
 | `metadata` | `Record<string, any>` | Opaque member metadata. |
 

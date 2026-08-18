@@ -44,6 +44,12 @@ function Roster({ workspaceId }: { workspaceId: string }) {
 
 `WorkspaceRosterResponse` (`{ data, total }`), or `WorkspaceRosterCountsResponse` (`{ counts, total, distinctUsers }`) when `countOnly` is set.
 
+Each `WorkspaceRosterEntry` is `{ user, reasons }`, where a reason is `{ type, ...detail }` — `member` carries `rank` / `capabilities` / `permissions` / `title` / `metadata`, `ancestor-owner` and `reach-holder` carry `viaWorkspaceId` (reach-holder also `capabilities`), and `descendant-member` carries `workspaceId` / `rank` / `capabilities`.
+
+<Warning>
+  **`rank`, `capabilities` and `permissions` are fenced on other users' entries.** They are **omitted** (absent — not `null`) unless the signed-in user holds one of the four people-operating capabilities on this workspace (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) or is the `owner` / an `ancestor-owner`. The caller's **own** entry always carries them, so anyone can discover their own access. Who is on the roster (`user`, reason `type`s, `title`, `metadata`, `viaWorkspaceId`) stays visible to any relation — read the three fenced fields defensively (`reason.capabilities ?? []`).
+</Warning>
+
 ## Related
 
 - [List Members API](/api-reference/workspaces/members/list-members)

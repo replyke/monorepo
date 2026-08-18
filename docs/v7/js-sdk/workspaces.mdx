@@ -91,7 +91,7 @@ const workspace = await sublay.workspaces.updateWorkspaceInheritFlag({
 
 ### deleteWorkspace
 
-**Owner-only** (own owner or an ancestor owner). Cascades the whole subtree transactionally and fires `workspace.deleted` per deleted workspace.
+**Owner-only** (own owner or an ancestor owner). Cascades the whole subtree transactionally and fires `workspace.deleted` per deleted workspace — and **no** `workspace.member.removed` events for the memberships it tears down (see [Webhooks](/sdk/workspaces/webhooks)).
 
 ```typescript
 const { message } = await sublay.workspaces.deleteWorkspace({ workspaceId: "ws_abc" });
@@ -124,7 +124,11 @@ const workspace = await sublay.workspaces.transferWorkspaceOwnership({
 
 ### fetchWorkspaceMembers
 
-The [unified roster](/api-reference/workspaces/members/list-members) — `WorkspaceRosterResponse`, or `WorkspaceRosterCountsResponse` with `countOnly`. Never paginated. Requires roster visibility.
+The [unified roster](/api-reference/workspaces/members/list-members) — `WorkspaceRosterResponse`, or `WorkspaceRosterCountsResponse` with `countOnly`. Never paginated. Requires roster visibility — **any relation** to the workspace.
+
+<Warning>
+  **`rank`, `capabilities` and `permissions` are fenced on other users' entries.** They are omitted (absent — not `null`) unless the bearer-token user holds one of the four people-operating capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) or is the `owner` / an `ancestor-owner`. The caller's own entry always carries them. Who is on the roster — `user`, reason `type`s, `title`, `metadata`, `viaWorkspaceId` — stays visible to any relation, so read the fenced fields defensively (`reason.capabilities ?? []`).
+</Warning>
 
 ```typescript
 const roster = await sublay.workspaces.fetchWorkspaceMembers({ workspaceId: "ws_abc" });
@@ -137,7 +141,11 @@ const counts = await sublay.workspaces.fetchWorkspaceMembers({ workspaceId: "ws_
 
 ### fetchWorkspaceMemberStanding
 
-One user's resolved standing, addressed by user id — works for any relation, including users with no direct member row. Requires roster visibility.
+One user's resolved standing, addressed by user id — works for any relation, including users with no direct member row. Requires roster visibility — **any relation** to the workspace.
+
+<Warning>
+  **`capabilities`, `permissions` and `rank` are fenced.** They are omitted unless the bearer-token user holds one of the four people-operating capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`), is the `owner` / an `ancestor-owner`, or is reading **their own** standing. `user`, `reasons`, `title` and `metadata` are always returned.
+</Warning>
 
 ```typescript
 const standing = await sublay.workspaces.fetchWorkspaceMemberStanding({
@@ -150,6 +158,8 @@ const standing = await sublay.workspaces.fetchWorkspaceMemberStanding({
 <ParamField body="targetUserId" type="string" required>The **target** whose standing to read (path param, not an actor).</ParamField>
 
 Returns `WorkspaceMemberStanding`. On its `user` field **only `id` is guaranteed** (`WorkspaceStandingUser`): the server returns the full user record when the user row still exists and falls back to `{ id }` alone when it does not — a deleted user with a lingering membership row is a reachable case. Read the rest defensively (`standing.user.username ?? "Deleted user"`).
+
+`reasons` is an array of structured `{ type, viaWorkspaceId? }` entries — the same shape a roster entry's `reasons` carries — so you learn which ancestor grants an `ancestor-owner` / `reach-holder` standing.
 
 ### updateWorkspaceMember
 
@@ -216,7 +226,11 @@ await sublay.workspaces.leaveWorkspace({ workspaceId: "ws_abc" });
 
 ### createWorkspaceInvite
 
-Requires the **`invite`** capability (or ownership); the inviter is the bearer-token user. Address the invitee by **exactly one** of `email`, `userId`, or `username` — here `userId`/`username` address the invite **target**, not an actor.
+Requires the **`invite`** capability (or ownership); the inviter is the bearer-token user. Address the invitee by **exactly one** of `email`, `userId`, or `username` — here `userId`/`username` address the invite **target**, not an actor. Email matching against existing accounts is **case-insensitive**.
+
+<Warning>
+  **The project must have `workspaceInviteAcceptUrl` configured**, or this call fails with `409 workspace/missing-invite-accept-url` and persists nothing — the invitation email would have nowhere to deep-link. It has no default. Applies even when the invitee already has an account. See [Project settings](/sdk/workspaces/overview#project-settings).
+</Warning>
 
 ```typescript
 const invite = await sublay.workspaces.createWorkspaceInvite({
@@ -263,7 +277,7 @@ await sublay.workspaces.revokeWorkspaceInvite({ workspaceId: "ws_abc", inviteId:
 
 ### resendWorkspaceInvite
 
-Refreshes a pending invite — resets a 14-day expiry and resends the email — valid even on one already past `expiresAt`. Terminal invites → `409`. Requires the `invite` capability (or ownership). Also a verb-suffixed **`POST .../resend`**. Returns the refreshed `WorkspaceInvitation`, carrying the new `expiresAt`.
+Refreshes a pending invite — resets a 14-day expiry and resends the email — valid even on one already past `expiresAt`. Terminal invites → `409`. Requires the `invite` capability (or ownership). Also a verb-suffixed **`POST .../resend`**. Returns the refreshed `WorkspaceInvitation`, carrying the new `expiresAt`. Like `createWorkspaceInvite`, it requires [`workspaceInviteAcceptUrl`](/sdk/workspaces/overview#project-settings) on the project → otherwise `409 workspace/missing-invite-accept-url` with `expiresAt` untouched.
 
 ```typescript
 const invite = await sublay.workspaces.resendWorkspaceInvite({ workspaceId: "ws_abc", inviteId: "inv_1" });
@@ -306,7 +320,9 @@ await sublay.workspaces.declineWorkspaceInvite({ inviteId: "inv_1" });
 
 ### fetchWorkspaceAuthority
 
-The bearer-token user's resolved standing on a workspace — `{ reasons, capabilities, permissions, rank }`. **Self-service.** Drive your UI off this rather than guessing: a permission check is a one-line `.includes()` on the result.
+The bearer-token user's resolved standing on a workspace — `{ reasons, capabilities, permissions, rank }`. **Self-service**, so nothing is fenced here. Drive your UI off this rather than guessing: a permission check is a one-line `.includes()` on the result.
+
+`reasons` is an array of structured `{ type, viaWorkspaceId? }` entries (`viaWorkspaceId` on `ancestor-owner` / `reach-holder` only). `capabilities` is the fully-resolved set and **`view` is implied by every other capability** — any user with standing carries it, while a stranger gets `reasons: []` and an empty set.
 
 ```typescript
 const authority = await sublay.workspaces.fetchWorkspaceAuthority({ workspaceId: "ws_abc" });

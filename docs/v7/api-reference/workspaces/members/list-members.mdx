@@ -4,7 +4,7 @@ api: "GET /v7/:projectId/workspaces/:id/members"
 description: "The unified roster — one entry per distinct user, each with a reasons array"
 ---
 
-Returns the roster as a **single unified array, one entry per distinct user**, each carrying a `reasons` array explaining *why* the user appears. Requires **roster visibility** (a member, an ancestor owner, or a holder of a people-operating capability that reaches the node).
+Returns the roster as a **single unified array, one entry per distinct user**, each carrying a `reasons` array explaining *why* the user appears. Requires **roster visibility** — **any relation** to the workspace (owner, ancestor-owner, member, or reach-holder). A caller with no relation gets a `404`.
 
 **Always returned in full — never paginated.** `include` flags only *add* entries; they never change the shape. `countOnly` is the numbers-only escape hatch.
 
@@ -31,10 +31,20 @@ Each entry's `reasons[]` contains `{ type, ...detail }` objects. A user present 
 | `type` | Detail | Counted as a seat? |
 |--------|--------|--------------------|
 | `owner` | — | **Yes** |
-| `member` | `rank`, `capabilities` | **Yes** |
+| `member` | `rank`, `capabilities`, `permissions`, `title`, `metadata` | **Yes** |
 | `ancestor-owner` | `viaWorkspaceId` | No (informational) |
 | `reach-holder` | `viaWorkspaceId`, `capabilities` | No (informational) |
-| `descendant-member` | `workspaceId` | Counted under the `descendants` include |
+| `descendant-member` | `workspaceId`, `rank`, `capabilities` | Counted under the `descendants` include |
+
+<Warning>
+  **The authority-bearing detail fields are fenced.** `capabilities`, `permissions` and `rank` are **omitted from a reason** (absent — not `null`) on **other users'** entries unless the caller:
+
+  - holds one of the four people-operating capabilities on this workspace — `invite`, `remove-member`, `edit-member-access`, `edit-member-profile`; **or**
+  - is the workspace's `owner` or an `ancestor-owner`; **or**
+  - is a service/master key.
+
+  The caller's **own** entry always carries them in full, so anyone can discover their own access. Who is on the roster — `user`, the reason `type`s, `title`, `metadata`, `viaWorkspaceId`, `workspaceId` — stays visible to any relation. Treat the three fields as optional in your types.
+</Warning>
 
 ## Response (array mode)
 
@@ -44,7 +54,24 @@ Each entry's `reasons[]` contains `{ type, ...detail }` objects. A user present 
     {
       "user": { "id": "u_pat" },
       "reasons": [
-        { "type": "member", "rank": 5, "capabilities": ["view", "invite"] },
+        { "type": "member", "rank": 5, "capabilities": ["view", "invite"], "permissions": [], "title": "Frontend Lead", "metadata": {} },
+        { "type": "ancestor-owner", "viaWorkspaceId": "ws_root" }
+      ]
+    }
+  ],
+  "total": 1
+}
+```
+
+The same roster read by a caller who cannot manage people here — the `member` reason keeps its identity fields but drops the authority-bearing ones:
+
+```json
+{
+  "data": [
+    {
+      "user": { "id": "u_pat" },
+      "reasons": [
+        { "type": "member", "title": "Frontend Lead", "metadata": {} },
         { "type": "ancestor-owner", "viaWorkspaceId": "ws_root" }
       ]
     }
@@ -65,4 +92,4 @@ Each entry's `reasons[]` contains `{ type, ...detail }` objects. A user present 
 
 `total` is the **distinct-user seat number** (owner + direct members), **not** the sum of buckets (buckets overlap). Ancestor-owners and reach-holders are never counted as seats.
 
-See also: [useFetchWorkspaceMembers](/hooks/workspaces/use-fetch-workspace-members)
+See also: [useFetchWorkspaceMembers](/hooks/workspaces/use-fetch-workspace-members) · [Fetch Member Standing](/api-reference/workspaces/members/fetch-member-standing)

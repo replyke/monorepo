@@ -8,7 +8,7 @@ icon: "plug"
 
 `useUpdateWorkspaceInheritFlag` returns a callable that flips a workspace's `inheritsFromParent` flag — the switch controlling whether authority held on an ancestor reaches into this node. See [Reach & the wall/door rule](/data-models/workspace#reach-and-the-wall-door-rule).
 
-**Authorization:** owner-only, in both directions. The signed-in user must be this workspace's own owner or an ancestor owner. **No capability grants this.** It is additionally blocked when the project enforces its inherit default.
+**Authorization:** owner-only, in both directions. The signed-in user must be this workspace's own owner or an ancestor owner. **No capability grants this.** It is additionally blocked when the project sets [`workspaceInheritEnforced`](/sdk/workspaces/overview#project-settings).
 
 ## Usage Example
 

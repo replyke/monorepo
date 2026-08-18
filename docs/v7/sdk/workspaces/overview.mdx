@@ -18,6 +18,26 @@ The React/React Native surface is a set of plain hooks re-exported from `@sublay
 - **[Reach & the wall/door rule](/data-models/workspace#reach-and-the-wall-door-rule)** — strict per-node by default; opt-in downward reach via the child-owned `inheritsFromParent` flag.
 - **[Invitations](/data-models/workspace-invitation#acceptance-model)** — identity-matched + verified-email, **no token**.
 
+## Project settings
+
+Three project-level settings configure this bundle. They live in your project's `settings` blob — set them in the dashboard under **Settings → project settings**, or via the update-project-settings endpoint. All three are **absent by default**, and absent means the strict behavior in the table below.
+
+| Setting | Type | Default | What it does |
+|---------|------|---------|--------------|
+| `workspaceInviteAcceptUrl` | `string` | *(none)* | The page in **your** app that surfaces workspace invitations. Invitation emails deep-link to it, with a fixed `?workspaceInviteId=<id>` appended (any query string you already have on the URL is preserved). **Required before any invitation can be created** — see the warning below. |
+| `workspaceInheritsDefault` | `boolean` | `false` | The [`inheritsFromParent`](/data-models/workspace#reach-and-the-wall-door-rule) flag new workspaces are **born with**. `false` (the default) means every workspace starts **sealed** — no downward reach. Set it to `true` if your product wants an org's authority to flow into sub-workspaces by default. This is read at create time only; it is never accepted from client input, and changing it does not retroactively alter existing workspaces. |
+| `workspaceInheritEnforced` | `boolean` | `false` | Locks `inheritsFromParent` to the project default so workspace **owners cannot flip it**. While `true`, [`useUpdateWorkspaceInheritFlag`](/hooks/workspaces/use-update-workspace-inherit-flag) fails with `403 workspace/inherit-enforced`. Use it when the wall/door policy is a product decision rather than a per-team one. |
+
+<Warning>
+  **Set `workspaceInviteAcceptUrl` before you ship invitations.** It has no default, so a freshly added bundle has none — and an invitation is delivered as an email whose only call to action is that deep-link.
+
+  Because of that, [Create Invite](/api-reference/workspaces/invitations/create-invite) and [Resend Invite](/api-reference/workspaces/invitations/resend-invite) **refuse outright** when it is unset, with `409 workspace/missing-invite-accept-url`. This applies **even when the invitee already has an account** — the in-app inbox is not a substitute for the emailed link, so the invite surface behaves the same for every invitee. Nothing is persisted and no email or webhook is emitted on the refusal; configure the setting and retry the identical request.
+</Warning>
+
+<Note>
+  The accept link carries **nothing secret**. Acceptance is identity-matched — the signed-in caller must *be* the invitation's target and have a verified email — so there is no token to leak and no domain allowlist to maintain. The email is a plain nudge into your app. See the [acceptance model](/data-models/workspace-invitation#acceptance-model).
+</Note>
+
 ## What a client app can do
 
 **All 21 workspace endpoints are callable from a browser or mobile app with a normal signed-in user's bearer token** — including every management operation: editing a workspace, deleting it, transferring ownership, flipping the inherit flag, editing a member's capabilities/rank, removing a member, offboarding across a subtree, and the full invite lifecycle (create, list, revoke, resend). Every one of these is exposed as a `@sublay/core` hook and as a `@sublay/js` function. **A members-management panel needs no server-side code and no hand-rolled `fetch`.**
@@ -29,7 +49,7 @@ With a client token, every endpoint in the bundle resolves the actor from that t
 | **Owner-only** | The caller must be the workspace's own owner, or an owner of an ancestor workspace. Not a capability — no capability grants it. |
 | **Capability-gated** | The caller's [resolved capability set](/hooks/workspaces/use-fetch-workspace-authority) (direct + reach + ownership) must contain the named capability, e.g. `invite`, `remove-member`, `edit-workspace`. |
 | **Rank-bounded** | On top of a capability, the caller may only act on members ranked strictly below them, and may only grant capabilities/permissions they themselves hold ([no-escalation](/data-models/workspace-member#no-privilege-escalation)). |
-| **Visibility** | The caller must be able to see the workspace / its roster at all. This gates three reads — the single workspace, the roster, and one member's standing. It does *not* gate the authority read (see the note below). |
+| **Visibility** | The caller must be able to see the workspace / its roster at all. This gates three reads — the single workspace, the roster, and one member's standing. **Any relation** to the workspace (owner, ancestor-owner, member, reach-holder) satisfies it. It does *not* gate the authority read (see the note below). |
 | **Self-service** | Anyone signed in can do it for themselves — accept/decline an invite addressed to them, leave a workspace, read their own authority. |
 
 <Note>
@@ -37,6 +57,12 @@ With a client token, every endpoint in the bundle resolves the actor from that t
 
   Its sibling read, one member's standing ([`GET /workspaces/:id/members/:userId`](/api-reference/workspaces/members/fetch-member-standing)), *is* visibility-gated and deliberately `404`s instead, so it never leaks existence. Do not assume the two behave alike.
 </Note>
+
+<Warning>
+  **Seeing the roster and seeing people's *authority* are two different tiers.** Any relation may read the roster and one member's standing — who is there, their `reasons`, `title` and `metadata`. But the authority-bearing fields — **`capabilities`, `permissions`, `rank`** — are **omitted** (absent, not `null`) unless the caller holds one of the four people-operating capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) or is the `owner` / an `ancestor-owner`.
+
+  A caller **always** sees their own — their own roster row, their own standing, and the [authority read](/api-reference/workspaces/fetch-authority), which is inherently a self read and never fenced. So a plain member can always discover their own access; they just cannot enumerate everyone else's. Service/master keys are never fenced. Type the three fields as optional on client surfaces.
+</Warning>
 
 <Note>
   **What actually needs a service key: acting on behalf of a *different* user.** Several endpoints accept an actor `userId` so a service/master key can perform an action *as* some named user. That parameter is **[node SDK](/node-sdk/workspaces) only** — `@sublay/core` and `@sublay/js` never expose it and strip it if it is smuggled in, because a client's actor is always the token's own user. This is the *only* difference in reach between the client SDKs and the node SDK for this bundle; it is **not** a restriction on which operations a client may perform.
@@ -115,5 +141,5 @@ function CreateTeam() {
 | [`useFetchWorkspaceAuthority`](/hooks/workspaces/use-fetch-workspace-authority) | Resolve the current user's standing | Self-service |
 
 <Tip>
-  Drive your UI off [`useFetchWorkspaceAuthority`](/hooks/workspaces/use-fetch-workspace-authority) rather than guessing: it returns `{ reasons, capabilities, permissions, rank }`, so showing the "Remove member" button is `authority.capabilities.includes("remove-member")`.
+  Drive your UI off [`useFetchWorkspaceAuthority`](/hooks/workspaces/use-fetch-workspace-authority) rather than guessing: it returns `{ reasons, capabilities, permissions, rank }`, so showing the "Remove member" button is `authority.capabilities.includes("remove-member")`. `reasons` are structured `{ type, viaWorkspaceId? }` entries — the same shape a roster entry carries — so you can also show *which* ancestor grants an inherited standing. And because **`view` is implied by every other capability**, `capabilities.includes("view")` doubles as "does this user have any standing here at all".
 </Tip>

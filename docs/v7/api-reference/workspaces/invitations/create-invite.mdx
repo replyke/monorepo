@@ -6,6 +6,12 @@ description: "Invite a user by email, userId, or username"
 
 Creates an invitation, addressed by **exactly one** of `email`, `userId`, or `username`. Requires the `invite` capability. Always sends an email (no toggle). Fires `workspace.invite.created`.
 
+<Warning>
+  **Requires `workspaceInviteAcceptUrl` on the project.** The invitation email's only call to action is a deep-link built from that setting, and it has no default — so an unconfigured project cannot create invitations at all. Without it this endpoint returns `409 workspace/missing-invite-accept-url` and persists nothing (no invitation row, no email, no webhook).
+
+  This applies **even when the invitee already has an account** — there is no special case. See [Project settings](/sdk/workspaces/overview#project-settings) for how to configure it.
+</Warning>
+
 The invited `capabilities`/`permissions` are validated against the inviter's own resolved set on the workspace — no-escalation on both arrays. The `rank` floor applies **only when the inviter has a direct member row** on the workspace: then the invited rank must be strictly larger (less senior) than the inviter's own. A **reach-holder** inviter (holding `invite` via an open inherit chain, with no direct row) is not in the workspace's rank ladder and may invite at any rank.
 
 **Duplicate handling:**
@@ -13,7 +19,7 @@ The invited `capabilities`/`permissions` are validated against the inviter's own
 - A **live** invite (`pending` and not past `expiresAt`) for the same target → **idempotent refresh** (updates the grant, resets a 14-day expiry).
 - A **terminal** (`accepted`/`declined`/`revoked`) or **effectively-expired** invite does **not** block — a fresh `pending` is created. (An `accepted` invite means the user is already a member, so re-inviting them returns `409` instead.)
 
-Invite-by-email to an address that already has an account resolves and stores the `userId` at creation.
+Invite-by-email to an address that already has an account resolves and stores the `userId` at creation. The account lookup is **case-insensitive**, so an account stored as `Jane@Example.com` is still bound when invited as `jane@example.com`.
 
 ## Path Parameters
 
@@ -24,7 +30,7 @@ Invite-by-email to an address that already has an account resolves and stores th
 ## Body Parameters
 
 <ParamField body="email" type="string">
-  Invitee email (trimmed + lowercased server-side). One of `email`/`userId`/`username` is required.
+  Invitee email (trimmed + lowercased server-side). One of `email`/`userId`/`username` is required. Matching an existing account is **case-insensitive**, so an address that was stored with different capitalization (as OAuth-created accounts are) still binds its `userId`.
 </ParamField>
 
 <ParamField body="userId" type="string">
@@ -67,6 +73,12 @@ Returns the created [WorkspaceInvitation](/data-models/workspace-invitation) obj
     ```json
     { "error": "You may only grant capabilities/permissions you hold.", "code": "workspace/no-escalation" }
     ```
+  </Accordion>
+  <Accordion title="Missing Invite Accept URL — 409">
+    ```json
+    { "error": "This project has no workspaceInviteAcceptUrl configured...", "code": "workspace/missing-invite-accept-url" }
+    ```
+    A **project misconfiguration**, not a bad request — the payload is fine and the caller is authorized. Set [`workspaceInviteAcceptUrl`](/sdk/workspaces/overview#project-settings) in your project settings and retry the identical request.
   </Accordion>
 </AccordionGroup>
 

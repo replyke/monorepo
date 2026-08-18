@@ -6,7 +6,20 @@ description: "A user's full resolved standing on a workspace, addressed by userI
 
 Returns a single user's full standing on a workspace, addressed by **`userId`** (not a membership-row id, so it works for users with no direct row). Returns the same unified shape as one roster row, computed on demand for **any** relation — direct `member`, this workspace's `owner`, an `ancestor-owner`, or a `reach-holder`. Returns empty/none **only** if the user has no relation at all.
 
-Requires roster visibility.
+Requires **roster visibility** — any relation to the workspace (owner, ancestor-owner, member, or reach-holder).
+
+`reasons` is an array of **structured entries** — `{ type, viaWorkspaceId? }` — the same object shape a [roster](/api-reference/workspaces/members/list-members) entry's `reasons` carries. `viaWorkspaceId` names the granting ancestor and appears on `ancestor-owner` / `reach-holder` only.
+
+<Warning>
+  **The authority-bearing fields are fenced.** `capabilities`, `permissions` and `rank` are **omitted from the response** (absent — not `null`) unless the caller:
+
+  - holds one of the four people-operating capabilities on this workspace — `invite`, `remove-member`, `edit-member-access`, `edit-member-profile`; **or**
+  - is the workspace's `owner` or an `ancestor-owner`; **or**
+  - is asking about **themselves** (a caller always sees their own access); **or**
+  - is a service/master key.
+
+  Everything else — `user`, `reasons`, `title`, `metadata` — is visible to any relation. Treat these three fields as optional in your types.
+</Warning>
 
 ## Path Parameters
 
@@ -20,10 +33,15 @@ Requires roster visibility.
 
 ## Response
 
+Caller who may see authority fields (a people-operator, an owner, or the user themselves):
+
 ```json
 {
   "user": { "id": "u_pat" },
-  "reasons": ["member", "ancestor-owner"],
+  "reasons": [
+    { "type": "member" },
+    { "type": "ancestor-owner", "viaWorkspaceId": "ws_root" }
+  ],
   "capabilities": ["view", "invite", "remove-member"],
   "permissions": ["deploy"],
   "rank": 5,
@@ -32,6 +50,23 @@ Requires roster visibility.
 }
 ```
 
-- `capabilities` is the **resolved** set (direct + reach + ownership).
+Caller with a plain relation, reading **someone else's** standing — the three authority fields are simply absent:
+
+```json
+{
+  "user": { "id": "u_pat" },
+  "reasons": [
+    { "type": "member" },
+    { "type": "ancestor-owner", "viaWorkspaceId": "ws_root" }
+  ],
+  "title": "Frontend Lead",
+  "metadata": {}
+}
+```
+
+- `reasons` is always present; `viaWorkspaceId` appears on `ancestor-owner` / `reach-holder` entries only.
+- `capabilities` is the **resolved** set (direct + reach + ownership). **`view` is implied by every other capability** — anyone with standing resolves with `view`, including a member whose stored `capabilities` array is empty. A user with no relation at all returns `reasons: []` and an empty capability set.
 - `permissions` is **per-node** (the direct membership on this workspace only; may be empty).
 - `rank` is the direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders (they sit outside the numbered ladder).
+
+See also: [useFetchWorkspaceMemberStanding](/hooks/workspaces/use-fetch-workspace-member-standing) · [List Members](/api-reference/workspaces/members/list-members) · [Read Authority](/api-reference/workspaces/fetch-authority)

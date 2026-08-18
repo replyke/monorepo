@@ -36,7 +36,7 @@ There are exactly **7** capabilities. Sublay ships **no** built-in `owner`/`admi
 
 | Capability | Grants |
 |------------|--------|
-| `view` | See the workspace's existence + name/metadata. The auditor floor — **implied by every other capability** (you cannot manage what you cannot see). |
+| `view` | See the workspace's existence + name/metadata. The auditor floor — **implied by every other capability** (you cannot manage what you cannot see), and by standing itself: the resolver adds `view` to anyone with any relation to the workspace, including a member whose stored `capabilities` array is empty. You never need to grant it explicitly. |
 | `invite` | The **whole** invitation lifecycle on this workspace: send, revoke, resend, and list pending invites. |
 | `remove-member` | Remove an existing member (subject to the [rank rule](#rank-semantics)). |
 | `edit-member-access` | Edit a member's **powerful** fields: `capabilities`, `permissions`, and `rank` (fenced by no-escalation + rank). |
@@ -44,7 +44,13 @@ There are exactly **7** capabilities. Sublay ships **no** built-in `owner`/`admi
 | `create-sub-workspace` | Create a child workspace (the creator becomes its owner). |
 | `edit-workspace` | Edit this workspace's own name and metadata. Does **not** include the inherit flag. |
 
-The four **people-operating** capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) additionally grant **roster visibility**.
+The four **people-operating** capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) additionally grant visibility of **other members' authority**.
+
+<Note>
+  **Two tiers, not one.** Reading the roster at all — [`GET /workspaces/:id/members`](/api-reference/workspaces/members/list-members) and [`GET /workspaces/:id/members/:userId`](/api-reference/workspaces/members/fetch-member-standing) — needs only **some relation** to the workspace (owner, ancestor-owner, member, or reach-holder); that tier shows *who* is there, plus each member's `title` and `metadata`.
+
+  The authority-bearing fields — **`capabilities`, `permissions`, `rank`** — are **omitted** from other users' entries unless the caller holds one of the four people-operating capabilities above, or is the `owner` / an `ancestor-owner` (service and master keys are never fenced). A caller always sees their **own** — their own roster row, their own standing, and the [authority read](/api-reference/workspaces/fetch-authority) — so no one is ever blind to their own access.
+</Note>
 
 **Owner-only, deliberately NOT capabilities:** deleting a workspace, transferring ownership, and flipping the inherit flag. **Self-service, no capability needed:** accepting/declining your own invite, leaving, and editing your own `title`.
 

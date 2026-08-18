@@ -6,7 +6,7 @@ icon: "plug"
 
 ## Overview
 
-`useDeleteWorkspace` returns a callable that deletes a [workspace](/data-models/workspace). Deletion **cascades the entire subtree** in one transaction, bottom-up: invitations → members → workspaces. Each deleted workspace fires `workspace.deleted`; each torn-down membership fires `workspace.member.removed`.
+`useDeleteWorkspace` returns a callable that deletes a [workspace](/data-models/workspace). Deletion **cascades the entire subtree** in one transaction, bottom-up: invitations → members → workspaces. Each deleted workspace fires `workspace.deleted` — and **no** `workspace.member.removed` events for the memberships it tears down. Treat `workspace.deleted` as removing that workspace's whole roster; see [Webhooks & lifecycle](/sdk/workspaces/webhooks#deleting-a-workspace-does-not-emit-per-member-events).
 
 **Authorization:** owner-only. The signed-in user must be this workspace's own owner or an ancestor owner. **There is no `delete-workspace` capability.**
 

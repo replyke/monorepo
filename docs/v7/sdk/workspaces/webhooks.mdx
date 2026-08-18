@@ -16,8 +16,8 @@ There are exactly **7** events:
 | `workspace.invite.declined` | An invitation is declined. |
 | `workspace.invite.revoked` | An invitation is revoked. |
 | `workspace.deleted` | A workspace is deleted (one per workspace actually deleted, including each node in a cascade). |
-| `workspace.member.added` | Any membership **row** is created. |
-| `workspace.member.removed` | Any membership **row** is deleted. |
+| `workspace.member.added` | A membership **row** is created. |
+| `workspace.member.removed` | A membership **row** is removed by a *targeted* action — **not** by a workspace delete (see below). |
 
 <Note>
   **There is no `workspace.invite.expired` event.** Expiry is lazy — a stale invite simply won't accept; there is no background sweep and thus no moment to fire it. Capability-change events are deliberately deferred, and **resend** emits no event (the status stays `pending` — no lifecycle transition).
@@ -29,10 +29,22 @@ There are exactly **7** events:
 
 - **On accept, BOTH fire:** `workspace.invite.accepted` (lifecycle) **and** `workspace.member.added` (roster). Dedupe on the ids in the payload if you consume both.
 - **`member.*` also covers non-invite roster changes** that have **no** invite event:
-  - `member.removed` fires on a **leave**, a **remove**, a **remove-from-subtree** sweep, **user-deletion cleanup**, and when a user *becomes owner* and their existing member row is dropped (owner/member rows are disjoint).
+  - `member.removed` fires on exactly five paths: a **leave**, a **remove**, a **remove-from-subtree** sweep, **user-deletion cleanup**, and when a user *becomes owner* and their existing member row is dropped (owner/member rows are disjoint).
   - `member.added` fires on the **transfer-demote** case (a previous owner demoted into a fresh member row).
 
-So if you dropped `member.*` in favor of `invite.*`, you would lose every removal transition (leaves, removals, offboarding, deletions) — which is why `member.*` is the stream to mirror your live seat/roster set.
+So if you dropped `member.*` in favor of `invite.*`, you would lose every targeted removal transition (leaves, removals, offboarding) — which is why `member.*` is the stream to mirror your live seat/roster set.
+
+## Deleting a workspace does NOT emit per-member events
+
+<Warning>
+  **`DELETE /workspaces/:id` emits `workspace.deleted` once per node in the cascade, and nothing per membership row.** There is no `workspace.member.removed` for the memberships it tears down — not for the deleted workspace, and not for any descendant.
+
+  Treat **`workspace.deleted` as removing that workspace's entire roster**: on receiving it, drop every seat you hold for that workspace id wholesale. Because the cascade fires one `workspace.deleted` per node, doing this for each event you receive clears the whole subtree.
+</Warning>
+
+This is deliberate. A workspace delete tears down *every* membership in the subtree at once, so a 500-member tree would fan out 500+ POSTs in a single burst against a delivery layer with **no retry and no batching** — and every one of them would be redundant with the `workspace.deleted` that accompanies it. The five paths that *do* fire `member.removed` are all bounded, targeted removals where the row is the only thing that changed and no other event would tell you about it.
+
+Note the asymmetry with **user-deletion cleanup**: deleting a *user* does still fire `member.removed` per row, because there is no `workspace.deleted` to stand in for it — the workspaces survive, only that user's seats disappear.
 
 <Note>
   The **idempotent already-member accept** is a no-op: it marks the invite `accepted` (so `invite.accepted` still fires) but creates no membership row, so **no** `member.added` fires.

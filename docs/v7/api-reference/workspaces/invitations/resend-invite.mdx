@@ -10,6 +10,10 @@ Refreshes a pending invitation — sets `expiresAt = now + 14 days` and resends 
   Resend **emits no webhook** — the status stays `pending`, so there is no lifecycle transition.
 </Note>
 
+<Warning>
+  **Requires `workspaceInviteAcceptUrl` on the project**, exactly as [Create Invite](/api-reference/workspaces/invitations/create-invite) does — resending an email that has nowhere to deep-link is equally pointless. Without it this endpoint returns `409 workspace/missing-invite-accept-url` and the invitation's `expiresAt` is left untouched. See [Project settings](/sdk/workspaces/overview#project-settings).
+</Warning>
+
 ## Path Parameters
 
 <ParamField path="id" type="string" required>
@@ -33,6 +37,12 @@ Returns the refreshed [WorkspaceInvitation](/data-models/workspace-invitation) o
     ```
     Returned when no invitation with that id exists on this workspace — including when the id belongs to a *different* workspace's invitation.
   </Accordion>
+  <Accordion title="Missing Invite Accept URL — 409">
+    ```json
+    { "error": "This project has no workspaceInviteAcceptUrl configured...", "code": "workspace/missing-invite-accept-url" }
+    ```
+    A **project misconfiguration**, not a bad request. The row is not touched — `expiresAt` is unchanged and no email is sent. Set [`workspaceInviteAcceptUrl`](/sdk/workspaces/overview#project-settings) and retry.
+  </Accordion>
   <Accordion title="Terminal Invite — 409">
     ```json
     { "error": "This invitation is no longer pending.", "code": "workspace/invite-terminal" }
@@ -40,3 +50,5 @@ Returns the refreshed [WorkspaceInvitation](/data-models/workspace-invitation) o
     The invitation is `accepted`, `declined`, or `revoked`. Note an invitation merely past its `expiresAt` is **not** terminal — resending one is the documented purpose of this endpoint.
   </Accordion>
 </AccordionGroup>
+
+See also: [useResendWorkspaceInvite](/hooks/workspaces/use-resend-workspace-invite) · [Project settings](/sdk/workspaces/overview#project-settings)

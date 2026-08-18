@@ -31,6 +31,10 @@ const workspace = await sublay.workspaces.createWorkspace({
 
 Root creation requires the acting user to have a **verified email**. Child creation requires the `create-sub-workspace` capability on the parent; the creator becomes the child's owner.
 
+<Warning>
+  **A service key does NOT bypass the verified-email gate.** The `userId` you act as must itself be verified, or the call returns `403 workspace/email-not-verified`. This matches `acceptWorkspaceInvite` and `transferWorkspaceOwnership` — all three doors into ownership check it, so **every** workspace owner has a confirmed email. A key lets you act *as* a user; it does not make that user verified.
+</Warning>
+
 <ParamField body="userId" type="string" required>The user the workspace is created as (becomes the owner).</ParamField>
 <ParamField body="name" type="string" required>Display name (1–100 characters).</ParamField>
 <ParamField body="metadata" type="object">Opaque developer data.</ParamField>
@@ -107,7 +111,7 @@ const { message } = await sublay.workspaces.deleteWorkspace({
 });
 ```
 
-Owner-only; cascades the subtree and fires `workspace.deleted` per deleted workspace.
+Owner-only; cascades the subtree and fires `workspace.deleted` per deleted workspace — and **no** `workspace.member.removed` events for the memberships it tears down (see [Webhooks](/sdk/workspaces/webhooks)).
 
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="userId" type="string" required>Must be own owner or an ancestor owner.</ParamField>
@@ -139,6 +143,10 @@ const workspace = await sublay.workspaces.transferWorkspaceOwnership({
 
 Returns the [unified roster](/api-reference/workspaces/members/list-members) (`WorkspaceRosterResponse`), or `WorkspaceRosterCountsResponse` when `countOnly` is set.
 
+<Note>
+  The roster fences the authority-bearing reason fields (`rank`, `capabilities`, `permissions`) from callers who cannot manage people on the workspace. A **service key is never fenced** — it always sees them — so this only matters for the [client-side](/js-sdk/workspaces) and [hook](/hooks/workspaces/use-fetch-workspace-members) surfaces. The SDK types mark the three fields optional for that reason.
+</Note>
+
 ```typescript
 const roster = await sublay.workspaces.fetchWorkspaceMembers({
   workspaceId: "ws_abc",
@@ -168,6 +176,8 @@ const standing = await sublay.workspaces.fetchWorkspaceMemberStanding({
 <ParamField body="targetUserId" type="string" required>The user whose standing to read.</ParamField>
 
 Returns `WorkspaceMemberStanding`. On its `user` field **only `id` is guaranteed** (`WorkspaceStandingUser`): the server returns the full user record when the user row still exists and falls back to `{ id }` alone when it does not — a deleted user with a lingering membership row is a reachable case. Read the rest defensively (`standing.user.username ?? "Deleted user"`).
+
+`reasons` is an array of structured `{ type, viaWorkspaceId? }` entries — the same shape a roster entry's `reasons` carries — so you learn not just the kind of standing but which ancestor grants it. `capabilities` / `permissions` / `rank` are typed **optional** because the server omits them for callers who cannot manage people; a **service key is never fenced**, so they are always present on this SDK's responses.
 
 ### updateWorkspaceMember
 
@@ -252,7 +262,11 @@ const invite = await sublay.workspaces.createWorkspaceInvite({
 });
 ```
 
-Requires the `invite` capability. Here `userId`/`username` (if used) address the invite **target**; the inviter is the service-key subject.
+Requires the `invite` capability. Here `userId`/`username` (if used) address the invite **target**; the inviter is the service-key subject. Email matching against existing accounts is **case-insensitive**.
+
+<Warning>
+  **The project must have `workspaceInviteAcceptUrl` configured**, or this call fails with `409 workspace/missing-invite-accept-url` and persists nothing. It has no default, and a service key does not exempt you. Applies even when the invitee already has an account. See [Project settings](/sdk/workspaces/overview#project-settings).
+</Warning>
 
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="email" type="string">One of `email`/`userId`/`username`.</ParamField>
@@ -283,7 +297,7 @@ await sublay.workspaces.revokeWorkspaceInvite({ workspaceId: "ws_abc", inviteId:
 const invite = await sublay.workspaces.resendWorkspaceInvite({ workspaceId: "ws_abc", inviteId: "inv_1" });
 ```
 
-Refreshes a lapsed pending invite (14-day expiry) and resends the email. Terminal invites → `409`. Returns the refreshed `WorkspaceInvitation`, carrying the new `expiresAt`.
+Refreshes a lapsed pending invite (14-day expiry) and resends the email. Terminal invites → `409`. Returns the refreshed `WorkspaceInvitation`, carrying the new `expiresAt`. Like `createWorkspaceInvite`, it requires [`workspaceInviteAcceptUrl`](/sdk/workspaces/overview#project-settings) on the project → otherwise `409 workspace/missing-invite-accept-url` with `expiresAt` untouched.
 
 ### acceptWorkspaceInvite
 
@@ -329,7 +343,7 @@ const authority = await sublay.workspaces.fetchWorkspaceAuthority({
   userId: "usr_pat",     // the target whose standing to resolve
 });
 
-// { reasons, capabilities, permissions, rank }
+// { reasons: [{ type, viaWorkspaceId? }], capabilities, permissions, rank }
 if (authority.permissions.includes("deploy")) {
   // your app allows the action
 }
@@ -337,5 +351,7 @@ if (authority.permissions.includes("deploy")) {
 
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="userId" type="string" required>The target user whose resolved standing to read.</ParamField>
+
+`reasons` entries carry `viaWorkspaceId` on `ancestor-owner` / `reach-holder`, naming the ancestor responsible — so when a user has authority you did not expect, you can tell exactly which node to go fix. `capabilities` is the fully-resolved set, and **`view` is implied by every other capability**: any user with standing carries it, while a user with no relation at all comes back with `reasons: []` and an empty capability set.
 
 Sublay never consumes your opaque `permissions` — there is deliberately no `?permission=` check or `can()` helper.
