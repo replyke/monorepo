@@ -31,6 +31,16 @@ export type WorkspaceAuthorityReason =
   | "member"
   | "reach-holder";
 
+// One structured standing entry, as returned by the per-user standing read and
+// the authority read. `viaWorkspaceId` names the ancestor responsible and is
+// present on `ancestor-owner` / `reach-holder` only (`owner` / `member` are
+// grants on the target workspace itself). A user may carry SEVERAL entries of
+// the same type — one per granting ancestor.
+export interface WorkspaceAuthorityReasonDetail {
+  type: WorkspaceAuthorityReason;
+  viaWorkspaceId?: string;
+}
+
 export type WorkspaceInclude = "memberCount";
 export type WorkspaceIncludeArray = WorkspaceInclude[];
 export type WorkspaceIncludeParam = string | WorkspaceIncludeArray;
@@ -88,6 +98,16 @@ export interface WorkspaceRosterReason {
     | "ancestor-owner"
     | "reach-holder"
     | "descendant-member";
+  // `member` carries `rank`/`capabilities`/`permissions`/`title`/`metadata`;
+  // `ancestor-owner`/`reach-holder` carry `viaWorkspaceId` (reach-holder also
+  // `capabilities`); `descendant-member` carries `workspaceId` + `rank`/
+  // `capabilities`. `owner` carries none.
+  //
+  // The authority-bearing fields (`rank`, `capabilities`, `permissions`) are
+  // additionally OMITTED (absent, not null) on OTHER users' entries unless the
+  // caller operates people on the workspace (holds `invite`, `remove-member`,
+  // `edit-member-access` or `edit-member-profile`) or is an owner/ancestor-owner.
+  // The caller's OWN entry always carries them.
   rank?: number;
   capabilities?: WorkspaceCapability[];
   permissions?: string[];
@@ -132,17 +152,21 @@ export type WorkspaceStandingUser = Pick<User, "id"> &
 
 export interface WorkspaceMemberStanding {
   user: WorkspaceStandingUser;
-  reasons: WorkspaceAuthorityReason[];
-  capabilities: WorkspaceCapability[];
-  permissions: string[];
-  rank: number | null;
+  reasons: WorkspaceAuthorityReasonDetail[];
+  // The authority-bearing fields are OMITTED (absent, not null) unless the
+  // caller operates people on the workspace (holds `invite`, `remove-member`,
+  // `edit-member-access` or `edit-member-profile`), is an owner/ancestor-owner,
+  // or is asking about THEMSELVES — a caller always sees their own access.
+  capabilities?: WorkspaceCapability[];
+  permissions?: string[];
+  rank?: number | null;
   title: string | null;
   metadata: Record<string, any>;
 }
 
 // The authority-as-a-service read (`GET /workspaces/:id/authority/me`).
 export interface WorkspaceAuthority {
-  reasons: WorkspaceAuthorityReason[];
+  reasons: WorkspaceAuthorityReasonDetail[];
   capabilities: WorkspaceCapability[];
   permissions: string[];
   rank: number | null;

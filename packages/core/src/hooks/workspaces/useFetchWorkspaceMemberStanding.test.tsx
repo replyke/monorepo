@@ -24,7 +24,7 @@ describe("useFetchWorkspaceMemberStanding", () => {
     const standing: WorkspaceMemberStanding = {
       // Id-only `user` — the server's fallback when the user row is gone.
       user: { id: "user-2" },
-      reasons: ["member"],
+      reasons: [{ type: "member" }],
       capabilities: ["view"],
       permissions: [],
       rank: 3,
