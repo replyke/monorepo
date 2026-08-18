@@ -13,17 +13,28 @@ export interface RemoveWorkspaceMemberFromSubtreeProps {
  * One descendant the subtree sweep did NOT clear, where the target user still
  * holds a direct membership.
  *
- * `id` / `name` are `null` when the acting user has no standing on that
- * workspace — the sweep reports THAT a membership survived without disclosing
- * the existence or name of a sealed sub-workspace the actor has no authority
- * over (the same sealing fence the descendant roster read applies).
+ * `id` / `name` are masked TOGETHER: an entry the acting user may see carries
+ * both, and one they may not carries `null` for both — the sweep reports THAT a
+ * membership survived without disclosing the existence or name of a sealed
+ * sub-workspace the actor has no authority over (the same sealing fence the
+ * descendant roster read applies). Modelled as a discriminated union so a
+ * `null` check on `id` narrows `name` too.
  */
-export interface SkippedWorkspace {
-  id: string | null;
-  name: string | null;
-  /** Why it was skipped. `out-of-reach`: the actor's authority does not extend there. */
-  reason: "out-of-reach";
-}
+export type SkippedWorkspace =
+  | {
+      // Visible: the actor has standing on this workspace.
+      id: string;
+      name: string;
+      /** Why it was skipped. `out-of-reach`: the actor's authority does not extend there. */
+      reason: "out-of-reach";
+    }
+  | {
+      // Sealed: the actor has no standing there, so its identity is withheld.
+      id: null;
+      name: null;
+      /** Why it was skipped. `out-of-reach`: the actor's authority does not extend there. */
+      reason: "out-of-reach";
+    };
 
 export interface RemoveWorkspaceMemberFromSubtreeResponse {
   removedCount: number;
