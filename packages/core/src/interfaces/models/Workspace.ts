@@ -36,10 +36,22 @@ export type WorkspaceAuthorityReason =
 // present on `ancestor-owner` / `reach-holder` only (`owner` / `member` are
 // grants on the target workspace itself). A user may carry SEVERAL entries of
 // the same type — one per granting ancestor.
-export interface WorkspaceAuthorityReasonDetail {
-  type: WorkspaceAuthorityReason;
-  viaWorkspaceId?: string;
-}
+//
+// Modelled as a discriminated union so `type` narrows `viaWorkspaceId`: the two
+// ancestor-derived reasons ALWAYS carry it and the two target-local reasons
+// NEVER do — those are the only four combinations the server emits (see
+// `resolveWorkspaceAuthority`).
+export type WorkspaceAuthorityReasonDetail =
+  | {
+      // A grant on the target workspace itself — no ancestor is responsible.
+      type: "owner" | "member";
+      viaWorkspaceId?: never;
+    }
+  | {
+      // A grant derived from an ancestor, which `viaWorkspaceId` names.
+      type: "ancestor-owner" | "reach-holder";
+      viaWorkspaceId: string;
+    };
 
 export type WorkspaceInclude = "memberCount";
 export type WorkspaceIncludeArray = WorkspaceInclude[];
