@@ -29,9 +29,15 @@ function useCreateWorkspace(): (
         throw new Error("Workspace name is required");
       }
 
+      // Client SDKs never send an actor `userId` — acting on behalf of another
+      // user is the node-sdk service-key capability. Strip it defensively in
+      // case a caller casts around the props type.
+      const body: Record<string, any> = { ...props };
+      delete body.userId;
+
       const response = await axios.post<Workspace>(
         `/${projectId}/workspaces`,
-        props
+        body
       );
 
       return response.data;

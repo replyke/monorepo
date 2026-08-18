@@ -121,8 +121,17 @@ export interface WorkspaceRosterCountsResponse {
 
 // The per-user standing read (`GET /workspaces/:id/members/:userId`) — the
 // target user plus their resolved authority and their direct-row cosmetics.
+/**
+ * The `user` carried by a standing read. Normally the full user record, but the
+ * server falls back to `{ id }` alone when the user row is gone (a deleted user
+ * with a lingering membership row is a reachable case), so every field except
+ * `id` may be absent.
+ */
+export type WorkspaceStandingUser = Pick<User, "id"> &
+  Partial<Omit<User, "id">>;
+
 export interface WorkspaceMemberStanding {
-  user: User;
+  user: WorkspaceStandingUser;
   reasons: WorkspaceAuthorityReason[];
   capabilities: WorkspaceCapability[];
   permissions: string[];

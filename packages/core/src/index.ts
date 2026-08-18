@@ -723,6 +723,7 @@ export type {
   WorkspaceRosterResponse,
   WorkspaceRosterCountsResponse,
   WorkspaceMember,
+  WorkspaceStandingUser,
   WorkspaceMemberStanding,
   WorkspaceAuthority,
 } from "./interfaces/models/Workspace";
