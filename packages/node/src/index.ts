@@ -155,13 +155,16 @@ export type {
   WorkspaceCapability,
   WorkspaceInvitationStatus,
   WorkspaceAuthorityReason,
+  WorkspaceAuthorityReasonDetail,
   WorkspaceRosterReason,
   WorkspaceRosterEntry,
   WorkspaceRosterResponse,
   WorkspaceRosterCountsResponse,
+  WorkspaceStandingUser,
   WorkspaceMemberStanding,
   WorkspaceAuthority,
-  RemoveFromSubtreeResponse,
+  RemoveWorkspaceMemberFromSubtreeResponse,
+  SkippedWorkspace,
 } from "./interfaces/Workspace";
 export type { Rule } from "./interfaces/Rule";
 export type { Follow } from "./interfaces/Follow";

@@ -1,7 +1,7 @@
 import { SublayHttpClient } from "../../core/client";
 import { Workspace } from "../../interfaces/Workspace";
 
-export interface TransferOwnershipProps {
+export interface TransferWorkspaceOwnershipProps {
   workspaceId: string;
   // The acting user (own owner or an ancestor owner). Required for the service
   // key (act-as-user).
@@ -16,9 +16,9 @@ export interface TransferOwnershipProps {
   previousOwnerCapabilities?: string[];
 }
 
-export async function transferOwnership(
+export async function transferWorkspaceOwnership(
   client: SublayHttpClient,
-  data: TransferOwnershipProps
+  data: TransferWorkspaceOwnershipProps
 ): Promise<Workspace> {
   const { workspaceId, ...body } = data;
   const response = await client.projectInstance.post<Workspace>(

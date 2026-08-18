@@ -1,7 +1,7 @@
 import { SublayHttpClient } from "../../core/client";
 import { WorkspaceAuthority } from "../../interfaces/Workspace";
 
-export interface GetAuthorityProps {
+export interface FetchWorkspaceAuthorityProps {
   workspaceId: string;
   // The user whose resolved standing to read. With a service key this is the
   // target user (the service-key `userId` variant); required here.
@@ -14,9 +14,9 @@ export interface GetAuthorityProps {
  * workspace. A permission check is a one-line `.includes()` on the result;
  * Sublay never consumes the developer's opaque permissions.
  */
-export async function getAuthority(
+export async function fetchWorkspaceAuthority(
   client: SublayHttpClient,
-  data: GetAuthorityProps
+  data: FetchWorkspaceAuthorityProps
 ): Promise<WorkspaceAuthority> {
   const { workspaceId, userId } = data;
   const response = await client.projectInstance.get<WorkspaceAuthority>(

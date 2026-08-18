@@ -1,6 +1,6 @@
 import { SublayHttpClient } from "../../core/client";
 
-export interface RemoveMemberProps {
+export interface RemoveWorkspaceMemberProps {
   workspaceId: string;
   // The member to remove (path param).
   targetUserId: string;
@@ -9,9 +9,9 @@ export interface RemoveMemberProps {
   userId: string;
 }
 
-export async function removeMember(
+export async function removeWorkspaceMember(
   client: SublayHttpClient,
-  data: RemoveMemberProps
+  data: RemoveWorkspaceMemberProps
 ): Promise<void> {
   const { workspaceId, targetUserId, userId } = data;
   // The controller resolves the acting user from the request body; send it there

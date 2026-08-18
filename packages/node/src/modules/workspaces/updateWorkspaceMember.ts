@@ -1,7 +1,7 @@
 import { SublayHttpClient } from "../../core/client";
 import { WorkspaceMember } from "../../interfaces/Workspace";
 
-export interface UpdateMemberProps {
+export interface UpdateWorkspaceMemberProps {
   workspaceId: string;
   // The target member's user id (path param).
   targetUserId: string;
@@ -18,9 +18,9 @@ export interface UpdateMemberProps {
   metadata?: Record<string, any>;
 }
 
-export async function updateMember(
+export async function updateWorkspaceMember(
   client: SublayHttpClient,
-  data: UpdateMemberProps
+  data: UpdateWorkspaceMemberProps
 ): Promise<WorkspaceMember> {
   const { workspaceId, targetUserId, ...body } = data;
   const response = await client.projectInstance.patch<WorkspaceMember>(

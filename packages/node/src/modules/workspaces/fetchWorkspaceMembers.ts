@@ -4,7 +4,7 @@ import {
   WorkspaceRosterCountsResponse,
 } from "../../interfaces/Workspace";
 
-export interface FetchMembersProps {
+export interface FetchWorkspaceMembersProps {
   workspaceId: string;
   // Comma-separated add-on buckets: `ancestorOwners`, `reachHolders`,
   // `descendants`. Default returns owner + direct members only.
@@ -18,9 +18,9 @@ export interface FetchMembersProps {
  * array. Always returned in full (never paginated). With `countOnly=true` the
  * shape is `WorkspaceRosterCountsResponse` instead.
  */
-export async function fetchMembers(
+export async function fetchWorkspaceMembers(
   client: SublayHttpClient,
-  data: FetchMembersProps
+  data: FetchWorkspaceMembersProps
 ): Promise<WorkspaceRosterResponse | WorkspaceRosterCountsResponse> {
   const { workspaceId, ...params } = data;
   const response = await client.projectInstance.get<

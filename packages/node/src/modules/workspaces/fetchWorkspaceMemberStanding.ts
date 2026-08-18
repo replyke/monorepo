@@ -1,15 +1,15 @@
 import { SublayHttpClient } from "../../core/client";
 import { WorkspaceMemberStanding } from "../../interfaces/Workspace";
 
-export interface FetchMemberStandingProps {
+export interface FetchWorkspaceMemberStandingProps {
   workspaceId: string;
   // The target user whose standing to read (path param).
   targetUserId: string;
 }
 
-export async function fetchMemberStanding(
+export async function fetchWorkspaceMemberStanding(
   client: SublayHttpClient,
-  data: FetchMemberStandingProps
+  data: FetchWorkspaceMemberStandingProps
 ): Promise<WorkspaceMemberStanding> {
   const { workspaceId, targetUserId } = data;
   const response =

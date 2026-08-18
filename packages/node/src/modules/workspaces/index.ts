@@ -3,26 +3,26 @@ export { createWorkspace } from "./createWorkspace";
 export { fetchWorkspace } from "./fetchWorkspace";
 export { fetchManyWorkspaces } from "./fetchManyWorkspaces";
 export { updateWorkspace } from "./updateWorkspace";
-export { updateInheritFlag } from "./updateInheritFlag";
+export { updateWorkspaceInheritFlag } from "./updateWorkspaceInheritFlag";
 export { deleteWorkspace } from "./deleteWorkspace";
-export { transferOwnership } from "./transferOwnership";
+export { transferWorkspaceOwnership } from "./transferWorkspaceOwnership";
 
 // Membership
-export { fetchMembers } from "./fetchMembers";
-export { fetchMemberStanding } from "./fetchMemberStanding";
-export { updateMember } from "./updateMember";
-export { removeMember } from "./removeMember";
+export { fetchWorkspaceMembers } from "./fetchWorkspaceMembers";
+export { fetchWorkspaceMemberStanding } from "./fetchWorkspaceMemberStanding";
+export { updateWorkspaceMember } from "./updateWorkspaceMember";
+export { removeWorkspaceMember } from "./removeWorkspaceMember";
 export { leaveWorkspace } from "./leaveWorkspace";
-export { removeFromSubtree } from "./removeFromSubtree";
+export { removeWorkspaceMemberFromSubtree } from "./removeWorkspaceMemberFromSubtree";
 
 // Invitations
-export { createInvite } from "./createInvite";
-export { fetchInvites } from "./fetchInvites";
-export { revokeInvite } from "./revokeInvite";
-export { resendInvite } from "./resendInvite";
-export { acceptInvite } from "./acceptInvite";
-export { declineInvite } from "./declineInvite";
-export { fetchMyInvites } from "./fetchMyInvites";
+export { createWorkspaceInvite } from "./createWorkspaceInvite";
+export { fetchWorkspaceInvites } from "./fetchWorkspaceInvites";
+export { revokeWorkspaceInvite } from "./revokeWorkspaceInvite";
+export { resendWorkspaceInvite } from "./resendWorkspaceInvite";
+export { acceptWorkspaceInvite } from "./acceptWorkspaceInvite";
+export { declineWorkspaceInvite } from "./declineWorkspaceInvite";
+export { fetchMyWorkspaceInvites } from "./fetchMyWorkspaceInvites";
 
 // Authority-as-a-service
-export { getAuthority } from "./getAuthority";
+export { fetchWorkspaceAuthority } from "./fetchWorkspaceAuthority";

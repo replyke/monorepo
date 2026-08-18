@@ -1,16 +1,16 @@
 import { SublayHttpClient } from "../../core/client";
 import { Workspace } from "../../interfaces/Workspace";
 
-export interface UpdateInheritFlagProps {
+export interface UpdateWorkspaceInheritFlagProps {
   workspaceId: string;
   // Owner-only flip; the acting user (must be own owner or an ancestor owner).
   userId: string;
   inheritsFromParent: boolean;
 }
 
-export async function updateInheritFlag(
+export async function updateWorkspaceInheritFlag(
   client: SublayHttpClient,
-  data: UpdateInheritFlagProps
+  data: UpdateWorkspaceInheritFlagProps
 ): Promise<Workspace> {
   const { workspaceId, userId, inheritsFromParent } = data;
   const response = await client.projectInstance.patch<Workspace>(

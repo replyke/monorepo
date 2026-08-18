@@ -1,11 +1,11 @@
 import { SublayHttpClient } from "../../core/client";
 import { WorkspaceInvitation } from "../../interfaces/Workspace";
 
-export interface FetchInvitesProps {
+export interface FetchWorkspaceInvitesProps {
   workspaceId: string;
 }
 
-export interface FetchInvitesResponse {
+export interface FetchWorkspaceInvitesResponse {
   data: WorkspaceInvitation[];
 }
 
@@ -13,12 +13,12 @@ export interface FetchInvitesResponse {
  * List a workspace's LIVE pending invites (`status='pending' AND expiresAt >
  * now`). Requires the `invite` capability (or owner).
  */
-export async function fetchInvites(
+export async function fetchWorkspaceInvites(
   client: SublayHttpClient,
-  data: FetchInvitesProps
-): Promise<FetchInvitesResponse> {
+  data: FetchWorkspaceInvitesProps
+): Promise<FetchWorkspaceInvitesResponse> {
   const { workspaceId } = data;
-  const response = await client.projectInstance.get<FetchInvitesResponse>(
+  const response = await client.projectInstance.get<FetchWorkspaceInvitesResponse>(
     `/workspaces/${workspaceId}/invites`
   );
   return response.data;

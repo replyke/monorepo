@@ -3,23 +3,23 @@ import {
   fetchWorkspace,
   fetchManyWorkspaces,
   updateWorkspace,
-  updateInheritFlag,
+  updateWorkspaceInheritFlag,
   deleteWorkspace,
-  transferOwnership,
-  fetchMembers,
-  fetchMemberStanding,
-  updateMember,
-  removeMember,
+  transferWorkspaceOwnership,
+  fetchWorkspaceMembers,
+  fetchWorkspaceMemberStanding,
+  updateWorkspaceMember,
+  removeWorkspaceMember,
   leaveWorkspace,
-  removeFromSubtree,
-  createInvite,
-  fetchInvites,
-  revokeInvite,
-  resendInvite,
-  acceptInvite,
-  declineInvite,
-  fetchMyInvites,
-  getAuthority,
+  removeWorkspaceMemberFromSubtree,
+  createWorkspaceInvite,
+  fetchWorkspaceInvites,
+  revokeWorkspaceInvite,
+  resendWorkspaceInvite,
+  acceptWorkspaceInvite,
+  declineWorkspaceInvite,
+  fetchMyWorkspaceInvites,
+  fetchWorkspaceAuthority,
 } from "../src/modules/workspaces";
 import { makeClient } from "./helpers/mockClient";
 
@@ -88,9 +88,9 @@ describe("node-sdk workspaces (lifecycle + ownership) — request shaping", () =
     });
   });
 
-  it("updateInheritFlag patches /workspaces/:id/inherit-flag with userId + flag", async () => {
+  it("updateWorkspaceInheritFlag patches /workspaces/:id/inherit-flag with userId + flag", async () => {
     const { client, projectInstance } = makeClient();
-    await updateInheritFlag(client, {
+    await updateWorkspaceInheritFlag(client, {
       workspaceId: "w1",
       userId: "u1",
       inheritsFromParent: true,
@@ -109,9 +109,9 @@ describe("node-sdk workspaces (lifecycle + ownership) — request shaping", () =
     });
   });
 
-  it("transferOwnership strips workspaceId into the path and posts the rest", async () => {
+  it("transferWorkspaceOwnership strips workspaceId into the path and posts the rest", async () => {
     const { client, projectInstance } = makeClient();
-    await transferOwnership(client, {
+    await transferWorkspaceOwnership(client, {
       workspaceId: "w1",
       userId: "u1",
       newOwnerId: "u2",
@@ -133,9 +133,9 @@ describe("node-sdk workspaces (lifecycle + ownership) — request shaping", () =
 });
 
 describe("node-sdk workspaces (membership) — request shaping", () => {
-  it("fetchMembers strips workspaceId into the path and passes the rest as params", async () => {
+  it("fetchWorkspaceMembers strips workspaceId into the path and passes the rest as params", async () => {
     const { client, projectInstance } = makeClient();
-    await fetchMembers(client, {
+    await fetchWorkspaceMembers(client, {
       workspaceId: "w1",
       include: "descendants",
       countOnly: true,
@@ -145,9 +145,9 @@ describe("node-sdk workspaces (membership) — request shaping", () => {
     });
   });
 
-  it("fetchMemberStanding puts target in the path (no query params)", async () => {
+  it("fetchWorkspaceMemberStanding puts target in the path (no query params)", async () => {
     const { client, projectInstance } = makeClient();
-    await fetchMemberStanding(client, {
+    await fetchWorkspaceMemberStanding(client, {
       workspaceId: "w1",
       targetUserId: "target1",
     });
@@ -156,9 +156,9 @@ describe("node-sdk workspaces (membership) — request shaping", () => {
     );
   });
 
-  it("updateMember puts target in the path, actor userId in the body", async () => {
+  it("updateWorkspaceMember puts target in the path, actor userId in the body", async () => {
     const { client, projectInstance } = makeClient();
-    await updateMember(client, {
+    await updateWorkspaceMember(client, {
       workspaceId: "w1",
       targetUserId: "target1",
       userId: "actor1",
@@ -172,9 +172,9 @@ describe("node-sdk workspaces (membership) — request shaping", () => {
     );
   });
 
-  it("removeMember puts target in the path and sends actor userId in the body (data)", async () => {
+  it("removeWorkspaceMember puts target in the path and sends actor userId in the body (data)", async () => {
     const { client, projectInstance } = makeClient();
-    await removeMember(client, {
+    await removeWorkspaceMember(client, {
       workspaceId: "w1",
       targetUserId: "target1",
       userId: "actor1",
@@ -194,9 +194,9 @@ describe("node-sdk workspaces (membership) — request shaping", () => {
     );
   });
 
-  it("removeFromSubtree puts target in the path and posts the acting userId", async () => {
+  it("removeWorkspaceMemberFromSubtree puts target in the path and posts the acting userId", async () => {
     const { client, projectInstance } = makeClient();
-    await removeFromSubtree(client, {
+    await removeWorkspaceMemberFromSubtree(client, {
       workspaceId: "w1",
       targetUserId: "target1",
       userId: "actor1",
@@ -209,9 +209,9 @@ describe("node-sdk workspaces (membership) — request shaping", () => {
 });
 
 describe("node-sdk workspaces (invitations) — request shaping", () => {
-  it("createInvite strips workspaceId into the path and posts the rest (userId here is the TARGET)", async () => {
+  it("createWorkspaceInvite strips workspaceId into the path and posts the rest (userId here is the TARGET)", async () => {
     const { client, projectInstance } = makeClient();
-    await createInvite(client, {
+    await createWorkspaceInvite(client, {
       workspaceId: "w1",
       userId: "invitee1",
       capabilities: ["invite"],
@@ -224,9 +224,9 @@ describe("node-sdk workspaces (invitations) — request shaping", () => {
     );
   });
 
-  it("createInvite forwards an email-addressed invite body", async () => {
+  it("createWorkspaceInvite forwards an email-addressed invite body", async () => {
     const { client, projectInstance } = makeClient();
-    await createInvite(client, {
+    await createWorkspaceInvite(client, {
       workspaceId: "w1",
       email: "New.Member@Example.com",
       rank: 1,
@@ -237,51 +237,51 @@ describe("node-sdk workspaces (invitations) — request shaping", () => {
     );
   });
 
-  it("fetchInvites hits /workspaces/:id/invites", async () => {
+  it("fetchWorkspaceInvites hits /workspaces/:id/invites", async () => {
     const { client, projectInstance } = makeClient();
-    await fetchInvites(client, { workspaceId: "w1" });
+    await fetchWorkspaceInvites(client, { workspaceId: "w1" });
     expect(projectInstance.get).toHaveBeenCalledWith("/workspaces/w1/invites");
   });
 
-  it("revokeInvite posts to the revoke route with an empty body", async () => {
+  it("revokeWorkspaceInvite posts to the revoke route with an empty body", async () => {
     const { client, projectInstance } = makeClient();
-    await revokeInvite(client, { workspaceId: "w1", inviteId: "i1" });
+    await revokeWorkspaceInvite(client, { workspaceId: "w1", inviteId: "i1" });
     expect(projectInstance.post).toHaveBeenCalledWith(
       "/workspaces/w1/invites/i1/revoke",
       {}
     );
   });
 
-  it("resendInvite posts to the resend route with an empty body", async () => {
+  it("resendWorkspaceInvite posts to the resend route with an empty body", async () => {
     const { client, projectInstance } = makeClient();
-    await resendInvite(client, { workspaceId: "w1", inviteId: "i1" });
+    await resendWorkspaceInvite(client, { workspaceId: "w1", inviteId: "i1" });
     expect(projectInstance.post).toHaveBeenCalledWith(
       "/workspaces/w1/invites/i1/resend",
       {}
     );
   });
 
-  it("acceptInvite posts the accepting userId to the non-:id-scoped accept route", async () => {
+  it("acceptWorkspaceInvite posts the accepting userId to the non-:id-scoped accept route", async () => {
     const { client, projectInstance } = makeClient();
-    await acceptInvite(client, { inviteId: "i1", userId: "u1" });
+    await acceptWorkspaceInvite(client, { inviteId: "i1", userId: "u1" });
     expect(projectInstance.post).toHaveBeenCalledWith(
       "/workspace-invites/i1/accept",
       { userId: "u1" }
     );
   });
 
-  it("declineInvite posts the declining userId to the non-:id-scoped decline route", async () => {
+  it("declineWorkspaceInvite posts the declining userId to the non-:id-scoped decline route", async () => {
     const { client, projectInstance } = makeClient();
-    await declineInvite(client, { inviteId: "i1", userId: "u1" });
+    await declineWorkspaceInvite(client, { inviteId: "i1", userId: "u1" });
     expect(projectInstance.post).toHaveBeenCalledWith(
       "/workspace-invites/i1/decline",
       { userId: "u1" }
     );
   });
 
-  it("fetchMyInvites hits /me/workspace-invites with the userId as a param", async () => {
+  it("fetchMyWorkspaceInvites hits /me/workspace-invites with the userId as a param", async () => {
     const { client, projectInstance } = makeClient();
-    await fetchMyInvites(client, { userId: "u1" });
+    await fetchMyWorkspaceInvites(client, { userId: "u1" });
     expect(projectInstance.get).toHaveBeenCalledWith("/me/workspace-invites", {
       params: { userId: "u1" },
     });
@@ -289,9 +289,9 @@ describe("node-sdk workspaces (invitations) — request shaping", () => {
 });
 
 describe("node-sdk workspaces (authority) — request shaping", () => {
-  it("getAuthority hits the authority route with the target userId as a param", async () => {
+  it("fetchWorkspaceAuthority hits the authority route with the target userId as a param", async () => {
     const { client, projectInstance } = makeClient();
-    await getAuthority(client, { workspaceId: "w1", userId: "u1" });
+    await fetchWorkspaceAuthority(client, { workspaceId: "w1", userId: "u1" });
     expect(projectInstance.get).toHaveBeenCalledWith(
       "/workspaces/w1/authority/me",
       { params: { userId: "u1" } }
@@ -321,7 +321,7 @@ describe("node-sdk workspaces — response mapping", () => {
     ).resolves.toEqual(envelope);
   });
 
-  it("fetchMembers returns response.data (roster or counts envelope)", async () => {
+  it("fetchWorkspaceMembers returns response.data (roster or counts envelope)", async () => {
     const { client, projectInstance } = makeClient();
     const counts = {
       counts: {
@@ -336,20 +336,20 @@ describe("node-sdk workspaces — response mapping", () => {
     };
     projectInstance.get.mockResolvedValueOnce({ data: counts });
     await expect(
-      fetchMembers(client, { workspaceId: "w1", countOnly: true })
+      fetchWorkspaceMembers(client, { workspaceId: "w1", countOnly: true })
     ).resolves.toEqual(counts);
   });
 
-  it("acceptInvite returns response.data", async () => {
+  it("acceptWorkspaceInvite returns response.data", async () => {
     const { client, projectInstance } = makeClient();
     const result = { success: true, workspaceId: "w1" };
     projectInstance.post.mockResolvedValueOnce({ data: result });
     await expect(
-      acceptInvite(client, { inviteId: "i1", userId: "u1" })
+      acceptWorkspaceInvite(client, { inviteId: "i1", userId: "u1" })
     ).resolves.toEqual(result);
   });
 
-  it("getAuthority returns response.data", async () => {
+  it("fetchWorkspaceAuthority returns response.data", async () => {
     const { client, projectInstance } = makeClient();
     const authority = {
       reasons: ["owner"],
@@ -359,7 +359,7 @@ describe("node-sdk workspaces — response mapping", () => {
     };
     projectInstance.get.mockResolvedValueOnce({ data: authority });
     await expect(
-      getAuthority(client, { workspaceId: "w1", userId: "u1" })
+      fetchWorkspaceAuthority(client, { workspaceId: "w1", userId: "u1" })
     ).resolves.toEqual(authority);
   });
 });
