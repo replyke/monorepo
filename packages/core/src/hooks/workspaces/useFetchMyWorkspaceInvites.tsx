@@ -10,7 +10,8 @@ export interface FetchMyWorkspaceInvitesResponse {
 /**
  * The bearer-token user's LIVE pending invites (`status='pending' AND expiresAt
  * > now`), matched by `userId` from the token. Surfacing is NOT
- * verification-gated (the verified check applies only at accept).
+ * verification-gated (the verified check applies when the user ACTS on an
+ * invite — accept or decline).
  */
 function useFetchMyWorkspaceInvites(): () => Promise<FetchMyWorkspaceInvitesResponse> {
   const { projectId } = useProject();

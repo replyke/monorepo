@@ -11,8 +11,10 @@ export interface DeclineWorkspaceInviteResponse {
 }
 
 /**
- * Decline an invitation — identity-matched to the bearer-token user (not
- * verification-gated).
+ * Decline an invitation — identity-matched to the bearer-token user, and
+ * verified-email-gated (the same gate as accept, so an unverified squatter on
+ * someone else's address cannot burn their invite). An unverified decline
+ * returns `403 workspace/email-not-verified`.
  */
 function useDeclineWorkspaceInvite(): (
   props: DeclineWorkspaceInviteProps
