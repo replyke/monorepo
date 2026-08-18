@@ -113,6 +113,11 @@ describe("signOutThunk", () => {
     const result = await store.dispatch(signOutThunk({ projectId: "project-1" }));
 
     expect(signOutThunk.rejected.match(result)).toBe(true);
+    // The expect above is the assertion; this guard only narrows the
+    // fulfilled|rejected union so `.error` is readable.
+    if (!signOutThunk.rejected.match(result)) {
+      throw new Error("expected signOutThunk to reject");
+    }
     expect(result.error.message).toBe("No refresh token");
   });
 

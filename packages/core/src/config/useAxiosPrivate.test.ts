@@ -17,6 +17,17 @@ import { armAuthGate, syncAuthGate, setAuthGateRefresher } from "./authGate";
 
 const mockedUseAuth = vi.mocked(useAuth);
 
+// `useAxiosPrivate` marks a request it has already refreshed-and-retried by
+// setting `config.sent` (the interceptor reaches it through axios' `any`-typed
+// error, so shipped code never needs this declared). The stub adapters below
+// read the flag off a properly typed config, so declare it here — test-only, so
+// the augmentation stays out of the published types.
+declare module "axios" {
+  interface InternalAxiosRequestConfig {
+    sent?: boolean;
+  }
+}
+
 /** Minimal unsigned JWT — only `exp` is ever read from it. */
 function jwtExpiringIn(seconds: number) {
   const encode = (value: object) =>
