@@ -6,7 +6,9 @@ import {
   resetAxiosMocks,
   makeAuthUser,
 } from "../../test-utils";
-import useRemoveWorkspaceMemberFromSubtree from "./useRemoveWorkspaceMemberFromSubtree";
+import useRemoveWorkspaceMemberFromSubtree, {
+  type RemoveWorkspaceMemberFromSubtreeResponse,
+} from "./useRemoveWorkspaceMemberFromSubtree";
 
 afterEach(() => {
   resetAxiosMocks();
@@ -20,11 +22,18 @@ describe("useRemoveWorkspaceMemberFromSubtree", () => {
       { projectId: "project-1", user }
     );
 
-    const response = {
+    const response: RemoveWorkspaceMemberFromSubtreeResponse = {
       removedCount: 2,
       removed: [
         { workspaceId: "w1", userId: "user-2" },
         { workspaceId: "w2", userId: "user-2" },
+      ],
+      // A non-owner's sweep can be partial — the hook passes the report through
+      // verbatim, including entries whose identity the server withheld.
+      skippedCount: 2,
+      skipped: [
+        { id: "w3", name: "Sealed Finance", reason: "out-of-reach" },
+        { id: null, name: null, reason: "out-of-reach" },
       ],
     };
     axiosPrivate.mockResponse("post", response);
