@@ -8,6 +8,12 @@ icon: "plug"
 
 `useFetchWorkspaceAuthority` returns a callable that resolves the signed-in user's standing on a workspace: `{ reasons, capabilities, permissions, rank }`. Use it to drive UI (show/hide buttons) — a permission check is a one-line `.includes()` on the result. Sublay never consumes your opaque `permissions`.
 
+<Note>
+  **Not visibility-gated.** [`GET /workspaces/:id/authority/me`](/api-reference/workspaces/fetch-authority) requires a signed-in user and nothing more. It returns `404` only when the workspace does not exist — a signed-in user with no relation to an existing workspace gets `200` with `reasons: []` and empty `capabilities` / `permissions`, which is exactly the answer a UI gate wants. The trade-off is that the route confirms a workspace *exists* to any signed-in caller.
+
+  Its sibling, [`useFetchWorkspaceMemberStanding`](/hooks/workspaces/use-fetch-workspace-member-standing), *is* visibility-gated and `404`s on a workspace the caller cannot see, so it never leaks existence. Do not assume the two behave alike.
+</Note>
+
 ## Usage Example
 
 ```tsx

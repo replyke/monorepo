@@ -167,6 +167,8 @@ const standing = await sublay.workspaces.fetchWorkspaceMemberStanding({
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="targetUserId" type="string" required>The user whose standing to read.</ParamField>
 
+Returns `WorkspaceMemberStanding`. On its `user` field **only `id` is guaranteed** (`WorkspaceStandingUser`): the server returns the full user record when the user row still exists and falls back to `{ id }` alone when it does not — a deleted user with a lingering membership row is a reachable case. Read the rest defensively (`standing.user.username ?? "Deleted user"`).
+
 ### updateWorkspaceMember
 
 ```typescript

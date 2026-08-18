@@ -29,8 +29,14 @@ With a client token, every endpoint in the bundle resolves the actor from that t
 | **Owner-only** | The caller must be the workspace's own owner, or an owner of an ancestor workspace. Not a capability — no capability grants it. |
 | **Capability-gated** | The caller's [resolved capability set](/hooks/workspaces/use-fetch-workspace-authority) (direct + reach + ownership) must contain the named capability, e.g. `invite`, `remove-member`, `edit-workspace`. |
 | **Rank-bounded** | On top of a capability, the caller may only act on members ranked strictly below them, and may only grant capabilities/permissions they themselves hold ([no-escalation](/data-models/workspace-member#no-privilege-escalation)). |
-| **Visibility** | The caller must be able to see the workspace / its roster at all. This is the gate on the reads — the single workspace, the roster, and one member's standing. |
+| **Visibility** | The caller must be able to see the workspace / its roster at all. This gates three reads — the single workspace, the roster, and one member's standing. It does *not* gate the authority read (see the note below). |
 | **Self-service** | Anyone signed in can do it for themselves — accept/decline an invite addressed to them, leave a workspace, read their own authority. |
+
+<Note>
+  **The authority read is the one read visibility does not gate.** [`GET /workspaces/:id/authority/me`](/api-reference/workspaces/fetch-authority) is mounted with authentication only — any signed-in user may call it for any workspace id. It returns `404` only when the workspace does not exist; a signed-in stranger gets `200` with `reasons: []` and empty `capabilities` / `permissions`, which is the correct "you have no standing here" answer for a UI gate. The consequence is that the route confirms a workspace *exists* to any signed-in user.
+
+  Its sibling read, one member's standing ([`GET /workspaces/:id/members/:userId`](/api-reference/workspaces/members/fetch-member-standing)), *is* visibility-gated and deliberately `404`s instead, so it never leaks existence. Do not assume the two behave alike.
+</Note>
 
 <Note>
   **What actually needs a service key: acting on behalf of a *different* user.** Several endpoints accept an actor `userId` so a service/master key can perform an action *as* some named user. That parameter is **[node SDK](/node-sdk/workspaces) only** — `@sublay/core` and `@sublay/js` never expose it and strip it if it is smuggled in, because a client's actor is always the token's own user. This is the *only* difference in reach between the client SDKs and the node SDK for this bundle; it is **not** a restriction on which operations a client may perform.

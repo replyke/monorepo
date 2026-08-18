@@ -50,13 +50,17 @@ function MemberDetail({
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `user` | `object` | The target user. |
+| `user` | `WorkspaceStandingUser` | The target user. Normally the full user record, but **only `id` is guaranteed** — see the note below. |
 | `reasons` | `("owner" \| "ancestor-owner" \| "member" \| "reach-holder")[]` | Why the user has standing. |
 | `capabilities` | `string[]` | The **resolved** capability set (direct + reach + ownership). |
 | `permissions` | `string[]` | **Per-node** permissions (direct membership on this workspace only; may be empty). |
 | `rank` | `number \| null` | Direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders. |
 | `title` | `string \| null` | Cosmetic title. |
 | `metadata` | `Record<string, any>` | Opaque member metadata. |
+
+<Note>
+  **Only `user.id` is guaranteed.** The server returns the full user record when the user row still exists, and falls back to `{ id }` alone when it does not — a deleted user with a lingering membership row is a reachable case. The SDK type reflects this: `id` is required and every other field is optional, so read the rest defensively (`standing.user.username ?? "Deleted user"`).
+</Note>
 
 ## Error codes
 

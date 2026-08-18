@@ -149,6 +149,8 @@ const standing = await sublay.workspaces.fetchWorkspaceMemberStanding({
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="targetUserId" type="string" required>The **target** whose standing to read (path param, not an actor).</ParamField>
 
+Returns `WorkspaceMemberStanding`. On its `user` field **only `id` is guaranteed** (`WorkspaceStandingUser`): the server returns the full user record when the user row still exists and falls back to `{ id }` alone when it does not — a deleted user with a lingering membership row is a reachable case. Read the rest defensively (`standing.user.username ?? "Deleted user"`).
+
 ### updateWorkspaceMember
 
 Two capability tiers: **powerful** fields (`capabilities`, `permissions`, `rank`) need `edit-member-access` plus the rank rule and [no-escalation](/data-models/workspace-member#no-privilege-escalation); **cosmetic** fields (`title`, `metadata`) need only `edit-member-profile`, and a member editing their own `title` needs nothing.
