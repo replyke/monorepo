@@ -263,7 +263,7 @@ await sublay.workspaces.revokeWorkspaceInvite({ workspaceId: "ws_abc", inviteId:
 
 ### resendWorkspaceInvite
 
-Refreshes a pending invite — resets a 14-day expiry and resends the email — valid even on one already past `expiresAt`. Terminal invites → `409`. Requires the `invite` capability (or ownership). Also a verb-suffixed **`POST .../resend`**.
+Refreshes a pending invite — resets a 14-day expiry and resends the email — valid even on one already past `expiresAt`. Terminal invites → `409`. Requires the `invite` capability (or ownership). Also a verb-suffixed **`POST .../resend`**. Returns the refreshed `WorkspaceInvitation`, carrying the new `expiresAt`.
 
 ```typescript
 const invite = await sublay.workspaces.resendWorkspaceInvite({ workspaceId: "ws_abc", inviteId: "inv_1" });

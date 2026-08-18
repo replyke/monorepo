@@ -280,10 +280,10 @@ await sublay.workspaces.revokeWorkspaceInvite({ workspaceId: "ws_abc", inviteId:
 ### resendWorkspaceInvite
 
 ```typescript
-await sublay.workspaces.resendWorkspaceInvite({ workspaceId: "ws_abc", inviteId: "inv_1" });
+const invite = await sublay.workspaces.resendWorkspaceInvite({ workspaceId: "ws_abc", inviteId: "inv_1" });
 ```
 
-Refreshes a lapsed pending invite (14-day expiry) and resends the email. Terminal invites → `409`.
+Refreshes a lapsed pending invite (14-day expiry) and resends the email. Terminal invites → `409`. Returns the refreshed `WorkspaceInvitation`, carrying the new `expiresAt`.
 
 ### acceptWorkspaceInvite
 
