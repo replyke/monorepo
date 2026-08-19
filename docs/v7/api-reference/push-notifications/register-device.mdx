@@ -4,7 +4,9 @@ api: "POST /v7/:projectId/push-notifications/devices"
 description: "Register a device to receive push notifications for the authenticated user"
 ---
 
-Registers a push device for the currently authenticated user. Re-registering the same physical device updates the existing record instead of creating a duplicate. If the device was previously registered by a different user (e.g. a shared device), it is reassigned to the calling user.
+Registers a push device for the currently authenticated user. Re-registering the same physical device for the same user updates the existing record instead of creating a duplicate.
+
+A device can serve several accounts at once. Registrations are unique per `(device, user)` pair, so registering a device that is already registered by a different user (e.g. a shared device, or a second account signed in on the same phone) **adds a second binding** — it does not reassign or replace the first user's registration. Each bound account then receives its own notifications on that device.
 
 Requires end-user authentication (`Authorization: Bearer <accessToken>`). Service and master keys are explicitly rejected — this endpoint has no impersonation path by design (see [Security note](#security-note)).
 
@@ -37,7 +39,19 @@ Requires the `push` bundle.
 
 ## Response
 
-Returns `200` with an empty body on success.
+Returns `200` with the stored device record on success.
+
+```json
+{
+  "id": "b6f2…",
+  "userId": "a41c…",
+  "platform": "ios",
+  "payload": "apns-device-token",
+  "deviceKey": "apns-device-token",
+  "createdAt": "2026-08-19T10:12:04.881Z",
+  "updatedAt": "2026-08-19T10:12:04.881Z"
+}
+```
 
 ## Error Responses
 

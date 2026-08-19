@@ -4,7 +4,11 @@ api: "DELETE /v7/:projectId/push-notifications/devices"
 description: "Remove a device registration so the authenticated user stops receiving push notifications on it"
 ---
 
-Removes the calling user's push device registration. The device is identified the same way it was registered — by its token (iOS/Android) or subscription endpoint (Web). If the device doesn't exist or belongs to a different user, the request is a clean no-op (returns `404`) rather than an error.
+Removes the calling user's push device registration. The device is identified the same way it was registered — by its token (iOS/Android) or subscription endpoint (Web).
+
+**Deregistration is idempotent.** The endpoint returns `200` whether or not a matching registration existed — the contract is "this binding is gone", and it is equally gone if an earlier call removed it or it never existed. There is no not-found error.
+
+Only the calling user's own binding is removed. A device can be registered by several accounts at once, so deregistering unbinds the caller's account from that device and leaves every other account's binding on the same device intact — callers cannot deregister devices they don't own.
 
 Requires end-user authentication. Service and master keys are rejected for the same reason as [Register Device](/api-reference/push-notifications/register-device#security-note).
 
@@ -37,17 +41,15 @@ Requires the `push` bundle.
 
 ## Response
 
-Returns `200` with an empty body when the device was found and removed.
+Returns `200` on success, including when no matching registration existed.
+
+```json
+{ "success": true }
+```
 
 ## Error Responses
 
 <AccordionGroup>
-  <Accordion title="Not Found — 404">
-    ```json
-    { "error": "Device not found", "code": "push-device/not-found" }
-    ```
-    Returned when no matching device exists for this user. This includes the case where the device exists but is registered to a different user — callers cannot deregister devices they don't own.
-  </Accordion>
   <Accordion title="Unauthorized — 401">
     ```json
     { "error": "Unauthorized", "code": "push-device/unauthorized" }
