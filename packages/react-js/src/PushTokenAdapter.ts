@@ -4,6 +4,7 @@ import type {
   PushDeviceContext,
 } from "@sublay/core";
 import { getApiBaseUrl } from "@sublay/core";
+import { subscribeToWebPushIdentifierChanges } from "./webPushRotation";
 
 // Converts a URL-safe Base64 string (VAPID key format) to a Uint8Array,
 // required by PushManager.subscribe({ applicationServerKey: ... }).
@@ -66,4 +67,8 @@ export const webPushTokenAdapter: PushTokenAdapter = {
       },
     };
   },
+
+  // Comparison-on-load rather than an event, and it deliberately never calls
+  // `getDeviceIdentifier` above — see `webPushRotation.ts` for why.
+  subscribeToIdentifierChanges: subscribeToWebPushIdentifierChanges,
 };

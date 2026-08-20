@@ -4,18 +4,21 @@ const {
   requestPermission,
   getToken,
   getAPNSToken,
+  onTokenRefresh,
   PlatformMock,
   messagingFn,
 } = vi.hoisted(() => {
   const requestPermission = vi.fn();
   const getToken = vi.fn();
   const getAPNSToken = vi.fn();
+  const onTokenRefresh = vi.fn();
   const PlatformMock: { OS: "ios" | "android" } = { OS: "ios" };
 
   const messagingFn: any = vi.fn(() => ({
     requestPermission,
     getToken,
     getAPNSToken,
+    onTokenRefresh,
   }));
   messagingFn.AuthorizationStatus = {
     NOT_DETERMINED: -1,
@@ -24,7 +27,14 @@ const {
     PROVISIONAL: 2,
   };
 
-  return { requestPermission, getToken, getAPNSToken, PlatformMock, messagingFn };
+  return {
+    requestPermission,
+    getToken,
+    getAPNSToken,
+    onTokenRefresh,
+    PlatformMock,
+    messagingFn,
+  };
 });
 
 vi.mock("react-native", () => ({ Platform: PlatformMock }));
@@ -90,5 +100,74 @@ describe("reactNativePushTokenAdapter.getDeviceIdentifier", () => {
     await expect(
       reactNativePushTokenAdapter.getDeviceIdentifier({ projectId: "project-1" }),
     ).resolves.toBeNull();
+  });
+});
+
+describe("reactNativePushTokenAdapter.subscribeToIdentifierChanges", () => {
+  it("RE-DERIVES on iOS instead of trusting the emitted FCM token", async () => {
+    PlatformMock.OS = "ios";
+    getAPNSToken.mockResolvedValue("apns-token-2");
+    const unsubscribe = vi.fn();
+    onTokenRefresh.mockReturnValue(unsubscribe);
+
+    let emitted: unknown;
+    const returned = reactNativePushTokenAdapter.subscribeToIdentifierChanges!(
+      { projectId: "project-1" },
+      (identifier) => {
+        emitted = identifier;
+      },
+    );
+
+    const handler = onTokenRefresh.mock.calls[0][0] as (t: string) => void;
+    // The event carries an FCM token while the adapter registers APNs — using
+    // it verbatim would bind the wrong kind of value entirely.
+    handler("fcm-token-that-must-be-ignored");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(getAPNSToken).toHaveBeenCalled();
+    expect(emitted).toEqual({ platform: "ios", token: "apns-token-2" });
+
+    returned();
+    expect(unsubscribe).toHaveBeenCalled();
+  });
+
+  it("re-derives on android too", async () => {
+    PlatformMock.OS = "android";
+    getToken.mockResolvedValue("fcm-token-3");
+    onTokenRefresh.mockReturnValue(vi.fn());
+
+    let emitted: unknown;
+    reactNativePushTokenAdapter.subscribeToIdentifierChanges!(
+      { projectId: "project-1" },
+      (identifier) => {
+        emitted = identifier;
+      },
+    );
+
+    const handler = onTokenRefresh.mock.calls[0][0] as (t: string) => void;
+    handler("ignored");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(emitted).toEqual({ platform: "android", token: "fcm-token-3" });
+  });
+
+  it("emits null rather than throwing when re-derivation fails", async () => {
+    PlatformMock.OS = "android";
+    getToken.mockRejectedValue(new Error("no token"));
+    onTokenRefresh.mockReturnValue(vi.fn());
+
+    let emitted: unknown = "unset";
+    reactNativePushTokenAdapter.subscribeToIdentifierChanges!(
+      { projectId: "project-1" },
+      (identifier) => {
+        emitted = identifier;
+      },
+    );
+
+    const handler = onTokenRefresh.mock.calls[0][0] as (t: string) => void;
+    handler("ignored");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(emitted).toBeNull();
   });
 });

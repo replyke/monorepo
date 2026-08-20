@@ -195,6 +195,27 @@ const accountsSlice = createSlice({
     ) => {
       state.deviceIdentifier = action.payload;
     },
+    /**
+     * Records whether an account wants push on THIS device.
+     *
+     * A dedicated reducer rather than an `upsertAccount` with a partial entry:
+     * `upsertAccount` takes a whole `AccountEntry` (it is the path that rebuilds
+     * one from a rotated refresh token) and enforces the account cap, neither of
+     * which applies to flipping one client-owned boolean on an account that is
+     * already stored. Unknown ids are ignored — there is nothing to express a
+     * preference about.
+     *
+     * The value is written as an explicit boolean, never left absent, so the
+     * "absent means never expressed a preference" reading stays true.
+     */
+    setAccountPushEnabled: (
+      state,
+      action: PayloadAction<{ userId: string; enabled: boolean }>
+    ) => {
+      const entry = state.accounts[action.payload.userId];
+      if (!entry) return;
+      entry.pushEnabled = action.payload.enabled;
+    },
     removeAccount: (state, action: PayloadAction<string>) => {
       delete state.accounts[action.payload];
       if (state.activeAccountId === action.payload) {
@@ -251,6 +272,7 @@ export const {
   setAccountMap,
   upsertAccount,
   setDeviceIdentifier,
+  setAccountPushEnabled,
   removeAccount,
   setActiveAccount,
   setSignedOut,
@@ -259,6 +281,36 @@ export const {
   setAccountsReady,
   registerAccountManager,
 } = accountsSlice.actions;
+
+/**
+ * Builds the persistable `AccountMap` out of the slice's current state.
+ *
+ * The single definition of what a persisted map contains, shared by
+ * `useAccountSync` Phase C and by the non-React callers that must AWAIT a write
+ * before continuing (the minted-token helper, push reconciliation, the
+ * per-account push toggle). Those callers hold `getState`, not a React
+ * subscription, and a second hand-rolled literal is how a field silently stops
+ * being persisted.
+ *
+ * Returns a fresh object on every call, so it is a snapshot builder for
+ * imperative callers — do NOT pass it to `useSelector`, which would re-render on
+ * every store action.
+ */
+export function buildAccountMap(state: AccountsState): AccountMap {
+  return {
+    activeAccountId: state.activeAccountId,
+    accounts: state.accounts,
+    signedOut: state.signedOut,
+    deviceIdentifier: state.deviceIdentifier,
+  };
+}
+
+/** `buildAccountMap` against a full root state — for `getState()` callers. */
+export function selectAccountMapSnapshot(state: {
+  sublay: SublayState;
+}): AccountMap {
+  return buildAccountMap(state.sublay.accounts);
+}
 
 // Selectors — namespaced for dual-mode support
 export const selectAccounts = (state: { sublay: SublayState }) =>

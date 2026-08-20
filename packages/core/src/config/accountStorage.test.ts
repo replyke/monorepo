@@ -5,7 +5,7 @@ import {
   resetAccountStorage,
   getRegisteredAccountStorage,
   runAccountStorageOp,
-  persistAccountMap,
+  persistAccountMapFor,
 } from "./accountStorage";
 import type { AccountStorage } from "../interfaces/AccountStorage";
 import type { AccountMap } from "../store/slices/accountsSlice";
@@ -57,11 +57,11 @@ describe("accountStorage slot", () => {
   });
 });
 
-describe("persistAccountMap", () => {
+describe("persistAccountMapFor", () => {
   it("is a clean no-op when no storage is registered — neither hangs nor throws", async () => {
     // `@sublay/core` used directly with no platform package is a genuinely
     // storage-less configuration, not an error.
-    await expect(persistAccountMap(makeMap("user-1"))).resolves.toBeUndefined();
+    await expect(persistAccountMapFor("project-1", makeMap("user-1"))).resolves.toBeUndefined();
   });
 
   it("writes through the registered handle under its registered projectId", async () => {
@@ -72,12 +72,30 @@ describe("persistAccountMap", () => {
     };
     registerAccountStorage(storage, "project-1");
 
-    await persistAccountMap(makeMap("user-1"));
+    await persistAccountMapFor("project-1", makeMap("user-1"));
 
     expect(storage.setAccountMap).toHaveBeenCalledWith(
       "project-1",
       makeMap("user-1")
     );
+  });
+
+  it("REJECTS rather than writing when the projectId does not match the slot", async () => {
+    // Last-mount-wins: with two providers mounted for two different projects
+    // the slot holds whichever mounted last. Writing to it regardless would let
+    // a mint land its rotated successor under the wrong key and report success,
+    // leaving a server-revoked token live on disk.
+    const storage: AccountStorage = {
+      getAccountMap: vi.fn(),
+      setAccountMap: vi.fn(async () => {}),
+      deleteAccountMap: vi.fn(),
+    };
+    registerAccountStorage(storage, "project-2");
+
+    await expect(
+      persistAccountMapFor("project-1", makeMap("user-1"))
+    ).rejects.toThrow(/registered for project project-2, not project-1/);
+    expect(storage.setAccountMap).not.toHaveBeenCalled();
   });
 
   it("REJECTS when the underlying write fails", async () => {
@@ -93,7 +111,7 @@ describe("persistAccountMap", () => {
     };
     registerAccountStorage(storage, "project-1");
 
-    await expect(persistAccountMap(makeMap("user-1"))).rejects.toThrow(
+    await expect(persistAccountMapFor("project-1", makeMap("user-1"))).rejects.toThrow(
       "keychain unavailable"
     );
   });
@@ -105,8 +123,8 @@ describe("runAccountStorageOp", () => {
     const storage = makeSlowStorage(order);
     registerAccountStorage(storage, "project-1");
 
-    const first = persistAccountMap(makeMap("first"));
-    const second = persistAccountMap(makeMap("second"));
+    const first = persistAccountMapFor("project-1", makeMap("first"));
+    const second = persistAccountMapFor("project-1", makeMap("second"));
 
     await Promise.all([first, second]);
 
@@ -136,8 +154,8 @@ describe("runAccountStorageOp", () => {
       "project-1"
     );
 
-    const failing = persistAccountMap(makeMap("boom"));
-    const following = persistAccountMap(makeMap("after"));
+    const failing = persistAccountMapFor("project-1", makeMap("boom"));
+    const following = persistAccountMapFor("project-1", makeMap("after"));
 
     await expect(failing).rejects.toThrow("write failed");
     await expect(following).resolves.toBeUndefined();
