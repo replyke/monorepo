@@ -19,7 +19,7 @@ import {
 import { selectRefreshToken } from "../store/slices/authSlice";
 import type { AccountStorage } from "../interfaces/AccountStorage";
 import {
-  persistAccountMap,
+  persistAccountMapFor,
   resetAccountStorage,
 } from "../config/accountStorage";
 
@@ -226,7 +226,11 @@ describe("SublayIntegrationProvider — account persistence", () => {
 
     await waitFor(() => expect(result.current).toBe(true));
     await expect(
-      persistAccountMap({ activeAccountId: null, accounts: {}, signedOut: false }),
+      persistAccountMapFor("test-project", {
+        activeAccountId: null,
+        accounts: {},
+        signedOut: false,
+      }),
     ).resolves.toBeUndefined();
   });
 });

@@ -94,21 +94,59 @@ export function runAccountStorageOp<T>(
 }
 
 /**
- * Persists a map through the mutex, using the registered handle.
+ * Raised when a caller's project and the registered slot's project disagree.
+ * A distinct type so the callers that must not proceed on a bad write can tell
+ * "wrong project" apart from "the adapter failed".
+ */
+export class AccountStorageProjectMismatchError extends Error {
+  constructor(expected: string, registered: string) {
+    super(
+      `Account storage is registered for project ${registered}, not ${expected}. Refusing to write.`
+    );
+    this.name = "AccountStorageProjectMismatchError";
+  }
+}
+
+/**
+ * Persists a map through the mutex, using the registered handle — for callers
+ * that must not proceed until the write has actually landed.
  *
- * Rejects when the underlying write fails — which is only meaningful because
- * the `AccountStorage` write contract now rejects too. Every adapter used to
- * catch, log and resolve `void`, so awaiting one succeeded on a failed write
- * and any guarantee built on the await was fictional.
+ * Rejects when the underlying write fails, which is only meaningful because the
+ * `AccountStorage` write contract now rejects too. Every adapter used to catch,
+ * log and resolve `void`, so awaiting one succeeded on a failed write and any
+ * guarantee built on the await was fictional.
  *
  * With nothing registered — `@sublay/core` used directly with no platform
  * package, a genuinely storage-less configuration — this resolves immediately.
  * A clean no-op, never a hang and never a throw.
+ *
+ * **The `projectId` argument is a guard, not a convenience.** The slot is
+ * last-mount-wins across the whole process (see the header), so with two
+ * providers mounted for two different projects it holds whichever mounted last.
+ * Writing to the slot's project unconditionally would be harmless for
+ * `useAccountSync` — which passes its own handle and catches anyway — but not
+ * for the mint path: a mint that landed its rotated successor under another
+ * project's key would report success while leaving a server-revoked token live
+ * on disk, destroying that account's token family on the next attempt. That is
+ * the single unrecoverable outcome in this surface, so a mismatch rejects
+ * loudly. A storage-LESS configuration is supported; a MISMATCHED one is a bug.
+ *
+ * (An unguarded `persistAccountMap(map)` existed briefly alongside this and was
+ * removed: it ended up with no production caller, and the only thing separating
+ * it from this function was the missing guard.)
  */
-export function persistAccountMap(map: AccountMap): Promise<void> {
+export function persistAccountMapFor(
+  projectId: string,
+  map: AccountMap
+): Promise<void> {
   const current = slot;
   if (!current) return Promise.resolve();
-  return runAccountStorageOp(current.projectId, () =>
-    current.storage.setAccountMap(current.projectId, map)
+  if (current.projectId !== projectId) {
+    return Promise.reject(
+      new AccountStorageProjectMismatchError(projectId, current.projectId)
+    );
+  }
+  return runAccountStorageOp(projectId, () =>
+    current.storage.setAccountMap(projectId, map)
   );
 }

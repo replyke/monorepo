@@ -127,13 +127,54 @@ describe("useRemoveAccount", () => {
     expect(store.getState().sublay.auth.refreshToken).toBeNull();
   });
 
-  it("still removes the account locally when the best-effort server sign-out fails", async () => {
+  // INVERTED (multi-account hardening): this used to assert that a failed
+  // server sign-out was swallowed and the account removed locally anyway. That
+  // is precisely what the atomic sign-out exists to prevent — the server can
+  // refuse to unbind the push binding and the SDK would delete the credential
+  // needed to retry, leaving the user receiving notifications from a removed
+  // account forever.
+  //
+  // Note the seeded device identifier: the strict rule is SCOPED to requests
+  // that actually asked for an unbind. See the sibling test below.
+  it("keeps the account and its credential when an UNBINDING sign-out fails", async () => {
+    const { result, store, axiosPublic } = renderHookWithAxios(() => useRemoveAccount());
+    act(() => {
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "user-1",
+          accounts: makeAccounts(),
+          deviceIdentifier: { platform: "ios", token: "device-token-1" },
+        }),
+      );
+    });
+
+    axiosPublic.mockError("post", 500, { message: "Internal error" });
+
+    // Called directly, not inside `act()` — wrapping a rejecting call in act()
+    // swallows the catch block's state update.
+    await expect(
+      result.current.removeAccount({ userId: "user-2" }),
+    ).rejects.toBeTruthy();
+
+    expect(store.getState().sublay.accounts.accounts["user-2"]).toBeDefined();
+    expect(
+      store.getState().sublay.accounts.accounts["user-2"].refreshToken,
+    ).toBe("refresh-2");
+    await waitFor(() => expect(result.current.error).toBeTruthy());
+  });
+
+  // The strictness above must NOT be broadened. With no device there is no
+  // unbind, so nothing is at stake — and since the server answers 204 for every
+  // write/token failure when no device is sent, the only thing left that can
+  // fail is the transport. Blocking here would mean an offline user, or any app
+  // on a project without the `push` bundle, could never remove an account.
+  it("still removes locally when a NON-unbinding sign-out fails (offline / no push bundle)", async () => {
     const { result, store, axiosPublic } = renderHookWithAxios(() => useRemoveAccount());
     act(() => {
       store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }));
     });
 
-    axiosPublic.mockError("post", 500, { message: "Internal error" });
+    axiosPublic.mockNetworkError("post");
 
     await act(async () => {
       await result.current.removeAccount({ userId: "user-2" });
@@ -141,6 +182,35 @@ describe("useRemoveAccount", () => {
 
     expect(result.current.error).toBeNull();
     expect(store.getState().sublay.accounts.accounts["user-2"]).toBeUndefined();
+    // And the request really did go out without a device.
+    expect(axiosPublic.calls("post")[0].body).toEqual({
+      refreshToken: "refresh-2",
+    });
+  });
+
+  it("sends the stored device identifier so the server unbinds push atomically", async () => {
+    const { result, store, axiosPublic } = renderHookWithAxios(() => useRemoveAccount());
+    act(() => {
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "user-1",
+          accounts: makeAccounts(),
+          deviceIdentifier: { platform: "ios", token: "device-token-1" },
+        }),
+      );
+    });
+
+    axiosPublic.mockResponse("post", {});
+
+    await act(async () => {
+      await result.current.removeAccount({ userId: "user-2" });
+    });
+
+    const [call] = axiosPublic.calls("post");
+    expect(call.body).toEqual({
+      refreshToken: "refresh-2",
+      device: { platform: "ios", token: "device-token-1" },
+    });
   });
 
   it("throws when the account is not found", async () => {

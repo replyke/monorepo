@@ -488,7 +488,156 @@ describe("useAccountSync — Phase 5 durable storage", () => {
 
     await waitFor(() => expect(storage.setAccountMap).toHaveBeenCalled());
     // An effect cannot await, so Phase C catches. The awaitable route for
-    // callers that must not proceed until the write lands is `persistAccountMap`.
+    // callers that must not proceed until the write lands is
+    // `persistAccountMapFor(projectId, map)`.
     await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+});
+
+describe("useAccountSync — Phase E (push reconciliation on transition)", () => {
+  const DEVICE = { platform: "ios" as const, token: "device-token-1" };
+
+  function makeMap(activeAccountId: string | null): AccountMap {
+    return {
+      activeAccountId,
+      accounts: {
+        "user-1": {
+          refreshToken: makeJwt({ sub: "user-1", exp: 9999999999 }),
+          tokenExpiresAt: 9999999999000,
+          user: { id: "user-1", name: null, email: null, avatar: null },
+        },
+        "user-2": {
+          refreshToken: makeJwt({ sub: "user-2", exp: 9999999999 }),
+          tokenExpiresAt: 9999999999000,
+          user: { id: "user-2", name: null, email: null, avatar: null },
+        },
+        "user-3": {
+          refreshToken: makeJwt({ sub: "user-3", exp: 9999999999 }),
+          tokenExpiresAt: 9999999999000,
+          user: { id: "user-3", name: null, email: null, avatar: null },
+          pushEnabled: false,
+        },
+      },
+      deviceIdentifier: DEVICE,
+    };
+  }
+
+  it("reconciles ONLY the newly active account, minting for nobody", async () => {
+    const storage = makeFakeStorage(makeMap("user-1"));
+    const { store, axiosPublic } = renderHookWithAxios(
+      () => useAccountSync(storage, "test-project"),
+      {
+        accessToken: "access-1",
+        beforeRender: ({ axiosPublic: pub }) => {
+          pub.mockResponse("post", {});
+        },
+      },
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.isReady).toBe(true),
+    );
+    store.dispatch(setUser(makeAuthUser({ id: "user-1" })));
+
+    await waitFor(() =>
+      expect(
+        axiosPublic
+          .calls("post")
+          .some((c) => c.url.includes("push-notifications/devices")),
+      ).toBe(true),
+    );
+
+    const posts = axiosPublic.calls("post");
+    // ⚠ THE load-bearing assertion: a transition must NEVER run the bulk loop.
+    // If it did, every stored account would be minted for on every switch —
+    // revoking each stored refresh token and destroying those accounts on the
+    // next pass.
+    expect(
+      posts.filter((c) => c.url.includes("request-new-access-token")),
+    ).toHaveLength(0);
+    expect(
+      posts.filter((c) => c.url.includes("push-notifications/devices")),
+    ).toHaveLength(1);
+    expect(posts[posts.length - 1].config?.headers.Authorization).toBe(
+      "Bearer access-1",
+    );
+  });
+
+  it("does not reconcile while the live session still belongs to the outgoing account", async () => {
+    const storage = makeFakeStorage(makeMap("user-1"));
+    const { store, axiosPublic } = renderHookWithAxios(
+      () => useAccountSync(storage, "test-project"),
+      { accessToken: "access-2" },
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.isReady).toBe(true),
+    );
+    // `user` is still the previous account — mid-transition.
+    store.dispatch(setUser(makeAuthUser({ id: "user-2" })));
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    // Phase B moves the active account to user-2 first, and only then does the
+    // reconcile become legal — so the one thing that must never happen is a
+    // device call made under the WRONG identity.
+    for (const call of axiosPublic.calls("post")) {
+      if (call.url.includes("push-notifications/devices")) {
+        expect(call.config?.headers.Authorization).toBe("Bearer access-2");
+      }
+    }
+  });
+
+  it("is a no-op when no device identifier is stored", async () => {
+    const map = makeMap("user-1");
+    map.deviceIdentifier = null;
+    const storage = makeFakeStorage(map);
+    const { store, axiosPublic } = renderHookWithAxios(
+      () => useAccountSync(storage, "test-project"),
+      { accessToken: "access-1" },
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.isReady).toBe(true),
+    );
+    store.dispatch(setUser(makeAuthUser({ id: "user-1" })));
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(
+      axiosPublic
+        .calls("post")
+        .filter((c) => c.url.includes("push-notifications/devices")),
+    ).toHaveLength(0);
+  });
+
+  it("deregisters a silenced account when it becomes active, and keeps it silenced", async () => {
+    const storage = makeFakeStorage(makeMap("user-3"));
+    const { store, axiosPublic } = renderHookWithAxios(
+      () => useAccountSync(storage, "test-project"),
+      {
+        accessToken: "access-3",
+        beforeRender: ({ axiosPublic: pub }) => {
+          pub.mockResponse("delete", {});
+        },
+      },
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.isReady).toBe(true),
+    );
+    store.dispatch(setUser(makeAuthUser({ id: "user-3" })));
+
+    await waitFor(() => expect(axiosPublic.calls("delete")).toHaveLength(1));
+    const [del] = axiosPublic.calls("delete");
+    expect(del.url).toBe("/test-project/push-notifications/devices");
+    expect(del.config?.data).toEqual(DEVICE);
+    expect(store.getState().sublay.accounts.accounts["user-3"].pushEnabled).toBe(
+      false,
+    );
+    // Still no mint — the newly active account uses its live session.
+    expect(
+      axiosPublic
+        .calls("post")
+        .filter((c) => c.url.includes("request-new-access-token")),
+    ).toHaveLength(0);
   });
 });

@@ -23,6 +23,7 @@ import {
 } from "./accountsSlice";
 import { baseApi } from "../api/baseApi";
 import { resetAccountScopedState } from "../actions";
+import type { PushDeviceIdentifier } from "../../interfaces/PushTokenAdapter";
 
 // Account-management endpoints (change/set password, confirm account deletion)
 // run behind requireUserAuth on the server. The shared default axios instance
@@ -159,8 +160,21 @@ const authService = {
     return response.data;
   },
 
-  async signOut(projectId: string, refreshToken: string | null) {
-    const payload = refreshToken ? { refreshToken } : {};
+  // `device` is OPTIONAL and nested under its own key, mirroring the server
+  // schema exactly. When present (and the project has the `push` bundle) the
+  // server deletes that user's push binding in the SAME transaction as the
+  // token-family destroy: signing out unbinds push, or nothing happens at all
+  // and the call fails so the caller can retry. Omitting it produces a request
+  // byte-identical to the pre-existing one.
+  async signOut(
+    projectId: string,
+    refreshToken: string | null,
+    device?: PushDeviceIdentifier | null
+  ) {
+    const payload: Record<string, unknown> = refreshToken
+      ? { refreshToken }
+      : {};
+    if (device) payload.device = device;
     await axios.post(`/${projectId}/auth/sign-out`, payload);
   },
 
@@ -311,6 +325,10 @@ export const signOutThunk = createAsyncThunk(
     const state = getState() as RootState;
     const refreshToken = state.sublay.auth.refreshToken;
     const activeAccountId = state.sublay.accounts.activeAccountId;
+    // Read synchronously from the slice — this is the reason the device
+    // identifier has a Redux home rather than living only in storage: none of
+    // the sign-out callers can reach `AccountStorage`.
+    const device = state.sublay.accounts.deviceIdentifier;
 
     if (!refreshToken) {
       throw new Error("No refresh token");
@@ -319,7 +337,12 @@ export const signOutThunk = createAsyncThunk(
     try {
       dispatch(setAuthenticating(true));
 
-      await authService.signOut(data.projectId, refreshToken);
+      // If this throws, NOTHING below runs: the account keeps its entry and its
+      // credential so the user can retry. That is the client half of the
+      // atomicity guarantee — without it the server can honestly refuse the
+      // unbind and the SDK deletes the credential anyway, leaving the user
+      // receiving notifications from an account they can no longer reach.
+      await authService.signOut(data.projectId, refreshToken, device);
 
       // Remove current account from the multi-account map. The reducer leaves
       // NO account active — see below.
@@ -554,28 +577,74 @@ export const signOutAllThunk = createAsyncThunk(
   ) => {
     const state = getState() as RootState;
     const accounts = state.sublay.accounts.accounts;
+    const device = state.sublay.accounts.deviceIdentifier;
 
     try {
       dispatch(setAuthenticating(true));
 
-      // Sign out from each account on the server (best-effort)
-      const signOutPromises = Object.values(accounts).map(async (account) => {
-        try {
-          await authService.signOut(data.projectId, account.refreshToken);
-        } catch (err) {
-          // Best-effort: log but don't fail the entire operation
-          handleError(err, `Failed to sign out account on server:`);
+      // Per account. Whether a failure is fatal depends on whether an UNBIND
+      // was actually attempted — see `strict` below.
+      const outcomes = await Promise.all(
+        Object.entries(accounts).map(async ([userId, account]) => {
+          try {
+            await authService.signOut(
+              data.projectId,
+              account.refreshToken,
+              device
+            );
+            return { userId, ok: true as const };
+          } catch (err) {
+            handleError(err, `Failed to sign out account on server:`);
+            return { userId, ok: false as const, error: err };
+          }
+        })
+      );
+
+      const failed = outcomes.filter((outcome) => !outcome.ok);
+
+      // ── The strictness is SCOPED TO UNBIND FAILURES. ─────────────────────
+      //
+      // A request carrying a `device` is relying on the atomic guarantee: the
+      // server removed the push binding and the token family together or
+      // removed neither. Swallowing that failure and clearing the map anyway —
+      // which is what this loop used to do for every failure — deletes the
+      // credential for an account whose binding survived, leaving the user
+      // receiving notifications from it with nothing left able to stop them.
+      //
+      // Without a device there is no unbind to protect, and the old
+      // best-effort behaviour is kept ON PURPOSE. `/auth/sign-out` returns 204
+      // for every write and token failure when no device is sent, so the only
+      // remaining failure is the TRANSPORT: strictness here would stop an
+      // offline user — or any app on a project without the `push` bundle —
+      // from signing out locally at all, against the server's own rule that a
+      // user can ALWAYS sign out.
+      const strict = Boolean(device);
+      const blocked = strict && failed.length > 0;
+
+      if (!blocked) {
+        dispatch(clearAllAccounts());
+      } else {
+        // Drop only what actually signed out; leave the rest to be retried.
+        for (const outcome of outcomes) {
+          if (outcome.ok) dispatch(removeAccount(outcome.userId));
         }
-      });
+        // The user asked to sign out of everything, so the live session ends
+        // either way — an access token is transient state, not the credential
+        // the guarantee is about.
+        dispatch(setActiveAccount(null));
+        dispatch(setSignedOut(true));
+      }
 
-      await Promise.all(signOutPromises);
-
-      // Clear all local state
-      dispatch(clearAllAccounts());
       dispatch(resetAuth());
       dispatch(clearUserInUserSlice());
       dispatch(baseApi.util.resetApiState());
       dispatch(resetAccountScopedState());
+
+      if (blocked) {
+        return rejectWithValue(
+          `Failed to sign out ${failed.length} of ${outcomes.length} accounts. Their sessions are still active — retry.`
+        );
+      }
 
       return;
     } catch (error) {

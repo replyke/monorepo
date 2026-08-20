@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useStore } from "react-redux";
 import { useSublayDispatch, useSublaySelector } from "../../store/hooks";
 import {
   setAccountMap,
@@ -11,6 +12,7 @@ import {
   selectAccountsReady,
   selectSignedOut,
   selectDeviceIdentifier,
+  buildAccountMap,
   type AccountMap,
   type AccountSummary,
   type AccountEntry,
@@ -30,6 +32,8 @@ import {
   runAccountStorageOp,
 } from "../../config/accountStorage";
 import { readJwtExp, readJwtSub } from "../../utils/jwt";
+import { reconcileAccountPushBinding } from "../push/reconcilePushBindings";
+import type { SublayState } from "../../store/sublayReducers";
 
 // An unreadable `exp` is persisted as 0 — i.e. "already expired" — so a token
 // we can't make sense of gets treated as stale rather than trusted. That is the
@@ -40,11 +44,23 @@ function extractExpFromJwt(jwt: string): number {
   return readJwtExp(jwt) ?? 0;
 }
 
+/** A stable string for one device identifier, for the Phase E latch. */
+function identifierLatchKey(identifier: {
+  platform: string;
+  token?: string;
+  subscription?: { endpoint: string };
+}): string {
+  return identifier.platform === "web"
+    ? identifier.subscription?.endpoint ?? "web"
+    : identifier.token ?? identifier.platform;
+}
+
 export default function useAccountSync(
   storage: AccountStorage,
   projectId: string
 ): void {
   const dispatch = useSublayDispatch();
+  const store = useStore<{ sublay: SublayState }>();
   const refreshToken = useSublaySelector(selectRefreshToken);
   const user = useSublaySelector(selectUser); // from userSlice (canonical)
   const accounts = useSublaySelector(selectAccounts);
@@ -182,12 +198,11 @@ export default function useAccountSync(
       return;
     }
 
-    const map: AccountMap = {
-      activeAccountId,
-      accounts,
-      signedOut,
-      deviceIdentifier,
-    };
+    // Built from the slice's own state through the shared builder, so the
+    // imperative callers that must await a write (the minted-token helper, push
+    // reconciliation, the per-account toggle) and this effect can never persist
+    // two different shapes.
+    const map: AccountMap = buildAccountMap(store.getState().sublay.accounts);
 
     // THROUGH the mutex, not alongside it. This effect's own overlapping chains
     // are the race being serialized, so persisting on the raw handle here would
@@ -196,13 +211,64 @@ export default function useAccountSync(
     // Still fire-and-forget from React's point of view — an effect cannot await
     // — so the rejection the write contract now produces is caught here rather
     // than surfacing as an unhandled rejection. Callers that must not proceed
-    // until the write lands use `persistAccountMap` and await it.
+    // until the write lands use `persistAccountMapFor(projectId, map)` and
+    // await it. (This effect does not: it holds its OWN handle and its own
+    // projectId, which is already the correct pairing, so it goes straight
+    // through the mutex.)
     runAccountStorageOp(projectId, () =>
       storage.setAccountMap(projectId, map)
     ).catch((error) => {
       handleError(error, "Failed to persist account map");
     });
   }, [accounts, activeAccountId, signedOut, deviceIdentifier, isReady]);
+
+  // Phase E: Reconcile the NEWLY ACTIVE account's push binding
+  //
+  // ⚠ THIS PATH MUST NEVER RUN THE BULK RECONCILE LOOP. Minting an access token
+  // for a non-active account revokes that account's stored refresh token, so a
+  // "reconcile every stored account on every transition" loop would revoke four
+  // tokens per switch, leave the map holding the revoked copies, and destroy
+  // each of those accounts on the next pass — systematically killing every
+  // account the user is not currently using. `reconcileAccountPushBinding` is
+  // single-account by construction and is the only reconcile call reachable
+  // from here; `reconcileAllPushBindings` is deliberately not even imported in
+  // this file.
+  //
+  // The single-account pass is free: the newly active account's session is
+  // already live, so it uses the live access token and mints nothing.
+  //
+  // Gated on the live session actually belonging to the active account, so a
+  // transition still mid-flight (tokens swapped, `user` not yet caught up) does
+  // not reconcile under the outgoing identity.
+  const lastReconciledRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isReady) return;
+
+    if (!activeAccountId || !deviceIdentifier || user?.id !== activeAccountId) {
+      // Signing out clears the latch so the next activation reconciles again.
+      if (!activeAccountId) lastReconciledRef.current = null;
+      return;
+    }
+
+    // Keyed by account AND identifier: a device-token rotation must not be
+    // swallowed by a latch that only remembers the account. (Rotation is
+    // handled by `usePushRegistration`'s bulk pass, but this keeps the two from
+    // disagreeing if the identifier changes while the account does not.)
+    const key = `${activeAccountId}:${identifierLatchKey(deviceIdentifier)}`;
+    if (lastReconciledRef.current === key) return;
+    lastReconciledRef.current = key;
+
+    reconcileAccountPushBinding(
+      { dispatch, getState: () => store.getState(), projectId },
+      activeAccountId
+    ).catch((error) => {
+      // Best-effort: a transition must not fail because a push binding could
+      // not be brought in line. The next transition retries.
+      lastReconciledRef.current = null;
+      handleError(error, "Failed to reconcile the push binding for this account");
+    });
+  }, [activeAccountId, deviceIdentifier, user?.id, isReady, projectId]);
 
   // Phase D: Cross-tab sync (web only)
   useEffect(() => {
