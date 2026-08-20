@@ -11,6 +11,10 @@ Beyond the manual [`push.send()`](/push-notifications) call, Sublay can **automa
 - **Per-event copy templates & project-level toggles** — the developer authors the push title/body per event type and can disable an event project-wide, from the dashboard.
 
 <Note>
+  **These are per-event-type controls for one signed-in user, and they are not the same thing as turning push off for an account on a device.** A user with no disabled types still receives nothing on a device where their account has been silenced with [`useAccountPushToggle`](/hooks/push/use-account-push-toggle) — that decides whether the account is bound to the device at all, while everything on this page decides which event types a bound account receives. The two compose, and neither overwrites the other.
+</Note>
+
+<Note>
   **Requires the `push` bundle.** Automatic push and the preference table live in the `push` bundle. Install it from your project's **Database** page in the [dashboard](https://dash.sublay.io). Chat-message push additionally requires the `chat` bundle; app-notification push requires the `notifications` bundle. See [Bundles](/bundles).
 </Note>
 

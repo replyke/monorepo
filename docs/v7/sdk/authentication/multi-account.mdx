@@ -20,6 +20,7 @@ When the user switches accounts, the SDK restores the stored refresh token for t
 | `useSwitchAccount` | Switch the active session to a different stored account |
 | `useRemoveAccount` | Sign out and remove one account from the stored list |
 | `useSignOutAll` | Sign out all accounts simultaneously |
+| [`useAccountPushToggle`](/hooks/push/use-account-push-toggle) | Turn push on or off per account on this device |
 
 ## Reading Account State
 
@@ -148,7 +149,13 @@ When the removed account is the currently active one, **the session ends and no 
   **Breaking change.** Previously the SDK immediately activated the oldest remaining account and refreshed into it, so "remove this account" silently landed the user inside a different identity. Removing, signing out, and deleting an account now all leave `activeAccount` as `null`. Apps that relied on landing in a live session must render their own next screen.
 </Warning>
 
-Removing an account also sends a best-effort sign-out request to the server to revoke the refresh token family.
+Removing an account sends a sign-out request that revokes the refresh token family **and** unbinds that account's push notifications on this device, in a single server transaction.
+
+<Warning>
+  **Breaking change: removal is atomic once push is involved.** When this device has a stored push identifier, the request asks for an unbind — and if it fails, **nothing is torn down**. The account keeps its entry and its credential, `removeAccount` rejects, and `error` carries the reason so the user can retry. It used to swallow the failure and remove the account locally anyway, which left the user receiving notifications from a removed account with the credential needed to fix it already deleted.
+
+  The strictness is **scoped to requests that ask for an unbind**, deliberately. On a device that has never registered for push there is nothing for the guarantee to protect, so the previous best-effort behaviour is unchanged and an offline user can still remove an account locally.
+</Warning>
 
 ## Signing Out All Accounts
 
@@ -162,7 +169,13 @@ function SignOutAllButton() {
 }
 ```
 
-`signOutAll` sends a sign-out request for every stored account's refresh token (best-effort) and clears all local auth state.
+`signOutAll` sends a sign-out request for every stored account's refresh token — each one revoking that account's token family and unbinding its push on this device — and then clears local auth state.
+
+<Warning>
+  **Breaking change: partial failures no longer wipe the map.** When the requests carry this device's push identifier, accounts whose request **succeeded** are removed and accounts whose request **failed** are kept with their credentials intact, and the call rejects with how many failed so the user can retry. It used to swallow every per-account failure and clear all accounts regardless. The live session ends either way — an access token is transient, not the credential the guarantee is about.
+
+  Same scoping as removal: with no push identifier on the device, nothing is at stake, failures stay best-effort and all local state is still cleared — an offline user can always sign out.
+</Warning>
 
 ## When a Transition Fails
 
@@ -208,6 +221,37 @@ if (!activeAccount && signedOut && accounts.length > 0) {
 }
 ```
 
+## Push Notifications Per Account
+
+Every signed-in account on a device is bound to that device **separately**, so a device holding four accounts receives push for all four — and a message that reaches two of them arrives as **two notifications**, each stamped with its own `recipientUserId`. Read that key in your tap handler before routing, or a tap lands in the wrong session; see [the SDK push page](/sdk/push-notifications/overview#the-notification-data-payload).
+
+### Each account has its own switch
+
+```tsx
+import { useAccountPushToggle } from "@sublay/react-js";
+
+const { setAccountPushEnabled, isAccountPushEnabled } = useAccountPushToggle();
+
+// Works on a background account — no switching required.
+await setAccountPushEnabled({ userId: "other-account-id", enabled: false });
+```
+
+The preference is **durable**. An account silenced on this device stays silenced across switches and relaunches — including through the refresh-token rotation that rebuilds its stored entry on every launch — until it is turned back on. See [`useAccountPushToggle`](/hooks/push/use-account-push-toggle).
+
+<Warning>
+  **The first `register()` on a device enables push for every stored account.** An account that has never expressed a preference reads as *enabled*, so opting in on one account binds all of them. This is the most surprising behaviour in this area; if your UI implies per-account opt-in, follow the first `register()` with explicit toggles.
+</Warning>
+
+### Signing out unbinds automatically
+
+Once this device has registered for push, `signOut()`, `removeAccount()` and `signOutAll()` each send its identifier with their sign-out request, and the server removes that account's push binding in the same transaction as the session teardown. Either both happen or neither does, and "neither" is reported rather than swallowed — see the warnings above. Devices that never registered send no identifier and behave exactly as they always did.
+
+Do **not** call `usePushRegistration().unregister()` in a logout flow. It is now a durable per-account preference, so using it as cleanup permanently silences that account's next session, and sign-out already unbinds. See [Turning push off](/sdk/push-notifications/overview#turning-push-off).
+
+### Rotated device tokens repair themselves
+
+When the OS rotates the device's push token, every binding on the old token is dead. The SDK notices and re-binds each **enabled** stored account onto the new token with no app involvement, leaving silenced accounts silenced. See [Automatic token rotation](/hooks/push/use-push-registration#automatic-token-rotation) for the per-platform detail.
+
 ## Reaching the Account Limit
 
 `useAddAccount` exposes two related but distinct values:
@@ -251,3 +295,4 @@ The raw `setActiveAccount`, `upsertAccount` and `removeAccount` reducers are del
 - [`useSwitchAccount` hook reference](/hooks/auth/use-switch-account)
 - [`useRemoveAccount` hook reference](/hooks/auth/use-remove-account)
 - [`useSignOutAll` hook reference](/hooks/auth/use-sign-out-all)
+- [`useAccountPushToggle` hook reference](/hooks/push/use-account-push-toggle)

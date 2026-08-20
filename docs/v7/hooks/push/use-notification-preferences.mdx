@@ -12,6 +12,10 @@ Disabling a type suppresses **push only** — the in-app notification is still w
 
 <Note>Requires an authenticated user and the `push` bundle installed on the project.</Note>
 
+<Note>
+  **Not the same as [`useAccountPushToggle`](/hooks/push/use-account-push-toggle).** This hook controls **which event types** the signed-in user receives. That one controls **whether an account is bound to this device at all** — and works on any stored account, not just the active one. An account silenced there receives nothing on that device regardless of what is set here, and these preferences are left untouched, applying again as soon as it is turned back on.
+</Note>
+
 ## Usage Example
 
 ```tsx

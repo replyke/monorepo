@@ -1,0 +1,105 @@
+---
+title: "useAccountPushToggle"
+description: "Turn push notifications on or off for any stored account on this device"
+icon: "toggle-on"
+---
+
+## Overview
+
+One physical device can hold several signed-in accounts, and each of them is bound to the device separately. `useAccountPushToggle` is the switch for that binding — **per account, per device** — and it works on accounts the user is not currently signed into.
+
+The stored flag is **durable intent**: it survives switches, relaunches, and the refresh-token rotation that rebuilds an account's stored entry on every launch. The server-side binding is disposable state that the SDK reconciles back to match the flag.
+
+<Note>
+  Requires the `push` bundle. Reconciling is a no-op until this device has registered at least once via [`usePushRegistration`](/hooks/push/use-push-registration) — there is nothing bound to turn off.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useAccounts, useAccountPushToggle } from "@sublay/react-js";
+
+function PerAccountNotificationSettings() {
+  const { accounts } = useAccounts();
+  const { setAccountPushEnabled, isAccountPushEnabled, isUpdating, error } =
+    useAccountPushToggle();
+
+  return (
+    <>
+      {accounts.map((account) => (
+        <label key={account.id}>
+          {account.name ?? account.email}
+          <input
+            type="checkbox"
+            checked={isAccountPushEnabled(account.id)}
+            disabled={isUpdating}
+            onChange={(e) =>
+              setAccountPushEnabled({
+                userId: account.id,
+                enabled: e.target.checked,
+              }).catch(() => {
+                /* `error` below carries the reason */
+              })
+            }
+          />
+        </label>
+      ))}
+      {error && <p role="alert">{error}</p>}
+    </>
+  );
+}
+```
+
+## Returns
+
+<ResponseField name="setAccountPushEnabled" type="({ userId, enabled }) => Promise<void>">
+  Applies the binding change server-side first, then writes the flag and persists it.
+
+  `userId` may be **any** account in the stored map, active or not. Silencing a background account unbinds it server-side without switching to it, and without touching the current session.
+
+  Rejects when the binding change fails.
+</ResponseField>
+
+<ResponseField name="isAccountPushEnabled" type="(userId: string) => boolean">
+  Whether a stored account currently wants push on this device. An account stored before this field existed reads as **enabled** — absent means "never expressed a preference", not "off". Returns `false` for an unknown id.
+</ResponseField>
+
+<ResponseField name="isUpdating" type="boolean">
+  `true` while a change is in flight.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  The reason the last change failed, or `null`.
+</ResponseField>
+
+## Failure Semantics
+
+**The flag is written only after the binding change succeeds.** If the call fails, the previous value stands and the promise rejects.
+
+This is deliberate and it is not a UI preference: the SDK must never report an account as push-enabled while nothing is actually bound, or as silenced while a binding survives. What you render on failure — a reverted switch, a retry affordance, an inline error — is entirely yours.
+
+Failing here destroys nothing. The account stays, its credential stays, and the user can retry.
+
+## Turning Off a Background Account
+
+Silencing an account the user is *not* signed into requires acting as that account for one request. The SDK does this by exchanging that account's stored refresh token for a short-lived access token.
+
+That exchange **rotates** — it revokes the token it presents and issues a successor — so the SDK persists the successor before treating the operation as complete. You do not need to do anything about this, but it is why the operation involves a network round trip per background account rather than being instant, and why it is confined to this one deliberate, user-initiated path.
+
+## Not the Same as Notification Preferences
+
+| | `useAccountPushToggle` | [`useNotificationPreferences`](/hooks/push/use-notification-preferences) |
+|---|---|---|
+| Scope | One account's binding on **this device** | The signed-in user's **event types**, everywhere |
+| Applies to | Any stored account, active or not | The active account only |
+| When off | The device is not bound — **nothing** arrives for that account here | The device is still bound; specific event types are suppressed |
+| Stored where | On the device, in the account map | On the server, per user |
+
+They compose: an account silenced with this hook receives nothing on this device regardless of its event-type preferences, and those preferences are untouched — they apply again the moment it is turned back on.
+
+## See Also
+
+- [usePushRegistration](/hooks/push/use-push-registration)
+- [Multi-Account](/sdk/authentication/multi-account)
+- [SDK — Push Notifications](/sdk/push-notifications/overview)
+- [Notification Preferences & Mute](/notification-preferences)

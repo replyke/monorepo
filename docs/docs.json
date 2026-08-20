@@ -443,6 +443,7 @@
                 "group": "Push Notifications",
                 "pages": [
                   "v7/hooks/push/use-push-registration",
+                  "v7/hooks/push/use-account-push-toggle",
                   "v7/hooks/push/use-notification-preferences"
                 ]
               },

@@ -188,6 +188,8 @@ Run the app on a **real device** (simulators/emulators don't receive push on iOS
 
 Use `usePushRegistration` with the adapter for your platform. Call `register()` in response to a deliberate user action — not on mount — because requesting OS push permission is a one-shot prompt that users cannot undo.
 
+Once per device is enough. The SDK persists the device identifier and re-binds automatically when the OS rotates the token, so there is no "call it again on every launch to be safe" step — see [Device Lifecycle](#device-lifecycle).
+
 ```tsx
 // Expo
 import { usePushRegistration } from "@sublay/core";
@@ -404,7 +406,9 @@ The chat-message path builds its `data` from the send context rather than notifi
 - **Re-registration:** registering the same physical device again (same token or endpoint) **as the same user** updates the existing record instead of duplicating it.
 - **Multiple accounts per device:** registering the same device as a *different* user adds a second binding rather than reassigning the first. A device signed into several accounts receives notifications for all of them, each copy carrying its own `recipientUserId`.
 - **Stale token cleanup:** a token or subscription permanently rejected by APNs, FCM, or Web Push during a send is automatically deleted — and because a dead token is dead for the whole device, **every** account bound to that token is unbound, not just the one that was being sent to. No separate cleanup pass is needed.
-- **Explicit logout:** call `unregister()` in your logout flow so the device stops receiving notifications for that account after sign-out. Other accounts bound to the same device are unaffected.
+- **Token rotation:** device tokens rotate (reinstall, OS refresh, backup restore), which kills every binding on the old token. The SDK detects this and re-binds every **enabled** account onto the new token with no app involvement — immediately on Expo and Android, and on the next page load on Web (which has no in-page rotation event). iOS APNs rotation under bare React Native is the one gap, and is picked up by the next `register()`. See [Automatic token rotation](/sdk/push-notifications/overview#automatic-token-rotation).
+- **Signing out unbinds automatically:** once this device has registered, `signOut()`, `removeAccount()` and `signOutAll()` pass its identifier with the sign-out request, and the server deletes that account's push binding in the **same transaction** as the session teardown. If the unbind fails nothing commits — the sign-out fails and the account keeps its credential so the user can retry, rather than being left receiving notifications from an account it can no longer reach. A device that never registered sends no identifier, has no unbind to protect, and signs out exactly as it always did. Other accounts on the device are unaffected.
+- **Per-account control:** `unregister()` silences the **active** account on this device as a durable preference, and [`useAccountPushToggle`](/hooks/push/use-account-push-toggle) does the same for any stored account without switching to it. Neither is a logout step — see the [warning on the SDK page](/sdk/push-notifications/overview#turning-push-off).
 
 ## References
 
@@ -416,6 +420,9 @@ Everything related to push notifications across the docs:
   </Card>
   <Card title="usePushRegistration" icon="cube" href="/hooks/push/use-push-registration">
     Request permission, register, and unregister the current user's device
+  </Card>
+  <Card title="useAccountPushToggle" icon="toggle-on" href="/hooks/push/use-account-push-toggle">
+    Per-account push control on a device holding several accounts
   </Card>
   <Card title="Node SDK — Push Notifications" icon="node-js" href="/node-sdk/push-notifications">
     The `push.send()` server module reference

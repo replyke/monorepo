@@ -8,6 +8,8 @@ icon: "cube"
 
 Explicit, developer-triggered hook for registering and unregistering the current user's device for push notifications. Unlike auth-token restoration, requesting OS or browser push permission is a deliberate action and should happen in response to a user gesture (for example, when they opt in to notifications in your settings screen) — not silently on mount.
 
+Calling it once per device is enough. Mounting the hook (which apps do on any screen holding a notification setting) also installs the SDK's [device-token rotation](#automatic-token-rotation) handling, so bindings stay correct without the app re-registering on every launch.
+
 The hook accepts a **platform adapter** that abstracts the platform-specific permission and token-retrieval steps. Three adapters are available out of the box:
 
 | Adapter | Package | Platform |
@@ -54,17 +56,17 @@ function NotificationSettings() {
 ## Parameters
 
 <ParamField path="adapter" type="PushTokenAdapter" required>
-  A platform adapter implementing `requestPermission()` and `getDeviceIdentifier()`. Import one of the three built-in adapters or implement your own.
+  A platform adapter implementing `requestPermission()` and `getDeviceIdentifier()`, and optionally `subscribeToIdentifierChanges()`. Import one of the three built-in adapters or implement your own.
 </ParamField>
 
 ## Returns
 
 <ResponseField name="register" type="() => Promise<boolean>">
-  Requests OS or browser permission, retrieves the device token or subscription, and registers it with the server. Returns `true` on success, `false` if permission was denied or the adapter could not produce an identifier (both are expected outcomes, not errors). Throws when the server call fails.
+  Requests OS or browser permission, retrieves the device token or subscription, and registers it with the server. Returns `true` on success, `false` if permission was denied or the adapter could not produce an identifier (both are expected outcomes, not errors). Throws when the server call fails. It also records this device's identifier and enables push for the stored accounts — see [What `register()` does beyond the API call](#what-register-does-beyond-the-api-call).
 </ResponseField>
 
 <ResponseField name="unregister" type="() => Promise<void>">
-  Retrieves the current device identifier and removes the registration from the server. A no-op if the adapter returns no identifier.
+  Unbinds the **active** account from this device and records that as a durable preference — see [`unregister()` is a preference, not a logout step](#unregister-is-a-preference-not-a-logout-step). A no-op if the adapter returns no identifier.
 </ResponseField>
 
 <ResponseField name="registering" type="boolean">
@@ -78,6 +80,24 @@ function NotificationSettings() {
 <Note>
   The hook requires an authenticated user — `register()` and `unregister()` throw immediately if no user session is available.
 </Note>
+
+### What `register()` does beyond the API call
+
+On success it also:
+
+- **stores this device's identifier durably**, so account-management paths that hold no adapter (removal, sign-out, the per-account toggle) can still unbind push;
+- **marks the active account as push-enabled**, because "push is on for this account on this device" is a sticky preference rather than a one-shot call;
+- **binds every other enabled stored account** onto the same device. An account that has never expressed a preference reads as *enabled*, so the first `register()` on a device holding several accounts turns push on for all of them. Turn individual ones back off with [`useAccountPushToggle`](/hooks/push/use-account-push-toggle).
+
+The return value reports on the *active* account's registration. A failure while re-binding one of the other accounts is logged, not thrown.
+
+### `unregister()` is a preference, not a logout step
+
+`unregister()` silences the active account on this device **durably**: it stays silenced across switches and relaunches until `register()` or the per-account toggle turns it back on. It does *not* clear the stored device identifier — that is device state shared with every other account on the device, and clearing it would break their deregistration too.
+
+<Warning>
+  **Do not call it in a logout flow.** Signing out (`signOut`, `removeAccount`, `signOutAll`) already deregisters the account atomically server-side, so there is nothing to clean up — and because the flag is durable, an `unregister()` at logout permanently silences that account's next session with no visible cause. Wire it to a user-facing notification switch instead.
+</Warning>
 
 ## Platform Adapters
 
@@ -135,11 +155,44 @@ const myAdapter: PushTokenAdapter = {
     // return { platform: "web", subscription: { endpoint, keys: { p256dh, auth } } }
     return null;
   },
+
+  // OPTIONAL — see "Automatic token rotation" below.
+  subscribeToIdentifierChanges(context, onChange) {
+    const unsubscribe = myPushLibrary.onTokenChange((token) => {
+      onChange({ platform: "android", token });
+    });
+    return unsubscribe;
+  },
 };
 ```
 
+`subscribeToIdentifierChanges` is optional. Omit it and rotation simply falls back to the next `register()` — the pre-existing behaviour. Emitting `null`, or an identifier equal to the stored one, is a no-op.
+
+## Automatic Token Rotation
+
+Device push tokens rotate on reinstall, on an OS-initiated refresh, and after a backup restore, and every binding on the old token dies with it. The hook covers this itself: when it is mounted **and this device has registered at least once**, it subscribes to the adapter's change signal, and on a change it records the new identifier and re-binds every *enabled* stored account onto it. Silenced accounts are left silenced.
+
+Apps that have never registered subscribe to nothing, and nothing on this path prompts the user — receiving a refreshed token asks for no permission.
+
+The three built-in adapters are deliberately asymmetric, because the platforms are:
+
+| Adapter | Behaviour |
+|---------|-----------|
+| `expoPushTokenAdapter` | Real OS event (`addPushTokenListener`). Emits exactly the shape the adapter registers, so rotation is picked up immediately. |
+| `reactNativePushTokenAdapter` | Firebase `onTokenRefresh`. The event carries an **FCM** token while the adapter registers **APNs** on iOS, so the handler ignores the emitted value and re-derives through `getDeviceIdentifier()`. Consequence: iOS APNs rotation is not reported by this event and falls back to the next `register()`. |
+| `webPushTokenAdapter` | **No in-page event exists** — `pushsubscriptionchange` fires inside the service worker *you* register, which the SDK cannot subscribe to. Web is covered by comparison instead: on mount it reads the browser's existing subscription and emits it if it differs from the stored one. It calls `getSubscription()` only, never `subscribe()`, so it cannot prompt on page load; and it probes for a registration before awaiting `serviceWorker.ready`, which never settles when no service worker is registered. |
+
+## Relationship to Other Hooks
+
+| Hook | Scope |
+|------|-------|
+| `usePushRegistration` | Permission + this device's identifier + the **active** account's binding |
+| [`useAccountPushToggle`](/hooks/push/use-account-push-toggle) | Any **stored** account's binding on this device, without switching to it |
+| [`useNotificationPreferences`](/hooks/push/use-notification-preferences) | Which **event types** the signed-in user receives — not whether the device is bound at all |
+
 ## See Also
 
+- [useAccountPushToggle](/hooks/push/use-account-push-toggle)
 - [Push Notifications overview](/push-notifications)
 - [Register Device endpoint](/api-reference/push-notifications/register-device)
 - [Node SDK — push.send](/node-sdk/push-notifications)

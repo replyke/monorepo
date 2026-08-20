@@ -13,6 +13,8 @@ This page covers **registering devices from your client SDK**. For the full feat
 
 Use `usePushRegistration` with the adapter for your platform. Call `register()` in response to a deliberate user action — not on mount — because requesting OS push permission is a one-shot prompt that users cannot undo.
 
+You only need to call it **once per device**, not on every launch. The SDK stores the device identifier and keeps the bindings in step on its own: it watches for OS token rotations and re-binds every enabled account onto the new token automatically. See [Automatic token rotation](#automatic-token-rotation).
+
 ```tsx
 // Expo
 import { usePushRegistration } from "@sublay/core";
@@ -68,18 +70,78 @@ async function handleNotificationTap(data: Record<string, string>) {
   **`recipientUserId` is reserved and server-stamped.** It is added per device at dispatch time, on both the automatic notification paths and server-side `push.send()` calls. If your backend puts a value under the same key in `data`, the server's value **wins** — an account-routing key has to be trustworthy. Dashboard test sends carry no `recipientUserId`, because they target a pasted token rather than a registered account.
 </Note>
 
-## Unregistering on Logout
+## Turning Push Off
 
-Call `unregister()` in your logout flow so the device stops receiving notifications after sign-out:
+`unregister()` unbinds the **currently active account** from this device and records that as a **durable preference** for that account. The account stays silenced across switches and relaunches until something turns it back on.
 
 ```tsx
 const { unregister } = usePushRegistration(webPushTokenAdapter);
 
-async function handleLogout() {
+// A "push notifications" switch in your settings screen.
+async function handleDisablePush() {
   await unregister();
-  // ...clear session
 }
 ```
+
+<Warning>
+  **Do not call `unregister()` in your logout flow.** It is no longer a logout-time cleanup step, and using it as one is actively harmful in two ways:
+
+  1. **Signing out already deregisters.** Once this device has registered, `signOut()`, `removeAccount()` and `signOutAll()` send its identifier with the sign-out request, and the server deletes the push binding in the *same transaction* as the session teardown — atomically, or not at all, with a failure reported rather than swallowed. There is nothing left for `unregister()` to clean up.
+  2. **It permanently silences the account.** Because the flag is durable, an `unregister()` at logout means the next time that user signs in they get **no notifications at all**, with no obvious cause and nothing in your UI that turned it off.
+
+  Wire `unregister()` to a notification switch the user controls, and nothing else.
+</Warning>
+
+Other accounts bound to the same device are unaffected, and the device identifier itself is kept — it is device state shared by every stored account, not account state.
+
+## Per-Account Push Control
+
+One physical device can hold several signed-in accounts, and **each account controls its push on this device independently**. `useAccountPushToggle` sets that preference for *any* stored account, including ones the user is not currently signed into:
+
+```tsx
+import { useAccounts, useAccountPushToggle } from "@sublay/react-js";
+
+function PerAccountPushSettings() {
+  const { accounts } = useAccounts();
+  const { setAccountPushEnabled, isAccountPushEnabled, isUpdating } =
+    useAccountPushToggle();
+
+  return accounts.map((account) => (
+    <Switch
+      key={account.id}
+      checked={isAccountPushEnabled(account.id)}
+      disabled={isUpdating}
+      onChange={(enabled) =>
+        setAccountPushEnabled({ userId: account.id, enabled })
+      }
+    />
+  ));
+}
+```
+
+Silencing a background account unbinds it server-side without switching to it. See [`useAccountPushToggle`](/hooks/push/use-account-push-toggle) for the full reference.
+
+<Note>
+  **This is not the same thing as [notification preferences](/notification-preferences).** The per-account toggle decides *whether an account is bound to this device at all*; [`useNotificationPreferences`](/hooks/push/use-notification-preferences) decides *which event types* the signed-in user receives. An account silenced here receives nothing on this device regardless of its per-event-type settings, and its preferences are untouched — they apply again the moment it is turned back on.
+</Note>
+
+<Warning>
+  **The first `register()` on a device turns push on for every stored account.** Absent means "never expressed a preference", which reads as *enabled* — so a device already holding four other signed-in accounts binds all of them, not just the one the user was looking at when they tapped the button. Turn individual accounts back off with the toggle above.
+</Warning>
+
+## Automatic Token Rotation
+
+Device push tokens rotate — on reinstall, on an OS-initiated refresh, after a backup restore. When that happens every binding on the old token is dead.
+
+The SDK handles this without the app doing anything. `usePushRegistration` subscribes to the platform's token-change signal (gated on this device having registered at least once, so apps that never use push subscribe to nothing), and on a change it records the new identifier and re-binds every **enabled** stored account onto it. Silenced accounts stay silenced.
+
+| Platform | How rotation is detected |
+|----------|--------------------------|
+| Expo | `expo-notifications`' token listener — reported immediately |
+| React Native | Firebase `onTokenRefresh` — immediate on Android. On iOS the event carries an FCM token while the adapter registers APNs, so APNs rotation is only picked up by the next `register()` |
+| Web | No in-page event exists (`pushsubscriptionchange` fires inside *your* service worker), so the SDK compares the browser's existing subscription against the stored one on mount. It never re-subscribes and never prompts |
+
+Nothing here asks the user for anything — receiving a refreshed token is not a permission prompt.
 
 ## Next Steps
 
@@ -89,5 +151,11 @@ async function handleLogout() {
   </Card>
   <Card title="usePushRegistration" icon="cube" href="/hooks/push/use-push-registration">
     The full hook API and platform adapters
+  </Card>
+  <Card title="useAccountPushToggle" icon="toggle-on" href="/hooks/push/use-account-push-toggle">
+    Per-account push control on a shared device
+  </Card>
+  <Card title="Multi-Account" icon="users" href="/sdk/authentication/multi-account">
+    How push interacts with several signed-in accounts
   </Card>
 </CardGroup>
