@@ -250,7 +250,7 @@ Do **not** call `usePushRegistration().unregister()` in a logout flow. It is now
 
 ### Rotated device tokens repair themselves
 
-When the OS rotates the device's push token, every binding on the old token is dead. The SDK notices and re-binds each **enabled** stored account onto the new token with no app involvement, leaving silenced accounts silenced. See [Automatic token rotation](/hooks/push/use-push-registration#automatic-token-rotation) for the per-platform detail.
+When the OS rotates the device's push token, every binding on the old token is dead. Wherever `usePushRegistration` is mounted, the SDK notices and re-binds each **enabled** stored account onto the new token with no further app involvement, leaving silenced accounts silenced. Detection lives in that hook and is gated on this device having registered at least once, so an app that never mounts it falls back to the next `register()`. See [Automatic token rotation](/hooks/push/use-push-registration#automatic-token-rotation) for the per-platform detail.
 
 ## Reaching the Account Limit
 
@@ -291,7 +291,7 @@ Every path also sets `accountLimitReached`, so a single piece of UI can cover al
 
 ### Why OAuth cannot throw
 
-`handleOAuthCallback` is synchronous and is shared by `@sublay/react-js` and `@sublay/expo`. It returns as soon as the redirect's tokens are read — before your app knows *whose* they are — and on the web the page that called `initiateOAuth` no longer exists by then. There is no promise left to reject, so both OAuth paths report the limit through `accountLimitReached` instead. The hook's own `error` string stays reserved for failures the provider reported.
+`handleOAuthRedirect` — the synchronous core both `@sublay/react-js` and `@sublay/expo` drive their OAuth return through — takes the tokens straight from the redirect. (On the web, `handleOAuthCallback` parses the callback page's URL and hands off to it; on Expo the redirect is resolved inline and calls it directly, so that package's `handleOAuthCallback` is only a no-op compatibility shim.) It returns as soon as the redirect's tokens are read — before your app knows *whose* they are — and on the web the page that called `initiateOAuth` no longer exists by then. There is no promise left to reject, so both OAuth paths report the limit through `accountLimitReached` instead. The hook's own `error` string stays reserved for failures the provider reported.
 
 ### What is left behind
 
@@ -338,7 +338,7 @@ If the built-in hooks do not fit, the transition primitives are exported directl
 | `activateStoredAccount` | The full transition: select an account, establish its session, roll the selection back if it cannot. A plain function, callable outside React. |
 | `resetAccountScopedState` | Redux action that returns every account-scoped feature slice to its initial state. Subscribe your own slices to it. |
 | `resetAuth` / `clearUser` | The auth and user teardown actions. |
-| `selectAccounts`, `selectActiveAccountId`, `selectSignedOut`, `selectAccountLimitReached` | Selectors over the accounts slice. |
+| `selectAccounts`, `selectActiveAccountId`, `selectSignedOut`, `selectAccountLimitReached`, `selectDeviceIdentifier` | Selectors over the accounts slice. |
 
 The raw `setActiveAccount`, `upsertAccount` and `removeAccount` reducers are deliberately **not** exported. They only mutate local state: dispatching `setActiveAccount` can point the active id at an account that is not in the map, and dispatching `removeAccount` drops an account without signing it out server-side. Use `activateStoredAccount` and the `useRemoveAccount` hook instead — they perform the whole flow.
 

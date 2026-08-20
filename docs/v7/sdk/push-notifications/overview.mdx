@@ -13,7 +13,7 @@ This page covers **registering devices from your client SDK**. For the full feat
 
 Use `usePushRegistration` with the adapter for your platform. Call `register()` in response to a deliberate user action — not on mount — because requesting OS push permission is a one-shot prompt that users cannot undo.
 
-You only need to call it **once per device**, not on every launch. The SDK stores the device identifier and keeps the bindings in step on its own: it watches for OS token rotations and re-binds every enabled account onto the new token automatically. See [Automatic token rotation](#automatic-token-rotation).
+You only need to call it **once per device**, not on every launch. The SDK stores the device identifier and keeps the bindings in step on its own: wherever `usePushRegistration` is mounted, it watches for OS token rotations and re-binds every enabled account onto the new token automatically. See [Automatic token rotation](#automatic-token-rotation).
 
 ```tsx
 // Expo

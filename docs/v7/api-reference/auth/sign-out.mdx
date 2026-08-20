@@ -65,7 +65,7 @@ Returns `204 No Content` on success. No response body.
 
 ## Error Responses
 
-All of these are reachable only when `device` is supplied. Every one of them means **nothing was committed** — the session and the push binding are both still in place, and the request can be retried.
+The three `500`s below are reachable only when `device` is supplied, and every one of them means **nothing was committed** — the session and the push binding are both still in place, and the request can be retried. The `400` is ordinary body validation and can be returned with or without a `device`.
 
 <AccordionGroup>
   <Accordion title="Push Deregistration Failed — 500">
