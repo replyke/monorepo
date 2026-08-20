@@ -114,6 +114,11 @@ function LinkGitHub() {
   otherwise.
 
   Call this inside a `useEffect` on your callback page.
+
+  It is **synchronous and returns before the user's identity is known**, so a
+  `true` return means "tokens were found", not "this account was admitted". If
+  the device already stores 5 accounts and this is a sixth, the session is
+  signed back out and `accountLimitReached` is raised a moment later.
 </ResponseField>
 
 <ResponseField name="isLoading" type="boolean">
@@ -123,6 +128,14 @@ function LinkGitHub() {
 
 <ResponseField name="error" type="string | null">
   Error message if the OAuth flow fails, or `null` when there is no error.
+
+  **The account limit does not appear here.** Reaching the 5-account limit is
+  discovered after the provider returns, and this hook has no call left to
+  reject — read `accountLimitReached` from
+  [`useAccounts`](/hooks/auth/use-accounts) or
+  [`useAddAccount`](/hooks/auth/use-add-account) instead. This is the one place
+  OAuth differs from email sign-in and external auth, which do throw. See
+  [OAuth → The account limit](/sdk/authentication/oauth#the-account-limit).
 </ResponseField>
 
 ## Integration Guide

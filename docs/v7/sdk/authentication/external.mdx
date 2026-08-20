@@ -124,6 +124,27 @@ Whenever `signedToken` changes (e.g., after a new user signs in), the SDK re-ini
   handles token refresh from that point forward.
 </Tip>
 
+## The Account Limit
+
+A device stores at most **5 accounts** ([Multi-Account](/sdk/authentication/multi-account)). If the verified token identifies a **sixth**, distinct user, the exchange is refused: the session Sublay just created is signed back out, the stored accounts are left untouched, and the app lands signed-out with `accountLimitReached` set.
+
+```tsx
+import { useAccounts } from "@sublay/react-js";
+
+function AccountLimitBanner() {
+  const { accountLimitReached, accounts } = useAccounts();
+  if (!accountLimitReached) return null;
+  return <p>This device already holds {accounts.length} accounts. Sign out of one to continue.</p>;
+}
+```
+
+Two consequences specific to this integration:
+
+- **A `signedToken` for an already-stored user is never refused.** The check is keyed on the user id Sublay resolves from the token, not on anything in `userData`, so returning users sign in normally at the limit.
+- **The refusal is not silent, and it does not fall back.** Because the provider exchanges the token on every launch, a refused exchange would otherwise repeat invisibly forever — or quietly restore some *other* stored account instead. Instead the SDK surfaces the reason, sets `accountLimitReached`, and lands with no account active. The auth gate still opens, so the app renders normally in its signed-out state rather than hanging.
+
+Apps in integration mode that never store multiple accounts cannot hit this: the limit is only reached once five distinct users have been admitted on the same device.
+
 ## User Identity
 
 When a user signs in via external auth, Sublay stores the `sub` claim as `foreignId` on the user record and creates a `UserIdentity` entry with `provider: "external"`. On subsequent sign-ins, the user is looked up by identity first, then by `foreignId` as a fallback, then by email.

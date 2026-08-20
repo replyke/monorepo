@@ -101,11 +101,19 @@ function SignInButton() {
   - `avatarOptions` (optional) — Image processing options for the avatar
   - `bannerFile` (optional) — Banner image file to upload
   - `bannerOptions` (optional) — Image processing options for the banner
+
+  Also throws [`ACCOUNT_LIMIT_MESSAGE`](#the-account-limit) when the device
+  already stores 5 accounts. Normally this happens before any network call, so
+  no account is created — but if the fifth slot fills while the request is in
+  flight, the refusal lands after it and the created user record persists.
 </ResponseField>
 
 <ResponseField name="signInWithEmailAndPassword" type="function">
   Sign in with an existing account. Accepts `{ email: string; password: string }`.
-  Throws if credentials are invalid.
+  Throws if credentials are invalid, and throws
+  [`ACCOUNT_LIMIT_MESSAGE`](#the-account-limit) if this would be a **sixth**
+  account on the device. Signing back in to an account already stored on the
+  device always succeeds, even at the limit.
 </ResponseField>
 
 <ResponseField name="signOut" type="function">
@@ -146,6 +154,29 @@ function SignInButton() {
     the opposite branch.
   </Warning>
 </ResponseField>
+
+## The Account Limit
+
+A device stores at most **5 accounts**. `signUpWithEmailAndPassword` and `signInWithEmailAndPassword` reject when a sixth would be added, throwing an `Error` whose message is exported as `ACCOUNT_LIMIT_MESSAGE`:
+
+```tsx
+import { useAuth, ACCOUNT_LIMIT_MESSAGE } from "@sublay/react-js";
+
+try {
+  await signInWithEmailAndPassword({ email, password });
+} catch (err) {
+  if (err instanceof Error && err.message === ACCOUNT_LIMIT_MESSAGE) {
+    // Prompt the user to sign out of one of the stored accounts.
+  }
+}
+```
+
+Two behaviours worth knowing:
+
+- **Sign-up is normally refused before the network call**; sign-in is refused after it, because only the server can say which account the credentials belong to. That is deliberate — checking the typed email against the stored accounts would lock users out of their own account whenever the stored email is stale, absent or cased differently. (A sign-up whose fifth slot fills *mid-request* is refused afterwards, and that user record does persist — see [what a refusal leaves behind](/sdk/authentication/multi-account#what-is-left-behind).)
+- **A refused sign-in leaves the currently active account signed in.** Nothing is torn down, the accounts map is untouched, and the session the server created for the refused attempt is signed back out, so nothing is left dangling.
+
+The same refusal also sets `accountLimitReached` on [`useAccounts`](/hooks/auth/use-accounts) and [`useAddAccount`](/hooks/auth/use-add-account). That flag is the **only** channel on the OAuth paths, which cannot reject their caller — see [Reaching the account limit](/sdk/authentication/multi-account#reaching-the-account-limit).
 
 ## Controlling Error Logging
 

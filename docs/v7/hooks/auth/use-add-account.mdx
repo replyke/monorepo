@@ -74,7 +74,27 @@ They answer different questions and are both needed:
 | Derived from | The map size, on every render | A refusal, latched in the store |
 | Typical use | Enable/disable the "Add account" button *before* the user commits | Render the error *after* a sign-in was rejected at the cap |
 
-`accountLimitReached` matters because not every rejection has a call to reject: it is also readable from [`useAccounts`](/hooks/auth/use-accounts).
+`accountLimitReached` matters because not every refusal has a call to reject. It is set by **every** entry point that refuses an account:
+
+| Entry point | Also surfaces as an error? |
+|---|---|
+| `signUpWithEmailAndPassword` | Yes — before any network call |
+| `signInWithEmailAndPassword` | Yes — after the account is resolved |
+| External auth (`signedToken`) | The provider's `auth/initialize` action rejects with the reason; the app lands signed-out |
+| OAuth, web and Expo | **No** — the flag is the only channel |
+
+It is also readable from [`useAccounts`](/hooks/auth/use-accounts).
+
+<Note>
+  `canAddAccount` is not a substitute. A sign-in can start without ever going
+  through `addAccount()` — a plain sign-in form, an OAuth return, or a map that
+  filled in another tab while a request was in flight — and only
+  `accountLimitReached` covers those. Conversely the flag is an event: it stays
+  `false` until something is actually refused, so it cannot pre-disable a button.
+</Note>
+
+For what the refusal leaves behind on each path, see
+[Reaching the account limit](/sdk/authentication/multi-account#reaching-the-account-limit).
 
 ## Integration Guide
 

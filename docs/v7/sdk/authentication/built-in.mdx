@@ -94,6 +94,39 @@ function SignInForm() {
 }
 ```
 
+## The Account Limit
+
+A device stores at most **5 accounts** ([Multi-Account](/sdk/authentication/multi-account)). Both calls above refuse a sixth, throwing an `Error` whose message is exported as `ACCOUNT_LIMIT_MESSAGE`:
+
+```tsx
+import { useAuth, ACCOUNT_LIMIT_MESSAGE } from "@sublay/react-js";
+
+try {
+  await signInWithEmailAndPassword({ email, password });
+} catch (err) {
+  if (err instanceof Error && err.message === ACCOUNT_LIMIT_MESSAGE) {
+    setError("You're signed in to 5 accounts. Sign out of one to continue.");
+  } else {
+    setError("Incorrect email or password.");
+  }
+}
+```
+
+| | Sign-up | Sign-in |
+|---|---|---|
+| Checked | Before the request — normally no account is created | After the request, on the account the server resolved |
+| Already-stored account | n/a (a sign-up is always new) | **Succeeds** — re-authenticating an account you already store is never blocked |
+
+<Note>
+  Sign-in is deliberately checked *after* the network call. Comparing the typed email against the stored accounts first would be faster and wrong: it would refuse users whose stored email is out of date, absent, or capitalised differently, with no way through.
+</Note>
+
+<Warning>
+  **One sign-up case does leave a user record behind.** The pre-request check can only use the accounts stored when the call left. If the fifth slot fills while your sign-up is in flight — another tab, or a second sign-in racing this one — the account has already been created on the server by the time the limit is discovered. The SDK signs that session straight back out, but the **user record persists**, so retrying the same email after freeing a slot fails with "email already in use". Sign in with it instead.
+</Warning>
+
+A refusal leaves the currently active account signed in, leaves the accounts map untouched, signs the server-side session created by the refused attempt back out, and sets `accountLimitReached` — see [Reaching the account limit](/sdk/authentication/multi-account#reaching-the-account-limit).
+
 ## Sign Out
 
 `signOut` revokes the current session's entire token family on the server and clears local auth state.

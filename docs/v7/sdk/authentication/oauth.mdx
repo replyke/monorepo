@@ -193,6 +193,36 @@ Tokens dispatched by the hook are picked up by the `SublayProvider`'s account ma
 | `redirectAfterAuth` | Optional (defaults to current URL) | **Required** (a custom-scheme deep link) |
 | Callback handling | Call `handleOAuthCallback` on the callback page | Resolved inline; `handleOAuthCallback` is a no-op |
 | Token persistence | `localStorage` | `SecureStore` |
+| Account limit reached | `accountLimitReached` (never throws) | `accountLimitReached` (never throws) |
+
+### The Account Limit
+
+A device stores at most **5 accounts** ([Multi-Account](/sdk/authentication/multi-account)). Signing in a sixth through OAuth is refused — but **on both platforms the limit surfaces as state, not as a thrown error**, unlike email sign-up/sign-in and external auth, which reject the call.
+
+Read it from `useAccounts` (or `useAddAccount`) rather than from the hook's `error` field, which stays reserved for failures the provider itself reported:
+
+```tsx
+import { useOAuthSignIn, useAccounts } from "@sublay/react-js";
+
+function OAuthCallbackPage() {
+  const { handleOAuthCallback, error } = useOAuthSignIn();
+  const { accountLimitReached } = useAccounts();
+
+  useEffect(() => {
+    handleOAuthCallback();
+  }, []);
+
+  if (accountLimitReached) return <p>You're signed in to 5 accounts already. Sign out of one to add another.</p>;
+  if (error) return <p>{error}</p>;
+  return <p>Signing you in...</p>;
+}
+```
+
+**Why it cannot throw.** `handleOAuthCallback` is synchronous and shared by both platform packages. It returns as soon as it has read the redirect's tokens — before your app knows whose they are — and on the web the page that called `initiateOAuth` was torn down by the redirect, so there is no promise left to reject. Making it reject would mean changing the shape of a function both packages depend on.
+
+**What happens instead.** The identity is resolved, found to be new, and refused. The session that was just created is signed back out on the server, so nothing is orphaned, and the account that was active before is re-*selected* — but its session is **not** re-established, because the redirect had already replaced its tokens before the identity was known. The app renders signed-out with that account selected and the user picks it again from the switcher. When the flow was started from `addAccount()`, there is no previous selection to restore and the app simply stays on the sign-in screen.
+
+An OAuth sign-in for an account the device **already stores** is never refused — the check is keyed on the resolved account id.
 
 ## How Tokens Are Returned
 

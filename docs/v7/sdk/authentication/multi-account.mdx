@@ -254,6 +254,58 @@ When the OS rotates the device's push token, every binding on the old token is d
 
 ## Reaching the Account Limit
 
+Signing in a **sixth** account is refused. It used to be a silent no-op that left the app in a broken state — the account was not stored, but it was made active anyway — so the refusal now produces a real error.
+
+### How the refusal reaches you
+
+Every sign-in path is covered, but they cannot all report the same way:
+
+| Entry point | How the limit surfaces | When |
+|---|---|---|
+| `signUpWithEmailAndPassword` | The call **rejects** | Before any network call — a sign-up is a new account by definition. If the map fills *while the request is in flight*, the refusal comes after it instead, and the created user record persists (see below) |
+| `signInWithEmailAndPassword` | The call **rejects** | After authentication, once the server has said which account this is |
+| External auth (`signedToken`) | The app lands signed-out with the flag set; the reason rides the rejected `auth/initialize` action | After the token is verified |
+| OAuth (web and Expo) | `accountLimitReached` only — **nothing throws** | After the provider returns |
+
+The rejecting calls throw an `Error` whose message is exported as `ACCOUNT_LIMIT_MESSAGE`, so you can recognise the case without matching on a string you do not own:
+
+```tsx
+import { useAuth, ACCOUNT_LIMIT_MESSAGE } from "@sublay/react-js";
+
+const { signInWithEmailAndPassword } = useAuth();
+
+try {
+  await signInWithEmailAndPassword({ email, password });
+} catch (err) {
+  if (err instanceof Error && err.message === ACCOUNT_LIMIT_MESSAGE) {
+    // Offer to sign out of one of the stored accounts.
+  }
+}
+```
+
+Every path also sets `accountLimitReached`, so a single piece of UI can cover all four.
+
+<Note>
+  **Signing back in to an account you already store always works, even at the limit.** The check is keyed on the account id the server resolves, not on the email you typed — so an account whose stored email is out of date, absent (accounts admitted through external auth may have no email), or capitalised differently signs in normally. This is also why email sign-in is checked *after* the network call rather than before it: the alternative would lock people out of their own accounts.
+</Note>
+
+### Why OAuth cannot throw
+
+`handleOAuthCallback` is synchronous and is shared by `@sublay/react-js` and `@sublay/expo`. It returns as soon as the redirect's tokens are read — before your app knows *whose* they are — and on the web the page that called `initiateOAuth` no longer exists by then. There is no promise left to reject, so both OAuth paths report the limit through `accountLimitReached` instead. The hook's own `error` string stays reserved for failures the provider reported.
+
+### What is left behind
+
+No session, ever: a refused sign-in really did create one on the server, and the SDK signs it back out immediately. Nothing in the map either — the stored accounts are untouched and the active account never points at an account that is not stored.
+
+**One exception, and it is a user record rather than a session.** A sign-up refused *before* the request creates nothing at all. A sign-up whose fifth slot filled *while the request was in flight* is refused after it, so the account exists on the server: its session is destroyed, but the user record stays and the email is taken. Retrying that email after freeing a slot fails as "already in use" — sign in with it instead.
+
+What changes locally depends on the path:
+
+- **Sign-up, email sign-in and external verification** are refused *before* the SDK touches your session, so whatever account was active stays signed in.
+- **OAuth** cannot be: the redirect hands over tokens before identity is known, so the previous session is already gone by the time the limit is discovered. The previous account is re-*selected*, but its session is **not** re-established — the app renders signed-out with that account selected, and the user signs in again from the picker. Started from `addAccount()` (which already cleared the selection), the app simply stays on the sign-in screen.
+
+### `canAddAccount` vs `accountLimitReached`
+
 `useAddAccount` exposes two related but distinct values:
 
 | Value | Kind | Meaning |
@@ -262,6 +314,8 @@ When the OS rotates the device's push token, every binding on the old token is d
 | `accountLimitReached` | Event | Was an account actually *refused* because the map was full? Latched until the next successful admission or any removal. Use it to render the error after the fact. |
 
 `accountLimitReached` is also available from `useAccounts()`.
+
+Use both: `canAddAccount` keeps the user from starting a sign-in that cannot succeed, and `accountLimitReached` covers the sign-ins that start anyway — a direct sign-in that never went through `addAccount()`, an OAuth return, or a map that filled in another tab while the request was in flight.
 
 ## Controlling SDK Error Logging
 
