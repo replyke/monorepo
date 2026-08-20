@@ -374,20 +374,19 @@ describe("secureStoreStorage — tolerant loader", () => {
     await expect(secureStoreStorage.getAccountMap(PROJECT)).resolves.toBeNull();
   });
 
-  it("reads a value written by the previous release as signed-out", async () => {
-    // Pre-chunking layout: the whole map under the index key. Deliberately not
-    // migrated — old data degrades to signed-out by design.
+  it("reads a shape that is neither layout as signed-out", async () => {
+    // Not a v1 map and not a v2 index — nothing to migrate, so it degrades to
+    // signed-out exactly as before.
     const fake = installFakeStore();
-    fake.store.set(
-      INDEX_KEY,
-      JSON.stringify({ activeAccountId: "a", accounts: { a: makeEntry("a") } })
-    );
+    fake.store.set(INDEX_KEY, JSON.stringify({ hello: "world" }));
 
     await expect(secureStoreStorage.getAccountMap(PROJECT)).resolves.toEqual({
       activeAccountId: null,
       accounts: {},
       signedOut: true,
     });
+    // …and nothing was written for it.
+    expect(setItemAsync).not.toHaveBeenCalled();
   });
 
   it("reads corrupt JSON as signed-out rather than throwing", async () => {
@@ -630,5 +629,396 @@ describe("secureStoreStorage — an unreadable index must not be clobbered", () 
     const fake = installFakeStore();
     await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a"]));
     expect(fake.keys().sort()).toEqual([INDEX_KEY, accountKey("a")].sort());
+  });
+});
+
+/**
+ * The v1 → v2 shim. Every assertion here is about data written by a release
+ * that predates chunking: the whole account map as one JSON value, sitting at
+ * the very key the v2 index now uses.
+ */
+describe("secureStoreStorage — v1 → v2 migration", () => {
+  /** An entry exactly as `@sublay/expo` 7.11.1 and earlier wrote it. */
+  function v1Entry(id: string, overrides: Record<string, unknown> = {}) {
+    return {
+      refreshToken: `refresh-token-for-${id}`,
+      tokenExpiresAt: 1893456000000,
+      user: {
+        id,
+        name: `User ${id}`,
+        email: `${id}@example.com`,
+        avatar: `https://cdn.example.com/${id}.png`,
+      },
+      ...overrides,
+    };
+  }
+
+  function plantV1(
+    fake: ReturnType<typeof installFakeStore>,
+    blob: Record<string, unknown>
+  ) {
+    fake.store.set(INDEX_KEY, JSON.stringify(blob));
+  }
+
+  it("keeps the session: a v1 map loads with its accounts and its selection", async () => {
+    const fake = installFakeStore();
+    plantV1(fake, {
+      // The selection is deliberately NOT the first key — "pick the first
+      // account" would pass an assertion that only checked for a non-null id.
+      activeAccountId: "b",
+      accounts: { a: v1Entry("a"), b: v1Entry("b") },
+    });
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+
+    expect(loaded).toEqual({
+      activeAccountId: "b",
+      accounts: { a: v1Entry("a"), b: v1Entry("b") },
+      signedOut: false,
+      deviceIdentifier: null,
+    });
+    expect(loaded!.accounts.b.refreshToken).toBe("refresh-token-for-b");
+  });
+
+  it("leaves the store in ordinary v2 form — one value per account plus an index", async () => {
+    const fake = installFakeStore();
+    plantV1(fake, {
+      activeAccountId: "a",
+      accounts: { a: v1Entry("a"), b: v1Entry("b") },
+    });
+
+    await secureStoreStorage.getAccountMap(PROJECT);
+
+    expect(fake.keys().sort()).toEqual(
+      [INDEX_KEY, accountKey("a"), accountKey("b")].sort()
+    );
+    const index = JSON.parse(fake.raw(INDEX_KEY)!);
+    expect(index.v).toBe(2);
+    expect(index.accountIds.sort()).toEqual(["a", "b"]);
+    expect(index.pending).toEqual([]);
+    expect(index.activeAccountId).toBe("a");
+    // The v1 blob is gone: the key holds an index, not a map.
+    expect(index.accounts).toBeUndefined();
+    for (const [key, value] of setItemAsync.mock.calls as [string, string][]) {
+      expect(key).toMatch(SECURE_STORE_KEY_PATTERN);
+      expect(utf8Bytes(value)).toBeLessThanOrEqual(MAX_VALUE_BYTES);
+    }
+  });
+
+  it("takes the ordinary read path on the second load — the migration runs once", async () => {
+    const fake = installFakeStore();
+    plantV1(fake, {
+      activeAccountId: "b",
+      accounts: { a: v1Entry("a"), b: v1Entry("b") },
+    });
+
+    const first = await secureStoreStorage.getAccountMap(PROJECT);
+    setItemAsync.mockClear();
+    deleteItemAsync.mockClear();
+
+    const second = await secureStoreStorage.getAccountMap(PROJECT);
+
+    // Byte-identical result, and not one write: the second load is a plain read.
+    expect(second).toEqual(first);
+    expect(setItemAsync).not.toHaveBeenCalled();
+    expect(deleteItemAsync).not.toHaveBeenCalled();
+    expect(fake.keys().sort()).toEqual(
+      [INDEX_KEY, accountKey("a"), accountKey("b")].sort()
+    );
+  });
+
+  it("gives the fields v1 never had their absent-field meanings", async () => {
+    const fake = installFakeStore();
+    plantV1(fake, { activeAccountId: "a", accounts: { a: v1Entry("a") } });
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    const entry = loaded!.accounts.a;
+
+    // Absent, not `false`/`null`: absent pushEnabled means enabled, absent
+    // needsReauth means no opinion, absent username means unknown. Writing a
+    // concrete value for any of them would assert something v1 never recorded.
+    expect("pushEnabled" in entry).toBe(false);
+    expect("needsReauth" in entry).toBe(false);
+    expect("username" in entry.user).toBe(false);
+    expect(entry.pushEnabled !== false).toBe(true); // isAccountPushEnabled
+    expect(entry.needsReauth === true).toBe(false); // accountNeedsReauth
+    // And the stored value carries the same absences forward.
+    const stored = JSON.parse(fake.raw(accountKey("a"))!);
+    expect("pushEnabled" in stored).toBe(false);
+    expect("needsReauth" in stored).toBe(false);
+  });
+
+  it("keeps tokenExpiresAt, which predates chunking, and defaults it only when missing", async () => {
+    const fake = installFakeStore();
+    plantV1(fake, {
+      activeAccountId: "a",
+      accounts: {
+        a: v1Entry("a", { tokenExpiresAt: 1893456000000 }),
+        b: v1Entry("b", { tokenExpiresAt: undefined }),
+      },
+    });
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(loaded!.accounts.a.tokenExpiresAt).toBe(1893456000000);
+    // Defensive only — every v1 writer emitted the field. `0` reads as expired,
+    // which prompts a re-auth rather than claiming a dead credential is live.
+    expect(loaded!.accounts.b.tokenExpiresAt).toBe(0);
+  });
+
+  it("carries a deliberate signed-out state across the conversion", async () => {
+    const fake = installFakeStore();
+    plantV1(fake, {
+      activeAccountId: null,
+      accounts: { a: v1Entry("a") },
+      signedOut: true,
+    });
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(loaded!.signedOut).toBe(true);
+    expect(loaded!.activeAccountId).toBeNull();
+    expect(JSON.parse(fake.raw(INDEX_KEY)!).signedOut).toBe(true);
+  });
+
+  it("reads an absent signedOut as false — most v1 values predate the field", async () => {
+    const fake = installFakeStore();
+    plantV1(fake, { activeAccountId: "a", accounts: { a: v1Entry("a") } });
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(loaded!.signedOut).toBe(false);
+  });
+
+  it("converts a v1 map that holds no accounts — there is nothing to lose", async () => {
+    // The signed-out-with-nothing-stored state, in v1 form. Recognizable, so it
+    // is normalized to a v2 index rather than left for the next load to re-read.
+    const fake = installFakeStore();
+    plantV1(fake, { activeAccountId: null, accounts: {} });
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(loaded).toEqual({
+      activeAccountId: null,
+      accounts: {},
+      signedOut: false,
+      deviceIdentifier: null,
+    });
+    expect(fake.keys()).toEqual([INDEX_KEY]);
+    expect(JSON.parse(fake.raw(INDEX_KEY)!)).toMatchObject({
+      v: 2,
+      accountIds: [],
+      pending: [],
+    });
+  });
+
+  it("does NOT migrate unparseable bytes", async () => {
+    const fake = installFakeStore();
+    fake.store.set(INDEX_KEY, "{not json");
+
+    await expect(secureStoreStorage.getAccountMap(PROJECT)).resolves.toEqual({
+      activeAccountId: null,
+      accounts: {},
+      signedOut: true,
+    });
+    expect(setItemAsync).not.toHaveBeenCalled();
+    expect(fake.keys()).toEqual([INDEX_KEY]); // no per-account keys invented
+  });
+
+  it("does NOT migrate an object whose accounts are not accounts", async () => {
+    // Has the right outline and nothing usable inside it: no refresh token, so
+    // there is no session to preserve and no entry to write.
+    const fake = installFakeStore();
+    plantV1(fake, { activeAccountId: "a", accounts: { a: { nickname: "a" } } });
+
+    await expect(secureStoreStorage.getAccountMap(PROJECT)).resolves.toEqual({
+      activeAccountId: null,
+      accounts: {},
+      signedOut: true,
+    });
+    expect(setItemAsync).not.toHaveBeenCalled();
+    expect(fake.keys()).toEqual([INDEX_KEY]);
+  });
+
+  it("does NOT migrate a value that is merely JSON", async () => {
+    const fake = installFakeStore();
+    for (const value of ['"a string"', "42", "[1,2,3]", "null"]) {
+      fake.store.set(INDEX_KEY, value);
+      await expect(secureStoreStorage.getAccountMap(PROJECT)).resolves.toEqual({
+        activeAccountId: null,
+        accounts: {},
+        signedOut: true,
+      });
+    }
+    expect(setItemAsync).not.toHaveBeenCalled();
+  });
+
+  it("migrates the readable accounts and drops an unreadable sibling", async () => {
+    const fake = installFakeStore();
+    plantV1(fake, {
+      activeAccountId: "a",
+      accounts: { a: v1Entry("a"), b: { user: { id: "b" } } },
+    });
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(Object.keys(loaded!.accounts)).toEqual(["a"]);
+    // The half-entry gets no key of its own — it would load but be unusable.
+    expect(fake.keys().sort()).toEqual([INDEX_KEY, accountKey("a")].sort());
+  });
+
+  it("fits: a stored v1 map was one value, so every value it becomes is smaller", async () => {
+    const fake = installFakeStore();
+    const blob = {
+      activeAccountId: "c",
+      accounts: {
+        a: v1Entry("a", { refreshToken: realisticToken("a") }),
+        b: v1Entry("b", { refreshToken: realisticToken("b") }),
+        c: v1Entry("c", { refreshToken: realisticToken("c") }),
+      },
+    };
+    // A real v1 map had to fit in a single SecureStore value to have been
+    // written at all — that ceiling is the premise the conversion rests on.
+    expect(utf8Bytes(JSON.stringify(blob))).toBeLessThanOrEqual(MAX_VALUE_BYTES);
+    plantV1(fake, blob);
+
+    await secureStoreStorage.getAccountMap(PROJECT);
+
+    for (const key of fake.keys()) {
+      expect(utf8Bytes(fake.raw(key)!)).toBeLessThanOrEqual(MAX_VALUE_BYTES);
+    }
+    expect(handleError).not.toHaveBeenCalled();
+  });
+
+  it("still sheds if a v1 value somehow got past the ceiling", async () => {
+    // Not reachable through a normal v1 write, but a lenient platform build
+    // could have stored one. The ordinary oversize path must still apply.
+    const fake = installFakeStore();
+    plantV1(fake, {
+      activeAccountId: "a",
+      accounts: {
+        a: v1Entry("a", {
+          user: {
+            id: "a",
+            name: "Big Avatar",
+            email: "a@example.com",
+            avatar: `https://cdn.example.com/${"x".repeat(2400)}.png`,
+          },
+        }),
+      },
+    });
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+
+    expect(utf8Bytes(fake.raw(accountKey("a"))!)).toBeLessThanOrEqual(
+      MAX_VALUE_BYTES
+    );
+    const stored = JSON.parse(fake.raw(accountKey("a"))!);
+    expect(stored.user.avatar).toBeNull();
+    expect(stored.refreshToken).toBe("refresh-token-for-a");
+    expect(loaded!.accounts.a.refreshToken).toBe("refresh-token-for-a");
+    expect(
+      handleError.mock.calls.some(
+        ([, msg]) => msg === "Account entry too large for SecureStore"
+      )
+    ).toBe(true);
+  });
+
+  it("an interrupted conversion keeps the v1 value authoritative and retries on the next load", async () => {
+    // Ops: 1 = the index read, 2-3 = the per-account values, 4 = the commit.
+    const fake = installFakeStore({ failAtOp: 4 });
+    plantV1(fake, {
+      activeAccountId: "b",
+      accounts: { a: v1Entry("a"), b: v1Entry("b") },
+    });
+
+    // The load still hands back a usable session rather than signing the user
+    // out over a failed write…
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(Object.keys(loaded!.accounts).sort()).toEqual(["a", "b"]);
+    expect(handleError).toHaveBeenCalledWith(
+      expect.anything(),
+      "Failed to migrate stored accounts to the current layout"
+    );
+    // …and the v1 value is untouched, so nothing is lost.
+    expect(JSON.parse(fake.raw(INDEX_KEY)!).accounts.b.refreshToken).toBe(
+      "refresh-token-for-b"
+    );
+
+    // Next launch: the store answers again and the conversion completes.
+    getItemAsync.mockImplementation(async (key: string) => fake.raw(key));
+    setItemAsync.mockImplementation(async (key: string, value: string) => {
+      fake.store.set(key, value);
+    });
+
+    const second = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(second!.activeAccountId).toBe("b");
+    expect(Object.keys(second!.accounts).sort()).toEqual(["a", "b"]);
+    expect(JSON.parse(fake.raw(INDEX_KEY)!).v).toBe(2);
+    expect(fake.keys().sort()).toEqual(
+      [INDEX_KEY, accountKey("a"), accountKey("b")].sort()
+    );
+  });
+
+  it("an interrupted conversion strands no credential when the app writes before the retry", async () => {
+    // The hazard the pending list exists for, in its v1 form. A conversion that
+    // wrote "b"'s value and died before its commit leaves that value on disk
+    // with only the v1 blob naming it. If the app then persists a map without
+    // "b", the writer must announce it — otherwise the commit names neither,
+    // and with no key-enumeration API the refresh token is unreachable forever.
+    const fake = installFakeStore({ failAtOp: 4 });
+    plantV1(fake, {
+      activeAccountId: "a",
+      accounts: { a: v1Entry("a"), b: v1Entry("b") },
+    });
+    await secureStoreStorage.getAccountMap(PROJECT);
+    expect(fake.raw(accountKey("b"))).not.toBeNull(); // written, uncommitted
+
+    getItemAsync.mockImplementation(async (key: string) => fake.raw(key));
+    setItemAsync.mockImplementation(async (key: string, value: string) => {
+      fake.store.set(key, value);
+    });
+    deleteItemAsync.mockImplementation(async (key: string) => {
+      fake.store.delete(key);
+    });
+
+    // The user signs out of "b" before the next launch ever happens.
+    await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a"]));
+
+    expect(fake.raw(accountKey("b"))).toBeNull();
+    expect(fake.keys().sort()).toEqual([INDEX_KEY, accountKey("a")].sort());
+    expect(JSON.parse(fake.raw(INDEX_KEY)!).pending).toEqual([]);
+  });
+
+  it("deleteAccountMap over a half-converted store leaves zero keys", async () => {
+    const fake = installFakeStore({ failAtOp: 4 });
+    plantV1(fake, {
+      activeAccountId: "a",
+      accounts: { a: v1Entry("a"), b: v1Entry("b") },
+    });
+    await secureStoreStorage.getAccountMap(PROJECT);
+
+    getItemAsync.mockImplementation(async (key: string) => fake.raw(key));
+    deleteItemAsync.mockImplementation(async (key: string) => {
+      fake.store.delete(key);
+    });
+
+    await secureStoreStorage.deleteAccountMap(PROJECT);
+
+    // Not just the v1 blob: the values the interrupted conversion wrote would
+    // otherwise stay resident and unreachable — a wipe that wipes nothing.
+    expect(fake.keys()).toEqual([]);
+  });
+
+  it("does not write through core's storage mutex — a write inside a read would deadlock", async () => {
+    // `useAccountSync` calls `getAccountMap` INSIDE `runAccountStorageOp`, which
+    // serializes per project. Anything in this file that reached for that mutex
+    // (or for `persistAccountMapFor`, which takes it) while the read still held
+    // it would wait on itself forever. The adapter therefore writes through
+    // `expo-secure-store` directly. The `@sublay/core` mock at the top of this
+    // file has exactly three exports, so an import of either function would fail
+    // this suite at module load — this assertion states the rule the mock
+    // enforces.
+    const core = await import("@sublay/core");
+    expect(Object.keys(core).sort()).toEqual([
+      "handleError",
+      "useAccountSync",
+      "useProject",
+    ]);
   });
 });
