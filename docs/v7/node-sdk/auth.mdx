@@ -83,6 +83,28 @@ await sublay.auth.signOut({ refreshToken });
   The refresh token to invalidate.
 </ParamField>
 
+<ParamField body="device" type="PushDeviceIdentifier">
+  Optional. The device the user is signing out on — `{ platform: "ios" | "android", token }`
+  or `{ platform: "web", subscription }`. When supplied (and the project has the
+  `push` bundle), the server deletes that user's push binding for the device in the
+  **same transaction** as the sign-out. Omit it and the request is identical to before
+  this field existed.
+</ParamField>
+
+```typescript
+await sublay.auth.signOut({
+  refreshToken,
+  device: { platform: "ios", token: deviceToken },
+});
+```
+
+<Warning>
+  If the unbind fails, **nothing is committed** — the call rejects with `500` /
+  `auth/device-deregistration-failed` and the session survives so you can retry.
+  Never treat a failed `signOut` as signed out; discarding the credential anyway
+  leaves the user receiving notifications from an account they can no longer reach.
+</Warning>
+
 **Returns** — `Promise<void>`
 
 ---

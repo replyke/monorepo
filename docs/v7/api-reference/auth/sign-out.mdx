@@ -1,12 +1,14 @@
 ---
 title: "Sign Out"
 api: "POST /v7/:projectId/auth/sign-out"
-description: "Sign out the current user and invalidate the refresh token family"
+description: "Sign out the current user, invalidate the refresh token family, and optionally unbind the device's push"
 ---
 
 Signs out a user by invalidating their refresh token and the entire token family associated with it. All rotated tokens from the same session are revoked, preventing future token refreshes.
 
-The endpoint always returns `204 No Content`, even if the refresh token is missing, invalid, or already expired. This ensures sign-out is always safe to call.
+A plain sign-out — a body carrying only `refreshToken` — always returns `204 No Content`, even if the refresh token is missing, invalid, or already expired. This keeps sign-out safe to call unconditionally: a user must always be able to end their session locally, whatever state their credential is in.
+
+Supplying the optional `device` object changes that in one narrowly scoped way. See [Atomic push deregistration](#atomic-push-deregistration) below.
 
 ## Body Parameters
 
@@ -15,12 +17,103 @@ The endpoint always returns `204 No Content`, even if the refresh token is missi
   `204` without performing any revocation.
 </ParamField>
 
+<ParamField body="device" type="object">
+  Optional. Identifies the physical device the user is signing out on, so the
+  server can unbind that account's push notifications in the same request. Same
+  shape as the [Deregister Device](/api-reference/push-notifications/deregister-device)
+  body. Ignored on projects without the `push` bundle.
+  <Expandable title="device fields">
+    <ParamField body="platform" type="string" required>
+      The device platform. One of `"ios"`, `"android"`, or `"web"`.
+    </ParamField>
+    <ParamField body="token" type="string">
+      The APNs or FCM device token. Required when `platform` is `"ios"` or `"android"`.
+    </ParamField>
+    <ParamField body="subscription" type="object">
+      The Web Push subscription object (`endpoint` plus `keys.p256dh` / `keys.auth`).
+      Required when `platform` is `"web"`. Only `endpoint` is used to identify the
+      registration.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Atomic push deregistration
+
+A device can be signed into several accounts at once, and each account has its own push binding on it. Signing out of an account without removing its binding would leave that account's notifications arriving on a device nobody is signed into — and once the credential is gone there is nothing left to repair it with.
+
+So when `device` is present and the project has the `push` bundle, the server deletes that user's push binding for that device **inside the same transaction** as the token-family destroy, attempting the unbind first. Either both happen or neither does.
+
+<Warning>
+  **If the unbind fails, nothing is committed and the request returns an error.**
+  The session survives, the refresh token still works, and the caller is expected
+  to retry. Do not treat a failed sign-out as signed out — tearing down local
+  state anyway is exactly what leaves a user receiving notifications from an
+  account they can no longer reach.
+</Warning>
+
+Details worth knowing:
+
+- **The binding is user-scoped.** The unbind targets only the signing-out user's row for that device. Other accounts bound to the same device are untouched.
+- **An expired refresh token still unbinds.** Session destruction requires a live token, but the unbind accepts an authentic-but-expired one (its signature still proves which user it was minted for) up to 90 days past expiry. Beyond that bound the token is refused as an unbind credential and the request falls back to a plain `204`.
+- **A destroyed token family still unbinds.** If the session was already ended by a prior sign-out-all or by refresh-token reuse detection, the binding is still removed.
+- **Projects without the `push` bundle are unaffected on the success path.** The device is ignored and the endpoint returns `204` exactly as it does without one — this route carries no bundle requirement. The one exception is the bundle lookup itself: it runs whenever `device` is supplied, and if it cannot be resolved the request fails with `auth/server-error` rather than reporting a sign-out that did not happen.
+- **A malformed or wrong-signature token still returns `204`.** There is no user to scope an unbind to and no session to destroy, so the endpoint keeps its permissive behavior rather than blocking sign-out.
+
 ## Response
 
 Returns `204 No Content` on success. No response body.
+
+## Error Responses
+
+All of these are reachable only when `device` is supplied. Every one of them means **nothing was committed** — the session and the push binding are both still in place, and the request can be retried.
+
+<AccordionGroup>
+  <Accordion title="Push Deregistration Failed — 500">
+    ```json
+    {
+      "error": "Failed to deregister the push device. Nothing was signed out; retry.",
+      "code": "auth/device-deregistration-failed"
+    }
+    ```
+    The push binding could not be deleted, so the transaction was rolled back and
+    the session was left intact. Keep the account and its credential and retry.
+  </Accordion>
+  <Accordion title="Sign Out Failed — 500">
+    ```json
+    {
+      "error": "Failed to sign out. Nothing was committed; retry.",
+      "code": "auth/sign-out-failed"
+    }
+    ```
+    The unbind was not what failed. Either it succeeded and the token-family
+    destroy did not, or the transaction never opened at all — in both cases the
+    whole transaction, including any unbind, was rolled back.
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "auth/server-error"
+    }
+    ```
+    Raised before the transaction is opened — most often when the `push`-bundle
+    lookup itself cannot be resolved (its backing cache is unavailable). Nothing
+    was attempted and nothing was committed; retry. This one is **not** limited
+    to projects with the `push` bundle, since the failure is in determining
+    whether the bundle is present.
+  </Accordion>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "...", "code": "auth/invalid-body" }
+    ```
+    Returned when `device` is malformed — for example `platform: "ios"` with no
+    `token`, or `platform: "web"` with no `subscription`.
+  </Accordion>
+</AccordionGroup>
 
 ## See Also
 
 - [`useAuth` hook](/hooks/auth/use-auth) — `signOut`
 - [`useSignOutAll` hook](/hooks/auth/use-sign-out-all)
+- [Deregister Device](/api-reference/push-notifications/deregister-device)
 - [Built-in Auth guide](/sdk/authentication/built-in)

@@ -105,6 +105,27 @@ The whole argument is optional.
   The refresh token to revoke. Defaults to the SDK's stored refresh token.
 </ParamField>
 
+<ParamField body="device" type="PushDeviceIdentifier">
+  Optional. The device the user is signing out on — `{ platform: "ios" | "android", token }`
+  or `{ platform: "web", subscription }`. When supplied (and the project has the
+  `push` bundle), the server deletes that user's push binding for the device in the
+  **same transaction** as the sign-out. Omit it and the request is identical to before
+  this field existed.
+</ParamField>
+
+```typescript
+await sublay.auth.signOut({
+  device: { platform: "web", subscription },
+});
+```
+
+<Warning>
+  If the unbind fails, **nothing is committed** — the call rejects with `500` /
+  `auth/device-deregistration-failed`, the session survives, and the SDK's stored
+  tokens are left in place so you can retry. Never treat a failed `signOut` as
+  signed out.
+</Warning>
+
 **Returns** — `Promise<void>`
 
 ---
