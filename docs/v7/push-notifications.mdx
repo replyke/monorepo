@@ -4,7 +4,7 @@ description: "Deliver native OS push notifications to your users on iOS, Android
 icon: "bell"
 ---
 
-Push Notifications lets your app deliver native OS push notifications to users on iOS (via APNs), Android (via FCM), and the browser (via Web Push) — all from a single server-side call. Sublay stores each user's registered devices, fans a message out to every platform, and prunes stale tokens automatically.
+Push Notifications lets your app deliver native OS push notifications to users on iOS (via APNs), Android (via FCM), and the browser (via Web Push) — all from a single server-side call. Sublay stores each user's registered devices, fans a message out to every platform, and prunes dead tokens automatically — across every account bound to the device, since a token the provider rejects is dead for all of them.
 
 <Note>
   **Requires the `push` bundle.** Install it from your project's **Database** page in the [dashboard](https://dash.sublay.io) before using any push feature. See [Bundles](/bundles) for details.
@@ -350,14 +350,15 @@ These are the same three fields `push.send()` accepts, wired to the automatic pa
 
 Every automatic push carries a flat `data` object of string identifiers so your app's tap handler can deep-link to the right screen. All `data` values are **flat top-level strings** (FCM coerces `data` values with `String()`, so nested objects are not used).
 
-Two keys are on every automatic push:
+Three keys are on every automatic push:
 
 | Key | Value |
 |-----|-------|
 | `type` | The event type, e.g. `entity-comment`, `new-follow`, `event-invite`, `message`. |
 | `action` | A canonical routing hint — one of `open-comment`, `open-entity`, `open-profile`, `open-space`, `open-event`, or `open-conversation` (message path). |
+| `recipientUserId` | The id of the account this copy of the notification is for. Stamped per device at dispatch time — see below. |
 
-Beyond `type` and `action`, each push forwards **every identifier form** for each object the notification references, so you can route on whichever id your app uses (UUID, short id, foreign id, slug, or username). Per referenced object:
+Beyond those three keys, each push forwards **every identifier form** for each object the notification references, so you can route on whichever id your app uses (UUID, short id, foreign id, slug, or username). Per referenced object:
 
 | Object | Keys forwarded |
 |--------|----------------|
@@ -388,14 +389,22 @@ Which of those apply depends on the event type:
   **These `data` keys are additive and non-breaking.** Existing tap handlers that ignore unknown keys are unaffected — nothing that was present before was removed or renamed. A key whose underlying value is absent (e.g. a user with no `foreignId`, a space with no `slug`) is simply omitted rather than sent empty.
 </Note>
 
-The chat-message path builds its `data` from the send context rather than notification metadata, so it always carries exactly `{ type: "message", action: "open-conversation", conversationId, messageId }`.
+#### `recipientUserId` is a reserved key
+
+One physical device can be signed into several accounts at once, so a single send can deliver the same notification to the same device more than once — once per recipient account. `recipientUserId` names the account each copy belongs to, which is what lets a tap handler switch to the right account before deep-linking.
+
+- **It is stamped per device by the server**, on both the automatic paths and `push.send()`. A value you supply yourself under the same key is **overwritten**: a client routing accounts on it has to be able to trust it absolutely.
+- **A device signed into two accounts shows two notifications** for a message both accounts receive — one per account, each naming its own recipient. This is intentional; suppressing the non-foregrounded account's copy is app-side work.
+- **Dashboard test sends omit it.** A test send from the dashboard targets a token you paste, not a registered account, so there is no recipient to name.
+
+The chat-message path builds its `data` from the send context rather than notification metadata, so beyond the per-device `recipientUserId` it carries exactly `{ type: "message", action: "open-conversation", conversationId, messageId }`.
 
 ## Device Lifecycle
 
-- **Re-registration:** registering the same physical device again (same token or endpoint) updates the existing record instead of duplicating it.
-- **Device reassignment:** if the same device is registered by a different user (e.g. a shared device after logout/login), the record is reassigned to the new user.
-- **Stale token cleanup:** tokens or subscriptions permanently rejected by APNs, FCM, or Web Push during a send are automatically deleted — no separate cleanup pass is needed.
-- **Explicit logout:** call `unregister()` in your logout flow so the device stops receiving notifications after sign-out.
+- **Re-registration:** registering the same physical device again (same token or endpoint) **as the same user** updates the existing record instead of duplicating it.
+- **Multiple accounts per device:** registering the same device as a *different* user adds a second binding rather than reassigning the first. A device signed into several accounts receives notifications for all of them, each copy carrying its own `recipientUserId`.
+- **Stale token cleanup:** a token or subscription permanently rejected by APNs, FCM, or Web Push during a send is automatically deleted — and because a dead token is dead for the whole device, **every** account bound to that token is unbound, not just the one that was being sent to. No separate cleanup pass is needed.
+- **Explicit logout:** call `unregister()` in your logout flow so the device stops receiving notifications for that account after sign-out. Other accounts bound to the same device are unaffected.
 
 ## References
 

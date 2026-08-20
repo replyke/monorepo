@@ -42,7 +42,13 @@ const result = await sublay.push.send({
 
 <ParamField body="data" type="Record<string, any>">
   Optional key-value payload forwarded to the app alongside the notification. Use for deep links, entity IDs, or any context your app needs when the user taps.
+
+  **`recipientUserId` is reserved.** Sublay stamps every dispatched copy with the id of the account it is for, so a device signed into several accounts can tell which one a notification belongs to. A value you set under that key is overwritten — an account-routing key has to be trustworthy.
 </ParamField>
+
+<Note>
+  **One notification per account, not per device.** A physical device can be bound to several accounts at once. If two of the `userIds` are signed in on the same device, that device receives two notifications — one per account, each carrying its own `recipientUserId`.
+</Note>
 
 #### Rich payload fields
 
@@ -106,7 +112,7 @@ interface PushDeviceResult {
 }
 ```
 
-Every requested `userId` is present in `results` — users with no registered devices get an empty array. Stale device tokens that are permanently rejected by the upstream provider are automatically removed; you don't need a separate cleanup step.
+Every requested `userId` is present in `results` — users with no registered devices get an empty array. Device tokens permanently rejected by the upstream provider are automatically removed; you don't need a separate cleanup step. A dead token is dead for the whole device, so removal unbinds **every** account registered on it, including accounts outside this call.
 
 **Example response:**
 

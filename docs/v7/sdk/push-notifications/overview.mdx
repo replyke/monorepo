@@ -42,6 +42,32 @@ const { register, unregister } = usePushRegistration(webPushTokenAdapter);
 
 The web adapter requires a service worker. Register one before calling `register()`. The public VAPID key your service worker needs is available from the unauthenticated [`GET /vapid-public-key`](/api-reference/push-notifications/get-vapid-public-key) endpoint.
 
+## The Notification `data` Payload
+
+Every push Sublay delivers carries a flat `data` object of string values. Your tap handler reads it to decide where to navigate — the full key list for automatic notifications is on the [feature overview](/push-notifications#tap-routing-data).
+
+One key matters specifically to multi-account apps:
+
+| Key | Value |
+|-----|-------|
+| `recipientUserId` | The id of the account this copy of the notification is for. |
+
+A single physical device can be signed into several accounts at once, and each signed-in account is bound to the device separately. When a notification is sent to more than one of them, the device receives **one notification per account**, each stamped with its own `recipientUserId`. Read it before routing, so a tap on a notification for a background account switches to that account rather than opening the wrong session's screen:
+
+```tsx
+async function handleNotificationTap(data: Record<string, string>) {
+  if (data.recipientUserId && data.recipientUserId !== user?.id) {
+    // Bring the account this notification belongs to into focus first.
+    await switchAccount({ userId: data.recipientUserId });
+  }
+  navigateTo(data);
+}
+```
+
+<Note>
+  **`recipientUserId` is reserved and server-stamped.** It is added per device at dispatch time, on both the automatic notification paths and server-side `push.send()` calls. If your backend puts a value under the same key in `data`, the server's value **wins** — an account-routing key has to be trustworthy. Dashboard test sends carry no `recipientUserId`, because they target a pasted token rather than a registered account.
+</Note>
+
 ## Unregistering on Logout
 
 Call `unregister()` in your logout flow so the device stops receiving notifications after sign-out:

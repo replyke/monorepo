@@ -4,7 +4,7 @@ api: "POST /v7/:projectId/push-notifications/send"
 description: "Send a push notification to one or more users across all their registered devices"
 ---
 
-Fans a push notification out to every registered device belonging to the listed users. The server dispatches to APNs (iOS), FCM (Android), and the Web Push protocol in parallel, using whichever platform credentials are configured for this project.
+Fans a push notification out to every registered device binding belonging to the listed users. The server dispatches to APNs (iOS), FCM (Android), and the Web Push protocol in parallel, using whichever platform credentials are configured for this project.
 
 Requires a service or master key (`Authorization: Bearer <serviceKey>`). End-user tokens are rejected — this endpoint is intended for your backend, not for end users calling it directly.
 
@@ -26,7 +26,13 @@ Requires the `push` bundle.
 
 <ParamField body="data" type="object">
   Optional key-value data payload forwarded to the app alongside the notification. Values must be strings or serializable primitives. Use this to pass deep-link targets, IDs, or any context your app needs when the user taps the notification.
+
+  **`recipientUserId` is reserved.** The server stamps every dispatched copy with the id of the account that copy is for, so a device signed into several accounts can tell which one a notification belongs to. A value you supply under that key is overwritten — an account-routing key has to be trustworthy.
 </ParamField>
+
+<Note>
+  **One notification per account, not per device.** A physical device can be bound to several accounts at once. If two of the `userIds` are signed in on the same device, that device receives two notifications — one per account, each with its own `recipientUserId`.
+</Note>
 
 ### Rich payload fields
 
@@ -113,7 +119,7 @@ Returns `200` with a `results` map keyed by user ID. Every requested `userId` is
 </ResponseField>
 
 <Note>
-  Devices whose tokens or subscriptions are reported as permanently invalid by the upstream provider (e.g. APNs `BadDeviceToken`, FCM `UNREGISTERED`, Web Push HTTP 410) are automatically deleted during the send — no separate cleanup step is needed.
+  Tokens or subscriptions reported as permanently invalid by the upstream provider (e.g. APNs `BadDeviceToken`, FCM `UNREGISTERED`, Web Push HTTP 410) are automatically deleted during the send — no separate cleanup step is needed. A dead token is dead for the whole device, so **every** account bound to it is unbound, including accounts that were not part of this request.
 </Note>
 
 ## Error Responses
