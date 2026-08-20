@@ -82,9 +82,9 @@ Expo's SecureStore documents a **2048-byte ceiling per value**. Storing the whol
 
 If a single account entry ever did exceed the budget, the adapter sheds `avatar` first, then `email`, and logs what it dropped — those are the two unbounded fields. `id`, `name`, `username`, the refresh token and the two re-auth markers are never shed: an entry missing those would load but be unusable, or would silently claim to be healthy.
 
-<Warning>
-  **Expo apps sign out once on upgrade.** The old single-value layout is not migrated — a value written by a previous release reads as signed-out, with the account entries intact-but-empty. Users sign in again, once. React Native (Keychain) and web (`localStorage`) have no comparable limit and are unaffected.
-</Warning>
+<Note>
+  **Upgrading keeps your users signed in.** A value written by a previous release — the whole map as one value — is converted to the new layout the first time the app loads it, with the accounts and the active selection intact. The conversion runs once and is invisible: later launches read the new layout directly. A stored value that is *not* a recognizable account map (corrupt bytes, a truncated write) is still read as signed-out rather than guessed at, so those rare installs sign in again once. React Native (Keychain) and web (`localStorage`) have no comparable limit, never changed layout, and are unaffected.
+</Note>
 
 ### Integration mode persists too
 
