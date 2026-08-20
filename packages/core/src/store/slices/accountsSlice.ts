@@ -113,6 +113,30 @@ export interface AccountsState {
 export const MAX_ACCOUNTS = 5;
 
 /**
+ * Whether admitting `userId` into `accounts` would exceed `MAX_ACCOUNTS`.
+ *
+ * **An id already in the map is never an admission** — it is the same person
+ * signing in again, and re-authenticating an account you are already storing
+ * has to work at the cap or a user with five accounts can never sign back into
+ * any of them. That is the whole reason the authoritative cap check is keyed on
+ * the resolved `user.id` and runs *after* authentication: the identity has to
+ * be known before "is this new?" can be answered. Matching a typed email
+ * against the stored summaries beforehand looks equivalent and is not — a
+ * summary can hold a stale email, a null one (accounts admitted through
+ * `verifyExternalUser`), or the same address in different case.
+ *
+ * Pass no `userId` for the pre-flight on sign-UP, where the answer is
+ * unconditional: a sign-up creates a person who by definition is not in the map.
+ */
+export function wouldExceedAccountLimit(
+  accounts: Record<string, AccountEntry>,
+  userId?: string | null
+): boolean {
+  if (userId && accounts[userId]) return false;
+  return Object.keys(accounts).length >= MAX_ACCOUNTS;
+}
+
+/**
  * Folds a freshly built entry over the stored one without losing client-owned
  * fields.
  *

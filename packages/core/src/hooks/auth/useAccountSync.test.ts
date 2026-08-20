@@ -641,3 +641,62 @@ describe("useAccountSync — Phase E (push reconciliation on transition)", () =>
     ).toHaveLength(0);
   });
 });
+
+describe("useAccountSync — the account-cap backstop (Phase 7)", () => {
+  it("does not activate an account the map refused to admit", async () => {
+    // The corruption this phase removes: `upsertAccount` refuses at
+    // MAX_ACCOUNTS and this effect used to select the id anyway, leaving
+    // `activeAccountId` naming a key that is not in `accounts` — then
+    // persisting it, and restoring it on the next launch.
+    //
+    // The entry-point gates in `authThunks` own this rule; this is the floor
+    // under them, because this effect is what writes the persisted map.
+    const ids = ["user-1", "user-2", "user-3", "user-4", "user-5"];
+    const storage = makeFakeStorage({
+      activeAccountId: "user-1",
+      accounts: Object.fromEntries(
+        ids.map((id) => [
+          id,
+          {
+            refreshToken: makeJwt({ sub: id, exp: 9999999999 }),
+            tokenExpiresAt: 9999999999000,
+            user: { id, name: id, email: null, avatar: null },
+          },
+        ]),
+      ),
+    });
+
+    const { store } = renderHookWithAxios(() =>
+      useAccountSync(storage, "test-project"),
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.isReady).toBe(true),
+    );
+
+    // A live session for a SIXTH user arrives (e.g. a path that bypassed the
+    // gates entirely).
+    store.dispatch(
+      setTokens({
+        accessToken: "access-6",
+        refreshToken: makeJwt({ sub: "user-6", exp: 9999999999 }),
+      }),
+    );
+    store.dispatch(setUser(makeAuthUser({ id: "user-6" })));
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.accountLimitReached).toBe(true),
+    );
+
+    const state = store.getState();
+    expect(state.sublay.accounts.accounts["user-6"]).toBeUndefined();
+    expect(Object.keys(state.sublay.accounts.accounts)).toHaveLength(5);
+    // The invariant: the active id is always a key of the map.
+    expect(state.sublay.accounts.activeAccountId).toBe("user-1");
+    expect(
+      state.sublay.accounts.accounts[
+        state.sublay.accounts.activeAccountId as string
+      ],
+    ).toBeDefined();
+  });
+});

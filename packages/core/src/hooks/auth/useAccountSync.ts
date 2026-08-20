@@ -168,6 +168,27 @@ export default function useAccountSync(
 
     dispatch(upsertAccount({ userId: user.id, entry }));
 
+    // BACKSTOP — never activate an account the map did not admit.
+    //
+    // `upsertAccount` refuses at `MAX_ACCOUNTS` (raising `accountLimitReached`),
+    // and this effect used to select the id regardless, leaving
+    // `activeAccountId` naming a key that is not in `accounts` — the corrupt
+    // shape this phase exists to remove, and one this effect then PERSISTS and
+    // Phase A restores on the next launch.
+    //
+    // Read back from the store rather than from the `accounts` selector: the
+    // dispatch above is synchronous, this render's selector value is not yet
+    // updated, and the refusal is only visible in the store.
+    //
+    // The entry-point gates (Gate 1/Gate 2 in `authThunks`) are the owners of
+    // this rule — they refuse the sign-in before it ever reaches here. This is
+    // the defensive floor under them, because this effect is what actually
+    // writes the persisted map.
+    const admitted = Boolean(
+      store.getState().sublay.accounts.accounts[user.id]
+    );
+    if (!admitted) return;
+
     if (user.id !== activeAccountId) {
       // Signing in while another account is active — the documented way to add
       // an account — changes the active account HERE and nowhere else: none of

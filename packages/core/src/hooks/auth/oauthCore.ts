@@ -1,6 +1,6 @@
 import type { AppDispatch } from "../../store/types";
 import { setTokens, setInitialized } from "../../store/slices/authSlice";
-import { requestNewAccessTokenThunk } from "../../store/slices/authThunks";
+import { completeOAuthSignInThunk } from "../../store/slices/authThunks";
 import { getAuthorizedTokenForAccount } from "../../config/authGate";
 
 /**
@@ -136,7 +136,16 @@ export interface HandleOAuthRedirectResult {
 /**
  * Token-handling tail: given a redirect URL **string**, extract the tokens /
  * error and, on success, perform the same Redux dispatches the web hook has
- * always done (`setTokens` → `setInitialized` → `requestNewAccessTokenThunk`).
+ * always done (`setTokens` → `setInitialized` → the profile refresh, now via
+ * `completeOAuthSignInThunk`, which wraps that refresh with the account-cap
+ * gate).
+ *
+ * **The cap cannot surface as a rejection here.** This function is synchronous
+ * and shared by both platform hooks, so an over-limit OAuth sign-in is caught
+ * after the fact: the session it created is signed out server-side, the
+ * previous selection is restored, and `accountLimitReached` is raised for the
+ * UI to read. Sign-up, email sign-in and external verification reject their
+ * callers instead — a deliberate asymmetry, documented on the OAuth pages.
  *
  * Pure of any I/O beyond dispatching: it does not read globals, navigate, or
  * clean the URL — the caller owns that. Accepts a URL string (or pre-parsed
@@ -178,11 +187,20 @@ export function handleOAuthRedirect({
     );
     dispatch(setInitialized(true));
 
-    // Fetch the user profile so `useAccountSync` can persist the account. The
-    // thunk reads the just-set refresh token from Redux, calls the server, and
-    // dispatches setUser + setUserInUserSlice on success.
+    // Fetch the user profile so `useAccountSync` can persist the account, and
+    // apply the account cap to the identity that comes back. The thunk reads
+    // the just-set refresh token from Redux, calls the server, dispatches
+    // setUser + setUserInUserSlice on success, and — if the map is already full
+    // and this is a NEW account — signs that just-minted session back out,
+    // restores the previous selection and raises `accountLimitReached`.
+    //
+    // Dispatched unawaited, as before: this function is synchronous and shared
+    // by both platform hooks, so the cap CANNOT surface as a rejected call on
+    // either. It surfaces through the flag (`useAccounts().accountLimitReached`
+    // / `useAddAccount().accountLimitReached`) — the documented asymmetry with
+    // sign-up, sign-in and external verification, which do reject.
     if (projectId) {
-      dispatch(requestNewAccessTokenThunk({ projectId }));
+      dispatch(completeOAuthSignInThunk({ projectId }));
     }
 
     return { success: true, error: null };
