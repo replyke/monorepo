@@ -10,9 +10,12 @@ import {
   setPasswordThunk,
   confirmAccountDeletionThunk,
   initializeAuthThunk,
+  verifyExternalUserThunk,
+  completeOAuthSignInThunk,
+  ACCOUNT_LIMIT_MESSAGE,
 } from "./authThunks";
 import { setTokens, setUser } from "./authSlice";
-import { setAccountMap } from "./accountsSlice";
+import { setAccountMap, setAccountLimitReached } from "./accountsSlice";
 import { selectUser as selectUserSliceUser } from "./userSlice";
 import {
   armAuthGate,
@@ -743,5 +746,532 @@ describe("initializeAuthThunk", () => {
     expect(state.sublay.accounts.activeAccountId).toBeNull();
     expect(state.sublay.accounts.signedOut).toBe(true);
     expect(state.sublay.accounts.accounts["user-1"]).toBeDefined();
+  });
+});
+
+// ── The account cap (Phase 7) ────────────────────────────────────────────────
+//
+// Reaching MAX_ACCOUNTS used to be a SILENT no-op that corrupted the map:
+// `upsertAccount` refused the entry and the sync effect selected the id anyway.
+// Two gates now stand in front of it — a pre-flight on sign-up only, and an
+// authoritative post-authentication check on all four entry points.
+
+/** Five stored accounts — the map is full. */
+function makeFullAccountMap(
+  options: {
+    activeAccountId?: string | null;
+    emails?: Record<string, string | null>;
+    ids?: string[];
+  } = {},
+) {
+  const ids = options.ids ?? ["user-1", "user-2", "user-3", "user-4", "user-5"];
+  const accounts = Object.fromEntries(
+    ids.map((id) => [
+      id,
+      {
+        refreshToken: `refresh-${id}`,
+        tokenExpiresAt: 9999999999000,
+        user: {
+          id,
+          name: id,
+          email: options.emails?.[id] ?? `${id}@example.com`,
+          avatar: null,
+        },
+      },
+    ]),
+  );
+  return {
+    activeAccountId:
+      options.activeAccountId === undefined ? ids[0] : options.activeAccountId,
+    accounts,
+  };
+}
+
+describe("account cap — Gate 1 (pre-flight, sign-up only)", () => {
+  it("rejects a sign-up at the limit without making any network call", async () => {
+    const store = makeSublayStore();
+    store.dispatch(setAccountMap(makeFullAccountMap()));
+    const axios = mockAxiosPublic();
+
+    const result = await store.dispatch(
+      signUpWithEmailAndPasswordThunk({
+        projectId: "project-1",
+        email: "sixth@example.com",
+        password: "secret",
+      }),
+    );
+
+    expect(signUpWithEmailAndPasswordThunk.rejected.match(result)).toBe(true);
+    if (!signUpWithEmailAndPasswordThunk.rejected.match(result)) {
+      throw new Error("expected the sign-up to reject");
+    }
+    expect(result.payload).toBe(ACCOUNT_LIMIT_MESSAGE);
+
+    // The whole point of Gate 1: no account is created on the server at all.
+    expect(axios.calls("post")).toHaveLength(0);
+
+    const state = store.getState();
+    expect(state.sublay.accounts.accountLimitReached).toBe(true);
+    expect(state.sublay.auth.isAuthenticating).toBe(false);
+    expect(Object.keys(state.sublay.accounts.accounts)).toHaveLength(5);
+  });
+
+  it("does NOT pre-flight an email sign-in — a stored account signs back in at the limit", async () => {
+    // A Gate-1 rejection is terminal (it happens before the network), so a
+    // stale/absent/differently-cased stored email would lock a user out of
+    // their own account. There is deliberately no pre-flight here.
+    const store = makeSublayStore();
+    store.dispatch(setAccountMap(makeFullAccountMap()));
+    const axios = mockAxiosPublic();
+    const user = { id: "user-3" } as AuthUser;
+    axios.mockResponse("post", {
+      accessToken: "access-3",
+      refreshToken: "refresh-3-new",
+      user,
+    });
+
+    const result = await store.dispatch(
+      signInWithEmailAndPasswordThunk({
+        projectId: "project-1",
+        email: "user-3@example.com",
+        password: "secret",
+      }),
+    );
+
+    expect(signInWithEmailAndPasswordThunk.fulfilled.match(result)).toBe(true);
+    expect(store.getState().sublay.auth.accessToken).toBe("access-3");
+    expect(axios.calls("post").map((c) => c.url)).toEqual([
+      "/project-1/auth/sign-in",
+    ]);
+  });
+
+  it("signs a stored account with NO stored email back in at the limit", async () => {
+    const store = makeSublayStore();
+    store.dispatch(
+      setAccountMap(makeFullAccountMap({ emails: { "user-3": null } })),
+    );
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "access-3",
+      refreshToken: "refresh-3-new",
+      user: { id: "user-3" } as AuthUser,
+    });
+
+    const result = await store.dispatch(
+      signInWithEmailAndPasswordThunk({
+        projectId: "project-1",
+        email: "whatever@example.com",
+        password: "secret",
+      }),
+    );
+
+    expect(signInWithEmailAndPasswordThunk.fulfilled.match(result)).toBe(true);
+    expect(store.getState().sublay.accounts.accountLimitReached).toBe(false);
+    expect(axios.calls("post")).toHaveLength(1);
+  });
+
+  it("signs a stored account whose stored email differs in CASE back in at the limit", async () => {
+    const store = makeSublayStore();
+    store.dispatch(
+      setAccountMap(
+        makeFullAccountMap({ emails: { "user-3": "Alice@Example.COM" } }),
+      ),
+    );
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "access-3",
+      refreshToken: "refresh-3-new",
+      user: { id: "user-3" } as AuthUser,
+    });
+
+    const result = await store.dispatch(
+      signInWithEmailAndPasswordThunk({
+        projectId: "project-1",
+        email: "alice@example.com",
+        password: "secret",
+      }),
+    );
+
+    expect(signInWithEmailAndPasswordThunk.fulfilled.match(result)).toBe(true);
+    expect(axios.calls("post")).toHaveLength(1);
+  });
+});
+
+describe("account cap — Gate 2 (post-authentication, all four entry points)", () => {
+  it("rejects an email sign-in for a NEW account, signs that session out, and leaves the active session untouched", async () => {
+    const store = makeSublayStore();
+    store.dispatch(setAccountMap(makeFullAccountMap()));
+    // A live session for account A, the "direct sign-in while A is active" case.
+    store.dispatch(
+      setTokens({ accessToken: "access-a", refreshToken: "refresh-a" }),
+    );
+    store.dispatch(setUser({ id: "user-1" } as AuthUser));
+
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "access-6",
+      refreshToken: "minted-refresh-6",
+      user: { id: "user-6" } as AuthUser,
+    });
+    axios.mockResponse("post", {}); // the cleanup sign-out
+
+    const result = await store.dispatch(
+      signInWithEmailAndPasswordThunk({
+        projectId: "project-1",
+        email: "sixth@example.com",
+        password: "secret",
+      }),
+    );
+
+    expect(signInWithEmailAndPasswordThunk.rejected.match(result)).toBe(true);
+    if (!signInWithEmailAndPasswordThunk.rejected.match(result)) {
+      throw new Error("expected the sign-in to reject");
+    }
+    expect(result.payload).toBe(ACCOUNT_LIMIT_MESSAGE);
+
+    const calls = axios.calls("post");
+    expect(calls.map((c) => c.url)).toEqual([
+      "/project-1/auth/sign-in",
+      "/project-1/auth/sign-out",
+    ]);
+    // NO ORPHANED SESSION: the just-minted credential — captured off the
+    // response before anything could overwrite it — is what gets signed out.
+    // And no `device`: an unbind failure would fail the whole sign-out and
+    // leave the very session this call exists to destroy alive.
+    expect(calls[1].body).toEqual({ refreshToken: "minted-refresh-6" });
+
+    const state = store.getState();
+    // Gate 2 ran BEFORE the token/user writes, so A's session is intact.
+    expect(state.sublay.auth.accessToken).toBe("access-a");
+    expect(state.sublay.auth.refreshToken).toBe("refresh-a");
+    expect(state.sublay.auth.user).toEqual({ id: "user-1" });
+    // The map never learns about user-6, and the active id stays a key of it.
+    expect(state.sublay.accounts.accounts["user-6"]).toBeUndefined();
+    expect(Object.keys(state.sublay.accounts.accounts)).toHaveLength(5);
+    expect(state.sublay.accounts.activeAccountId).toBe("user-1");
+    expect(
+      state.sublay.accounts.accounts[
+        state.sublay.accounts.activeAccountId as string
+      ],
+    ).toBeDefined();
+    expect(state.sublay.accounts.accountLimitReached).toBe(true);
+    expect(state.sublay.auth.isAuthenticating).toBe(false);
+  });
+
+  it("rejects a sign-up whose map filled while the request was in flight", async () => {
+    // Gate 1 passed — there were four accounts when the call left. Gate 2 is
+    // what catches the fifth arriving from another tab mid-flight.
+    const store = makeSublayStore();
+    store.dispatch(
+      setAccountMap(
+        makeFullAccountMap({ ids: ["user-1", "user-2", "user-3", "user-4"] }),
+      ),
+    );
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "access-6",
+      refreshToken: "minted-refresh-6",
+      user: { id: "user-6" } as AuthUser,
+    });
+    axios.mockResponse("post", {}); // the cleanup sign-out
+
+    // Started, then the fifth account lands while the request is in flight —
+    // the thunk body is parked on the (already-queued) sign-up response, so
+    // this dispatch happens strictly between Gate 1 and Gate 2.
+    const pending = store.dispatch(
+      signUpWithEmailAndPasswordThunk({
+        projectId: "project-1",
+        email: "sixth@example.com",
+        password: "secret",
+      }),
+    );
+    store.dispatch(setAccountMap(makeFullAccountMap()));
+    const result = await pending;
+
+    expect(signUpWithEmailAndPasswordThunk.rejected.match(result)).toBe(true);
+    const calls = axios.calls("post");
+    expect(calls.map((c) => c.url)).toEqual([
+      "/project-1/auth/sign-up",
+      "/project-1/auth/sign-out",
+    ]);
+    expect(calls[1].body).toEqual({ refreshToken: "minted-refresh-6" });
+    expect(store.getState().sublay.auth.accessToken).toBeNull();
+    expect(store.getState().sublay.accounts.accountLimitReached).toBe(true);
+  });
+
+  it("rejects an external-user verification for a NEW account and signs that session out", async () => {
+    const store = makeSublayStore();
+    store.dispatch(setAccountMap(makeFullAccountMap()));
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "access-6",
+      refreshToken: "minted-refresh-6",
+      user: { id: "user-6" } as AuthUser,
+    });
+    axios.mockResponse("post", {});
+
+    const result = await store.dispatch(
+      verifyExternalUserThunk({ projectId: "project-1", userJwt: "jwt" }),
+    );
+
+    expect(verifyExternalUserThunk.rejected.match(result)).toBe(true);
+    if (!verifyExternalUserThunk.rejected.match(result)) {
+      throw new Error("expected the verification to reject");
+    }
+    expect(result.payload).toBe(ACCOUNT_LIMIT_MESSAGE);
+
+    const calls = axios.calls("post");
+    expect(calls.map((c) => c.url)).toEqual([
+      "/project-1/auth/verify-external-user",
+      "/project-1/auth/sign-out",
+    ]);
+    expect(calls[1].body).toEqual({ refreshToken: "minted-refresh-6" });
+
+    const state = store.getState();
+    expect(state.sublay.auth.accessToken).toBeNull();
+    expect(state.sublay.auth.user).toBeNull();
+    expect(state.sublay.accounts.accounts["user-6"]).toBeUndefined();
+    expect(state.sublay.accounts.accountLimitReached).toBe(true);
+  });
+
+  it("verifies an already-stored external user at the limit", async () => {
+    const store = makeSublayStore();
+    store.dispatch(setAccountMap(makeFullAccountMap({ emails: { "user-2": null } })));
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "access-2",
+      refreshToken: "refresh-2-new",
+      user: { id: "user-2" } as AuthUser,
+    });
+
+    const result = await store.dispatch(
+      verifyExternalUserThunk({ projectId: "project-1", userJwt: "jwt" }),
+    );
+
+    expect(verifyExternalUserThunk.fulfilled.match(result)).toBe(true);
+    expect(store.getState().sublay.auth.accessToken).toBe("access-2");
+    expect(axios.calls("post")).toHaveLength(1);
+  });
+
+  it("catches an over-limit OAuth sign-in after the fact: unwinds to selection only, signs the ROTATED token out, and raises the flag", async () => {
+    // `handleOAuthRedirect` already wrote the redirect's tokens synchronously,
+    // before any identity existed — this is the one Gate-2 site that unwinds.
+    const store = makeSublayStore();
+    store.dispatch(setAccountMap(makeFullAccountMap({ activeAccountId: "user-1" })));
+    store.dispatch(
+      setTokens({ accessToken: "oauth-access", refreshToken: "oauth-refresh" }),
+    );
+
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "fresh",
+      refreshToken: "rotated-refresh",
+      user: { id: "user-6" } as AuthUser,
+    });
+    axios.mockResponse("post", {});
+
+    const result = await store.dispatch(
+      completeOAuthSignInThunk({ projectId: "project-1" }),
+    );
+
+    // It FULFILS: neither OAuth path can reject its caller — the entry point is
+    // synchronous and shared by both platform packages. The flag is the channel.
+    expect(completeOAuthSignInThunk.fulfilled.match(result)).toBe(true);
+
+    const calls = axios.calls("post");
+    expect(calls.map((c) => c.url)).toEqual([
+      "/project-1/auth/request-new-access-token",
+      "/project-1/auth/sign-out",
+    ]);
+    // The refresh ROTATED, so the redirect's original token is already spent —
+    // signing out with it would leave the live family orphaned.
+    expect(calls[1].body).toEqual({ refreshToken: "rotated-refresh" });
+
+    const state = store.getState();
+    expect(state.sublay.auth.accessToken).toBeNull();
+    expect(state.sublay.auth.refreshToken).toBeNull();
+    expect(state.sublay.auth.user).toBeNull();
+    expect(selectUserSliceUser(state)).toBeNull();
+    // Selection restored; the map still holds the active id.
+    expect(state.sublay.accounts.activeAccountId).toBe("user-1");
+    expect(state.sublay.accounts.accounts["user-1"]).toBeDefined();
+    expect(state.sublay.accounts.accounts["user-6"]).toBeUndefined();
+    expect(state.sublay.accounts.accountLimitReached).toBe(true);
+  });
+
+  it("leaves no selection — and does not fake a sign-out — when OAuth was started from addAccount()", async () => {
+    const store = makeSublayStore();
+    store.dispatch(
+      setAccountMap(makeFullAccountMap({ activeAccountId: null })),
+    );
+    store.dispatch(
+      setTokens({ accessToken: "oauth-access", refreshToken: "oauth-refresh" }),
+    );
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "fresh",
+      refreshToken: "rotated-refresh",
+      user: { id: "user-6" } as AuthUser,
+    });
+    axios.mockResponse("post", {});
+
+    await store.dispatch(completeOAuthSignInThunk({ projectId: "project-1" }));
+
+    const state = store.getState();
+    expect(state.sublay.accounts.activeAccountId).toBeNull();
+    // The user did not sign out — they failed to ADD. The next launch should
+    // behave exactly as it would have before the attempt.
+    expect(state.sublay.accounts.signedOut).toBe(false);
+    expect(state.sublay.accounts.accountLimitReached).toBe(true);
+  });
+
+  it("lets an already-stored account back in through OAuth at the limit", async () => {
+    const store = makeSublayStore();
+    store.dispatch(setAccountMap(makeFullAccountMap({ activeAccountId: null })));
+    store.dispatch(
+      setTokens({ accessToken: "oauth-access", refreshToken: "oauth-refresh" }),
+    );
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "fresh",
+      refreshToken: "rotated-refresh",
+      user: { id: "user-4" } as AuthUser,
+    });
+
+    await store.dispatch(completeOAuthSignInThunk({ projectId: "project-1" }));
+
+    expect(axios.calls("post").map((c) => c.url)).toEqual([
+      "/project-1/auth/request-new-access-token",
+    ]);
+    expect(store.getState().sublay.auth.accessToken).toBe("fresh");
+    expect(store.getState().sublay.accounts.accountLimitReached).toBe(false);
+  });
+});
+
+describe("account cap — the launch-path collision (Task 7.2)", () => {
+  it("surfaces a cap rejection at launch instead of swallowing it and restoring a stored account", async () => {
+    // Integration mode: the app presents a signed token for a SIXTH user on
+    // every launch. Gate 2 refuses it and signs the minted session out; without
+    // this branch the thunk would fall through to step 2 and quietly restore
+    // whichever stored account was selected — or, with none, land silently
+    // signed-out on every single launch with no error and no route through.
+    const store = makeSublayStore();
+    store.dispatch(setAccountMap(makeFullAccountMap()));
+    store.dispatch(setTokens({ accessToken: null, refreshToken: "refresh-1" }));
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "access-6",
+      refreshToken: "minted-refresh-6",
+      user: { id: "user-6" } as AuthUser,
+    });
+    axios.mockResponse("post", {}); // the cleanup sign-out
+    // Queued but must never be reached — reaching it would mean the launch
+    // fell through and restored a stored account behind the user's back.
+    axios.mockResponse("post", {
+      accessToken: "from-refresh",
+      refreshToken: "refresh-1-new",
+      user: { id: "user-1" } as AuthUser,
+    });
+
+    const result = await store.dispatch(
+      initializeAuthThunk({ projectId: "project-1", signedToken: "jwt" }),
+    );
+
+    expect(initializeAuthThunk.rejected.match(result)).toBe(true);
+    if (!initializeAuthThunk.rejected.match(result)) {
+      throw new Error("expected initializeAuthThunk to reject");
+    }
+    expect(result.error.message).toBe(ACCOUNT_LIMIT_MESSAGE);
+
+    expect(axios.calls("post").map((c) => c.url)).toEqual([
+      "/project-1/auth/verify-external-user",
+      "/project-1/auth/sign-out",
+    ]);
+
+    const state = store.getState();
+    // The auth gate still opens — withholding it would park every outbound
+    // request behind the 5s ready-timeout fallback, silently.
+    expect(state.sublay.auth.initialized).toBe(true);
+    // Observably signed out, with a readable reason.
+    expect(state.sublay.accounts.accountLimitReached).toBe(true);
+    expect(state.sublay.accounts.signedOut).toBe(true);
+    expect(state.sublay.accounts.activeAccountId).toBeNull();
+    expect(state.sublay.auth.accessToken).toBeNull();
+    // Entries intact — nothing was lost, the user can free a slot.
+    expect(Object.keys(state.sublay.accounts.accounts)).toHaveLength(5);
+  });
+
+  it("surfaces the cap on a RE-RUN, when the flag is already latched from an earlier refusal", async () => {
+    // `SublayStoreProvider` re-dispatches this thunk on every `signedToken`
+    // change with no `initialized` guard, and `accountLimitReached` is a sticky
+    // latch — nothing ever sets it back to `false`. A "did the flag just flip?"
+    // discriminator would therefore stop firing after the first refusal, and
+    // the second launch would fall through to step 2 and silently restore the
+    // previous account. The discriminator is the rejection payload instead.
+    const store = makeSublayStore();
+    store.dispatch(setAccountMap(makeFullAccountMap()));
+    store.dispatch(setTokens({ accessToken: null, refreshToken: "refresh-1" }));
+    // Already latched by an earlier refusal in this session.
+    store.dispatch(setAccountLimitReached(true));
+
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "access-6",
+      refreshToken: "minted-refresh-6",
+      user: { id: "user-6" } as AuthUser,
+    });
+    axios.mockResponse("post", {}); // the cleanup sign-out
+    // Must never be reached.
+    axios.mockResponse("post", {
+      accessToken: "from-refresh",
+      refreshToken: "refresh-1-new",
+      user: { id: "user-1" } as AuthUser,
+    });
+
+    const result = await store.dispatch(
+      initializeAuthThunk({ projectId: "project-1", signedToken: "rotated-jwt" }),
+    );
+
+    expect(initializeAuthThunk.rejected.match(result)).toBe(true);
+    if (!initializeAuthThunk.rejected.match(result)) {
+      throw new Error("expected initializeAuthThunk to reject");
+    }
+    expect(result.error.message).toBe(ACCOUNT_LIMIT_MESSAGE);
+
+    expect(axios.calls("post").map((c) => c.url)).toEqual([
+      "/project-1/auth/verify-external-user",
+      "/project-1/auth/sign-out",
+    ]);
+
+    const state = store.getState();
+    expect(state.sublay.auth.accessToken).toBeNull();
+    expect(state.sublay.accounts.activeAccountId).toBeNull();
+    expect(state.sublay.accounts.signedOut).toBe(true);
+    expect(state.sublay.accounts.accountLimitReached).toBe(true);
+    expect(state.sublay.auth.initialized).toBe(true);
+  });
+
+  it("still falls through to the stored-account refresh when the verify failed for any OTHER reason", async () => {
+    const store = makeSublayStore();
+    store.dispatch(setAccountMap(makeFullAccountMap()));
+    store.dispatch(setTokens({ accessToken: null, refreshToken: "refresh-1" }));
+    const axios = mockAxiosPublic();
+    axios.mockError("post", 401, { error: "Invalid signed token" });
+    axios.mockResponse("post", {
+      accessToken: "from-refresh",
+      refreshToken: "refresh-1-new",
+      user: { id: "user-1" } as AuthUser,
+    });
+
+    await store.dispatch(
+      initializeAuthThunk({ projectId: "project-1", signedToken: "jwt" }),
+    );
+
+    expect(store.getState().sublay.auth.accessToken).toBe("from-refresh");
+    expect(store.getState().sublay.accounts.accountLimitReached).toBe(false);
+    expect(axios.calls("post").map((c) => c.url)).toEqual([
+      "/project-1/auth/verify-external-user",
+      "/project-1/auth/request-new-access-token",
+    ]);
   });
 });

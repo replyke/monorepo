@@ -20,9 +20,13 @@ import {
   clearAllAccounts,
   setActiveAccount,
   setSignedOut,
+  setAccountLimitReached,
+  wouldExceedAccountLimit,
+  MAX_ACCOUNTS,
 } from "./accountsSlice";
 import { baseApi } from "../api/baseApi";
 import { resetAccountScopedState } from "../actions";
+import { readJwtSub } from "../../utils/jwt";
 import type { PushDeviceIdentifier } from "../../interfaces/PushTokenAdapter";
 
 // Account-management endpoints (change/set password, confirm account deletion)
@@ -226,6 +230,129 @@ const authService = {
   },
 };
 
+// ── The account cap: two gates ───────────────────────────────────────────────
+//
+// Reaching `MAX_ACCOUNTS` used to produce a corrupted map rather than an error:
+// `upsertAccount` silently refused the entry and `useAccountSync` activated the
+// id anyway, leaving `activeAccountId` naming an account that is not in
+// `accounts` — persisted, and restored on the next launch.
+//
+// GATE 1 — pre-flight, before any network call, **sign-up only.** A sign-up
+// creates a person who by definition is not in the map, so a full map rejects
+// unconditionally, with certainty and no round trip.
+//
+// **Email sign-in deliberately gets no pre-flight.** A Gate-1 rejection is
+// terminal: it happens before the network, so identity is never resolved and
+// Gate 2 never runs to correct it. Matching the typed email against stored
+// summaries would lock a legitimate user out of their own account whenever the
+// stored email is stale, absent (accounts admitted through `verifyExternalUser`
+// carry a null email), or cased differently from what they typed — the server
+// canonicalizes, the client would compare raw input. OAuth and
+// `verifyExternalUser` have no pre-flight either: identity exists only after
+// the provider or the server resolves it.
+//
+// GATE 2 — post-authentication, authoritative, on ALL FOUR entry points:
+// `signUpWithEmailAndPasswordThunk`, `signInWithEmailAndPasswordThunk`,
+// `verifyExternalUserThunk`, and the OAuth path (`completeOAuthSignInThunk`,
+// dispatched by `oauthCore`'s `handleOAuthRedirect`, which never goes through
+// the sign-in thunks). Once the real `user.id` is known: if it is new and the
+// map is full, sign the just-minted session out server-side, restore what can
+// be restored, set the flag, and reject.
+//
+// The three thunk entry points run Gate 2 **before** their `setTokens`/`setUser`
+// rather than unwinding them afterwards, which is why they need no local
+// teardown: the previous account's session is never touched. The OAuth path
+// cannot — `handleOAuthRedirect` writes the tokens synchronously, before any
+// identity exists — so it is the one path that unwinds, and its unwind restores
+// SELECTION ONLY (see `unwindLocalSession` below).
+
+/**
+ * The dispatch shape the cap helper needs.
+ *
+ * Deliberately structural rather than `AppDispatch`: `createAsyncThunk` hands
+ * its body a `ThunkDispatch` parameterised on `unknown` state, which is not
+ * assignable to the store's own dispatch type.
+ */
+type CapGateDispatch = (action: any) => any;
+
+export const ACCOUNT_LIMIT_MESSAGE = `This device is already signed in to ${MAX_ACCOUNTS} accounts, the maximum. Sign out of one of them before signing in to another.`;
+
+/**
+ * Turns a session that cannot be admitted into a clean refusal.
+ *
+ * Three obligations, in this order:
+ *
+ *  1. **Sign the just-minted session out server-side.** Gate 2 runs after
+ *     authentication, so a real token family exists on the server for an
+ *     account this device is about to forget. Without this call it would sit
+ *     there until expiry with nothing able to reach it — `refreshToken` must
+ *     therefore be the credential CAPTURED BEFORE anything overwrote it (the
+ *     value straight off the auth response on the thunk paths; the rotated
+ *     successor read out of state on the OAuth path, since the redirect's
+ *     original was already spent by the refresh).
+ *
+ *     No `device` is sent. The device identifier would ask the server to unbind
+ *     push in the same transaction, and per the atomicity rule a failed unbind
+ *     fails the whole request — which would leave the very session this call
+ *     exists to destroy alive. An account that was never admitted has no
+ *     binding this SDK created on this device anyway.
+ *
+ *  2. **Unwind local session state, but only where the caller already wrote
+ *     it.** Selection is restored; the session is not re-established (the same
+ *     honesty as the transition core's rollback — by this point the previous
+ *     account's access token is gone and recovering it would mean spending its
+ *     refresh token on another call that can fail in turn).
+ *
+ *  3. **Set the limit flag**, which is the ONLY channel the OAuth paths have:
+ *     `handleOAuthRedirect` is synchronous and shared by web and Expo, so
+ *     neither can reject its caller.
+ */
+async function refuseAtAccountLimit({
+  dispatch,
+  projectId,
+  refreshToken,
+  unwindLocalSession = false,
+  previousActiveAccountId = null,
+}: {
+  dispatch: CapGateDispatch;
+  projectId: string;
+  /** The credential of the session being refused, captured before any rewrite. */
+  refreshToken: string | null | undefined;
+  /** True only for callers that already wrote tokens/user into Redux. */
+  unwindLocalSession?: boolean;
+  previousActiveAccountId?: string | null;
+}): Promise<void> {
+  if (refreshToken) {
+    try {
+      await authService.signOut(projectId, refreshToken);
+    } catch (error) {
+      // Logged, not rethrown: the caller's error is the account limit, and a
+      // failed cleanup must not replace it with a confusing transport error.
+      // Nothing is leaked to the user either way — the credential is discarded
+      // here and never persisted, so the stranded family is unreachable rather
+      // than usable.
+      handleError(
+        error,
+        "Failed to sign out the session refused at the account limit:"
+      );
+    }
+  }
+
+  if (unwindLocalSession) {
+    dispatch(resetAuth());
+    dispatch(clearUserInUserSlice());
+    dispatch(baseApi.util.resetApiState());
+    dispatch(resetAccountScopedState());
+    // Selection only. `setActiveAccount(null)` deliberately does NOT set
+    // `signedOut`: the user did not sign out, they failed to ADD an account, so
+    // the next launch should behave exactly as it would have before the attempt
+    // (Phase A's first-account fallback) rather than parking them at the picker.
+    dispatch(setActiveAccount(previousActiveAccountId ?? null));
+  }
+
+  dispatch(setAccountLimitReached(true));
+}
+
 // Async Thunks
 
 export const signUpWithEmailAndPasswordThunk = createAsyncThunk(
@@ -248,15 +375,43 @@ export const signUpWithEmailAndPasswordThunk = createAsyncThunk(
       bannerFile?: File | Blob;
       bannerOptions?: any;
     },
-    { dispatch, rejectWithValue }
+    { dispatch, getState, rejectWithValue }
   ) => {
     try {
       dispatch(setAuthenticating(true));
+
+      // GATE 1 — pre-flight, sign-up only. No network call is made at all: a
+      // sign-up admits a new person by definition, so a full map is a certain
+      // refusal with no false-rejection risk.
+      const accountsBefore = (getState() as RootState).sublay.accounts.accounts;
+      if (wouldExceedAccountLimit(accountsBefore)) {
+        dispatch(setAccountLimitReached(true));
+        return rejectWithValue(ACCOUNT_LIMIT_MESSAGE);
+      }
 
       const result = await authService.signUpWithEmailAndPassword(
         data.projectId,
         data
       );
+
+      // GATE 2 — authoritative, and still needed after Gate 1: the map can fill
+      // while the request is in flight (another tab, a concurrent sign-in).
+      // Runs BEFORE the dispatches below, so there is nothing to unwind and the
+      // account that was active — if any — keeps its session.
+      if (
+        wouldExceedAccountLimit(
+          (getState() as RootState).sublay.accounts.accounts,
+          result?.user?.id
+        )
+      ) {
+        await refuseAtAccountLimit({
+          dispatch,
+          projectId: data.projectId,
+          // Captured straight off the response, before anything can overwrite it.
+          refreshToken: result?.refreshToken,
+        });
+        return rejectWithValue(ACCOUNT_LIMIT_MESSAGE);
+      }
 
       // Update auth state
       dispatch(
@@ -284,15 +439,36 @@ export const signInWithEmailAndPasswordThunk = createAsyncThunk(
   "auth/signInWithEmailAndPassword",
   async (
     data: { projectId: string; email: string; password: string },
-    { dispatch, rejectWithValue }
+    { dispatch, getState, rejectWithValue }
   ) => {
     try {
       dispatch(setAuthenticating(true));
 
+      // NO Gate 1 here — see the two-gate note above. Signing back in to an
+      // account this device already stores must work at the cap, and only the
+      // server can say which account the credentials belong to.
       const result = await authService.signInWithEmailAndPassword(
         data.projectId,
         data
       );
+
+      // GATE 2 — keyed on the resolved id, so an already-stored account (one
+      // with a stale, absent or differently-cased stored email included) passes
+      // straight through. Runs BEFORE the dispatches below: nothing to unwind,
+      // and the currently active account keeps its session.
+      if (
+        wouldExceedAccountLimit(
+          (getState() as RootState).sublay.accounts.accounts,
+          result?.user?.id
+        )
+      ) {
+        await refuseAtAccountLimit({
+          dispatch,
+          projectId: data.projectId,
+          refreshToken: result?.refreshToken,
+        });
+        return rejectWithValue(ACCOUNT_LIMIT_MESSAGE);
+      }
 
       // Update auth state
       dispatch(
@@ -474,13 +650,34 @@ export const verifyExternalUserThunk = createAsyncThunk(
   "auth/verifyExternalUser",
   async (
     data: { projectId: string; userJwt: string },
-    { dispatch, rejectWithValue }
+    { dispatch, getState, rejectWithValue }
   ) => {
     try {
       const result = await authService.verifyExternalUser(
         data.projectId,
         data.userJwt
       );
+
+      // GATE 2. No pre-flight is possible: the identity inside the signed token
+      // is the server's to resolve, not the client's. Runs before the state
+      // writes below, so a refusal leaves whatever session was live untouched.
+      //
+      // `initializeAuthThunk` calls this thunk on every launch in integration
+      // mode and must not swallow this particular rejection — see the cap-limit
+      // branch there.
+      if (
+        wouldExceedAccountLimit(
+          (getState() as RootState).sublay.accounts.accounts,
+          result?.user?.id
+        )
+      ) {
+        await refuseAtAccountLimit({
+          dispatch,
+          projectId: data.projectId,
+          refreshToken: result?.refreshToken,
+        });
+        return rejectWithValue(ACCOUNT_LIMIT_MESSAGE);
+      }
 
       // Update auth state
       dispatch(
@@ -499,6 +696,70 @@ export const verifyExternalUserThunk = createAsyncThunk(
         error instanceof Error ? error.message : "Unknown error"
       );
     }
+  }
+);
+
+/**
+ * The OAuth tail: fetch the profile for the tokens the redirect carried, then
+ * apply Gate 2 to the identity that comes back.
+ *
+ * **The fourth entry point, and the one most easily missed.** OAuth never goes
+ * through the sign-in thunks: `oauthCore`'s `handleOAuthRedirect` drives
+ * `setTokens` → `setInitialized` → the refresh itself. A cap guard placed only
+ * on the sign-in thunks would leave the single path that also has no pre-flight
+ * completely uncovered, which is the exact shape that corrupted the map.
+ *
+ * **It does not reject its caller, by design.** `handleOAuthRedirect` is
+ * synchronous, shared by `@sublay/react-js` and `@sublay/expo`, and returns
+ * `{ success: true }` before any identity exists; on web the flow is a full-page
+ * navigation, so the promise from `initiateOAuth` belongs to a document that no
+ * longer exists by the time the callback runs. Making either platform reject
+ * would mean making that exported function async and changing the Expo hook's
+ * error convention from state to throw. Decided: don't. **Both OAuth paths
+ * surface the cap through `accountLimitReached`** — that is why the flag exists
+ * alongside the thrown errors, and the asymmetry is documented.
+ *
+ * This is also the one Gate-2 site that must UNWIND rather than run first: the
+ * tokens were written before the identity was knowable.
+ */
+export const completeOAuthSignInThunk = createAsyncThunk(
+  "auth/completeOAuthSignIn",
+  async (data: { projectId: string }, { dispatch, getState }) => {
+    const previousActiveAccountId = (getState() as RootState).sublay.accounts
+      .activeAccountId;
+
+    const result = await dispatch(
+      requestNewAccessTokenThunk({ projectId: data.projectId })
+    );
+
+    // A failed refresh is already handled (and logged) by that thunk; there is
+    // no identity to gate on, and nothing was admitted.
+    if (
+      !requestNewAccessTokenThunk.fulfilled.match(result) ||
+      !result.payload
+    ) {
+      return;
+    }
+
+    const state = getState() as RootState;
+    // The refresh ROTATED: the credential in state now is the live one, and the
+    // token the redirect carried is already spent. This is the value that must
+    // be captured before the unwind below clears it.
+    const mintedRefreshToken = state.sublay.auth.refreshToken;
+    // The profile fetch populates `user`; the refresh token's `sub` is the same
+    // id, and covers a response that carried tokens but no user object.
+    const userId = state.sublay.auth.user?.id ?? readJwtSub(mintedRefreshToken);
+
+    if (!userId) return;
+    if (!wouldExceedAccountLimit(state.sublay.accounts.accounts, userId)) return;
+
+    await refuseAtAccountLimit({
+      dispatch,
+      projectId: data.projectId,
+      refreshToken: mintedRefreshToken,
+      unwindLocalSession: true,
+      previousActiveAccountId,
+    });
   }
 );
 
@@ -696,6 +957,41 @@ export const initializeAuthThunk = createAsyncThunk(
         );
 
         if (verifyExternalUserThunk.fulfilled.match(verified)) return;
+
+        // ── Gate 2 × the launch path. ──────────────────────────────────────
+        //
+        // An integration-mode app with a full map booting as a NEW user gets
+        // its just-minted session signed out by Gate 2 — correctly — and would
+        // then fall through to step 2 and quietly restore whichever stored
+        // account happens to be selected, as if the app's own signed token had
+        // never been presented. Worse, with no stored account it would land
+        // silently signed-out on EVERY launch, with no error and no route
+        // through: the rejection has no call site to reach, because the app
+        // never called anything.
+        //
+        // So this failure surfaces instead of being swallowed: throw into the
+        // catch below, which lands observably signed-out and logs a reason,
+        // while `accountLimitReached` (set by Gate 2 and cleared by nothing on
+        // that path) stays true for the UI to read. `setInitialized(true)`
+        // still runs in `finally` — see the note there.
+        //
+        // Discriminated on the REJECTION PAYLOAD, statelessly. Reading
+        // `accountLimitReached` across the dispatch instead would be a sticky
+        // latch: nothing ever sets it back to `false` (only a successful
+        // admission or a removal clears it), and `SublayStoreProvider`
+        // re-dispatches this thunk on EVERY `signedToken` change with no
+        // `initialized` guard. So a user refused once, whose host app then
+        // rotated its signed JWT, would re-enter here with the flag already
+        // true, fail the "did it just flip?" test, and fall through to step 2 —
+        // silently restoring the previous account. Exactly the swallow this
+        // branch exists to prevent.
+        //
+        // Safe to key on the payload: `verifyExternalUserThunk` has no caller
+        // outside this thunk and is not exported from `index.ts`, so nothing
+        // downstream rethrows its payload as a user-facing message.
+        if (verified.payload === ACCOUNT_LIMIT_MESSAGE) {
+          throw new Error(ACCOUNT_LIMIT_MESSAGE);
+        }
       }
 
       // Step 2: Try to refresh access token.

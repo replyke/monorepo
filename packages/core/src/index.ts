@@ -127,6 +127,16 @@ export {
 } from "./store/slices/authSlice";
 export { requestNewAccessTokenThunk } from "./store/slices/authThunks";
 
+// -- the account cap
+//
+// The message `signUpWithEmailAndPassword`, `signInWithEmailAndPassword` and
+// `verifyExternalUser` reject with once this device already holds
+// `MAX_ACCOUNTS` accounts. Exported so an app can recognise the cap without
+// string-matching a message it does not own. The two OAuth paths cannot reject
+// their caller (their entry point is synchronous and shared by both platforms)
+// and raise `accountLimitReached` instead — see `useAccounts`/`useAddAccount`.
+export { ACCOUNT_LIMIT_MESSAGE } from "./store/slices/authThunks";
+
 // -- account storage
 export type { AccountStorage } from "./interfaces/AccountStorage";
 export {
