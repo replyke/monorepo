@@ -83,7 +83,7 @@ await sublay.auth.signOut({ refreshToken });
   The refresh token to invalidate.
 </ParamField>
 
-<ParamField body="device" type="PushDeviceIdentifier">
+<ParamField body="pushDevice" type="PushDeviceIdentifier">
   Optional. The device the user is signing out on — `{ platform: "ios" | "android", token }`
   or `{ platform: "web", subscription }`. When supplied (and the project has the
   `push` bundle), the server deletes that user's push binding for the device in the
@@ -94,7 +94,7 @@ await sublay.auth.signOut({ refreshToken });
 ```typescript
 await sublay.auth.signOut({
   refreshToken,
-  device: { platform: "ios", token: deviceToken },
+  pushDevice: { platform: "ios", token: deviceToken },
 });
 ```
 

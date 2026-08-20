@@ -8,7 +8,7 @@ Signs out a user by invalidating their refresh token and the entire token family
 
 A plain sign-out — a body carrying only `refreshToken` — always returns `204 No Content`, even if the refresh token is missing, invalid, or already expired. This keeps sign-out safe to call unconditionally: a user must always be able to end their session locally, whatever state their credential is in.
 
-Supplying the optional `device` object changes that in one narrowly scoped way. See [Atomic push deregistration](#atomic-push-deregistration) below.
+Supplying the optional `pushDevice` object changes that in one narrowly scoped way. See [Atomic push deregistration](#atomic-push-deregistration) below.
 
 ## Body Parameters
 
@@ -17,12 +17,12 @@ Supplying the optional `device` object changes that in one narrowly scoped way. 
   `204` without performing any revocation.
 </ParamField>
 
-<ParamField body="device" type="object">
+<ParamField body="pushDevice" type="object">
   Optional. Identifies the physical device the user is signing out on, so the
   server can unbind that account's push notifications in the same request. Same
   shape as the [Deregister Device](/api-reference/push-notifications/deregister-device)
   body. Ignored on projects without the `push` bundle.
-  <Expandable title="device fields">
+  <Expandable title="pushDevice fields">
     <ParamField body="platform" type="string" required>
       The device platform. One of `"ios"`, `"android"`, or `"web"`.
     </ParamField>
@@ -41,7 +41,7 @@ Supplying the optional `device` object changes that in one narrowly scoped way. 
 
 A device can be signed into several accounts at once, and each account has its own push binding on it. Signing out of an account without removing its binding would leave that account's notifications arriving on a device nobody is signed into — and once the credential is gone there is nothing left to repair it with.
 
-So when `device` is present and the project has the `push` bundle, the server deletes that user's push binding for that device **inside the same transaction** as the token-family destroy, attempting the unbind first. Either both happen or neither does.
+So when `pushDevice` is present and the project has the `push` bundle, the server deletes that user's push binding for that device **inside the same transaction** as the token-family destroy, attempting the unbind first. Either both happen or neither does.
 
 <Warning>
   **If the unbind fails, nothing is committed and the request returns an error.**
@@ -56,7 +56,7 @@ Details worth knowing:
 - **The binding is user-scoped.** The unbind targets only the signing-out user's row for that device. Other accounts bound to the same device are untouched.
 - **An expired refresh token still unbinds.** Session destruction requires a live token, but the unbind accepts an authentic-but-expired one (its signature still proves which user it was minted for) up to 90 days past expiry. Beyond that bound the token is refused as an unbind credential and the request falls back to a plain `204`.
 - **A destroyed token family still unbinds.** If the session was already ended by a prior sign-out-all or by refresh-token reuse detection, the binding is still removed.
-- **Projects without the `push` bundle are unaffected on the success path.** The device is ignored and the endpoint returns `204` exactly as it does without one — this route carries no bundle requirement. The one exception is the bundle lookup itself: it runs whenever `device` is supplied, and if it cannot be resolved the request fails with `auth/server-error` rather than reporting a sign-out that did not happen.
+- **Projects without the `push` bundle are unaffected on the success path.** The `pushDevice` is ignored and the endpoint returns `204` exactly as it does without one — this route carries no bundle requirement. The one exception is the bundle lookup itself: it runs whenever `pushDevice` is supplied, and if it cannot be resolved the request fails with `auth/server-error` rather than reporting a sign-out that did not happen.
 - **A malformed or wrong-signature token still returns `204`.** There is no user to scope an unbind to and no session to destroy, so the endpoint keeps its permissive behavior rather than blocking sign-out.
 
 ## Response
@@ -65,7 +65,7 @@ Returns `204 No Content` on success. No response body.
 
 ## Error Responses
 
-The three `500`s below are reachable only when `device` is supplied, and every one of them means **nothing was committed** — the session and the push binding are both still in place, and the request can be retried. The `400` is ordinary body validation and can be returned with or without a `device`.
+The three `500`s below are reachable only when `pushDevice` is supplied, and every one of them means **nothing was committed** — the session and the push binding are both still in place, and the request can be retried. The `400` is ordinary body validation and can be returned with or without a `pushDevice`.
 
 <AccordionGroup>
   <Accordion title="Push Deregistration Failed — 500">
@@ -106,7 +106,7 @@ The three `500`s below are reachable only when `device` is supplied, and every o
     ```json
     { "error": "...", "code": "auth/invalid-body" }
     ```
-    Returned when `device` is malformed — for example `platform: "ios"` with no
+    Returned when `pushDevice` is malformed — for example `platform: "ios"` with no
     `token`, or `platform: "web"` with no `subscription`.
   </Accordion>
 </AccordionGroup>
