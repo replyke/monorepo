@@ -9,12 +9,19 @@ import {
   selectAccounts,
   selectActiveAccountId,
   selectAccountsReady,
+  selectSignedOut,
   type AccountMap,
   type AccountSummary,
   type AccountEntry,
 } from "../../store/slices/accountsSlice";
-import { selectRefreshToken, setRefreshToken } from "../../store/slices/authSlice";
-import { selectUser } from "../../store/slices/userSlice";
+import {
+  selectRefreshToken,
+  setRefreshToken,
+  resetAuth,
+} from "../../store/slices/authSlice";
+import { selectUser, clearUser } from "../../store/slices/userSlice";
+import { baseApi } from "../../store/api/baseApi";
+import { resetAccountScopedState } from "../../store/actions";
 import { handleError } from "../../utils/handleError";
 import type { AccountStorage } from "../../interfaces/AccountStorage";
 import { readJwtExp, readJwtSub } from "../../utils/jwt";
@@ -37,8 +44,16 @@ export default function useAccountSync(
   const user = useSublaySelector(selectUser); // from userSlice (canonical)
   const accounts = useSublaySelector(selectAccounts);
   const activeAccountId = useSublaySelector(selectActiveAccountId);
+  const signedOut = useSublaySelector(selectSignedOut);
   const isReady = useSublaySelector(selectAccountsReady);
   const isInitialLoadRef = useRef(true);
+
+  // Phase D's listener is registered once (deps: projectId, dispatch) so it
+  // cannot close over `activeAccountId` directly without going stale. A ref
+  // gives it the current value without re-registering the listener on every
+  // token rotation.
+  const activeAccountIdRef = useRef(activeAccountId);
+  activeAccountIdRef.current = activeAccountId;
 
   // Phase A: Mount — register + load from storage
   useEffect(() => {
@@ -49,9 +64,19 @@ export default function useAccountSync(
         const map = await storage.getAccountMap(projectId);
         if (map) {
           // If no active account is set (or it points to a removed account),
-          // default to the first available account on load
+          // default to the first available account on load — UNLESS the user
+          // deliberately signed out.
+          //
+          // `activeAccountId: null` is ambiguous on its own: it is both "the
+          // user has never picked an account" and "the user just signed out"
+          // (or a stored session turned out to be dead). Only the first should
+          // fall back to the first stored account. Reading the second that way
+          // is what used to silently re-activate an account the user had just
+          // left, on the very next launch — the whole reason the persisted
+          // `signedOut` field exists.
           const accountIds = Object.keys(map.accounts);
           if (
+            !map.signedOut &&
             accountIds.length > 0 &&
             (!map.activeAccountId || !map.accounts[map.activeAccountId])
           ) {
@@ -59,7 +84,11 @@ export default function useAccountSync(
           }
 
           dispatch(setAccountMap(map));
-          if (map.activeAccountId && map.accounts[map.activeAccountId]) {
+          if (
+            !map.signedOut &&
+            map.activeAccountId &&
+            map.accounts[map.activeAccountId]
+          ) {
             dispatch(
               setRefreshToken(map.accounts[map.activeAccountId].refreshToken)
             );
@@ -110,6 +139,21 @@ export default function useAccountSync(
     dispatch(upsertAccount({ userId: user.id, entry }));
 
     if (user.id !== activeAccountId) {
+      // Signing in while another account is active — the documented way to add
+      // an account — changes the active account HERE and nowhere else: none of
+      // the transition hooks runs on this path. So this is the sixth
+      // account-changing path, and until now it dispatched neither
+      // `resetApiState` nor a feature-slice reset, which carried the previous
+      // account's query cache and slice state straight into the new session.
+      //
+      // Only on a real change of an EXISTING selection: the first sign-in of a
+      // session moves `null` → id, where there is no previous account's state
+      // to clear and resetting would needlessly drop what the sign-in itself
+      // just populated.
+      if (activeAccountId) {
+        dispatch(baseApi.util.resetApiState());
+        dispatch(resetAccountScopedState());
+      }
       dispatch(setActiveAccount(user.id));
     }
   }, [refreshToken, user, isReady]);
@@ -124,11 +168,11 @@ export default function useAccountSync(
       return;
     }
 
-    const map: AccountMap = { activeAccountId, accounts };
+    const map: AccountMap = { activeAccountId, accounts, signedOut };
     storage.setAccountMap(projectId, map).catch((error) => {
       handleError(error, "Failed to persist account map");
     });
-  }, [accounts, activeAccountId, isReady]);
+  }, [accounts, activeAccountId, signedOut, isReady]);
 
   // Phase D: Cross-tab sync (web only)
   useEffect(() => {
@@ -148,10 +192,28 @@ export default function useAccountSync(
       try {
         const map: AccountMap = JSON.parse(event.newValue);
         dispatch(setAccountMap(map));
-        if (map.activeAccountId && map.accounts[map.activeAccountId]) {
-          dispatch(
-            setRefreshToken(map.accounts[map.activeAccountId].refreshToken)
-          );
+
+        // Cross-tab sync is a full account transition, not a state mirror: the
+        // other tab may have switched accounts or signed out entirely, and this
+        // tab is still rendering the previous account's cache and slice state.
+        const incomingId =
+          !map.signedOut && map.activeAccountId
+            ? map.activeAccountId
+            : null;
+
+        if (incomingId !== activeAccountIdRef.current) {
+          dispatch(baseApi.util.resetApiState());
+          dispatch(resetAccountScopedState());
+        }
+
+        if (incomingId && map.accounts[incomingId]) {
+          dispatch(setRefreshToken(map.accounts[incomingId].refreshToken));
+        } else {
+          // The other tab signed out. Tear the local session down too —
+          // previously this branch did nothing at all, leaving this tab
+          // authenticated against a map that no longer holds its credential.
+          dispatch(resetAuth());
+          dispatch(clearUser());
         }
       } catch (error) {
         handleError(error, "Failed to sync account map from storage event");

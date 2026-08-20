@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { resetAccountScopedState } from "../actions";
 import type {
   Conversation,
   ConversationPreview,
@@ -563,6 +564,12 @@ const chatSlice = createSlice({
     setSocketConnected(state, action: PayloadAction<boolean>) {
       state.socketConnected = action.payload;
     },
+  },
+  extraReducers: (builder) => {
+    // Every hand-rolled slice returns to its initial state on an account
+    // change. RTK-Query's cache is handled separately by
+    // `baseApi.util.resetApiState()`; this covers what that does not.
+    builder.addCase(resetAccountScopedState, () => initialState);
   },
 });
 

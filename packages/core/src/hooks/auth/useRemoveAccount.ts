@@ -5,10 +5,10 @@ import {
   selectActiveAccountId,
   removeAccount as removeAccountAction,
 } from "../../store/slices/accountsSlice";
-import { resetAuth, setTokens, setInitialized } from "../../store/slices/authSlice";
+import { resetAuth } from "../../store/slices/authSlice";
 import { clearUser } from "../../store/slices/userSlice";
-import { requestNewAccessTokenThunk } from "../../store/slices/authThunks";
 import { baseApi } from "../../store/api/baseApi";
+import { resetAccountScopedState } from "../../store/actions";
 import useProject from "../projects/useProject";
 import axios from "../../config/axios";
 import { handleError } from "../../utils/handleError";
@@ -49,40 +49,26 @@ export default function useRemoveAccount(): UseRemoveAccountReturn {
           handleError(signOutError, "Server sign-out failed during account removal");
         }
 
-        // Remove from accounts map
+        // Remove from accounts map. When the removed account was the active
+        // one the reducer leaves NOTHING active — no successor is selected and
+        // no successor session is established. Removing an account is not a
+        // request to be signed into a different one; the app renders its own
+        // next screen. (This used to activate `remaining[0]` and refresh into
+        // it, which silently landed the user inside the oldest account they
+        // had ever added.)
         dispatch(removeAccountAction(userId));
 
         if (isActiveAccount) {
-          const remainingIds = Object.keys(accounts).filter(
-            (id) => id !== userId
-          );
-
-          if (remainingIds.length > 0) {
-            const nextId = remainingIds[0];
-            const nextAccount = accounts[nextId];
-
-            dispatch(resetAuth());
-            dispatch(clearUser());
-            dispatch(baseApi.util.resetApiState());
-            dispatch(
-              setTokens({
-                accessToken: null,
-                refreshToken: nextAccount.refreshToken,
-              })
-            );
-            dispatch(setInitialized(false));
-            await dispatch(requestNewAccessTokenThunk({ projectId }));
-            dispatch(setInitialized(true));
-          } else {
-            dispatch(resetAuth());
-            dispatch(clearUser());
-            dispatch(baseApi.util.resetApiState());
-          }
+          dispatch(resetAuth());
+          dispatch(clearUser());
+          dispatch(baseApi.util.resetApiState());
+          dispatch(resetAccountScopedState());
         }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to remove account"
         );
+        throw err;
       } finally {
         setIsRemoving(false);
       }

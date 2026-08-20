@@ -162,10 +162,25 @@ export default function useAuth(): UseAuthValues {
     if (!projectId) return;
 
     const result = await dispatch(requestNewAccessTokenThunk({ projectId }));
-    
-    if (requestNewAccessTokenThunk.fulfilled.match(result)) {
+
+    // Guard on the payload, and THROW on failure.
+    //
+    // This used to return `undefined` for every failure — including a rejected
+    // refresh and a stored entry with no refresh token at all — which is
+    // indistinguishable from the no-projectId early return above and reads as
+    // a successful call that simply had nothing to do. Every other action on
+    // this hook throws on failure; this one now agrees with them.
+    if (
+      requestNewAccessTokenThunk.fulfilled.match(result) &&
+      result.payload
+    ) {
       return result.payload;
     }
+
+    throw new Error(
+      (typeof result.payload === "string" && result.payload) ||
+        "Failed to request a new access token"
+    );
   }, [dispatch, projectId]);
 
   const handleSetRefreshToken = useCallback((token: React.SetStateAction<string | null>) => {

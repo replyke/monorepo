@@ -3,7 +3,13 @@ import { act } from "@testing-library/react";
 
 import { renderHookWithAxios, makeAuthUser } from "../../test-utils";
 import useAddAccount from "./useAddAccount";
-import { setAccountMap, MAX_ACCOUNTS, type AccountEntry } from "../../store/slices/accountsSlice";
+import {
+  setAccountMap,
+  setAccountLimitReached,
+  MAX_ACCOUNTS,
+  type AccountEntry,
+} from "../../store/slices/accountsSlice";
+import { setUnreadSummary } from "../../store/slices/chatSlice";
 import { setUser as setUserInUserSlice } from "../../store/slices/userSlice";
 
 function makeAccounts(count: number): Record<string, AccountEntry> {
@@ -44,6 +50,43 @@ describe("useAddAccount", () => {
     expect(store.getState().sublay.accounts.activeAccountId).toBeNull();
     // Existing accounts in the map are left untouched.
     expect(Object.keys(store.getState().sublay.accounts.accounts)).toHaveLength(1);
+    // ...and the outgoing account's feature state does not survive into the
+    // account the user is about to sign into.
+    expect(store.getState().sublay.chat.unreadConversationCount).toBeNull();
+  });
+
+  it("clears account-scoped feature state", () => {
+    const { result, store } = renderHookWithAxios(() => useAddAccount());
+    act(() => {
+      store.dispatch(setAccountMap({ activeAccountId: "user-0", accounts: makeAccounts(1) }));
+      store.dispatch(setUnreadSummary({ totalUnread: 8, unreadConversationCount: 4 }));
+    });
+    expect(store.getState().sublay.chat.unreadConversationCount).toBe(4);
+
+    act(() => {
+      result.current.addAccount();
+    });
+
+    expect(store.getState().sublay.chat.unreadConversationCount).toBeNull();
+  });
+
+  it("surfaces accountLimitReached, distinct from canAddAccount", () => {
+    const { result, store } = renderHookWithAxios(() => useAddAccount());
+    act(() => {
+      store.dispatch(
+        setAccountMap({ activeAccountId: "user-0", accounts: makeAccounts(MAX_ACCOUNTS) }),
+      );
+    });
+
+    // Room check says no, but nothing has actually been REFUSED yet.
+    expect(result.current.canAddAccount).toBe(false);
+    expect(result.current.accountLimitReached).toBe(false);
+
+    act(() => {
+      store.dispatch(setAccountLimitReached(true));
+    });
+
+    expect(result.current.accountLimitReached).toBe(true);
   });
 
   it("reports canAddAccount as false and no-ops once MAX_ACCOUNTS is reached", () => {
