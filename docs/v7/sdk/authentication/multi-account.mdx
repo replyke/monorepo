@@ -9,7 +9,7 @@ Sublay stores up to **5 accounts at once** in a single app instance. Users can a
 
 Each signed-in account is stored in the Redux `accounts` map, keyed by user ID. The `activeAccountId` field tracks which account is currently active, and the map is persisted by the `AccountManager` your platform package mounts — see [Where accounts are stored](#where-accounts-are-stored).
 
-When the user switches accounts, the SDK restores the stored refresh token for the target account and fetches a new access token automatically. If that fails — an expired or revoked stored token, for example — the switch **rejects** rather than reporting success; see [When a transition fails](#when-a-transition-fails).
+When the user switches accounts, the SDK exchanges the target account's stored refresh token for a live session **before** it tears the current one down. If that fails — an expired or revoked stored token, for example — the switch **rejects** and the account you were using stays signed in; see [When a transition fails](#when-a-transition-fails).
 
 ## Hooks
 
@@ -44,9 +44,27 @@ function AccountList() {
 }
 ```
 
-Each account entry in `accounts` is an `AccountSummary` containing `id`, `name`, `username`, `email`, and `avatar`.
+Each account in `accounts` is a `StoredAccount`: the profile summary — `id`, `name`, `username`, `email`, `avatar` — plus two re-auth markers, `tokenExpiresAt` and `needsReauth`.
 
-`username`, `email` and `avatar` may be `null`, and `username` may be absent entirely on an entry stored by an older SDK version — absent means *unknown*, not "the user has no username". There is no stored marker for "this account's session has expired": you find that out when a transition fails, which leaves the entry in the map precisely so you can render a re-auth affordance for it. See [When a transition fails](#when-a-transition-fails).
+`username`, `email` and `avatar` may be `null`, and `username` may be absent entirely on an entry stored by an older SDK version — absent means *unknown*, not "the user has no username".
+
+### Knowing which stored accounts still work
+
+A stored account can stop working while it sits in the switcher. The two markers let you show that before the user taps it, and you need both:
+
+| Marker | Kind | What it catches |
+|--------|------|-----------------|
+| `tokenExpiresAt` | Proactive — decoded from the stored refresh token's `exp` claim, no network call | The token simply aged out. `0` means the expiry could not be read from the token, and sorts as already-expired |
+| `needsReauth` | Reactive — set when a switch into that account is actually refused | Everything expiry cannot see: reuse detection, a password change, a remote sign-out-all, an admin revocation. All of those kill the token family while `exp` is still far in the future |
+
+```tsx
+const needsSignIn = (account) =>
+  account.needsReauth || account.tokenExpiresAt <= Date.now();
+```
+
+`needsReauth` clears the moment the account is successfully activated again — by a switch that works, or by signing into it afresh. A switch that failed because the request never reached the server does **not** set it: a flaky network is not a dead account.
+
+Neither marker is a guarantee. `needsReauth: false` with a future expiry means *nothing has gone wrong that the SDK knows of*, so a switch can still fail — and when it does, the entry stays in the map precisely so you can render a re-auth affordance for it. See [When a transition fails](#when-a-transition-fails).
 
 ## Where Accounts Are Stored
 
@@ -62,7 +80,7 @@ Persistence is owned by an `AccountManager` component that each platform package
 
 Expo's SecureStore documents a **2048-byte ceiling per value**. Storing the whole account map as one value meant a map of several accounts could exceed it, and the failed write was logged and swallowed — so the map silently stopped persisting. `@sublay/expo` now writes one value per account behind a small index value, so five accounts fit comfortably with each value well inside the limit.
 
-If a single account entry ever did exceed the budget, the adapter sheds `avatar` first, then `email`, and logs what it dropped. `id`, `name`, `username` and the refresh token are never shed, so the account stays usable.
+If a single account entry ever did exceed the budget, the adapter sheds `avatar` first, then `email`, and logs what it dropped — those are the two unbounded fields. `id`, `name`, `username`, the refresh token and the two re-auth markers are never shed: an entry missing those would load but be unusable, or would silently claim to be healthy.
 
 <Warning>
   **Expo apps sign out once on upgrade.** The old single-value layout is not migrated — a value written by a previous release reads as signed-out, with the account entries intact-but-empty. Users sign in again, once. React Native (Keychain) and web (`localStorage`) have no comparable limit and are unaffected.
@@ -179,24 +197,39 @@ function SignOutAllButton() {
 
 ## When a Transition Fails
 
-Every path that establishes a session for a stored account — `switchAccount`, and the automatic restore at app launch — has to refresh that account's stored refresh token into a live access token. That refresh can fail: the token expired, the server revoked it, or the stored entry is unusable.
+Every path that establishes a session for a stored account — `switchAccount`, and the automatic restore at app launch — has to exchange that account's stored refresh token for a live access token. That exchange can fail: the token expired, the server revoked it, or the stored entry is unusable.
 
 Those failures are now **observable**. They used to resolve as if the transition had succeeded, leaving the app pointed at an account with no session.
 
-**`switchAccount` rejects.** The returned promise rejects and `error` is set. The rollback restores the **selection**, not the session:
+**`switchAccount` rejects, and nothing else changes.** The target's credential is proven out of band *before* the current session is torn down, so a failure is a complete no-op against what you were using:
 
-- The previously active account is selected again, but its session is *not* re-established — by the time the failure is known, the outgoing session has already been torn down. The app renders signed-out with the previous account selected.
-- If there was no previously active account, nothing is selected and the app is signed out.
-- **Both account entries survive.** The account that failed to restore stays in the map, which is what lets you render a "session expired — sign in again" affordance for it.
+- The previously active account is **still active, with a live session** — same tokens, same user, same cached data. Nothing was signed out.
+- **Both account entries survive.** The account that failed to restore stays in the map, which is what lets you render a "session expired — sign in again" affordance for it, and its `needsReauth` marker is set when the server was the one that refused.
+- If there was no previously active account — the picker state after `addAccount()` — nothing is selected and the app is marked signed out, so the next launch does not silently activate a different account.
 
 ```tsx
 try {
   await switchAccount({ userId });
 } catch (err) {
-  // The switch did not happen. `error` is also set on the hook.
-  // Both accounts are still in the map; prompt a re-auth for `userId`.
+  // The switch did not happen, and the account you were using is still
+  // signed in. `error` is also set on the hook. Prompt a re-auth for `userId`.
 }
 ```
+
+<Warning>
+  **Behavior change from the first hardening release.** A failed switch used to
+  sign you out of the account you were already using: the teardown ran first, so
+  by the time the dead credential was discovered there was nothing left to
+  restore, and only the *selection* could be rolled back. Validating first
+  removes that entirely. If your app has a "recover from a failed switch"
+  branch that assumes the session is gone, it no longer fires.
+</Warning>
+
+<Note>
+  A switch still costs exactly **one** token exchange. The refresh endpoint
+  rotates the token presented to it, so validating first replaces the old
+  post-swap refresh rather than adding a second call.
+</Note>
 
 **`removeAccount` rejects** on the same terms.
 
@@ -335,12 +368,14 @@ If the built-in hooks do not fit, the transition primitives are exported directl
 
 | Export | Purpose |
 |--------|---------|
-| `activateStoredAccount` | The full transition: select an account, establish its session, roll the selection back if it cannot. A plain function, callable outside React. |
+| `activateStoredAccount` | The full transition: validate a stored account's credential, then tear down and swap the session over. A plain function, callable outside React. Takes `dispatch` **and `getState`** — it reads the target's stored entry and writes the rotated successor back through the same persist path every other rotation uses. Rejects without touching anything when the credential is dead. |
 | `resetAccountScopedState` | Redux action that returns every account-scoped feature slice to its initial state. Subscribe your own slices to it. |
 | `resetAuth` / `clearUser` | The auth and user teardown actions. |
 | `selectAccounts`, `selectActiveAccountId`, `selectSignedOut`, `selectAccountLimitReached`, `selectDeviceIdentifier` | Selectors over the accounts slice. |
 
 The raw `setActiveAccount`, `upsertAccount` and `removeAccount` reducers are deliberately **not** exported. They only mutate local state: dispatching `setActiveAccount` can point the active id at an account that is not in the map, and dispatching `removeAccount` drops an account without signing it out server-side. Use `activateStoredAccount` and the `useRemoveAccount` hook instead — they perform the whole flow.
+
+`accountNeedsReauth(entry)` is exported alongside `isAccountPushEnabled` for reading the marker off a raw `AccountEntry`, since absent and `false` mean the same thing there.
 
 ## See Also
 

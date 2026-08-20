@@ -43,11 +43,12 @@ function ActiveAccountLabel() {
 
 ## Returns
 
-<ResponseField name="accounts" type="AccountSummary[]">
+<ResponseField name="accounts" type="StoredAccount[]">
   Array of all stored accounts, derived from the accounts map in Redux state.
+  Each one carries the profile summary plus the two re-auth markers below.
 </ResponseField>
 
-<ResponseField name="activeAccount" type="AccountSummary | null">
+<ResponseField name="activeAccount" type="StoredAccount | null">
   The account currently marked as active, or `null` if no session is active.
 </ResponseField>
 
@@ -73,7 +74,7 @@ function ActiveAccountLabel() {
   differs from `canAddAccount`.
 </ResponseField>
 
-## AccountSummary Type
+## StoredAccount Type
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -82,15 +83,66 @@ function ActiveAccountLabel() {
 | `username` | `string \| null \| undefined` | Username. `undefined` on entries stored by an SDK version before this field existed — absent means *unknown*, not "no username" |
 | `email` | `string \| null` | Email address |
 | `avatar` | `string \| null` | Avatar URL |
+| `tokenExpiresAt` | `number` | When this account's stored refresh token expires, as an epoch in **milliseconds**. `0` means unknown |
+| `needsReauth` | `boolean` | `true` once a switch into this account has actually been refused by the server |
 
-There is no stored "needs re-authentication" marker on the summary. A stored
-session that has expired is discovered when a transition fails: the entry is
-deliberately left in the map so you can render a re-auth affordance for it. See
+`StoredAccount` is a superset of the `AccountSummary` shape stored in the
+account map, so code that only reads `id`/`name`/`username`/`email`/`avatar` is
+unaffected.
+
+## Telling a Live Account From a Dead One
+
+A stored account can stop working while it is sitting in the switcher. Two
+fields let you show that **before** the user taps it, and you need both —
+neither is sufficient on its own:
+
+<ResponseField name="tokenExpiresAt" type="number">
+  **Proactive.** Read from the stored refresh token's own `exp` claim when the
+  entry is written (a decode, never a verification and never a network call).
+
+  `0` means *unknown* — the token carried no readable numeric `exp`, so the SDK
+  recorded nothing rather than guessing. It sorts as already-expired
+  deliberately: treating a credential the SDK cannot read as fresh is the worse
+  failure.
+</ResponseField>
+
+<ResponseField name="needsReauth" type="boolean">
+  **Reactive.** Set when a switch into this account is refused by the server,
+  and cleared the moment the account is successfully activated again — whether
+  by a switch that works or by signing into it afresh.
+
+  This catches every death `tokenExpiresAt` cannot see: reuse detection, a
+  password change, a remote sign-out-all, an admin revocation. All of those
+  destroy the token family while `exp` is still comfortably in the future.
+
+  A failed switch that could not reach the server does **not** set it — a flaky
+  network is not a dead account.
+</ResponseField>
+
+```tsx
+const { accounts } = useAccounts();
+
+const needsSignIn = (account: StoredAccount) =>
+  account.needsReauth || account.tokenExpiresAt <= Date.now();
+
+accounts.map((account) => (
+  <AccountRow
+    key={account.id}
+    account={account}
+    badge={needsSignIn(account) ? "Sign in again" : undefined}
+  />
+));
+```
+
+Neither marker is a promise: `needsReauth: false` with a future
+`tokenExpiresAt` means *nothing has gone wrong that the SDK knows of*, not that
+the next switch is guaranteed to succeed. A switch can still fail, and when it
+does the current session is left untouched — see
 [When a transition fails](/sdk/authentication/multi-account#when-a-transition-fails).
 
 On Expo, `avatar` and then `email` may be dropped from a stored entry if it
-would otherwise exceed SecureStore's per-value limit. `id`, `name`, `username`
-and the credential are never dropped. See
+would otherwise exceed SecureStore's per-value limit. `id`, `name`, `username`,
+the credential and both re-auth markers are never dropped. See
 [Where accounts are stored](/sdk/authentication/multi-account#where-accounts-are-stored).
 
 ## Rendering the Signed-Out State

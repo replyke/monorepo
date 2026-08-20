@@ -6,7 +6,7 @@ icon: "plug"
 
 ## Overview
 
-`useSwitchAccount` switches the active session to a different stored account. It clears the current auth state, sets the target account as active, and fetches a fresh access token using the stored refresh token.
+`useSwitchAccount` switches the active session to a different stored account. It exchanges the target account's stored refresh token for a live session **first**, and only then clears the current auth state and swaps the new one in. If that exchange fails, nothing is touched — you stay signed in where you were.
 
 ## Usage Example
 
@@ -23,6 +23,10 @@ function AccountSwitcher() {
       {accounts.map((account) => (
         <li key={account.id}>
           {account.name ?? account.email}
+          {/* Both markers, so a dead account is labelled before it is tapped. */}
+          {(account.needsReauth || account.tokenExpiresAt <= Date.now()) && (
+            <span> — sign in again</span>
+          )}
           {account.id !== activeAccount?.id && (
             <button
               onClick={() => switchAccount({ userId: account.id })}
@@ -74,8 +78,8 @@ The hook returns a `switchAccount` function that accepts:
 </ResponseField>
 
 <ResponseField name="isSwitching" type="boolean">
-  `true` while the switch is in progress (clearing state and fetching a new
-  access token).
+  `true` while the switch is in progress (validating the target's stored
+  credential, then swapping the session over).
 </ResponseField>
 
 <ResponseField name="error" type="string | null">
@@ -90,11 +94,15 @@ The hook returns a `switchAccount` function that accepts:
 
 When the target account's stored refresh token cannot be exchanged for an access token — it expired, was revoked, or the stored entry has no usable token at all — the returned promise **rejects** and `error` is set.
 
-The rollback restores the **selection, not the session**:
+**A failed switch leaves the current session completely intact.** The target's
+credential is validated out of band before anything is torn down, so on failure
+nothing has changed: the account you were using is still active, still holds its
+tokens, and still has its cached data. Only the rejection happened.
 
-- The previously active account becomes the selected one again, but its session is *not* re-established. The outgoing session was already torn down before the failure could be known, so the honest terminal state is "previous account selected, app renders signed-out".
-- With no previously active account, nothing is selected and the app is signed out.
+- The previously active account is still active, with a live session. Nothing was signed out.
 - **Both entries remain in the accounts map**, including the one that failed. That entry is what lets you render a "session expired" prompt for it.
+- When the server was the one that refused the credential, that account's `needsReauth` is set, so the switcher can label it without trying again. A switch that failed because the request never reached the server does **not** set it.
+- Switching with *no* account active — the account-picker state after `addAccount()` — leaves nothing selected and marks the app signed out, so the next launch does not silently activate a different account.
 
 ```tsx
 const { switchAccount, error } = useSwitchAccount();
@@ -104,11 +112,17 @@ async function onPick(userId: string) {
     await switchAccount({ userId });
     // Session is live for `userId`.
   } catch {
-    // Not switched. `error` holds the reason; the user is signed out.
-    // Prompt them to sign in again for `userId`.
+    // Not switched, and nothing else changed — the previous account is still
+    // signed in. `error` holds the reason; prompt a re-auth for `userId`.
   }
 }
 ```
+
+<Note>
+  **The switch costs exactly one token exchange, same as before.** The refresh
+  endpoint rotates the token it is given, so validating first replaces the old
+  post-swap refresh rather than adding a second call.
+</Note>
 
 ## Integration Guide
 

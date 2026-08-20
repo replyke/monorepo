@@ -129,6 +129,12 @@ function SignInButton() {
   Change the password for the currently authenticated user. Accepts
   `{ password: string; newPassword: string }`. The current password must be
   correct. Throws if verification fails.
+
+  A password change invalidates that user's refresh tokens elsewhere, including
+  any stored on another device. A stored account killed that way still has a
+  valid-looking expiry, so it is only discovered by trying — which is what
+  `needsReauth` on [`useAccounts`](/hooks/auth/use-accounts#telling-a-live-account-from-a-dead-one)
+  records.
 </ResponseField>
 
 <ResponseField name="setPassword" type="function">
@@ -153,6 +159,14 @@ function SignInButton() {
     Integrators branching on `fulfilled.match(result)` for that case will see
     the opposite branch.
   </Warning>
+
+  This refreshes the **active** account only — it presents whatever refresh
+  token is in auth state. Switching to a *stored* account no longer goes through
+  this thunk: `switchAccount` exchanges the target's credential out of band,
+  before it touches the live session, so it cannot disturb the account you are
+  currently signed into. If you were observing `auth/requestNewAccessToken`
+  actions to detect account switches, watch the accounts slice instead. See
+  [When a transition fails](/sdk/authentication/multi-account#when-a-transition-fails).
 </ResponseField>
 
 ## The Account Limit
