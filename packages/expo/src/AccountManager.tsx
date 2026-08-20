@@ -15,8 +15,8 @@ const MAX_VALUE_BYTES = 2048;
 
 /**
  * Bumped whenever the on-disk layout changes. A value written by an older
- * release does not parse as this shape, and is deliberately read as
- * signed-out rather than migrated: see `getAccountMap`.
+ * release does not parse as this shape; a recognizable v1 map is converted
+ * forward on load (see `migrateFromV1`), anything else reads as signed-out.
  */
 const INDEX_VERSION = 2;
 
@@ -127,9 +127,267 @@ function serializeEntry(userId: string, entry: AccountEntry): string {
   return serialized;
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * v1 → v2 STORAGE SHIM
+ *
+ * WHAT THIS IS. A one-way, one-shot conversion of the account data written by
+ * `@sublay/expo` releases up to and including 7.11.1 ("v1") into the layout
+ * this file otherwise uses ("v2"). v1 stored the entire account map as a single
+ * SecureStore value, under the very key the v2 index now occupies. v2 stores one
+ * value per account plus a versioned index. There is no v1 writer anywhere; data
+ * only ever moves v1 → v2, and only on load.
+ *
+ * DELETION INVENTORY — the complete list of what to remove, in file order:
+ *
+ *   1. this comment block, `readV1Entry`, `readV1Map` and `migrateFromV1`
+ *      (everything between this line and `type IndexRead`)
+ *   2. the `{ kind: "v1"; map: AccountMap }` member of `IndexRead`
+ *   3. the `readV1Map(parsed)` dispatch in `readIndex` — the unrecognized-shape
+ *      branch collapses back to a bare `return { kind: "unrecognized" }`
+ *   4. the `read.kind === "v1"` branch in `getAccountMap` (the `unrecognized`
+ *      branch below it stays: it is the signed-out fallback, not part of this)
+ *   5. the `read.kind === "v1"` half of the `announced` expression in
+ *      `setAccountMap`, which reverts to `previous?.pending ?? []`
+ *   6. the `else if (read.kind === "v1")` branch in `deleteAccountMap`
+ *   7. the sentence in `INDEX_VERSION`'s doc comment that points at
+ *      `migrateFromV1` — prose, so nothing will flag it
+ *
+ * Items 2-6 are all compiler-caught once item 1 is gone, so a missed one costs a
+ * red squiggle rather than a bug; item 7 is not, which is why it is listed. The
+ * list is exhaustive — you should not need to go looking. On the test side it is
+ * the whole `v1 → v2 migration` describe block; the `reads a shape that is
+ * neither layout as signed-out` case belongs to the loader and stays.
+ *
+ * WHY IT EXISTS. The multi-account hardening release deliberately shipped
+ * WITHOUT a migration: v1 data was read as signed-out, and Expo apps would sign
+ * their user out once on upgrade. That call rested on a finding that the release
+ * had no external exposure. The finding was real, but it was established by
+ * counting rows for the push feature — it was never established for this storage
+ * layer, and it cannot be: the SDK sends no header identifying itself, so the
+ * server cannot tell which package made a request. With no way to measure who is
+ * out there, "nobody is affected" was an assumption, not a fact, so the decision
+ * was reversed before release.
+ *
+ * The blast radius is also wider than "multi-account apps". `useAccountSync`
+ * calls `upsertAccount` unconditionally, so an app with exactly one signed-in
+ * user stores that user in the same map. Without this shim, EVERY `@sublay/expo`
+ * app signs its user out on upgrade, whether or not it ever showed a switcher.
+ *
+ * WHEN IT IS SAFE TO DELETE. When every installation still holding v1 data has
+ * either already launched a version containing this shim (which converts it on
+ * the spot and never looks at v1 again), or is one you are content to sign out.
+ * There is no flag to check and no telemetry that will answer this — it is a
+ * judgement about how long your consumers take to adopt a release and how much
+ * app-store install inertia you are willing to write off. Two or three minor
+ * versions of carriage is the usual shape of that judgement.
+ *
+ * Deleting it costs already-migrated installs NOTHING: their store has been in
+ * v2 form since their first launch on a shim-carrying version, and their loads
+ * never enter this code. The cost falls only on an install that skipped every
+ * version that carried the shim and upgrades straight from 7.11.1-or-earlier to
+ * the version that dropped it.
+ *
+ * ONE CONSTRAINT IF YOU EDIT IT. The conversion writes during a READ.
+ * `useAccountSync` calls `getAccountMap` inside core's per-project storage
+ * mutex (`@sublay/core`'s `config/accountStorage`), so anything here that
+ * reached back for that mutex — `runAccountStorageOp`, or `persistAccountMapFor`
+ * which takes it — would queue behind the read that is still running and hang
+ * the bootstrap forever. Write through `expo-secure-store` directly, as the
+ * functions below do. The mutex still does its job around this: the whole
+ * conversion happens inside the read's turn, so no other persist can interleave
+ * with it.
+ *
+ * WHAT BREAKS IF YOU DELETE IT TOO EARLY. Those users are signed out once and
+ * must sign in again. Their stored refresh tokens become unreadable and are
+ * eventually overwritten; nothing server-side is touched, so their accounts,
+ * content and sessions elsewhere are unaffected. This is a courtesy migration —
+ * annoying to lose, not dangerous. Do not let it hold a release hostage.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Converts one v1 account entry, or returns `null` if it is not one.
+ *
+ * The v1 shape, as written by 7.11.1 and every release before it:
+ *
+ *     { refreshToken: string,
+ *       tokenExpiresAt: number,          // epoch ms, present since the original
+ *                                        // multi-account release — it predates
+ *                                        // the chunking work
+ *       user: { id, name, email, avatar } }
+ *
+ * `refreshToken` and `user` are what make an entry an entry: without the token
+ * there is no session to preserve, and without the user object there is nobody
+ * to preserve it for. Both are required here, and an entry missing either is
+ * rejected rather than patched up — a half-entry that loads is worse than one
+ * that never appears.
+ *
+ * Fields v1 did not have are LEFT ABSENT rather than defaulted to a value, so
+ * they land on exactly the meaning a missing field has everywhere else in this
+ * surface: `username` absent = unknown (not "has no username"), `pushEnabled`
+ * absent = push enabled, `needsReauth` absent = no opinion. Writing `false`/
+ * `null` for any of them would assert something v1 never recorded.
+ */
+function readV1Entry(userId: string, value: unknown): AccountEntry | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const candidate = value as {
+    refreshToken?: unknown;
+    tokenExpiresAt?: unknown;
+    user?: unknown;
+  };
+
+  if (typeof candidate.refreshToken !== "string" || candidate.refreshToken === "")
+    return null;
+  if (
+    !candidate.user ||
+    typeof candidate.user !== "object" ||
+    Array.isArray(candidate.user)
+  )
+    return null;
+
+  const user = candidate.user as {
+    id?: unknown;
+    name?: unknown;
+    email?: unknown;
+    avatar?: unknown;
+  };
+
+  return {
+    refreshToken: candidate.refreshToken,
+    // Every v1 writer emitted this, so the fallback is defensive only. `0` reads
+    // as "expired", which renders a re-auth affordance — the safe direction to
+    // be wrong in, since the alternative is claiming a credential is live.
+    tokenExpiresAt:
+      typeof candidate.tokenExpiresAt === "number" ? candidate.tokenExpiresAt : 0,
+    user: {
+      // v1 keyed the map by `user.id`, so the key is a sound fallback identity.
+      id: typeof user.id === "string" ? user.id : userId,
+      name: typeof user.name === "string" ? user.name : null,
+      email: typeof user.email === "string" ? user.email : null,
+      avatar: typeof user.avatar === "string" ? user.avatar : null,
+    },
+  };
+}
+
+/**
+ * Recognizes a v1 map and converts it, or returns `null` for anything else.
+ *
+ * This is the line between "old data" and "garbage", and it has to hold from
+ * both sides. Too strict and a real session is thrown away for a field nobody
+ * cares about; too loose and arbitrary bytes are promoted into an account map,
+ * writing per-account keys for ids that never existed. The recognizable core of
+ * v1 is: an object carrying an `accounts` object, an `activeAccountId` that is a
+ * string or null, and — when it claims accounts at all — at least one entry that
+ * actually parses as an entry.
+ *
+ * The active pointer is carried across VERBATIM, including when it names an
+ * entry that was dropped. Resolving a dangling pointer is core's decision, not
+ * storage's, exactly as on the v2 read path.
+ */
+function readV1Map(parsed: unknown): AccountMap | null {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+  const candidate = parsed as {
+    activeAccountId?: unknown;
+    accounts?: unknown;
+    signedOut?: unknown;
+  };
+
+  const rawAccounts = candidate.accounts;
+  if (
+    !rawAccounts ||
+    typeof rawAccounts !== "object" ||
+    Array.isArray(rawAccounts)
+  )
+    return null;
+
+  if (
+    candidate.activeAccountId !== undefined &&
+    candidate.activeAccountId !== null &&
+    typeof candidate.activeAccountId !== "string"
+  )
+    return null;
+
+  const source = Object.entries(rawAccounts as Record<string, unknown>);
+  const accounts: Record<string, AccountEntry> = {};
+  for (const [userId, value] of source) {
+    const entry = readV1Entry(userId, value);
+    if (entry) accounts[userId] = entry;
+  }
+
+  // Claimed accounts but not one of them parses: this is not a v1 map that lost
+  // an entry, it is something else that happens to have an `accounts` key.
+  if (source.length > 0 && Object.keys(accounts).length === 0) return null;
+
+  return {
+    activeAccountId:
+      typeof candidate.activeAccountId === "string"
+        ? candidate.activeAccountId
+        : null,
+    accounts,
+    // `signedOut` arrived during this same work, so no released v1 build ever
+    // wrote it — only pre-chunking builds of the branch did. Carried anyway
+    // because it costs one comparison, and absent reads as `false`, the same
+    // default the v2 index applies.
+    signedOut: candidate.signedOut === true,
+    // v1 had no device identifier — push bindings are per-account and postdate
+    // it. `null` (not absent) so this load and every later one are identical.
+    deviceIdentifier: null,
+  };
+}
+
+/**
+ * Writes a converted v1 map out in v2 form. One shot: once the index lands, the
+ * v1 value is gone and no later load takes this path again.
+ *
+ * ORDER IS THE WHOLE DESIGN, because the v1 blob sits at the index key and the
+ * write that commits the conversion is the same write that destroys it.
+ *
+ *   1. per-account values — the v1 blob is still intact and still authoritative
+ *   2. the index — commit; the v1 blob is replaced in the same operation
+ *
+ * Interrupted between the two, the store still holds a complete v1 map, so the
+ * next load simply converts it again from the top. The conversion is idempotent:
+ * it rewrites the same keys with the same content. Nothing is stranded, because
+ * every value it wrote belongs to an id the surviving v1 blob still names — see
+ * the `v1` branch of `setAccountMap`, which is what keeps that true even if the
+ * app goes on to persist a different map before the retry.
+ *
+ * `pending` is empty on the committed index and correctly so: unlike the
+ * ordinary write path there is no previous committed set to reclaim from, and
+ * every value written above is named by this same index.
+ *
+ * SIZE. Fitting is guaranteed by construction, not hoped for: a v1 map was a
+ * SINGLE SecureStore value, so a stored one is necessarily under the 2048-byte
+ * ceiling, and every per-account value carved out of it is smaller than the blob
+ * that contained it. `serializeEntry`/`writeIndex` still apply the shed and the
+ * over-budget log, so a v1 value that somehow got past the limit on a lenient
+ * platform is handled by the same path as any other oversize entry.
+ */
+async function migrateFromV1(projectId: string, map: AccountMap): Promise<void> {
+  const ids = Object.keys(map.accounts);
+
+  for (const id of ids) {
+    await SecureStore.setItemAsync(
+      accountKey(projectId, id),
+      serializeEntry(id, map.accounts[id])
+    );
+  }
+
+  await writeIndex(projectId, {
+    v: INDEX_VERSION,
+    activeAccountId: map.activeAccountId,
+    signedOut: map.signedOut ?? false,
+    deviceIdentifier: null,
+    accountIds: ids,
+    pending: [],
+  });
+}
+
 type IndexRead =
   | { kind: "index"; index: StoredIndex }
-  | { kind: "legacy" }
+  /** A recognizable pre-chunking map, already converted to the current shape. */
+  | { kind: "v1"; map: AccountMap }
+  /** Parsed or not, it is neither layout. Never migrated — see `getAccountMap`. */
+  | { kind: "unrecognized" }
   | { kind: "empty" }
   | { kind: "unreadable"; error: unknown };
 
@@ -157,7 +415,8 @@ async function readIndex(projectId: string): Promise<IndexRead> {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return { kind: "legacy" };
+    // Not even JSON. Never a v1 map, so there is nothing to migrate.
+    return { kind: "unrecognized" };
   }
 
   const candidate = parsed as Partial<StoredIndex> | null;
@@ -168,8 +427,9 @@ async function readIndex(projectId: string): Promise<IndexRead> {
     !Array.isArray(candidate.accountIds)
   ) {
     // Either a pre-chunking value (the whole map under this key) or something
-    // we do not recognize. Both are legacy.
-    return { kind: "legacy" };
+    // we do not recognize. Only the first is migrated.
+    const v1 = readV1Map(parsed);
+    return v1 ? { kind: "v1", map: v1 } : { kind: "unrecognized" };
   }
 
   return {
@@ -248,11 +508,32 @@ export const secureStoreStorage: AccountStorage = {
     // failure at the call site, and throwing here would take the bootstrap down.
     if (read.kind === "empty" || read.kind === "unreadable") return null;
 
-    if (read.kind === "legacy") {
-      // A value written before chunking. Deliberately NOT migrated: the whole
-      // point of chunking is that the old single-value layout could not hold
-      // five accounts, and a shim would have to trust a blob that may itself be
-      // a truncated write. Expo consumers are signed out once, by design.
+    if (read.kind === "v1") {
+      // A value written before chunking, already converted in `readIndex`.
+      // Convert the STORE too, here and now, so the next load is an ordinary v2
+      // read and this path is never taken again. See the v1 → v2 shim block.
+      try {
+        await migrateFromV1(projectId, read.map);
+      } catch (error) {
+        // Best effort by design. The v1 value is still on disk and still whole
+        // — the conversion writes values before it touches the index — so the
+        // next load retries from the top. Returning the converted map anyway
+        // keeps the user signed in for THIS launch, which is the entire point;
+        // failing the load here would sign them out over a transient locked
+        // keychain, i.e. exactly the outcome the shim exists to prevent.
+        handleError(
+          error,
+          "Failed to migrate stored accounts to the current layout"
+        );
+      }
+      return read.map;
+    }
+
+    if (read.kind === "unrecognized") {
+      // Neither layout: unparseable bytes, a truncated write, or a value that
+      // is not an account map at all. NOT migrated — a shim that guessed here
+      // would promote garbage into per-account keys — so it degrades to
+      // signed-out, which is what this whole path used to do for v1 too.
       return { activeAccountId: null, accounts: {}, signedOut: true };
     }
 
@@ -323,7 +604,19 @@ export const secureStoreStorage: AccountStorage = {
       }
       const previous = read.kind === "index" ? read.index : null;
       const committed = previous?.accountIds ?? [];
-      const announced = previous?.pending ?? [];
+      // A v1 blob names ids whose per-account values may ALREADY be on disk: a
+      // conversion that wrote its values and was interrupted before its commit
+      // leaves exactly that state. Those keys are uncommitted-but-possibly-
+      // resident, which is precisely what `pending` means, so they enter the
+      // computation as if the previous writer had announced them. Without this,
+      // a write that lands while a conversion is half-finished commits an index
+      // that neither names nor announces them, and their refresh tokens become
+      // unreachable — the one orphan class the pending list cannot otherwise
+      // reach. (This write replaces the v1 value, so an interruption from here
+      // on signs the user out once — the pre-shim behavior, on a crash only.)
+      const announced =
+        previous?.pending ??
+        (read.kind === "v1" ? Object.keys(read.map.accounts) : []);
 
       const nextIds = Object.keys(map.accounts);
       const uncommitted = nextIds.filter((id) => !committed.includes(id));
@@ -419,6 +712,14 @@ export const secureStoreStorage: AccountStorage = {
           new Set([...read.index.accountIds, ...read.index.pending])
         );
         for (const id of ids) {
+          await SecureStore.deleteItemAsync(accountKey(projectId, id));
+        }
+      } else if (read.kind === "v1") {
+        // Same reason as the write path: an interrupted conversion may have
+        // written per-account values that the surviving v1 blob is the only
+        // record of. Deleting just the blob would leave those credentials
+        // resident and unreachable — a wipe that wipes nothing.
+        for (const id of Object.keys(read.map.accounts)) {
           await SecureStore.deleteItemAsync(accountKey(projectId, id));
         }
       }
