@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
+import { useStore } from "react-redux";
 import { useSublayDispatch, useSublaySelector } from "../../store/hooks";
+import type { SublayState } from "../../store/sublayReducers";
 import {
   selectAccounts,
   selectActiveAccountId,
@@ -15,6 +17,10 @@ export interface UseSwitchAccountReturn {
 
 export default function useSwitchAccount(): UseSwitchAccountReturn {
   const dispatch = useSublayDispatch();
+  // The transition core validates the target's stored credential before it
+  // tears anything down, which means reading the stored entry and writing the
+  // rotated successor back — neither reachable through `dispatch` alone.
+  const store = useStore<{ sublay: SublayState }>();
   const { projectId } = useProject();
   const accounts = useSublaySelector(selectAccounts);
   const activeAccountId = useSublaySelector(selectActiveAccountId);
@@ -31,12 +37,14 @@ export default function useSwitchAccount(): UseSwitchAccountReturn {
       setError(null);
 
       try {
-        // The whole sequence lives in the transition core, which owns the
-        // unwrap guard and the selection-only rollback. A failed refresh
-        // REJECTS here — it used to resolve as if the switch had worked,
-        // leaving the app pointed at an account with no session.
+        // The whole sequence lives in the transition core, which validates the
+        // target's stored credential BEFORE tearing anything down. A dead
+        // credential REJECTS here and leaves the current session completely
+        // untouched — it used to sign the user out of the account they were
+        // happily using, because teardown ran first.
         await activateStoredAccount({
           dispatch,
+          getState: () => store.getState(),
           projectId,
           userId,
           refreshToken: accounts[userId].refreshToken,
@@ -51,7 +59,7 @@ export default function useSwitchAccount(): UseSwitchAccountReturn {
         setIsSwitching(false);
       }
     },
-    [dispatch, projectId, accounts, activeAccountId]
+    [dispatch, store, projectId, accounts, activeAccountId]
   );
 
   return { switchAccount, isSwitching, error };

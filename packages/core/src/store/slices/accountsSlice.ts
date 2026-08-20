@@ -36,6 +36,28 @@ export interface AccountEntry {
    * `isAccountPushEnabled` rather than testing the field directly.
    */
   pushEnabled?: boolean;
+  /**
+   * Set when a transition INTO this account failed because the stored refresh
+   * token was rejected — expired, revoked, reuse-detected, killed by a password
+   * change, a remote sign-out-all or an admin revocation.
+   *
+   * The reactive half of the pair with `tokenExpiresAt`, and neither is
+   * sufficient alone. `tokenExpiresAt` is proactive but only knows what the
+   * JWT's own `exp` claim says; every death in the list above kills the token
+   * family while `exp` is still comfortably in the future, and the only way to
+   * learn about those is to have tried. This field records that we tried.
+   *
+   * **Absent means "no opinion", not "healthy".** `upsertAccount` merges, and
+   * `useAccountSync` Phase B rebuilds a fresh entry literal on every launch and
+   * every transition — an entry that says nothing about re-auth. If absent
+   * overwrote, the marker would be erased on a cadence. It is cleared
+   * deliberately instead, by `setActiveAccount`, which is dispatched on exactly
+   * one occasion: a successful activation of that account.
+   *
+   * Read it through `accountNeedsReauth`, never as a bare truthiness test on a
+   * possibly-absent field.
+   */
+  needsReauth?: boolean;
 }
 
 /**
@@ -46,6 +68,18 @@ export interface AccountEntry {
  */
 export function isAccountPushEnabled(entry: AccountEntry): boolean {
   return entry.pushEnabled !== false;
+}
+
+/**
+ * `true` only when a transition into this account has actually been refused.
+ *
+ * Absent means nothing has gone wrong *that we know of* — it is not a promise
+ * that the credential is live. Pair it with `tokenExpiresAt` when rendering a
+ * switcher: expiry catches the deaths that are predictable, this catches the
+ * ones that are not.
+ */
+export function accountNeedsReauth(entry: AccountEntry): boolean {
+  return entry.needsReauth === true;
 }
 
 export interface AccountMap {
@@ -240,6 +274,27 @@ const accountsSlice = createSlice({
       if (!entry) return;
       entry.pushEnabled = action.payload.enabled;
     },
+    /**
+     * Records that this account's stored credential was refused (or clears the
+     * record).
+     *
+     * Setting is written as an explicit `true`; CLEARING deletes the field
+     * rather than writing `false`, so "healthy" stays the absent state the
+     * merge semantics already treat as "no opinion" — and so an entry that has
+     * never failed costs nothing on Expo's per-value byte budget.
+     *
+     * Unknown ids are ignored: an account that is not stored has no marker to
+     * carry, and `activateStoredAccount` can legitimately be asked for one.
+     */
+    setAccountNeedsReauth: (
+      state,
+      action: PayloadAction<{ userId: string; needsReauth: boolean }>
+    ) => {
+      const entry = state.accounts[action.payload.userId];
+      if (!entry) return;
+      if (action.payload.needsReauth) entry.needsReauth = true;
+      else delete entry.needsReauth;
+    },
     removeAccount: (state, action: PayloadAction<string>) => {
       delete state.accounts[action.payload];
       if (state.activeAccountId === action.payload) {
@@ -263,7 +318,27 @@ const accountsSlice = createSlice({
       // flag — it means "the last thing that happened was a deliberate
       // sign-out", and this is no longer that. Without a clearing point the
       // user lands at the account picker on every launch, forever.
-      if (action.payload) state.signedOut = false;
+      if (action.payload) {
+        state.signedOut = false;
+
+        // ...and the defined clearing point for that account's re-auth marker.
+        //
+        // It lives HERE rather than in `activateStoredAccount` so it covers the
+        // other way a dead account comes back to life: signing into it again.
+        // That path never touches the transition core — `useAccountSync` Phase
+        // B upserts the entry and dispatches this action — so a marker cleared
+        // only in the transition core would survive a successful re-auth and
+        // leave the switcher showing "sign in again" forever.
+        //
+        // Since validate-before-commit, no failure path selects anything: the
+        // transition core selects only after the credential has been proven,
+        // so every dispatch carrying an id is an activation that worked. The
+        // one near-exception is `refuseAtAccountLimit` restoring the PREVIOUS
+        // selection, and that account cannot be carrying a marker — it was the
+        // live session a moment earlier.
+        const entry = state.accounts[action.payload];
+        if (entry) delete entry.needsReauth;
+      }
     },
     setSignedOut: (state, action: PayloadAction<boolean>) => {
       state.signedOut = action.payload;
@@ -297,6 +372,7 @@ export const {
   upsertAccount,
   setDeviceIdentifier,
   setAccountPushEnabled,
+  setAccountNeedsReauth,
   removeAccount,
   setActiveAccount,
   setSignedOut,

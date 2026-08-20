@@ -5,12 +5,50 @@ import {
   selectActiveAccountId,
   selectAccountLimitReached,
   selectSignedOut,
+  accountNeedsReauth,
   type AccountSummary,
 } from "../../store/slices/accountsSlice";
 
+/**
+ * A stored account as a switcher needs to render it: the profile summary plus
+ * the two markers that say whether its stored credential is still worth trying.
+ *
+ * A superset of `AccountSummary`, so existing code that reads `id`/`name`/
+ * `email`/`avatar`/`username` off these is unaffected.
+ */
+export interface StoredAccount extends AccountSummary {
+  /**
+   * When this account's stored refresh token expires, as an epoch in
+   * milliseconds, read from the token's own `exp` claim.
+   *
+   * **`0` means "unknown"** — the token carried no readable numeric `exp`, so
+   * `useAccountSync` recorded 0 rather than guessing. It reads as
+   * already-expired on purpose: treating a credential we cannot understand as
+   * fresh is the failure mode worth avoiding.
+   *
+   * Proactive but not sufficient. It only knows what the JWT says, and a token
+   * family can be killed while its `exp` is still far in the future — see
+   * `needsReauth`.
+   */
+  tokenExpiresAt: number;
+  /**
+   * `true` when a switch into this account has actually been refused by the
+   * server: revoked, reuse-detected, or invalidated by a password change, a
+   * remote sign-out-all or an admin revocation. All of those leave `exp`
+   * untouched, so this is the only way to see them.
+   *
+   * Reactive but not sufficient either — it is only ever set by *trying*.
+   * Render a switcher off both: `needsReauth || tokenExpiresAt <= Date.now()`.
+   *
+   * Clears the moment the account is successfully activated, whether by a
+   * switch or by signing into it again.
+   */
+  needsReauth: boolean;
+}
+
 export interface UseAccountsReturn {
-  accounts: AccountSummary[];
-  activeAccount: AccountSummary | null;
+  accounts: StoredAccount[];
+  activeAccount: StoredAccount | null;
   accountCount: number;
   /**
    * `true` when no account is active *because the user deliberately signed
@@ -34,11 +72,25 @@ export default function useAccounts(): UseAccountsReturn {
   const accountLimitReached = useSublaySelector(selectAccountLimitReached);
 
   return useMemo(() => {
-    const accountSummaries = Object.values(accountsMap).map(
-      (entry) => entry.user
-    );
+    const byId = new Map<string, StoredAccount>();
+    for (const [userId, entry] of Object.entries(accountsMap)) {
+      byId.set(userId, {
+        ...entry.user,
+        // Defensive only — no persisted map can reach here without the field.
+        // It has been written on every entry since multi-account shipped, and
+        // Expo's chunked v2 layout signs pre-v2 stores out rather than loading
+        // them. Kept because "unknown expiry reads as expired" is the right
+        // answer if a hand-built map ever arrives, not because legacy data does.
+        tokenExpiresAt: entry.tokenExpiresAt ?? 0,
+        needsReauth: accountNeedsReauth(entry),
+      });
+    }
+
+    const accountSummaries = Array.from(byId.values());
+    // Keyed lookup, not a scan of the array: the map is keyed by user id and
+    // that key is the authority on which entry is active.
     const activeAccount = activeAccountId
-      ? accountsMap[activeAccountId]?.user ?? null
+      ? byId.get(activeAccountId) ?? null
       : null;
 
     return {

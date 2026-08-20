@@ -83,24 +83,29 @@ describe("useSwitchAccount", () => {
     ).rejects.toThrow("Account user-missing not found");
   });
 
-  // INVERTED (multi-account hardening). This test used to be titled "does not
-  // throw when requesting the new access token fails (swallowed inside the
-  // thunk)" and asserted `error === null` with the active id already moved to
-  // the target — it codified the bug: `switchAccount` reported success while
-  // leaving the app pointed at an account with no session.
+  // INVERTED TWICE. It began as "does not throw when requesting the new access
+  // token fails", asserting `error === null` with the active id already moved
+  // to the target. Phase 4 inverted that to "rejects and rolls the SELECTION
+  // back", asserting the previous account was selected again with both tokens
+  // null — an honest description of teardown-first, and of the remaining bug:
+  // tapping a dead account signed the user out of the good one they were using.
+  // Validate-before-commit removes that, so the honest assertion is now that
+  // the current session is untouched.
   //
   // NOTE ON THE HARNESS: the rejecting call is NOT wrapped in `act()`.
   // Wrapping a rejecting hook call in `act()` swallows the dispatch made from
-  // the catch block, so the rollback would not be observable here.
-  it("rejects and rolls the SELECTION back when requesting the new access token fails", async () => {
+  // the catch block, so the marker write would not be observable here.
+  it("rejects and leaves the current session fully intact when the target's credential is dead", async () => {
     const { result, store, axiosPublic } = renderHookWithAxios(() => useSwitchAccount(), {
+      accessToken: "access-1",
       refreshToken: "refresh-1",
     });
     act(() => {
       store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }));
+      store.dispatch(setUnreadSummary({ totalUnread: 12, unreadConversationCount: 7 }));
     });
 
-    axiosPublic.mockError("post", 500, { message: "Internal error" });
+    axiosPublic.mockError("post", 403, { error: "Refresh token revoked" });
 
     await expect(result.current.switchAccount({ userId: "user-2" })).rejects.toThrow();
 
@@ -108,29 +113,32 @@ describe("useSwitchAccount", () => {
     await waitFor(() => expect(result.current.error).not.toBeNull());
 
     const state = store.getState();
-    // Selection is back on the previous account...
+    // Still signed in as user-1: selection, tokens, gate and cached feature
+    // state all exactly where they were.
     expect(state.sublay.accounts.activeAccountId).toBe("user-1");
-    // ...but no session was re-established for it — that is the honest
-    // terminal state, since the teardown ran before the failure was known.
-    expect(state.sublay.auth.accessToken).toBeNull();
-    expect(state.sublay.auth.refreshToken).toBeNull();
+    expect(state.sublay.auth.accessToken).toBe("access-1");
+    expect(state.sublay.auth.refreshToken).toBe("refresh-1");
+    expect(state.sublay.auth.initialized).toBe(true);
+    expect(state.sublay.accounts.signedOut).toBe(false);
+    expect(state.sublay.chat.unreadConversationCount).toBe(7);
     // Both entries survive: the failed target stays so the app can prompt a
-    // re-auth for it.
+    // re-auth for it...
     expect(Object.keys(state.sublay.accounts.accounts).sort()).toEqual([
       "user-1",
       "user-2",
     ]);
-    // The auth gate is open again regardless — withholding `initialized` would
-    // park every outbound request behind the 5s fallback.
-    expect(state.sublay.auth.initialized).toBe(true);
+    // ...and it is marked, so the switcher can say so before the next tap.
+    expect(state.sublay.accounts.accounts["user-2"].needsReauth).toBe(true);
   });
 
   it("fails observably when the target entry carries an empty refresh token", async () => {
-    // The `fulfilled`-with-`undefined` path: the refresh thunk has no
-    // credential to present, so it never reaches the network. A guard on
-    // `rejected.match` alone misses this entirely — which is why the guard is
-    // on the payload and the thunk now rejects.
-    const { result, store, axiosPublic } = renderHookWithAxios(() => useSwitchAccount());
+    // A corrupt map: there is no credential to present, so the failure never
+    // reaches the network. A guard that waits for a request to fail misses this
+    // entirely — which is why the check runs before anything is torn down.
+    const { result, store, axiosPublic } = renderHookWithAxios(() => useSwitchAccount(), {
+      accessToken: "access-1",
+      refreshToken: "refresh-1",
+    });
     const accounts = makeAccounts();
     accounts["user-2"] = { ...accounts["user-2"], refreshToken: "" };
     act(() => {
@@ -141,9 +149,15 @@ describe("useSwitchAccount", () => {
 
     await waitFor(() => expect(result.current.error).not.toBeNull());
     expect(axiosPublic.calls("post")).toHaveLength(0);
-    expect(store.getState().sublay.accounts.activeAccountId).toBe("user-1");
+    const state = store.getState();
+    expect(state.sublay.accounts.activeAccountId).toBe("user-1");
+    expect(state.sublay.auth.accessToken).toBe("access-1");
+    expect(state.sublay.accounts.accounts["user-2"].needsReauth).toBe(true);
   });
 
+  // Unchanged in meaning: with nothing active there is no session to protect,
+  // and the signed-out flag is what stops the next launch silently activating
+  // whichever account happens to be first in the map.
   it("lands signed-out with nothing selected when the failed switch had no previous account", async () => {
     const { result, store, axiosPublic } = renderHookWithAxios(() => useSwitchAccount());
     act(() => {
