@@ -131,10 +131,12 @@ export { requestNewAccessTokenThunk } from "./store/slices/authThunks";
 export type { AccountStorage } from "./interfaces/AccountStorage";
 export {
   MAX_ACCOUNTS,
+  isAccountPushEnabled,
   selectAccounts,
   selectActiveAccountId,
   selectSignedOut,
   selectAccountLimitReached,
+  selectDeviceIdentifier,
   type AccountSummary,
   type AccountEntry,
   type AccountMap,

@@ -4,7 +4,14 @@ import { waitFor } from "@testing-library/react";
 import { renderHookWithAxios, resetAxiosMocks, makeAuthUser } from "../../test-utils";
 import useAccountSync from "./useAccountSync";
 import { setTokens } from "../../store/slices/authSlice";
-import { setSignedOut } from "../../store/slices/accountsSlice";
+import {
+  setSignedOut,
+  setDeviceIdentifier,
+} from "../../store/slices/accountsSlice";
+import {
+  resetAccountStorage,
+  runAccountStorageOp,
+} from "../../config/accountStorage";
 import { setUnreadSummary } from "../../store/slices/chatSlice";
 import { setUser } from "../../store/slices/userSlice";
 import type { AccountMap } from "../../store/slices/accountsSlice";
@@ -12,6 +19,9 @@ import type { AccountStorage } from "../../interfaces/AccountStorage";
 
 afterEach(() => {
   resetAxiosMocks();
+  // The storage slot and its per-project mutex are module-level state shared by
+  // every test in the run.
+  resetAccountStorage();
 });
 
 function makeJwt(payload: Record<string, unknown>): string {
@@ -317,5 +327,168 @@ describe("useAccountSync", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(store.getState().sublay.accounts.activeAccountId).toBeNull();
+  });
+});
+
+describe("useAccountSync — Phase 5 durable storage", () => {
+  it("records `username` on the stored summary", async () => {
+    const storage = makeFakeStorage(null);
+    const { store } = renderHookWithAxios(() =>
+      useAccountSync(storage, "test-project"),
+    );
+
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+
+    const jwt = makeJwt({ sub: "user-1" });
+    store.dispatch(setTokens({ accessToken: "access-1", refreshToken: jwt }));
+    store.dispatch(
+      setUser(makeAuthUser({ id: "user-1", name: "Alice", username: "alice" })),
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.accounts["user-1"]).toBeDefined(),
+    );
+    expect(
+      store.getState().sublay.accounts.accounts["user-1"].user.username,
+    ).toBe("alice");
+  });
+
+  it("persists the device identifier, and keeps it across a sign-out-all", async () => {
+    const storage = makeFakeStorage(null);
+    const { store } = renderHookWithAxios(() =>
+      useAccountSync(storage, "test-project"),
+    );
+
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+
+    store.dispatch(setDeviceIdentifier({ platform: "ios", token: "apns-1" }));
+
+    await waitFor(() => expect(storage.setAccountMap).toHaveBeenCalled());
+    const calls = (storage.setAccountMap as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls[calls.length - 1][1].deviceIdentifier).toEqual({
+      platform: "ios",
+      token: "apns-1",
+    });
+  });
+
+  it("restores the device identifier from storage on load", async () => {
+    const storage = makeFakeStorage({
+      activeAccountId: null,
+      accounts: {},
+      signedOut: true,
+      deviceIdentifier: { platform: "android", token: "fcm-1" },
+    });
+
+    const { store } = renderHookWithAxios(() =>
+      useAccountSync(storage, "test-project"),
+    );
+
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+    expect(store.getState().sublay.accounts.deviceIdentifier).toEqual({
+      platform: "android",
+      token: "fcm-1",
+    });
+  });
+
+  it("keeps `pushEnabled` across the refresh-token rotation that rebuilds the entry", async () => {
+    // End-to-end version of the reducer-level merge test: the rotation goes
+    // through Phase B, which builds its entry literal with no knowledge of the
+    // flag. Before the merge, this silently re-enabled a silenced account on
+    // every launch and every transition.
+    const jwt1 = makeJwt({ sub: "user-1", exp: 9999999999 });
+    const storage = makeFakeStorage({
+      activeAccountId: "user-1",
+      accounts: {
+        "user-1": {
+          refreshToken: jwt1,
+          tokenExpiresAt: 9999999999000,
+          user: { id: "user-1", name: "Alice", email: null, avatar: null },
+          pushEnabled: false,
+        },
+      },
+    });
+
+    const { store } = renderHookWithAxios(() =>
+      useAccountSync(storage, "test-project"),
+    );
+
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+
+    const rotated = makeJwt({ sub: "user-1", exp: 9999999999 });
+    store.dispatch(setTokens({ accessToken: "access-2", refreshToken: rotated }));
+    store.dispatch(setUser(makeAuthUser({ id: "user-1", name: "Alice" })));
+
+    await waitFor(() =>
+      expect(
+        store.getState().sublay.accounts.accounts["user-1"].refreshToken,
+      ).toBe(rotated),
+    );
+    expect(store.getState().sublay.accounts.accounts["user-1"].pushEnabled).toBe(
+      false,
+    );
+  });
+
+  it("persists THROUGH the shared mutex rather than alongside it", async () => {
+    // Phase C used to call the raw handle, which would leave the mutex
+    // guarding nothing. Proven by occupying the project's queue first: if the
+    // persist went around the mutex it would start immediately.
+    const order: string[] = [];
+    const storage: AccountStorage = {
+      getAccountMap: vi.fn(async () => null),
+      setAccountMap: vi.fn(async () => {
+        order.push("persist");
+      }),
+      deleteAccountMap: vi.fn(async () => {}),
+    };
+
+    const { store } = renderHookWithAxios(() =>
+      useAccountSync(storage, "test-project"),
+    );
+
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+
+    let releaseOccupant!: () => void;
+    const occupied = runAccountStorageOp("test-project", async () => {
+      order.push("occupant:start");
+      await new Promise<void>((resolve) => {
+        releaseOccupant = resolve;
+      });
+      order.push("occupant:end");
+    });
+
+    store.dispatch(setDeviceIdentifier({ platform: "ios", token: "apns-1" }));
+
+    // The persist is queued behind the occupant, not racing it.
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(order).toEqual(["occupant:start"]);
+
+    releaseOccupant();
+    await occupied;
+
+    await waitFor(() => expect(storage.setAccountMap).toHaveBeenCalled());
+    expect(order).toEqual(["occupant:start", "occupant:end", "persist"]);
+  });
+
+  it("does not surface a rejected persist as an unhandled rejection", async () => {
+    const storage: AccountStorage = {
+      getAccountMap: vi.fn(async () => null),
+      setAccountMap: vi.fn(async () => {
+        throw new Error("keychain unavailable");
+      }),
+      deleteAccountMap: vi.fn(async () => {}),
+    };
+
+    const { store } = renderHookWithAxios(() =>
+      useAccountSync(storage, "test-project"),
+    );
+
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+
+    store.dispatch(setDeviceIdentifier({ platform: "ios", token: "apns-1" }));
+
+    await waitFor(() => expect(storage.setAccountMap).toHaveBeenCalled());
+    // An effect cannot await, so Phase C catches. The awaitable route for
+    // callers that must not proceed until the write lands is `persistAccountMap`.
+    await new Promise((resolve) => setTimeout(resolve, 20));
   });
 });

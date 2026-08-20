@@ -1,11 +1,18 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { SublayState } from "../sublayReducers";
+import type { PushDeviceIdentifier } from "../../interfaces/PushTokenAdapter";
 
 // Types
 
 export interface AccountSummary {
   id: string;
   name: string | null;
+  /**
+   * Optional because entries persisted before this field existed simply do not
+   * carry it. Absent means *unknown*, not "the user has no username" — the two
+   * are different and only the second is `null`.
+   */
+  username?: string | null;
   email: string | null;
   avatar: string | null;
 }
@@ -14,11 +21,51 @@ export interface AccountEntry {
   refreshToken: string;
   tokenExpiresAt: number; // epoch ms — extracted from JWT exp claim
   user: AccountSummary;
+  /**
+   * Whether this account wants push notifications on THIS device.
+   *
+   * Client-owned and durable: it records an explicit user choice, so it must
+   * survive the entry being rebuilt — which happens on every launch and every
+   * transition, because the server rotates the refresh token on each exchange
+   * and `useAccountSync` Phase B writes a fresh entry whenever it changes.
+   * That is why `upsertAccount` merges rather than replaces.
+   *
+   * **Absent reads as enabled.** Absent means "never expressed a preference",
+   * and every entry written before this release is absent — reading those as
+   * disabled would unbind accounts that are working fine. Use
+   * `isAccountPushEnabled` rather than testing the field directly.
+   */
+  pushEnabled?: boolean;
+}
+
+/**
+ * `true` unless the account was explicitly silenced on this device.
+ *
+ * Read the flag through this, never as `entry.pushEnabled` — absent and `true`
+ * mean the same thing and a bare truthiness test gets the absent case wrong.
+ */
+export function isAccountPushEnabled(entry: AccountEntry): boolean {
+  return entry.pushEnabled !== false;
 }
 
 export interface AccountMap {
   activeAccountId: string | null;
   accounts: Record<string, AccountEntry>;
+  /**
+   * This device's push identifier — a device-level sibling of `accounts`, not a
+   * per-account field. One copy serves every stored account.
+   *
+   * Persisted rather than cached in memory because the docs tell apps to call
+   * `register()` on a deliberate user action and explicitly *not* on mount, so
+   * an in-memory copy would be cold on nearly every launch while the server-side
+   * binding lives on. With a cold copy, account removal cannot unbind its push
+   * and the per-account toggle silently no-ops.
+   *
+   * It survives `clearAllAccounts` and sign-out-all — a device's push token does
+   * not stop being that device's token because nobody is signed in — and is
+   * cleared only by `deleteAccountMap`, which is a full wipe.
+   */
+  deviceIdentifier?: PushDeviceIdentifier | null;
   /**
    * `true` means "the last thing that happened was a deliberate sign-out".
    *
@@ -39,6 +86,14 @@ export interface AccountMap {
 export interface AccountsState {
   accounts: Record<string, AccountEntry>;
   activeAccountId: string | null;
+  /**
+   * See `AccountMap.deviceIdentifier`. It needs a Redux home and not just a
+   * storage slot: `useAccountSync` Phase C builds the persisted map out of this
+   * state, so without a field here every persist would silently drop it — and
+   * the sign-out callers have to read it synchronously while building their
+   * request, where `AccountStorage` is not reachable.
+   */
+  deviceIdentifier: PushDeviceIdentifier | null;
   /** See `AccountMap.signedOut`. */
   signedOut: boolean;
   /**
@@ -57,11 +112,42 @@ export interface AccountsState {
 
 export const MAX_ACCOUNTS = 5;
 
+/**
+ * Folds a freshly built entry over the stored one without losing client-owned
+ * fields.
+ *
+ * `undefined` on the incoming side means "the builder had nothing to say about
+ * this", not "clear it" — Phase B constructs its entry from the live session
+ * and knows nothing about `pushEnabled` or about summary fields the current
+ * user object happens not to carry. Anything the caller means to clear it sends
+ * as an explicit `null` / `false`, which does overwrite.
+ */
+function mergeAccountEntry(
+  existing: AccountEntry,
+  incoming: AccountEntry
+): AccountEntry {
+  const merged: AccountEntry = { ...existing };
+
+  for (const [key, value] of Object.entries(incoming)) {
+    if (value === undefined || key === "user") continue;
+    (merged as unknown as Record<string, unknown>)[key] = value;
+  }
+
+  merged.user = { ...existing.user };
+  for (const [key, value] of Object.entries(incoming.user ?? {})) {
+    if (value === undefined) continue;
+    (merged.user as unknown as Record<string, unknown>)[key] = value;
+  }
+
+  return merged;
+}
+
 // Slice
 
 const initialState: AccountsState = {
   accounts: {},
   activeAccountId: null,
+  deviceIdentifier: null,
   signedOut: false,
   accountLimitReached: false,
   isReady: false,
@@ -76,20 +162,38 @@ const accountsSlice = createSlice({
       state.accounts = action.payload.accounts;
       state.activeAccountId = action.payload.activeAccountId;
       state.signedOut = action.payload.signedOut ?? false;
+      state.deviceIdentifier = action.payload.deviceIdentifier ?? null;
     },
     upsertAccount: (
       state,
       action: PayloadAction<{ userId: string; entry: AccountEntry }>
     ) => {
-      const isNewAccount = !(action.payload.userId in state.accounts);
-      if (isNewAccount && Object.keys(state.accounts).length >= MAX_ACCOUNTS) {
+      const { userId, entry } = action.payload;
+      const existing = state.accounts[userId];
+      if (!existing && Object.keys(state.accounts).length >= MAX_ACCOUNTS) {
         // Limit reached — the account is not admitted. Recorded rather than
         // silently ignored so `useAddAccount`/`useAccounts` can surface it.
         state.accountLimitReached = true;
         return;
       }
-      state.accounts[action.payload.userId] = action.payload.entry;
+      // MERGE, never replace. Phase B rebuilds an entry literal from
+      // `refreshToken` + `user` every time the refresh token changes — i.e. on
+      // every launch and every transition, since the server rotates it on each
+      // exchange. A wholesale assignment therefore erased `pushEnabled` on a
+      // cadence: switch into an account you had deliberately silenced, its entry
+      // is rebuilt without the flag, absent-reads-as-enabled, and it is
+      // re-registered. Client-owned fields have to be preserved by
+      // construction, not by hoping the rebuilder repopulates them.
+      state.accounts[userId] = existing
+        ? mergeAccountEntry(existing, entry)
+        : entry;
       state.accountLimitReached = false;
+    },
+    setDeviceIdentifier: (
+      state,
+      action: PayloadAction<PushDeviceIdentifier | null>
+    ) => {
+      state.deviceIdentifier = action.payload;
     },
     removeAccount: (state, action: PayloadAction<string>) => {
       delete state.accounts[action.payload];
@@ -128,6 +232,11 @@ const accountsSlice = createSlice({
       // Sign-out-all is deliberate by definition.
       state.signedOut = true;
       state.accountLimitReached = false;
+      // `deviceIdentifier` is deliberately NOT cleared. It is device state, not
+      // account state: this device's push token does not stop being this
+      // device's token because nobody is signed in, and losing it would leave
+      // the next sign-in unable to reconcile its bindings. Only
+      // `deleteAccountMap` — a full wipe — drops it.
     },
     setAccountsReady: (state, action: PayloadAction<boolean>) => {
       state.isReady = action.payload;
@@ -141,6 +250,7 @@ const accountsSlice = createSlice({
 export const {
   setAccountMap,
   upsertAccount,
+  setDeviceIdentifier,
   removeAccount,
   setActiveAccount,
   setSignedOut,
@@ -157,6 +267,8 @@ export const selectActiveAccountId = (state: { sublay: SublayState }) =>
   state.sublay.accounts.activeAccountId;
 export const selectSignedOut = (state: { sublay: SublayState }) =>
   state.sublay.accounts.signedOut;
+export const selectDeviceIdentifier = (state: { sublay: SublayState }) =>
+  state.sublay.accounts.deviceIdentifier;
 export const selectAccountLimitReached = (state: { sublay: SublayState }) =>
   state.sublay.accounts.accountLimitReached;
 export const selectAccountsReady = (state: { sublay: SublayState }) =>

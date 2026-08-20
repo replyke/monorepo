@@ -26,7 +26,11 @@ export const keychainStorage: AccountStorage = {
         service,
       });
     } catch (error) {
+      // Log AND rethrow — see the note in the interface: the write contract
+      // rejects on failure, because an await that succeeds on a failed write
+      // makes every guarantee built on it fictional.
       handleError(error, "Failed to write account map to Keychain");
+      throw error;
     }
   },
 
@@ -37,6 +41,7 @@ export const keychainStorage: AccountStorage = {
       });
     } catch (error) {
       handleError(error, "Failed to delete account map from Keychain");
+      throw error;
     }
   },
 };

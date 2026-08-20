@@ -76,16 +76,39 @@ describe("webAccountStorage", () => {
     await expect(webAccountStorage.getAccountMap("project-1")).resolves.toBeNull();
   });
 
-  it("reports the error via handleError when localStorage.setItem throws", async () => {
+  it("logs AND REJECTS when localStorage.setItem throws", async () => {
+    // Inverted deliberately — see the interface docblock: a write contract that
+    // resolves on failure makes every awaited persist a lie.
     const setItemSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("quota exceeded");
     });
 
-    await webAccountStorage.setAccountMap("project-1", { activeAccountId: null, accounts: {} });
+    await expect(
+      webAccountStorage.setAccountMap("project-1", { activeAccountId: null, accounts: {} })
+    ).rejects.toThrow("quota exceeded");
 
     expect(handleError).toHaveBeenCalledTimes(1);
     expect(handleError.mock.calls[0][1]).toBe("Failed to write account map to localStorage");
 
     setItemSpy.mockRestore();
+  });
+
+  it("logs AND REJECTS when localStorage.removeItem throws", async () => {
+    const removeItemSpy = vi
+      .spyOn(Storage.prototype, "removeItem")
+      .mockImplementation(() => {
+        throw new Error("storage disabled");
+      });
+
+    await expect(
+      webAccountStorage.deleteAccountMap("project-1")
+    ).rejects.toThrow("storage disabled");
+
+    expect(handleError).toHaveBeenCalledTimes(1);
+    expect(handleError.mock.calls[0][1]).toBe(
+      "Failed to delete account map from localStorage"
+    );
+
+    removeItemSpy.mockRestore();
   });
 });

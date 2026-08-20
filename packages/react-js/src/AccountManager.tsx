@@ -20,12 +20,21 @@ export const webAccountStorage: AccountStorage = {
         JSON.stringify(map)
       );
     } catch (error) {
+      // Log AND rethrow. The write contract rejects on failure now: an awaited
+      // persist that resolves on a failed write is worse than no persist at
+      // all, because callers act on it.
       handleError(error, "Failed to write account map to localStorage");
+      throw error;
     }
   },
 
   async deleteAccountMap(projectId: string): Promise<void> {
-    localStorage.removeItem(`${STORAGE_KEY_PREFIX}${projectId}`);
+    try {
+      localStorage.removeItem(`${STORAGE_KEY_PREFIX}${projectId}`);
+    } catch (error) {
+      handleError(error, "Failed to delete account map from localStorage");
+      throw error;
+    }
   },
 };
 

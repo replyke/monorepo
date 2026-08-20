@@ -59,10 +59,16 @@ describe("keychainStorage.setAccountMap", () => {
     );
   });
 
-  it("reports the error via handleError instead of throwing when the write fails", async () => {
+  it("logs AND REJECTS when the write fails", async () => {
+    // Inverted deliberately. This used to resolve void, which made
+    // `await storage.setAccountMap(...)` succeed on a failed write — and any
+    // guarantee built on that await (most dangerously "the rotated refresh
+    // token is durably stored") fictional.
     setGenericPassword.mockRejectedValue(new Error("disk full"));
 
-    await keychainStorage.setAccountMap("project-1", { activeAccountId: null, accounts: {} });
+    await expect(
+      keychainStorage.setAccountMap("project-1", { activeAccountId: null, accounts: {} })
+    ).rejects.toThrow("disk full");
 
     expect(handleError).toHaveBeenCalledTimes(1);
     expect(handleError.mock.calls[0][1]).toBe("Failed to write account map to Keychain");
@@ -80,10 +86,12 @@ describe("keychainStorage.deleteAccountMap", () => {
     });
   });
 
-  it("reports the error via handleError instead of throwing when the reset fails", async () => {
+  it("logs AND REJECTS when the reset fails", async () => {
     resetGenericPassword.mockRejectedValue(new Error("not found"));
 
-    await keychainStorage.deleteAccountMap("project-1");
+    await expect(keychainStorage.deleteAccountMap("project-1")).rejects.toThrow(
+      "not found"
+    );
 
     expect(handleError).toHaveBeenCalledTimes(1);
     expect(handleError.mock.calls[0][1]).toBe("Failed to delete account map from Keychain");

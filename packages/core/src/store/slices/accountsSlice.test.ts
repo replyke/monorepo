@@ -10,6 +10,8 @@ import accountsReducer, {
   clearAllAccounts,
   setAccountsReady,
   registerAccountManager,
+  setDeviceIdentifier,
+  isAccountPushEnabled,
   MAX_ACCOUNTS,
   type AccountsState,
   type AccountEntry,
@@ -28,6 +30,7 @@ function initialState(overrides: Partial<AccountsState> = {}): AccountsState {
   return {
     accounts: {},
     activeAccountId: null,
+    deviceIdentifier: null,
     signedOut: false,
     accountLimitReached: false,
     isReady: false,
@@ -230,5 +233,133 @@ describe("accountsSlice", () => {
   it("registerAccountManager flags accountManagerRegistered", () => {
     const state = accountsReducer(initialState(), registerAccountManager());
     expect(state.accountManagerRegistered).toBe(true);
+  });
+});
+
+describe("accountsSlice — Phase 5 map shape", () => {
+  it("isAccountPushEnabled reads an absent flag as enabled", () => {
+    // Every entry written before this field existed is absent. Reading those as
+    // disabled would unbind accounts that are working fine.
+    expect(isAccountPushEnabled(makeEntry())).toBe(true);
+    expect(isAccountPushEnabled(makeEntry({ pushEnabled: true }))).toBe(true);
+    expect(isAccountPushEnabled(makeEntry({ pushEnabled: false }))).toBe(false);
+  });
+
+  it("upsertAccount MERGES, so pushEnabled survives the refresh-token rotation that rebuilds the entry", () => {
+    // This is the whole reason the merge exists: Phase B rebuilds an entry
+    // literal from refreshToken + user on every launch and every transition,
+    // and knows nothing about pushEnabled.
+    let state = accountsReducer(
+      initialState(),
+      upsertAccount({
+        userId: "user-1",
+        entry: makeEntry({ pushEnabled: false }),
+      })
+    );
+
+    state = accountsReducer(
+      state,
+      upsertAccount({
+        userId: "user-1",
+        entry: makeEntry({ refreshToken: "rotated-token" }),
+      })
+    );
+
+    expect(state.accounts["user-1"].refreshToken).toBe("rotated-token");
+    expect(state.accounts["user-1"].pushEnabled).toBe(false);
+    expect(isAccountPushEnabled(state.accounts["user-1"])).toBe(false);
+  });
+
+  it("upsertAccount merges the summary field-wise rather than replacing it", () => {
+    let state = accountsReducer(
+      initialState(),
+      upsertAccount({
+        userId: "user-1",
+        entry: makeEntry({
+          user: {
+            id: "user-1",
+            name: "User One",
+            username: "user_one",
+            email: "a@b.c",
+            avatar: "https://x/y.png",
+          },
+        }),
+      })
+    );
+
+    // A rebuild whose summary omits `username` entirely must not erase it.
+    state = accountsReducer(
+      state,
+      upsertAccount({
+        userId: "user-1",
+        entry: makeEntry({
+          user: { id: "user-1", name: "Renamed", email: "a@b.c", avatar: null },
+        }),
+      })
+    );
+
+    expect(state.accounts["user-1"].user.name).toBe("Renamed");
+    expect(state.accounts["user-1"].user.username).toBe("user_one");
+    // An explicit null DOES overwrite — that is how a caller clears a field.
+    expect(state.accounts["user-1"].user.avatar).toBeNull();
+  });
+
+  it("upsertAccount still writes a brand new entry wholesale", () => {
+    const state = accountsReducer(
+      initialState(),
+      upsertAccount({ userId: "user-1", entry: makeEntry({ pushEnabled: false }) })
+    );
+    expect(state.accounts["user-1"].pushEnabled).toBe(false);
+  });
+
+  it("setAccountMap carries the device identifier through, defaulting an absent one to null", () => {
+    const withId = accountsReducer(
+      initialState(),
+      setAccountMap({
+        activeAccountId: null,
+        accounts: {},
+        deviceIdentifier: { platform: "ios", token: "apns-token" },
+      })
+    );
+    expect(withId.deviceIdentifier).toEqual({
+      platform: "ios",
+      token: "apns-token",
+    });
+
+    const without = accountsReducer(
+      withId,
+      setAccountMap({ activeAccountId: null, accounts: {} })
+    );
+    expect(without.deviceIdentifier).toBeNull();
+  });
+
+  it("clearAllAccounts PRESERVES the device identifier", () => {
+    // A device's push token does not stop being this device's token because
+    // nobody is signed in — losing it would leave the next sign-in unable to
+    // reconcile its bindings.
+    const start = initialState({
+      accounts: { "user-1": makeEntry() },
+      activeAccountId: "user-1",
+      deviceIdentifier: { platform: "android", token: "fcm-token" },
+    });
+
+    const state = accountsReducer(start, clearAllAccounts());
+
+    expect(state.accounts).toEqual({});
+    expect(state.deviceIdentifier).toEqual({
+      platform: "android",
+      token: "fcm-token",
+    });
+  });
+
+  it("setDeviceIdentifier sets and clears the device identifier", () => {
+    let state = accountsReducer(
+      initialState(),
+      setDeviceIdentifier({ platform: "ios", token: "t" })
+    );
+    expect(state.deviceIdentifier).toEqual({ platform: "ios", token: "t" });
+
+    state = accountsReducer(state, setDeviceIdentifier(null));
+    expect(state.deviceIdentifier).toBeNull();
   });
 });
