@@ -140,20 +140,32 @@ export function syncAuthGate(state: {
     return;
   }
 
-  // Re-close when `initialized` goes back to false. The account-transition core
-  // (`hooks/auth/accountTransition`) deliberately drives
-  // setTokens(accessToken: null) -> setInitialized(false) -> rotate ->
-  // setInitialized(true), and dispatches `resetApiState()` across that window —
-  // which forces every mounted RTK query to refetch. A latch that only ever
-  // opened would let those refetches out with no token and cache the OUTGOING
-  // account's stranger-data against the incoming one. This is the same bug the
-  // gate exists to close, in the one place the store explicitly announces
-  // "bootstrapping again".
+  // Re-close when `initialized` goes back to false — i.e. whenever the store
+  // announces "bootstrapping again". A latch that only ever opened would let
+  // requests out during such a window with no token, and since a re-bootstrap
+  // is usually paired with `resetApiState()` (which forces every mounted RTK
+  // query to refetch), those refetches would cache one account's stranger-data
+  // against another. That is the same bug the gate exists to close.
   //
-  // `useSwitchAccount` is the only caller driving that window today.
-  // `signOutThunk` and `confirmAccountDeletionThunk` used to as well, when they
-  // refreshed into a successor account; they no longer select one, so they tear
-  // down and stay down without reopening the gate.
+  // ⚠ NO SDK CODE DISPATCHES `setInitialized(false)` ANY MORE. This branch used
+  // to describe the account-transition core, which drove
+  // setTokens(accessToken: null) -> setInitialized(false) -> rotate ->
+  // setInitialized(true) and needed the gate shut across the rotation. Since
+  // validate-before-commit (`hooks/auth/accountTransition`) that window does
+  // not exist: the incoming account's credential is exchanged OUT OF BAND,
+  // before anything is torn down, and the teardown-plus-install that follows is
+  // synchronous — there is no point inside it at which a request could be
+  // issued, so there is nothing to gate. Every remaining `setInitialized`
+  // dispatch in the SDK passes `true`.
+  //
+  // KEPT DELIBERATELY, not overlooked. `setInitialized` is a public export
+  // (`index.ts`, under the store internals the platform packages and
+  // integration-mode apps drive), so an app running its own bootstrap can still
+  // announce a re-bootstrap from outside the SDK. Deleting this would silently
+  // turn the gate into a one-way latch for those callers — a behaviour change
+  // on a defensive path, in exchange for removing one boolean compare. If you
+  // are here because coverage flags it as unreached: that is expected, and it
+  // is reached by `authGate.test.ts`.
   if (!state.initialized && opened) {
     opened = false;
     deferred = createDeferred();

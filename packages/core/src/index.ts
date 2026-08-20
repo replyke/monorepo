@@ -95,6 +95,7 @@ export {
   useRemoveAccount,
   useSignOutAll,
   type UseAccountsReturn,
+  type StoredAccount,
   type UseSwitchAccountReturn,
   type UseAddAccountReturn,
   type UseRemoveAccountReturn,
@@ -142,6 +143,7 @@ export type { AccountStorage } from "./interfaces/AccountStorage";
 export {
   MAX_ACCOUNTS,
   isAccountPushEnabled,
+  accountNeedsReauth,
   selectAccounts,
   selectActiveAccountId,
   selectSignedOut,
@@ -167,8 +169,13 @@ export {
 //     push. `useRemoveAccount` performs the whole flow and is the public
 //     surface.
 //
-// `activateStoredAccount` is the validated equivalent of the first: it selects,
-// establishes the session, and rolls the selection back if it cannot.
+// `activateStoredAccount` is the validated equivalent of the first: it proves
+// the stored account's credential out of band, and only then tears the current
+// session down and selects the new one. There is no selection rollback, because
+// a failure never changes the selection — it rejects with everything exactly as
+// it was. It takes `getState` alongside `dispatch`: reading the target's stored
+// entry and persisting the successor the exchange rotates into are both part of
+// the sequence, and neither is reachable from `dispatch` alone.
 export {
   activateStoredAccount,
   AccountTransitionError,

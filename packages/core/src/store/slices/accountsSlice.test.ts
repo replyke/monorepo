@@ -11,7 +11,9 @@ import accountsReducer, {
   setAccountsReady,
   registerAccountManager,
   setDeviceIdentifier,
+  setAccountNeedsReauth,
   isAccountPushEnabled,
+  accountNeedsReauth,
   MAX_ACCOUNTS,
   type AccountsState,
   type AccountEntry,
@@ -361,5 +363,102 @@ describe("accountsSlice — Phase 5 map shape", () => {
 
     state = accountsReducer(state, setDeviceIdentifier(null));
     expect(state.deviceIdentifier).toBeNull();
+  });
+});
+
+describe("accountsSlice — re-auth markers", () => {
+  it("accountNeedsReauth reads an absent marker as healthy", () => {
+    // Absent is "nothing has gone wrong that we know of", which is also every
+    // entry written before the field existed.
+    expect(accountNeedsReauth(makeEntry())).toBe(false);
+    expect(accountNeedsReauth(makeEntry({ needsReauth: true }))).toBe(true);
+  });
+
+  it("setAccountNeedsReauth sets an explicit true and clears back to absent", () => {
+    let state = accountsReducer(
+      initialState({ accounts: { "user-1": makeEntry() } }),
+      setAccountNeedsReauth({ userId: "user-1", needsReauth: true })
+    );
+    expect(state.accounts["user-1"].needsReauth).toBe(true);
+
+    state = accountsReducer(
+      state,
+      setAccountNeedsReauth({ userId: "user-1", needsReauth: false })
+    );
+    // Deleted, not written as `false`: "healthy" stays the absent state the
+    // merge already treats as "no opinion", and costs nothing on Expo's budget.
+    expect("needsReauth" in state.accounts["user-1"]).toBe(false);
+  });
+
+  it("setAccountNeedsReauth ignores an unknown account", () => {
+    const state = accountsReducer(
+      initialState({ accounts: { "user-1": makeEntry() } }),
+      setAccountNeedsReauth({ userId: "user-9", needsReauth: true })
+    );
+    expect(state.accounts["user-9"]).toBeUndefined();
+  });
+
+  // THE TRAP. Phase B rebuilds an entry literal from refreshToken + user on
+  // every launch and every transition, and knows nothing about needsReauth. A
+  // wholesale write would erase the marker on that cadence.
+  it("upsertAccount MERGES, so needsReauth survives the entry being rebuilt", () => {
+    let state = accountsReducer(
+      initialState({ accounts: { "user-1": makeEntry({ needsReauth: true }) } }),
+      upsertAccount({
+        userId: "user-1",
+        entry: makeEntry({ refreshToken: "rotated-token" }),
+      })
+    );
+
+    expect(state.accounts["user-1"].refreshToken).toBe("rotated-token");
+    expect(state.accounts["user-1"].needsReauth).toBe(true);
+
+    // ...and the clearing point removes it: activating the account.
+    state = accountsReducer(state, setActiveAccount("user-1"));
+    expect(accountNeedsReauth(state.accounts["user-1"])).toBe(false);
+  });
+
+  // The clearing point lives in `setActiveAccount` and not in the transition
+  // core precisely so it also covers the other way a dead account comes back:
+  // signing into it again, which never touches the transition core.
+  it("setActiveAccount clears only the activated account's marker", () => {
+    const state = accountsReducer(
+      initialState({
+        accounts: {
+          "user-1": makeEntry({ needsReauth: true }),
+          "user-2": { ...makeEntry({ needsReauth: true }), user: { id: "user-2", name: null, email: null, avatar: null } },
+        },
+      }),
+      setActiveAccount("user-1")
+    );
+
+    expect(accountNeedsReauth(state.accounts["user-1"])).toBe(false);
+    expect(accountNeedsReauth(state.accounts["user-2"])).toBe(true);
+  });
+
+  it("setActiveAccount(null) clears nothing", () => {
+    const state = accountsReducer(
+      initialState({ accounts: { "user-1": makeEntry({ needsReauth: true }) } }),
+      setActiveAccount(null)
+    );
+    expect(accountNeedsReauth(state.accounts["user-1"])).toBe(true);
+  });
+
+  it("setAccountMap carries stored markers through unchanged, and tolerates their absence", () => {
+    const state = accountsReducer(
+      initialState(),
+      setAccountMap({
+        activeAccountId: null,
+        accounts: {
+          "user-1": makeEntry({ needsReauth: true, tokenExpiresAt: 4102444800000 }),
+          // An entry from a release before the marker existed.
+          "user-2": { ...makeEntry(), user: { id: "user-2", name: null, email: null, avatar: null } },
+        },
+      })
+    );
+
+    expect(state.accounts["user-1"].needsReauth).toBe(true);
+    expect(state.accounts["user-1"].tokenExpiresAt).toBe(4102444800000);
+    expect(accountNeedsReauth(state.accounts["user-2"])).toBe(false);
   });
 });

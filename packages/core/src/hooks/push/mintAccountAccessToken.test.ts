@@ -17,6 +17,8 @@ import {
 import type { AccountStorage } from "../../interfaces/AccountStorage";
 import {
   mintAccountAccessToken,
+  mintAccountSession,
+  leaseAccountSession,
   resetAccountTokenMints,
 } from "./mintAccountAccessToken";
 
@@ -206,6 +208,182 @@ describe("mintAccountAccessToken", () => {
     // Two exchanges would have presented the same refresh token twice, which is
     // the reuse-detection trigger — self-inflicted family destruction.
     expect(axiosPublic.calls("post")).toHaveLength(1);
+  });
+
+  // The two entry points share ONE single-flight entry, and that sharing is the
+  // point rather than an accident: push reconciliation and an account
+  // transition can both be minting for the same non-active account at the same
+  // moment — a bulk reconcile after `register()` or a device-token rotation,
+  // racing the user tapping "switch to that account". They compute the same
+  // key, so two independent exchanges would present the same refresh token
+  // twice. That IS the reuse-detection trigger.
+  it("shares one exchange between mintAccountSession and mintAccountAccessToken", async () => {
+    const axiosPublic = mockAxiosPublic();
+    registerAccountStorage(
+      makeStorage(async () => {}),
+      "test-project",
+    );
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-2",
+      refreshToken: "refresh-2-successor",
+      user: { id: "user-2" },
+    });
+
+    const [session, token] = await Promise.all([
+      mintAccountSession({ ...ctx(), userId: "user-2" }),
+      mintAccountAccessToken({ ...ctx(), userId: "user-2" }),
+    ]);
+
+    expect(axiosPublic.calls("post")).toHaveLength(1);
+    expect(token).toBe("access-2");
+    expect(session.accessToken).toBe("access-2");
+    // The LIVE token after the exchange, never the one that was presented.
+    expect(session.refreshToken).toBe("refresh-2-successor");
+    expect(session.user).toEqual({ id: "user-2" });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // THE POST-INSTALL WINDOW
+  //
+  // Releasing the flight when the exchange settles is too early. The awaiting
+  // caller's continuation has not run yet, so anything asking for this account
+  // in that gap starts a SECOND, perfectly legal exchange: it presents S1 (now
+  // in the map) and writes S2 back. The first caller then installs S1 as the
+  // live session, Phase B rebuilds the map entry from it, and the next refresh
+  // presents a revoked token — reuse detection, family destroyed.
+  //
+  // The lease is what makes that unreachable: the flight stays closed until the
+  // install has happened.
+  // ─────────────────────────────────────────────────────────────────────────
+  it("holds the flight open until the leaseholder releases", async () => {
+    const axiosPublic = mockAxiosPublic();
+    registerAccountStorage(
+      makeStorage(async () => {}),
+      "test-project",
+    );
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-2",
+      refreshToken: "refresh-2-successor",
+    });
+
+    const lease = await leaseAccountSession({ ...ctx(), userId: "user-2" });
+
+    // This is the reconcile arriving in the window the plain single flight left
+    // open. It must be served the SAME session, not start a rotation.
+    const during = await mintAccountSession({ ...ctx(), userId: "user-2" });
+
+    expect(axiosPublic.calls("post")).toHaveLength(1);
+    expect(during).toEqual(lease.session);
+    // Nothing rotated behind the leaseholder: what it is about to install is
+    // still what the map holds.
+    expect(store.getState().sublay.accounts.accounts["user-2"].refreshToken).toBe(
+      lease.session.refreshToken,
+    );
+
+    // Once released, a genuinely later caller does exchange again — the lease
+    // closes a window, it does not permanently pin the account.
+    lease.release();
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-2b",
+      refreshToken: "refresh-2-successor-2",
+    });
+    await mintAccountSession({ ...ctx(), userId: "user-2" });
+    expect(axiosPublic.calls("post")).toHaveLength(2);
+  });
+
+  // The idempotence guard in `release()` only bites with MORE THAN ONE
+  // leaseholder — which is exactly when it matters. With one, a double release
+  // is absorbed harmlessly by `evictIfIdle`'s identity check, because the flight
+  // is already out of the map. With two, a double release on A takes `holds`
+  // 2 -> 1 -> 0 and evicts the flight while B is still pre-install, reopening
+  // the very window the lease exists to close.
+  it("a double release by one leaseholder cannot evict the flight out from under another", async () => {
+    const axiosPublic = mockAxiosPublic();
+    registerAccountStorage(
+      makeStorage(async () => {}),
+      "test-project",
+    );
+    // TWO responses queued up front, deliberately. If the guard is ever
+    // removed, the mint below starts a real second exchange — and with a
+    // response waiting for it, this test fails on the assertion that says so
+    // rather than blowing up on an un-mocked request. A mutation should be
+    // legible.
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-2",
+      refreshToken: "refresh-2-successor",
+    });
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-2b",
+      refreshToken: "refresh-2-successor-2",
+    });
+
+    const leaseA = await leaseAccountSession({ ...ctx(), userId: "user-2" });
+    const leaseB = await leaseAccountSession({ ...ctx(), userId: "user-2" });
+    expect(axiosPublic.calls("post")).toHaveLength(1);
+
+    leaseA.release();
+    leaseA.release(); // the buggy second decrement
+
+    // B has not installed yet, so the flight must still be closed: a mint
+    // arriving now has to JOIN, not start a rotation behind B.
+    const during = await mintAccountSession({ ...ctx(), userId: "user-2" });
+    expect(axiosPublic.calls("post")).toHaveLength(1);
+    expect(during).toEqual(leaseB.session);
+
+    // ...and B's release still ends the lease properly — the guard suppresses
+    // the extra decrement, it does not leak a permanent hold. This is where the
+    // second queued response gets consumed.
+    leaseB.release();
+    await mintAccountSession({ ...ctx(), userId: "user-2" });
+    expect(axiosPublic.calls("post")).toHaveLength(2);
+  });
+
+  // A joiner's hold counts too. `startOrJoin` increments synchronously, before
+  // the caller awaits, so a lease taken on a flight someone else started is
+  // still counted by the time the exchange asks whether it may evict.
+  it("counts a lease taken on a flight another caller started", async () => {
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-2",
+      refreshToken: "refresh-2-successor",
+    });
+
+    const reconcile = mintAccountSession({ ...ctx(), userId: "user-2" });
+    const leasePromise = leaseAccountSession({ ...ctx(), userId: "user-2" });
+
+    const [, lease] = await Promise.all([reconcile, leasePromise]);
+    expect(axiosPublic.calls("post")).toHaveLength(1);
+
+    // Still held even though this caller did not start the flight.
+    await mintAccountSession({ ...ctx(), userId: "user-2" });
+    expect(axiosPublic.calls("post")).toHaveLength(1);
+
+    lease.release();
+  });
+
+  it("releases its own hold when the exchange fails", async () => {
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockError("post", 403, { error: "Refresh token revoked" });
+
+    await expect(
+      leaseAccountSession({ ...ctx(), userId: "user-2" }),
+    ).rejects.toBeTruthy();
+
+    // There was no session to install, so nothing needed protecting — and the
+    // flight must not be left pinned by a lease its holder never received.
+    axiosPublic.mockResponse("post", { accessToken: "access-2" });
+    await mintAccountSession({ ...ctx(), userId: "user-2" });
+    expect(axiosPublic.calls("post")).toHaveLength(2);
+  });
+
+  it("mintAccountSession reports the presented token as live when the server did not rotate", async () => {
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", { accessToken: "access-2" });
+
+    const session = await mintAccountSession({ ...ctx(), userId: "user-2" });
+
+    expect(session.refreshToken).toBe("refresh-2");
+    expect(session.user).toBeNull();
   });
 
   it("refuses to persist under another project's storage slot", async () => {

@@ -164,6 +164,58 @@ describe("secureStoreStorage — chunked write path", () => {
     expect(fake.keys().length).toBe(6); // index + five accounts
   });
 
+  // The re-auth markers are a persisted-shape change, so the budget has to be
+  // re-checked against the LARGEST an entry can now be: every optional field
+  // present at once. Both are tiny (a boolean and a number), and neither joins
+  // the shed order — `avatar` and `email` are the two unbounded fields and
+  // shedding a marker would make the entry load but lie.
+  it("still fits five accounts when every optional field is present", async () => {
+    installFakeStore();
+    const map = makeMap(
+      ["a", "b", "c", "d", "e"],
+      {
+        activeAccountId: "c",
+        deviceIdentifier: {
+          platform: "web",
+          subscription: {
+            endpoint: `https://fcm.googleapis.com/fcm/send/${"x".repeat(152)}`,
+            keys: { p256dh: "p".repeat(87), auth: "a".repeat(22) },
+          },
+        },
+      },
+      (id) =>
+        makeEntry(id, {
+          refreshToken: realisticToken(id),
+          pushEnabled: false,
+          needsReauth: true,
+          user: {
+            id,
+            name: `User ${id}`,
+            username: `user_${id}`,
+            email: `${id}@example.com`,
+            avatar: `https://cdn.example.com/avatars/${"u".repeat(60)}/${id}.png`,
+          },
+        })
+    );
+
+    await secureStoreStorage.setAccountMap(PROJECT, map);
+
+    for (const [, value] of setItemAsync.mock.calls as [string, string][]) {
+      expect(utf8Bytes(value)).toBeLessThanOrEqual(MAX_VALUE_BYTES);
+    }
+    // Round-trips verbatim: neither marker is dropped or defaulted on read.
+    await expect(secureStoreStorage.getAccountMap(PROJECT)).resolves.toEqual(map);
+  });
+
+  it("reads an entry written before the re-auth marker existed", async () => {
+    const fake = installFakeStore();
+    await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a"]));
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(loaded!.accounts["a"].needsReauth).toBeUndefined();
+    expect(fake.keys().length).toBe(2);
+  });
+
   it("writes one value per account plus a versioned index", async () => {
     const fake = installFakeStore();
     await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a", "b"]));

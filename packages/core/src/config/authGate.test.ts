@@ -114,14 +114,20 @@ describe("authGate — cold start", () => {
   });
 });
 
-describe("authGate — re-bootstrap (account switch / partial sign-out)", () => {
+describe("authGate — re-bootstrap (externally driven)", () => {
   it("re-closes when `initialized` goes back to false", async () => {
-    // `signOutThunk`/`confirmAccountDeletionThunk` drive
-    // setTokens(accessToken: null) -> setInitialized(false) -> rotate ->
-    // setInitialized(true) when another account remains, and
-    // `useSwitchAccount` dispatches `resetApiState()` across that window, which
-    // forces every mounted RTK query to refetch. Those refetches must wait, or
-    // they cache the outgoing account's stranger-data against the incoming one.
+    // NO SDK CODE DRIVES THIS ANY MORE — see the branch's own comment in
+    // `authGate.ts`. It used to be `signOutThunk`/`confirmAccountDeletionThunk`
+    // refreshing into a successor account, and then `useSwitchAccount`; neither
+    // does now (no successor selection, and validation happens out of band
+    // before any teardown, so a switch has no re-bootstrap window at all).
+    //
+    // The branch is kept for callers OUTSIDE the SDK: `setInitialized` is a
+    // public export, so an integration-mode app running its own bootstrap can
+    // still withdraw `initialized`. Requests raised during such a window must
+    // wait rather than go out unauthenticated — especially since a re-bootstrap
+    // is usually paired with `resetApiState()`, which makes every mounted RTK
+    // query refetch. This test is what keeps the branch honest and reached.
     armAuthGate();
     syncAuthGate({ accessToken: jwtExpiringIn(1800), initialized: true });
 
