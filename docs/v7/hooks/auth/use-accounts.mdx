@@ -79,8 +79,19 @@ function ActiveAccountLabel() {
 |----------|------|-------------|
 | `id` | `string` | User ID |
 | `name` | `string \| null` | Display name |
+| `username` | `string \| null \| undefined` | Username. `undefined` on entries stored by an SDK version before this field existed — absent means *unknown*, not "no username" |
 | `email` | `string \| null` | Email address |
 | `avatar` | `string \| null` | Avatar URL |
+
+There is no stored "needs re-authentication" marker on the summary. A stored
+session that has expired is discovered when a transition fails: the entry is
+deliberately left in the map so you can render a re-auth affordance for it. See
+[When a transition fails](/sdk/authentication/multi-account#when-a-transition-fails).
+
+On Expo, `avatar` and then `email` may be dropped from a stored entry if it
+would otherwise exceed SecureStore's per-value limit. `id`, `name`, `username`
+and the credential are never dropped. See
+[Where accounts are stored](/sdk/authentication/multi-account#where-accounts-are-stored).
 
 ## Rendering the Signed-Out State
 

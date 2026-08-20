@@ -54,6 +54,19 @@ Integration mode requires three changes to your existing store and one change to
   <Step title="Replace SublayProvider with SublayIntegrationProvider">
     Use `SublayIntegrationProvider` instead of `SublayProvider`. This provider does not create a Redux store — it expects your own `<Provider>` to already be in the tree above it.
 
+    <Warning>
+      **Import it from your platform package** — `@sublay/react-js`,
+      `@sublay/react-native` or `@sublay/expo` — **not from `@sublay/core`.**
+
+      Account persistence is carried by an `AccountManager` component that only
+      the platform packages can supply, because the storage adapter is
+      platform-specific. Core's own `SublayIntegrationProvider` has no
+      `AccountManager`: it works, but the account map lives only in memory, so
+      stored accounts (and the per-device push state that rides on the same
+      map) do not survive a relaunch. The platform packages' version wraps
+      core's and mounts the right adapter for you.
+    </Warning>
+
     ```tsx
     import { Provider } from "react-redux";
     import { SublayIntegrationProvider } from "@sublay/react-js";
@@ -99,7 +112,10 @@ All integration exports are available from `@sublay/react-js`:
 | `resetAuth` / `clearUser` | `ActionCreator` | The auth and current-user teardown actions. |
 | `activateStoredAccount` | `function` | Selects a stored account and establishes its session, rolling the selection back on failure. A plain function, callable from a thunk or effect body. |
 | `setSublayLogLevel` | `function` | Sets SDK console logging to `"error"` (default), `"warn"` or `"silent"`. Process-global; not a provider prop. |
-| `selectAccounts`, `selectActiveAccountId`, `selectSignedOut`, `selectAccountLimitReached` | `Selector` | Selectors over the accounts slice. |
+| `selectAccounts`, `selectActiveAccountId`, `selectSignedOut`, `selectAccountLimitReached`, `selectDeviceIdentifier` | `Selector` | Selectors over the accounts slice. |
+| `MAX_ACCOUNTS` | `number` | The stored-account limit (5). |
+| `isAccountPushEnabled` | `function` | Reads an account entry's per-device push preference. Use it rather than testing `entry.pushEnabled`: an absent flag means "never expressed a preference", which reads as enabled. |
+| `AccountStorage` | `type` | The storage contract an `AccountManager` implements. Its two write methods **reject** when a write does not land — do not swallow the failure if you implement your own. |
 
 <Note>
   The raw `setActiveAccount`, `upsertAccount` and `removeAccount` reducers are

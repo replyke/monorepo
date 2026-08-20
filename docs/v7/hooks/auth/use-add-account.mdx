@@ -11,8 +11,9 @@ icon: "plug"
 After the user completes sign-in, the new account is added to the accounts map automatically.
 
 <Note>
-  A maximum of 5 accounts can be stored simultaneously. `canAddAccount` is
-  `false` when the limit is reached.
+  5 accounts can be stored simultaneously. `canAddAccount` is `false` when the
+  limit is reached. All 5 genuinely persist on every platform — see
+  [Where accounts are stored](/sdk/authentication/multi-account#where-accounts-are-stored).
 </Note>
 
 ## Usage Example
@@ -55,8 +56,7 @@ function AddAccountButton() {
 </ResponseField>
 
 <ResponseField name="canAddAccount" type="boolean">
-  `true` if fewer than 5 accounts are currently stored. `false` when the
-  maximum is reached.
+  `true` if fewer than 5 accounts are currently stored. `false` at the limit.
 </ResponseField>
 
 <ResponseField name="accountLimitReached" type="boolean">
