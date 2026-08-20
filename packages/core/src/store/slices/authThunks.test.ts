@@ -936,7 +936,7 @@ describe("account cap — Gate 2 (post-authentication, all four entry points)", 
     ]);
     // NO ORPHANED SESSION: the just-minted credential — captured off the
     // response before anything could overwrite it — is what gets signed out.
-    // And no `device`: an unbind failure would fail the whole sign-out and
+    // And no `pushDevice`: an unbind failure would fail the whole sign-out and
     // leave the very session this call exists to destroy alive.
     expect(calls[1].body).toEqual({ refreshToken: "minted-refresh-6" });
 

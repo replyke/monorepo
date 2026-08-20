@@ -163,9 +163,9 @@ describe("useRemoveAccount", () => {
     await waitFor(() => expect(result.current.error).toBeTruthy());
   });
 
-  // The strictness above must NOT be broadened. With no device there is no
-  // unbind, so nothing is at stake — and since the server answers 204 for every
-  // write/token failure when no device is sent, the only thing left that can
+  // The strictness above must NOT be broadened. With no `pushDevice` there is
+  // no unbind, so nothing is at stake — and since the server answers 204 for
+  // every write/token failure when none is sent, the only thing left that can
   // fail is the transport. Blocking here would mean an offline user, or any app
   // on a project without the `push` bundle, could never remove an account.
   it("still removes locally when a NON-unbinding sign-out fails (offline / no push bundle)", async () => {
@@ -182,7 +182,7 @@ describe("useRemoveAccount", () => {
 
     expect(result.current.error).toBeNull();
     expect(store.getState().sublay.accounts.accounts["user-2"]).toBeUndefined();
-    // And the request really did go out without a device.
+    // And the request really did go out without a `pushDevice`.
     expect(axiosPublic.calls("post")[0].body).toEqual({
       refreshToken: "refresh-2",
     });
@@ -209,7 +209,7 @@ describe("useRemoveAccount", () => {
     const [call] = axiosPublic.calls("post");
     expect(call.body).toEqual({
       refreshToken: "refresh-2",
-      device: { platform: "ios", token: "device-token-1" },
+      pushDevice: { platform: "ios", token: "device-token-1" },
     });
   });
 
