@@ -140,15 +140,20 @@ export function syncAuthGate(state: {
     return;
   }
 
-  // Re-close when `initialized` goes back to false. `signOutThunk` and
-  // `confirmAccountDeletionThunk` deliberately drive
+  // Re-close when `initialized` goes back to false. The account-transition core
+  // (`hooks/auth/accountTransition`) deliberately drives
   // setTokens(accessToken: null) -> setInitialized(false) -> rotate ->
-  // setInitialized(true) when another account remains, and `useSwitchAccount`
-  // dispatches `resetApiState()` across that window — which forces every
-  // mounted RTK query to refetch. A latch that only ever opened would let those
-  // refetches out with no token and cache the OUTGOING account's stranger-data
-  // against the incoming one. This is the same bug the gate exists to close, in
-  // the one place the store explicitly announces "bootstrapping again".
+  // setInitialized(true), and dispatches `resetApiState()` across that window —
+  // which forces every mounted RTK query to refetch. A latch that only ever
+  // opened would let those refetches out with no token and cache the OUTGOING
+  // account's stranger-data against the incoming one. This is the same bug the
+  // gate exists to close, in the one place the store explicitly announces
+  // "bootstrapping again".
+  //
+  // `useSwitchAccount` is the only caller driving that window today.
+  // `signOutThunk` and `confirmAccountDeletionThunk` used to as well, when they
+  // refreshed into a successor account; they no longer select one, so they tear
+  // down and stay down without reopening the gate.
   if (!state.initialized && opened) {
     opened = false;
     deferred = createDeferred();

@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction, createSelector } from "@reduxjs/toolkit";
+import { resetAccountScopedState } from "../actions";
 import type { Collection } from "../../interfaces/models/Collection";
 import type { Entity } from "../../interfaces/models/Entity";
 import type { SublayState } from '../sublayReducers';
@@ -283,6 +284,12 @@ export const collectionsSlice = createSlice({
     handleError: (state) => {
       state.loading = false;
     },
+  },
+  extraReducers: (builder) => {
+    // Every hand-rolled slice returns to its initial state on an account
+    // change. RTK-Query's cache is handled separately by
+    // `baseApi.util.resetApiState()`; this covers what that does not.
+    builder.addCase(resetAccountScopedState, () => initialState);
   },
 });
 

@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction, createSelector } from "@reduxjs/toolkit";
+import { resetAccountScopedState } from "../actions";
 import type { SublayState } from "../sublayReducers";
 import type { DbFilter } from "../../interfaces/models/Table";
 
@@ -59,6 +60,12 @@ export const tablesSlice = createSlice({
     resetTableView: (state, action: PayloadAction<string>) => {
       state.views[action.payload] = createDefaultView();
     },
+  },
+  extraReducers: (builder) => {
+    // Every hand-rolled slice returns to its initial state on an account
+    // change. RTK-Query's cache is handled separately by
+    // `baseApi.util.resetApiState()`; this covers what that does not.
+    builder.addCase(resetAccountScopedState, () => initialState);
   },
 });
 

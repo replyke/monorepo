@@ -12,9 +12,10 @@ export interface ConfirmAccountDeletionProps {
  * Step 2 of self-service account deletion. Verifies the emailed code and then
  * permanently deletes the signed-in user's account (same cascade as the
  * admin/service delete). On success the local session is torn down like a
- * sign-out — the deleted account is removed from the multi-account map and the
- * SDK switches to a remaining account if there is one. This is immediate and
- * cannot be undone.
+ * sign-out — the deleted account is removed from the multi-account map and
+ * **no other account is activated**, even if the user has others signed in.
+ * The app lands signed-out; read `activeAccount` from `useAccounts` and render
+ * your own next screen. This is immediate and cannot be undone.
  */
 function useConfirmAccountDeletion(): (
   props: ConfirmAccountDeletionProps

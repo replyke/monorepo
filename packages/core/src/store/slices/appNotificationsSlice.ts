@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { resetAccountScopedState } from "../actions";
 import type { UnifiedAppNotification, NotificationTemplates } from "../../interfaces/models/AppNotification";
 import type { SublayState } from '../sublayReducers';
 
@@ -124,6 +125,12 @@ export const appNotificationsSlice = createSlice({
     handleError: (state) => {
       state.loading = false;
     },
+  },
+  extraReducers: (builder) => {
+    // Every hand-rolled slice returns to its initial state on an account
+    // change. RTK-Query's cache is handled separately by
+    // `baseApi.util.resetApiState()`; this covers what that does not.
+    builder.addCase(resetAccountScopedState, () => initialState);
   },
 });
 

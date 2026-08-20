@@ -57,7 +57,24 @@ export default function useAuthGate(projectId: string): void {
       if (!projectId) return undefined;
 
       const result = await dispatch(requestNewAccessTokenThunk({ projectId }));
-      if (requestNewAccessTokenThunk.fulfilled.match(result)) {
+
+      // Guard on the PAYLOAD, not just on `fulfilled.match`. This site used to
+      // return `result.payload` behind a bare `fulfilled.match`, which is
+      // `undefined` in exactly the case that matters — the thunk used to
+      // early-return (and therefore *fulfil*) when no refresh token was
+      // present. `undefined` happens to be the right answer here, so the old
+      // shape limped along, but it read as "a fulfilled refresh succeeded" and
+      // was copied to four other sites where it was not harmless.
+      //
+      // Deliberately does NOT rethrow: a refresher that REJECTS would reject
+      // the shared single-flight promise, and through it the axios request
+      // interceptor and RTK's `prepareHeaders` — killing requests before they
+      // are sent, app-wide. The gate wants "no new token", not an exception.
+      // See the guard in `config/authGate.ts`.
+      if (
+        requestNewAccessTokenThunk.fulfilled.match(result) &&
+        result.payload
+      ) {
         return result.payload;
       }
       return undefined;

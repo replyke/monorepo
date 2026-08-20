@@ -138,7 +138,11 @@ describe("signOutThunk", () => {
     expect(axios.calls("post")[0].url).toBe("/project-1/auth/sign-out");
   });
 
-  it("switches to the next account instead of a full reset when one remains", async () => {
+  // INVERTED (multi-account hardening): this used to assert that signing out
+  // of the active account immediately signed the user INTO the oldest
+  // remaining one and refreshed its token. Sign-out now ends the session and
+  // leaves nothing active; which identity comes next is the app's call.
+  it("ends the session and activates NO successor when other accounts remain", async () => {
     const store = makeSublayStore();
     store.dispatch(setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }));
     store.dispatch(
@@ -159,39 +163,43 @@ describe("signOutThunk", () => {
       }),
     );
     const axios = mockAxiosPublic();
-    // sign-out call, then the requestNewAccessToken call for the next account
     axios.mockResponse("post", {});
-    axios.mockResponse("post", {
-      accessToken: "access-2",
-      refreshToken: "refresh-2-rotated",
-      user: { id: "user-2" },
-    });
 
     const result = await store.dispatch(signOutThunk({ projectId: "project-1" }));
 
     expect(signOutThunk.fulfilled.match(result)).toBe(true);
     const state = store.getState();
-    expect(state.sublay.auth.accessToken).toBe("access-2");
-    expect(state.sublay.auth.refreshToken).toBe("refresh-2-rotated");
-    expect(state.sublay.auth.initialized).toBe(true);
 
+    // Signed out, with no successor session.
+    expect(state.sublay.auth.accessToken).toBeNull();
+    expect(state.sublay.auth.refreshToken).toBeNull();
+    expect(state.sublay.accounts.activeAccountId).toBeNull();
+    expect(state.sublay.accounts.signedOut).toBe(true);
+
+    // The remaining account survives untouched, ready to be picked.
+    expect(state.sublay.accounts.accounts["user-1"]).toBeUndefined();
+    expect(state.sublay.accounts.accounts["user-2"]).toBeDefined();
+
+    // Exactly one request: the sign-out. No refresh into a successor.
     const urls = axios.calls("post").map((c) => c.url);
-    expect(urls).toEqual([
-      "/project-1/auth/sign-out",
-      "/project-1/auth/request-new-access-token",
-    ]);
+    expect(urls).toEqual(["/project-1/auth/sign-out"]);
   });
 });
 
 describe("requestNewAccessTokenThunk", () => {
-  it("is a no-op when there is no refresh token", async () => {
+  // INVERTED (multi-account hardening): this used to FULFIL with an undefined
+  // payload, which made every caller guarding on `fulfilled.match` read "there
+  // is no credential to refresh with" as a successful refresh. That is the
+  // defect behind the whole unwrap-site class: an entry with an empty or
+  // missing refresh token switched cleanly into a session that did not exist.
+  it("rejects — rather than fulfilling — when there is no refresh token", async () => {
     const store = makeSublayStore();
     const axios = mockAxiosPublic();
 
     const result = await store.dispatch(requestNewAccessTokenThunk({ projectId: "project-1" }));
 
-    expect(requestNewAccessTokenThunk.fulfilled.match(result)).toBe(true);
-    expect(result.payload).toBeUndefined();
+    expect(requestNewAccessTokenThunk.rejected.match(result)).toBe(true);
+    expect(result.payload).toBe("No refresh token available");
     expect(axios.calls("post")).toHaveLength(0);
   });
 
@@ -530,19 +538,81 @@ describe("account-management thunks — idle expiry", () => {
 });
 
 describe("initializeAuthThunk", () => {
-  it("verifies the signed token then refreshes, finishing with initialized=true", async () => {
+  // CHANGED: this used to assert that a successful verify was followed by a
+  // redundant refresh. `verifyExternalUserThunk` already dispatches setTokens
+  // (access AND refresh) plus setUser, so the second call established nothing —
+  // it only spent a refresh token minted milliseconds earlier, because the
+  // exchange rotates.
+  it("verifies the signed token and stops there — the verify already established the session", async () => {
     const store = makeSublayStore();
     store.dispatch(setTokens({ accessToken: null, refreshToken: "refresh-1" }));
     const axios = mockAxiosPublic();
     const user = { id: "user-1" } as AuthUser;
-    axios.mockResponse("post", { accessToken: "from-verify", refreshToken: "refresh-1", user });
-    axios.mockResponse("post", { accessToken: "from-refresh", refreshToken: "refresh-2", user });
+    axios.mockResponse("post", { accessToken: "from-verify", refreshToken: "refresh-2", user });
 
     await store.dispatch(initializeAuthThunk({ projectId: "project-1", signedToken: "jwt" }));
 
     const state = store.getState();
     expect(state.sublay.auth.initialized).toBe(true);
+    expect(state.sublay.auth.accessToken).toBe("from-verify");
+    expect(state.sublay.auth.refreshToken).toBe("refresh-2");
+    expect(selectUserSliceUser(state)).toEqual(user);
+
+    const urls = axios.calls("post").map((c) => c.url);
+    expect(urls).toEqual(["/project-1/auth/verify-external-user"]);
+  });
+
+  // REGRESSION GUARD. Landing signed-out is the right answer for a STORED
+  // token that turned out to be dead. It is the wrong answer for a session
+  // minted milliseconds ago: a blip on the post-verify refresh would have torn
+  // down a perfectly good session, and an integration-mode app has no stored
+  // accounts and no picker to recover through — and this thunk does not re-run.
+  it("does NOT tear down a just-minted external-user session (no post-verify refresh exists to fail)", async () => {
+    const store = makeSublayStore();
+    const axios = mockAxiosPublic();
+    const user = { id: "user-1" } as AuthUser;
+    axios.mockResponse("post", { accessToken: "from-verify", refreshToken: "refresh-2", user });
+    // Queued but must never be reached: if a second call were made, this is
+    // the network blip that used to sign the user out.
+    axios.mockError("post", 503, { error: "Service unavailable" });
+
+    const result = await store.dispatch(
+      initializeAuthThunk({ projectId: "project-1", signedToken: "jwt" }),
+    );
+
+    expect(initializeAuthThunk.fulfilled.match(result)).toBe(true);
+
+    const state = store.getState();
+    expect(axios.calls("post")).toHaveLength(1);
+    // The session minted seconds ago is intact.
+    expect(state.sublay.auth.accessToken).toBe("from-verify");
+    expect(state.sublay.auth.refreshToken).toBe("refresh-2");
+    expect(state.sublay.auth.user).toEqual(user);
+    expect(selectUserSliceUser(state)).toEqual(user);
+    // ...and the teardown did NOT run.
+    expect(state.sublay.accounts.signedOut).toBe(false);
+    expect(state.sublay.auth.initialized).toBe(true);
+  });
+
+  it("falls through to the stored-account refresh when the verify itself fails", async () => {
+    // A rejected verify keeps the pre-existing behavior: a stored account may
+    // still be restorable.
+    const store = makeSublayStore();
+    store.dispatch(setTokens({ accessToken: null, refreshToken: "refresh-1" }));
+    const axios = mockAxiosPublic();
+    axios.mockError("post", 401, { error: "Invalid signed token" });
+    axios.mockResponse("post", {
+      accessToken: "from-refresh",
+      refreshToken: "refresh-2",
+      user: { id: "user-1" } as AuthUser,
+    });
+
+    await store.dispatch(initializeAuthThunk({ projectId: "project-1", signedToken: "jwt" }));
+
+    const state = store.getState();
     expect(state.sublay.auth.accessToken).toBe("from-refresh");
+    expect(state.sublay.accounts.signedOut).toBe(false);
+    expect(state.sublay.auth.initialized).toBe(true);
 
     const urls = axios.calls("post").map((c) => c.url);
     expect(urls).toEqual([
@@ -562,5 +632,116 @@ describe("initializeAuthThunk", () => {
     expect(store.getState().sublay.auth.initialized).toBe(true);
     const urls = axios.calls("post").map((c) => c.url);
     expect(urls).toEqual(["/project-1/auth/request-new-access-token"]);
+  });
+
+  it("does not attempt a refresh at all when nothing is stored", async () => {
+    // A first launch is not a failure, and must not be recorded as a
+    // deliberate sign-out.
+    const store = makeSublayStore();
+    const axios = mockAxiosPublic();
+
+    const result = await store.dispatch(initializeAuthThunk({ projectId: "project-1" }));
+
+    // A first launch FULFILS — it is not a failure and must not read as one.
+    expect(initializeAuthThunk.fulfilled.match(result)).toBe(true);
+
+    const state = store.getState();
+    expect(axios.calls("post")).toHaveLength(0);
+    expect(state.sublay.auth.initialized).toBe(true);
+    expect(state.sublay.accounts.signedOut).toBe(false);
+  });
+
+  it("lands signed-out — entries intact — when the stored refresh token is dead", async () => {
+    // The launch path used to have ZERO observability here: the un-unwrapped
+    // dispatch resolved even for a rejected thunk, so the `catch` was dead
+    // code and an expired stored token reproduced the stranded state on EVERY
+    // launch, silently.
+    const store = makeSublayStore();
+    store.dispatch(setTokens({ accessToken: null, refreshToken: "refresh-1" }));
+    store.dispatch(
+      setAccountMap({
+        activeAccountId: "user-1",
+        accounts: {
+          "user-1": {
+            refreshToken: "refresh-1",
+            tokenExpiresAt: 0,
+            user: { id: "user-1", name: "A", email: null, avatar: null },
+          },
+          "user-2": {
+            refreshToken: "refresh-2",
+            tokenExpiresAt: 0,
+            user: { id: "user-2", name: "B", email: null, avatar: null },
+          },
+        },
+      }),
+    );
+    const axios = mockAxiosPublic();
+    axios.mockError("post", 403, { error: "Refresh token revoked" });
+
+    const result = await store.dispatch(initializeAuthThunk({ projectId: "project-1" }));
+
+    // The reason is REACHABLE, not merely logged: an app can tell "your stored
+    // session expired" apart from "you signed out", which otherwise look
+    // identical (both land on `signedOut: true`).
+    expect(initializeAuthThunk.rejected.match(result)).toBe(true);
+    // Guard only narrows the fulfilled|rejected union so `.error` is readable.
+    if (!initializeAuthThunk.rejected.match(result)) {
+      throw new Error("expected initializeAuthThunk to reject");
+    }
+    expect(result.error.message).toBeTruthy();
+
+    const state = store.getState();
+    // Signed out...
+    expect(state.sublay.auth.accessToken).toBeNull();
+    expect(state.sublay.auth.refreshToken).toBeNull();
+    expect(state.sublay.accounts.activeAccountId).toBeNull();
+    // ...observably, so the next launch shows the picker instead of silently
+    // re-activating the first stored account.
+    expect(state.sublay.accounts.signedOut).toBe(true);
+    // ...with both entries intact, so the user can re-authenticate either one.
+    expect(Object.keys(state.sublay.accounts.accounts).sort()).toEqual([
+      "user-1",
+      "user-2",
+    ]);
+    // The request-path auth gate STILL opens. Withholding this would park
+    // every outbound request behind the 5s ready-timeout fallback.
+    expect(state.sublay.auth.initialized).toBe(true);
+  });
+
+  it("lands signed-out when the selected account's refresh token is empty", async () => {
+    // The `fulfilled`-with-`undefined` path — no network call happens at all,
+    // so a guard on `rejected.match` would never see it. An account IS
+    // selected, so this is a corrupt entry, not a fresh launch.
+    const store = makeSublayStore();
+    store.dispatch(setTokens({ accessToken: "stale", refreshToken: "" }));
+    store.dispatch(
+      setAccountMap({
+        activeAccountId: "user-1",
+        accounts: {
+          "user-1": {
+            refreshToken: "",
+            tokenExpiresAt: 0,
+            user: { id: "user-1", name: "A", email: null, avatar: null },
+          },
+        },
+      }),
+    );
+    const axios = mockAxiosPublic();
+
+    const result = await store.dispatch(initializeAuthThunk({ projectId: "project-1" }));
+
+    expect(initializeAuthThunk.rejected.match(result)).toBe(true);
+    if (!initializeAuthThunk.rejected.match(result)) {
+      throw new Error("expected initializeAuthThunk to reject");
+    }
+    expect(result.error.message).toBe("No refresh token available");
+
+    const state = store.getState();
+    expect(axios.calls("post")).toHaveLength(0);
+    expect(state.sublay.auth.initialized).toBe(true);
+    expect(state.sublay.auth.accessToken).toBeNull();
+    expect(state.sublay.accounts.activeAccountId).toBeNull();
+    expect(state.sublay.accounts.signedOut).toBe(true);
+    expect(state.sublay.accounts.accounts["user-1"]).toBeDefined();
   });
 });

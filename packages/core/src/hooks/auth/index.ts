@@ -11,3 +11,9 @@ export { default as useVerifyEmail, type VerifyEmailProps } from './useVerifyEma
 export { default as useRequestAccountDeletion } from './useRequestAccountDeletion';
 export { default as useConfirmAccountDeletion, type ConfirmAccountDeletionProps } from './useConfirmAccountDeletion';
 export { default as useOAuthIdentities, type OAuthIdentity, type UseOAuthIdentitiesReturn } from './useOAuthIdentities';
+export {
+  activateStoredAccount,
+  AccountTransitionError,
+  ACCOUNT_TRANSITION_FAILED_MESSAGE,
+  type ActivateStoredAccountArgs,
+} from './accountTransition';

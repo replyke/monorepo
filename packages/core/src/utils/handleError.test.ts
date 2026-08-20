@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-import { handleError } from "./handleError";
+import { handleError, setSublayLogLevel, getSublayLogLevel } from "./handleError";
 
 afterEach(() => {
   vi.restoreAllMocks();
+  // Module-level setting — leaks across files if not reset.
+  setSublayLogLevel("error");
 });
 
 describe("handleError", () => {
@@ -59,5 +61,39 @@ describe("handleError", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
 
     expect(handleError({ message: "boom" })).toBe(" - boom");
+  });
+});
+
+describe("setSublayLogLevel", () => {
+  it("defaults to 'error' and logs through console.error", () => {
+    expect(getSublayLogLevel()).toBe("error");
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    handleError({ message: "boom" }, "Failed:");
+
+    expect(errorSpy).toHaveBeenCalledWith("Failed: - boom");
+  });
+
+  it("routes to console.warn at level 'warn'", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    setSublayLogLevel("warn");
+    handleError({ message: "boom" }, "Failed:");
+
+    expect(warnSpy).toHaveBeenCalledWith("Failed: - boom");
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("logs nothing at level 'silent' but still returns the message", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    setSublayLogLevel("silent");
+    const result = handleError({ message: "boom" }, "Failed:");
+
+    expect(result).toBe("Failed: - boom");
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 });

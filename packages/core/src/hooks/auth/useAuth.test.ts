@@ -83,4 +83,30 @@ describe("useAuth", () => {
     expect(returned).toBe("fresh");
     expect(result.current.accessToken).toBe("fresh");
   });
+
+  it("requestNewAccessToken THROWS when the refresh fails", async () => {
+    // It used to return `undefined` for every failure, indistinguishable from
+    // the no-projectId early return — i.e. it read as a call that simply had
+    // nothing to do. Every other action on this hook throws on failure.
+    const { result, axiosPublic } = renderHookWithAxios(() => useAuth(), {
+      projectId: "project-1",
+      accessToken: "stale",
+      refreshToken: "refresh-1",
+    });
+    axiosPublic.mockError("post", 403, { error: "Refresh token revoked" });
+
+    await expect(result.current.requestNewAccessToken()).rejects.toThrow();
+  });
+
+  it("requestNewAccessToken THROWS when there is no stored refresh token", async () => {
+    // The `fulfilled`-with-`undefined` path — no network call at all.
+    const { result, axiosPublic } = renderHookWithAxios(() => useAuth(), {
+      projectId: "project-1",
+    });
+
+    await expect(result.current.requestNewAccessToken()).rejects.toThrow(
+      "No refresh token available",
+    );
+    expect(axiosPublic.calls("post")).toHaveLength(0);
+  });
 });

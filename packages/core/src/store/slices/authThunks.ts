@@ -15,8 +15,14 @@ import {
   setUser as setUserInUserSlice,
   clearUser as clearUserInUserSlice,
 } from "./userSlice";
-import { removeAccount, clearAllAccounts } from "./accountsSlice";
+import {
+  removeAccount,
+  clearAllAccounts,
+  setActiveAccount,
+  setSignedOut,
+} from "./accountsSlice";
 import { baseApi } from "../api/baseApi";
+import { resetAccountScopedState } from "../actions";
 
 // Account-management endpoints (change/set password, confirm account deletion)
 // run behind requireUserAuth on the server. The shared default axios instance
@@ -305,7 +311,6 @@ export const signOutThunk = createAsyncThunk(
     const state = getState() as RootState;
     const refreshToken = state.sublay.auth.refreshToken;
     const activeAccountId = state.sublay.accounts.activeAccountId;
-    const accounts = state.sublay.accounts.accounts;
 
     if (!refreshToken) {
       throw new Error("No refresh token");
@@ -316,42 +321,24 @@ export const signOutThunk = createAsyncThunk(
 
       await authService.signOut(data.projectId, refreshToken);
 
-      // Remove current account from the multi-account map
+      // Remove current account from the multi-account map. The reducer leaves
+      // NO account active — see below.
       if (activeAccountId) {
         dispatch(removeAccount(activeAccountId));
       }
 
-      // Check for remaining accounts
-      const remainingIds = Object.keys(accounts).filter(
-        (id) => id !== activeAccountId
-      );
-
-      if (remainingIds.length > 0) {
-        // Switch to the first remaining account
-        const nextId = remainingIds[0];
-        const nextAccount = accounts[nextId];
-
-        dispatch(resetAuth());
-        dispatch(clearUserInUserSlice());
-        dispatch(baseApi.util.resetApiState());
-        dispatch(
-          setTokens({
-            accessToken: null,
-            refreshToken: nextAccount.refreshToken,
-          })
-        );
-        dispatch(setInitialized(false));
-
-        await dispatch(
-          requestNewAccessTokenThunk({ projectId: data.projectId })
-        );
-        dispatch(setInitialized(true));
-      } else {
-        // No remaining accounts — standard sign-out
-        dispatch(resetAuth());
-        dispatch(clearUserInUserSlice());
-        dispatch(baseApi.util.resetApiState());
-      }
+      // Signing out ends the session. It does NOT sign you into whichever
+      // account happens to be left: picking the next identity is the app's
+      // decision. (This used to activate `remaining[0]` — insertion order, so
+      // the oldest account ever added — and refresh into it.)
+      dispatch(resetAuth());
+      dispatch(clearUserInUserSlice());
+      dispatch(baseApi.util.resetApiState());
+      dispatch(resetAccountScopedState());
+      // Belt and braces: `removeAccount` already sets this when the removed
+      // account was the active one, but a sign-out with no active account in
+      // the map still has to read as deliberate on the next launch.
+      dispatch(setSignedOut(true));
 
       return;
     } catch (error) {
@@ -373,7 +360,6 @@ export const confirmAccountDeletionThunk = createAsyncThunk(
   ) => {
     const state = getState() as RootState;
     const activeAccountId = state.sublay.accounts.activeAccountId;
-    const accounts = state.sublay.accounts.accounts;
 
     try {
       dispatch(setAuthenticating(true));
@@ -387,43 +373,18 @@ export const confirmAccountDeletionThunk = createAsyncThunk(
       );
 
       // Tear down the local session exactly like sign-out: drop the deleted
-      // account from the multi-account map, then either switch to a remaining
-      // account or fully reset. No server sign-out call — the session is
-      // already gone.
+      // account from the multi-account map and land signed-out. No server
+      // sign-out call — the session is already gone. No successor account is
+      // activated (see `signOutThunk`).
       if (activeAccountId) {
         dispatch(removeAccount(activeAccountId));
       }
 
-      const remainingIds = Object.keys(accounts).filter(
-        (id) => id !== activeAccountId
-      );
-
-      if (remainingIds.length > 0) {
-        // Switch to the first remaining account
-        const nextId = remainingIds[0];
-        const nextAccount = accounts[nextId];
-
-        dispatch(resetAuth());
-        dispatch(clearUserInUserSlice());
-        dispatch(baseApi.util.resetApiState());
-        dispatch(
-          setTokens({
-            accessToken: null,
-            refreshToken: nextAccount.refreshToken,
-          })
-        );
-        dispatch(setInitialized(false));
-
-        await dispatch(
-          requestNewAccessTokenThunk({ projectId: data.projectId })
-        );
-        dispatch(setInitialized(true));
-      } else {
-        // No remaining accounts — standard teardown
-        dispatch(resetAuth());
-        dispatch(clearUserInUserSlice());
-        dispatch(baseApi.util.resetApiState());
-      }
+      dispatch(resetAuth());
+      dispatch(clearUserInUserSlice());
+      dispatch(baseApi.util.resetApiState());
+      dispatch(resetAccountScopedState());
+      dispatch(setSignedOut(true));
 
       return;
     } catch (error) {
@@ -447,7 +408,19 @@ export const requestNewAccessTokenThunk = createAsyncThunk(
     const refreshToken = state.sublay.auth.refreshToken;
 
     if (!refreshToken) {
-      return;
+      // REJECT rather than fulfil-with-undefined.
+      //
+      // This early return used to *fulfil*, which made every caller that
+      // guarded on `fulfilled.match(result)` treat "there is no credential to
+      // refresh with" as a successful refresh. An account entry with an empty
+      // or missing refresh token therefore switched cleanly into a session
+      // that did not exist. Rejecting here is what lets the unwrap guards
+      // downstream be trustworthy.
+      //
+      // Public breaking change: `requestNewAccessTokenThunk` is exported, and
+      // an integrator branching on `fulfilled.match` for the no-token case
+      // sees the opposite branch now.
+      return rejectWithValue("No refresh token available");
     }
 
     try {
@@ -602,6 +575,7 @@ export const signOutAllThunk = createAsyncThunk(
       dispatch(resetAuth());
       dispatch(clearUserInUserSlice());
       dispatch(baseApi.util.resetApiState());
+      dispatch(resetAccountScopedState());
 
       return;
     } catch (error) {
@@ -620,26 +594,105 @@ export const initializeAuthThunk = createAsyncThunk(
   "auth/initialize",
   async (
     data: { projectId: string; signedToken?: string | null },
-    { dispatch }
+    { dispatch, getState }
   ) => {
     try {
-      // Step 1: If we have a signed token, verify external user
+      // Step 1: If we have a signed token, verify external user.
+      //
+      // A FULFILLED verify has already established the session — it dispatched
+      // `setTokens` (access AND refresh) plus `setUser` into both slices,
+      // which is precisely what step 2 would do. So step 2 is redundant on
+      // this path, and worse than redundant: the refresh exchange ROTATES,
+      // spending a refresh token minted milliseconds ago for nothing.
+      //
+      // Returning here is also what keeps the failure branch below honest.
+      // That branch discards the credential and lands signed-out, which is the
+      // right answer for "a STORED token turned out to be dead" — the case the
+      // decision was made for. It is the wrong answer for a session minted
+      // seconds earlier: a single network blip in the ~100ms window between
+      // verify and refresh would sign the user out of a perfectly good
+      // session. Integration-mode apps feel that worst — they have no stored
+      // accounts and no picker to recover through, and this thunk will not
+      // re-run (its effect deps are unchanged and `initialized` latches), so
+      // the app would sit signed-out until a reload.
+      //
+      // A REJECTED verify falls through: a stored account may still be
+      // restorable, which is the behavior this path has always had.
       if (data.signedToken) {
-        await dispatch(
+        const verified = await dispatch(
           verifyExternalUserThunk({
             projectId: data.projectId,
             userJwt: data.signedToken,
           })
         );
+
+        if (verifyExternalUserThunk.fulfilled.match(verified)) return;
       }
 
-      // Step 2: Try to refresh access token
-      await dispatch(
+      // Step 2: Try to refresh access token.
+      //
+      // No stored credential AND no account selected is not a failure — it is
+      // a first launch, or a launch after a sign-out. Bail before the refresh
+      // so the failure branch below means what it says. A selected account
+      // with no usable credential IS a failure, and falls through to the
+      // refresh (which now rejects for exactly that) so it lands observably.
+      const bootState = getState() as RootState;
+      if (
+        !bootState.sublay.auth.refreshToken &&
+        !bootState.sublay.accounts.activeAccountId
+      ) {
+        return;
+      }
+
+      const result = await dispatch(
         requestNewAccessTokenThunk({ projectId: data.projectId })
       );
+
+      // This is the fifth unwrap site and the most consequential one. Until
+      // now the `await`ed dispatch resolved even for a rejected thunk, so the
+      // `catch` below was DEAD CODE for exactly the failure that matters: an
+      // active account whose stored refresh token had expired reproduced the
+      // stranded state on every single launch, unobserved.
+      if (
+        !requestNewAccessTokenThunk.fulfilled.match(result) ||
+        !result.payload
+      ) {
+        throw new Error(
+          (typeof result.payload === "string" && result.payload) ||
+            "Could not restore the stored session."
+        );
+      }
     } catch (error) {
       handleError(error, "Auth initialization failed:");
+
+      // Land signed-out with the account entries intact, exactly like a failed
+      // remove/sign-out — one consistent answer to "a stored token turned out
+      // to be dead". The user picks from the switcher; they are never silently
+      // moved into an account they did not ask for. `signedOut` is what stops
+      // Phase A re-activating the first stored account on the next launch.
+      dispatch(resetAuth());
+      dispatch(clearUserInUserSlice());
+      dispatch(baseApi.util.resetApiState());
+      dispatch(resetAccountScopedState());
+      dispatch(setActiveAccount(null));
+      dispatch(setSignedOut(true));
+
+      // Rethrow so the reason is REACHABLE, not just logged. Swallowing left
+      // it in a `console.error` that the log-level setter can silence, with no
+      // way for an app to tell "you signed out" apart from "your stored
+      // session expired" — both land on `signedOut: true`.
+      //
+      // Safe to throw: both providers dispatch this thunk bare, with no
+      // `.unwrap()` and no `.catch()`, and nothing subscribes to it in
+      // `extraReducers`. So it produces a rejected ACTION, never an unhandled
+      // rejection, and the message surfaces as `action.error.message` for a
+      // caller that wants it. The teardown above has already run, and
+      // `setInitialized(true)` still runs in `finally` below.
+      throw error;
     } finally {
+      // ALWAYS — this is what opens the request-path auth gate. Withholding it
+      // to "fail closed" would park every outbound request behind the 5s ready
+      // timeout, silently, for the life of the session. See config/authGate.ts.
       dispatch(setInitialized(true));
     }
   }

@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { act, waitFor } from "@testing-library/react";
 
-import { renderHookWithAxios, resetAxiosMocks, makeAuthUser } from "../../test-utils";
+import { renderHookWithAxios, resetAxiosMocks } from "../../test-utils";
 import useRemoveAccount from "./useRemoveAccount";
 import { setAccountMap } from "../../store/slices/accountsSlice";
 import type { AccountEntry } from "../../store/slices/accountsSlice";
@@ -46,30 +46,66 @@ describe("useRemoveAccount", () => {
     expect(call.body).toEqual({ refreshToken: "refresh-2" });
   });
 
-  it("removing the active account switches to a remaining one and refreshes its token", async () => {
-    const { result, store, axiosPublic } = renderHookWithAxios(() => useRemoveAccount());
+  // INVERTED (multi-account hardening): this used to assert that removing the
+  // active account signed the user into the oldest remaining one. Removal now
+  // ends the session and leaves nothing active.
+  it("removing the active account lands signed-out and activates NO successor", async () => {
+    const { result, store, axiosPublic } = renderHookWithAxios(() => useRemoveAccount(), {
+      accessToken: "access-1",
+      refreshToken: "refresh-1",
+    });
     act(() => {
       store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }));
     });
 
     axiosPublic.mockResponse("post", {}); // best-effort sign-out
-    axiosPublic.mockResponse("post", {
-      accessToken: "access-2",
-      refreshToken: "refresh-2-rotated",
-      user: makeAuthUser({ id: "user-2" }),
-    }); // request-new-access-token for the next account
 
     await act(async () => {
       await result.current.removeAccount({ userId: "user-1" });
     });
 
-    expect(store.getState().sublay.accounts.accounts["user-1"]).toBeUndefined();
-    expect(store.getState().sublay.auth.accessToken).toBe("access-2");
-    expect(store.getState().sublay.auth.refreshToken).toBe("refresh-2-rotated");
+    const state = store.getState();
+    expect(state.sublay.accounts.accounts["user-1"]).toBeUndefined();
+    // The other account is still there — it is simply not activated.
+    expect(state.sublay.accounts.accounts["user-2"]).toBeDefined();
+    expect(state.sublay.accounts.activeAccountId).toBeNull();
+    expect(state.sublay.accounts.signedOut).toBe(true);
+    expect(state.sublay.auth.accessToken).toBeNull();
+    expect(state.sublay.auth.refreshToken).toBeNull();
 
+    // Only the sign-out request — no refresh into a successor.
     const calls = axiosPublic.calls("post");
-    expect(calls[0].url).toBe("/test-project/auth/sign-out");
-    expect(calls[1].url).toBe("/test-project/auth/request-new-access-token");
+    expect(calls.map((c) => c.url)).toEqual(["/test-project/auth/sign-out"]);
+  });
+
+  it("removing a THIRD account leaves both survivors in the map with no session for either", async () => {
+    const { result, store, axiosPublic } = renderHookWithAxios(() => useRemoveAccount(), {
+      accessToken: "access-1",
+      refreshToken: "refresh-1",
+    });
+    const three = makeAccounts();
+    three["user-3"] = {
+      refreshToken: "refresh-3",
+      tokenExpiresAt: 0,
+      user: { id: "user-3", name: "Cara", email: null, avatar: null },
+    };
+    act(() => {
+      store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: three }));
+    });
+
+    axiosPublic.mockResponse("post", {});
+
+    await act(async () => {
+      await result.current.removeAccount({ userId: "user-1" });
+    });
+
+    const state = store.getState();
+    expect(Object.keys(state.sublay.accounts.accounts).sort()).toEqual([
+      "user-2",
+      "user-3",
+    ]);
+    expect(state.sublay.accounts.activeAccountId).toBeNull();
+    expect(axiosPublic.calls("post")).toHaveLength(1);
   });
 
   it("removing the last remaining (active) account fully resets local auth state", async () => {

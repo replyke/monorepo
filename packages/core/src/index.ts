@@ -1,5 +1,10 @@
 // Helpers & Utilities
-export { handleError } from "./utils/handleError";
+export {
+  handleError,
+  setSublayLogLevel,
+  getSublayLogLevel,
+  type SublayLogLevel,
+} from "./utils/handleError";
 export {
   SuspendedError,
   isSuspendedError,
@@ -126,10 +131,41 @@ export { requestNewAccessTokenThunk } from "./store/slices/authThunks";
 export type { AccountStorage } from "./interfaces/AccountStorage";
 export {
   MAX_ACCOUNTS,
+  selectAccounts,
+  selectActiveAccountId,
+  selectSignedOut,
+  selectAccountLimitReached,
   type AccountSummary,
   type AccountEntry,
   type AccountMap,
 } from "./store/slices/accountsSlice";
+
+// -- account-transition primitives (R8)
+//
+// Composable pieces for integrators who drive their own account UI, WITHOUT
+// re-exposing the footguns underneath. Deliberately absent:
+//
+//   - `setActiveAccount` — an unguarded assignment, so publishing it would make
+//     "`activeAccountId` names a key that is not in `accounts`" a supported
+//     public operation. That corrupt shape is precisely what this surface
+//     exists to prevent.
+//   - `upsertAccount` — the reducer that enforces the account cap.
+//   - `removeAccount` — the bare reducer only mutates local state; dispatching
+//     it drops an account without signing it out server-side or unbinding its
+//     push. `useRemoveAccount` performs the whole flow and is the public
+//     surface.
+//
+// `activateStoredAccount` is the validated equivalent of the first: it selects,
+// establishes the session, and rolls the selection back if it cannot.
+export {
+  activateStoredAccount,
+  AccountTransitionError,
+  ACCOUNT_TRANSITION_FAILED_MESSAGE,
+  type ActivateStoredAccountArgs,
+} from "./hooks/auth/accountTransition";
+export { resetAccountScopedState } from "./store/actions";
+export { resetAuth } from "./store/slices/authSlice";
+export { clearUser } from "./store/slices/userSlice";
 
 // -- (current) user
 export {
