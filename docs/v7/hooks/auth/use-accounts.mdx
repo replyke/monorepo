@@ -55,6 +55,24 @@ function ActiveAccountLabel() {
   Total number of stored accounts.
 </ResponseField>
 
+<ResponseField name="signedOut" type="boolean">
+  `true` when there is no active account **because the user deliberately signed
+  out** — or removed the active account, deleted it, or a stored session turned
+  out to be dead — as opposed to "nothing has ever been selected". Both look
+  like `activeAccount === null`; this is what tells them apart, and it is
+  persisted, so it survives a relaunch.
+
+  While it is `true`, the SDK will not auto-select a stored account at launch.
+  It clears as soon as any account is successfully activated.
+</ResponseField>
+
+<ResponseField name="accountLimitReached" type="boolean">
+  `true` when an account was actually refused admission because the map was
+  already at the 5-account limit. Clears on the next successful admission and
+  on any removal. See [`useAddAccount`](/hooks/auth/use-add-account) for how it
+  differs from `canAddAccount`.
+</ResponseField>
+
 ## AccountSummary Type
 
 | Property | Type | Description |
@@ -63,6 +81,18 @@ function ActiveAccountLabel() {
 | `name` | `string \| null` | Display name |
 | `email` | `string \| null` | Email address |
 | `avatar` | `string \| null` | Avatar URL |
+
+## Rendering the Signed-Out State
+
+Because the SDK no longer auto-selects an account after a sign-out, removal or deletion, `activeAccount` can be `null` while `accounts` is non-empty. That is the account-picker state:
+
+```tsx
+const { accounts, activeAccount, signedOut } = useAccounts();
+
+if (activeAccount) return <App />;
+if (signedOut && accounts.length > 0) return <AccountPicker accounts={accounts} />;
+return <SignIn />;
+```
 
 ## Integration Guide
 

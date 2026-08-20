@@ -95,6 +95,41 @@ All integration exports are available from `@sublay/react-js`:
 | `sublayApiMiddleware` | `Middleware` | RTK Query middleware for cache invalidation and subscriptions. |
 | `sublayMiddleware` | `Middleware[]` | Combined array of all required Sublay middleware. Spread into your middleware chain. |
 | `SublayIntegrationProvider` | `React.FC` | Context provider for integration mode. |
+| `resetAccountScopedState` | `ActionCreator` | Dispatched by the SDK on every account change. Subscribe your own slices to it — see below. |
+| `resetAuth` / `clearUser` | `ActionCreator` | The auth and current-user teardown actions. |
+| `activateStoredAccount` | `function` | Selects a stored account and establishes its session, rolling the selection back on failure. A plain function, callable from a thunk or effect body. |
+| `setSublayLogLevel` | `function` | Sets SDK console logging to `"error"` (default), `"warn"` or `"silent"`. Process-global; not a provider prop. |
+| `selectAccounts`, `selectActiveAccountId`, `selectSignedOut`, `selectAccountLimitReached` | `Selector` | Selectors over the accounts slice. |
+
+<Note>
+  The raw `setActiveAccount`, `upsertAccount` and `removeAccount` reducers are
+  deliberately **not** exported. They only mutate local state: `setActiveAccount`
+  can point the active id at an account that is not in the map, and
+  `removeAccount` drops an account without signing it out server-side. Use
+  `activateStoredAccount` and the `useRemoveAccount` hook, which perform the
+  whole flow.
+</Note>
+
+## Clearing Your Own State on an Account Change
+
+Sublay dispatches `resetAccountScopedState` on **every** path that changes the active account — switching, removing, signing out, deleting an account, adding one, a direct sign-in while another account is active, and cross-tab sync. Its own feature slices return to their initial state on it.
+
+If you keep account-scoped data in your own slices, subscribe to the same signal instead of re-deriving when an account changed:
+
+```ts
+import { resetAccountScopedState } from "@sublay/react-js";
+
+const yourFeatureSlice = createSlice({
+  name: "yourFeature",
+  initialState,
+  reducers: { /* ... */ },
+  extraReducers: (builder) => {
+    builder.addCase(resetAccountScopedState, () => initialState);
+  },
+});
+```
+
+RTK Query caches are handled separately by `baseApi.util.resetApiState()`, which the SDK dispatches alongside.
 
 ## State Shape
 
@@ -104,7 +139,8 @@ When integrated, Sublay occupies two top-level keys in your store:
 {
   sublay: {
     auth: { ... },          // Auth tokens, current user, initialization state
-    accounts: { ... },      // Multi-account list and active account
+    accounts: { ... },      // Multi-account list, active account, signedOut,
+                            // accountLimitReached
     user: { ... },          // Current user profile
     appNotifications: { ... },
     collections: { ... },

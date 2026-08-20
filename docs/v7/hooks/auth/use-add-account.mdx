@@ -48,15 +48,33 @@ function AddAccountButton() {
 ## Returns
 
 <ResponseField name="addAccount" type="function">
-  Clears the current access token, refresh token, and user state from Redux.
-  The existing accounts map is preserved. After calling this function, the app
-  should display sign-in UI for the new account.
+  Clears the current access token, refresh token, and user state from Redux,
+  along with the outgoing account's cached API data and account-scoped feature
+  state. The existing accounts map is preserved. After calling this function,
+  the app should display sign-in UI for the new account.
 </ResponseField>
 
 <ResponseField name="canAddAccount" type="boolean">
   `true` if fewer than 5 accounts are currently stored. `false` when the
   maximum is reached.
 </ResponseField>
+
+<ResponseField name="accountLimitReached" type="boolean">
+  `true` when an account was actually **refused** admission because the map was
+  already full. Clears on the next successful admission and on any removal.
+</ResponseField>
+
+### `canAddAccount` vs `accountLimitReached`
+
+They answer different questions and are both needed:
+
+| | `canAddAccount` | `accountLimitReached` |
+|---|---|---|
+| Kind | Predicate — "is there room right now?" | Event — "did an admission just get refused?" |
+| Derived from | The map size, on every render | A refusal, latched in the store |
+| Typical use | Enable/disable the "Add account" button *before* the user commits | Render the error *after* a sign-in was rejected at the cap |
+
+`accountLimitReached` matters because not every rejection has a call to reject: it is also readable from [`useAccounts`](/hooks/auth/use-accounts).
 
 ## Integration Guide
 

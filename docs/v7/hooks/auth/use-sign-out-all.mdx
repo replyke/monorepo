@@ -45,9 +45,16 @@ function SignOutAllButton() {
 <ResponseField name="signOutAll" type="function">
   Async function that signs out all accounts. Sends a server-side sign-out
   request for each stored refresh token, clears the accounts map, resets auth
-  state, and resets the API cache. Throws if the operation fails at the
-  Redux thunk level.
+  state, resets the API cache, and returns every account-scoped feature slice
+  (chat, notifications, entity/space lists, collections, table views) to its
+  initial state. Throws if the operation fails at the Redux thunk level.
 </ResponseField>
+
+<Note>
+  Afterwards the app is in the **durable signed-out state**: `activeAccount` is
+  `null`, `signedOut` from [`useAccounts`](/hooks/auth/use-accounts) is `true`,
+  and no account is auto-selected at the next launch.
+</Note>
 
 ## Integration Guide
 

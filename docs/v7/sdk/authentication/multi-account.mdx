@@ -9,7 +9,7 @@ Sublay supports up to **5 simultaneously stored accounts** in a single app insta
 
 Each signed-in account is stored in the Redux `accounts` map, keyed by user ID. The map persists to `localStorage` (web) or platform-specific secure storage (React Native). The `activeAccountId` field tracks which account is currently active.
 
-When the user switches accounts, the SDK restores the stored refresh token for the target account and fetches a new access token automatically.
+When the user switches accounts, the SDK restores the stored refresh token for the target account and fetches a new access token automatically. If that fails — an expired or revoked stored token, for example — the switch **rejects** rather than reporting success; see [When a transition fails](#when-a-transition-fails).
 
 ## Hooks
 
@@ -116,7 +116,11 @@ function RemoveAccountButton({ userId }: { userId: string }) {
 }
 ```
 
-When the removed account is the currently active one, the SDK automatically switches to the next available account. If no other accounts remain, the SDK resets to the unauthenticated state.
+When the removed account is the currently active one, **the session ends and no account is left active** — the remaining accounts stay in the map, but the SDK does not sign the user into one of them. Render your own next screen (an account picker, or your sign-in UI) when `activeAccount` is `null`.
+
+<Warning>
+  **Breaking change.** Previously the SDK immediately activated the oldest remaining account and refreshed into it, so "remove this account" silently landed the user inside a different identity. Removing, signing out, and deleting an account now all leave `activeAccount` as `null`. Apps that relied on landing in a live session must render their own next screen.
+</Warning>
 
 Removing an account also sends a best-effort sign-out request to the server to revoke the refresh token family.
 
@@ -133,6 +137,86 @@ function SignOutAllButton() {
 ```
 
 `signOutAll` sends a sign-out request for every stored account's refresh token (best-effort) and clears all local auth state.
+
+## When a Transition Fails
+
+Every path that establishes a session for a stored account — `switchAccount`, and the automatic restore at app launch — has to refresh that account's stored refresh token into a live access token. That refresh can fail: the token expired, the server revoked it, or the stored entry is unusable.
+
+Those failures are now **observable**. They used to resolve as if the transition had succeeded, leaving the app pointed at an account with no session.
+
+**`switchAccount` rejects.** The returned promise rejects and `error` is set. The rollback restores the **selection**, not the session:
+
+- The previously active account is selected again, but its session is *not* re-established — by the time the failure is known, the outgoing session has already been torn down. The app renders signed-out with the previous account selected.
+- If there was no previously active account, nothing is selected and the app is signed out.
+- **Both account entries survive.** The account that failed to restore stays in the map, which is what lets you render a "session expired — sign in again" affordance for it.
+
+```tsx
+try {
+  await switchAccount({ userId });
+} catch (err) {
+  // The switch did not happen. `error` is also set on the hook.
+  // Both accounts are still in the map; prompt a re-auth for `userId`.
+}
+```
+
+**`removeAccount` rejects** on the same terms.
+
+**At app launch**, a stored session that cannot be restored lands the app **signed out with the account entries intact** — never silently switched into a different account. See [Durable signed-out state](#durable-signed-out-state).
+
+## Durable Signed-Out State
+
+"No account is active" has two meanings, and the SDK tells them apart across relaunches:
+
+| Situation | `activeAccount` | `signedOut` | What happens on the next launch |
+|-----------|-----------------|-------------|---------------------------------|
+| Nothing has ever been selected | `null` | `false` | The first stored account is selected and restored |
+| The user deliberately signed out, removed the active account, deleted it, or a stored session turned out to be dead | `null` | `true` | **Nothing is auto-selected.** The app renders signed-out, and the user picks from the switcher |
+
+`signedOut` is read from `useAccounts()` and is persisted alongside the account map, so it survives a relaunch. It clears the moment any account is successfully activated.
+
+```tsx
+const { accounts, activeAccount, signedOut } = useAccounts();
+
+if (!activeAccount && signedOut && accounts.length > 0) {
+  return <AccountPicker accounts={accounts} />;
+}
+```
+
+## Reaching the Account Limit
+
+`useAddAccount` exposes two related but distinct values:
+
+| Value | Kind | Meaning |
+|-------|------|---------|
+| `canAddAccount` | Predicate | Is there room right now? Derived from the map size on every render. Use it to enable or disable an "Add account" button. |
+| `accountLimitReached` | Event | Was an account actually *refused* because the map was full? Latched until the next successful admission or any removal. Use it to render the error after the fact. |
+
+`accountLimitReached` is also available from `useAccounts()`.
+
+## Controlling SDK Error Logging
+
+The SDK logs handled failures with `console.error`. Apps whose crash reporters treat `console.error` as a signal — or that simply want a quieter console — can change the level:
+
+```ts
+import { setSublayLogLevel } from "@sublay/react-js";
+
+setSublayLogLevel("silent"); // "error" (default) | "warn" | "silent"
+```
+
+This is a **bare setter, not a provider prop**, deliberately: the setting is process-global, and a prop would be silently last-mount-wins in apps that mount two providers. It is also coarse — it silences *all* SDK logging, unexpected failures included. Errors are still returned to and surfaced by the calling hooks; only the console output changes.
+
+## Composing Your Own Account UI
+
+If the built-in hooks do not fit, the transition primitives are exported directly:
+
+| Export | Purpose |
+|--------|---------|
+| `activateStoredAccount` | The full transition: select an account, establish its session, roll the selection back if it cannot. A plain function, callable outside React. |
+| `resetAccountScopedState` | Redux action that returns every account-scoped feature slice to its initial state. Subscribe your own slices to it. |
+| `resetAuth` / `clearUser` | The auth and user teardown actions. |
+| `selectAccounts`, `selectActiveAccountId`, `selectSignedOut`, `selectAccountLimitReached` | Selectors over the accounts slice. |
+
+The raw `setActiveAccount`, `upsertAccount` and `removeAccount` reducers are deliberately **not** exported. They only mutate local state: dispatching `setActiveAccount` can point the active id at an account that is not in the map, and dispatching `removeAccount` drops an account without signing it out server-side. Use `activateStoredAccount` and the `useRemoveAccount` hook instead — they perform the whole flow.
 
 ## See Also
 

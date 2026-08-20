@@ -111,6 +111,10 @@ function SignInButton() {
 <ResponseField name="signOut" type="function">
   Sign out the current account. Sends a sign-out request to the server to revoke
   the refresh token family, then clears local auth state. Throws on error.
+
+  **It does not sign you into another account.** If other accounts are stored,
+  they stay in the map but none is activated — see
+  [Multi-Account](/sdk/authentication/multi-account).
 </ResponseField>
 
 <ResponseField name="changePassword" type="function">
@@ -128,10 +132,32 @@ function SignInButton() {
 
 <ResponseField name="requestNewAccessToken" type="function">
   Manually trigger an access token refresh using the stored refresh token.
-  Returns the new access token string, or `undefined` if the refresh fails.
-  The SDK handles refresh automatically in most cases; use this only when
-  you need to force a refresh.
+  Resolves with the new access token string, and **throws** if the refresh
+  fails or if there is no stored refresh token to present. Returns `undefined`
+  only when no `projectId` is available. The SDK handles refresh automatically
+  in most cases; use this only when you need to force a refresh.
+
+  <Warning>
+    **Breaking change.** It previously returned `undefined` on
+    failure, which was indistinguishable from a call that had nothing to do.
+    The underlying `requestNewAccessTokenThunk` likewise now **rejects** —
+    rather than fulfilling with `undefined` — when no refresh token is present.
+    Integrators branching on `fulfilled.match(result)` for that case will see
+    the opposite branch.
+  </Warning>
 </ResponseField>
+
+## Controlling Error Logging
+
+Handled SDK failures are logged with `console.error`. To change or silence that:
+
+```ts
+import { setSublayLogLevel } from "@sublay/react-js";
+
+setSublayLogLevel("silent"); // "error" (default) | "warn" | "silent"
+```
+
+It is a bare setter rather than a `SublayProvider` prop because the setting is process-global — a prop would be silently last-mount-wins in an app that mounts two providers. It is coarse by design: it silences all SDK logging, including unexpected failures. Errors are still returned to the calling hooks; only the console output changes.
 
 ## Integration Guide
 

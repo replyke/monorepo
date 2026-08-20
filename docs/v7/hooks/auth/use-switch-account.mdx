@@ -69,8 +69,8 @@ The hook returns a `switchAccount` function that accepts:
 <ResponseField name="switchAccount" type="function">
   Async function that switches the active session. Calling it with the ID of
   the already-active account is a no-op. Throws synchronously if the account is
-  not found or no `projectId` is available. Runtime errors (e.g. token refresh
-  failure) are caught and surfaced via the `error` field instead of throwing.
+  not found or no `projectId` is available, and **rejects** if the session for
+  the target account could not be established — see below.
 </ResponseField>
 
 <ResponseField name="isSwitching" type="boolean">
@@ -81,6 +81,34 @@ The hook returns a `switchAccount` function that accepts:
 <ResponseField name="error" type="string | null">
   Error message if the switch failed, or `null` if no error occurred.
 </ResponseField>
+
+## Failure Behavior
+
+<Warning>
+  **Breaking change.** A failed token refresh used to be swallowed: `switchAccount` resolved, `error` stayed `null`, and the app was left pointed at an account with no live session. It now rejects.
+</Warning>
+
+When the target account's stored refresh token cannot be exchanged for an access token — it expired, was revoked, or the stored entry has no usable token at all — the returned promise **rejects** and `error` is set.
+
+The rollback restores the **selection, not the session**:
+
+- The previously active account becomes the selected one again, but its session is *not* re-established. The outgoing session was already torn down before the failure could be known, so the honest terminal state is "previous account selected, app renders signed-out".
+- With no previously active account, nothing is selected and the app is signed out.
+- **Both entries remain in the accounts map**, including the one that failed. That entry is what lets you render a "session expired" prompt for it.
+
+```tsx
+const { switchAccount, error } = useSwitchAccount();
+
+async function onPick(userId: string) {
+  try {
+    await switchAccount({ userId });
+    // Session is live for `userId`.
+  } catch {
+    // Not switched. `error` holds the reason; the user is signed out.
+    // Prompt them to sign in again for `userId`.
+  }
+}
+```
 
 ## Integration Guide
 

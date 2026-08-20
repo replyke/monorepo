@@ -8,7 +8,11 @@ icon: "plug"
 
 `useRemoveAccount` signs out and removes a specific account from the stored accounts map. It sends a best-effort sign-out request to the server to revoke the account's refresh token family before removing local state.
 
-If the removed account is the currently active one, the SDK automatically switches to the next available account. If no other accounts remain, the SDK resets to the unauthenticated state.
+If the removed account is the currently active one, **the session ends and no account is left active**, even when other accounts remain stored. The app renders signed-out; choosing what happens next is yours.
+
+<Warning>
+  **Breaking change.** The SDK used to activate the next available account — insertion order, i.e. the oldest account ever added — and refresh into it, so removing an account silently signed the user into a different identity. It no longer does. Read `activeAccount` from [`useAccounts`](/hooks/auth/use-accounts) and render your own next screen when it is `null`.
+</Warning>
 
 ## Usage Example
 
@@ -69,8 +73,8 @@ The hook returns a `removeAccount` function that accepts:
 <ResponseField name="removeAccount" type="function">
   Async function that removes the specified account. Throws synchronously if
   `userId` is not found in the accounts map or if no `projectId` is available.
-  Runtime errors during removal are caught and surfaced via the `error` field
-  instead of throwing.
+  Runtime errors during removal set `error` **and reject** the returned promise.
+  Removing a non-active account leaves the current session untouched.
 </ResponseField>
 
 <ResponseField name="isRemoving" type="boolean">

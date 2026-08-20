@@ -6,11 +6,15 @@ icon: "plug"
 
 ## Overview
 
-`useConfirmAccountDeletion` returns a function that submits the confirmation code from [`useRequestAccountDeletion`](/hooks/auth/use-request-account-deletion) and **permanently deletes** the authenticated user's account. On success, the local session is torn down just like a sign-out: the deleted account is removed from the multi-account map, and the SDK switches to a remaining signed-in account if there is one (otherwise the user is fully logged out).
+`useConfirmAccountDeletion` returns a function that submits the confirmation code from [`useRequestAccountDeletion`](/hooks/auth/use-request-account-deletion) and **permanently deletes** the authenticated user's account. On success, the local session is torn down just like a sign-out: the deleted account is removed from the multi-account map and **no other account is activated**, even if the user has others signed in. The app renders signed-out.
 
 <Warning>
   Deletion is **immediate and irreversible**. There is no grace period and no
   recovery once this resolves.
+</Warning>
+
+<Warning>
+  **Breaking change.** The SDK used to switch into the oldest remaining account after a deletion. It now ends the session and leaves nothing active — read `activeAccount` from [`useAccounts`](/hooks/auth/use-accounts) and render your own next screen when it is `null`.
 </Warning>
 
 ## Usage Example
@@ -80,7 +84,8 @@ The hook returns an async function that resolves to `void` on success. It throws
 
 <Note>
   You don't need to call `signOut` afterward — the hook clears the local session
-  for you and switches to a remaining account if the user had several signed in.
+  for you. Any other stored accounts stay in the map, but none of them is
+  activated; the app lands signed-out with the account picker available.
 </Note>
 
 ## See Also
