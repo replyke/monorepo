@@ -1,0 +1,163 @@
+import { describe, it, expect, afterEach, vi } from "vitest";
+
+import {
+  registerAccountStorage,
+  resetAccountStorage,
+  getRegisteredAccountStorage,
+  runAccountStorageOp,
+  persistAccountMap,
+} from "./accountStorage";
+import type { AccountStorage } from "../interfaces/AccountStorage";
+import type { AccountMap } from "../store/slices/accountsSlice";
+
+afterEach(() => {
+  resetAccountStorage();
+});
+
+function makeMap(activeAccountId: string | null): AccountMap {
+  return { activeAccountId, accounts: {}, signedOut: false };
+}
+
+/** A storage whose writes take a controllable amount of real time. */
+function makeSlowStorage(order: string[], delayMs = 20): AccountStorage {
+  return {
+    getAccountMap: vi.fn(async () => null),
+    setAccountMap: vi.fn(async (_projectId: string, map: AccountMap) => {
+      order.push(`start:${map.activeAccountId}`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      order.push(`end:${map.activeAccountId}`);
+    }),
+    deleteAccountMap: vi.fn(async () => {}),
+  };
+}
+
+describe("accountStorage slot", () => {
+  it("is last-mount-wins and is never cleared by a later read", () => {
+    const first: AccountStorage = {
+      getAccountMap: vi.fn(),
+      setAccountMap: vi.fn(),
+      deleteAccountMap: vi.fn(),
+    };
+    const second: AccountStorage = {
+      getAccountMap: vi.fn(),
+      setAccountMap: vi.fn(),
+      deleteAccountMap: vi.fn(),
+    };
+
+    registerAccountStorage(first, "project-1");
+    registerAccountStorage(second, "project-2");
+
+    // There is deliberately no deregistration: unmounting one of two mounted
+    // providers must not strip the survivor's handle, because that would
+    // silently turn an awaited persist into a no-op.
+    expect(getRegisteredAccountStorage()).toEqual({
+      storage: second,
+      projectId: "project-2",
+    });
+  });
+});
+
+describe("persistAccountMap", () => {
+  it("is a clean no-op when no storage is registered — neither hangs nor throws", async () => {
+    // `@sublay/core` used directly with no platform package is a genuinely
+    // storage-less configuration, not an error.
+    await expect(persistAccountMap(makeMap("user-1"))).resolves.toBeUndefined();
+  });
+
+  it("writes through the registered handle under its registered projectId", async () => {
+    const storage: AccountStorage = {
+      getAccountMap: vi.fn(),
+      setAccountMap: vi.fn(async () => {}),
+      deleteAccountMap: vi.fn(),
+    };
+    registerAccountStorage(storage, "project-1");
+
+    await persistAccountMap(makeMap("user-1"));
+
+    expect(storage.setAccountMap).toHaveBeenCalledWith(
+      "project-1",
+      makeMap("user-1")
+    );
+  });
+
+  it("REJECTS when the underlying write fails", async () => {
+    // The whole point of the write-contract change: an await that resolves on a
+    // failed write lets a caller treat an already-revoked refresh token as
+    // durably stored.
+    const storage: AccountStorage = {
+      getAccountMap: vi.fn(),
+      setAccountMap: vi.fn(async () => {
+        throw new Error("keychain unavailable");
+      }),
+      deleteAccountMap: vi.fn(),
+    };
+    registerAccountStorage(storage, "project-1");
+
+    await expect(persistAccountMap(makeMap("user-1"))).rejects.toThrow(
+      "keychain unavailable"
+    );
+  });
+});
+
+describe("runAccountStorageOp", () => {
+  it("serializes overlapping persists — they cannot interleave, and the later map wins", async () => {
+    const order: string[] = [];
+    const storage = makeSlowStorage(order);
+    registerAccountStorage(storage, "project-1");
+
+    const first = persistAccountMap(makeMap("first"));
+    const second = persistAccountMap(makeMap("second"));
+
+    await Promise.all([first, second]);
+
+    expect(order).toEqual([
+      "start:first",
+      "end:first",
+      "start:second",
+      "end:second",
+    ]);
+    // "Later map wins wholesale": the last write to reach storage is the later
+    // map, whole, rather than a mix of the two.
+    const calls = (storage.setAccountMap as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls[calls.length - 1][1].activeAccountId).toBe("second");
+  });
+
+  it("keeps the queue alive when an operation rejects, and delivers the rejection only to its own caller", async () => {
+    const order: string[] = [];
+    registerAccountStorage(
+      {
+        getAccountMap: vi.fn(),
+        setAccountMap: vi.fn(async (_p: string, map: AccountMap) => {
+          if (map.activeAccountId === "boom") throw new Error("write failed");
+          order.push(map.activeAccountId!);
+        }),
+        deleteAccountMap: vi.fn(),
+      },
+      "project-1"
+    );
+
+    const failing = persistAccountMap(makeMap("boom"));
+    const following = persistAccountMap(makeMap("after"));
+
+    await expect(failing).rejects.toThrow("write failed");
+    await expect(following).resolves.toBeUndefined();
+    expect(order).toEqual(["after"]);
+  });
+
+  it("does not serialize across different projects", async () => {
+    const order: string[] = [];
+    const op = (label: string) => async () => {
+      order.push(`start:${label}`);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      order.push(`end:${label}`);
+    };
+
+    await Promise.all([
+      runAccountStorageOp("project-a", op("a")),
+      runAccountStorageOp("project-b", op("b")),
+    ]);
+
+    // Interleaved, not sequential — two projects have independent stores.
+    expect(order).toEqual(["start:a", "start:b", "end:a", "end:b"]);
+  });
+});

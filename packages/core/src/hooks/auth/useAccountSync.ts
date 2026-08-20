@@ -10,6 +10,7 @@ import {
   selectActiveAccountId,
   selectAccountsReady,
   selectSignedOut,
+  selectDeviceIdentifier,
   type AccountMap,
   type AccountSummary,
   type AccountEntry,
@@ -24,6 +25,10 @@ import { baseApi } from "../../store/api/baseApi";
 import { resetAccountScopedState } from "../../store/actions";
 import { handleError } from "../../utils/handleError";
 import type { AccountStorage } from "../../interfaces/AccountStorage";
+import {
+  registerAccountStorage,
+  runAccountStorageOp,
+} from "../../config/accountStorage";
 import { readJwtExp, readJwtSub } from "../../utils/jwt";
 
 // An unreadable `exp` is persisted as 0 — i.e. "already expired" — so a token
@@ -45,6 +50,7 @@ export default function useAccountSync(
   const accounts = useSublaySelector(selectAccounts);
   const activeAccountId = useSublaySelector(selectActiveAccountId);
   const signedOut = useSublaySelector(selectSignedOut);
+  const deviceIdentifier = useSublaySelector(selectDeviceIdentifier);
   const isReady = useSublaySelector(selectAccountsReady);
   const isInitialLoadRef = useRef(true);
 
@@ -59,9 +65,16 @@ export default function useAccountSync(
   useEffect(() => {
     dispatch(registerAccountManager());
 
+    // Publish the handle (and its projectId) so callers that must await a write
+    // but cannot call a hook can reach it. Last mount wins and it is never
+    // cleared on unmount — see `config/accountStorage`.
+    registerAccountStorage(storage, projectId);
+
     const loadAccounts = async () => {
       try {
-        const map = await storage.getAccountMap(projectId);
+        const map = await runAccountStorageOp(projectId, () =>
+          storage.getAccountMap(projectId)
+        );
         if (map) {
           // If no active account is set (or it points to a removed account),
           // default to the first available account on load — UNLESS the user
@@ -126,6 +139,7 @@ export default function useAccountSync(
     const summary: AccountSummary = {
       id: user.id,
       name: user.name ?? null,
+      username: user.username ?? null,
       email: user.email ?? null,
       avatar: user.avatar ?? null,
     };
@@ -168,11 +182,27 @@ export default function useAccountSync(
       return;
     }
 
-    const map: AccountMap = { activeAccountId, accounts, signedOut };
-    storage.setAccountMap(projectId, map).catch((error) => {
+    const map: AccountMap = {
+      activeAccountId,
+      accounts,
+      signedOut,
+      deviceIdentifier,
+    };
+
+    // THROUGH the mutex, not alongside it. This effect's own overlapping chains
+    // are the race being serialized, so persisting on the raw handle here would
+    // leave the mutex guarding nothing.
+    //
+    // Still fire-and-forget from React's point of view — an effect cannot await
+    // — so the rejection the write contract now produces is caught here rather
+    // than surfacing as an unhandled rejection. Callers that must not proceed
+    // until the write lands use `persistAccountMap` and await it.
+    runAccountStorageOp(projectId, () =>
+      storage.setAccountMap(projectId, map)
+    ).catch((error) => {
       handleError(error, "Failed to persist account map");
     });
-  }, [accounts, activeAccountId, signedOut, isReady]);
+  }, [accounts, activeAccountId, signedOut, deviceIdentifier, isReady]);
 
   // Phase D: Cross-tab sync (web only)
   useEffect(() => {
