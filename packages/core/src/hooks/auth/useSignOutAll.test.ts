@@ -87,9 +87,9 @@ describe("useSignOutAll", () => {
     expect(state.sublay.auth.accessToken).toBeNull();
   });
 
-  // The strictness above must NOT be broadened. With no device there is no
-  // unbind at stake, and the server answers 204 for every write/token failure
-  // when none is sent — so the only remaining failure is the transport.
+  // The strictness above must NOT be broadened. With no `pushDevice` there is
+  // no unbind at stake, and the server answers 204 for every write/token
+  // failure when none is sent — so the only remaining failure is the transport.
   // Blocking here would strand an offline user, or any app on a project with no
   // `push` bundle, unable to sign out locally at all.
   it("still clears everything when a NON-unbinding sign-out fails (offline / no push bundle)", async () => {
@@ -108,7 +108,7 @@ describe("useSignOutAll", () => {
     expect(store.getState().sublay.accounts.accounts).toEqual({});
     expect(store.getState().sublay.accounts.activeAccountId).toBeNull();
     for (const call of axiosPublic.calls("post")) {
-      expect(call.body).not.toHaveProperty("device");
+      expect(call.body).not.toHaveProperty("pushDevice");
     }
   });
 
@@ -133,7 +133,7 @@ describe("useSignOutAll", () => {
 
     for (const call of axiosPublic.calls("post")) {
       expect(call.body).toMatchObject({
-        device: { platform: "android", token: "device-token-1" },
+        pushDevice: { platform: "android", token: "device-token-1" },
       });
     }
     // The identifier is device state and survives a full sign-out-all.

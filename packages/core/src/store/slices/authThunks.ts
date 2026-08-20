@@ -164,21 +164,21 @@ const authService = {
     return response.data;
   },
 
-  // `device` is OPTIONAL and nested under its own key, mirroring the server
-  // schema exactly. When present (and the project has the `push` bundle) the
-  // server deletes that user's push binding in the SAME transaction as the
-  // token-family destroy: signing out unbinds push, or nothing happens at all
-  // and the call fails so the caller can retry. Omitting it produces a request
-  // byte-identical to the pre-existing one.
+  // `pushDevice` is OPTIONAL and nested under its own key, mirroring the
+  // server schema exactly. When present (and the project has the `push`
+  // bundle) the server deletes that user's push binding in the SAME
+  // transaction as the token-family destroy: signing out unbinds push, or
+  // nothing happens at all and the call fails so the caller can retry.
+  // Omitting it produces a request byte-identical to the pre-existing one.
   async signOut(
     projectId: string,
     refreshToken: string | null,
-    device?: PushDeviceIdentifier | null
+    pushDevice?: PushDeviceIdentifier | null
   ) {
     const payload: Record<string, unknown> = refreshToken
       ? { refreshToken }
       : {};
-    if (device) payload.device = device;
+    if (pushDevice) payload.pushDevice = pushDevice;
     await axios.post(`/${projectId}/auth/sign-out`, payload);
   },
 
@@ -291,10 +291,10 @@ export const ACCOUNT_LIMIT_MESSAGE = `This device is already signed in to ${MAX_
  *     successor read out of state on the OAuth path, since the redirect's
  *     original was already spent by the refresh).
  *
- *     No `device` is sent. The device identifier would ask the server to unbind
- *     push in the same transaction, and per the atomicity rule a failed unbind
- *     fails the whole request — which would leave the very session this call
- *     exists to destroy alive. An account that was never admitted has no
+ *     No `pushDevice` is sent. The device identifier would ask the server to
+ *     unbind push in the same transaction, and per the atomicity rule a failed
+ *     unbind fails the whole request — which would leave the very session this
+ *     call exists to destroy alive. An account that was never admitted has no
  *     binding this SDK created on this device anyway.
  *
  *  2. **Unwind local session state, but only where the caller already wrote
@@ -504,7 +504,7 @@ export const signOutThunk = createAsyncThunk(
     // Read synchronously from the slice — this is the reason the device
     // identifier has a Redux home rather than living only in storage: none of
     // the sign-out callers can reach `AccountStorage`.
-    const device = state.sublay.accounts.deviceIdentifier;
+    const pushDevice = state.sublay.accounts.deviceIdentifier;
 
     if (!refreshToken) {
       throw new Error("No refresh token");
@@ -518,7 +518,7 @@ export const signOutThunk = createAsyncThunk(
       // atomicity guarantee — without it the server can honestly refuse the
       // unbind and the SDK deletes the credential anyway, leaving the user
       // receiving notifications from an account they can no longer reach.
-      await authService.signOut(data.projectId, refreshToken, device);
+      await authService.signOut(data.projectId, refreshToken, pushDevice);
 
       // Remove current account from the multi-account map. The reducer leaves
       // NO account active — see below.
@@ -838,7 +838,7 @@ export const signOutAllThunk = createAsyncThunk(
   ) => {
     const state = getState() as RootState;
     const accounts = state.sublay.accounts.accounts;
-    const device = state.sublay.accounts.deviceIdentifier;
+    const pushDevice = state.sublay.accounts.deviceIdentifier;
 
     try {
       dispatch(setAuthenticating(true));
@@ -851,7 +851,7 @@ export const signOutAllThunk = createAsyncThunk(
             await authService.signOut(
               data.projectId,
               account.refreshToken,
-              device
+              pushDevice
             );
             return { userId, ok: true as const };
           } catch (err) {
@@ -865,21 +865,21 @@ export const signOutAllThunk = createAsyncThunk(
 
       // ── The strictness is SCOPED TO UNBIND FAILURES. ─────────────────────
       //
-      // A request carrying a `device` is relying on the atomic guarantee: the
-      // server removed the push binding and the token family together or
+      // A request carrying a `pushDevice` is relying on the atomic guarantee:
+      // the server removed the push binding and the token family together or
       // removed neither. Swallowing that failure and clearing the map anyway —
       // which is what this loop used to do for every failure — deletes the
       // credential for an account whose binding survived, leaving the user
       // receiving notifications from it with nothing left able to stop them.
       //
-      // Without a device there is no unbind to protect, and the old
+      // Without a `pushDevice` there is no unbind to protect, and the old
       // best-effort behaviour is kept ON PURPOSE. `/auth/sign-out` returns 204
-      // for every write and token failure when no device is sent, so the only
+      // for every write and token failure when none is sent, so the only
       // remaining failure is the TRANSPORT: strictness here would stop an
       // offline user — or any app on a project without the `push` bundle —
       // from signing out locally at all, against the server's own rule that a
       // user can ALWAYS sign out.
-      const strict = Boolean(device);
+      const strict = Boolean(pushDevice);
       const blocked = strict && failed.length > 0;
 
       if (!blocked) {
