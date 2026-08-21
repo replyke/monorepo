@@ -12,9 +12,12 @@ import accountsReducer, {
   registerAccountManager,
   setDeviceIdentifier,
   setAccountNeedsReauth,
+  setAccountNeedsPushRebind,
   setAccountCredential,
   isAccountPushEnabled,
+  accountOptedIntoPush,
   accountNeedsReauth,
+  accountNeedsPushRebind,
   MAX_ACCOUNTS,
   type AccountsState,
   type AccountEntry,
@@ -248,6 +251,23 @@ describe("accountsSlice — Phase 5 map shape", () => {
     expect(isAccountPushEnabled(makeEntry({ pushEnabled: false }))).toBe(false);
   });
 
+  it("accountOptedIntoPush reads an absent flag as NOT opted in", () => {
+    // The stricter half of the pair, and the difference is the absent case.
+    // `isAccountPushEnabled` answers "what does this look like" and says yes;
+    // this answers "may we bind" and says no, because absent means the account
+    // was never asked and a binding routes message content to a device.
+    expect(accountOptedIntoPush(makeEntry())).toBe(false);
+    expect(accountOptedIntoPush(makeEntry({ pushEnabled: true }))).toBe(true);
+    expect(accountOptedIntoPush(makeEntry({ pushEnabled: false }))).toBe(false);
+
+    // The two genuinely disagree, and only on absent. If they ever stop
+    // disagreeing, one of them has been changed in place — which is exactly
+    // what must not happen: tightening the exported one flips every upgrading
+    // install's toggle UI to off.
+    expect(isAccountPushEnabled(makeEntry())).toBe(true);
+    expect(accountOptedIntoPush(makeEntry())).toBe(false);
+  });
+
   it("upsertAccount MERGES, so pushEnabled survives the refresh-token rotation that rebuilds the entry", () => {
     // This is the whole reason the merge exists: Phase B rebuilds an entry
     // literal from refreshToken + user on every launch and every transition,
@@ -389,6 +409,65 @@ describe("accountsSlice — re-auth markers", () => {
     // Deleted, not written as `false`: "healthy" stays the absent state the
     // merge already treats as "no opinion", and costs nothing on Expo's budget.
     expect("needsReauth" in state.accounts["user-1"]).toBe(false);
+  });
+
+  it("accountNeedsPushRebind reads an absent marker as nothing-to-repair", () => {
+    expect(accountNeedsPushRebind(makeEntry())).toBe(false);
+    expect(accountNeedsPushRebind(makeEntry({ needsPushRebind: true }))).toBe(
+      true
+    );
+  });
+
+  it("setAccountNeedsPushRebind sets an explicit true and clears back to absent", () => {
+    let state = accountsReducer(
+      initialState({ accounts: { "user-1": makeEntry() } }),
+      setAccountNeedsPushRebind({ userId: "user-1", needsRebind: true })
+    );
+    expect(state.accounts["user-1"].needsPushRebind).toBe(true);
+
+    state = accountsReducer(
+      state,
+      setAccountNeedsPushRebind({ userId: "user-1", needsRebind: false })
+    );
+    expect("needsPushRebind" in state.accounts["user-1"]).toBe(false);
+  });
+
+  it("setAccountNeedsPushRebind ignores an unknown account", () => {
+    const state = accountsReducer(
+      initialState({ accounts: { "user-1": makeEntry() } }),
+      setAccountNeedsPushRebind({ userId: "user-9", needsRebind: true })
+    );
+    expect(state.accounts["user-9"]).toBeUndefined();
+  });
+
+  it("a re-bind mark SURVIVES the entry rebuild, and selecting the account does not clear it", () => {
+    // Two independent ways the mark could evaporate before the repair runs.
+    //
+    // First, Phase B rebuilds an entry literal from refreshToken + user on
+    // every launch and every transition and knows nothing about this field, so
+    // it has to be preserved by the merge rather than by hoping.
+    let state = accountsReducer(
+      initialState({
+        accounts: { "user-1": makeEntry({ needsPushRebind: true }) },
+      }),
+      upsertAccount({
+        userId: "user-1",
+        entry: makeEntry({ refreshToken: "rotated-token" }),
+      })
+    );
+    expect(state.accounts["user-1"].refreshToken).toBe("rotated-token");
+    expect(state.accounts["user-1"].needsPushRebind).toBe(true);
+
+    // Second, SELECTING the account proves its credential — which is why
+    // `setActiveAccount` clears `needsReauth` — but it does not re-create the
+    // push binding. That happens a beat later and can fail. Clearing here would
+    // report the repair done whenever the account was merely opened.
+    state = accountsReducer(
+      accountsReducer(state, setAccountNeedsReauth({ userId: "user-1", needsReauth: true })),
+      setActiveAccount("user-1")
+    );
+    expect(state.accounts["user-1"].needsReauth).toBeUndefined();
+    expect(state.accounts["user-1"].needsPushRebind).toBe(true);
   });
 
   it("setAccountCredential rotates the token on a stored account", () => {

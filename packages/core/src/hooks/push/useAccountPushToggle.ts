@@ -5,6 +5,7 @@ import { useSublayDispatch, useSublaySelector } from "../../store/hooks";
 import {
   isAccountPushEnabled,
   setAccountPushEnabled,
+  setAccountNeedsPushRebind,
   selectAccounts,
   selectAccountMapSnapshot,
 } from "../../store/slices/accountsSlice";
@@ -80,6 +81,15 @@ export default function useAccountPushToggle(): UseAccountPushToggleValues {
         );
 
         dispatch(setAccountPushEnabled({ userId, enabled }));
+
+        // Whatever this account's binding needed, it has just had it — this
+        // path binds or unbinds directly against the CURRENT device identifier
+        // and only writes the flag once that succeeded. Leaving a stale
+        // "needs re-binding" marker standing would report notifications as
+        // paused on an account the user just deliberately silenced, with no
+        // route to clear it: the marker is cleared by the activation-time
+        // reconcile, which for a silenced account has nothing left to do.
+        dispatch(setAccountNeedsPushRebind({ userId, needsRebind: false }));
 
         // Awaited: the whole point of the flag is that it is DURABLE intent,
         // and reconciliation on the next launch reads it from storage.

@@ -778,11 +778,13 @@ describe("useAccountSync — Phase E (push reconciliation on transition)", () =>
           refreshToken: makeJwt({ sub: "user-1", exp: 9999999999 }),
           tokenExpiresAt: 9999999999000,
           user: { id: "user-1", name: null, email: null, avatar: null },
+          pushEnabled: true,
         },
         "user-2": {
           refreshToken: makeJwt({ sub: "user-2", exp: 9999999999 }),
           tokenExpiresAt: 9999999999000,
           user: { id: "user-2", name: null, email: null, avatar: null },
+          pushEnabled: true,
         },
         "user-3": {
           refreshToken: makeJwt({ sub: "user-3", exp: 9999999999 }),
@@ -912,6 +914,160 @@ describe("useAccountSync — Phase E (push reconciliation on transition)", () =>
         .calls("post")
         .filter((c) => c.url.includes("request-new-access-token")),
     ).toHaveLength(0);
+  });
+});
+
+describe("useAccountSync — lazy push re-binding", () => {
+  const DEVICE = { platform: "ios" as const, token: "device-token-1" };
+
+  function makeMap(
+    activeAccountId: string | null,
+    overrides: Record<string, Partial<AccountMap["accounts"][string]>> = {},
+  ): AccountMap {
+    const base: AccountMap["accounts"] = {
+      "user-1": {
+        refreshToken: makeJwt({ sub: "user-1", exp: 9999999999 }),
+        tokenExpiresAt: 9999999999000,
+        user: { id: "user-1", name: null, email: null, avatar: null },
+        pushEnabled: true,
+      },
+      "user-2": {
+        refreshToken: makeJwt({ sub: "user-2", exp: 9999999999 }),
+        tokenExpiresAt: 9999999999000,
+        user: { id: "user-2", name: null, email: null, avatar: null },
+        pushEnabled: true,
+      },
+    };
+    for (const [userId, patch] of Object.entries(overrides)) {
+      base[userId] = { ...base[userId], ...patch };
+    }
+    return { activeAccountId, accounts: base, deviceIdentifier: DEVICE };
+  }
+
+  it("carries a re-bind mark across a reload of the stored state", async () => {
+    // The rotation that raises the mark happens once, and the account it
+    // describes may not be opened for days. A mark that did not survive the
+    // relaunch would leave that account quiet with nothing recording why.
+    const storage = makeFakeStorage(
+      makeMap("user-1", { "user-2": { needsPushRebind: true } }),
+    );
+    const { store } = renderHookWithAxios(
+      () => useAccountSync(storage, "test-project"),
+      {
+        accessToken: "access-1",
+        beforeRender: ({ axiosPublic: pub }) => {
+          pub.mockResponse("post", {});
+        },
+      },
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.isReady).toBe(true),
+    );
+
+    expect(
+      store.getState().sublay.accounts.accounts["user-2"].needsPushRebind,
+    ).toBe(true);
+  });
+
+  it("re-binds a marked account when it is activated, and clears the mark", async () => {
+    const storage = makeFakeStorage(
+      makeMap("user-2", { "user-2": { needsPushRebind: true } }),
+    );
+    const { store, axiosPublic } = renderHookWithAxios(
+      () => useAccountSync(storage, "test-project"),
+      {
+        accessToken: "access-2",
+        beforeRender: ({ axiosPublic: pub }) => {
+          pub.mockResponse("post", {});
+        },
+      },
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.isReady).toBe(true),
+    );
+    store.dispatch(setUser(makeAuthUser({ id: "user-2" })));
+
+    // The binding is re-created with the LIVE session — no credential is
+    // exchanged for it, which is the whole reason the repair waits for an
+    // activation instead of running in the background.
+    await waitFor(() =>
+      expect(
+        axiosPublic
+          .calls("post")
+          .filter((c) => c.url.includes("push-notifications/devices")),
+      ).toHaveLength(1),
+    );
+    expect(
+      axiosPublic
+        .calls("post")
+        .filter((c) => c.url.includes("request-new-access-token")),
+    ).toHaveLength(0);
+
+    await waitFor(() =>
+      expect(
+        store.getState().sublay.accounts.accounts["user-2"].needsPushRebind,
+      ).toBeUndefined(),
+    );
+
+    // ...and the cleared mark reaches disk, so the next launch does not report
+    // notifications as paused on an account that has just been repaired.
+    await waitFor(() => {
+      const written = (storage.setAccountMap as ReturnType<typeof vi.fn>).mock
+        .calls as Array<[string, AccountMap]>;
+      expect(written.length).toBeGreaterThan(0);
+      expect(
+        written[written.length - 1][1].accounts["user-2"].needsPushRebind,
+      ).toBeUndefined();
+    });
+  });
+
+  it("does not bind an account that has never expressed a push preference", async () => {
+    // S11: the device identifier deliberately survives a sign-out-all — it is
+    // device state, not account state — and activation-time reconciliation runs
+    // on every activation, a plain sign-in included. Reading an absent
+    // preference as consent meant that on a shared device, the next person to
+    // sign in was push-bound to the identifier the previous user left behind,
+    // having granted nothing, with the app never calling `register()`, and it
+    // survived a restart.
+    const storage = makeFakeStorage({
+      activeAccountId: null,
+      accounts: {},
+      deviceIdentifier: DEVICE,
+      signedOut: true,
+    });
+    const { store, axiosPublic } = renderHookWithAxios(
+      () => useAccountSync(storage, "test-project"),
+      { accessToken: "access-9" },
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.isReady).toBe(true),
+    );
+
+    // A brand-new person signs in on this device.
+    const jwt = makeJwt({ sub: "user-9", exp: 9999999999 });
+    store.dispatch(setTokens({ accessToken: "access-9", refreshToken: jwt }));
+    store.dispatch(setUser(makeAuthUser({ id: "user-9" })));
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.activeAccountId).toBe("user-9"),
+    );
+    // Give the reconcile effect every chance to fire.
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    expect(
+      axiosPublic
+        .calls("post")
+        .filter((c) => c.url.includes("push-notifications/devices")),
+    ).toHaveLength(0);
+    // Not silenced either — absent means "never asked", so nothing is unbound
+    // out from under an upgrading install that is working fine.
+    expect(axiosPublic.calls("delete")).toHaveLength(0);
+    expect(
+      store.getState().sublay.accounts.accounts["user-9"].needsPushRebind,
+    ).toBeUndefined();
   });
 });
 

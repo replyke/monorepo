@@ -246,18 +246,33 @@ export default function useAccountSync(
 
   // Phase E: Reconcile the NEWLY ACTIVE account's push binding
   //
-  // ⚠ THIS PATH MUST NEVER RUN THE BULK RECONCILE LOOP. Minting an access token
-  // for a non-active account revokes that account's stored refresh token, so a
+  // ⚠ THIS PATH MUST NEVER TOUCH ANY OTHER ACCOUNT. Minting an access token for
+  // a non-active account revokes that account's stored refresh token, so a
   // "reconcile every stored account on every transition" loop would revoke four
   // tokens per switch, leave the map holding the revoked copies, and destroy
   // each of those accounts on the next pass — systematically killing every
   // account the user is not currently using. `reconcileAccountPushBinding` is
   // single-account by construction and is the only reconcile call reachable
-  // from here; `reconcileAllPushBindings` is deliberately not even imported in
-  // this file.
+  // from here.
   //
   // The single-account pass is free: the newly active account's session is
   // already live, so it uses the live access token and mints nothing.
+  //
+  // ⚠ IT IS ALSO WHERE A DEFERRED RE-BIND IS REPAIRED. A device-token rotation
+  // marks each opted-in background account instead of exchanging its
+  // credential, and this is the pass that clears the mark — using the session
+  // the activation just established. That is why it must stay unconditional
+  // per (account, identifier) rather than being latched on the account alone.
+  //
+  // ⚠ AND IT REQUIRES AN EXPLICIT PREFERENCE. This effect runs on every
+  // activation, and a plain sign-in IS an activation. The device identifier
+  // deliberately survives a sign-out-all — it is device state, not account
+  // state — so on a shared device, reading an absent `pushEnabled` as consent
+  // meant the next person to sign in was push-bound to an identifier the
+  // previous user left behind, having granted nothing, with the app never
+  // calling `register()`, and it survived a restart. `reconcileAccountPushBinding`
+  // leaves an account with no expressed preference completely alone; enabling
+  // push still takes the deliberate `register()` call it always did.
   //
   // Gated on the live session actually belonging to the active account, so a
   // transition still mid-flight (tokens swapped, `user` not yet caught up) does
@@ -274,9 +289,11 @@ export default function useAccountSync(
     }
 
     // Keyed by account AND identifier: a device-token rotation must not be
-    // swallowed by a latch that only remembers the account. (Rotation is
-    // handled by `usePushRegistration`'s bulk pass, but this keeps the two from
-    // disagreeing if the identifier changes while the account does not.)
+    // swallowed by a latch that only remembers the account. That pairing is
+    // load-bearing now rather than defensive — a rotation marks the background
+    // accounts and re-binds only the active one, so this is the pass that
+    // repairs the account the user is standing in when the identifier changes
+    // underneath it.
     const key = `${activeAccountId}:${identifierLatchKey(deviceIdentifier)}`;
     if (lastReconciledRef.current === key) return;
     lastReconciledRef.current = key;

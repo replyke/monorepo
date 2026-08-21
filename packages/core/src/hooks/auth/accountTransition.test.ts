@@ -10,7 +10,7 @@ import {
   AccountTransitionError,
 } from "./accountTransition";
 import {
-  mintAccountSession,
+  mintAccountAccessToken,
   resetAccountTokenMints,
 } from "../push/mintAccountAccessToken";
 import { setAccountMap } from "../../store/slices/accountsSlice";
@@ -121,21 +121,26 @@ describe("activateStoredAccount (callable outside React)", () => {
   // ─────────────────────────────────────────────────────────────────────────
   // THE POST-INSTALL WINDOW, end to end.
   //
-  // A push reconcile or a per-account toggle can be minting for the very
-  // account being switched into — it is non-active on both sides, so both
-  // compute the same single-flight key. The dangerous ordering is the one where
-  // the second ask lands AFTER the exchange settles but BEFORE (or around) the
-  // install: it presents the successor the transition is about to install and
-  // rotates again, leaving the live session holding a revoked token while the
-  // map holds its replacement. The next ordinary refresh then trips reuse
+  // A per-account push toggle — or a SECOND TAP ON THE SAME SWITCHER — can be
+  // minting for the very account being switched into: it is non-active on both
+  // sides, so both compute the same single-flight key. The dangerous ordering
+  // is the one where the second ask lands AFTER the exchange settles but BEFORE
+  // the install: it presents the successor the transition is about to install
+  // and rotates again, leaving the live session holding a revoked token while
+  // the map holds its replacement. The next ordinary refresh then trips reuse
   // detection and destroys the family.
   //
-  // The racer here chains onto the same flight, so it fires in exactly that
-  // window. Two responses are queued deliberately: without the lease this test
-  // would not error, it would quietly end with `auth.refreshToken` and the
-  // map's copy disagreeing.
+  // The racer is fired from inside the window rather than raced into it. The
+  // transition's teardown dispatch is the first thing that happens after the
+  // exchange has settled and the last thing before the install, so hooking it
+  // puts the second ask exactly where it hurts — deterministically, instead of
+  // depending on how many microtasks each entry point happens to cost.
+  //
+  // Two responses are queued deliberately: without the lease this test would
+  // not error, it would quietly end with `auth.refreshToken` and the map's copy
+  // disagreeing.
   // ─────────────────────────────────────────────────────────────────────────
-  it("cannot be rotated behind by a mint that lands around the install", async () => {
+  it("cannot be rotated behind by a mint that lands inside the install window", async () => {
     const store = makeLiveStore();
     const axios = mockAxiosPublic();
     axios.mockResponse("post", {
@@ -149,8 +154,24 @@ describe("activateStoredAccount (callable outside React)", () => {
       user: { id: "user-2" },
     });
 
-    const switching = activateStoredAccount({
-      dispatch: store.dispatch,
+    const mintArgs = {
+      dispatch: store.dispatch as never,
+      getState: () => store.getState(),
+      projectId: "project-1",
+      userId: "user-2",
+    };
+
+    let racing: Promise<string> | null = null;
+    const dispatch = ((action: { type?: string }) => {
+      const result = (store.dispatch as (a: unknown) => unknown)(action);
+      if (!racing && action?.type === "auth/resetAuth") {
+        racing = mintAccountAccessToken(mintArgs);
+      }
+      return result;
+    }) as unknown as typeof store.dispatch;
+
+    await activateStoredAccount({
+      dispatch,
       getState: () => store.getState(),
       projectId: "project-1",
       userId: "user-2",
@@ -158,21 +179,10 @@ describe("activateStoredAccount (callable outside React)", () => {
       previousActiveAccountId: "user-1",
     });
 
-    const racing = mintAccountSession({
-      dispatch: store.dispatch as never,
-      getState: () => store.getState(),
-      projectId: "project-1",
-      userId: "user-2",
-    }).then(() =>
-      mintAccountSession({
-        dispatch: store.dispatch as never,
-        getState: () => store.getState(),
-        projectId: "project-1",
-        userId: "user-2",
-      })
-    );
-
-    await Promise.all([switching, racing]);
+    // The racer really did fire inside the window — without this the test would
+    // pass vacuously if the teardown dispatch were ever reordered away.
+    expect(racing).not.toBeNull();
+    await racing;
 
     const state = store.getState();
     // One exchange for the whole convoy — the second response was never used.

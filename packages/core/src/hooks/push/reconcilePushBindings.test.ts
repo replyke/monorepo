@@ -9,7 +9,9 @@ import {
 import {
   setAccountMap,
   setDeviceIdentifier,
+  setAccountNeedsPushRebind,
   type AccountEntry,
+  type AccountMap,
 } from "../../store/slices/accountsSlice";
 import { setTokens } from "../../store/slices/authSlice";
 import {
@@ -20,7 +22,7 @@ import { resetAccountTokenMints } from "./mintAccountAccessToken";
 import {
   applyAccountPushBinding,
   reconcileAccountPushBinding,
-  reconcileAllPushBindings,
+  markPushBindingsForRebind,
   pushIdentifiersEqual,
 } from "./reconcilePushBindings";
 
@@ -28,23 +30,37 @@ let store: SublayStore;
 
 const DEVICE = { platform: "ios" as const, token: "device-token-1" };
 
+// The four states that matter, and the fixture carries one account in each:
+//
+//   user-1  active,     explicitly enabled
+//   user-2  background, explicitly enabled
+//   user-3  background, explicitly SILENCED
+//   user-4  background, NEVER ASKED (absent preference — an entry written
+//           before the flag existed, or an account that just signed in)
 function makeAccounts(): Record<string, AccountEntry> {
   return {
     "user-1": {
       refreshToken: "refresh-1",
       tokenExpiresAt: 0,
       user: { id: "user-1", name: null, email: null, avatar: null },
+      pushEnabled: true,
     },
     "user-2": {
       refreshToken: "refresh-2",
       tokenExpiresAt: 0,
       user: { id: "user-2", name: null, email: null, avatar: null },
+      pushEnabled: true,
     },
     "user-3": {
       refreshToken: "refresh-3",
       tokenExpiresAt: 0,
       user: { id: "user-3", name: null, email: null, avatar: null },
       pushEnabled: false,
+    },
+    "user-4": {
+      refreshToken: "refresh-4",
+      tokenExpiresAt: 0,
+      user: { id: "user-4", name: null, email: null, avatar: null },
     },
   };
 }
@@ -67,18 +83,28 @@ const ctx = () => ({
   projectId: "test-project",
 });
 
+let written: AccountMap[];
+
 beforeEach(() => {
   seed();
   resetAccountTokenMints();
+  written = [];
   registerAccountStorage(
     {
       getAccountMap: vi.fn().mockResolvedValue(null),
-      setAccountMap: vi.fn().mockResolvedValue(undefined),
+      setAccountMap: vi.fn(async (_projectId: string, map: AccountMap) => {
+        // Structured-clone-ish snapshot: the slice mutates in place, so holding
+        // the reference would let a later dispatch rewrite "what was written".
+        written.push(JSON.parse(JSON.stringify(map)));
+      }),
       deleteAccountMap: vi.fn().mockResolvedValue(undefined),
     },
     "test-project",
   );
 });
+
+/** The last map that actually reached storage. */
+const lastWritten = () => written[written.length - 1];
 
 afterEach(() => {
   resetAxiosMocks();
@@ -169,7 +195,7 @@ describe("reconcileAccountPushBinding", () => {
     const axiosPublic = mockAxiosPublic();
 
     await reconcileAccountPushBinding(ctx(), "user-1");
-    await reconcileAllPushBindings(ctx());
+    await markPushBindingsForRebind(ctx());
 
     expect(axiosPublic.calls("post")).toHaveLength(0);
     expect(axiosPublic.calls("delete")).toHaveLength(0);
@@ -205,44 +231,211 @@ describe("applyAccountPushBinding", () => {
   });
 });
 
-describe("reconcileAllPushBindings", () => {
-  it("re-registers every ENABLED account and leaves silenced ones alone", async () => {
+describe("markPushBindingsForRebind", () => {
+  it("MARKS every opted-in background account instead of exchanging its credential", async () => {
     const axiosPublic = mockAxiosPublic();
-    // user-1 (active): device POST, no mint.
-    axiosPublic.mockResponse("post", {});
-    // user-2: mint, then device POST.
-    axiosPublic.mockResponse("post", {
-      accessToken: "access-2",
-      refreshToken: "refresh-2-successor",
-    });
+    // ONE response only: the active account's device POST. If anything here
+    // starts a token exchange it falls through to the real, un-mocked axios and
+    // the request assertions below say exactly what went out.
     axiosPublic.mockResponse("post", {});
 
-    await reconcileAllPushBindings(ctx());
+    await markPushBindingsForRebind(ctx());
 
+    // ⚠ THE LOAD-BEARING ASSERTION, and it is on the REQUESTS rather than on a
+    // mock's call count: the bulk loop this replaces traded each background
+    // account's stored refresh token for a temporary session, and that trade is
+    // one-time-use — interrupted, it locks the account out for good. A test
+    // that only checked "the loop function was not called" would pass against a
+    // rewritten loop that still exchanged.
     const posts = axiosPublic.calls("post");
-    expect(posts.map((c) => c.url)).toEqual([
-      "/test-project/push-notifications/devices",
-      "/test-project/auth/request-new-access-token",
-      "/test-project/push-notifications/devices",
-    ]);
-    // user-3 is silenced: never minted for, never called for. Deregistering it
-    // here would be a no-op bought with a rotation of its refresh token.
     expect(
-      posts.some((c) => c.body && (c.body as { refreshToken?: string }).refreshToken === "refresh-3"),
+      posts.filter((c) => c.url.includes("request-new-access-token")),
+    ).toHaveLength(0);
+    expect(
+      posts.some(
+        (c) =>
+          c.body &&
+          typeof (c.body as { refreshToken?: string }).refreshToken === "string",
+      ),
     ).toBe(false);
+
+    const accounts = store.getState().sublay.accounts.accounts;
+    expect(accounts["user-2"].needsPushRebind).toBe(true);
+  });
+
+  it("re-binds the ACTIVE account on the spot, and does not mark it", async () => {
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {});
+
+    await markPushBindingsForRebind(ctx());
+
+    const devicePosts = axiosPublic
+      .calls("post")
+      .filter((c) => c.url.includes("push-notifications/devices"));
+    // Exactly one, and it is the active account's — free, because its session is
+    // already live and `resolveAccessToken` never reaches the mint for it.
+    expect(devicePosts).toHaveLength(1);
+    expect(devicePosts[0].body).toEqual(DEVICE);
+    expect(devicePosts[0].config?.headers.Authorization).toBe("Bearer access-1");
+    expect(
+      store.getState().sublay.accounts.accounts["user-1"].needsPushRebind,
+    ).toBeUndefined();
+  });
+
+  it("marks NEITHER a silenced account nor one that never expressed a preference", async () => {
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {});
+
+    await markPushBindingsForRebind(ctx());
+
+    const accounts = store.getState().sublay.accounts.accounts;
+    // Silenced: it was unbound when it was silenced, so there is nothing to
+    // repair — and marking it would surface "notifications paused" on an
+    // account the user deliberately turned off.
+    expect(accounts["user-3"].needsPushRebind).toBeUndefined();
+    // Never asked: absent is not consent. Marking it would raise a marker that
+    // the activation path — which applies the same explicit-preference rule —
+    // would never clear, leaving "open to resume" on an account that opening
+    // does not fix.
+    expect(accounts["user-4"].needsPushRebind).toBeUndefined();
     expect(axiosPublic.calls("delete")).toHaveLength(0);
   });
 
-  it("keeps going when one account fails", async () => {
+  it("persists the marks, because the repair may be several launches away", async () => {
     const axiosPublic = mockAxiosPublic();
-    axiosPublic.mockError("post", 500, { message: "nope" }); // user-1 device POST
-    axiosPublic.mockResponse("post", {
-      accessToken: "access-2",
-      refreshToken: "refresh-2-successor",
-    });
     axiosPublic.mockResponse("post", {});
 
-    await expect(reconcileAllPushBindings(ctx())).resolves.toBeUndefined();
-    expect(axiosPublic.calls("post")).toHaveLength(3);
+    await markPushBindingsForRebind(ctx());
+
+    // Named first so a mutation that simply stops persisting fails on "nothing
+    // reached storage" rather than on a property read of `undefined`.
+    expect(written.length).toBeGreaterThan(0);
+    expect(lastWritten().accounts["user-2"].needsPushRebind).toBe(true);
+    expect(lastWritten().accounts["user-4"].needsPushRebind).toBeUndefined();
+  });
+
+  it("still records the marks when the active account's re-bind fails", async () => {
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockError("post", 500, { message: "nope" });
+
+    await expect(markPushBindingsForRebind(ctx())).resolves.toBeUndefined();
+
+    // One failed request for the account the user is looking at must not lose
+    // the record of what the other accounts need.
+    expect(
+      store.getState().sublay.accounts.accounts["user-2"].needsPushRebind,
+    ).toBe(true);
+    expect(written.length).toBeGreaterThan(0);
+    expect(lastWritten().accounts["user-2"].needsPushRebind).toBe(true);
+  });
+
+  it("is a clean no-op when no device identifier is stored", async () => {
+    seed({ withDevice: false });
+    const axiosPublic = mockAxiosPublic();
+
+    await markPushBindingsForRebind(ctx());
+
+    expect(axiosPublic.calls("post")).toHaveLength(0);
+    expect(
+      store.getState().sublay.accounts.accounts["user-2"].needsPushRebind,
+    ).toBeUndefined();
+  });
+});
+
+describe("the re-bind marker's lifecycle", () => {
+  it("is cleared, durably, when the account is next activated and re-bound", async () => {
+    store.dispatch(
+      setAccountNeedsPushRebind({ userId: "user-1", needsRebind: true }),
+    );
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {});
+
+    await reconcileAccountPushBinding(ctx(), "user-1");
+
+    // The binding was actually re-created — the mark does not clear on its own.
+    expect(
+      axiosPublic
+        .calls("post")
+        .filter((c) => c.url.includes("push-notifications/devices")),
+    ).toHaveLength(1);
+    expect(
+      store.getState().sublay.accounts.accounts["user-1"].needsPushRebind,
+    ).toBeUndefined();
+    expect(lastWritten().accounts["user-1"].needsPushRebind).toBeUndefined();
+  });
+
+  it("SURVIVES a failed re-bind, so the next activation tries again", async () => {
+    store.dispatch(
+      setAccountNeedsPushRebind({ userId: "user-1", needsRebind: true }),
+    );
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockError("post", 500, { message: "nope" });
+
+    await expect(reconcileAccountPushBinding(ctx(), "user-1")).rejects.toBeTruthy();
+
+    expect(
+      store.getState().sublay.accounts.accounts["user-1"].needsPushRebind,
+    ).toBe(true);
+  });
+
+  it("clears when a silenced account is activated and its binding removed", async () => {
+    store.dispatch(
+      setAccountNeedsPushRebind({ userId: "user-3", needsRebind: true }),
+    );
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-3",
+      refreshToken: "refresh-3-successor",
+    });
+    axiosPublic.mockResponse("delete", {});
+
+    await reconcileAccountPushBinding(ctx(), "user-3");
+
+    // Its intent is now matched by the server, so there is nothing left to
+    // repair — and leaving the marker would report paused notifications on an
+    // account the user silenced on purpose.
+    expect(
+      store.getState().sublay.accounts.accounts["user-3"].needsPushRebind,
+    ).toBeUndefined();
+  });
+});
+
+describe("reconcileAccountPushBinding — explicit preference required", () => {
+  it("leaves an account that never expressed a preference completely alone", async () => {
+    const axiosPublic = mockAxiosPublic();
+    // Queued up front, deliberately: user-4 is not the active account, so if
+    // the absent case ever starts binding again it MINTS first. Without these
+    // the mutation blows up on an un-mocked request instead of failing on the
+    // assertion that names the behavior, and a mutation should be legible.
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-4",
+      refreshToken: "refresh-4-successor",
+    });
+    axiosPublic.mockResponse("post", {});
+    axiosPublic.mockResponse("delete", {});
+
+    await reconcileAccountPushBinding(ctx(), "user-4");
+
+    // Not bound: on a shared device the identifier deliberately survives a
+    // sign-out-all, so binding on absent means the next person to sign in is
+    // push-bound having granted nothing and with the app never calling
+    // `register()`.
+    expect(axiosPublic.calls("post")).toHaveLength(0);
+    // ...and not UNBOUND either. Absent is "never asked", not "turn it off" —
+    // an upgrading install's working binding must not be torn down.
+    expect(axiosPublic.calls("delete")).toHaveLength(0);
+  });
+
+  it("still binds an account that explicitly enabled push", async () => {
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {});
+
+    await reconcileAccountPushBinding(ctx(), "user-1");
+
+    expect(
+      axiosPublic
+        .calls("post")
+        .filter((c) => c.url.includes("push-notifications/devices")),
+    ).toHaveLength(1);
   });
 });

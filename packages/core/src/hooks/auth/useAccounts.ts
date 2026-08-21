@@ -6,6 +6,7 @@ import {
   selectAccountLimitReached,
   selectSignedOut,
   accountNeedsReauth,
+  accountNeedsPushRebind,
   type AccountSummary,
 } from "../../store/slices/accountsSlice";
 
@@ -44,6 +45,27 @@ export interface StoredAccount extends AccountSummary {
    * switch or by signing into it again.
    */
   needsReauth: boolean;
+  /**
+   * `true` when this account's notifications are paused because this device's
+   * push token changed while the account was in the background.
+   *
+   * Its stored credential is fine and its data is fine — only the server-side
+   * notification binding points at a token this device no longer holds.
+   * Switching into the account re-creates the binding and clears this, so the
+   * useful thing to render is an invitation to open it: *"notifications paused
+   * — open to resume"*.
+   *
+   * **Not the same as `needsReauth`, and saying so matters in both
+   * directions.** `needsReauth` means the credential is dead and the user must
+   * sign in again; telling them that when their notifications are merely stale
+   * asks for a password they do not need. This one means the account still
+   * works and is just quiet; treating it as "everything is fine" hides the one
+   * thing they could fix by tapping it.
+   *
+   * Only ever set for accounts that explicitly enabled push. An account that
+   * never asked for notifications has none to pause.
+   */
+  needsPushRebind: boolean;
 }
 
 export interface UseAccountsReturn {
@@ -83,6 +105,7 @@ export default function useAccounts(): UseAccountsReturn {
         // answer if a hand-built map ever arrives, not because legacy data does.
         tokenExpiresAt: entry.tokenExpiresAt ?? 0,
         needsReauth: accountNeedsReauth(entry),
+        needsPushRebind: accountNeedsPushRebind(entry),
       });
     }
 
