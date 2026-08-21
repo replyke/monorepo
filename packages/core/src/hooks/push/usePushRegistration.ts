@@ -157,6 +157,21 @@ function usePushRegistration(
       const identifier = await adapter.getDeviceIdentifier({ projectId });
       if (!identifier) return;
 
+      // RECORD IT. This value used to be fetched and discarded, which mattered
+      // because `register()` was the only writer — and the previous release's
+      // `register()` persisted nothing. An install that registered before this
+      // release therefore has a live server-side binding and no stored
+      // identifier, and every path that unbinds push is gated on having one:
+      // sign-out, account removal and the per-account toggle all silently
+      // no-op. This is one of the two ways such an install acquires one without
+      // being told to call `register()` again (the other is the rotation
+      // subscription below).
+      //
+      // The adapter's value wins over whatever was stored: it is the identifier
+      // this call is about to deregister, so it is the one the server has rows
+      // for.
+      dispatch(setDeviceIdentifier(identifier));
+
       // Flag first, and deliberately so. "Off" is the safe direction to write
       // ahead of the request: if the DELETE fails the account reads as silenced
       // while a binding survives, and the next reconcile removes it. The
@@ -228,21 +243,44 @@ function usePushRegistration(
    * the session that least needs it and never again. Mounting here means any
    * app that has EVER registered gets rotation coverage on every launch.
    *
-   * Gated on an identifier already being persisted — which is only checkable
-   * because the identifier is persisted rather than in-memory. Apps that never
-   * use push mount nothing, and nothing here asks the user for anything:
-   * receiving a refreshed token is not a permission prompt.
+   * Gated on the ADAPTER supporting subscription, and on nothing else.
    *
-   * The dependency is the PRESENCE of an identifier, not its value, so a
-   * rotation does not tear down and re-mount the very subscription that
-   * reported it.
+   * It used to be gated on an identifier already being persisted, which was a
+   * chicken-and-egg: this is the only path that can DISCOVER an identifier
+   * without the app calling `register()` again, and the previous release's
+   * `register()` persisted nothing — so on every upgrading install the gate
+   * held closed against the one mechanism that would have opened it, and the
+   * whole per-account push subsystem silently no-opped. `applyIdentifierChange`
+   * already handles a `current === null` correctly: there is no previous
+   * identifier to unbind, so it records the incoming one and re-binds.
+   *
+   * Apps whose adapter omits the subscription mount nothing, and NOTHING HERE
+   * ASKS THE USER FOR ANYTHING — every adapter's implementation is
+   * non-prompting by construction, and must stay that way. Expo and React
+   * Native attach a passive OS listener (`addPushTokenListener`,
+   * `onTokenRefresh`); the web reads the subscription the browser already
+   * holds via `getSubscription()` and is forbidden from calling
+   * `getDeviceIdentifier`, which subscribes and can prompt without a gesture.
+   *
+   * ⚠ HOW MUCH DISCOVERY THIS ACTUALLY BUYS DIFFERS BY PLATFORM, and only the
+   * web case is immediate. The web implementation emits on mount, so an
+   * upgrading install acquires an identifier on its next launch. The two native
+   * listeners are ROTATION-ONLY — they emit when the OS hands over a NEW token
+   * and never merely because someone subscribed — so a native upgrader whose
+   * token does not rotate acquires nothing here and depends on `unregister()`.
+   * On iOS under React Native it is narrower still: `onTokenRefresh` reports
+   * FCM, while that adapter registers APNs, so APNs rotation is not reported by
+   * this event at all (see `PushTokenAdapter` in `@sublay/react-native`).
+   * Recorded as a known residual, not an oversight.
+   *
+   * The identifier's VALUE is deliberately not a dependency, so a rotation does
+   * not tear down and re-mount the very subscription that reported it.
    */
-  const hasDeviceIdentifier = Boolean(deviceIdentifier);
   const applyIdentifierChangeRef = useRef(applyIdentifierChange);
   applyIdentifierChangeRef.current = applyIdentifierChange;
 
   useEffect(() => {
-    if (!projectId || !hasDeviceIdentifier) return;
+    if (!projectId) return;
     if (!adapter.subscribeToIdentifierChanges) return;
 
     const unsubscribe = adapter.subscribeToIdentifierChanges(
@@ -257,7 +295,7 @@ function usePushRegistration(
     return () => {
       unsubscribe?.();
     };
-  }, [projectId, adapter, hasDeviceIdentifier]);
+  }, [projectId, adapter]);
 
   return { register, unregister, registering, unregistering };
 }

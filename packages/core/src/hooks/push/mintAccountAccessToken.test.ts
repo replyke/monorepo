@@ -8,6 +8,8 @@ import {
 } from "../../test-utils";
 import {
   setAccountMap,
+  removeAccount,
+  clearAllAccounts,
   type AccountMap,
 } from "../../store/slices/accountsSlice";
 import {
@@ -376,6 +378,31 @@ describe("mintAccountAccessToken", () => {
     expect(axiosPublic.calls("post")).toHaveLength(2);
   });
 
+  it("a TIMED-OUT exchange does not poison later mints for that account", async () => {
+    // The reason `config/axios` sets a timeout at all. A request that never
+    // settles is never evicted from the flight map, so every later exchange for
+    // this account joins the same dead promise and the lease is never released
+    // — the switch spinner never stops and the account cannot be switched into
+    // again without an app restart. A timeout turns "never" into a rejection,
+    // and a rejection evicts.
+    //
+    // A timeout carries NO `response`, unlike the 403 case covered above, so it
+    // travels a different shape through every error check on this path.
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockNetworkError("post", "timeout of 30000ms exceeded");
+
+    await expect(
+      mintAccountSession({ ...ctx(), userId: "user-2" }),
+    ).rejects.toBeTruthy();
+
+    axiosPublic.mockResponse("post", { accessToken: "access-2" });
+    const session = await mintAccountSession({ ...ctx(), userId: "user-2" });
+
+    expect(session.accessToken).toBe("access-2");
+    // A FRESH request, not a joined dead one.
+    expect(axiosPublic.calls("post")).toHaveLength(2);
+  });
+
   it("mintAccountSession reports the presented token as live when the server did not rotate", async () => {
     const axiosPublic = mockAxiosPublic();
     axiosPublic.mockResponse("post", { accessToken: "access-2" });
@@ -384,6 +411,101 @@ describe("mintAccountAccessToken", () => {
 
     expect(session.refreshToken).toBe("refresh-2");
     expect(session.user).toBeNull();
+  });
+
+  it("fails and writes NOTHING when the account was removed mid-exchange", async () => {
+    // The resurrection bug. The credential write used to go through
+    // `upsertAccount`, which CREATES when the key is absent — so an exchange
+    // that outlived a removal put the account back, carrying a live successor
+    // token and the user's summary, fully usable again. The sign-out that
+    // removed it spent the OLD token, not this successor.
+    const axiosPublic = mockAxiosPublic();
+    registerAccountStorage(
+      makeStorage(async () => {}),
+      "test-project",
+    );
+
+    let respond!: (value: unknown) => void;
+    const pending = new Promise((resolve) => {
+      respond = resolve;
+    });
+    vi.spyOn(axiosPublic.instance, "post").mockImplementation(
+      () => pending as never,
+    );
+
+    const minting = mintAccountSession({ ...ctx(), userId: "user-2" });
+
+    // The user removes the account while the exchange is in flight.
+    store.dispatch(removeAccount("user-2"));
+
+    respond({
+      data: {
+        accessToken: "access-2",
+        refreshToken: "refresh-2-successor",
+        user: { id: "user-2", email: "bob@example.com" },
+      },
+    });
+
+    await expect(minting).rejects.toThrow(/removed while its token exchange/i);
+
+    // No entry, no credential, no email written back to the map.
+    expect(store.getState().sublay.accounts.accounts["user-2"]).toBeUndefined();
+    expect(
+      Object.keys(store.getState().sublay.accounts.accounts),
+    ).toEqual(["user-1"]);
+  });
+
+  it("fails and writes NOTHING when sign-out-all cleared the map mid-exchange", async () => {
+    // The same hole through the other door. `clearAllAccounts` empties the map,
+    // so a create-on-absent write resurrected one account out of a device the
+    // user had just signed out of entirely.
+    const axiosPublic = mockAxiosPublic();
+    registerAccountStorage(
+      makeStorage(async () => {}),
+      "test-project",
+    );
+
+    let respond!: (value: unknown) => void;
+    const pending = new Promise((resolve) => {
+      respond = resolve;
+    });
+    vi.spyOn(axiosPublic.instance, "post").mockImplementation(
+      () => pending as never,
+    );
+
+    const minting = mintAccountSession({ ...ctx(), userId: "user-2" });
+    store.dispatch(clearAllAccounts());
+    respond({
+      data: { accessToken: "access-2", refreshToken: "refresh-2-successor" },
+    });
+
+    await expect(minting).rejects.toThrow(/removed while its token exchange/i);
+    expect(store.getState().sublay.accounts.accounts).toEqual({});
+  });
+
+  it("does not persist to storage when the account vanished mid-exchange", async () => {
+    // The write is awaited through the project mutex and is what makes a
+    // rotation durable. Nothing about a removed account should reach disk.
+    const axiosPublic = mockAxiosPublic();
+    const setAccountMapSpy = vi.fn().mockResolvedValue(undefined);
+    registerAccountStorage(makeStorage(setAccountMapSpy), "test-project");
+
+    let respond!: (value: unknown) => void;
+    const pending = new Promise((resolve) => {
+      respond = resolve;
+    });
+    vi.spyOn(axiosPublic.instance, "post").mockImplementation(
+      () => pending as never,
+    );
+
+    const minting = mintAccountSession({ ...ctx(), userId: "user-2" });
+    store.dispatch(removeAccount("user-2"));
+    respond({
+      data: { accessToken: "access-2", refreshToken: "refresh-2-successor" },
+    });
+
+    await expect(minting).rejects.toBeTruthy();
+    expect(setAccountMapSpy).not.toHaveBeenCalled();
   });
 
   it("refuses to persist under another project's storage slot", async () => {

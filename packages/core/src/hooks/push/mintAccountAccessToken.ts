@@ -81,7 +81,7 @@ import axios from "../../config/axios";
 import type { AppDispatch } from "../../store/types";
 import type { SublayState } from "../../store/sublayReducers";
 import {
-  upsertAccount,
+  setAccountCredential,
   selectAccountMapSnapshot,
 } from "../../store/slices/accountsSlice";
 import { persistAccountMapFor } from "../../config/accountStorage";
@@ -311,20 +311,40 @@ async function exchange({
   const successor: string | undefined = response.data?.refreshToken;
   const user: AuthUser | null = response.data?.user ?? null;
 
+  // RE-READ AFTER THE AWAIT. The entry read at the top of this function is a
+  // snapshot from before a network round trip, and an account can be removed
+  // (`removeAccount`, `clearAllAccounts`) while that round trip is in flight —
+  // a background reconcile overlapping a removal on an account-management
+  // screen is the ordinary way it happens.
+  //
+  // Writing anyway used to RESURRECT the removed account: `upsertAccount`
+  // creates when the key is absent, so the map got a fresh entry carrying a
+  // live successor token and the user's summary, and the account was fully
+  // usable again — the sign-out that removed it spent the OLD token, not this
+  // successor.
+  //
+  // Nothing is written and the exchange FAILS rather than resolving. Returning
+  // a session here would hand the caller a live credential for an account that
+  // no longer exists, which is the same exposure by a different route.
+  if (!getState().sublay.accounts.accounts[userId]) {
+    throw new AccountTokenMintError(
+      `Account ${userId} was removed while its token exchange was in flight.`
+    );
+  }
+
   if (successor && successor !== entry.refreshToken) {
     // In-memory first, so the revoked token stops being the one anything else
     // would present even if the write below fails.
+    //
+    // `setAccountCredential`, NOT `upsertAccount`: update-only, so even if the
+    // entry disappears between the check above and this dispatch, the write is
+    // a no-op instead of a resurrection. The check is what makes the FAILURE
+    // correct; the reducer is what makes the WRITE safe.
     dispatch(
-      upsertAccount({
+      setAccountCredential({
         userId,
-        entry: {
-          refreshToken: successor,
-          tokenExpiresAt: readJwtExp(successor) ?? 0,
-          // `upsertAccount` merges, so this preserves `pushEnabled` and every
-          // other client-owned field; the summary is carried forward verbatim
-          // because this exchange learns nothing new about the user.
-          user: entry.user,
-        },
+        refreshToken: successor,
+        tokenExpiresAt: readJwtExp(successor) ?? 0,
       })
     );
 

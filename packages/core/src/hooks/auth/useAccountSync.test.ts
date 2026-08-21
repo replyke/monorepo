@@ -1,7 +1,12 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
 
-import { renderHookWithAxios, resetAxiosMocks, makeAuthUser } from "../../test-utils";
+import {
+  renderHookWithAxios,
+  resetAxiosMocks,
+  makeAuthUser,
+  mockAxiosPublic,
+} from "../../test-utils";
 import useAccountSync from "./useAccountSync";
 import { setTokens } from "../../store/slices/authSlice";
 import {
@@ -161,9 +166,22 @@ describe("useAccountSync", () => {
     const storage = makeFakeStorage(null);
     const { store } = renderHookWithAxios(() => useAccountSync(storage, "test-project"));
 
+    const jwt = makeJwt({ sub: "user-9" });
+    // A DISTINCT successor, deliberately. An incoming identity now triggers a
+    // refresh to establish its session, and that refresh rotates — so a mock
+    // returning the same token the map holds would let the final state satisfy
+    // this test no matter what the switch branch installed, which is exactly
+    // the discrimination this test exists to provide.
+    const rotated = makeJwt({ sub: "user-9", jti: "successor" });
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-9",
+      refreshToken: rotated,
+      user: { id: "user-9" },
+    });
+
     await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
 
-    const jwt = makeJwt({ sub: "user-9" });
     const incomingMap: AccountMap = {
       activeAccountId: "user-9",
       accounts: {
@@ -181,7 +199,23 @@ describe("useAccountSync", () => {
     await waitFor(() =>
       expect(store.getState().sublay.accounts.activeAccountId).toBe("user-9"),
     );
-    expect(store.getState().sublay.auth.refreshToken).toBe(jwt);
+
+    // THE INSTALL, proven directly: the refresh thunk reads whatever the switch
+    // branch wrote into `auth.refreshToken`, so the request body is a witness
+    // to it that no later rotation can forge.
+    const refreshCalls = await waitFor(() => {
+      const calls = axiosPublic
+        .calls("post")
+        .filter((c) => c.url.includes("request-new-access-token"));
+      expect(calls).toHaveLength(1);
+      return calls;
+    });
+    expect((refreshCalls[0].body as { refreshToken?: string }).refreshToken).toBe(jwt);
+
+    // ...and the tab ends up holding the successor that refresh returned.
+    await waitFor(() =>
+      expect(store.getState().sublay.auth.refreshToken).toBe(rotated),
+    );
   });
 
   it("does NOT default to the first account when the stored map is signedOut", async () => {
@@ -310,6 +344,245 @@ describe("useAccountSync", () => {
     expect(state.sublay.auth.user).toBeNull();
     expect(state.sublay.user.user).toBeNull();
     expect(state.sublay.chat.unreadConversationCount).toBeNull();
+  });
+
+  it("clears the outgoing account's access token and profile on a cross-tab switch", async () => {
+    // The half-transition this closes: the tab installed the incoming refresh
+    // token and kept account A's ACCESS token and user profile. Access tokens
+    // live 30 minutes and the gate only rotates near expiry, so the tab read
+    // and wrote as A for up to ~29 minutes under a switcher showing B — and
+    // refetched immediately, because the cache was dropped in the same handler.
+    const jwt1 = makeJwt({ sub: "user-1", exp: 9999999999 });
+    const jwt2 = makeJwt({ sub: "user-2", exp: 9999999999 });
+    const accounts = {
+      "user-1": {
+        refreshToken: jwt1,
+        tokenExpiresAt: 9999999999000,
+        user: { id: "user-1", name: "Alice", email: null, avatar: null },
+      },
+      "user-2": {
+        refreshToken: jwt2,
+        tokenExpiresAt: 9999999999000,
+        user: { id: "user-2", name: "Bob", email: null, avatar: null },
+      },
+    };
+
+    const storage = makeFakeStorage({ activeAccountId: "user-1", accounts });
+    const { store } = renderHookWithAxios(() => useAccountSync(storage, "test-project"));
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+
+    // Held pending so the assertions below observe the state BETWEEN teardown
+    // and the incoming account's session landing — which is the window the
+    // outgoing credential used to survive in. Released in a `finally` rather
+    // than left hanging: a promise that never settles outlives the test and
+    // leaves a dangling async chain in the worker.
+    const axiosPublic = mockAxiosPublic();
+    let releaseRefresh!: () => void;
+    const heldRefresh = new Promise((resolve) => {
+      releaseRefresh = () => resolve({ data: {} });
+    });
+    vi.spyOn(axiosPublic.instance, "post").mockReturnValue(heldRefresh as never);
+
+    try {
+
+    store.dispatch(setTokens({ accessToken: "access-token-for-user-1", refreshToken: jwt1 }));
+    store.dispatch(setUser(makeAuthUser({ id: "user-1", name: "Alice" })));
+    await waitFor(() => expect(store.getState().sublay.user.user?.id).toBe("user-1"));
+
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: "sublay-accounts:test-project",
+        newValue: JSON.stringify({
+          activeAccountId: "user-2",
+          accounts,
+        } satisfies AccountMap),
+      }),
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.activeAccountId).toBe("user-2"),
+    );
+
+    const state = store.getState();
+    // The credential that could still act as user-1 is gone. Nothing can go out
+    // as the outgoing account while the incoming one's token is being minted.
+    expect(state.sublay.auth.accessToken).toBeNull();
+    expect(state.sublay.auth.user).toBeNull();
+    expect(state.sublay.user.user).toBeNull();
+    // ...and the incoming account's credential IS installed, so the session can
+    // be re-established as user-2.
+    expect(state.sublay.auth.refreshToken).toBe(jwt2);
+    } finally {
+      releaseRefresh();
+    }
+  });
+
+  it("converges the receiving tab onto a live session for the incoming account", async () => {
+    // The other half of the switch. Clearing the outgoing credential is only
+    // safe if something then establishes the incoming one — and nothing else
+    // here would: `initializeAuthThunk` runs once at mount, the gate stays open
+    // and simply reports "no token", the reactive 403 refresh lives on
+    // axiosPrivate (a signed-out-looking tab issues optionalUserAuth reads that
+    // answer 200-as-a-stranger), and baseApi has no reauth wrapper at all. So
+    // the tab would sit signed-out under a switcher naming Bob.
+    const jwt1 = makeJwt({ sub: "user-1", exp: 9999999999 });
+    const jwt2 = makeJwt({ sub: "user-2", exp: 9999999999 });
+    const successor = makeJwt({ sub: "user-2", exp: 9999999999, jti: "rotated" });
+    const accounts = {
+      "user-1": {
+        refreshToken: jwt1,
+        tokenExpiresAt: 9999999999000,
+        user: { id: "user-1", name: "Alice", email: null, avatar: null },
+      },
+      "user-2": {
+        refreshToken: jwt2,
+        tokenExpiresAt: 9999999999000,
+        user: { id: "user-2", name: "Bob", email: null, avatar: null },
+      },
+    };
+
+    const storage = makeFakeStorage({ activeAccountId: "user-1", accounts });
+    const { store } = renderHookWithAxios(() => useAccountSync(storage, "test-project"));
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-token-for-user-2",
+      refreshToken: successor,
+      user: { id: "user-2", name: "Bob" },
+    });
+
+    store.dispatch(setTokens({ accessToken: "access-token-for-user-1", refreshToken: jwt1 }));
+    store.dispatch(setUser(makeAuthUser({ id: "user-1", name: "Alice" })));
+    await waitFor(() => expect(store.getState().sublay.user.user?.id).toBe("user-1"));
+
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: "sublay-accounts:test-project",
+        newValue: JSON.stringify({
+          activeAccountId: "user-2",
+          accounts,
+        } satisfies AccountMap),
+      }),
+    );
+
+    // A LIVE session for the incoming account, not merely a torn-down one.
+    await waitFor(() =>
+      expect(store.getState().sublay.auth.accessToken).toBe(
+        "access-token-for-user-2",
+      ),
+    );
+    const state = store.getState();
+    expect(state.sublay.user.user?.id).toBe("user-2");
+    expect(state.sublay.auth.refreshToken).toBe(successor);
+
+    // It presented the SUCCESSOR the originating tab persisted before it
+    // broadcast — never the token that tab already spent, and never user-1's.
+    const refreshCalls = axiosPublic
+      .calls("post")
+      .filter((c) => c.url.includes("request-new-access-token"));
+    expect(refreshCalls).toHaveLength(1);
+    expect((refreshCalls[0].body as { refreshToken?: string }).refreshToken).toBe(jwt2);
+  });
+
+  it("does NOT mint a new session when another tab only rotated the SAME account's token", async () => {
+    // Every tab re-rotating every other tab's rotation would never terminate.
+    const jwt1 = makeJwt({ sub: "user-1", exp: 9999999999 });
+    const rotated = makeJwt({ sub: "user-1", exp: 9999999999, jti: "successor" });
+    const storage = makeFakeStorage({
+      activeAccountId: "user-1",
+      accounts: {
+        "user-1": {
+          refreshToken: jwt1,
+          tokenExpiresAt: 9999999999000,
+          user: { id: "user-1", name: "Alice", email: null, avatar: null },
+        },
+      },
+    });
+
+    const { store } = renderHookWithAxios(() => useAccountSync(storage, "test-project"));
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+
+    const axiosPublic = mockAxiosPublic();
+    store.dispatch(setTokens({ accessToken: "access-token-for-user-1", refreshToken: jwt1 }));
+    store.dispatch(setUser(makeAuthUser({ id: "user-1", name: "Alice" })));
+    await waitFor(() => expect(store.getState().sublay.user.user?.id).toBe("user-1"));
+
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: "sublay-accounts:test-project",
+        newValue: JSON.stringify({
+          activeAccountId: "user-1",
+          accounts: {
+            "user-1": {
+              refreshToken: rotated,
+              tokenExpiresAt: 9999999999000,
+              user: { id: "user-1", name: "Alice", email: null, avatar: null },
+            },
+          },
+        } satisfies AccountMap),
+      }),
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.auth.refreshToken).toBe(rotated),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(
+      axiosPublic.calls("post").filter((c) => c.url.includes("request-new-access-token")),
+    ).toHaveLength(0);
+  });
+
+  it("does NOT tear down the session when another tab only rotated the SAME account's token", async () => {
+    // The other half of the rule. Phase C persists on every accounts change, so
+    // an ordinary refresh in another tab broadcasts a map whose active account
+    // is unchanged and whose refresh token is new. Tearing down there would
+    // force a pointless re-authentication round trip on every rotation.
+    const jwt1 = makeJwt({ sub: "user-1", exp: 9999999999 });
+    const rotated = makeJwt({ sub: "user-1", exp: 9999999999, jti: "successor" });
+
+    const storage = makeFakeStorage({
+      activeAccountId: "user-1",
+      accounts: {
+        "user-1": {
+          refreshToken: jwt1,
+          tokenExpiresAt: 9999999999000,
+          user: { id: "user-1", name: "Alice", email: null, avatar: null },
+        },
+      },
+    });
+
+    const { store } = renderHookWithAxios(() => useAccountSync(storage, "test-project"));
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+
+    store.dispatch(setTokens({ accessToken: "access-token-for-user-1", refreshToken: jwt1 }));
+    store.dispatch(setUser(makeAuthUser({ id: "user-1", name: "Alice" })));
+    await waitFor(() => expect(store.getState().sublay.user.user?.id).toBe("user-1"));
+
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: "sublay-accounts:test-project",
+        newValue: JSON.stringify({
+          activeAccountId: "user-1",
+          accounts: {
+            "user-1": {
+              refreshToken: rotated,
+              tokenExpiresAt: 9999999999000,
+              user: { id: "user-1", name: "Alice", email: null, avatar: null },
+            },
+          },
+        } satisfies AccountMap),
+      }),
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.auth.refreshToken).toBe(rotated),
+    );
+
+    const state = store.getState();
+    expect(state.sublay.auth.accessToken).toBe("access-token-for-user-1");
+    expect(state.sublay.user.user?.id).toBe("user-1");
   });
 
   it("ignores a 'storage' event for a different project's key", async () => {

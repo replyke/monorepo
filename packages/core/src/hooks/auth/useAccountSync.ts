@@ -23,6 +23,7 @@ import {
   resetAuth,
 } from "../../store/slices/authSlice";
 import { selectUser, clearUser } from "../../store/slices/userSlice";
+import { requestNewAccessTokenThunk } from "../../store/slices/authThunks";
 import { baseApi } from "../../store/api/baseApi";
 import { resetAccountScopedState } from "../../store/actions";
 import { handleError } from "../../utils/handleError";
@@ -318,13 +319,94 @@ export default function useAccountSync(
             ? map.activeAccountId
             : null;
 
-        if (incomingId !== activeAccountIdRef.current) {
+        // A DIFFERENT identity is arriving, as opposed to the same account's
+        // refresh token having rotated in the other tab. Only the first is a
+        // transition; the second happens on every ordinary rotation and must
+        // stay a cheap token update (see the install branch below).
+        const identityChanged = incomingId !== activeAccountIdRef.current;
+
+        if (identityChanged) {
           dispatch(baseApi.util.resetApiState());
           dispatch(resetAccountScopedState());
         }
 
         if (incomingId && map.accounts[incomingId]) {
+          // TEAR DOWN BEFORE INSTALLING — the same sequence
+          // `activateStoredAccount` runs, for the same reason.
+          //
+          // Installing only the refresh token left this tab holding the
+          // OUTGOING account's access token and user profile while
+          // `activeAccountId` named the incoming one. Access tokens live 30
+          // minutes and the auth gate only rotates within 60s of expiry, so
+          // for up to ~29 minutes the tab read AND wrote as the previous
+          // account under a switcher showing the new one — and because the
+          // cache was just dropped above, it refetched immediately under the
+          // wrong identity.
+          //
+          // With the access token cleared, nothing can go out as the outgoing
+          // account: the gate hands out a null credential rather than A's.
+          //
+          // NOT on a same-account rotation: clearing the session there would
+          // force a needless re-authentication round trip every time the other
+          // tab rotated its token, which is every refresh.
+          if (identityChanged) {
+            dispatch(resetAuth());
+            dispatch(clearUser());
+          }
           dispatch(setRefreshToken(map.accounts[incomingId].refreshToken));
+
+          // ...AND MINT THE INCOMING ACCOUNT'S SESSION. The teardown above is
+          // only half a transition on its own, because NOTHING ELSE WOULD EVER
+          // RESTORE ONE HERE:
+          //
+          //   - `initializeAuthThunk` runs once, from a mount effect whose deps
+          //     are all stable afterwards, so it does not re-run on a switch.
+          //   - The gate does not park the request either. `resetAuth` leaves
+          //     `initialized` alone, so the gate stays OPEN and simply reports
+          //     "no token" — it rotates a near-expiry token, never a null one.
+          //   - The reactive refresh-on-403 lives on `axiosPrivate`, so it only
+          //     fires if something happens to make a `requireUserAuth` call. A
+          //     tab rendering signed-out UI issues `optionalUserAuth` reads,
+          //     which answer 200-as-a-stranger; there is no error to react to.
+          //   - `baseApi` has no reauth wrapper at all, and `resetApiState()`
+          //     two lines above forces every mounted query to refetch straight
+          //     away — caching stranger data under args that never change
+          //     again.
+          //
+          // So the tab would sit signed-out under a switcher naming the
+          // incoming account until something else woke it. This dispatch is the
+          // convergence step.
+          //
+          // SAFE TO ROTATE HERE, and this is the question worth asking, because
+          // presenting a spent refresh token destroys an account's whole token
+          // family. What is being presented is the SUCCESSOR the originating
+          // tab already exchanged for and durably persisted before it
+          // broadcast — not the token it spent. And when this rotation
+          // produces a successor of its own, the same-identity branch above
+          // carries it back to every other tab, so none of them is left holding
+          // the spent copy.
+          //
+          // Several tabs receiving one switch all present that same successor
+          // within milliseconds of each other. That is FINE, and better than
+          // the alternative: the server keeps a 30-second grace window in which
+          // a re-presented token returns the family's live successor instead of
+          // destroying the family (`requestNewAccessToken.ts`), and
+          // simultaneous presentations land inside it by construction, where
+          // lazily staggered ones might not.
+          //
+          // Only on an identity change — doing this on every rotation
+          // broadcast would have every tab re-rotate every other tab's
+          // rotation, forever.
+          if (identityChanged) {
+            dispatch(
+              requestNewAccessTokenThunk({ projectId })
+            ).catch((error: unknown) => {
+              // The thunk already reports its own failures and never rejects
+              // unless unwrapped; this is belt-and-braces so a rejection can
+              // never surface as an unhandled one from inside an event handler.
+              handleError(error, "Failed to restore the session after a cross-tab switch");
+            });
+          }
         } else {
           // The other tab signed out. Tear the local session down too —
           // previously this branch did nothing at all, leaving this tab

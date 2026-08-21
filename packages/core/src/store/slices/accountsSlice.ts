@@ -275,6 +275,44 @@ const accountsSlice = createSlice({
       entry.pushEnabled = action.payload.enabled;
     },
     /**
+     * Writes a rotated refresh token onto an account that is ALREADY stored.
+     *
+     * UPDATE-ONLY, and that is the entire reason it exists separately from
+     * `upsertAccount`. The credential write happens after a network round trip,
+     * and an account can be removed (`removeAccount`, `clearAllAccounts`)
+     * while that round trip is in flight. `upsertAccount` CREATES when the key
+     * is absent, so writing a rotated credential through it resurrected the
+     * removed account — with a live successor token and the user's summary
+     * persisted back to disk, fully usable again, because the sign-out that
+     * removed it spent the OLD token and not the successor. In the variant
+     * where the map was at `MAX_ACCOUNTS`, the write was instead silently
+     * refused while the caller reported success, leaving the map holding a
+     * revoked token that trips reuse detection on its next use.
+     *
+     * Unknown ids are ignored, matching `setAccountPushEnabled` and
+     * `setAccountNeedsReauth`: an account that is not stored has no credential
+     * to carry. Callers that must not proceed on a vanished account check for
+     * themselves — see `mintAccountAccessToken`, which re-reads after its await
+     * and fails rather than returning a session for an account that is gone.
+     *
+     * Touches the credential fields only. The summary is not the exchange's to
+     * update — it learns nothing new about the user — and leaving it alone is
+     * also what keeps a removed account's email from being written back.
+     */
+    setAccountCredential: (
+      state,
+      action: PayloadAction<{
+        userId: string;
+        refreshToken: string;
+        tokenExpiresAt: number;
+      }>
+    ) => {
+      const entry = state.accounts[action.payload.userId];
+      if (!entry) return;
+      entry.refreshToken = action.payload.refreshToken;
+      entry.tokenExpiresAt = action.payload.tokenExpiresAt;
+    },
+    /**
      * Records that this account's stored credential was refused (or clears the
      * record).
      *
@@ -372,6 +410,7 @@ export const {
   upsertAccount,
   setDeviceIdentifier,
   setAccountPushEnabled,
+  setAccountCredential,
   setAccountNeedsReauth,
   removeAccount,
   setActiveAccount,
