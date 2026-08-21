@@ -328,8 +328,23 @@ function readV1Map(parsed: unknown): AccountMap | null {
     // because it costs one comparison, and absent reads as `false`, the same
     // default the v2 index applies.
     signedOut: candidate.signedOut === true,
-    // v1 had no device identifier — push bindings are per-account and postdate
-    // it. `null` (not absent) so this load and every later one are identical.
+    // v1 had no device identifier — because v1's `register()` never persisted
+    // the one it registered with, not because v1 predates push. There is simply
+    // nothing in a v1 map to carry forward. `null` (not absent) so this load
+    // and every later one are identical.
+    //
+    // ⚠ DO NOT READ THIS AS "a v1 map means push was never set up." The v1
+    // FORMAT outlived the arrival of push: push registration shipped in 7.5.0
+    // and the v1 format stayed in use all the way through 7.11.1, so there is a
+    // seven-minor-version window in which an install both stored a v1 map and
+    // registered live `PushDevices` rows. Such an install arrives here with
+    // server-side bindings and no local identifier, which is exactly the state
+    // in which sign-out, account removal and the per-account toggle all no-op.
+    //
+    // It is handled in core rather than here: it re-acquires an identifier from
+    // the adapter's rotation subscription or from `unregister()` — see
+    // `usePushRegistration`, which is why neither of those is gated on already
+    // having one.
     deviceIdentifier: null,
   };
 }

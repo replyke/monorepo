@@ -12,6 +12,7 @@ import accountsReducer, {
   registerAccountManager,
   setDeviceIdentifier,
   setAccountNeedsReauth,
+  setAccountCredential,
   isAccountPushEnabled,
   accountNeedsReauth,
   MAX_ACCOUNTS,
@@ -388,6 +389,45 @@ describe("accountsSlice — re-auth markers", () => {
     // Deleted, not written as `false`: "healthy" stays the absent state the
     // merge already treats as "no opinion", and costs nothing on Expo's budget.
     expect("needsReauth" in state.accounts["user-1"]).toBe(false);
+  });
+
+  it("setAccountCredential rotates the token on a stored account", () => {
+    const state = accountsReducer(
+      initialState({
+        accounts: {
+          "user-1": makeEntry({ refreshToken: "old", pushEnabled: false }),
+        },
+      }),
+      setAccountCredential({
+        userId: "user-1",
+        refreshToken: "successor",
+        tokenExpiresAt: 1234,
+      })
+    );
+
+    expect(state.accounts["user-1"].refreshToken).toBe("successor");
+    expect(state.accounts["user-1"].tokenExpiresAt).toBe(1234);
+    // Credential fields only — client-owned state and the summary are untouched.
+    expect(state.accounts["user-1"].pushEnabled).toBe(false);
+    expect(state.accounts["user-1"].user.name).toBe("User One");
+  });
+
+  it("setAccountCredential ignores an unknown account — it never CREATES", () => {
+    // The whole reason it exists apart from `upsertAccount`. The credential
+    // write happens after a network round trip, and an account can be removed
+    // while that round trip is in flight; a create-on-absent write resurrected
+    // the removed account with a live successor token and the user's email.
+    const state = accountsReducer(
+      initialState({ accounts: { "user-1": makeEntry() } }),
+      setAccountCredential({
+        userId: "user-9",
+        refreshToken: "successor",
+        tokenExpiresAt: 1234,
+      })
+    );
+
+    expect(state.accounts["user-9"]).toBeUndefined();
+    expect(Object.keys(state.accounts)).toEqual(["user-1"]);
   });
 
   it("setAccountNeedsReauth ignores an unknown account", () => {

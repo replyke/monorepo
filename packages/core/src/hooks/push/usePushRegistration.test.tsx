@@ -325,10 +325,37 @@ describe("usePushRegistration", () => {
       // rotation detection for every other stored account.
       expect(state.sublay.accounts.deviceIdentifier).toEqual(DEVICE);
     });
+
+    it("unregister persists the identifier it fetched, on an install that had none", async () => {
+      // `unregister()` always fetched this value and threw it away. It is the
+      // second discovery path for an upgrading install: the previous release
+      // registered a device and stored nothing, so without this the app has a
+      // live server-side binding and no local identifier to unbind it with.
+      fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({}));
+      const adapter = makeAdapter();
+      const { result, store } = renderHookWithStore(
+        () => usePushRegistration(adapter),
+        { projectId: "test-project" },
+      );
+      seedAccounts(store, null);
+      expect(store.getState().sublay.accounts.deviceIdentifier).toBeNull();
+
+      await act(async () => {
+        await result.current.unregister();
+      });
+
+      expect(store.getState().sublay.accounts.deviceIdentifier).toEqual(DEVICE);
+    });
   });
 
   describe("device-token change detection", () => {
-    it("mounts nothing when no identifier is stored", () => {
+    it("mounts even when NO identifier is stored, so an upgrading install can discover one", () => {
+      // This used to be gated on an identifier already being stored, which was
+      // a chicken-and-egg: the previous release's `register()` persisted
+      // nothing, so no upgrading install has one, and this subscription is the
+      // only path that can acquire one without the app calling `register()`
+      // again. With the gate in place the entire per-account push subsystem
+      // silently no-opped on every upgrading install.
       const subscribe = vi.fn().mockReturnValue(() => {});
       const adapter = makeAdapter({
         subscribeToIdentifierChanges: subscribe,
@@ -339,7 +366,74 @@ describe("usePushRegistration", () => {
       );
       act(() => store.dispatch(setUser(makeAuthUser())));
 
-      expect(subscribe).not.toHaveBeenCalled();
+      expect(store.getState().sublay.accounts.deviceIdentifier).toBeNull();
+      expect(subscribe).toHaveBeenCalledTimes(1);
+      expect(subscribe.mock.calls[0][0]).toEqual({ projectId: "test-project" });
+      // Discovery must never cost the user a permission prompt.
+      expect(adapter.requestPermission).not.toHaveBeenCalled();
+      expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
+    });
+
+    it("mounts nothing when the adapter does not support subscription", () => {
+      // The remaining gate: an adapter with no `subscribeToIdentifierChanges`
+      // simply has no rotation coverage, which is the documented fallback.
+      const adapter = makeAdapter();
+      const { store } = renderHookWithStore(
+        () => usePushRegistration(adapter),
+        { projectId: "test-project" },
+      );
+      seedAccounts(store, DEVICE);
+
+      expect(adapter.requestPermission).not.toHaveBeenCalled();
+      expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
+    });
+
+    it("an install with no stored identifier acquires one from the subscription", () => {
+      // The self-heal end to end: `applyIdentifierChange` handles a null
+      // current correctly — nothing to unbind, so it simply records what it was
+      // handed. That is what gives sign-out and account removal something to
+      // send.
+      let emit: ((next: PushDeviceIdentifier | null) => void) | undefined;
+      const adapter = makeAdapter({
+        subscribeToIdentifierChanges: (_ctx, onChange) => {
+          emit = onChange;
+          return () => {};
+        },
+      });
+      const { store } = renderHookWithStore(
+        () => usePushRegistration(adapter),
+        { projectId: "test-project" },
+      );
+      act(() => {
+        store.dispatch(setUser(makeAuthUser()));
+        store.dispatch(
+          setAccountMap({
+            activeAccountId: "test-user-id",
+            accounts: makeAccounts(),
+            deviceIdentifier: null,
+          }),
+        );
+      });
+
+      expect(store.getState().sublay.accounts.deviceIdentifier).toBeNull();
+
+      const axiosPublic = mockAxiosPublic();
+      axiosPublic.mockResponse("post", {});
+      axiosPublic.mockResponse("post", {
+        accessToken: "access-2",
+        refreshToken: "refresh-2-successor",
+      });
+      axiosPublic.mockResponse("post", {});
+
+      act(() => {
+        emit!(DEVICE);
+      });
+
+      return waitFor(() =>
+        expect(store.getState().sublay.accounts.deviceIdentifier).toEqual(
+          DEVICE,
+        ),
+      );
     });
 
     it("mounts on launch once an identifier is stored, without calling register()", () => {
