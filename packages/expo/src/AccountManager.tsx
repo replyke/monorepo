@@ -224,8 +224,13 @@ function serializeEntry(userId: string, entry: AccountEntry): string {
  * Fields v1 did not have are LEFT ABSENT rather than defaulted to a value, so
  * they land on exactly the meaning a missing field has everywhere else in this
  * surface: `username` absent = unknown (not "has no username"), `pushEnabled`
- * absent = push enabled, `needsReauth` absent = no opinion. Writing `false`/
- * `null` for any of them would assert something v1 never recorded.
+ * absent = never expressed a preference, `needsReauth` absent = no opinion.
+ * Writing `false`/`null` for any of them would assert something v1 never
+ * recorded — and for `pushEnabled` in particular, a migrated account that
+ * genuinely never chose must not be treated as having consented to a push
+ * binding. It reads as enabled where the SDK REPORTS state and as not-opted-in
+ * where the SDK decides whether to BIND; a deliberate `register()` is what
+ * turns the absent case into a recorded choice.
  */
 function readV1Entry(userId: string, value: unknown): AccountEntry | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;

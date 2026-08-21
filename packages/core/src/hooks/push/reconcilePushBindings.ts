@@ -13,37 +13,74 @@
 // it repair a rotated device token without having to detect one.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// ⚠ WHEN IT MAY RUN — the constraint the whole design is built around
+// ⚠ NOTHING HERE MAY SPEND A BACKGROUND ACCOUNT'S CREDENTIAL
 // ─────────────────────────────────────────────────────────────────────────────
 // Minting an access token for a non-active account is not free: the exchange
 // ROTATES, revoking the presented refresh token (see `mintAccountAccessToken`).
-// So a naive "reconcile every stored account on every transition" loop would
-// revoke four stored tokens per switch, leave the map holding the revoked
-// copies, and then permanently destroy each of those accounts on the next pass.
-// It would systematically kill every account the user is not currently using.
+// The revocation and the successor's durable write cannot be made atomic by any
+// client-side code, so an interruption in between — the app swiped away, an iOS
+// suspension, a dropped connection — leaves the stored copy dead and the
+// successor unsaved. That account is then permanently locked out, and to the
+// user it looks like a random logout.
+//
+// A background pass therefore takes that risk on the user's behalf, for an
+// account they are not even looking at, up to five at a time, at launch. It
+// used to. It does not any more:
 //
 //   (a) ACCOUNT TRANSITION → `reconcileAccountPushBinding` for the newly active
-//       account ONLY. Free: its session is already live, no mint is involved.
-//       **This path must never call `reconcileAllPushBindings`.**
-//   (b) TOGGLE CHANGE → that one account (one mint if it is not the active one).
+//       account ONLY. Free: its session is already live, so it authorizes with
+//       the live access token and mints nothing.
+//   (b) TOGGLE CHANGE → that one account, via `applyAccountPushBinding`. This
+//       is the ONE path that still mints for a non-active account, and it is
+//       allowed to: the user asked for it, it is foregrounded, it is one
+//       account, and it reports its own failure so a retry is available.
 //   (c) AFTER A SUCCESSFUL `register()`, OR A DEVICE-TOKEN CHANGE →
-//       `reconcileAllPushBindings`. The only bulk path, and the only two moments
-//       the device token can be new. Explicit, rare, and deliberately NOT a
-//       mounted effect.
+//       `markPushBindingsForRebind`. MARKS the background accounts and binds
+//       only the active one. No exchange happens for anybody else; each marked
+//       account is repaired by (a) when the user next switches into it.
 //
-// The bulk loop covers ENABLED accounts only. A silenced account is skipped
-// rather than deregistered, which is both correct and cheap: on a token change
-// the new token has no bindings at all, and on the `register()` path a silenced
-// account was already unbound when it was silenced — so the DELETE would be a
-// no-op bought with a rotation of that account's refresh token.
+// The accepted cost of (c) is that a push-enabled account the user never opens
+// stops receiving notifications after a device-token rotation until they next
+// open it. That is close to what already happened — a failed background re-bind
+// lost push silently and never recovered — except that this version self-heals
+// and cannot destroy an account.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// WHICH ACCOUNTS: `accountOptedIntoPush`, NOT `isAccountPushEnabled`
+// ─────────────────────────────────────────────────────────────────────────────
+// Binding is gated on an EXPLICIT `pushEnabled === true`. An absent preference
+// is not consent — it means the account has never been asked — and acting on it
+// caused two distinct failures:
+//
+//   - A plain sign-in on a shared device bound the new account to an identifier
+//     the previous user left behind. Nobody granted anything and the app never
+//     called `register()`.
+//   - Marking and binding disagreed. If a mark were raised on the looser rule
+//     while activation applied the stricter one, an account that predates the
+//     preference would be marked, never repaired, and would show "notifications
+//     paused — open to resume" forever on an account that opening never fixes.
+//
+// Both sides of that seam read `accountOptedIntoPush`. `isAccountPushEnabled`
+// stays what it always was — the value a toggle renders — and is not consulted
+// here.
+//
+// An explicitly SILENCED account is skipped by (c) rather than deregistered:
+// on a token change the new token has no bindings at all, and on the
+// `register()` path a silenced account was already unbound when it was
+// silenced — so the DELETE would be a no-op bought with a rotation of that
+// account's refresh token.
 
 import axios from "../../config/axios";
 import { getAuthorizedTokenForAccount } from "../../config/authGate";
 import type { AppDispatch } from "../../store/types";
 import {
-  isAccountPushEnabled,
+  accountOptedIntoPush,
+  accountNeedsPushRebind,
+  setAccountNeedsPushRebind,
+  selectAccountMapSnapshot,
   type AccountEntry,
 } from "../../store/slices/accountsSlice";
+import { persistAccountMapFor } from "../../config/accountStorage";
 import type { PushDeviceIdentifier } from "../../interfaces/PushTokenAdapter";
 import { handleError } from "../../utils/handleError";
 import {
@@ -89,6 +126,13 @@ export function pushIdentifiersEqual(
  * start waits for the bootstrap and a near-expiry token rotates once, exactly
  * like every other authenticated call. Only a non-active account mints, and a
  * mint is a rotation.
+ *
+ * ⚠ THE MINT BRANCH HAS EXACTLY ONE CALLER LEFT: the per-account toggle acting
+ * on an account the user is not signed into. Reconciliation no longer reaches
+ * it from either direction — the activation path is by definition the active
+ * account, and the bulk path marks instead of binding. If a new caller appears
+ * here, check first that it is a deliberate, foregrounded user action; a
+ * background one is the failure mode described at the top of this file.
  */
 async function resolveAccessToken(
   ctx: PushReconcileContext,
@@ -151,9 +195,44 @@ export async function applyAccountPushBinding(
 }
 
 /**
- * Makes ONE account's server binding match its stored intent.
+ * Writes the account map, best-effort.
+ *
+ * The re-bind marker is durable state — the rotation that raises it happens
+ * once and the repair may be several launches away — so it has to reach
+ * storage rather than living in Redux until the next unrelated persist.
+ *
+ * A failed write must not fail the caller: by the time this runs the
+ * server-side outcome is already decided, and `useAccountSync` Phase C gets an
+ * unawaited second attempt off the same state change.
+ */
+async function persistAccounts(ctx: PushReconcileContext): Promise<void> {
+  try {
+    await persistAccountMapFor(
+      ctx.projectId,
+      selectAccountMapSnapshot(ctx.getState())
+    );
+  } catch (error) {
+    handleError(error, "Failed to persist push binding state");
+  }
+}
+
+/**
+ * Makes ONE account's server binding match its stored intent, and clears its
+ * re-bind marker once it has.
  *
  * Path (a) and path (b) in the header. Unknown accounts are a no-op.
+ *
+ * **An account that has never expressed a preference is left completely
+ * alone** — not bound, not unbound. Absent is "never asked", and the activation
+ * path is reached on every sign-in, so reading absent as consent here is what
+ * bound a fresh account on a shared device to an identifier the previous user
+ * left behind. It is also the rule `markPushBindingsForRebind` applies, so the
+ * two cannot disagree about which accounts are in play.
+ *
+ * The marker is cleared only after `applyAccountPushBinding` RESOLVES: a
+ * throw leaves it standing, so the next activation tries again. It is cleared
+ * on the silenced path too — an account whose binding has been removed to
+ * match its intent has nothing left to repair.
  */
 export async function reconcileAccountPushBinding(
   ctx: PushReconcileContext,
@@ -163,42 +242,74 @@ export async function reconcileAccountPushBinding(
     ctx.getState().sublay.accounts.accounts[userId];
   if (!entry) return;
 
-  await applyAccountPushBinding(ctx, userId, isAccountPushEnabled(entry));
+  if (entry.pushEnabled === undefined) return;
+
+  await applyAccountPushBinding(ctx, userId, accountOptedIntoPush(entry));
+
+  // Re-read: `applyAccountPushBinding` awaits a round trip, and the account can
+  // be removed under it.
+  const current = ctx.getState().sublay.accounts.accounts[userId];
+  if (!current || !accountNeedsPushRebind(current)) return;
+
+  ctx.dispatch(setAccountNeedsPushRebind({ userId, needsRebind: false }));
+  await persistAccounts(ctx);
 }
 
 /**
- * Path (c): re-binds every ENABLED stored account onto this device's current
- * identifier.
+ * Path (c): records that every opted-in BACKGROUND account needs re-binding,
+ * and re-binds the active one on the spot.
  *
  * ⚠ Only two callers may ever reach this — a successful `register()` and a
- * device-token change. Calling it from a transition is the failure mode
- * described in the header.
+ * device-token change. They are the only two moments the device identifier can
+ * be new.
  *
- * Sequential rather than parallel: each non-active account costs one rotating
- * token exchange plus an awaited storage write, and the writes serialize on the
- * project mutex anyway. Per-account failures are logged and skipped so one dead
- * stored account cannot stop the rest of the device from being re-bound.
+ * **Nothing here exchanges a credential.** That is the whole difference from
+ * the bulk loop this replaces: a background account is marked, not spent. The
+ * active account is bound immediately because it costs nothing to — its
+ * session is already live, so `resolveAccessToken` takes the live-token branch
+ * and never reaches the mint.
+ *
+ * Marks are raised before the active account's request goes out, so an
+ * identifier change that is interrupted mid-flight still leaves the record of
+ * what needs repairing. The single persist at the end covers both.
  */
-export async function reconcileAllPushBindings(
+export async function markPushBindingsForRebind(
   ctx: PushReconcileContext
 ): Promise<void> {
   const { sublay } = ctx.getState();
   if (!sublay.accounts.deviceIdentifier) return;
 
-  const entries = Object.entries(sublay.accounts.accounts);
+  const activeAccountId = sublay.accounts.activeAccountId;
+  let marked = false;
 
-  for (const [userId, entry] of entries) {
-    // Silenced accounts are left alone — see the header for why deregistering
-    // them here would be a no-op bought with a token rotation.
-    if (!isAccountPushEnabled(entry)) continue;
+  for (const [userId, entry] of Object.entries(sublay.accounts.accounts)) {
+    // Explicit opt-in only, and the active account is repaired rather than
+    // marked — see the header for both.
+    if (userId === activeAccountId) continue;
+    if (!accountOptedIntoPush(entry)) continue;
 
+    ctx.dispatch(setAccountNeedsPushRebind({ userId, needsRebind: true }));
+    marked = true;
+  }
+
+  const activeEntry = activeAccountId
+    ? sublay.accounts.accounts[activeAccountId]
+    : undefined;
+
+  if (activeAccountId && activeEntry && accountOptedIntoPush(activeEntry)) {
     try {
-      await applyAccountPushBinding(ctx, userId, true);
+      await applyAccountPushBinding(ctx, activeAccountId, true);
     } catch (error) {
+      // Best-effort, and logged rather than thrown: `register()` reports on the
+      // registration that already succeeded, and a device-token change has
+      // nobody to report to. The activation-time reconcile re-runs on the new
+      // identifier, so this account is not stranded by one failed request.
       handleError(
         error,
-        `Failed to reconcile the push binding for account ${userId}`
+        `Failed to re-bind the push binding for account ${activeAccountId}`
       );
     }
   }
+
+  if (marked) await persistAccounts(ctx);
 }

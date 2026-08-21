@@ -44,10 +44,13 @@ describe("useAccounts", () => {
       name: "Alice",
       email: null,
       avatar: null,
-      // The two re-auth markers ride on every listed account so a switcher can
-      // tell a live entry from a dead one BEFORE the user taps it.
+      // The health markers ride on every listed account so a switcher can tell
+      // a live entry from a dead one BEFORE the user taps it, and can say
+      // "notifications paused" without implying anything is wrong with the
+      // account itself.
       tokenExpiresAt: 0,
       needsReauth: false,
+      needsPushRebind: false,
     });
   });
 
@@ -96,5 +99,58 @@ describe("useAccounts", () => {
     expect(byId["user-3"].needsReauth).toBe(false);
     expect(byId["user-3"].tokenExpiresAt).toBe(1);
     expect(result.current.activeAccount?.needsReauth).toBe(false);
+  });
+
+  it("surfaces the needs-re-binding marker, distinctly from needsReauth", () => {
+    // The two mean opposite things about whether the user has to do anything
+    // hard. `needsReauth` says the credential is dead — sign in again.
+    // `needsPushRebind` says the credential is fine and only the notification
+    // routing is stale — open the account and it repairs itself. Rendering one
+    // as the other is wrong in both directions: asking for a password nobody
+    // needs, or hiding the one tap that would fix it.
+    const { result, store } = renderHookWithAxios(() => useAccounts());
+
+    act(() => {
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "user-1",
+          accounts: {
+            "user-1": {
+              refreshToken: "token-1",
+              tokenExpiresAt: 4102444800000,
+              user: { id: "user-1", name: "Alice", email: null, avatar: null },
+            },
+            // Notifications paused: this device's push token moved on while
+            // this account was in the background.
+            "user-2": {
+              refreshToken: "token-2",
+              tokenExpiresAt: 4102444800000,
+              needsPushRebind: true,
+              user: { id: "user-2", name: "Bob", email: null, avatar: null },
+            },
+            // Dead credential — and its notifications are not the problem.
+            "user-3": {
+              refreshToken: "token-3",
+              tokenExpiresAt: 4102444800000,
+              needsReauth: true,
+              user: { id: "user-3", name: "Cleo", email: null, avatar: null },
+            },
+          },
+        }),
+      );
+    });
+
+    const byId = Object.fromEntries(
+      result.current.accounts.map((account) => [account.id, account]),
+    );
+
+    expect(byId["user-1"].needsPushRebind).toBe(false);
+    expect(byId["user-1"].needsReauth).toBe(false);
+
+    expect(byId["user-2"].needsPushRebind).toBe(true);
+    expect(byId["user-2"].needsReauth).toBe(false);
+
+    expect(byId["user-3"].needsPushRebind).toBe(false);
+    expect(byId["user-3"].needsReauth).toBe(true);
   });
 });

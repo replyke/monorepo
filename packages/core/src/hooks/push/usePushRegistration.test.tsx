@@ -71,23 +71,37 @@ const ROTATED: PushDeviceIdentifier = {
   token: "device-token-2",
 };
 
+// One account in each of the four states a push preference can be in:
+//
+//   test-user-id  ACTIVE,     explicitly enabled
+//   user-2        background, explicitly enabled
+//   user-3        background, explicitly SILENCED
+//   user-4        background, NEVER ASKED (absent — every entry written before
+//                 the flag existed looks like this)
 function makeAccounts(): Record<string, AccountEntry> {
   return {
     "test-user-id": {
       refreshToken: "refresh-1",
       tokenExpiresAt: 0,
       user: { id: "test-user-id", name: null, email: null, avatar: null },
+      pushEnabled: true,
     },
     "user-2": {
       refreshToken: "refresh-2",
       tokenExpiresAt: 0,
       user: { id: "user-2", name: null, email: null, avatar: null },
+      pushEnabled: true,
     },
     "user-3": {
       refreshToken: "refresh-3",
       tokenExpiresAt: 0,
       user: { id: "user-3", name: null, email: null, avatar: null },
       pushEnabled: false,
+    },
+    "user-4": {
+      refreshToken: "refresh-4",
+      tokenExpiresAt: 0,
+      user: { id: "user-4", name: null, email: null, avatar: null },
     },
   };
 }
@@ -269,12 +283,7 @@ describe("usePushRegistration", () => {
     it("persists the device identifier and enables the active account", async () => {
       fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({}));
       const axiosPublic = mockAxiosPublic();
-      // The bulk pass: user-2 mints then registers; user-3 is silenced.
-      axiosPublic.mockResponse("post", {});
-      axiosPublic.mockResponse("post", {
-        accessToken: "access-2",
-        refreshToken: "refresh-2-successor",
-      });
+      // The active account's re-bind. Nothing else goes out.
       axiosPublic.mockResponse("post", {});
 
       const adapter = makeAdapter();
@@ -293,14 +302,119 @@ describe("usePushRegistration", () => {
       expect(
         state.sublay.accounts.accounts["test-user-id"].pushEnabled,
       ).toBe(true);
-      // The first register() on a device holding several accounts turns push on
-      // for every enabled one — and leaves the silenced one silenced.
-      expect(state.sublay.accounts.accounts["user-3"].pushEnabled).toBe(false);
+    });
+
+    it("records an explicit preference for EVERY account that never expressed one", async () => {
+      // `register()` has always documented that it turns push on for every
+      // stored account, and it wrote the flag for the active one only. That gap
+      // is what would strand an upgrading install: binding requires an EXPLICIT
+      // opt-in, every entry written before the flag existed is absent, and
+      // nothing else ever writes it except a deliberate per-account toggle — so
+      // those accounts would be neither marked nor bound, and opening them
+      // would not help either.
+      fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({}));
+      const axiosPublic = mockAxiosPublic();
+      axiosPublic.mockResponse("post", {});
+
+      const adapter = makeAdapter();
+      const { result, store } = renderHookWithStore(
+        () => usePushRegistration(adapter),
+        { projectId: "test-project" },
+      );
+      seedAccounts(store);
+
+      await act(async () => {
+        await result.current.register();
+      });
+
+      const accounts = store.getState().sublay.accounts.accounts;
+      // Never asked -> now explicitly on, so it has a route to push.
+      expect(accounts["user-4"].pushEnabled).toBe(true);
+      expect(accounts["test-user-id"].pushEnabled).toBe(true);
+      expect(accounts["user-2"].pushEnabled).toBe(true);
+      // ...and an account the user DELIBERATELY SILENCED stays silenced. This
+      // call speaks for accounts that were never asked, not over accounts that
+      // answered.
+      expect(accounts["user-3"].pushEnabled).toBe(false);
+    });
+
+    it("marks the other accounts rather than exchanging their credentials", async () => {
+      fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({}));
+      const axiosPublic = mockAxiosPublic();
+      axiosPublic.mockResponse("post", {});
+
+      const adapter = makeAdapter();
+      const { result, store } = renderHookWithStore(
+        () => usePushRegistration(adapter),
+        { projectId: "test-project" },
+      );
+      seedAccounts(store);
+
+      await act(async () => {
+        await result.current.register();
+      });
+
+      // On the REQUESTS: no stored refresh token was presented for anybody.
+      const posts = axiosPublic.calls("post");
+      expect(
+        posts.filter((c) => c.url.includes("request-new-access-token")),
+      ).toHaveLength(0);
+      for (const token of ["refresh-2", "refresh-3", "refresh-4"]) {
+        expect(
+          posts.some(
+            (c) =>
+              c.body &&
+              (c.body as { refreshToken?: string }).refreshToken === token,
+          ),
+        ).toBe(false);
+      }
+
+      const accounts = store.getState().sublay.accounts.accounts;
+      expect(accounts["user-2"].needsPushRebind).toBe(true);
+      // Just enabled by this very call, so it is marked too — it has an
+      // explicit preference now and no binding yet.
+      expect(accounts["user-4"].needsPushRebind).toBe(true);
+      // Silenced: nothing to repair.
+      expect(accounts["user-3"].needsPushRebind).toBeUndefined();
+      // Active: re-bound on the spot instead.
+      expect(accounts["test-user-id"].needsPushRebind).toBeUndefined();
+    });
+
+    it("marks NOTHING when re-registering the same device token", async () => {
+      fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({}));
+      const axiosPublic = mockAxiosPublic();
+      axiosPublic.mockResponse("post", {});
+
+      const adapter = makeAdapter();
+      const { result, store } = renderHookWithStore(
+        () => usePushRegistration(adapter),
+        { projectId: "test-project" },
+      );
+      // Already registered with the identifier this adapter is about to yield —
+      // a settings screen calling register() again, or a second tap on "Enable
+      // notifications".
+      seedAccounts(store, { platform: "ios", token: "device-token-1" });
+
+      await act(async () => {
+        await result.current.register();
+      });
+
+      // Nothing about the OTHER accounts' bindings went stale, so none of them
+      // may be told its notifications are paused. Marking here would surface
+      // "open to resume" on accounts that are working, and only opening each
+      // one individually would clear it.
+      const accounts = store.getState().sublay.accounts.accounts;
+      expect(accounts["user-2"].needsPushRebind).toBeUndefined();
+      expect(accounts["user-3"].needsPushRebind).toBeUndefined();
+      expect(accounts["user-4"].needsPushRebind).toBeUndefined();
+      expect(accounts["test-user-id"].needsPushRebind).toBeUndefined();
+
+      // Still exchanges nothing, on the requests rather than on a call count.
       expect(
         axiosPublic
           .calls("post")
-          .some((c) => c.body && (c.body as { refreshToken?: string }).refreshToken === "refresh-3"),
-      ).toBe(false);
+          .filter((c) => c.url.includes("request-new-access-token")),
+      ).toHaveLength(0);
     });
 
     it("unregister durably silences the account and keeps the device identifier", async () => {
@@ -453,7 +567,13 @@ describe("usePushRegistration", () => {
       expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
     });
 
-    it("re-registers every enabled account on the new token and leaves silenced ones alone", async () => {
+    it("MARKS the background accounts on a rotation and exchanges nothing", async () => {
+      // The mechanism this replaces re-bound every enabled stored account by
+      // trading its refresh token for a temporary session. That trade is
+      // one-time-use: the server revokes the presented token as it answers, and
+      // an interruption before the successor is durably written leaves the
+      // account permanently locked out. It ran for up to five accounts, in the
+      // background, at launch.
       let emit: ((next: PushDeviceIdentifier | null) => void) | undefined;
       const adapter = makeAdapter({
         subscribeToIdentifierChanges: (_ctx, onChange) => {
@@ -470,12 +590,7 @@ describe("usePushRegistration", () => {
       // The old identifier's DELETE goes out over RTK Query.
       fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({}));
       const axiosPublic = mockAxiosPublic();
-      axiosPublic.mockResponse("post", {}); // active account re-registers
-      axiosPublic.mockResponse("post", {
-        accessToken: "access-2",
-        refreshToken: "refresh-2-successor",
-      });
-      axiosPublic.mockResponse("post", {}); // user-2 re-registers
+      axiosPublic.mockResponse("post", {}); // the ACTIVE account re-registers
 
       await act(async () => {
         emit!(ROTATED);
@@ -488,17 +603,88 @@ describe("usePushRegistration", () => {
         ),
       );
 
-      const devicePosts = axiosPublic
-        .calls("post")
-        .filter((c) => c.url.includes("push-notifications/devices"));
-      expect(devicePosts).toHaveLength(2);
-      for (const call of devicePosts) expect(call.body).toEqual(ROTATED);
-      // Silenced accounts are never minted for.
+      // ⚠ ASSERTED ON THE REQUESTS, not on a mock's call count. The bulk loop no
+      // longer exists, so "the loop was not called" would be vacuously true of
+      // any rewrite that still exchanged.
+      const posts = axiosPublic.calls("post");
       expect(
-        axiosPublic
-          .calls("post")
-          .some((c) => c.body && (c.body as { refreshToken?: string }).refreshToken === "refresh-3"),
-      ).toBe(false);
+        posts.filter((c) => c.url.includes("request-new-access-token")),
+      ).toHaveLength(0);
+      for (const token of ["refresh-2", "refresh-3", "refresh-4"]) {
+        expect(
+          posts.some(
+            (c) =>
+              c.body &&
+              (c.body as { refreshToken?: string }).refreshToken === token,
+          ),
+        ).toBe(false);
+      }
+
+      // The ACTIVE account is still re-bound immediately — it costs nothing,
+      // because its session is already live.
+      const devicePosts = posts.filter((c) =>
+        c.url.includes("push-notifications/devices"),
+      );
+      expect(devicePosts).toHaveLength(1);
+      expect(devicePosts[0].body).toEqual(ROTATED);
+
+      const accounts = store.getState().sublay.accounts.accounts;
+      expect(accounts["user-2"].needsPushRebind).toBe(true);
+      expect(accounts["test-user-id"].needsPushRebind).toBeUndefined();
+      // Silenced, and never asked: neither is marked, because neither has a
+      // binding that a rotation could have invalidated.
+      expect(accounts["user-3"].needsPushRebind).toBeUndefined();
+      expect(accounts["user-4"].needsPushRebind).toBeUndefined();
+    });
+
+    it("persists the marks, so they survive a relaunch", async () => {
+      const setAccountMap = vi.fn().mockResolvedValue(undefined);
+      registerAccountStorage(
+        {
+          getAccountMap: vi.fn().mockResolvedValue(null),
+          setAccountMap,
+          deleteAccountMap: vi.fn().mockResolvedValue(undefined),
+        },
+        "test-project",
+      );
+
+      let emit: ((next: PushDeviceIdentifier | null) => void) | undefined;
+      const adapter = makeAdapter({
+        subscribeToIdentifierChanges: (_ctx, onChange) => {
+          emit = onChange;
+          return () => {};
+        },
+      });
+      const { store } = renderHookWithStore(
+        () => usePushRegistration(adapter),
+        { projectId: "test-project" },
+      );
+      seedAccounts(store, DEVICE);
+
+      fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({}));
+      const axiosPublic = mockAxiosPublic();
+      axiosPublic.mockResponse("post", {});
+
+      await act(async () => {
+        emit!(ROTATED);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      await waitFor(() =>
+        expect(store.getState().sublay.accounts.deviceIdentifier).toEqual(
+          ROTATED,
+        ),
+      );
+
+      // The rotation happens once; the repair may be several launches away. A
+      // mark that only lived in Redux would be gone by then, and the account
+      // would go quiet with nothing recording why.
+      await waitFor(() => {
+        const written = setAccountMap.mock.calls
+          .map((call) => call[1] as { accounts: Record<string, { needsPushRebind?: boolean }> })
+          .filter((map) => map.accounts["user-2"]?.needsPushRebind === true);
+        expect(written.length).toBeGreaterThan(0);
+      });
     });
 
     it("ignores an emitted identifier equal to the stored one", async () => {

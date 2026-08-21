@@ -19,7 +19,6 @@ import {
 import type { AccountStorage } from "../../interfaces/AccountStorage";
 import {
   mintAccountAccessToken,
-  mintAccountSession,
   leaseAccountSession,
   resetAccountTokenMints,
 } from "./mintAccountAccessToken";
@@ -213,13 +212,13 @@ describe("mintAccountAccessToken", () => {
   });
 
   // The two entry points share ONE single-flight entry, and that sharing is the
-  // point rather than an accident: push reconciliation and an account
+  // point rather than an accident: the per-account push toggle and an account
   // transition can both be minting for the same non-active account at the same
-  // moment — a bulk reconcile after `register()` or a device-token rotation,
-  // racing the user tapping "switch to that account". They compute the same
-  // key, so two independent exchanges would present the same refresh token
-  // twice. That IS the reuse-detection trigger.
-  it("shares one exchange between mintAccountSession and mintAccountAccessToken", async () => {
+  // moment — the user silencing an account they are not signed into, racing
+  // the user tapping "switch to that account". They compute the same key, so
+  // two independent exchanges would present the same refresh token twice. That
+  // IS the reuse-detection trigger.
+  it("shares one exchange between mintAccountAccessToken and leaseAccountSession", async () => {
     const axiosPublic = mockAxiosPublic();
     registerAccountStorage(
       makeStorage(async () => {}),
@@ -231,17 +230,18 @@ describe("mintAccountAccessToken", () => {
       user: { id: "user-2" },
     });
 
-    const [session, token] = await Promise.all([
-      mintAccountSession({ ...ctx(), userId: "user-2" }),
+    const [lease, token] = await Promise.all([
+      leaseAccountSession({ ...ctx(), userId: "user-2" }),
       mintAccountAccessToken({ ...ctx(), userId: "user-2" }),
     ]);
 
     expect(axiosPublic.calls("post")).toHaveLength(1);
     expect(token).toBe("access-2");
-    expect(session.accessToken).toBe("access-2");
+    expect(lease.session.accessToken).toBe("access-2");
     // The LIVE token after the exchange, never the one that was presented.
-    expect(session.refreshToken).toBe("refresh-2-successor");
-    expect(session.user).toEqual({ id: "user-2" });
+    expect(lease.session.refreshToken).toBe("refresh-2-successor");
+    expect(lease.session.user).toEqual({ id: "user-2" });
+    lease.release();
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -270,12 +270,13 @@ describe("mintAccountAccessToken", () => {
 
     const lease = await leaseAccountSession({ ...ctx(), userId: "user-2" });
 
-    // This is the reconcile arriving in the window the plain single flight left
-    // open. It must be served the SAME session, not start a rotation.
-    const during = await mintAccountSession({ ...ctx(), userId: "user-2" });
+    // This is a second caller arriving in the window the plain single flight
+    // left open — the toggle, or a second tap on the same switcher. It must be
+    // served the SAME session, not start a rotation.
+    const during = await mintAccountAccessToken({ ...ctx(), userId: "user-2" });
 
     expect(axiosPublic.calls("post")).toHaveLength(1);
-    expect(during).toEqual(lease.session);
+    expect(during).toBe(lease.session.accessToken);
     // Nothing rotated behind the leaseholder: what it is about to install is
     // still what the map holds.
     expect(store.getState().sublay.accounts.accounts["user-2"].refreshToken).toBe(
@@ -289,7 +290,7 @@ describe("mintAccountAccessToken", () => {
       accessToken: "access-2b",
       refreshToken: "refresh-2-successor-2",
     });
-    await mintAccountSession({ ...ctx(), userId: "user-2" });
+    await mintAccountAccessToken({ ...ctx(), userId: "user-2" });
     expect(axiosPublic.calls("post")).toHaveLength(2);
   });
 
@@ -328,15 +329,15 @@ describe("mintAccountAccessToken", () => {
 
     // B has not installed yet, so the flight must still be closed: a mint
     // arriving now has to JOIN, not start a rotation behind B.
-    const during = await mintAccountSession({ ...ctx(), userId: "user-2" });
+    const during = await mintAccountAccessToken({ ...ctx(), userId: "user-2" });
     expect(axiosPublic.calls("post")).toHaveLength(1);
-    expect(during).toEqual(leaseB.session);
+    expect(during).toBe(leaseB.session.accessToken);
 
     // ...and B's release still ends the lease properly — the guard suppresses
     // the extra decrement, it does not leak a permanent hold. This is where the
     // second queued response gets consumed.
     leaseB.release();
-    await mintAccountSession({ ...ctx(), userId: "user-2" });
+    await mintAccountAccessToken({ ...ctx(), userId: "user-2" });
     expect(axiosPublic.calls("post")).toHaveLength(2);
   });
 
@@ -350,14 +351,14 @@ describe("mintAccountAccessToken", () => {
       refreshToken: "refresh-2-successor",
     });
 
-    const reconcile = mintAccountSession({ ...ctx(), userId: "user-2" });
+    const toggleMint = mintAccountAccessToken({ ...ctx(), userId: "user-2" });
     const leasePromise = leaseAccountSession({ ...ctx(), userId: "user-2" });
 
-    const [, lease] = await Promise.all([reconcile, leasePromise]);
+    const [, lease] = await Promise.all([toggleMint, leasePromise]);
     expect(axiosPublic.calls("post")).toHaveLength(1);
 
     // Still held even though this caller did not start the flight.
-    await mintAccountSession({ ...ctx(), userId: "user-2" });
+    await mintAccountAccessToken({ ...ctx(), userId: "user-2" });
     expect(axiosPublic.calls("post")).toHaveLength(1);
 
     lease.release();
@@ -374,7 +375,7 @@ describe("mintAccountAccessToken", () => {
     // There was no session to install, so nothing needed protecting — and the
     // flight must not be left pinned by a lease its holder never received.
     axiosPublic.mockResponse("post", { accessToken: "access-2" });
-    await mintAccountSession({ ...ctx(), userId: "user-2" });
+    await mintAccountAccessToken({ ...ctx(), userId: "user-2" });
     expect(axiosPublic.calls("post")).toHaveLength(2);
   });
 
@@ -392,25 +393,26 @@ describe("mintAccountAccessToken", () => {
     axiosPublic.mockNetworkError("post", "timeout of 30000ms exceeded");
 
     await expect(
-      mintAccountSession({ ...ctx(), userId: "user-2" }),
+      mintAccountAccessToken({ ...ctx(), userId: "user-2" }),
     ).rejects.toBeTruthy();
 
     axiosPublic.mockResponse("post", { accessToken: "access-2" });
-    const session = await mintAccountSession({ ...ctx(), userId: "user-2" });
+    const token = await mintAccountAccessToken({ ...ctx(), userId: "user-2" });
 
-    expect(session.accessToken).toBe("access-2");
+    expect(token).toBe("access-2");
     // A FRESH request, not a joined dead one.
     expect(axiosPublic.calls("post")).toHaveLength(2);
   });
 
-  it("mintAccountSession reports the presented token as live when the server did not rotate", async () => {
+  it("reports the presented token as live when the server did not rotate", async () => {
     const axiosPublic = mockAxiosPublic();
     axiosPublic.mockResponse("post", { accessToken: "access-2" });
 
-    const session = await mintAccountSession({ ...ctx(), userId: "user-2" });
+    const lease = await leaseAccountSession({ ...ctx(), userId: "user-2" });
 
-    expect(session.refreshToken).toBe("refresh-2");
-    expect(session.user).toBeNull();
+    expect(lease.session.refreshToken).toBe("refresh-2");
+    expect(lease.session.user).toBeNull();
+    lease.release();
   });
 
   it("fails and writes NOTHING when the account was removed mid-exchange", async () => {
@@ -433,7 +435,7 @@ describe("mintAccountAccessToken", () => {
       () => pending as never,
     );
 
-    const minting = mintAccountSession({ ...ctx(), userId: "user-2" });
+    const minting = mintAccountAccessToken({ ...ctx(), userId: "user-2" });
 
     // The user removes the account while the exchange is in flight.
     store.dispatch(removeAccount("user-2"));
@@ -473,7 +475,7 @@ describe("mintAccountAccessToken", () => {
       () => pending as never,
     );
 
-    const minting = mintAccountSession({ ...ctx(), userId: "user-2" });
+    const minting = mintAccountAccessToken({ ...ctx(), userId: "user-2" });
     store.dispatch(clearAllAccounts());
     respond({
       data: { accessToken: "access-2", refreshToken: "refresh-2-successor" },
@@ -498,7 +500,7 @@ describe("mintAccountAccessToken", () => {
       () => pending as never,
     );
 
-    const minting = mintAccountSession({ ...ctx(), userId: "user-2" });
+    const minting = mintAccountAccessToken({ ...ctx(), userId: "user-2" });
     store.dispatch(removeAccount("user-2"));
     respond({
       data: { accessToken: "access-2", refreshToken: "refresh-2-successor" },

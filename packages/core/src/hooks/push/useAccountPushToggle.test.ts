@@ -148,6 +148,48 @@ describe("useAccountPushToggle", () => {
     expect(result.current.isAccountPushEnabled("user-missing")).toBe(false);
   });
 
+  it("clears a stale needs-re-binding marker once the binding matches intent", async () => {
+    // A marked background account that the user then SILENCES. The toggle
+    // unbinds it directly against the current identifier, so there is nothing
+    // left to repair — and the marker's only other clearing point is the
+    // activation-time reconcile, which for a silenced account does the same
+    // unbind. Left standing, it would report "notifications paused" forever on
+    // an account the user deliberately turned off.
+    const { result, store, axiosPublic } = render();
+    act(() => {
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "user-1",
+          accounts: {
+            ...makeAccounts(),
+            "user-2": {
+              ...makeAccounts()["user-2"],
+              pushEnabled: true,
+              needsPushRebind: true,
+            },
+          },
+          deviceIdentifier: DEVICE,
+        }),
+      );
+    });
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-2",
+      refreshToken: "refresh-2-successor",
+    });
+    axiosPublic.mockResponse("delete", {});
+
+    await act(async () => {
+      await result.current.setAccountPushEnabled({
+        userId: "user-2",
+        enabled: false,
+      });
+    });
+
+    const entry = store.getState().sublay.accounts.accounts["user-2"];
+    expect(entry.pushEnabled).toBe(false);
+    expect(entry.needsPushRebind).toBeUndefined();
+  });
+
   it("throws for an unknown account", async () => {
     const { result } = render();
     await expect(

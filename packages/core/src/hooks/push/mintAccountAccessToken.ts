@@ -27,55 +27,75 @@
 //     nothing else, so it goes out over the bare public axios instance, which
 //     carries no interceptors at all.
 //
-// Single-flighted per (project, account) so two reconciliations racing for the
-// same account cannot present the same refresh token twice — which is the
+// Single-flighted per (project, account) so two callers racing for the same
+// account cannot present the same refresh token twice — which is the
 // reuse-detection trigger, self-inflicted.
 //
 // ⚠ THE SINGLE-FLIGHT BOUNDARY IS ONE JS CONTEXT. `inFlight` is module state,
 // so it serializes racing callers inside a single app instance and nothing
-// beyond it. Two browser tabs — each with its own module instance — that both
-// remount after a subscription rotation can therefore each present the same
-// stored non-active refresh token. What keeps that theoretical rather than
-// live:
+// beyond it. Two browser tabs — each with its own module instance — can
+// therefore each present the same stored non-active refresh token. What keeps
+// that theoretical rather than live:
 //
-//   - The write mutex plus Phase D's cross-tab `storage` sync converge the tabs
-//     on the successor.
+//   - The write mutex plus `useAccountSync` Phase D's cross-tab `storage` sync
+//     converge the tabs on the successor.
 //   - The server's ~30s grace window returns the family's live successor rather
 //     than destroying it, when an unrevoked one exists.
-//   - Reaching the bulk loop at all is rare, though for DIFFERENT reasons on
-//     the two paths that reach it, and only one of them is user-initiated:
-//     `register()` is a deliberate user action, so two tabs racing it is
-//     already unusual. The rotation path is NOT user-initiated — on web it is
-//     `subscribeToWebPushIdentifierChanges`, a comparison run from a mount
-//     effect — but it is gated on `pushIdentifiersEqual` finding an ACTUAL
-//     difference, so an ordinary mount never reaches the loop; only a genuine
-//     rotation does, and only on the first tabs to observe it.
+//   - Both remaining callers are DELIBERATE, FOREGROUNDED user actions — a tap
+//     on an account switcher, a tap on a per-account notification switch — so
+//     two tabs reaching this simultaneously means one person acting in two
+//     windows at once. Nothing background reaches it any more.
 //
 // It is also the SAME class of exposure the ordinary active-account refresh
 // already carries across tabs. Read "cannot present the same token twice" as
 // in-context, not absolute.
 //
-// TWO CALLERS by design, both of which are "spend THIS account's credential,
-// out of band, without disturbing whatever session is currently live":
+// ─────────────────────────────────────────────────────────────────────────────
+// WHO CALLS THIS
+// ─────────────────────────────────────────────────────────────────────────────
+// Two callers, both of which are "spend THIS account's credential, out of band,
+// without disturbing whatever session is currently live", and both of which a
+// user asked for and is waiting on:
 //
-//   1. Push reconciliation for a non-active account (`reconcilePushBindings`),
-//      via `mintAccountAccessToken` — it needs a bearer token and nothing else.
-//   2. The validate step of an account transition (`accountTransition`), via
+//   1. THE PER-ACCOUNT PUSH TOGGLE (`useAccountPushToggle`), acting on an
+//      account the user is not signed into, via `mintAccountAccessToken` — it
+//      needs a bearer token and nothing else. Silencing or un-silencing a
+//      background account without switching to it is a documented capability,
+//      and this exchange is what authorizes the bind/unbind as that account.
+//   2. THE VALIDATE STEP OF AN ACCOUNT TRANSITION (`accountTransition`), via
 //      `leaseAccountSession` — it needs the whole exchange result, because the
 //      proven session is then INSTALLED rather than thrown away, and it needs
 //      the flight held until that install has happened.
 //
-// Do not widen it into a general "act as any stored account" capability.
+// Do not widen it into a general "act as any stored account" capability, and in
+// particular do not call it from anything that runs on its own schedule. Push
+// reconciliation used to, for up to five accounts at launch; that is exactly
+// the pass that was removed, because an interruption mid-exchange leaves the
+// stored token revoked and the successor unsaved, and the account is then
+// locked out with no route back. A foregrounded, one-account, user-initiated
+// call is a risk somebody chose to take and can retry; a background sweep is
+// not.
 //
-// Both go through ONE single-flight entry per (project, account), and that
-// sharing is load-bearing rather than incidental. The two callers can genuinely
-// collide: a bulk reconcile (after `register()` or a device-token rotation) or
-// a per-account push toggle can be minting for account X at the moment the user
-// taps "switch to X" — X is non-active on both sides, so both compute the same
-// key. Two independent exchanges there would present the same refresh token
-// twice, which IS the reuse-detection trigger. Because the shared promise
-// carries the full `MintedAccountSession`, the second caller can be served from
-// the first caller's single rotation instead.
+// ─────────────────────────────────────────────────────────────────────────────
+// WHY BOTH GO THROUGH ONE SINGLE-FLIGHT ENTRY
+// ─────────────────────────────────────────────────────────────────────────────
+// The sharing is load-bearing rather than incidental, and it did not stop
+// being so when reconciliation left. The two remaining callers can genuinely
+// collide: the toggle can be minting for account X at the moment the user taps
+// "switch to X" — X is non-active on both sides, so both compute the same key.
+// Two independent exchanges there would present the same refresh token twice.
+// Because the shared promise carries the full `MintedAccountSession`, the
+// second caller is served from the first caller's single rotation instead.
+//
+// ⚠ AND THE LEASE GUARDS SOMETHING NARROWER THAN THAT, WHICH IS WHY IT SURVIVES
+// EVEN IF THE TOGGLE EVER GOES AWAY: two overlapping TRANSITIONS INTO THE SAME
+// ACCOUNT. Nothing prevents them. `activateStoredAccount` has no re-entrancy
+// guard of its own and is a public export; `useSwitchAccount` never consults
+// its own `isSwitching` flag as a guard, and its `userId === activeAccountId`
+// early return only bites once the first transition has already installed. A
+// double tap, or two mounted switchers, therefore both get through. The second
+// one arriving in the settle -> install window is precisely the case
+// `leaseAccountSession` exists to close — see its docblock.
 
 import axios from "../../config/axios";
 import type { AppDispatch } from "../../store/types";
@@ -208,19 +228,6 @@ function startOrJoin(
 }
 
 /**
- * The whole exchange result, single-flighted per (project, account).
- *
- * Use this when the session is only going to be READ — to authorize a request,
- * typically. A caller that INSTALLS the returned refresh token as the live
- * session must use `leaseAccountSession` instead.
- */
-export function mintAccountSession(
-  args: MintAccountAccessTokenArgs
-): Promise<MintedAccountSession> {
-  return startOrJoin(args, false).flight.promise;
-}
-
-/**
  * The same exchange, with the flight held open until the caller says it is
  * done.
  *
@@ -232,6 +239,17 @@ export function mintAccountSession(
  * asks for this account in that gap starts a SECOND exchange, which is a
  * perfectly legal rotation: it presents the successor S1 (already durably in
  * the map) and gets S2 back, writing S2 to the map.
+ *
+ * **"Anything" includes a SECOND TRANSITION INTO THE SAME ACCOUNT,** which is
+ * why this survived the removal of push reconciliation's bulk pass. Nothing
+ * upstream serializes transitions: `activateStoredAccount` has no re-entrancy
+ * guard and is publicly exported, and `useSwitchAccount` never reads its own
+ * `isSwitching` flag as a guard — that flag is per-hook-instance React state,
+ * set inside the async callback, so a double tap or two mounted switchers both
+ * get through, and the `userId === activeAccountId` early return only starts
+ * refusing once the first transition has already installed. Remove the hold and
+ * a double tap costs two exchanges, with the first tap installing the revoked
+ * one.
  *
  * That is fine for the second caller and fatal for the first. The transition
  * core installs S1 into the auth slice, `useAccountSync` Phase B then rebuilds
@@ -250,7 +268,8 @@ export function mintAccountSession(
  * is a lock on this account's credential; holding it across I/O would stall
  * every other mint for that account behind it, and a leaked lease pins a stale
  * session forever. The one caller (`activateStoredAccount`) installs
- * synchronously and releases in a `finally`.
+ * synchronously and releases in a `finally` — and a second transition arriving
+ * in the meantime is served that same session rather than rotating behind it.
  *
  * A failed exchange releases its own hold before rejecting — there is no
  * session to install, so there is nothing to protect.
@@ -278,14 +297,28 @@ export async function leaseAccountSession(
 }
 
 /**
- * Just the bearer token — for callers that only need to authorize a request as
- * this account. Shares the same single flight, so a reconcile and a transition
- * racing for the same account cost ONE rotation between them.
+ * Just the bearer token — for the one caller that needs to authorize a single
+ * request as a stored account it is not signed into: the per-account push
+ * toggle. Shares the same single flight, so a toggle and a transition racing
+ * for the same account cost ONE rotation between them.
+ *
+ * **The non-holding entry point, and the only one.** There used to be a second
+ * — a `mintAccountSession` returning the whole exchange result to a caller that
+ * only read it — for push reconciliation's bulk pass. That pass no longer
+ * exchanges anything, so the entry point went with it rather than staying as a
+ * general "hand me a live session for any stored account" affordance with no
+ * consumer to justify it.
+ *
+ * A caller that INSTALLS the returned credential as the live session must not
+ * use this: it releases the flight the moment the exchange settles, which
+ * reopens the window `leaseAccountSession` exists to close.
  */
 export function mintAccountAccessToken(
   args: MintAccountAccessTokenArgs
 ): Promise<string> {
-  return mintAccountSession(args).then((session) => session.accessToken);
+  return startOrJoin(args, false).flight.promise.then(
+    (session) => session.accessToken
+  );
 }
 
 async function exchange({

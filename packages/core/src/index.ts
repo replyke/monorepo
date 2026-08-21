@@ -142,8 +142,14 @@ export { ACCOUNT_LIMIT_MESSAGE } from "./store/slices/authThunks";
 export type { AccountStorage } from "./interfaces/AccountStorage";
 export {
   MAX_ACCOUNTS,
+  // `isAccountPushEnabled` is REPORTED STATE — what a per-account push switch
+  // renders as `checked`, with an absent preference reading as enabled. It is
+  // not the rule the SDK uses to decide whether to create a binding; that one
+  // requires an explicit opt-in and is internal, so a binding is never created
+  // for an account that has not asked for one.
   isAccountPushEnabled,
   accountNeedsReauth,
+  accountNeedsPushRebind,
   selectAccounts,
   selectActiveAccountId,
   selectSignedOut,

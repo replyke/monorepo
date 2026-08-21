@@ -30,10 +30,24 @@ export interface AccountEntry {
    * and `useAccountSync` Phase B writes a fresh entry whenever it changes.
    * That is why `upsertAccount` merges rather than replaces.
    *
-   * **Absent reads as enabled.** Absent means "never expressed a preference",
-   * and every entry written before this release is absent — reading those as
-   * disabled would unbind accounts that are working fine. Use
-   * `isAccountPushEnabled` rather than testing the field directly.
+   * **Three states, not two.** `true` and `false` are explicit user choices;
+   * ABSENT means "never expressed a preference", which every entry written
+   * before this field existed carries.
+   *
+   * Which way absent reads depends on the question being asked, and the two
+   * questions have separate predicates on purpose:
+   *
+   *   - *"What does this account's push state look like?"* —
+   *     `isAccountPushEnabled`. Absent reads as ENABLED. It is the value a
+   *     per-account toggle renders as `checked`, and reading an upgrading
+   *     install's accounts as off would flip every one of those switches.
+   *   - *"May we create a push binding for this account?"* —
+   *     `accountOptedIntoPush`. Absent reads as NO, because a binding routes
+   *     message content to a device and nobody asked for it. This is the one
+   *     that decides whether anything is bound, and it is deliberately NOT
+   *     exported from the package.
+   *
+   * Never test the field directly; the absent case is what gets it wrong.
    */
   pushEnabled?: boolean;
   /**
@@ -58,16 +72,82 @@ export interface AccountEntry {
    * possibly-absent field.
    */
   needsReauth?: boolean;
+  /**
+   * Set when this device's push identifier changed while the account was not
+   * the active one, so its server-side binding now points at a token this
+   * device no longer holds.
+   *
+   * **Why a marker and not a re-bind.** Binding a non-active account means
+   * exchanging its stored refresh token for a session, and that exchange is
+   * one-time-use: the server revokes the presented token as it answers. An
+   * interruption between the two — the app swiped away, an OS suspension, a
+   * dropped connection — leaves the stored copy dead and the successor
+   * unsaved, and that account is then locked out for good. Running that trade
+   * for up to five background accounts at launch is a lot of exposure to buy
+   * notification routing with, so the rotation records what needs repairing
+   * and the repair happens on the account's next activation, where a live
+   * session already exists and nothing has to be exchanged.
+   *
+   * **Not `needsReauth`, and the two must not be conflated.** `needsReauth`
+   * means this account's credential is dead and the user has to sign in again.
+   * This means the credential is fine and only the notification routing is
+   * stale — the account works, it is just quiet until it is next opened.
+   *
+   * Absent means "nothing to repair". Read it through `accountNeedsPushRebind`.
+   */
+  needsPushRebind?: boolean;
 }
 
 /**
  * `true` unless the account was explicitly silenced on this device.
  *
+ * **Reported state, not a binding decision.** This is what a per-account push
+ * switch renders as its `checked` value, and it answers the absent case with
+ * `true` so an account that predates the preference does not display as off.
+ * Deciding whether to actually CREATE a binding is a different and stricter
+ * question — see `accountOptedIntoPush`.
+ *
  * Read the flag through this, never as `entry.pushEnabled` — absent and `true`
- * mean the same thing and a bare truthiness test gets the absent case wrong.
+ * report the same thing and a bare truthiness test gets the absent case wrong.
  */
 export function isAccountPushEnabled(entry: AccountEntry): boolean {
   return entry.pushEnabled !== false;
+}
+
+/**
+ * `true` only when this account has EXPLICITLY asked for push on this device.
+ *
+ * Internal, and deliberately not exported from the package: it is the rule for
+ * *acting*, and publishing it alongside `isAccountPushEnabled` would invite
+ * call sites to pick whichever one they read first.
+ *
+ * The difference is the absent case, and it is the whole point. An absent
+ * preference is not consent. Treating it as consent is what let a plain
+ * sign-in bind a brand-new account to a device whose identifier happened to
+ * survive the previous user's sign-out — nobody granted anything, the app
+ * never called `register()`, and the binding survived a restart. It is also
+ * what would mark an upgrading install's accounts as needing a re-bind that
+ * the activation path, which applies this same rule, would then never clear.
+ *
+ * **Both sides use this one.** Marking and binding have to agree, or a mark is
+ * either raised for something that will never be repaired or dropped for
+ * something that needed repairing.
+ */
+export function accountOptedIntoPush(entry: AccountEntry): boolean {
+  return entry.pushEnabled === true;
+}
+
+/**
+ * `true` when this device's push identifier moved on while the account was in
+ * the background, so its binding needs re-creating on next activation.
+ *
+ * Distinct from `accountNeedsReauth`: that one says the credential is dead and
+ * the user must sign in again; this one says the credential is fine and only
+ * the notifications are paused. An app that surfaces both should say different
+ * things about them.
+ */
+export function accountNeedsPushRebind(entry: AccountEntry): boolean {
+  return entry.needsPushRebind === true;
 }
 
 /**
@@ -333,6 +413,32 @@ const accountsSlice = createSlice({
       if (action.payload.needsReauth) entry.needsReauth = true;
       else delete entry.needsReauth;
     },
+    /**
+     * Records that this account's push binding is stale (or clears the record).
+     *
+     * Written when the device's push identifier changes while the account is
+     * not active, and cleared when the activation-time reconcile has actually
+     * re-bound it. The mark is DURABLE: the rotation it records happens once,
+     * and the repair may be several launches away.
+     *
+     * Set writes an explicit `true`; clearing DELETES the field rather than
+     * writing `false`, matching `setAccountNeedsReauth` — "nothing to repair"
+     * stays the absent state that `mergeAccountEntry` already treats as "no
+     * opinion", so Phase B rebuilding the entry on every token rotation cannot
+     * erase or resurrect it, and a device that has never rotated costs nothing
+     * on Expo's per-value byte budget.
+     *
+     * Unknown ids are ignored, matching the sibling reducers.
+     */
+    setAccountNeedsPushRebind: (
+      state,
+      action: PayloadAction<{ userId: string; needsRebind: boolean }>
+    ) => {
+      const entry = state.accounts[action.payload.userId];
+      if (!entry) return;
+      if (action.payload.needsRebind) entry.needsPushRebind = true;
+      else delete entry.needsPushRebind;
+    },
     removeAccount: (state, action: PayloadAction<string>) => {
       delete state.accounts[action.payload];
       if (state.activeAccountId === action.payload) {
@@ -374,6 +480,12 @@ const accountsSlice = createSlice({
         // one near-exception is `refuseAtAccountLimit` restoring the PREVIOUS
         // selection, and that account cannot be carrying a marker — it was the
         // live session a moment earlier.
+        //
+        // `needsPushRebind` is deliberately NOT cleared here. Selecting an
+        // account proves its credential; it does not re-create its push
+        // binding. That is `reconcileAccountPushBinding`'s job, it runs a beat
+        // later and it can fail — clearing the mark on selection would report
+        // the repair done whenever the account was merely opened.
         const entry = state.accounts[action.payload];
         if (entry) delete entry.needsReauth;
       }
@@ -412,6 +524,7 @@ export const {
   setAccountPushEnabled,
   setAccountCredential,
   setAccountNeedsReauth,
+  setAccountNeedsPushRebind,
   removeAccount,
   setActiveAccount,
   setSignedOut,

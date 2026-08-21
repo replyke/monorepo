@@ -51,11 +51,20 @@ import {
  * exactly where they were, and the dead account is marked `needsReauth` so a
  * switcher can show it as needing a sign-in.
  *
- * **The LEASE, specifically — not the plain `mintAccountSession`.** That is the
- * non-holding variant, and using it here would release the single flight the
- * instant the exchange settled, reopening the window this design exists to
- * close: a push reconcile could rotate again before the install landed, leaving
- * the live session holding a revoked token. See `leaseAccountSession`.
+ * **The LEASE, specifically — not the plain `mintAccountAccessToken`.** That is
+ * the non-holding variant, and using it here would release the single flight
+ * the instant the exchange settled, reopening the window this design exists to
+ * close: something else could rotate again before the install landed, leaving
+ * the live session holding a revoked token.
+ *
+ * Two things can be that "something else". A second transition into the same
+ * account — `activateStoredAccount` is exported and has no re-entrancy guard of
+ * its own, while `useSwitchAccount`'s in-progress flag is per-hook-instance
+ * state set inside the async callback, so a double tap or two mounted switchers
+ * both get through. And the per-account push toggle, which exchanges a stored
+ * credential whenever the account it targets is not the active one. Push
+ * reconciliation used to be a third; it no longer exchanges anything. See
+ * `leaseAccountSession`.
  *
  * **The rotation count is unchanged.** The old order refreshed after the swap;
  * this one refreshes before it. One exchange either way — the validate step IS
