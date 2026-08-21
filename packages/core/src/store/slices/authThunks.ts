@@ -3,6 +3,7 @@ import axios from "../../config/axios";
 import { getAuthorizedTokenForAccount } from "../../config/authGate";
 
 import { handleError } from "../../utils/handleError";
+import { isUnbindFailure } from "../../utils/unbindFailure";
 import type { RootState } from "../index";
 import {
   setTokens,
@@ -513,12 +514,31 @@ export const signOutThunk = createAsyncThunk(
     try {
       dispatch(setAuthenticating(true));
 
-      // If this throws, NOTHING below runs: the account keeps its entry and its
-      // credential so the user can retry. That is the client half of the
-      // atomicity guarantee — without it the server can honestly refuse the
-      // unbind and the SDK deletes the credential anyway, leaving the user
+      // ── The strictness is SCOPED TO UNBIND FAILURES. ─────────────────────
+      //
+      // Rethrowing here means NOTHING below runs: the account keeps its entry
+      // and its credential so the user can retry. That is the client half of
+      // the atomicity guarantee — without it the server can honestly refuse
+      // the unbind and the SDK deletes the credential anyway, leaving the user
       // receiving notifications from an account they can no longer reach.
-      await authService.signOut(data.projectId, refreshToken, pushDevice);
+      //
+      // But it applies ONLY to the server's own statement that it attempted an
+      // unbind and committed nothing (`isUnbindFailure`). This path used to
+      // reject on every failure, which made the primary sign-out API — the one
+      // `useAuth().signOut()` calls — unusable offline: a user with no
+      // connection could not sign out of their own device. Everything else
+      // (no response at all, a pre-controller gate, the generic server error)
+      // proceeds with the local teardown, matching the other two sign-out
+      // paths and the server's rule that a user can ALWAYS sign out.
+      try {
+        await authService.signOut(data.projectId, refreshToken, pushDevice);
+      } catch (signOutError) {
+        if (isUnbindFailure(signOutError)) throw signOutError;
+        handleError(
+          signOutError,
+          "Server sign-out failed; signing out locally anyway:"
+        );
+      }
 
       // Remove current account from the multi-account map. The reducer leaves
       // NO account active — see below.
@@ -844,7 +864,7 @@ export const signOutAllThunk = createAsyncThunk(
       dispatch(setAuthenticating(true));
 
       // Per account. Whether a failure is fatal depends on whether an UNBIND
-      // was actually attempted — see `strict` below.
+      // was actually attempted — see `blockedOutcomes` below.
       const outcomes = await Promise.all(
         Object.entries(accounts).map(async ([userId, account]) => {
           try {
@@ -861,33 +881,40 @@ export const signOutAllThunk = createAsyncThunk(
         })
       );
 
-      const failed = outcomes.filter((outcome) => !outcome.ok);
-
       // ── The strictness is SCOPED TO UNBIND FAILURES. ─────────────────────
       //
-      // A request carrying a `pushDevice` is relying on the atomic guarantee:
-      // the server removed the push binding and the token family together or
-      // removed neither. Swallowing that failure and clearing the map anyway —
-      // which is what this loop used to do for every failure — deletes the
-      // credential for an account whose binding survived, leaving the user
-      // receiving notifications from it with nothing left able to stop them.
+      // An account is kept ONLY when the server actually refused to unbind it,
+      // which `isUnbindFailure` reads off the response code. That response is
+      // the server's statement that it attempted the unbind inside the
+      // transaction and committed nothing: the push binding and the token
+      // family are both still there. Clearing the map anyway — which is what
+      // this loop used to do for every failure — deletes the credential for an
+      // account whose binding survived, leaving the user receiving
+      // notifications from it with nothing left able to stop them.
       //
-      // Without a `pushDevice` there is no unbind to protect, and the old
-      // best-effort behaviour is kept ON PURPOSE. `/auth/sign-out` returns 204
-      // for every write and token failure when none is sent, so the only
-      // remaining failure is the TRANSPORT: strictness here would stop an
-      // offline user — or any app on a project without the `push` bundle —
-      // from signing out locally at all, against the server's own rule that a
-      // user can ALWAYS sign out.
-      const strict = Boolean(pushDevice);
-      const blocked = strict && failed.length > 0;
+      // Every other failure keeps the old best-effort behaviour ON PURPOSE,
+      // and this is where keying on `Boolean(pushDevice)` did real damage:
+      // any app that had ever called `register()` has a stored identifier, so
+      // an OFFLINE sign-out-all rejected and left every account in the map —
+      // the user could not sign out at all. A transport failure carries no
+      // response; a quota, freeze, migration, rate-limit or validation
+      // rejection carries a different code; none of them attempted an unbind.
+      // Blocking on any of them contradicts the server's own rule that a user
+      // can ALWAYS sign out.
+      const blockedOutcomes = outcomes.filter(
+        (outcome) => !outcome.ok && isUnbindFailure(outcome.error),
+      );
+      const blockedIds = new Set(blockedOutcomes.map((o) => o.userId));
+      const blocked = blockedIds.size > 0;
 
       if (!blocked) {
         dispatch(clearAllAccounts());
       } else {
-        // Drop only what actually signed out; leave the rest to be retried.
+        // Drop everything the guarantee does not protect — the accounts that
+        // signed out cleanly AND the ones whose failure never reached the
+        // unbind. Only a refused unbind keeps its entry, to be retried.
         for (const outcome of outcomes) {
-          if (outcome.ok) dispatch(removeAccount(outcome.userId));
+          if (!blockedIds.has(outcome.userId)) dispatch(removeAccount(outcome.userId));
         }
         // The user asked to sign out of everything, so the live session ends
         // either way — an access token is transient state, not the credential
@@ -903,7 +930,7 @@ export const signOutAllThunk = createAsyncThunk(
 
       if (blocked) {
         return rejectWithValue(
-          `Failed to sign out ${failed.length} of ${outcomes.length} accounts. Their sessions are still active — retry.`
+          `Failed to sign out ${blockedOutcomes.length} of ${outcomes.length} accounts. Their sessions are still active — retry.`
         );
       }
 

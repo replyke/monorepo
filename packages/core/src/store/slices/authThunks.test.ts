@@ -23,6 +23,7 @@ import {
   setAuthGateRefresher,
 } from "../../config/authGate";
 import type { AuthUser } from "../../interfaces/models/User";
+import type { PushDeviceIdentifier } from "../../interfaces/PushTokenAdapter";
 
 afterEach(() => {
   // Also resets the auth gate — the module-level latches are shared across a run.
@@ -186,6 +187,153 @@ describe("signOutThunk", () => {
     // Exactly one request: the sign-out. No refresh into a successor.
     const urls = axios.calls("post").map((c) => c.url);
     expect(urls).toEqual(["/project-1/auth/sign-out"]);
+  });
+});
+
+/**
+ * The atomicity contract on the path apps actually use.
+ *
+ * `useAuth().signOut()` dispatches `signOutThunk`, and until these tests
+ * existed BOTH halves of its behavior could be deleted with the suite green:
+ * neither existing test seeds a `deviceIdentifier` or asserts the request body,
+ * so the `pushDevice` could stop being sent (the binding survives the sign-out
+ * and the credential needed to fix it is deleted) and the refusal could stop
+ * blocking teardown (same outcome, from the other direction). `useRemoveAccount`
+ * and `useSignOutAll` both had this pair; the primary API had neither.
+ */
+describe("signOutThunk — the push atomicity contract", () => {
+  /** Seeds a signed-in account plus a stored device identifier. */
+  function seedSignedIn(
+    store: ReturnType<typeof makeSublayStore>,
+    deviceIdentifier: PushDeviceIdentifier,
+  ) {
+    store.dispatch(setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }));
+    store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    store.dispatch(
+      setAccountMap({
+        activeAccountId: "user-1",
+        accounts: {
+          "user-1": {
+            refreshToken: "refresh-1",
+            tokenExpiresAt: Date.now() + 100_000,
+            user: { id: "user-1", name: "A", email: null, avatar: null },
+          },
+        },
+        deviceIdentifier,
+      }),
+    );
+  }
+
+  it("sends the stored device identifier so the server unbinds push atomically", async () => {
+    const store = makeSublayStore();
+    seedSignedIn(store, { platform: "ios", token: "device-token-1" });
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {});
+
+    const result = await store.dispatch(signOutThunk({ projectId: "project-1" }));
+
+    expect(signOutThunk.fulfilled.match(result)).toBe(true);
+    expect(axios.calls("post")[0].body).toEqual({
+      refreshToken: "refresh-1",
+      pushDevice: { platform: "ios", token: "device-token-1" },
+    });
+  });
+
+  // Web is the shape that would fail silently if the identifier were mangled:
+  // on ios the server's `deriveDeviceKey` is the identity function, so a broken
+  // derivation still matches, while a web subscription is hashed. Every other
+  // client sign-out test uses a native platform, so a web-only defect in what
+  // this path sends would pass unnoticed.
+  it("sends a WEB device identifier as a whole subscription object", async () => {
+    const store = makeSublayStore();
+    const subscription = {
+      endpoint: "https://push.example.com/sub-abc",
+      keys: { p256dh: "p256dh-key", auth: "auth-key" },
+    };
+    seedSignedIn(store, { platform: "web", subscription });
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {});
+
+    const result = await store.dispatch(signOutThunk({ projectId: "project-1" }));
+
+    expect(signOutThunk.fulfilled.match(result)).toBe(true);
+    expect(axios.calls("post")[0].body).toEqual({
+      refreshToken: "refresh-1",
+      pushDevice: { platform: "web", subscription },
+    });
+  });
+
+  // The blocking half. The server states it attempted the unbind and committed
+  // nothing, so the account and its credential must both survive — tearing down
+  // here deletes the only credential that could ever retry, leaving the user
+  // receiving notifications from an account they can no longer reach.
+  it.each([
+    ["the unbind itself failed", "auth/device-deregistration-failed"],
+    ["the token write rolled the unbind back", "auth/sign-out-failed"],
+  ])("keeps the account and its credential when %s", async (_label, code) => {
+    const store = makeSublayStore();
+    seedSignedIn(store, { platform: "ios", token: "device-token-1" });
+    const axios = mockAxiosPublic();
+    axios.mockError("post", 500, { error: "Nothing was committed; retry.", code });
+
+    const result = await store.dispatch(signOutThunk({ projectId: "project-1" }));
+
+    expect(signOutThunk.rejected.match(result)).toBe(true);
+
+    const state = store.getState();
+    // Nothing below the sign-out call ran: entry, credential and session all
+    // survive so the user can retry.
+    expect(state.sublay.accounts.accounts["user-1"]).toBeDefined();
+    expect(state.sublay.accounts.accounts["user-1"].refreshToken).toBe("refresh-1");
+    expect(state.sublay.accounts.activeAccountId).toBe("user-1");
+    expect(state.sublay.accounts.signedOut).toBe(false);
+    expect(state.sublay.auth.refreshToken).toBe("refresh-1");
+  });
+
+  // The non-blocking half, and the reason this path had to change: it used to
+  // reject on EVERY failure while the other two sign-out paths did not, so an
+  // offline user could not sign out at all through the primary API.
+  it("signs out locally when the device is OFFLINE despite a stored identifier", async () => {
+    const store = makeSublayStore();
+    seedSignedIn(store, { platform: "ios", token: "device-token-1" });
+    const axios = mockAxiosPublic();
+    axios.mockNetworkError("post");
+
+    const result = await store.dispatch(signOutThunk({ projectId: "project-1" }));
+
+    expect(signOutThunk.fulfilled.match(result)).toBe(true);
+
+    const state = store.getState();
+    expect(state.sublay.accounts.accounts["user-1"]).toBeUndefined();
+    expect(state.sublay.accounts.activeAccountId).toBeNull();
+    expect(state.sublay.accounts.signedOut).toBe(true);
+    expect(state.sublay.auth.refreshToken).toBeNull();
+    // The request really did ask for an unbind — this is not the
+    // no-`pushDevice` path in disguise.
+    expect(axios.calls("post")[0].body).toHaveProperty("pushDevice");
+  });
+
+  // Every gate that rejects before the sign-out controller runs. None of them
+  // touches a push binding, so none may block. `auth/server-error` covers the
+  // push-availability lookup, which fails closed into the controller's generic
+  // catch — a sign-out must still succeed when that lookup itself fails.
+  it.each([
+    ["quota exhaustion", 429, "project/quota-reached"],
+    ["pending deletion", 423, "project/pending-deletion"],
+    ["a migration window", 503, "project/migrating"],
+    ["body validation", 400, "auth/invalid-body"],
+    ["a failed push-availability lookup", 500, "auth/server-error"],
+  ])("signs out locally when the rejection is %s", async (_label, status, code) => {
+    const store = makeSublayStore();
+    seedSignedIn(store, { platform: "ios", token: "device-token-1" });
+    const axios = mockAxiosPublic();
+    axios.mockError("post", status as number, { code });
+
+    const result = await store.dispatch(signOutThunk({ projectId: "project-1" }));
+
+    expect(signOutThunk.fulfilled.match(result)).toBe(true);
+    expect(store.getState().sublay.accounts.accounts["user-1"]).toBeUndefined();
+    expect(store.getState().sublay.accounts.signedOut).toBe(true);
   });
 });
 
