@@ -64,12 +64,14 @@ All optional. Each is mapped to whichever platform(s) support it at dispatch tim
 
 <ParamField body="tag" type="string">
   Display-replace key so notifications collapse in the UI (FCM `android.notification.tag`, Web `tag`). Scoped per recipient, exactly like `collapseId` below.
+
+  **The device receives a different string than you sent.** Scoping appends a short digest of the recipient's user id, so a push sent with `tag: "thread-42"` arrives carrying something like `thread-42.9f3c1a8b`. Client code that reads the delivered `tag` — a service worker matching open notifications, for instance — must not compare it to the value it sent. Match on a prefix, or carry your own key in `data` instead, which is passed through untouched.
 </ParamField>
 
 <ParamField body="collapseId" type="string">
   Transport-level collapse identifier (APNs `apns-collapse-id`, FCM `collapse_key`) — a newer push supersedes an undelivered one carrying the same id **for the same account**.
 
-  **Scoped per recipient.** Two accounts signed in on one physical device share one transport destination, so the server appends a short digest of the recipient's id to the key you supply before handing it to the provider. Each account gets its own collapse namespace on the shared device and cannot supersede the other's notification, while collapsing within a single account behaves exactly as the field describes.
+  **Scoped per recipient.** Two accounts signed in on one physical device share one transport destination, so the server appends a short digest of the recipient's id to the key you supply before handing it to the provider — the provider therefore sees a different string than you sent. Each account gets its own collapse namespace on the shared device and cannot supersede the other's notification, while collapsing within a single account behaves exactly as the field describes.
 
   **Over-length keys are folded rather than refused.** APNs caps `apns-collapse-id` at 64 bytes. When your key plus the recipient digest would exceed that, the server replaces the whole scoped key with a fixed-width digest of it — still deterministic and still per-recipient, so collapsing keeps working — instead of letting APNs reject the send with `BadCollapseId`. FCM's `collapse_key` and the display `tag` have no comparable documented ceiling, so nothing is folded on those paths. The parameter itself has no maximum: any non-empty string is accepted.
 </ParamField>

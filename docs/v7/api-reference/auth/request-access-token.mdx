@@ -63,7 +63,9 @@ When a valid refresh token is provided, the response is:
 Each call to this endpoint revokes the submitted refresh token and issues a new one. If the same refresh token is submitted again after being revoked:
 
 - **Within 30 seconds of revocation** (grace period): The server returns the successor token to handle concurrent requests gracefully.
-- **After 30 seconds**: The entire token family is destroyed and the user must sign in again. Reuse detection is the one event where the platform has proof a credential was taken, so **every push binding that user holds is deleted in the same transaction** — on every device, not just the one that replayed the token. A binding records nothing about which sign-in created it, so the attacker's cannot be singled out; the user's own devices re-bind on their own the next time each is opened. Projects without the `push` bundle skip this step and are otherwise unaffected.
+- **After 30 seconds**: The entire token family is destroyed and the user must sign in again on every device that shared it.
+
+Reuse detection ends **sessions only**. Push bindings are left in place, so notifications keep arriving on the user's devices and resume normally once each signs back in. Re-presenting a spent refresh token is a signal, not a proof — an app killed mid-refresh, a staggered multi-tab restore or a response lost in transit all look identical to it, which is what the 30-second grace window exists for — and none of those should silence every handset a user owns. The two events that *do* clear push bindings are ones the user deliberately takes: [Reset Password](/api-reference/auth/reset-password) and [Change Password](/api-reference/auth/change-password).
 
 ## Error Responses
 

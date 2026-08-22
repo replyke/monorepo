@@ -111,16 +111,21 @@ The whole argument is optional.
   `push` bundle), the server deletes that user's push binding for the device in the
   **same transaction** as the sign-out.
 
-  **It requires a refresh token.** The unbind is scoped to the refresh token's
-  subject — that is what stops one account removing another's binding on a shared
-  device — so with no token to resolve, the server returns `204` without ever
-  reading `pushDevice`. Rather than report a success that unbound nothing, this
-  call **throws** before issuing the request.
+  **The unbind needs a refresh token — the sign-out does not.** The unbind is
+  scoped to the refresh token's subject — that is what stops one account removing
+  another's binding on a shared device — so with no token to resolve, the server
+  returns `204` without ever reading `pushDevice`. Rather than report a success
+  that unbound nothing, the call **drops the field**, issues a request byte-identical
+  to the same sign-out with no `pushDevice`, clears the local tokens, warns, and
+  resolves with `pushUnbindSkipped: true`. Signing out always completes locally;
+  what you lose is the unbind, and the result tells you so.
 
   That is the case to watch in **host-managed mode**: a client built with
   `getToken` and no `initialTokens` has an inert `setTokens`, so it never holds a
-  refresh token. Pass `refreshToken` alongside `pushDevice` there. A sign-out that
-  asks for no unbind is unaffected and still works with no credential at all.
+  refresh token. Pass `refreshToken` alongside `pushDevice` there — otherwise the
+  device keeps receiving that account's notifications until something else removes
+  the binding. A sign-out that asks for no unbind is unaffected and still works
+  with no credential at all.
 </ParamField>
 
 ```typescript
@@ -136,7 +141,14 @@ await sublay.auth.signOut({
   signed out.
 </Warning>
 
-**Returns** — `Promise<void>`
+**Returns** — `Promise<{ pushUnbindSkipped: boolean }>`
+
+`pushUnbindSkipped` is `true` only when a `pushDevice` was supplied and no refresh
+token could be resolved, so the unbind was never requested and this device's binding
+for that account is still live — the sign-out itself happened either way. It is
+`false` on every other outcome, including a sign-out that asked for no unbind at all.
+Recover by re-issuing the sign-out with an explicit `refreshToken` in hand, or by
+removing the binding from a client that holds one.
 
 ---
 
@@ -223,7 +235,7 @@ await sublay.auth.resetPassword({
 
 Changes the authenticated user's password after verifying the current one. Use this for an authenticated "change password" flow, as opposed to the token-based `resetPassword`.
 
-A password change ends **every other session** for that user and deletes every push binding they hold — see [Change Password](/api-reference/auth/change-password). The session making the call survives only if it names itself.
+A password change ends **every other session** for that user and deletes every push binding they hold — see [Change Password](/api-reference/auth/change-password). The session making the call survives: the server reads which session is asking off the access token the request is already authenticated with, so nothing about it has to be sent.
 
 ```typescript
 const { success, message } = await sublay.auth.changePassword({
@@ -240,10 +252,10 @@ const { success, message } = await sublay.auth.changePassword({
   The new password to set.
 </ParamField>
 
-<ParamField body="refreshToken" type="string">
-  The session to keep. Defaults to the SDK's stored refresh token in SDK-managed mode, so you normally do not pass it.
+<ParamField body="pushDevice" type="object">
+  This device, so its push binding survives the change. Same value you pass to `push.register` and `auth.signOut`: `{ platform: "ios" | "android", token }` or `{ platform: "web", subscription }`.
 
-  In host-managed mode the SDK holds no refresh token, so pass the one your host holds. With no refresh token resolvable, the password still changes and **every** session ends including this one — the fail-secure default, not an error. Your next request then `401`s and the host re-authenticates.
+  Omit it and every push binding for the user is deleted, this device's included — and nothing re-binds it until the app cold-starts, switches accounts or rotates its token, so it stops notifying until then.
 </ParamField>
 
 **Returns** — `Promise<{ success: boolean; message: string }>`

@@ -279,7 +279,7 @@ await sublay.push.send({
 | `priority` | iOS, Android | `"high"` (default) wakes the device; `"normal"` is power-considerate. |
 | `subtitle` | iOS | Line under the title. |
 | `imageUrl` | iOS, Android, Web | Big-picture image. iOS needs a Notification Service Extension — see below. |
-| `tag` | Android, Web | Display-replace key so notifications collapse instead of stacking. Scoped per recipient. |
+| `tag` | Android, Web | Display-replace key so notifications collapse instead of stacking. Scoped per recipient, so the string the device receives is the one you sent plus a short digest — don't compare it to what you sent. |
 | `collapseId` | iOS, Android | Transport-level collapse — a newer push supersedes an undelivered one **for the same account**. Scoped per recipient, and folded to a digest when an over-length key would exceed the APNs 64-byte cap. |
 | `threadId` | iOS | Notification grouping. |
 | `ttl` | iOS, Android | Time-to-live in **seconds** for offline devices. |

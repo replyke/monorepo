@@ -239,7 +239,7 @@ const { success } = await sublay.auth.sendVerificationEmail({
 
 Changes a user's password, verifying their current password first. Use this for an authenticated "change password" flow (as opposed to the token-based `resetPassword`).
 
-A password change ends **every session** for that user and deletes every push binding they hold, unless one session is named to be spared — see [Change Password](/api-reference/auth/change-password).
+A password change ends **every session** for that user and deletes every push binding they hold — see [Change Password](/api-reference/auth/change-password). A service key is not a session, so a call made with one has nothing to spare.
 
 ```typescript
 const { success, message } = await sublay.auth.changePassword({
@@ -261,10 +261,10 @@ const { success, message } = await sublay.auth.changePassword({
   The new password to set.
 </ParamField>
 
-<ParamField body="refreshToken" type="string">
-  The session to spare, named by the refresh token that device holds — typically one your own client just sent you. Its family survives while every other device must sign in again.
+<ParamField body="pushDevice" type="object">
+  One device whose push binding should survive the change: `{ platform: "ios" | "android", token }` or `{ platform: "web", subscription }`.
 
-  Omit it and every session for the user ends, which is usually right for a server-side caller acting on someone's behalf: it holds no refresh token, and revoking everything is the fail-secure outcome rather than an error. A token that fails verification, or belongs to a different user, is ignored — it can never preserve someone else's session.
+  A server-side caller normally has no device to name and should omit this — every binding for the user then goes, which is the right default when acting on someone's behalf. Supply it only when your own client told you which device it is on and you want that one to keep receiving notifications.
 </ParamField>
 
 **Returns** — `Promise<{ success: boolean; message: string }>`

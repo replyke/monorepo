@@ -85,7 +85,7 @@ All optional. Each maps to whichever platform(s) support it and is silently igno
 <ParamField body="collapseId" type="string">
   Transport-level collapse identifier (APNs `apns-collapse-id`, FCM `collapse_key`) — a newer push supersedes an undelivered one with the same id **for the same account**.
 
-  Both keys are scoped to the recipient before they reach the provider: two accounts signed in on one physical device share a single transport destination, so the server appends a short digest of the recipient's id and each account collapses only against itself. An over-length `collapseId` is folded into a fixed-width digest rather than refused by APNs — see [the endpoint reference](/api-reference/push-notifications/send).
+  Both keys are scoped to the recipient before they reach the provider: two accounts signed in on one physical device share a single transport destination, so the server appends a short digest of the recipient's id and each account collapses only against itself. That means the device receives a different string than you sent — client code reading the delivered `tag` must match on a prefix rather than on equality, or carry its own key in `data`, which is passed through untouched. An over-length `collapseId` is folded into a fixed-width digest rather than refused by APNs — see [the endpoint reference](/api-reference/push-notifications/send).
 </ParamField>
 
 <ParamField body="threadId" type="string">
