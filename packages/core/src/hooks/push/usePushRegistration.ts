@@ -9,6 +9,7 @@ import {
 } from "../../store/api/pushApi";
 import {
   setDeviceIdentifier,
+  markPushIdentifierProbed,
   setAccountPushEnabled,
   selectDeviceIdentifier,
   selectActiveAccountId,
@@ -437,14 +438,59 @@ function usePushRegistration(
    * granted implicitly, that remains every install. What it stops reading for:
    * every install that was never asked or that declined — which is the whole
    * population an app acquires when it mounts this hook before its user has
-   * ever opted in. And the one legacy case it gives up: an install that
-   * registered on a previous release and has since revoked permission in
-   * system settings. That binding is self-clearing — a device whose permission
-   * was revoked stops being deliverable, and the server prunes it on the first
-   * failed send.
+   * ever opted in.
    *
-   * An adapter that does not implement `hasPermission` is not gated, so a
-   * custom adapter keeps exactly the behaviour it declared.
+   * ── ⚠ AND WHY IT IS BYPASSED EXACTLY ONCE ───────────────────────────────
+   *
+   * The gate is right in the steady state and wrong on precisely one
+   * population: an install that registered on a release that persisted no
+   * identifier and has SINCE REVOKED permission in system settings. It holds a
+   * live server-side binding, and revoking permission does nothing to that
+   * binding — an APNs/FCM token stays valid when notifications are turned off
+   * (the provider still accepts the push; the OS just does not display it), and
+   * the server prunes only on uninstall/dead-token signals (`BadDeviceToken` /
+   * `Unregistered`, `messaging/registration-token-not-registered` /
+   * `messaging/invalid-registration-token`). None of those means "the user
+   * turned notifications off". So the binding is never pruned, and with the
+   * gate closed no client path can reach it either: sign-out, account removal
+   * and the per-account toggle are all gated on a stored identifier. Turn
+   * notifications back on later and the device receives notifications for an
+   * account nobody is signed into — the exact orphan the atomic unbind exists
+   * to prevent, made permanent.
+   *
+   * So the FIRST read on a device that has not run one yet ignores
+   * `hasPermission`, and `pushIdentifierProbed` (persisted, device-level)
+   * makes "first" mean once per install rather than once per launch. It also
+   * removes an Android-version asymmetry: on Android 12 and below the gate
+   * never bit in the first place, because permission is implicit there.
+   *
+   * Two conditions narrow the one-shot to installs it can actually help, and
+   * both are necessary rather than heuristic:
+   *
+   *   - AT LEAST ONE STORED ACCOUNT. The unbind is scoped to a refresh token's
+   *     subject, so with no stored account there is no credential any unbind
+   *     could ever be scoped to and an identifier would buy nothing.
+   *   - NO IDENTIFIER STORED YET. If one is already stored there is no
+   *     pre-persistence binding left to discover; the ordinary gated read is
+   *     the steady state.
+   *
+   * Either way the flag is burned once the attempt completes, so a device that
+   * did not qualify does not re-arm on the next launch. `useAccountSync` Phase
+   * A burns it too, when storage holds no map at all — a device that has never
+   * stored an account cannot hold a binding from an older release, and that is
+   * what keeps a brand-new install out of the one-shot even when the app mounts
+   * this hook only after sign-in.
+   *
+   * THE RESIDUAL, stated rather than defended: a legacy install that has
+   * accounts, never registered push, and has no permission does get an
+   * identifier stored by the one-shot. Its sign-outs then carry a `pushDevice`
+   * that matches no row, and the server logs `no-matching-binding` for them.
+   * That is log noise on a fixed, non-growing population (new installs are
+   * excluded by the Phase A burn), traded against a permanent, user-visible
+   * push leak with no other remedy.
+   *
+   * An adapter that does not implement `hasPermission` is not gated at all, so
+   * a custom adapter keeps exactly the behaviour it declared.
    *
    * ONCE, and only after account storage has loaded. `applyIdentifierChange`
    * dispatches `setDeviceIdentifier` and persists the whole account map, so
@@ -469,17 +515,57 @@ function usePushRegistration(
     if (!hasWaitedForManager) return;
     if (accountManagerRegistered && !accountsReady) return;
     if (hasReadIdentifierRef.current) return;
+    // Burned BEFORE the async work, so a re-run of this effect (its deps can
+    // change under it) cannot start a second read. A rejection therefore spends
+    // this MOUNT's attempt — deliberately: the failures available here are an
+    // adapter that cannot answer, and retrying it in the same session is not
+    // what fixes that. The next launch, the next rotation and the next
+    // `register()` all retry, and a rejection does NOT burn the persisted
+    // one-shot below.
     hasReadIdentifierRef.current = true;
 
-    Promise.resolve(adapter.hasPermission ? adapter.hasPermission() : true)
+    const accountsState = getState().sublay.accounts;
+    // See the header. `probePending` is what has to be burned afterwards;
+    // `ignorePermission` is the narrower question of whether this particular
+    // device is one the one-shot can help.
+    const probePending = !accountsState.pushIdentifierProbed;
+    const ignorePermission =
+      probePending &&
+      accountsState.deviceIdentifier === null &&
+      Object.keys(accountsState.accounts).length > 0;
+
+    Promise.resolve(
+      ignorePermission || !adapter.hasPermission
+        ? true
+        : adapter.hasPermission()
+    )
       .then((permitted) => {
         // No grant, no binding — see the header. Nothing is read and nothing is
         // stored, so this install's sign-outs stay byte-identical to a
         // sign-out from a device that has never touched push.
-        if (!permitted) return;
+        if (!permitted) return null;
         return adapter.getDeviceIdentifier({ projectId });
       })
-      .then((identifier) => {
+      .then(async (identifier) => {
+        // THE READ IS DONE, so the one-shot is spent — burn it HERE, before
+        // applying the answer, and durably. Two things hang on the ordering:
+        //
+        //  - Burning it up front instead (beside the ref above) would let one
+        //    failed adapter call cost the device its single
+        //    permission-ignoring read forever. The flag is persisted, so unlike
+        //    the ref there is no next launch to retry on. A read that REJECTS
+        //    skips this handler entirely and leaves the flag armed.
+        //  - Burning it after the apply would tie it to the apply path's
+        //    latency and failure modes — `applyIdentifierChange` unbinds,
+        //    persists and marks background accounts — and none of that changes
+        //    whether the read happened.
+        //
+        // `persistAccountState` reports its own failures and never rejects, so
+        // a storage problem cannot swallow the apply below.
+        if (probePending) {
+          dispatch(markPushIdentifierProbed());
+          await persistAccountState();
+        }
         // `null` is "nothing to report", and an identifier equal to the stored
         // one is a no-op inside `applyIdentifierChange` — so on the common case
         // (already registered, nothing rotated) this costs one adapter call and
@@ -501,6 +587,9 @@ function usePushRegistration(
     hasWaitedForManager,
     accountManagerRegistered,
     accountsReady,
+    dispatch,
+    getState,
+    persistAccountState,
   ]);
 
   return { register, unregister, registering, unregistering };

@@ -45,10 +45,24 @@ export interface PushTokenAdapter {
    * It is a heuristic in one direction only, and deliberately: a granted
    * permission does NOT imply a binding (see
    * `canReadIdentifierWithoutPrompting`), but a missing one does imply the
-   * absence of a binding, which is the half the gate needs.
+   * absence of a binding *created by this release* — which is the half the gate
+   * needs.
    *
-   * An adapter that omits this is not gated — a custom adapter that declares
-   * the prompt-free read keeps the behaviour it declared.
+   * **It is bypassed exactly once per device.** A grant proves nothing about
+   * the past: an install that registered on an older release and has since
+   * turned notifications off in system settings still holds a live binding,
+   * because revoking permission does not invalidate an APNs/FCM token and the
+   * server prunes only on uninstall/dead-token signals. So core runs the first
+   * read on a device ignoring this method, records that it has done so, and
+   * gates every later read on it normally. See `AccountMap.pushIdentifierProbed`
+   * and the gate's own note in `usePushRegistration`.
+   *
+   * An adapter that omits this is not gated at all — a custom adapter that
+   * declares the prompt-free read keeps the behaviour it declared.
+   *
+   * ⚠ **This is not what makes the read safe.** `canReadIdentifierWithoutPrompting`
+   * is: it declares that `getDeviceIdentifier` cannot raise a prompt, whatever
+   * the permission state. Nothing here may ever become a way to ASK.
    */
   hasPermission?(): Promise<boolean>;
   /**
@@ -57,8 +71,9 @@ export interface PushTokenAdapter {
    * the user for anything.
    *
    * When it is set, core calls `getDeviceIdentifier` ONCE on mount — with no
-   * user gesture, and only if `hasPermission` allows (see there) — and feeds
-   * the answer through the same path a rotation takes. That is what closes the
+   * user gesture, and (after the device's first such read) only if
+   * `hasPermission` allows (see there) — and feeds the answer through the same
+   * path a rotation takes. That is what closes the
    * upgrade gap for native installs: both native subscriptions are
    * ROTATION-ONLY, so an install that registered before this SDK stored device
    * identifiers, and whose token then never rotates, would otherwise never

@@ -37,6 +37,7 @@ function initialState(overrides: Partial<AccountsState> = {}): AccountsState {
     accounts: {},
     activeAccountId: null,
     deviceIdentifier: null,
+    pushIdentifierProbed: false,
     signedOut: false,
     accountLimitReached: false,
     isReady: false,

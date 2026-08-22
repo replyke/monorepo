@@ -977,6 +977,46 @@ describe("useAccountSync — Phase 5 durable storage", () => {
     });
   });
 
+  it("burns the push-identifier one-shot when storage holds NO map at all", async () => {
+    // A device with no account map has never stored an account, so it cannot be
+    // carrying a push binding created by a release that persisted no device
+    // identifier — the one population `usePushRegistration`'s
+    // permission-ignoring read exists for. Marking it here is what stops that
+    // read firing on a brand-new install whose app mounts the push hook only
+    // AFTER sign-in, which would store a device token for a user who never went
+    // near a permission prompt.
+    const storage = makeFakeStorage(null);
+
+    const { store } = renderHookWithAxios(() =>
+      useAccountSync(storage, "test-project"),
+    );
+
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+    expect(store.getState().sublay.accounts.pushIdentifierProbed).toBe(true);
+  });
+
+  it("leaves the push-identifier one-shot ARMED when a map exists", async () => {
+    // The upgrade population: a map written by a release that stored no device
+    // identifier carries no flag, so the read must still get its one turn.
+    const storage = makeFakeStorage({
+      activeAccountId: "user-1",
+      accounts: {
+        "user-1": {
+          refreshToken: makeJwt({ sub: "user-1", exp: 9999999999 }),
+          tokenExpiresAt: 9999999999000,
+          user: { id: "user-1", name: "Alice", email: null, avatar: null },
+        },
+      },
+    });
+
+    const { store } = renderHookWithAxios(() =>
+      useAccountSync(storage, "test-project"),
+    );
+
+    await waitFor(() => expect(store.getState().sublay.accounts.isReady).toBe(true));
+    expect(store.getState().sublay.accounts.pushIdentifierProbed).toBe(false);
+  });
+
   it("keeps `pushEnabled` across the refresh-token rotation that rebuilds the entry", async () => {
     // End-to-end version of the reducer-level merge test: the rotation goes
     // through Phase B, which builds its entry literal with no knowledge of the
