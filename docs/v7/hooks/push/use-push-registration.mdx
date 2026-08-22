@@ -193,9 +193,17 @@ Both native subscriptions are rotation-only, so a device whose token never rotat
 Two conditions gate it, and both matter:
 
 - **The adapter must declare that reading cannot prompt.** `expoPushTokenAdapter` and `reactNativePushTokenAdapter` do; `webPushTokenAdapter` must not, because its `getDeviceIdentifier()` calls `pushManager.subscribe()`, which can raise a permission prompt with no user gesture behind it. Web covers the same ground through its mount-emitting subscription instead.
-- **The device must already hold OS notification permission**, read through the adapter's `hasPermission()` — which reads the current status and never asks. A device token exists on both native platforms whether or not the user was ever asked (that is how silent push works), so "reading cannot prompt" is not on its own a reason to store one. `register()` cannot create a binding without a permission grant, so a device with no grant has no binding to discover. An adapter that does not implement `hasPermission()` is not gated.
+- **The device must already hold OS notification permission**, read through the adapter's `hasPermission()` — which reads the current status and never asks. A device token exists on both native platforms whether or not the user was ever asked (that is how silent push works), so "reading cannot prompt" is not on its own a reason to store one. `register()` cannot create a binding without a permission grant, so a device with no grant has no binding to discover *from this release*. An adapter that does not implement `hasPermission()` is not gated.
 
 This does not require a permission *prompt* and never raises one; it reads a grant that already exists. A device whose permission is granted but which never registered for Sublay push simply stores an identifier that matches no binding — sign-out then asks for an unbind that removes nothing.
+
+#### The permission gate is bypassed once per device
+
+A grant proves nothing about the past. Turning notifications off in system settings does not invalidate an APNs or FCM token and does not remove a binding: the provider still accepts the notification and the OS simply does not display it, and the server prunes a token only on an uninstall or dead-token signal from the provider. So a device that registered on an SDK release which stored no identifier, and has since revoked permission, holds a live binding that the gate makes unreachable — no identifier means sign-out, account removal and the per-account toggle all no-op, and re-enabling notifications later delivers that account's notifications to a device nobody is signed into.
+
+To close that, the **first** identifier read on a device ignores `hasPermission()`. The SDK records that it has run and persists the record with the account map, so it happens once per install and every later read is gated normally. Two further conditions narrow it: the device must already have **at least one stored account** (an unbind is scoped to a refresh token's subject, so with none stored there is nothing an identifier could ever unbind) and must have **no identifier stored yet**. A device whose account storage was empty the first time this SDK ran is marked as ineligible outright — it cannot be carrying a binding from an older release. A read that fails does not consume the one turn.
+
+The cost is stated rather than hidden: a device that has accounts, never registered for push, and holds no permission does get an identifier stored by that single read, and its sign-outs then ask for an unbind that matches nothing.
 
 The three built-in adapters are deliberately asymmetric, because the platforms are:
 

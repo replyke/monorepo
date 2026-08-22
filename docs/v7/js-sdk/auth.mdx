@@ -161,9 +161,18 @@ differently — `pushUnbindSkipReason` says which:
   that account next registers on this device, or when the server prunes the token as
   undeliverable.
 
-`false` means the unbind was not skipped — it either succeeded or was never asked for,
-as with a sign-out that passed no `pushDevice`. Both skips also log a warning, so a
-caller that ignores the result still hears about it.
+`false` means **no skip was reported** — not by this SDK, and not by the server. It is
+not a promise that no skip happened. The server declines the unbind for several reasons
+it answers with a plain `204`, and every one of them reads `false` here: a refresh token
+that is authentic but expired beyond the server's 90-day unbind window (reachable by
+passing an old `refreshToken` explicitly), a malformed or wrong-signature token, a
+project without the `push` bundle, and an unbind that ran and matched no row. The server
+records each of those in its own logs. Only the case where it could not determine
+whether a binding exists is reported back, because that is the one where the binding may
+still be live and nobody looked.
+
+Both reported skips also log a warning, so a caller that ignores the result still hears
+about it.
 
 ---
 

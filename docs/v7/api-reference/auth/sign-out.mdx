@@ -57,7 +57,7 @@ Details worth knowing:
 - **An expired refresh token still unbinds.** Session destruction requires a live token, but the unbind accepts an authentic-but-expired one (its signature still proves which user it was minted for) up to 90 days past expiry. Beyond that bound the token is refused as an unbind credential and the request falls back to a plain `204`.
 - **A destroyed token family still unbinds.** If the session was already ended by a prior sign-out-all, the binding is still removed.
 - **Projects without the `push` bundle are unaffected on the success path.** The route itself carries no bundle gate — it is never refused with `database/tables-not-available`. When `pushDevice` is supplied the server looks the bundle up, and on a project that does not have it the `pushDevice` is ignored and the endpoint returns `204` exactly as it does without one.
-- **If the bundle lookup itself cannot be resolved, the sign-out still completes and the skipped unbind is reported.** The response is a `200` carrying `pushUnbindSkipped: true` and the code `auth/push-unbind-status-unknown` (see [Response](#response)) instead of a bare `204`, because nobody checked and the binding may still be live. The session is destroyed either way — a user can always sign out.
+- **If the bundle lookup itself cannot be resolved, the sign-out still completes and the skipped unbind is reported.** The response is a `200` carrying `pushUnbindSkipped: true` and the code `auth/push-unbind-status-unknown` (see [Response](#response)) instead of a bare `204`, because nobody checked and the binding may still be live. The session is destroyed either way — a user can always sign out. That body is emitted only once the sign-out has actually committed; in the rare case where the lookup could not be resolved *and* the session write then failed, the response is a plain `204` instead, because the claim it makes — signed out, do not retry — would be false.
 - **A device identifier matching no binding still returns `204`.** The unbind is scoped to the signing-out user, so a key that matches no row of theirs removes nothing and the sign-out completes. The server records that outcome in its own logs; there is no separate response for it.
 - **A malformed or wrong-signature token still returns `204`.** There is no user to scope an unbind to and no session to destroy, so the endpoint keeps its permissive behavior rather than blocking sign-out.
 
@@ -78,6 +78,8 @@ One success case answers with a body instead. When `pushDevice` was supplied and
 ```
 
 The session really is destroyed, so this is not an error and must not be retried as one. It is not a `204` either: a `204` says there is nothing left to remove, and here nobody looked — the binding may still be live while the credential that could have removed it is being discarded. Surface it, and remove the binding by registering that account on the device again.
+
+Because that promise is what clients act on, the body rides only on a committed sign-out. If the session write fails on this path the transaction rolls back, the token family survives, and the endpoint answers a plain `204` rather than claiming a sign-out that did not happen.
 
 ## Error Responses
 
