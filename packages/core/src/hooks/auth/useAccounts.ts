@@ -100,9 +100,11 @@ export default function useAccounts(): UseAccountsReturn {
         ...entry.user,
         // Defensive only — no persisted map can reach here without the field.
         // It has been written on every entry since multi-account shipped, and
-        // Expo's chunked v2 layout signs pre-v2 stores out rather than loading
-        // them. Kept because "unknown expiry reads as expired" is the right
-        // answer if a hand-built map ever arrives, not because legacy data does.
+        // Expo's chunked layout converts an older single-value store forward
+        // rather than discarding it, carrying `tokenExpiresAt` across (and
+        // defaulting it to 0 when an entry somehow lacks one). Kept because
+        // "unknown expiry reads as expired" is the right answer if a
+        // hand-built map ever arrives, not because legacy data does.
         tokenExpiresAt: entry.tokenExpiresAt ?? 0,
         needsReauth: accountNeedsReauth(entry),
         needsPushRebind: accountNeedsPushRebind(entry),
