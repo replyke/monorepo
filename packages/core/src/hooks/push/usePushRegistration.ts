@@ -388,7 +388,8 @@ function usePushRegistration(
 
   /**
    * Reads this device's CURRENT push identifier once on mount — on the
-   * platforms where doing so cannot prompt.
+   * platforms where doing so cannot prompt, and only for installs that
+   * plausibly have a binding to unbind.
    *
    * ⚠ THIS IS THE ONLY THING THAT CLOSES THE NATIVE UPGRADE GAP. Both native
    * subscriptions above are ROTATION-ONLY: they emit when the OS hands over a
@@ -401,14 +402,49 @@ function usePushRegistration(
    * token does not rotate: months, or never. It affects Expo and React Native
    * alike, not just React Native on iOS.
    *
-   * The fix is small because the constraint was never universal. Only the WEB
-   * adapter is forbidden from calling `getDeviceIdentifier` without a gesture
-   * (`pushManager.subscribe()` can prompt); both native adapters read a value
-   * the OS already holds — React Native's own subscription already re-derives
-   * through it on every refresh. So the adapter declares the capability and
-   * this reads it, instead of one platform's rule stranding the other two. Web
-   * is unaffected: it declares nothing here and keeps covering the same ground
-   * through its mount-emitting subscription.
+   * The read is possible at all because the "must not prompt" constraint was
+   * never universal. Only the WEB adapter is forbidden from calling
+   * `getDeviceIdentifier` without a gesture (`pushManager.subscribe()` can
+   * prompt); both native adapters read a value the OS hands over with no
+   * user-facing UI — React Native's own subscription already re-derives
+   * through it on every refresh. Web is unaffected: it declares nothing here
+   * and keeps covering the same ground through its mount-emitting
+   * subscription.
+   *
+   * ── ⚠ WHY IT IS GATED ON `hasPermission` ────────────────────────────────
+   *
+   * "It cannot prompt" is not the same as "it should run". On both native
+   * platforms a device token EXISTS WITHOUT THE USER EVER BEING ASKED — that
+   * is how silent push works — so an ungated read stored a push identifier on
+   * every native install that merely mounts this hook, including apps whose
+   * project has no push bundle and users who never went near a permission
+   * prompt. `signOutThunk` then sends `pushDevice` on their behalf, which
+   * makes every ordinary sign-out ask the server to unbind something that was
+   * never bound, and raises the server's `no-matching-binding` warning — a
+   * line that exists to flag a REAL defect (a client key that does not match
+   * what was registered) — on routine traffic, burying it.
+   *
+   * `hasPermission` is the closest signal there is to "this install could have
+   * a binding", and the reason it works is asymmetry: `register()` is the only
+   * thing that creates a binding and it cannot get past `requestPermission()`
+   * without a grant — that was true of the previous release too, which is what
+   * makes this safe for the upgrade population it exists for. A grant does not
+   * imply a binding; the ABSENCE of one does imply no binding.
+   *
+   * What it therefore still reads for, honestly stated: any native install
+   * whose notification permission is granted, whether or not Sublay push was
+   * ever registered. On Android 12 and below, where notification permission is
+   * granted implicitly, that remains every install. What it stops reading for:
+   * every install that was never asked or that declined — which is the whole
+   * population an app acquires when it mounts this hook before its user has
+   * ever opted in. And the one legacy case it gives up: an install that
+   * registered on a previous release and has since revoked permission in
+   * system settings. That binding is self-clearing — a device whose permission
+   * was revoked stops being deliverable, and the server prunes it on the first
+   * failed send.
+   *
+   * An adapter that does not implement `hasPermission` is not gated, so a
+   * custom adapter keeps exactly the behaviour it declared.
    *
    * ONCE, and only after account storage has loaded. `applyIdentifierChange`
    * dispatches `setDeviceIdentifier` and persists the whole account map, so
@@ -435,8 +471,14 @@ function usePushRegistration(
     if (hasReadIdentifierRef.current) return;
     hasReadIdentifierRef.current = true;
 
-    adapter
-      .getDeviceIdentifier({ projectId })
+    Promise.resolve(adapter.hasPermission ? adapter.hasPermission() : true)
+      .then((permitted) => {
+        // No grant, no binding — see the header. Nothing is read and nothing is
+        // stored, so this install's sign-outs stay byte-identical to a
+        // sign-out from a device that has never touched push.
+        if (!permitted) return;
+        return adapter.getDeviceIdentifier({ projectId });
+      })
       .then((identifier) => {
         // `null` is "nothing to report", and an identifier equal to the stored
         // one is a no-op inside `applyIdentifierChange` — so on the common case

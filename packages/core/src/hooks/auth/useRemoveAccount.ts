@@ -13,7 +13,10 @@ import { resetAccountScopedState } from "../../store/actions";
 import useProject from "../projects/useProject";
 import axios from "../../config/axios";
 import { handleError } from "../../utils/handleError";
-import { isUnbindFailure } from "../../utils/unbindFailure";
+import {
+  isUnbindFailure,
+  warnPushUnbindSkipped,
+} from "../../utils/unbindFailure";
 
 export interface UseRemoveAccountReturn {
   removeAccount: ({ userId }: { userId: string }) => Promise<void>;
@@ -53,7 +56,15 @@ export default function useRemoveAccount(): UseRemoveAccountReturn {
         if (deviceIdentifier) payload.pushDevice = deviceIdentifier;
 
         try {
-          await axios.post(`/${projectId}/auth/sign-out`, payload);
+          // A 2xx is not a promise that the unbind happened: when the server
+          // could not determine whether a binding exists it removes the session
+          // anyway and names the skip in the body. Reported, never blocking —
+          // see `utils/unbindFailure.ts`.
+          const { data } = await axios.post(
+            `/${projectId}/auth/sign-out`,
+            payload
+          );
+          warnPushUnbindSkipped(data);
         } catch (signOutError) {
           // ── The strictness is SCOPED TO UNBIND FAILURES. ──────────────────
           //

@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 
 import { makeSublayStore, mockAxiosPublic, resetAxiosMocks } from "../../test-utils";
 import {
@@ -317,16 +317,59 @@ describe("signOutThunk — the push atomicity contract", () => {
     expect(axios.calls("post")[0].body).toHaveProperty("pushDevice");
   });
 
+  // The THIRD outcome: a 2xx that reports the unbind was skipped because the
+  // server could not determine whether a binding exists. It must complete like
+  // any other successful sign-out — this is the case that used to arrive as
+  // `auth/device-deregistration-failed`, where the rethrow above meant nothing
+  // below it ran and a Redis blip left the user unable to sign out at all.
+  it("signs out COMPLETELY when the server reports a SKIPPED unbind", async () => {
+    const store = makeSublayStore();
+    seedSignedIn(store, { platform: "ios", token: "device-token-1" });
+    const axios = mockAxiosPublic();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    axios.mockResponse("post", {
+      pushUnbindSkipped: true,
+      code: "auth/push-unbind-status-unknown",
+    });
+
+    let result;
+    let warnings: unknown[][];
+    try {
+      result = await store.dispatch(signOutThunk({ projectId: "project-1" }));
+    } finally {
+      // Captured BEFORE restoring: `mockRestore` clears the recorded calls.
+      warnings = warn.mock.calls;
+      warn.mockRestore();
+    }
+
+    expect(signOutThunk.fulfilled.match(result)).toBe(true);
+
+    const state = store.getState();
+    // The whole teardown ran: entry, selection, session.
+    expect(state.sublay.accounts.accounts["user-1"]).toBeUndefined();
+    expect(state.sublay.accounts.activeAccountId).toBeNull();
+    expect(state.sublay.accounts.signedOut).toBe(true);
+    expect(state.sublay.auth.refreshToken).toBeNull();
+    // Not silently, though — the binding may still be live and the credential
+    // that could have removed it is gone.
+    expect(warnings!.flat().join(" ")).toContain("push unbind was SKIPPED");
+  });
+
   // Every gate that rejects before the sign-out controller runs. None of them
-  // touches a push binding, so none may block. `auth/server-error` covers the
-  // push-availability lookup, which fails closed into the controller's generic
-  // catch — a sign-out must still succeed when that lookup itself fails.
+  // touches a push binding, so none may block. `auth/server-error` is the
+  // controller's generic outer catch, raised for faults that never attempted an
+  // unbind — a sign-out must still succeed through it.
   it.each([
     ["quota exhaustion", 429, "project/quota-reached"],
     ["pending deletion", 423, "project/pending-deletion"],
     ["a migration window", 503, "project/migrating"],
     ["body validation", 400, "auth/invalid-body"],
-    ["a failed push-availability lookup", 500, "auth/server-error"],
+    ["a generic server fault", 500, "auth/server-error"],
+    // Belt: the skipped-unbind code never blocks, whatever status carries it.
+    // It is the one code that must stay OUT of `UNBIND_FAILURE_CODES` — putting
+    // it in is the mistake that shipped, in the shape of the server answering
+    // `auth/device-deregistration-failed` for the same condition.
+    ["a reported skipped unbind", 500, "auth/push-unbind-status-unknown"],
   ])("signs out locally when the rejection is %s", async (_label, status, code) => {
     const store = makeSublayStore();
     seedSignedIn(store, { platform: "ios", token: "device-token-1" });

@@ -3,7 +3,10 @@ import axios from "../../config/axios";
 import { getAuthorizedTokenForAccount } from "../../config/authGate";
 
 import { handleError } from "../../utils/handleError";
-import { isUnbindFailure } from "../../utils/unbindFailure";
+import {
+  isUnbindFailure,
+  warnPushUnbindSkipped,
+} from "../../utils/unbindFailure";
 import { isCredentialRejection } from "../../utils/credentialRejection";
 import type { RootState } from "../index";
 import {
@@ -182,7 +185,14 @@ const authService = {
       ? { refreshToken }
       : {};
     if (pushDevice) payload.pushDevice = pushDevice;
-    await axios.post(`/${projectId}/auth/sign-out`, payload);
+    // The body is returned rather than discarded because a 2xx sign-out is not
+    // always a completed unbind: the server reports a skipped one in the body
+    // (`utils/unbindFailure.ts`), and there is no other channel for it.
+    const response = await axios.post(
+      `/${projectId}/auth/sign-out`,
+      payload
+    );
+    return response.data;
   },
 
   async requestNewAccessToken(projectId: string, refreshToken: string | null) {
@@ -558,7 +568,13 @@ export const signOutThunk = createAsyncThunk(
       // proceeds with the local teardown, matching the other two sign-out
       // paths and the server's rule that a user can ALWAYS sign out.
       try {
-        await authService.signOut(data.projectId, refreshToken, pushDevice);
+        // Succeeded — but a 2xx does not promise the unbind happened. When the
+        // server could not determine whether a binding exists it signs the
+        // user out anyway and says so in the body; blocking there is what made
+        // a Redis blip stop someone leaving their own account.
+        warnPushUnbindSkipped(
+          await authService.signOut(data.projectId, refreshToken, pushDevice)
+        );
       } catch (signOutError) {
         if (isUnbindFailure(signOutError)) throw signOutError;
         handleError(
@@ -969,10 +985,13 @@ export const signOutAllThunk = createAsyncThunk(
       const outcomes = await Promise.all(
         Object.entries(accounts).map(async ([userId, account]) => {
           try {
-            await authService.signOut(
-              data.projectId,
-              account.refreshToken,
-              pushDevice
+            // See `signOutThunk`: a 2xx can still carry a skipped unbind.
+            warnPushUnbindSkipped(
+              await authService.signOut(
+                data.projectId,
+                account.refreshToken,
+                pushDevice
+              )
             );
             return { userId, ok: true as const };
           } catch (err) {

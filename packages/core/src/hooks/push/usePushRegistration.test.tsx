@@ -640,6 +640,87 @@ describe("usePushRegistration", () => {
       expect(adapter.getDeviceIdentifier).toHaveBeenCalledTimes(1);
     });
 
+    it("does NOT read the identifier on mount when the OS permission was never granted", async () => {
+      // A DEVICE TOKEN IS NOT CONSENT. On both native platforms the OS issues
+      // one whether or not the user was ever asked — that is what makes silent
+      // push work — so "the read cannot prompt" says nothing about whether this
+      // install has anything to unbind. Ungated, every native install that
+      // merely mounts this hook stored a push identifier, and `signOutThunk`
+      // sends `pushDevice` whenever one is stored: ordinary sign-outs then ask
+      // the server to unbind something that was never bound, and its
+      // `no-matching-binding` warning — a line that flags a REAL client/server
+      // key mismatch — fires on routine traffic and stops meaning anything.
+      //
+      // `register()` cannot create a binding without a grant (it stops at
+      // `requestPermission()`), so no grant implies no binding.
+      const store = makeRtkQueryStore();
+      store.dispatch(setUser(makeAuthUser()));
+      store.dispatch(
+        setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }),
+      );
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "test-user-id",
+          accounts: makeAccounts(),
+          deviceIdentifier: null,
+        }),
+      );
+
+      const adapter = makeAdapter({
+        canReadIdentifierWithoutPrompting: true,
+        hasPermission: vi.fn().mockResolvedValue(false),
+        subscribeToIdentifierChanges: vi.fn().mockReturnValue(() => {}),
+      });
+      renderHookWithStore(() => usePushRegistration(adapter), {
+        projectId: "test-project",
+        store,
+      });
+
+      await waitFor(() => expect(adapter.hasPermission).toHaveBeenCalled());
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
+      expect(store.getState().sublay.accounts.deviceIdentifier).toBeNull();
+      // And asking is never a substitute for reading: the gate must not turn
+      // into a prompt on mount.
+      expect(adapter.requestPermission).not.toHaveBeenCalled();
+    });
+
+    it("DOES read the identifier on mount once permission is granted", async () => {
+      // The other side of the gate, and the population the read exists for: an
+      // install that registered on a previous release granted permission to get
+      // there, so a grant is what "this install could have a binding" looks
+      // like from the client.
+      const store = makeRtkQueryStore();
+      store.dispatch(setUser(makeAuthUser()));
+      store.dispatch(
+        setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }),
+      );
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "test-user-id",
+          accounts: makeAccounts(),
+          deviceIdentifier: null,
+        }),
+      );
+
+      const adapter = makeAdapter({
+        canReadIdentifierWithoutPrompting: true,
+        hasPermission: vi.fn().mockResolvedValue(true),
+        subscribeToIdentifierChanges: vi.fn().mockReturnValue(() => {}),
+      });
+      renderHookWithStore(() => usePushRegistration(adapter), {
+        projectId: "test-project",
+        store,
+      });
+
+      await waitFor(() =>
+        expect(store.getState().sublay.accounts.deviceIdentifier).toEqual(DEVICE),
+      );
+      expect(adapter.getDeviceIdentifier).toHaveBeenCalledTimes(1);
+      expect(adapter.requestPermission).not.toHaveBeenCalled();
+    });
+
     it("does NOT read the identifier on mount for an adapter that has not declared it", async () => {
       // The web adapter's `getDeviceIdentifier` calls `pushManager.subscribe()`,
       // which can raise a permission prompt with no user gesture. It declares
