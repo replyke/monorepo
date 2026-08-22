@@ -320,7 +320,27 @@ export async function markPushBindingsForRebind(
     ? sublay.accounts.accounts[activeAccountId]
     : undefined;
 
-  if (activeAccountId && activeEntry && accountOptedIntoPush(activeEntry)) {
+  // The restriction governs the active account too. A narrow call names the
+  // accounts a repeat `register()` just flipped from "never asked" to enabled,
+  // and that same `register()` has already bound the active account itself — so
+  // re-POSTing for it here is work nobody asked for. (Idempotent, so this was
+  // never a live bug; it read as one half of the loop's rule being forgotten.)
+  // A full call passes no restriction and still re-binds, which is the case
+  // that matters: on a genuine identifier change the active account's binding
+  // points at a token this device no longer holds.
+  //
+  // ONE EXCEPTION, and it is why this is not a bare `restrictTo.has(...)`: an
+  // active account CARRYING A MARK still runs. The mark comes off only after a
+  // bind resolves, so skipping the request would leave the account the user is
+  // looking at reporting "notifications paused" with nothing left to clear it.
+  const activeIsInScope =
+    !!activeAccountId &&
+    !!activeEntry &&
+    (!restrictTo ||
+      restrictTo.has(activeAccountId) ||
+      accountNeedsPushRebind(activeEntry));
+
+  if (activeIsInScope && activeAccountId && activeEntry && accountOptedIntoPush(activeEntry)) {
     try {
       await applyAccountPushBinding(ctx, activeAccountId, true);
 

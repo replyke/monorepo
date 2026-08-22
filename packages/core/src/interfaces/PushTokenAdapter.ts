@@ -27,28 +27,62 @@ export interface PushTokenAdapter {
     context: PushDeviceContext
   ): Promise<PushDeviceIdentifier | null>;
   /**
+   * OPTIONAL. Reports whether this app currently holds the OS's permission to
+   * show notifications, WITHOUT prompting for it.
+   *
+   * Distinct from `requestPermission`, which asks. This only reads the answer
+   * the OS already has, so core can call it on mount.
+   *
+   * **What it is for.** It is the gate on the mount-time identifier read below,
+   * and it is the closest available answer to *"could this install already
+   * have a push binding?"*. `register()` — the only thing in this SDK that
+   * creates one — cannot get past `requestPermission()` without a grant, in
+   * this release or the one before it. So an install with no grant has no
+   * binding, and reading and storing its device identifier would be storing a
+   * push token for a user who never asked for push, on a device with nothing
+   * to unbind.
+   *
+   * It is a heuristic in one direction only, and deliberately: a granted
+   * permission does NOT imply a binding (see
+   * `canReadIdentifierWithoutPrompting`), but a missing one does imply the
+   * absence of a binding, which is the half the gate needs.
+   *
+   * An adapter that omits this is not gated — a custom adapter that declares
+   * the prompt-free read keeps the behaviour it declared.
+   */
+  hasPermission?(): Promise<boolean>;
+  /**
    * OPTIONAL, defaults to `false`. `true` declares that
    * `getDeviceIdentifier` reads a value the OS already holds and CANNOT prompt
    * the user for anything.
    *
    * When it is set, core calls `getDeviceIdentifier` ONCE on mount — with no
-   * user gesture — and feeds the answer through the same path a rotation takes.
-   * That is what closes the upgrade gap for native installs: both native
-   * subscriptions are ROTATION-ONLY, so an install that registered before this
-   * SDK stored device identifiers, and whose token then never rotates, would
-   * otherwise never acquire one — and every path that UNBINDS push (sign-out,
-   * account removal, the per-account toggle) is gated on having one, so all of
-   * them silently no-op. Web covers the same ground a different way: its
-   * subscription emits on mount from `getSubscription()`, which is why it does
-   * not need this.
+   * user gesture, and only if `hasPermission` allows (see there) — and feeds
+   * the answer through the same path a rotation takes. That is what closes the
+   * upgrade gap for native installs: both native subscriptions are
+   * ROTATION-ONLY, so an install that registered before this SDK stored device
+   * identifiers, and whose token then never rotates, would otherwise never
+   * acquire one — and every path that UNBINDS push (sign-out, account removal,
+   * the per-account toggle) is gated on having one, so all of them silently
+   * no-op. Web covers the same ground a different way: its subscription emits
+   * on mount from `getSubscription()`, which is why it does not need this.
    *
    * ⚠ **Only set this when it is literally true.** The web adapter must NOT:
    * its `getDeviceIdentifier` calls `pushManager.subscribe()`, which can raise
    * a permission prompt with no user gesture behind it. Expo
    * (`getDevicePushTokenAsync`) and React Native (`getToken` / `getAPNSToken`)
-   * both read what the OS already has — permission was granted before any
-   * token existed — which is why the React Native subscription already
-   * re-derives through `getDeviceIdentifier` on every refresh.
+   * both read a value the OS hands out without any user-facing UI: registering
+   * with APNs/FCM and asking the user for permission are separate operations,
+   * which is why `requestPermission` exists as its own method and why the React
+   * Native subscription can re-derive through `getDeviceIdentifier` on every
+   * refresh.
+   *
+   * ⚠ **A token is not consent, and this is the trap the flag hides.** On both
+   * native platforms a device token exists whether or not the user was ever
+   * asked — that is how silent/background push works — so this read on its own
+   * says nothing about whether the user wants notifications or whether any
+   * binding exists. That is why core gates it on `hasPermission` and why a
+   * stored identifier never implies an account is push-enabled.
    *
    * Reading it costs nothing when no identifier has changed: an answer equal to
    * the stored one is a no-op, and `null` means "nothing to report".
@@ -78,8 +112,8 @@ export interface PushTokenAdapter {
    *    A device whose token does not rotate emits nothing here — which on those
    *    platforms can be months, or never. That is what
    *    `canReadIdentifierWithoutPrompting` is for: both native adapters set it,
-   *    so core reads the current identifier once on mount instead of waiting
-   *    for a rotation that may never come.
+   *    so core reads the current identifier once on mount (behind
+   *    `hasPermission`) instead of waiting for a rotation that may never come.
    *  - **React Native on iOS is not covered by the EVENT at all.**
    *    `onTokenRefresh` reports an FCM token while that adapter registers the
    *    APNs one, so the event never carries the identifier that was actually

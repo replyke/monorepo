@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { act, waitFor } from "@testing-library/react";
 
 import { renderHookWithAxios, resetAxiosMocks } from "../../test-utils";
@@ -284,6 +284,44 @@ describe("useRemoveAccount", () => {
     expect(axiosPublic.calls("post")[0].body).toEqual({
       refreshToken: "refresh-2",
     });
+  });
+
+  it("REMOVES the account when the server reports a SKIPPED unbind", async () => {
+    // The 2xx that is not a completed unbind: the server could not determine
+    // whether a binding exists, so it never attempted one. That case used to
+    // arrive as `auth/device-deregistration-failed`, which blocked here — a
+    // Redis blip made an account unremovable. It completes and reports instead.
+    const { result, store, axiosPublic } = renderHookWithAxios(() => useRemoveAccount());
+    act(() => {
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "user-1",
+          accounts: makeAccounts(),
+          deviceIdentifier: { platform: "ios", token: "device-token-1" },
+        }),
+      );
+    });
+
+    axiosPublic.mockResponse("post", {
+      pushUnbindSkipped: true,
+      code: "auth/push-unbind-status-unknown",
+    });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    let warnings: unknown[][] = [];
+    try {
+      await act(async () => {
+        await result.current.removeAccount({ userId: "user-2" });
+      });
+    } finally {
+      // Captured before restoring: `mockRestore` clears the recorded calls.
+      warnings = warn.mock.calls;
+      warn.mockRestore();
+    }
+
+    expect(result.current.error).toBeNull();
+    expect(store.getState().sublay.accounts.accounts["user-2"]).toBeUndefined();
+    expect(warnings.flat().join(" ")).toContain("push unbind was SKIPPED");
   });
 
   it("sends the stored device identifier so the server unbinds push atomically", async () => {

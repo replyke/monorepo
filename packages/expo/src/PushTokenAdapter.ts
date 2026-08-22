@@ -25,20 +25,39 @@ export const expoPushTokenAdapter: PushTokenAdapter = {
     return status === "granted";
   },
 
+  // `getPermissionsAsync` READS the current status; only
+  // `requestPermissionsAsync` above can prompt. Core uses this to decide
+  // whether to do the mount-time identifier read below at all: a device that
+  // was never granted notification permission cannot have been registered by
+  // `register()`, which stops at `requestPermission()` without a grant, so
+  // there is no binding for it to discover and no reason to store its push
+  // token.
+  async hasPermission(): Promise<boolean> {
+    const { status } = await Notifications.getPermissionsAsync();
+    return status === "granted";
+  },
+
   async getDeviceIdentifier(): Promise<PushDeviceIdentifier | null> {
     const devicePushToken = await Notifications.getDevicePushTokenAsync();
     return toIdentifier(devicePushToken);
   },
 
   // `getDevicePushTokenAsync` registers with APNs/FCM and hands back the token
-  // the OS already holds — it does not ask the user for anything, which is
-  // `requestPermissionsAsync`'s job above. Declaring that lets core read the
-  // current identifier ONCE ON MOUNT rather than waiting for a rotation, which
-  // is the only thing that closes the gap for an install that registered before
-  // this SDK persisted identifiers: the listener below is rotation-only, so on
-  // a device whose token never rotates it would otherwise emit nothing, and
-  // every unbind path (sign-out, account removal, the per-account toggle) stays
-  // silently no-op for want of a stored identifier.
+  // the OS holds. It shows the user nothing: registering for remote
+  // notifications and ASKING to display them are separate operations, and the
+  // asking is `requestPermissionsAsync`'s job above. Declaring that lets core
+  // read the current identifier ONCE ON MOUNT rather than waiting for a
+  // rotation, which is the only thing that closes the gap for an install that
+  // registered before this SDK persisted identifiers: the listener below is
+  // rotation-only, so on a device whose token never rotates it would otherwise
+  // emit nothing, and every unbind path (sign-out, account removal, the
+  // per-account toggle) stays silently no-op for want of a stored identifier.
+  //
+  // ⚠ NOT because "a token only exists once permission was granted" — it does
+  // not. A device token is issued whether or not the user was ever asked, which
+  // is what makes silent push possible, so this read says nothing about consent
+  // or about a binding existing. That is precisely why core gates it on
+  // `hasPermission` above.
   canReadIdentifierWithoutPrompting: true,
 
   // Expo is the clean case: `addPushTokenListener` emits exactly the

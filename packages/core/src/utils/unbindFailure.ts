@@ -1,3 +1,5 @@
+import { getSublayLogLevel } from "./handleError";
+
 /**
  * Did `/auth/sign-out` refuse *the push unbind*?
  *
@@ -23,7 +25,7 @@
  * account. The server already distinguishes these cases in its response; the
  * client simply was not reading it.
  *
- * ## The two codes
+ * ## The two blocking codes
  *
  * Both are emitted by `v7/controllers/auth/signOut.ts` from a single branch
  * guarded by `shouldUnbind`, so reaching either one *proves* an unbind was
@@ -35,11 +37,31 @@
  *   outcome: the binding survives and the credential must survive with it.
  *
  * Deliberately NOT in the list: `auth/server-error`, the controller's generic
- * outer catch. It is raised before any unbind is attempted (the push-availability
- * lookup fails closed into it), so there is no binding at stake and blocking on
- * it would stop an otherwise healthy sign-out.
+ * outer catch. It is the endpoint's answer for a fault that is not an unbind
+ * attempt, so there is no binding at stake and blocking on it would stop an
+ * otherwise healthy sign-out.
  *
- * ## The shape of the check
+ * ## The third code, which must NOT block: `PUSH_UNBIND_SKIPPED_CODE`
+ *
+ * There is one outcome that is neither "the unbind failed" nor "the unbind
+ * happened": the server could not determine whether this project even has push
+ * devices, so it never attempted one. Its availability lookup reads Redis and
+ * falls back to the database, so an ordinary cache blip reaches it.
+ *
+ * That case used to answer with `auth/device-deregistration-failed`, which
+ * meant every path here rethrew and NOTHING below it ran — no local teardown,
+ * no account removal. **The user could not sign out**, on the one operation
+ * this SDK guarantees always completes, because a cache was briefly down. It
+ * is the same trade `@sublay/js` reversed for the same reason: a stuck user is
+ * worse than a skipped unbind.
+ *
+ * So the server now completes the sign-out and names the skip in a `200` body,
+ * and this module's job on it is to REPORT rather than block —
+ * `warnPushUnbindSkipped` below. The binding may still be live and the
+ * credential is gone, which is worth a loud line in the console; it is not
+ * worth locking someone inside their account.
+ *
+ * ## The shape of the checks
  *
  * Positive membership only — a path must never branch on the *absence* of a
  * code. A transport failure carries no `response` at all, a gate rejection
@@ -56,9 +78,19 @@ export const UNBIND_FAILURE_CODES = [
 export type UnbindFailureCode = (typeof UNBIND_FAILURE_CODES)[number];
 
 /**
+ * The server's statement that it signed the user out WITHOUT attempting the
+ * unbind, because it could not determine whether a binding exists.
+ *
+ * Carried on a `200`, not on an error — see the header for why it must not be
+ * an error status and must not be a bare `204` either.
+ */
+export const PUSH_UNBIND_SKIPPED_CODE = "auth/push-unbind-status-unknown";
+
+/**
  * True only when the rejection is the server's own statement that it attempted
  * a push unbind and committed nothing. Everything else — transport failures,
- * pre-controller gates, the generic server error — is false.
+ * pre-controller gates, the generic server error, and the skipped-unbind
+ * report above — is false.
  */
 export function isUnbindFailure(error: unknown): boolean {
   const code = (error as { response?: { data?: { code?: unknown } } } | null)
@@ -68,4 +100,46 @@ export function isUnbindFailure(error: unknown): boolean {
     typeof code === "string" &&
     (UNBIND_FAILURE_CODES as readonly string[]).includes(code)
   );
+}
+
+/**
+ * True when a SUCCESSFUL sign-out response says the unbind was skipped.
+ *
+ * Takes the response body, not an error: this arrives on a `200`, so nothing
+ * throws and the caller has to look.
+ */
+export function isPushUnbindSkipped(responseData: unknown): boolean {
+  return (
+    (responseData as { code?: unknown } | null | undefined)?.code ===
+    PUSH_UNBIND_SKIPPED_CODE
+  );
+}
+
+/**
+ * Reports a sign-out that completed without removing this device's push
+ * binding, and says what the app can do about it.
+ *
+ * The sign-out is not reversed and the caller is not failed — by the time this
+ * runs the server has already destroyed the session. The account's credential
+ * is gone with it, so nothing in this SDK can retry the unbind; the binding is
+ * removed the next time that account registers on this device, or by the
+ * server's dead-token pruning once the token stops being deliverable.
+ *
+ * Honours `setSublayLogLevel("silent")` like every other line the SDK writes.
+ */
+export function warnPushUnbindSkipped(responseData: unknown): boolean {
+  if (!isPushUnbindSkipped(responseData)) return false;
+
+  if (getSublayLogLevel() !== "silent") {
+    console.warn(
+      "Sublay: signed out, but the push unbind was SKIPPED — the server could " +
+        "not determine whether this project has push devices, so it did not " +
+        "attempt one. This device may still be bound to that account and can " +
+        "keep receiving its notifications. The sign-out itself completed; the " +
+        "binding clears when that account next registers on this device, or " +
+        "when the server prunes the token as undeliverable."
+    );
+  }
+
+  return true;
 }

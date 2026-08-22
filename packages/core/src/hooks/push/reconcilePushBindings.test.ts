@@ -388,6 +388,51 @@ describe("markPushBindingsForRebind", () => {
     expect(accounts["user-3"].needsPushRebind).toBeUndefined();
   });
 
+  it("restricted to named accounts, does NOT re-POST for the active account", async () => {
+    // The restriction governs the active account too. A narrow call only ever
+    // comes from a repeat `register()` on an unchanged identifier, and that
+    // call has already bound the active account itself — so a request here is
+    // work nobody asked for. (Idempotent, so never a live bug; it read as half
+    // the loop's rule being forgotten.)
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {});
+
+    store.dispatch(setAccountPushEnabled({ userId: "user-4", enabled: true }));
+
+    await markPushBindingsForRebind(ctx(), { accountIds: ["user-4"] });
+
+    expect(axiosPublic.calls("post")).toHaveLength(0);
+  });
+
+  it("restricted, still re-binds the active account when it is CARRYING A MARK", async () => {
+    // The one exception, and the reason this is not a bare membership test: the
+    // mark comes off only after a bind resolves, so skipping the request would
+    // leave the account the user is looking at reporting "notifications paused"
+    // with nothing left able to clear it.
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {});
+
+    store.dispatch(setAccountPushEnabled({ userId: "user-4", enabled: true }));
+    store.dispatch(
+      setAccountNeedsPushRebind({ userId: "user-1", needsRebind: true }),
+    );
+
+    await markPushBindingsForRebind(ctx(), { accountIds: ["user-4"] });
+
+    expect(axiosPublic.calls("post")).toHaveLength(1);
+    expect(
+      store.getState().sublay.accounts.accounts["user-1"].needsPushRebind,
+    ).toBeUndefined();
+  });
+
+  it("unrestricted, DOES re-bind the active account — the identifier really changed", async () => {
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {});
+
+    await markPushBindingsForRebind(ctx());
+
+    expect(axiosPublic.calls("post")).toHaveLength(1);
+  });
   it("is a clean no-op when no device identifier is stored", async () => {
     seed({ withDevice: false });
     const axiosPublic = mockAxiosPublic();
