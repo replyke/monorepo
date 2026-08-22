@@ -172,7 +172,7 @@ Removing an account sends a sign-out request that revokes the refresh token fami
 <Warning>
   **Removal is atomic once push is involved.** When this device has a stored push identifier, the request asks for an unbind — and if the server refuses it, **nothing is torn down**. The account keeps its entry and its credential, `removeAccount` **rejects**, and `error` carries the reason so the user can retry. `await removeAccount(...)` therefore needs a `catch`.
 
-  The strictness is **scoped to a server refusal of the unbind itself** — `auth/device-deregistration-failed` or `auth/sign-out-failed`. Anything that never reached the sign-out handler is best-effort: no network, a throttled request, a body the server rejected. An offline user can still remove an account locally, and a device with no stored push identifier has nothing for the guarantee to protect.
+  The strictness is **scoped to a server refusal of the unbind itself** — `auth/device-deregistration-failed` or `auth/sign-out-failed`. Anything that never reached the sign-out handler is best-effort: no network, a throttled request, a body the server rejected. An offline user can still remove an account locally, and a device with no stored push identifier has nothing for the guarantee to protect. A `200` carrying `auth/push-unbind-status-unknown` is a success, not a refusal: the server signed the account out without attempting an unbind because it could not determine whether the project has push devices, so the removal completes and the SDK warns.
 </Warning>
 
 ## Signing Out All Accounts
@@ -192,7 +192,7 @@ function SignOutAllButton() {
 <Warning>
   **A partial failure keeps the accounts it could not sign out.** When the requests carry this device's push identifier, accounts whose request **succeeded** are removed and accounts whose unbind the server **refused** are kept with their credentials intact; the call then **rejects** with how many failed, so the user can retry. The live session ends either way — an access token is transient, not the credential the guarantee is about.
 
-  Same scoping as removal: a transport failure is not a refusal, so an offline `signOutAll` still clears local state and resolves. With no push identifier on the device nothing is at stake either.
+  Same scoping as removal: a transport failure is not a refusal, so an offline `signOutAll` still clears local state and resolves, and neither is a `200` reporting a skipped unbind. With no push identifier on the device nothing is at stake either.
 </Warning>
 
 ## When a Transition Fails
@@ -302,6 +302,8 @@ The preference is **durable**. An account silenced on this device stays silenced
 ### Signing out unbinds automatically
 
 Once this device has a stored push identifier, `signOut()`, `removeAccount()` and `signOutAll()` each send it with their sign-out request, and the server removes that account's push binding in the same transaction as the session teardown. Either both happen or neither does, and "neither" is reported rather than swallowed — see the warnings above. Devices with no stored identifier send none, have no unbind to protect, and sign out best-effort.
+
+The identifier is **device** state and does not imply that the signing-out account ever opted into push. On native, `usePushRegistration` records one on mount for any device that already holds OS notification permission — that is what lets an app upgrading from an older SDK release still unbind the bindings it created back then. When the account had no binding the unbind removes nothing, and the sign-out is indistinguishable from one that carried no identifier at all. A device whose notification permission was never granted stores nothing and sends nothing.
 
 Do **not** call `usePushRegistration().unregister()` in a logout flow. It is a durable per-account preference, so using it as cleanup permanently silences that account's next session, and sign-out already unbinds. See [Turning push off](/sdk/push-notifications/overview#turning-push-off).
 

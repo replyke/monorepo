@@ -157,6 +157,15 @@ const myAdapter: PushTokenAdapter = {
     return null;
   },
 
+  // OPTIONAL — see "Reading the current identifier on mount" below.
+  // Read the CURRENT permission status; never prompt here.
+  async hasPermission(): Promise<boolean> {
+    return myPushLibrary.permissionStatus() === "granted";
+  },
+
+  // OPTIONAL — set only if getDeviceIdentifier() cannot prompt.
+  canReadIdentifierWithoutPrompting: true,
+
   // OPTIONAL — see "Automatic token rotation" below.
   subscribeToIdentifierChanges(context, onChange) {
     const unsubscribe = myPushLibrary.onTokenChange((token) => {
@@ -169,11 +178,24 @@ const myAdapter: PushTokenAdapter = {
 
 `subscribeToIdentifierChanges` is optional. Omit it and rotation simply falls back to the next `register()` — the pre-existing behaviour. Emitting `null`, or an identifier equal to the stored one, is a no-op.
 
+`canReadIdentifierWithoutPrompting` and `hasPermission` are optional and work as a pair — see [Reading the current identifier on mount](#reading-the-current-identifier-on-mount-native). Set the flag only if `getDeviceIdentifier()` reads a value the platform already holds and can never raise a permission prompt; an adapter that omits `hasPermission` is not gated on one.
+
 ## Automatic Token Rotation
 
 Device push tokens rotate on reinstall, on an OS-initiated refresh, and after a backup restore, and every binding on the old token dies with it. The hook covers this itself: whenever it is mounted with an adapter that implements `subscribeToIdentifierChanges`, it subscribes to that signal. On a change it unbinds the old identifier for the active account, records the new one, re-binds the **active** account, and **marks** every other push-enabled account as needing a re-bind — repaired on each account's next activation rather than by spending its stored credential in the background. Silenced accounts are left silenced, and an account that never expressed a preference is neither marked nor bound.
 
 The subscription is gated on the adapter alone, so an app whose adapter omits it subscribes to nothing. Nothing on this path prompts the user — receiving a refreshed token asks for no permission — and nothing on it exchanges a stored credential.
+
+### Reading the current identifier on mount (native)
+
+Both native subscriptions are rotation-only, so a device whose token never rotates would never emit one — and every path that *unbinds* push is gated on having a stored identifier. To cover that, the built-in native adapters declare `canReadIdentifierWithoutPrompting`, and the hook reads the current identifier once on mount and feeds it through the same path a rotation takes. An identifier equal to the stored one changes nothing, which is the common case.
+
+Two conditions gate it, and both matter:
+
+- **The adapter must declare that reading cannot prompt.** `expoPushTokenAdapter` and `reactNativePushTokenAdapter` do; `webPushTokenAdapter` must not, because its `getDeviceIdentifier()` calls `pushManager.subscribe()`, which can raise a permission prompt with no user gesture behind it. Web covers the same ground through its mount-emitting subscription instead.
+- **The device must already hold OS notification permission**, read through the adapter's `hasPermission()` — which reads the current status and never asks. A device token exists on both native platforms whether or not the user was ever asked (that is how silent push works), so "reading cannot prompt" is not on its own a reason to store one. `register()` cannot create a binding without a permission grant, so a device with no grant has no binding to discover. An adapter that does not implement `hasPermission()` is not gated.
+
+This does not require a permission *prompt* and never raises one; it reads a grant that already exists. A device whose permission is granted but which never registered for Sublay push simply stores an identifier that matches no binding — sign-out then asks for an unbind that removes nothing.
 
 The three built-in adapters are deliberately asymmetric, because the platforms are:
 
@@ -181,7 +203,7 @@ The three built-in adapters are deliberately asymmetric, because the platforms a
 |---------|-----------|
 | `expoPushTokenAdapter` | Real OS event (`addPushTokenListener`), emitting exactly the shape the adapter registers. **Rotation-only:** it fires when the OS hands over a new token, never merely because something subscribed. |
 | `reactNativePushTokenAdapter` | Firebase `onTokenRefresh`, also rotation-only. The event carries an **FCM** token while the adapter registers **APNs** on iOS, so the handler ignores the emitted value and re-derives through `getDeviceIdentifier()`. Consequence: iOS APNs rotation is not reported by this event at all and falls back to the next `register()` or `unregister()`. A failed re-derivation is reported through the SDK's error handler rather than passed off as "no change". |
-| `webPushTokenAdapter` | **No in-page event exists** — `pushsubscriptionchange` fires inside the service worker *you* register, which the SDK cannot subscribe to. Web is covered by comparison instead: on mount it reads the browser's existing subscription and emits it if it differs from the stored one. That makes web the one platform where a device with no stored identifier acquires one without calling `register()` again. It calls `getSubscription()` only, never `subscribe()`, so it cannot prompt on page load; it probes for a registration before awaiting `serviceWorker.ready`, which never settles when no service worker is registered; and a failure is reported through the SDK's error handler rather than swallowed. |
+| `webPushTokenAdapter` | **No in-page event exists** — `pushsubscriptionchange` fires inside the service worker *you* register, which the SDK cannot subscribe to. Web is covered by comparison instead: on mount it reads the browser's existing subscription and emits it if it differs from the stored one, which is how a web device with no stored identifier acquires one without calling `register()` again. It calls `getSubscription()` only, never `subscribe()`, so it cannot prompt on page load; it probes for a registration before awaiting `serviceWorker.ready`, which never settles when no service worker is registered; and a failure is reported through the SDK's error handler rather than swallowed. Native reaches the same place differently — see [Reading the current identifier on mount](#reading-the-current-identifier-on-mount-native). |
 
 ## Relationship to Other Hooks
 

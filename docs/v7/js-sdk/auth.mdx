@@ -150,6 +150,12 @@ for that account is still live — the sign-out itself happened either way. It i
 Recover by re-issuing the sign-out with an explicit `refreshToken` in hand, or by
 removing the binding from a client that holds one.
 
+It reports this client's own skip, not the server's. The server has one skip of its
+own — a `200` carrying `pushUnbindSkipped: true` and `auth/push-unbind-status-unknown`,
+returned when it could not determine whether the project has push devices — and that
+one resolves normally here with `pushUnbindSkipped: false`. See
+[`POST /auth/sign-out`](/api-reference/auth/sign-out#response).
+
 ---
 
 ### verifyExternalUser

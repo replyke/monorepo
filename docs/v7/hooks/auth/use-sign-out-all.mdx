@@ -11,7 +11,9 @@ icon: "plug"
 <Warning>
   **A partial failure keeps the accounts it could not sign out.** When the requests carry this device's push identifier, accounts whose request **succeeded** are removed and accounts whose unbind the server **refused** are kept with their credentials intact; the call then **rejects** with how many failed, so the user can retry. Its signature is `() => Promise<void>`, so nothing warns you at compile time: `await signOutAll()` needs a `catch`. The live session ends either way — an access token is transient state, not the credential the guarantee is about.
 
-  As with [`useRemoveAccount`](/hooks/auth/use-remove-account), only a **server refusal of the unbind** blocks — `auth/device-deregistration-failed` or `auth/sign-out-failed`. A transport failure carries no response and is not one, so an offline `signOutAll` clears all local state and resolves; so does a device that has never registered for push. A user can always sign out.
+  As with [`useRemoveAccount`](/hooks/auth/use-remove-account), only a **server refusal of the unbind** blocks — `auth/device-deregistration-failed` or `auth/sign-out-failed`. Those are the two codes the server returns when it attempted the unbind inside its transaction and rolled the whole thing back. Everything else resolves: a transport failure carries no response, a throttled or migrating project is refused before the unbind is reached, and a device with **no stored push identifier** sends nothing to unbind in the first place. A user can always sign out.
+
+  A third code, `auth/push-unbind-status-unknown`, arrives on a **success** and never blocks: the server signed the account out without attempting an unbind because it could not determine whether the project has push devices. The SDK completes the sign-out and warns; that device may still be bound to the account until it registers again.
 </Warning>
 
 ## Usage Example

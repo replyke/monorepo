@@ -13,7 +13,7 @@ The stored flag is **durable intent**: it lives in the account map next to that 
 The flag has **three** states, not two. `true` and `false` are choices the user made; *absent* means the account has never been asked. Absent reads as enabled when *describing* an account — which is what `isAccountPushEnabled` below returns, and what a switch should render — but it is never treated as consent to create a binding. Nothing is bound for an account that has not explicitly opted in.
 
 <Note>
-  Requires the `push` bundle. Reconciling is a no-op until this device has a stored push identifier — there is nothing to bind or unbind. [`usePushRegistration`](/hooks/push/use-push-registration) is what records one, through `register()`, `unregister()`, or its rotation subscription.
+  Requires the `push` bundle. Reconciling is a no-op until this device has a stored push identifier — there is nothing to bind or unbind. [`usePushRegistration`](/hooks/push/use-push-registration) is what records one, through `register()`, `unregister()`, its rotation subscription, or — on native, when the device already holds notification permission — its mount-time read.
 </Note>
 
 ## Usage Example

@@ -103,6 +103,11 @@ await sublay.auth.signOut({
   `auth/device-deregistration-failed` and the session survives so you can retry.
   Never treat a failed `signOut` as signed out; discarding the credential anyway
   leaves the user receiving notifications from an account they can no longer reach.
+
+  A `200` carrying `auth/push-unbind-status-unknown` is a success, not a failure:
+  the server signed the user out without attempting an unbind because it could not
+  determine whether the project has push devices. See
+  [`POST /auth/sign-out`](/api-reference/auth/sign-out#response).
 </Warning>
 
 **Returns** — `Promise<void>`

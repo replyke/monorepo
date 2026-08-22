@@ -14,6 +14,10 @@ If the removed account is the currently active one, **the session ends and no ac
   **Removal is atomic once push is involved.** If this device has a stored push identifier, the sign-out request carries it, and if the server **refuses the unbind** nothing is torn down: `removeAccount` **rejects**, `error` carries the reason, and the account keeps its entry and its credential so the user can retry. Its signature is `({ userId }) => Promise<void>`, so nothing warns you at compile time: `await removeAccount(...)` needs a `catch`.
 
   The strictness is scoped to a **server refusal of the unbind itself** — the sign-out endpoint answering `auth/device-deregistration-failed` or `auth/sign-out-failed`, the two codes it returns when its transaction rolled back. Everything else is best-effort: no network, a throttled or migrating project, a rejected body, the generic `auth/server-error`, or a device with no stored push identifier. An offline user can still remove an account locally.
+
+  One more code arrives on a **success** and never blocks: `auth/push-unbind-status-unknown`, returned with `200` when the server signed the account out without attempting an unbind because it could not determine whether the project has push devices. `removeAccount` resolves, the account is removed, and the SDK warns — the binding may still be live, so it is worth surfacing, but it is not worth making an account unremovable over.
+
+  A stored push identifier is **device** state, not an account's consent: on native the SDK records one when the device already holds OS notification permission, whether or not this particular account ever registered. When the account had no binding, the unbind removes nothing and the removal completes exactly as it would without one.
 </Warning>
 
 <Note>
