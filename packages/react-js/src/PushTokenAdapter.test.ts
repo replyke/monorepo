@@ -64,6 +64,20 @@ const CTX = { projectId: "proj-abc" };
 // ---------------------------------------------------------------------------
 // requestPermission
 // ---------------------------------------------------------------------------
+describe("webPushTokenAdapter.canReadIdentifierWithoutPrompting", () => {
+  it("is NOT declared — subscribing can prompt with no user gesture", () => {
+    // The native adapters declare it because their `getDeviceIdentifier` reads
+    // a token the OS already holds. This one calls `pushManager.subscribe()`,
+    // which can raise a permission prompt. Declaring it here would have core
+    // call it on every mount. Web needs it least anyway: its subscription emits
+    // on mount from `getSubscription()`, which is what already lets an
+    // upgrading web install acquire an identifier without another `register()`.
+    expect(
+      webPushTokenAdapter.canReadIdentifierWithoutPrompting,
+    ).toBeUndefined();
+  });
+});
+
 describe("webPushTokenAdapter.requestPermission", () => {
   it("returns true when granted", async () => {
     mockRequestPermission.mockResolvedValue("granted");

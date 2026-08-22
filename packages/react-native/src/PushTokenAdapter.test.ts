@@ -51,6 +51,20 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+describe("reactNativePushTokenAdapter.canReadIdentifierWithoutPrompting", () => {
+  it("is declared, so core reads the identifier on mount instead of awaiting a rotation", () => {
+    // Neither `getToken()` nor `getAPNSToken()` prompts — permission was
+    // granted before any token existed, which is why the refresh handler
+    // already re-derives through `getDeviceIdentifier`. It matters most here:
+    // `onTokenRefresh` carries an FCM token, so an APNs rotation on iOS never
+    // raises it at all, and an upgrading install would otherwise sit with a
+    // live server-side binding it has no local identifier to unbind.
+    expect(
+      reactNativePushTokenAdapter.canReadIdentifierWithoutPrompting,
+    ).toBe(true);
+  });
+});
+
 describe("reactNativePushTokenAdapter.requestPermission", () => {
   it("returns true when authorized", async () => {
     requestPermission.mockResolvedValue(1); // AUTHORIZED

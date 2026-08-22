@@ -263,11 +263,15 @@ export async function activateStoredAccount({
  *   - `signedOut`, but ONLY when nothing is active right now. Read from the
  *     store rather than from the caller's `previousActiveAccountId`, because
  *     the store is the authority on whether a session is at stake. This is the
- *     "user tapped a dead account from the picker after `addAccount()`" case:
- *     the selection is already null and `signedOut` is still false, so without
- *     this the next launch would silently activate whichever account happens to
- *     be first in the map — the stranding this work exists to remove. With a
- *     session live, the flag is left alone: nothing was signed out.
+ *     "user tapped a dead account from the picker while nothing was selected"
+ *     case — after a sign-out, or on a launch that found nothing to restore:
+ *     the selection is null and `signedOut` may still be false, so without this
+ *     the next launch would silently activate whichever account happens to be
+ *     first in the map, which is the stranding this work exists to remove. With
+ *     a selection standing, the flag is left alone: nothing was signed out.
+ *     (`addAccount()` no longer produces a null selection — it deliberately
+ *     writes nothing to the shared map, since that map is broadcast to every
+ *     other tab.)
  */
 function failTransition({
   dispatch,

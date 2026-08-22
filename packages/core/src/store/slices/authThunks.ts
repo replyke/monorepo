@@ -210,16 +210,21 @@ const authService = {
       password: string;
       newPassword: string;
       /**
-       * The caller's OWN session, named so the server can spare it.
+       * OPTIONAL. The physical device making this call, so the server keeps
+       * ITS push binding while clearing every other one the user holds.
        *
-       * Changing a password destroys every token family for the user. The route
-       * is authenticated by an ACCESS token, which carries no `jti` and is not
-       * stored, so the server has no way to work out which session is asking —
-       * naming the refresh token this device holds is the only link there is.
-       * Omitting it destroys every session including this one, which is the
-       * fail-secure default and never an error.
+       * Deliberately NOT derived from the session. A password change ends every
+       * other session for the user, and the server identifies the caller's
+       * session from a claim on the access token this request already carries —
+       * so nothing about the SESSION has to be sent. A push binding, though,
+       * records nothing about which login created it, so a session identity can
+       * never stand in for a device identity: sparing this handset's
+       * notifications requires naming the handset.
+       *
+       * Omitting it is not an error — every binding goes, this device included,
+       * and it re-binds on the next cold start, account switch or `register()`.
        */
-      refreshToken?: string;
+      pushDevice?: PushDeviceIdentifier;
     },
     authorization: AuthorizedConfig
   ) {
@@ -862,32 +867,42 @@ export const changePasswordThunk = createAsyncThunk(
         return rejectWithValue("No user is authenticated");
       }
 
-      // ── NAME THIS DEVICE'S SESSION, so the server spares it. ─────────────
+      // ── NAME THIS DEVICE. NOT THIS SESSION. ──────────────────────────────
       //
-      // A password change now ends every OTHER session for the user — the
-      // point of reaching for "change my password" when you suspect a
-      // compromise. The server cannot identify the caller's session on its own
-      // (an access token carries no `jti` and is not stored), so without this
-      // field the change signs the caller out too, at their next refresh, of
-      // the app they are standing in.
+      // A password change ends every OTHER session for the user — the point of
+      // reaching for "change my password" when you suspect a compromise — and
+      // clears every push binding the user holds, so an intruder's device stops
+      // receiving notification content.
       //
-      // READ AFTER `withAuth`, NEVER from the snapshot above: the auth gate
-      // rotates a near-expiry token before it hands one back, and the refresh
-      // endpoint rotates the refresh token with it. The snapshot's value can
-      // therefore be the spent predecessor by the time this request goes out.
-      // (The server resolves the family through the token's `jti`, and the
-      // revoked row keeps its `familyId`, so a stale one would still resolve
-      // today — this does not depend on that.)
+      // THE SESSION half needs nothing from us any more. This used to send the
+      // stored refresh token so the server could tell which session was asking;
+      // the session id is now a claim on the access token the request is
+      // already authenticated with, so putting a 30-day credential on the wire
+      // bought nothing. (The server still accepts the old field during the
+      // transition — this is what lets that fallback be deleted.)
       //
-      // Absent is not an error: a client with no resolvable refresh token
-      // still changes the password and simply loses every session, the
-      // documented fail-secure behaviour.
+      // THE DEVICE half cannot be derived the same way, and that asymmetry is
+      // the whole reason this field exists: a push binding records nothing
+      // about which login created it, so a session identity can never stand in
+      // for a device identity. Without naming the handset, the change silences
+      // notifications on the very device the user is standing in — nothing
+      // re-binds from a live session, so it stays quiet until a cold start, an
+      // account switch or a token rotation. That is precisely the outcome this
+      // was meant to prevent.
+      //
+      // Read synchronously from the accounts slice, like the sign-out paths —
+      // it is device state, and `AccountStorage` is not reachable from here.
+      // Absent is not an error: every binding goes, this device included, and
+      // it re-binds on next open.
+      const pushDevice = (getState() as RootState).sublay.accounts
+        .deviceIdentifier;
+
       await authService.changePassword(
         data.projectId,
         {
           password: data.password,
           newPassword: data.newPassword,
-          refreshToken: settled.refreshToken ?? undefined,
+          ...(pushDevice ? { pushDevice } : {}),
         },
         authorization
       );

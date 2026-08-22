@@ -16,6 +16,30 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+describe("expoPushTokenAdapter.canReadIdentifierWithoutPrompting", () => {
+  it("is declared, so core reads the identifier on mount instead of awaiting a rotation", () => {
+    // `addPushTokenListener` is ROTATION-ONLY: it fires when the OS hands over a
+    // NEW token, never merely because something subscribed. An install that
+    // registered before this SDK persisted device identifiers therefore has a
+    // live server-side binding, nothing stored locally, and no event coming —
+    // and every unbind path (sign-out, account removal, the per-account toggle)
+    // is gated on having one, so all three silently no-op for as long as the
+    // token does not rotate. Declaring this is what closes that.
+    expect(expoPushTokenAdapter.canReadIdentifierWithoutPrompting).toBe(true);
+  });
+
+  it("is only honest because getDevicePushTokenAsync does not prompt", async () => {
+    // The declaration is a promise that core may call `getDeviceIdentifier`
+    // with no user gesture. Asking for permission is `requestPermissionsAsync`,
+    // which lives behind `requestPermission()` and must not be reached here.
+    getDevicePushTokenAsync.mockResolvedValue({ type: "ios", data: "apns-1" });
+
+    await expoPushTokenAdapter.getDeviceIdentifier({ projectId: "p1" });
+
+    expect(requestPermissionsAsync).not.toHaveBeenCalled();
+  });
+});
+
 describe("expoPushTokenAdapter.requestPermission", () => {
   it("returns true when permission is granted", async () => {
     requestPermissionsAsync.mockResolvedValue({ status: "granted" });

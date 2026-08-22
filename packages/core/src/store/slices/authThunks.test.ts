@@ -15,7 +15,11 @@ import {
   ACCOUNT_LIMIT_MESSAGE,
 } from "./authThunks";
 import { setTokens, setUser } from "./authSlice";
-import { setAccountMap, setAccountLimitReached } from "./accountsSlice";
+import {
+  setAccountMap,
+  setAccountLimitReached,
+  setDeviceIdentifier,
+} from "./accountsSlice";
 import { selectUser as selectUserSliceUser } from "./userSlice";
 import {
   armAuthGate,
@@ -405,23 +409,54 @@ describe("changePasswordThunk", () => {
     expect(axios.calls("post")[0].config?.headers?.Authorization).toBe(
       "Bearer access-1",
     );
-    // ...and NAMES THIS DEVICE'S SESSION. A password change ends every other
-    // session for the user, and the server cannot tell which one is asking —
-    // an access token carries no `jti` and is not stored — so without this
-    // field the caller is signed out of the app they are standing in at their
-    // next refresh, which is the outcome this whole behaviour exists to avoid.
+    // ...and SENDS NO REFRESH TOKEN. This used to name the caller's session so
+    // the server could spare it; the session id is now a claim on the access
+    // token the request already carries, so sending a 30-day credential bought
+    // nothing. The server still accepts the old field transitionally — this
+    // assertion is what lets that fallback be deleted.
     expect(axios.calls("post")[0].body).toEqual({
       password: "old",
       newPassword: "new",
-      refreshToken: "refresh-1",
+    });
+    expect(axios.calls("post")[0].body).not.toHaveProperty("refreshToken");
+  });
+
+  it("NAMES THIS DEVICE so the caller's own push binding survives", async () => {
+    // A password change clears every push binding the user holds, so an
+    // intruder's device stops receiving notification content. A binding records
+    // nothing about which login created it, so the session identity the access
+    // token carries cannot stand in for a device identity — sparing this
+    // handset requires naming the handset. Without it the change silences
+    // notifications on the very device the user is standing in, and nothing
+    // re-binds from a live session: it stays quiet until a cold start, an
+    // account switch or a token rotation.
+    const store = makeSublayStore();
+    store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    store.dispatch(setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }));
+    store.dispatch(
+      setDeviceIdentifier({ platform: "ios", token: "device-token-1" }),
+    );
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {});
+
+    const result = await store.dispatch(
+      changePasswordThunk({ projectId: "project-1", password: "old", newPassword: "new" }),
+    );
+
+    expect(changePasswordThunk.fulfilled.match(result)).toBe(true);
+    expect(axios.calls("post")[0].body).toEqual({
+      password: "old",
+      newPassword: "new",
+      pushDevice: { platform: "ios", token: "device-token-1" },
     });
   });
 
-  it("sends the ROTATED refresh token when the gate rotated one on the way in", async () => {
-    // `withAuth` runs the request through the auth gate, which pre-emptively
-    // rotates a near-expiry access token — and that exchange rotates the
-    // REFRESH token with it. Reading the value from the pre-gate snapshot
-    // therefore names a session the server has already superseded.
+  it("sends no session credential even when the gate rotated one on the way in", async () => {
+    // This used to read the refresh token AFTER `withAuth` precisely because
+    // the gate rotates a near-expiry access token and the refresh token goes
+    // with it, so the pre-gate snapshot named a superseded session. That whole
+    // hazard is gone with the field: nothing about the session is sent, and the
+    // bearer is still the rotated one.
     const store = makeSublayStore();
     store.dispatch(setUser({ id: "user-1" } as AuthUser));
     store.dispatch(
@@ -456,15 +491,15 @@ describe("changePasswordThunk", () => {
     expect(changePasswordThunk.fulfilled.match(result)).toBe(true);
     const [call] = axios.calls("post");
     expect(call.config?.headers?.Authorization).toBe("Bearer access-2");
-    expect((call.body as { refreshToken?: string }).refreshToken).toBe(
-      "refresh-2",
-    );
+    expect(call.body).not.toHaveProperty("refreshToken");
+    expect(call.body).toEqual({ password: "old", newPassword: "new" });
   });
 
-  it("still changes the password when no refresh token can be resolved", async () => {
-    // Fail-secure, not an error: with no session named, the server destroys
-    // every family for the user — this one included. A client that cannot name
-    // its session must still be able to change the password.
+  it("still changes the password when this device has no stored push identifier", async () => {
+    // Not an error: with no device named, the server clears every binding for
+    // the user — this device's included — and it re-binds on next open. An
+    // install that has never registered for push must still be able to change
+    // the password.
     const store = makeSublayStore();
     store.dispatch(setUser({ id: "user-1" } as AuthUser));
     store.dispatch(setTokens({ accessToken: "access-1", refreshToken: null }));

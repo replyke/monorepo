@@ -25,7 +25,7 @@ function makeAccounts(count: number): Record<string, AccountEntry> {
 }
 
 describe("useAddAccount", () => {
-  it("clears auth/user state and the active account to surface the sign-in UI", () => {
+  it("clears auth/user state to surface the sign-in UI, and leaves the shared map alone", () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, store } = renderHookWithAxios(() => useAddAccount(), {
       user,
@@ -47,7 +47,11 @@ describe("useAddAccount", () => {
     expect(store.getState().sublay.auth.refreshToken).toBeNull();
     expect(store.getState().sublay.auth.user).toBeNull();
     expect(store.getState().sublay.user.user).toBeNull();
-    expect(store.getState().sublay.accounts.activeAccountId).toBeNull();
+    // ...and the PERSISTED, CROSS-TAB-BROADCAST map is untouched: the selection
+    // still names the account the user stepped out of, and nothing claims a
+    // sign-out. Writing either of those here signed every other tab out.
+    expect(store.getState().sublay.accounts.activeAccountId).toBe("user-1");
+    expect(store.getState().sublay.accounts.signedOut).toBe(false);
     // Existing accounts in the map are left untouched.
     expect(Object.keys(store.getState().sublay.accounts.accounts)).toHaveLength(1);
     // ...and the outgoing account's feature state does not survive into the
@@ -55,12 +59,17 @@ describe("useAddAccount", () => {
     expect(store.getState().sublay.chat.unreadConversationCount).toBeNull();
   });
 
-  it("records leaving as deliberate, so an ABANDONED flow does not activate another account", () => {
-    // `activeAccountId: null` means both "nobody has ever picked" and "the
-    // session was intentionally ended", and only the first should fall back to
-    // a stored account. Without the flag, a user who backs out of the sign-in
-    // screen and quits is silently signed into the OLDEST remembered account on
-    // the next launch — `useAccountSync` Phase A's first-account fallback.
+  it("does NOT record a sign-out — an ABANDONED flow returns to the account the user was in", () => {
+    // This used to dispatch `setActiveAccount(null)` + `setSignedOut(true)` so
+    // that Phase A's first-account fallback would not drop an abandoning user
+    // into the OLDEST remembered account on the next launch. Both writes land
+    // in the PERSISTED map, which `useAccountSync` Phase D broadcasts to every
+    // other tab — where "nobody is active" reads as a sign-out and tears that
+    // tab's live session down.
+    //
+    // Leaving the selection alone fixes the launch bug more directly: there is
+    // no ambiguous null for Phase A to resolve, so it restores `user-1` — the
+    // account the user actually stepped out of, never `user-0`.
     const { result, store } = renderHookWithAxios(() => useAddAccount(), {
       accessToken: "access-1",
       refreshToken: "refresh-1",
@@ -79,13 +88,16 @@ describe("useAddAccount", () => {
       result.current.addAccount();
     });
 
-    expect(store.getState().sublay.accounts.activeAccountId).toBeNull();
-    expect(store.getState().sublay.accounts.signedOut).toBe(true);
+    expect(store.getState().sublay.accounts.activeAccountId).toBe("user-1");
+    expect(store.getState().sublay.accounts.signedOut).toBe(false);
     // The entries survive — the whole point is that the other accounts are
     // still there to switch back into.
     expect(
       Object.keys(store.getState().sublay.accounts.accounts),
     ).toHaveLength(2);
+    // The local session IS gone, which is what surfaces the sign-in screen.
+    expect(store.getState().sublay.auth.accessToken).toBeNull();
+    expect(store.getState().sublay.auth.refreshToken).toBeNull();
   });
 
   it("clears account-scoped feature state", () => {
@@ -123,11 +135,15 @@ describe("useAddAccount", () => {
   });
 
   it("reports canAddAccount as false and no-ops once MAX_ACCOUNTS is reached", () => {
-    const { result, store } = renderHookWithAxios(() => useAddAccount());
+    const { result, store } = renderHookWithAxios(() => useAddAccount(), {
+      accessToken: "access-1",
+      refreshToken: "refresh-1",
+    });
     act(() => {
       store.dispatch(
         setAccountMap({ activeAccountId: "user-0", accounts: makeAccounts(MAX_ACCOUNTS) }),
       );
+      store.dispatch(setUnreadSummary({ totalUnread: 8, unreadConversationCount: 4 }));
     });
 
     expect(result.current.canAddAccount).toBe(false);
@@ -136,7 +152,13 @@ describe("useAddAccount", () => {
       result.current.addAccount();
     });
 
-    // Nothing was reset since the cap was already reached.
+    // Nothing was torn down, since the cap was already reached: the user is
+    // still signed in where they were rather than being dropped onto a sign-in
+    // screen they can never complete. (Asserted on the SESSION, not on the
+    // selection — the selection is left alone on every path now.)
+    expect(store.getState().sublay.auth.accessToken).toBe("access-1");
+    expect(store.getState().sublay.auth.refreshToken).toBe("refresh-1");
+    expect(store.getState().sublay.chat.unreadConversationCount).toBe(4);
     expect(store.getState().sublay.accounts.activeAccountId).toBe("user-0");
   });
 });
