@@ -23,7 +23,13 @@ export const reactNativePushTokenAdapter: PushTokenAdapter = {
   // was never granted notification permission cannot have been registered by
   // `register()`, which stops at `requestPermission()` without a grant, so
   // there is no binding for it to discover and no reason to store its push
-  // token.
+  // token — for a binding created by THIS release.
+  //
+  // ⚠ Core bypasses it exactly once per device, and this is why: revoking
+  // notification permission neither invalidates the token nor removes a
+  // binding, so a device that registered on an older release and has since
+  // turned notifications off still has one, and gating on this would leave it
+  // permanently unreachable. See `AccountMap.pushIdentifierProbed`.
   async hasPermission(): Promise<boolean> {
     const status = await messaging().hasPermission();
     return (

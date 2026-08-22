@@ -7,6 +7,7 @@ import {
   setActiveAccount,
   setAccountsReady,
   registerAccountManager,
+  markPushIdentifierProbed,
   selectAccounts,
   selectActiveAccountId,
   selectAccountsReady,
@@ -128,6 +129,20 @@ export default function useAccountSync(
               setRefreshToken(map.accounts[map.activeAccountId].refreshToken)
             );
           }
+        } else {
+          // NO MAP ON DISK — so this device has never stored an account, and
+          // therefore cannot be carrying a push binding created by a release
+          // that persisted no device identifier. Burn the one-time
+          // permission-ignoring read here rather than leaving it armed: an app
+          // that mounts `usePushRegistration` only AFTER sign-in would
+          // otherwise fire it on the next launch of a brand-new install, and
+          // store a device token for a user who never went near a permission
+          // prompt. See `AccountMap.pushIdentifierProbed`.
+          //
+          // Nothing is persisted from here — Phase C skips the initial load by
+          // design. The flag rides out on the first real write, which on this
+          // path is the sign-in that creates the map.
+          dispatch(markPushIdentifierProbed());
         }
       } catch (error) {
         handleError(error, "Failed to load account map from storage");

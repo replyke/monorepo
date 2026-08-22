@@ -181,6 +181,37 @@ export interface AccountMap {
    */
   deviceIdentifier?: PushDeviceIdentifier | null;
   /**
+   * `true` means this device has already run the ONE-TIME unconditional read of
+   * its push identifier, so the read must never run again.
+   *
+   * **What it is for.** `usePushRegistration`'s mount read is gated on the OS
+   * notification permission, which is a good steady-state rule and a wrong
+   * rule exactly once: an install that registered on a release that persisted
+   * no identifier, and has since revoked permission in system settings, holds a
+   * live server-side binding that the gate makes unreachable — sign-out,
+   * account removal and the per-account toggle are all gated on having an
+   * identifier, so none of them can unbind it, and nothing else ever will
+   * (revoking permission does not invalidate an APNs/FCM token, and the
+   * server prunes only on uninstall/dead-token signals). So the read runs ONCE
+   * ignoring permission, and this flag is what makes "once" survive a relaunch.
+   *
+   * Written by two places, both meaning "there is nothing left to discover":
+   *
+   *   - `usePushRegistration`, after the mount read has actually completed.
+   *   - `useAccountSync` Phase A, when storage holds NO map at all. A device
+   *     with no account map has never stored an account, so it cannot hold a
+   *     binding created by an older release — and marking it here is what stops
+   *     the one-shot firing on a fresh install whose app only mounts the push
+   *     hook after sign-in.
+   *
+   * Device state like `deviceIdentifier`, not account state: it survives
+   * `clearAllAccounts` and is dropped only by `deleteAccountMap`.
+   *
+   * Absent (maps written before this field existed) reads as `false`, which is
+   * the whole point — those are precisely the maps the one-shot exists for.
+   */
+  pushIdentifierProbed?: boolean;
+  /**
    * `true` means "the last thing that happened was a deliberate sign-out".
    *
    * Persisted, because relaunch is exactly the case it exists to survive. It is
@@ -208,6 +239,8 @@ export interface AccountsState {
    * request, where `AccountStorage` is not reachable.
    */
   deviceIdentifier: PushDeviceIdentifier | null;
+  /** See `AccountMap.pushIdentifierProbed`. */
+  pushIdentifierProbed: boolean;
   /** See `AccountMap.signedOut`. */
   signedOut: boolean;
   /**
@@ -286,6 +319,7 @@ const initialState: AccountsState = {
   accounts: {},
   activeAccountId: null,
   deviceIdentifier: null,
+  pushIdentifierProbed: false,
   signedOut: false,
   accountLimitReached: false,
   isReady: false,
@@ -301,6 +335,9 @@ const accountsSlice = createSlice({
       state.activeAccountId = action.payload.activeAccountId;
       state.signedOut = action.payload.signedOut ?? false;
       state.deviceIdentifier = action.payload.deviceIdentifier ?? null;
+      // Absent reads as `false` — a map written before this field existed is
+      // exactly the population the one-shot read exists for.
+      state.pushIdentifierProbed = action.payload.pushIdentifierProbed ?? false;
     },
     upsertAccount: (
       state,
@@ -332,6 +369,18 @@ const accountsSlice = createSlice({
       action: PayloadAction<PushDeviceIdentifier | null>
     ) => {
       state.deviceIdentifier = action.payload;
+    },
+    /**
+     * Burns the one-time unconditional push-identifier read. See
+     * `AccountMap.pushIdentifierProbed`.
+     *
+     * One-way on purpose: there is no un-marking action, because the thing it
+     * records — "the read that ignores permission has had its chance" — cannot
+     * become untrue. Callers must persist after dispatching it, or the one-shot
+     * fires again on the next launch.
+     */
+    markPushIdentifierProbed: (state) => {
+      state.pushIdentifierProbed = true;
     },
     /**
      * Records whether an account wants push on THIS device.
@@ -507,6 +556,10 @@ const accountsSlice = createSlice({
       // device's token because nobody is signed in, and losing it would leave
       // the next sign-in unable to reconcile its bindings. Only
       // `deleteAccountMap` — a full wipe — drops it.
+      //
+      // Neither is `pushIdentifierProbed`, for the same reason and one more:
+      // clearing it would re-arm the one-time permission-ignoring read on every
+      // sign-out-all, which is the opposite of once.
     },
     setAccountsReady: (state, action: PayloadAction<boolean>) => {
       state.isReady = action.payload;
@@ -521,6 +574,7 @@ export const {
   setAccountMap,
   upsertAccount,
   setDeviceIdentifier,
+  markPushIdentifierProbed,
   setAccountPushEnabled,
   setAccountCredential,
   setAccountNeedsReauth,
@@ -554,6 +608,7 @@ export function buildAccountMap(state: AccountsState): AccountMap {
     accounts: state.accounts,
     signedOut: state.signedOut,
     deviceIdentifier: state.deviceIdentifier,
+    pushIdentifierProbed: state.pushIdentifierProbed,
   };
 }
 

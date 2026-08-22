@@ -653,6 +653,10 @@ describe("usePushRegistration", () => {
       //
       // `register()` cannot create a binding without a grant (it stops at
       // `requestPermission()`), so no grant implies no binding.
+      //
+      // THE STEADY STATE, i.e. `pushIdentifierProbed` already set: the one-time
+      // permission-ignoring read has had its turn (see the next three tests)
+      // and everything after it is gated.
       const store = makeRtkQueryStore();
       store.dispatch(setUser(makeAuthUser()));
       store.dispatch(
@@ -663,6 +667,7 @@ describe("usePushRegistration", () => {
           activeAccountId: "test-user-id",
           accounts: makeAccounts(),
           deviceIdentifier: null,
+          pushIdentifierProbed: true,
         }),
       );
 
@@ -701,6 +706,9 @@ describe("usePushRegistration", () => {
           activeAccountId: "test-user-id",
           accounts: makeAccounts(),
           deviceIdentifier: null,
+          // Probed already, so this exercises the GATE and not the one-shot
+          // below it.
+          pushIdentifierProbed: true,
         }),
       );
 
@@ -719,6 +727,164 @@ describe("usePushRegistration", () => {
       );
       expect(adapter.getDeviceIdentifier).toHaveBeenCalledTimes(1);
       expect(adapter.requestPermission).not.toHaveBeenCalled();
+    });
+
+    it("IGNORES the permission gate on the device's FIRST mount read, once", async () => {
+      // THE LEAK THE GATE OPENS, and the whole reason it is bypassed once.
+      //
+      // An install that registered on a release which persisted no identifier,
+      // and has since turned notifications off in system settings, still holds
+      // a LIVE server-side binding: revoking permission does not invalidate an
+      // APNs/FCM token, and the server prunes only on uninstall/dead-token
+      // signals (`BadDeviceToken` / `Unregistered`,
+      // `messaging/registration-token-not-registered`). None of those means
+      // "the user turned notifications off", so nothing ever prunes it — and
+      // with the gate closed no client path can reach it either, because
+      // sign-out, account removal and the toggle are all gated on a stored
+      // identifier. Re-enable notifications later and the device receives
+      // notifications for an account nobody is signed into.
+      const setAccountMapSpy = spyOnPersistedMaps();
+      const store = makeRtkQueryStore();
+      store.dispatch(setUser(makeAuthUser()));
+      store.dispatch(
+        setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }),
+      );
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "test-user-id",
+          accounts: makeAccounts(),
+          deviceIdentifier: null,
+          // Absent — a map written before the flag existed, which is exactly
+          // the population the one-shot exists for.
+        }),
+      );
+
+      const adapter = makeAdapter({
+        canReadIdentifierWithoutPrompting: true,
+        hasPermission: vi.fn().mockResolvedValue(false),
+        subscribeToIdentifierChanges: vi.fn().mockReturnValue(() => {}),
+      });
+      renderHookWithStore(() => usePushRegistration(adapter), {
+        projectId: "test-project",
+        store,
+      });
+
+      await waitFor(() =>
+        expect(store.getState().sublay.accounts.deviceIdentifier).toEqual(
+          DEVICE,
+        ),
+      );
+      // Read WITHOUT a grant — and still without asking for one. The read is
+      // safe because `canReadIdentifierWithoutPrompting` says it cannot prompt,
+      // which is a property of the adapter and not of the permission state.
+      expect(adapter.requestPermission).not.toHaveBeenCalled();
+
+      // ONCE, and durably: the flag rides out to storage, so the next launch
+      // reads a map that is already probed and falls back to the gate.
+      await waitFor(() => {
+        const maps = persistedMaps(setAccountMapSpy) as unknown as {
+          pushIdentifierProbed?: boolean;
+        }[];
+        expect(maps.some((map) => map.pushIdentifierProbed === true)).toBe(true);
+      });
+      // eslint-disable-next-line no-console
+      expect(store.getState().sublay.accounts.pushIdentifierProbed).toBe(true);
+    });
+
+    it("does NOT run the one-shot on a device with no stored account", async () => {
+      // A NECESSARY CONDITION, not a heuristic: the unbind is scoped to a
+      // refresh token's subject, so with nothing stored there is no credential
+      // any unbind could ever be scoped to and an identifier buys nothing. The
+      // flag is burned anyway, so signing in later does not re-arm the one-shot
+      // on what is plainly a fresh install.
+      const setAccountMapSpy = spyOnPersistedMaps();
+      const store = makeRtkQueryStore();
+      store.dispatch(setUser(makeAuthUser()));
+      store.dispatch(
+        setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }),
+      );
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: null,
+          accounts: {},
+          deviceIdentifier: null,
+        }),
+      );
+
+      const adapter = makeAdapter({
+        canReadIdentifierWithoutPrompting: true,
+        hasPermission: vi.fn().mockResolvedValue(false),
+        subscribeToIdentifierChanges: vi.fn().mockReturnValue(() => {}),
+      });
+      renderHookWithStore(() => usePushRegistration(adapter), {
+        projectId: "test-project",
+        store,
+      });
+
+      await waitFor(() =>
+        expect(store.getState().sublay.accounts.pushIdentifierProbed).toBe(true),
+      );
+      expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
+      expect(adapter.requestPermission).not.toHaveBeenCalled();
+      expect(store.getState().sublay.accounts.deviceIdentifier).toBeNull();
+      await waitFor(() => {
+        const maps = persistedMaps(setAccountMapSpy) as unknown as {
+          pushIdentifierProbed?: boolean;
+        }[];
+        expect(maps.some((map) => map.pushIdentifierProbed === true)).toBe(true);
+      });
+    });
+
+    it("a FAILED permission check does not burn the one-shot, but does spend the mount's attempt", async () => {
+      // Two separate one-times, and they must not be conflated.
+      //
+      // The persisted flag is the device's single permission-ignoring read; an
+      // adapter that happened to throw must not cost it, because there is no
+      // next launch to retry on once the flag is written. The in-memory ref is
+      // this MOUNT's attempt, burned before the async work so a re-running
+      // effect cannot start a second read — the retries for that one are the
+      // next launch, the next rotation and the next `register()`.
+      //
+      // An identifier is already stored, so the one-shot's narrowing conditions
+      // put this on the GATED path — which is what makes `hasPermission` run at
+      // all while the flag is still unburned.
+      const store = makeRtkQueryStore();
+      store.dispatch(setUser(makeAuthUser()));
+      store.dispatch(
+        setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }),
+      );
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "test-user-id",
+          accounts: makeAccounts(),
+          deviceIdentifier: DEVICE,
+        }),
+      );
+
+      const adapter = makeAdapter({
+        canReadIdentifierWithoutPrompting: true,
+        hasPermission: vi.fn().mockRejectedValue(new Error("adapter exploded")),
+        subscribeToIdentifierChanges: vi.fn().mockReturnValue(() => {}),
+      });
+      renderHookWithStore(() => usePushRegistration(adapter), {
+        projectId: "test-project",
+        store,
+      });
+
+      await waitFor(() => expect(adapter.hasPermission).toHaveBeenCalled());
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      // NOT burned — the next launch gets the read this one failed to make.
+      expect(store.getState().sublay.accounts.pushIdentifierProbed).toBe(false);
+      expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
+
+      // Re-run the effect (readiness is one of its dependencies). The mount's
+      // attempt is spent, so nothing runs a second time.
+      act(() => {
+        store.dispatch(setAccountsReady(true));
+      });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(adapter.hasPermission).toHaveBeenCalledTimes(1);
     });
 
     it("does NOT read the identifier on mount for an adapter that has not declared it", async () => {
@@ -835,7 +1001,18 @@ describe("usePushRegistration", () => {
         true,
       );
       expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
-      expect(setAccountMapSpy).not.toHaveBeenCalled();
+      // Scoped to CONTENT, not to the call count. Writes are serialized through
+      // one module-global storage slot, so a persist still in flight from an
+      // earlier test's hook can land on this spy — which says nothing about
+      // this hook. What must never appear is a map built from a PRE-RESTORE
+      // snapshot, i.e. one with no accounts in it: that is the write that would
+      // wipe every stored account off the device. Remove either gate and
+      // exactly that map is written.
+      expect(
+        persistedMaps(setAccountMapSpy).some(
+          (map) => Object.keys(map.accounts).length === 0,
+        ),
+      ).toBe(false);
       expect(store.getState().sublay.accounts.deviceIdentifier).toBeNull();
 
       // Once the restore lands, the read proceeds against the real map.
@@ -887,7 +1064,18 @@ describe("usePushRegistration", () => {
 
       expect(store.getState().sublay.accounts.isReady).toBe(false);
       expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
-      expect(setAccountMapSpy).not.toHaveBeenCalled();
+      // Scoped to CONTENT, not to the call count. Writes are serialized through
+      // one module-global storage slot, so a persist still in flight from an
+      // earlier test's hook can land on this spy — which says nothing about
+      // this hook. What must never appear is a map built from a PRE-RESTORE
+      // snapshot, i.e. one with no accounts in it: that is the write that would
+      // wipe every stored account off the device. Remove either gate and
+      // exactly that map is written.
+      expect(
+        persistedMaps(setAccountMapSpy).some(
+          (map) => Object.keys(map.accounts).length === 0,
+        ),
+      ).toBe(false);
       expect(store.getState().sublay.accounts.deviceIdentifier).toBeNull();
 
       act(() => {
