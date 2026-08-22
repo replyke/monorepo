@@ -191,6 +191,17 @@ export {
 export { resetAccountScopedState } from "./store/actions";
 export { resetAuth } from "./store/slices/authSlice";
 export { clearUser } from "./store/slices/userSlice";
+// `setSignedOut` completes that set. The other three clear the SESSION; none of
+// them touches `accountsSlice`, so a hand-rolled teardown left `signedOut:
+// false` with an account still selected — and the next launch read that as "the
+// user has never picked an account", re-activated it and restored its refresh
+// token. The app signed itself back in. Dispatch `setSignedOut(true)` to record
+// that ending the session was deliberate; `setActiveAccount` clears it again on
+// the next activation, so nothing has to unset it by hand.
+//
+// A plain boolean, with none of the corruption risk that keeps
+// `setActiveAccount` unexported.
+export { setSignedOut } from "./store/slices/accountsSlice";
 
 // -- (current) user
 export {

@@ -482,6 +482,51 @@ describe("secureStoreStorage — removal path", () => {
     expect(fake.raw(accountKey("b"))).toBeNull();
   });
 
+  it("does NOT sweep an account whose removal was announced but never committed", async () => {
+    // The sweep exists to reclaim orphans, and `pending` is deliberately
+    // written BEFORE the commit — so between the announcement and the commit
+    // the index both NAMES an account and announces it. An interruption in that
+    // window (the app killed, the process suspended) leaves exactly that state
+    // on disk.
+    //
+    // ⚠ The committed-ids filter is what stops the sweep destroying the
+    // credential of an account whose removal never committed. Dropping it
+    // passed the entire suite while making a load delete a live account's
+    // refresh token — a random logout with no cause anybody could trace.
+    const fake = installFakeStore();
+    await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a", "b"]));
+
+    // Remove "b", and die at the COMMIT — after the announcement landed.
+    let indexWrites = 0;
+    setItemAsync.mockImplementation(async (key: string, value: string) => {
+      if (key === INDEX_KEY) {
+        indexWrites += 1;
+        // 1 = the announcement, 2 = the commit.
+        if (indexWrites === 2) throw new Error("interrupted");
+      }
+      fake.store.set(key, value);
+    });
+    await expect(
+      secureStoreStorage.setAccountMap(PROJECT, makeMap(["a"]))
+    ).rejects.toThrow("interrupted");
+
+    // On disk: "b" is still committed AND announced.
+    const announced = JSON.parse(fake.raw(INDEX_KEY)!);
+    expect(announced.accountIds).toEqual(["a", "b"]);
+    expect(announced.pending).toEqual(["b"]);
+
+    setItemAsync.mockImplementation(async (key: string, value: string) => {
+      fake.store.set(key, value);
+    });
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+
+    // The removal never committed, so "b" is still a live account — with its
+    // credential intact and readable.
+    expect(loaded!.accounts.b).toBeDefined();
+    expect(loaded!.accounts.b.refreshToken).toBe(makeEntry("b").refreshToken);
+    expect(fake.raw(accountKey("b"))).not.toBeNull();
+  });
+
   it("deleteAccountMap leaves zero keys behind", async () => {
     const fake = installFakeStore();
     await secureStoreStorage.setAccountMap(
@@ -515,10 +560,23 @@ describe("secureStoreStorage — removal path", () => {
     expect(fake.keys()).toEqual([]);
   });
 
-  it("rejects — and logs — when the wipe cannot complete", async () => {
+  it("rejects — and logs — when a per-account value cannot be deleted, keeping the index", async () => {
+    // ORDERING, pinned. The wipe deletes the VALUES first and the index LAST,
+    // and only an interruption can tell the two orders apart — with every
+    // delete failing (or every delete succeeding) both orders look identical,
+    // which is why "leaves zero keys behind" and a blanket-rejection test both
+    // passed with the index deleted first.
+    //
+    // Index first means: the index is gone, the value delete then fails, and
+    // every surviving credential is resident with nothing naming it. There is
+    // no key-enumeration API, so nothing can ever find it again — a credential
+    // wipe that wipes nothing and cannot be retried.
     const fake = installFakeStore();
     await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a"]));
-    deleteItemAsync.mockRejectedValue(new Error("keychain locked"));
+    deleteItemAsync.mockImplementation(async (key: string) => {
+      if (key === accountKey("a")) throw new Error("keychain locked");
+      fake.store.delete(key);
+    });
 
     await expect(secureStoreStorage.deleteAccountMap(PROJECT)).rejects.toThrow(
       "keychain locked"
@@ -527,8 +585,11 @@ describe("secureStoreStorage — removal path", () => {
       expect.anything(),
       "Failed to delete account map from SecureStore"
     );
-    // The index survives, so a retry can still find what is left.
+    // The index survives, still naming the credential that is still on disk, so
+    // a retry can finish the job.
     expect(fake.raw(INDEX_KEY)).not.toBeNull();
+    expect(JSON.parse(fake.raw(INDEX_KEY)!).accountIds).toEqual(["a"]);
+    expect(fake.raw(accountKey("a"))).not.toBeNull();
   });
 });
 

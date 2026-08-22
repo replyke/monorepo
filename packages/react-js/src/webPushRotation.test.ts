@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
+const handleError = vi.fn();
+
+vi.mock("@sublay/core", () => ({
+  handleError: (...args: unknown[]) => handleError(...args),
+}));
+
 import { subscribeToWebPushIdentifierChanges } from "./webPushRotation";
 
 function makeSubscription(endpoint: string) {
@@ -38,6 +44,7 @@ function stubServiceWorker(options: {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  handleError.mockClear();
 });
 
 describe("subscribeToWebPushIdentifierChanges", () => {
@@ -102,6 +109,26 @@ describe("subscribeToWebPushIdentifierChanges", () => {
       subscribeToWebPushIdentifierChanges({ projectId: "p" }, onChange)(),
     ).not.toThrow();
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("REPORTS a browser that refuses to report its own subscription", async () => {
+    // The only path by which the web discovers a rotated subscription, and the
+    // one an installed base that never calls `register()` again depends on
+    // entirely. A bare `catch {}` turned "rotation coverage is dead on this
+    // device" into an event with no trace anywhere.
+    const { getSubscription } = stubServiceWorker({
+      registration: {},
+      subscription: null,
+    });
+    getSubscription.mockRejectedValue(new Error("SecurityError"));
+
+    const onChange = vi.fn();
+    subscribeToWebPushIdentifierChanges({ projectId: "p" }, onChange);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(handleError).toHaveBeenCalledTimes(1);
+    expect(handleError.mock.calls[0][1]).toContain("rotation coverage");
   });
 
   it("abandons an in-flight check after unsubscribe", async () => {

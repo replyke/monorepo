@@ -37,7 +37,12 @@ const {
   };
 });
 
+const handleError = vi.fn();
+
 vi.mock("react-native", () => ({ Platform: PlatformMock }));
+vi.mock("@sublay/core", () => ({
+  handleError: (...args: unknown[]) => handleError(...args),
+}));
 vi.mock("@react-native-firebase/messaging", () => ({ default: messagingFn }));
 
 import { reactNativePushTokenAdapter } from "./PushTokenAdapter";
@@ -151,7 +156,11 @@ describe("reactNativePushTokenAdapter.subscribeToIdentifierChanges", () => {
     expect(emitted).toEqual({ platform: "android", token: "fcm-token-3" });
   });
 
-  it("emits null rather than throwing when re-derivation fails", async () => {
+  it("REPORTS a failed re-derivation instead of reporting no change", async () => {
+    // It used to answer a failure with `onChange(null)`, which is core's "there
+    // is nothing to report" signal — so a device whose token had just rotated
+    // was told nothing had changed, stayed bound to the replaced token, and
+    // left no trace anywhere. Rotation coverage died silently.
     PlatformMock.OS = "android";
     getToken.mockRejectedValue(new Error("no token"));
     onTokenRefresh.mockReturnValue(vi.fn());
@@ -168,6 +177,10 @@ describe("reactNativePushTokenAdapter.subscribeToIdentifierChanges", () => {
     handler("ignored");
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(emitted).toBeNull();
+    // Nothing emitted at all — not a no-change.
+    expect(emitted).toBe("unset");
+    expect(handleError).toHaveBeenCalledTimes(1);
+    expect(handleError.mock.calls[0][1]).toContain("re-derive");
+    // ...and it still does not throw out of the OS callback.
   });
 });

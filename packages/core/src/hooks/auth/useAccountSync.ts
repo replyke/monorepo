@@ -78,6 +78,11 @@ export default function useAccountSync(
   const activeAccountIdRef = useRef(activeAccountId);
   activeAccountIdRef.current = activeAccountId;
 
+  // Same reason, for the resume re-read below: that listener is registered once
+  // and must reach the CURRENT handle without re-registering.
+  const storageRef = useRef(storage);
+  storageRef.current = storage;
+
   // Phase A: Mount — register + load from storage
   useEffect(() => {
     dispatch(registerAccountManager());
@@ -322,121 +327,176 @@ export default function useAccountSync(
 
     const storageKey = `sublay-accounts:${projectId}`;
 
-    const handleStorageEvent = (event: StorageEvent) => {
-      if (event.key !== storageKey || !event.newValue) return;
-      try {
-        const map: AccountMap = JSON.parse(event.newValue);
-        dispatch(setAccountMap(map));
+    // The convergence sequence, shared by the two ways a tab learns that the
+    // stored map moved on without it: another tab's `storage` event, and this
+    // tab waking up from the back/forward cache having missed one.
+    const applyIncomingMap = (map: AccountMap) => {
+      dispatch(setAccountMap(map));
 
-        // Cross-tab sync is a full account transition, not a state mirror: the
-        // other tab may have switched accounts or signed out entirely, and this
-        // tab is still rendering the previous account's cache and slice state.
-        const incomingId =
-          !map.signedOut && map.activeAccountId
-            ? map.activeAccountId
-            : null;
+      // Cross-tab sync is a full account transition, not a state mirror: the
+      // other tab may have switched accounts or signed out entirely, and this
+      // tab is still rendering the previous account's cache and slice state.
+      const incomingId =
+        !map.signedOut && map.activeAccountId
+          ? map.activeAccountId
+          : null;
 
-        // A DIFFERENT identity is arriving, as opposed to the same account's
-        // refresh token having rotated in the other tab. Only the first is a
-        // transition; the second happens on every ordinary rotation and must
-        // stay a cheap token update (see the install branch below).
-        const identityChanged = incomingId !== activeAccountIdRef.current;
+      // A DIFFERENT identity is arriving, as opposed to the same account's
+      // refresh token having rotated in the other tab. Only the first is a
+      // transition; the second happens on every ordinary rotation and must
+      // stay a cheap token update (see the install branch below).
+      const identityChanged = incomingId !== activeAccountIdRef.current;
 
+      if (identityChanged) {
+        dispatch(baseApi.util.resetApiState());
+        dispatch(resetAccountScopedState());
+      }
+
+      if (incomingId && map.accounts[incomingId]) {
+        // TEAR DOWN BEFORE INSTALLING — the same sequence
+        // `activateStoredAccount` runs, for the same reason.
+        //
+        // Installing only the refresh token left this tab holding the
+        // OUTGOING account's access token and user profile while
+        // `activeAccountId` named the incoming one. Access tokens live 30
+        // minutes and the auth gate only rotates within 60s of expiry, so
+        // for up to ~29 minutes the tab read AND wrote as the previous
+        // account under a switcher showing the new one — and because the
+        // cache was just dropped above, it refetched immediately under the
+        // wrong identity.
+        //
+        // With the access token cleared, nothing can go out as the outgoing
+        // account: the gate hands out a null credential rather than A's.
+        //
+        // NOT on a same-account rotation: clearing the session there would
+        // force a needless re-authentication round trip every time the other
+        // tab rotated its token, which is every refresh.
         if (identityChanged) {
-          dispatch(baseApi.util.resetApiState());
-          dispatch(resetAccountScopedState());
-        }
-
-        if (incomingId && map.accounts[incomingId]) {
-          // TEAR DOWN BEFORE INSTALLING — the same sequence
-          // `activateStoredAccount` runs, for the same reason.
-          //
-          // Installing only the refresh token left this tab holding the
-          // OUTGOING account's access token and user profile while
-          // `activeAccountId` named the incoming one. Access tokens live 30
-          // minutes and the auth gate only rotates within 60s of expiry, so
-          // for up to ~29 minutes the tab read AND wrote as the previous
-          // account under a switcher showing the new one — and because the
-          // cache was just dropped above, it refetched immediately under the
-          // wrong identity.
-          //
-          // With the access token cleared, nothing can go out as the outgoing
-          // account: the gate hands out a null credential rather than A's.
-          //
-          // NOT on a same-account rotation: clearing the session there would
-          // force a needless re-authentication round trip every time the other
-          // tab rotated its token, which is every refresh.
-          if (identityChanged) {
-            dispatch(resetAuth());
-            dispatch(clearUser());
-          }
-          dispatch(setRefreshToken(map.accounts[incomingId].refreshToken));
-
-          // ...AND MINT THE INCOMING ACCOUNT'S SESSION. The teardown above is
-          // only half a transition on its own, because NOTHING ELSE WOULD EVER
-          // RESTORE ONE HERE:
-          //
-          //   - `initializeAuthThunk` runs once, from a mount effect whose deps
-          //     are all stable afterwards, so it does not re-run on a switch.
-          //   - The gate does not park the request either. `resetAuth` leaves
-          //     `initialized` alone, so the gate stays OPEN and simply reports
-          //     "no token" — it rotates a near-expiry token, never a null one.
-          //   - The reactive refresh-on-403 lives on `axiosPrivate`, so it only
-          //     fires if something happens to make a `requireUserAuth` call. A
-          //     tab rendering signed-out UI issues `optionalUserAuth` reads,
-          //     which answer 200-as-a-stranger; there is no error to react to.
-          //   - `baseApi` has no reauth wrapper at all, and `resetApiState()`
-          //     two lines above forces every mounted query to refetch straight
-          //     away — caching stranger data under args that never change
-          //     again.
-          //
-          // So the tab would sit signed-out under a switcher naming the
-          // incoming account until something else woke it. This dispatch is the
-          // convergence step.
-          //
-          // SAFE TO ROTATE HERE, and this is the question worth asking, because
-          // presenting a spent refresh token destroys an account's whole token
-          // family. What is being presented is the SUCCESSOR the originating
-          // tab already exchanged for and durably persisted before it
-          // broadcast — not the token it spent. And when this rotation
-          // produces a successor of its own, the same-identity branch above
-          // carries it back to every other tab, so none of them is left holding
-          // the spent copy.
-          //
-          // Several tabs receiving one switch all present that same successor
-          // within milliseconds of each other. That is FINE, and better than
-          // the alternative: the server keeps a 30-second grace window in which
-          // a re-presented token returns the family's live successor instead of
-          // destroying the family (`requestNewAccessToken.ts`), and
-          // simultaneous presentations land inside it by construction, where
-          // lazily staggered ones might not.
-          //
-          // Only on an identity change — doing this on every rotation
-          // broadcast would have every tab re-rotate every other tab's
-          // rotation, forever.
-          if (identityChanged) {
-            dispatch(
-              requestNewAccessTokenThunk({ projectId })
-            ).catch((error: unknown) => {
-              // The thunk already reports its own failures and never rejects
-              // unless unwrapped; this is belt-and-braces so a rejection can
-              // never surface as an unhandled one from inside an event handler.
-              handleError(error, "Failed to restore the session after a cross-tab switch");
-            });
-          }
-        } else {
-          // The other tab signed out. Tear the local session down too —
-          // previously this branch did nothing at all, leaving this tab
-          // authenticated against a map that no longer holds its credential.
           dispatch(resetAuth());
           dispatch(clearUser());
         }
+        dispatch(setRefreshToken(map.accounts[incomingId].refreshToken));
+
+        // ...AND MINT THE INCOMING ACCOUNT'S SESSION. The teardown above is
+        // only half a transition on its own, because NOTHING ELSE WOULD EVER
+        // RESTORE ONE HERE:
+        //
+        //   - `initializeAuthThunk` runs once, from a mount effect whose deps
+        //     are all stable afterwards, so it does not re-run on a switch.
+        //   - The gate does not park the request either. `resetAuth` leaves
+        //     `initialized` alone, so the gate stays OPEN and simply reports
+        //     "no token" — it rotates a near-expiry token, never a null one.
+        //   - The reactive refresh-on-403 lives on `axiosPrivate`, so it only
+        //     fires if something happens to make a `requireUserAuth` call. A
+        //     tab rendering signed-out UI issues `optionalUserAuth` reads,
+        //     which answer 200-as-a-stranger; there is no error to react to.
+        //   - `baseApi` has no reauth wrapper at all, and `resetApiState()`
+        //     two lines above forces every mounted query to refetch straight
+        //     away — caching stranger data under args that never change
+        //     again.
+        //
+        // So the tab would sit signed-out under a switcher naming the
+        // incoming account until something else woke it. This dispatch is the
+        // convergence step.
+        //
+        // SAFE TO ROTATE HERE, and this is the question worth asking, because
+        // presenting a spent refresh token destroys an account's whole token
+        // family. What is being presented is the SUCCESSOR the originating
+        // tab already exchanged for and durably persisted before it
+        // broadcast — not the token it spent. And when this rotation
+        // produces a successor of its own, the same-identity branch above
+        // carries it back to every other tab, so none of them is left holding
+        // the spent copy.
+        //
+        // Several tabs receiving one switch all present that same successor
+        // within milliseconds of each other. That is FINE, and better than
+        // the alternative: the server keeps a 30-second grace window in which
+        // a re-presented token returns the family's live successor instead of
+        // destroying the family (`requestNewAccessToken.ts`), and
+        // simultaneous presentations land inside it by construction, where
+        // lazily staggered ones might not.
+        //
+        // Only on an identity change — doing this on every rotation
+        // broadcast would have every tab re-rotate every other tab's
+        // rotation, forever.
+        if (identityChanged) {
+          dispatch(
+            requestNewAccessTokenThunk({ projectId })
+          ).catch((error: unknown) => {
+            // The thunk already reports its own failures and never rejects
+            // unless unwrapped; this is belt-and-braces so a rejection can
+            // never surface as an unhandled one from inside an event handler.
+            handleError(error, "Failed to restore the session after a cross-tab switch");
+          });
+        }
+      } else {
+        // The other tab signed out. Tear the local session down too —
+        // previously this branch did nothing at all, leaving this tab
+        // authenticated against a map that no longer holds its credential.
+        dispatch(resetAuth());
+        dispatch(clearUser());
+      }
+    };
+
+    const handleStorageEvent = (event: StorageEvent) => {
+      if (event.key !== storageKey || !event.newValue) return;
+      try {
+        applyIncomingMap(JSON.parse(event.newValue) as AccountMap);
       } catch (error) {
         handleError(error, "Failed to sync account map from storage event");
       }
     };
 
+    // ── RESUME. The one cross-tab case the listener above cannot cover. ──
+    //
+    // `storage` events are delivered live or not at all, and the initial load
+    // runs once. A tab frozen into the back/forward cache and restored hours
+    // later therefore holds the map it had when it froze — including a refresh
+    // token another tab has since rotated away, which on its next use trips
+    // reuse detection and destroys that account's whole token family. Re-read
+    // before this tab uses any of it.
+    //
+    // THROUGH THE MUTEX, so a read cannot overtake a persist that is still in
+    // flight and resurrect the state it is replacing.
+    let rereading = false;
+    const rereadStoredAccounts = () => {
+      // A resume can arrive from more than one listener at once (a bfcache
+      // restore that also fires `resume`); one read is enough.
+      if (rereading) return;
+      rereading = true;
+      runAccountStorageOp(projectId, () =>
+        storageRef.current.getAccountMap(projectId)
+      )
+        .then((map) => {
+          if (map) applyIncomingMap(map);
+        })
+        .catch((error) => {
+          handleError(error, "Failed to re-read the account map on resume");
+        })
+        .finally(() => {
+          rereading = false;
+        });
+    };
+
+    // ONLY genuine resumes — `pageshow` with `persisted`, and the Page
+    // Lifecycle `resume`. Deliberately NOT `visibilitychange` or `focus`: those
+    // fire on every tab switch and every window focus, which on a busy desktop
+    // is dozens of times an hour, and each one would decrypt and re-read the
+    // whole account store to discover nothing changed. A tab that was merely
+    // hidden never stopped receiving `storage` events and is already current.
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) rereadStoredAccounts();
+    };
+
     window.addEventListener("storage", handleStorageEvent);
-    return () => window.removeEventListener("storage", handleStorageEvent);
+    window.addEventListener("pageshow", handlePageShow);
+    const doc = typeof document !== "undefined" ? document : null;
+    doc?.addEventListener?.("resume", rereadStoredAccounts);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageEvent);
+      window.removeEventListener("pageshow", handlePageShow);
+      doc?.removeEventListener?.("resume", rereadStoredAccounts);
+    };
   }, [projectId, dispatch]);
 }

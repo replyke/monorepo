@@ -280,7 +280,15 @@ describe("usePushRegistration", () => {
   });
 
   describe("device identifier + pushEnabled ownership", () => {
-    it("persists the device identifier and enables the active account", async () => {
+    it("persists the device identifier, enables the active account, and binds THAT account and no other", async () => {
+      // The claim this test's comment used to make and its assertions did not
+      // check. It read the Redux flags only, so "nothing else goes out" was
+      // prose: the active account's re-bind could vanish entirely, or every
+      // stored account could be bound, and this stayed green either way.
+      //
+      // What Phase 6 actually does is bind ONE account — the active one, whose
+      // session is already live and costs nothing to use — and MARK the rest.
+      // So the assertions are on the requests.
       fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({}));
       const axiosPublic = mockAxiosPublic();
       // The active account's re-bind. Nothing else goes out.
@@ -302,6 +310,27 @@ describe("usePushRegistration", () => {
       expect(
         state.sublay.accounts.accounts["test-user-id"].pushEnabled,
       ).toBe(true);
+
+      const posts = axiosPublic.calls("post");
+      const deviceCalls = posts.filter((c) =>
+        c.url.includes("push-notifications/devices"),
+      );
+      // EXACTLY ONE, carrying this device's identifier under the ACTIVE
+      // account's live session.
+      expect(deviceCalls).toHaveLength(1);
+      expect(deviceCalls[0].body).toEqual(DEVICE);
+      expect(deviceCalls[0].config?.headers.Authorization).toBe(
+        "Bearer access-1",
+      );
+      // ...and no stored credential was spent to reach any of the others.
+      expect(
+        posts.filter((c) => c.url.includes("request-new-access-token")),
+      ).toHaveLength(0);
+      expect(
+        axiosPublic
+          .calls("delete")
+          .filter((c) => c.url.includes("push-notifications/devices")),
+      ).toHaveLength(0);
     });
 
     it("records an explicit preference for EVERY account that never expressed one", async () => {

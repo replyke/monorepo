@@ -38,6 +38,26 @@ function makeAccounts(): Record<string, AccountEntry> {
   };
 }
 
+/**
+ * The same store BEFORE the bootstrap settled — `initialized: false`.
+ *
+ * The distinction is the whole point: asserting `initialized === true` on a
+ * store that already had it is vacuous, and it was. `setInitialized(true)` could
+ * be deleted from the transition core outright and the entire package suite
+ * stayed green, while what it guards is every outbound request in the session
+ * waiting out the auth gate's 5s ready-timeout fallback.
+ */
+function makeBootstrappingStore() {
+  const store = makeSublayStore();
+  store.dispatch(
+    setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() })
+  );
+  store.dispatch(
+    setTokens({ accessToken: "access-1", refreshToken: "refresh-1" })
+  );
+  return store;
+}
+
 /** A store standing in for "user-1 is signed in and everything is fine". */
 function makeLiveStore() {
   const store = makeSublayStore();
@@ -97,6 +117,34 @@ describe("activateStoredAccount (callable outside React)", () => {
   // The refresh exchange ROTATES: presenting a token revokes it. Validating
   // before committing moved the exchange earlier — it must not have ADDED one.
   // The validate step IS the session-establishing exchange.
+  it("OPENS the auth gate — on a store where it was still closed", async () => {
+    const store = makeBootstrappingStore();
+    expect(store.getState().sublay.auth.initialized).toBe(false);
+
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "access-2",
+      refreshToken: "refresh-2-rotated",
+      user: { id: "user-2" },
+    });
+
+    await activateStoredAccount({
+      dispatch: store.dispatch,
+      getState: () => store.getState(),
+      projectId: "project-1",
+      userId: "user-2",
+      refreshToken: "refresh-2",
+      previousActiveAccountId: "user-1",
+    });
+
+    // `resetAuth` in the teardown deliberately leaves `initialized` alone, so
+    // on the happy path this dispatch is a no-op — it is here for a transition
+    // that runs during bootstrap, and for the case where a dispatch above
+    // throws. Withholding it parks every outbound request behind the gate's 5s
+    // ready-timeout fallback, silently, for the rest of the session.
+    expect(store.getState().sublay.auth.initialized).toBe(true);
+  });
+
   it("spends exactly one token exchange", async () => {
     const store = makeLiveStore();
     const axios = mockAxiosPublic();

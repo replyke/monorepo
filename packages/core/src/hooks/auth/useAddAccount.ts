@@ -4,6 +4,7 @@ import { resetAuth } from "../../store/slices/authSlice";
 import { clearUser } from "../../store/slices/userSlice";
 import {
   setActiveAccount,
+  setSignedOut,
   selectAccounts,
   selectAccountLimitReached,
   MAX_ACCOUNTS,
@@ -47,6 +48,19 @@ export default function useAddAccount(): UseAddAccountReturn {
     dispatch(resetAuth());
     dispatch(clearUser());
     dispatch(setActiveAccount(null));
+    // RECORD THAT LEAVING WAS DELIBERATE. `activeAccountId: null` is ambiguous
+    // on its own — it is both "nobody has ever picked an account" and "the
+    // session was intentionally ended" — and only the first should fall back to
+    // a stored account. Without this, ABANDONING the flow (the user backs out
+    // of the sign-in screen and quits) left the map selecting nobody with the
+    // flag still false, so Phase A's first-account fallback silently activated
+    // the OLDEST remembered account on the next launch. The user asked to add
+    // an account, not to be moved into a different one.
+    //
+    // Cleared again the moment an account is activated — a completed sign-in
+    // dispatches `setActiveAccount(id)`, which is the defined clearing point —
+    // so this costs the successful path nothing.
+    dispatch(setSignedOut(true));
     dispatch(baseApi.util.resetApiState());
     // The outgoing account's feature state must not survive into the account
     // the user is about to sign into.
