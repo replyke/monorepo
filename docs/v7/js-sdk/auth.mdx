@@ -141,20 +141,29 @@ await sublay.auth.signOut({
   signed out.
 </Warning>
 
-**Returns** — `Promise<{ pushUnbindSkipped: boolean }>`
+**Returns** — `Promise<{ pushUnbindSkipped: boolean; pushUnbindSkipReason?: "no-refresh-token" | "push-unbind-status-unknown" }>`
 
-`pushUnbindSkipped` is `true` only when a `pushDevice` was supplied and no refresh
-token could be resolved, so the unbind was never requested and this device's binding
-for that account is still live — the sign-out itself happened either way. It is
-`false` on every other outcome, including a sign-out that asked for no unbind at all.
-Recover by re-issuing the sign-out with an explicit `refreshToken` in hand, or by
-removing the binding from a client that holds one.
+`pushUnbindSkipped` is `true` whenever a `pushDevice` was supplied and the unbind did
+not happen, so this device's binding for that account may still be live. The sign-out
+itself completes either way. There are two ways to get it, and they are recovered
+differently — `pushUnbindSkipReason` says which:
 
-It reports this client's own skip, not the server's. The server has one skip of its
-own — a `200` carrying `pushUnbindSkipped: true` and `auth/push-unbind-status-unknown`,
-returned when it could not determine whether the project has push devices — and that
-one resolves normally here with `pushUnbindSkipped: false`. See
-[`POST /auth/sign-out`](/api-reference/auth/sign-out#response).
+- **`"no-refresh-token"`** — the SDK never asked, because no refresh token could be
+  resolved (see `pushDevice` above). Nothing was destroyed either: with no token the
+  server has no session to end, so the account, its credential and its binding are all
+  still there. **Retryable** — re-issue the sign-out with an explicit `refreshToken`,
+  or remove the binding from a client that holds one.
+- **`"push-unbind-status-unknown"`** — the server was asked and could not answer: it
+  could not determine whether the project has push devices, so it attempted no unbind
+  and said so in a `200` body (see
+  [`POST /auth/sign-out`](/api-reference/auth/sign-out#response)). The sign-out itself
+  committed, so there is no credential left to retry with. The binding clears when
+  that account next registers on this device, or when the server prunes the token as
+  undeliverable.
+
+`false` means the unbind was not skipped — it either succeeded or was never asked for,
+as with a sign-out that passed no `pushDevice`. Both skips also log a warning, so a
+caller that ignores the result still hears about it.
 
 ---
 
