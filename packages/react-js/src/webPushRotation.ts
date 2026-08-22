@@ -1,3 +1,4 @@
+import { handleError } from "@sublay/core";
 import type { PushDeviceContext, PushDeviceIdentifier } from "@sublay/core";
 
 // Device-token rotation coverage for the web.
@@ -78,9 +79,17 @@ export function subscribeToWebPushIdentifierChanges(
 
       const identifier = toIdentifier(subscription);
       if (identifier && !cancelled) onChange(identifier);
-    } catch {
-      // Best-effort housekeeping. A browser that refuses to report its own
-      // subscription simply falls back to the next `register()`.
+    } catch (error) {
+      // Best-effort — a browser that refuses to report its own subscription
+      // falls back to the next `register()` — but NOT SILENT. This is the only
+      // path by which the web discovers a rotated subscription, and an
+      // installed base that never calls `register()` again depends on it
+      // entirely, so a bare `catch {}` here turned "rotation coverage is dead
+      // on this device" into an event with no trace anywhere.
+      handleError(
+        error,
+        "Failed to read the existing web push subscription; rotation coverage is inactive until the next register()"
+      );
     }
   })();
 

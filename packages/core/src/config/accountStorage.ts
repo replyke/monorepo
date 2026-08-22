@@ -48,13 +48,56 @@ let slot: StorageSlot | null = null;
 const chains = new Map<string, Promise<void>>();
 
 /**
+ * Raised when a second provider mounts for a DIFFERENT project.
+ *
+ * One project per app is the supported shape. Everything under this module is
+ * process-global — the slot below holds one handle, and `config/authGate` holds
+ * one token — so a second project's provider does not get its own world: it
+ * takes over the shared one. The non-last project then silently breaks. Its
+ * switcher stops working, and the mint path's rotated successor is refused at
+ * the persist guard AFTER the exchange has already revoked the presented token,
+ * which locks that account out permanently.
+ *
+ * Failing at mount converts that into a mistake the developer hits on the first
+ * render, before any credential exists to corrupt.
+ */
+export class AccountStorageMultiProjectError extends Error {
+  constructor(registered: string, incoming: string) {
+    super(
+      `Sublay supports one project per app. Account storage is already mounted for project ${registered}, ` +
+        `and a second provider tried to mount for ${incoming}. The two would share one account store, one ` +
+        `auth gate and one credential slot, so the non-last project's account switching stops working and a ` +
+        `rotated refresh token can be written under the wrong project's key — which locks that account out ` +
+        `permanently. Mount a single provider, for one project id, for the lifetime of the app.`
+    );
+    this.name = "AccountStorageMultiProjectError";
+  }
+}
+
+/**
  * Registers the storage handle an `AccountManager` mounted. Last mount wins;
  * there is no deregistration by design (see the header).
+ *
+ * **Refuses a second project.** Keyed on the projectId rather than on the
+ * handle, which is what separates the unsupported configuration from the
+ * ordinary ones: a remount, a development hot reload and a second provider for
+ * the SAME project all arrive here with a fresh handle and the same id, and all
+ * three must keep working. Only a different id is the configuration that
+ * corrupts credentials, and it is the only one that throws.
+ *
+ * (There is no deregistration to relax this with. Unmounting deliberately
+ * leaves the slot in place — clearing it would turn a surviving provider's
+ * awaited persist into a silent no-op — so "unmount the first, then mount the
+ * second" is not a supported sequence either, and the message does not offer
+ * it.)
  */
 export function registerAccountStorage(
   storage: AccountStorage,
   projectId: string
 ): void {
+  if (slot && slot.projectId !== projectId) {
+    throw new AccountStorageMultiProjectError(slot.projectId, projectId);
+  }
   slot = { storage, projectId };
 }
 

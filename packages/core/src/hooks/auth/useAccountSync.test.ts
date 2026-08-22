@@ -218,6 +218,95 @@ describe("useAccountSync", () => {
     );
   });
 
+  it("re-reads storage when a bfcached tab is restored, so it stops holding a rotated-away credential", async () => {
+    // The one cross-tab case the `storage` listener cannot cover: that event is
+    // delivered live or not at all, and the initial load runs once. A tab
+    // frozen into the back/forward cache and restored hours later holds the map
+    // it froze with — including a refresh token another tab has since rotated
+    // away, which on its next use trips reuse detection and destroys that
+    // account's whole token family.
+    const original = makeJwt({ sub: "user-1", jti: "original" });
+    const rotated = makeJwt({ sub: "user-1", jti: "rotated-elsewhere" });
+    const entry = (token: string) => ({
+      refreshToken: token,
+      tokenExpiresAt: 9999999999000,
+      user: { id: "user-1", name: null, email: null, avatar: null },
+    });
+
+    const storage = makeFakeStorage({
+      activeAccountId: "user-1",
+      accounts: { "user-1": entry(original) },
+    });
+    const { store } = renderHookWithAxios(() =>
+      useAccountSync(storage, "test-project"),
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.auth.refreshToken).toBe(original),
+    );
+
+    // Another tab rotated while this one was frozen. No `storage` event reaches
+    // a frozen tab, so this is the state it wakes up next to.
+    (storage.getAccountMap as unknown as { mockResolvedValue: (v: unknown) => void })
+      .mockResolvedValue({
+        activeAccountId: "user-1",
+        accounts: { "user-1": entry(rotated) },
+      } as AccountMap);
+
+    window.dispatchEvent(
+      new PageTransitionEvent("pageshow", { persisted: true }),
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.auth.refreshToken).toBe(rotated),
+    );
+    expect(store.getState().sublay.accounts.accounts["user-1"].refreshToken).toBe(
+      rotated,
+    );
+    // Same identity, so this is a cheap credential update — not a teardown and
+    // not a re-authentication round trip.
+    expect(store.getState().sublay.accounts.activeAccountId).toBe("user-1");
+  });
+
+  it("does not re-read on an ordinary foreground — only on a genuine resume", async () => {
+    // `visibilitychange` and `focus` fire on every tab switch. Re-reading there
+    // would decrypt and re-read the whole account store dozens of times an hour
+    // to discover nothing changed, and a tab that was merely hidden never
+    // stopped receiving `storage` events.
+    const storage = makeFakeStorage({
+      activeAccountId: "user-1",
+      accounts: {
+        "user-1": {
+          refreshToken: makeJwt({ sub: "user-1" }),
+          tokenExpiresAt: 9999999999000,
+          user: { id: "user-1", name: null, email: null, avatar: null },
+        },
+      },
+    });
+    const { store } = renderHookWithAxios(() =>
+      useAccountSync(storage, "test-project"),
+    );
+
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.isReady).toBe(true),
+    );
+    const readsAfterLoad = (storage.getAccountMap as unknown as { mock: { calls: unknown[] } })
+      .mock.calls.length;
+
+    window.dispatchEvent(new Event("focus"));
+    document.dispatchEvent(new Event("visibilitychange"));
+    // A `pageshow` that is NOT a bfcache restore — an ordinary navigation —
+    // is not a resume either.
+    window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: false }));
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(
+      (storage.getAccountMap as unknown as { mock: { calls: unknown[] } }).mock.calls
+        .length,
+    ).toBe(readsAfterLoad);
+  });
+
   it("does NOT default to the first account when the stored map is signedOut", async () => {
     // The whole point of the persisted flag: `activeAccountId: null` means two
     // different things, and only one of them should fall back to the first
@@ -838,7 +927,17 @@ describe("useAccountSync — Phase E (push reconciliation on transition)", () =>
     );
   });
 
-  it("does not reconcile while the live session still belongs to the outgoing account", async () => {
+  it("makes NO device call at all while the selection and the live session disagree", async () => {
+    // Mid-transition: the map still selects user-1 while the live session has
+    // already become user-2's. Reconciling here writes a device row for the
+    // OUTGOING account using the INCOMING account's token — one account's push
+    // binding created under another account's session.
+    //
+    // ⚠ ASSERT ZERO CALLS, not "the calls that happened used the right token".
+    // The bug SATISFIES that weaker assertion: `resolveAccessToken` sees
+    // `userId === activeAccountId` and takes the live-session branch, so the
+    // wrongly-created row goes out carrying exactly the header the weaker
+    // version was checking for. This test passed with the guard deleted.
     const storage = makeFakeStorage(makeMap("user-1"));
     const { store, axiosPublic } = renderHookWithAxios(
       () => useAccountSync(storage, "test-project"),
@@ -848,18 +947,21 @@ describe("useAccountSync — Phase E (push reconciliation on transition)", () =>
     await waitFor(() =>
       expect(store.getState().sublay.accounts.isReady).toBe(true),
     );
-    // `user` is still the previous account — mid-transition.
+    // `user` is the INCOMING account while the map still selects the outgoing
+    // one. With no refresh token in state, Phase B cannot upsert and move the
+    // selection, so the disagreement persists for the whole test.
     store.dispatch(setUser(makeAuthUser({ id: "user-2" })));
 
     await new Promise((resolve) => setTimeout(resolve, 20));
-    // Phase B moves the active account to user-2 first, and only then does the
-    // reconcile become legal — so the one thing that must never happen is a
-    // device call made under the WRONG identity.
-    for (const call of axiosPublic.calls("post")) {
-      if (call.url.includes("push-notifications/devices")) {
-        expect(call.config?.headers.Authorization).toBe("Bearer access-2");
-      }
-    }
+
+    expect(store.getState().sublay.accounts.activeAccountId).toBe("user-1");
+    expect(store.getState().sublay.user.user?.id).toBe("user-2");
+
+    const deviceCalls = [
+      ...axiosPublic.calls("post"),
+      ...axiosPublic.calls("delete"),
+    ].filter((c) => c.url.includes("push-notifications/devices"));
+    expect(deviceCalls).toHaveLength(0);
   });
 
   it("is a no-op when no device identifier is stored", async () => {

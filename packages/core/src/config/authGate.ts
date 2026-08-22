@@ -255,12 +255,14 @@ export async function getAuthorizedToken(
   // the request before it is even sent — strictly worse than the pre-gate
   // behaviour, where a refresh failure only cost one retry.
   //
-  // No refresher rejects today: all three callers bottom out in
-  // `await dispatch(requestNewAccessTokenThunk(...))` without `.unwrap()`,
-  // which resolves even for a rejected thunk. But `.unwrap()` is the idiomatic
-  // way to surface thunk errors, and this single-flight promise is shared
-  // across all three call sites — so adding it in one place would fail every
-  // request in the app. Guarded rather than documented.
+  // This guard is load-bearing, not defensive. Two of the three callers
+  // (`useAxiosPrivate` and `useAskContent`) pass `useAuth().requestNewAccessToken`,
+  // which THROWS — on a failed refresh, and on the no-project path. The
+  // single-flight promise is shared across all three call sites, so an
+  // unguarded rejection here would not fail one request: it would fail every
+  // in-flight request in the app at once.
+  //
+  // Do not remove this in the belief that no refresher rejects. One does.
   let refreshed: string | undefined;
   try {
     refreshed = await refreshAccessToken(currentRefresher);

@@ -4,6 +4,7 @@ import { getAuthorizedTokenForAccount } from "../../config/authGate";
 
 import { handleError } from "../../utils/handleError";
 import { isUnbindFailure } from "../../utils/unbindFailure";
+import { isCredentialRejection } from "../../utils/credentialRejection";
 import type { RootState } from "../index";
 import {
   setTokens,
@@ -20,6 +21,7 @@ import {
   removeAccount,
   clearAllAccounts,
   setActiveAccount,
+  setAccountNeedsReauth,
   setSignedOut,
   setAccountLimitReached,
   wouldExceedAccountLimit,
@@ -204,7 +206,21 @@ const authService = {
 
   async changePassword(
     projectId: string,
-    data: { password: string; newPassword: string },
+    data: {
+      password: string;
+      newPassword: string;
+      /**
+       * The caller's OWN session, named so the server can spare it.
+       *
+       * Changing a password destroys every token family for the user. The route
+       * is authenticated by an ACCESS token, which carries no `jti` and is not
+       * stored, so the server has no way to work out which session is asking —
+       * naming the refresh token this device holds is the only link there is.
+       * Omitting it destroys every session including this one, which is the
+       * fail-secure default and never an error.
+       */
+      refreshToken?: string;
+    },
     authorization: AuthorizedConfig
   ) {
     await axios.post(`/${projectId}/auth/change-password`, data, authorization);
@@ -276,7 +292,13 @@ const authService = {
  */
 type CapGateDispatch = (action: any) => any;
 
-export const ACCOUNT_LIMIT_MESSAGE = `This device is already signed in to ${MAX_ACCOUNTS} accounts, the maximum. Sign out of one of them before signing in to another.`;
+// Names the real cause. The map holds REMEMBERED CREDENTIALS — one active
+// session at a time, never five concurrent ones — so "already signed in to five
+// accounts" describes a state the SDK cannot be in and sends an integrator
+// looking for five live sessions. What actually fills the map is an app that
+// signs users in without ever calling `signOut()` when one leaves, and the only
+// thing that frees a slot is removing an entry.
+export const ACCOUNT_LIMIT_MESSAGE = `This device already remembers ${MAX_ACCOUNTS} accounts, the maximum, so another cannot be added. Remembered accounts persist until they are signed out, so sign out of one to free a slot — call signOut() (or removeAccount()) when a user leaves.`;
 
 /**
  * Turns a session that cannot be admitted into a clean refusal.
@@ -617,7 +639,35 @@ export const confirmAccountDeletionThunk = createAsyncThunk(
   }
 );
 
-export const requestNewAccessTokenThunk = createAsyncThunk(
+/**
+ * Why a stored credential could not be exchanged for a live session.
+ *
+ * Carried as the rejected action's `meta` rather than folded into the payload,
+ * which stays the plain string every existing consumer reads
+ * (`useAuth().requestNewAccessToken`, `useAuthGate`, `initializeAuthThunk` and
+ * any integrator branching on `rejected.match(...)`).
+ *
+ * ONE bit, and it is the one the launch path turns on: did the SERVER refuse
+ * this credential, or did the request never reach it? Without it the init catch
+ * fires on any error at all, so a single offline launch tore the session down
+ * and persisted a deliberate sign-out — which contradicts the transition core's
+ * own stated rule that a transport failure is not a dead account.
+ */
+export interface RefreshRejectionMeta {
+  /**
+   * True when the server refused the credential (401/403 — expired, revoked,
+   * reuse-detected, invalidated by a password change or a remote sign-out-all),
+   * and when there was no credential to present at all. False for a transport
+   * failure, which says nothing about whether the account is alive.
+   */
+  credentialRejected: boolean;
+}
+
+export const requestNewAccessTokenThunk = createAsyncThunk<
+  string,
+  { projectId: string },
+  { rejectValue: string; rejectedMeta: RefreshRejectionMeta }
+>(
   "auth/requestNewAccessToken",
   async (
     data: { projectId: string },
@@ -639,7 +689,13 @@ export const requestNewAccessTokenThunk = createAsyncThunk(
       // Public breaking change: `requestNewAccessTokenThunk` is exported, and
       // an integrator branching on `fulfilled.match` for the no-token case
       // sees the opposite branch now.
-      return rejectWithValue("No refresh token available");
+      // `credentialRejected`, because it is a statement about the CREDENTIAL and
+      // not about the network: an entry carrying no usable refresh token is
+      // exactly an entry that needs a re-authentication, which is the same
+      // reading `activateStoredAccount` gives the identical case.
+      return rejectWithValue("No refresh token available", {
+        credentialRejected: true,
+      });
     }
 
     try {
@@ -660,7 +716,8 @@ export const requestNewAccessTokenThunk = createAsyncThunk(
     } catch (error) {
       handleError(error, "Request new access token error:");
       return rejectWithValue(
-        error instanceof Error ? error.message : "Unknown error"
+        error instanceof Error ? error.message : "Unknown error",
+        { credentialRejected: isCredentialRejection(error) }
       );
     }
   }
@@ -800,11 +857,40 @@ export const changePasswordThunk = createAsyncThunk(
       const authorization = await withAuth(state.sublay.auth.accessToken);
 
       // Re-read: the bootstrap we just waited on is what populates `user`.
-      if (!(getState() as RootState).sublay.auth.user) {
+      const settled = (getState() as RootState).sublay.auth;
+      if (!settled.user) {
         return rejectWithValue("No user is authenticated");
       }
 
-      await authService.changePassword(data.projectId, data, authorization);
+      // ── NAME THIS DEVICE'S SESSION, so the server spares it. ─────────────
+      //
+      // A password change now ends every OTHER session for the user — the
+      // point of reaching for "change my password" when you suspect a
+      // compromise. The server cannot identify the caller's session on its own
+      // (an access token carries no `jti` and is not stored), so without this
+      // field the change signs the caller out too, at their next refresh, of
+      // the app they are standing in.
+      //
+      // READ AFTER `withAuth`, NEVER from the snapshot above: the auth gate
+      // rotates a near-expiry token before it hands one back, and the refresh
+      // endpoint rotates the refresh token with it. The snapshot's value can
+      // therefore be the spent predecessor by the time this request goes out.
+      // (The server resolves the family through the token's `jti`, and the
+      // revoked row keeps its `familyId`, so a stale one would still resolve
+      // today — this does not depend on that.)
+      //
+      // Absent is not an error: a client with no resolvable refresh token
+      // still changes the password and simply loses every session, the
+      // documented fail-secure behaviour.
+      await authService.changePassword(
+        data.projectId,
+        {
+          password: data.password,
+          newPassword: data.newPassword,
+          refreshToken: settled.refreshToken ?? undefined,
+        },
+        authorization
+      );
 
       return;
     } catch (error) {
@@ -946,6 +1032,32 @@ export const signOutAllThunk = createAsyncThunk(
   }
 );
 
+/**
+ * A stored session that could not be restored at launch, carrying the one fact
+ * the failure handling turns on.
+ *
+ * Internal: the launch path's rejection is already reachable as
+ * `action.error.message`, and a second exported error type alongside
+ * `AccountTransitionError` would ask integrators to learn two. What this class
+ * exists for is to get `credentialRejected` from the unwrap site to the catch
+ * without every other throw in the `try` (the cap refusal, an unexpected one)
+ * being mistaken for a refresh failure.
+ */
+class StoredSessionRestoreError extends Error {
+  readonly credentialRejected: boolean;
+
+  constructor(message: string, credentialRejected: boolean) {
+    super(message);
+    this.name = "StoredSessionRestoreError";
+    this.credentialRejected = credentialRejected;
+  }
+}
+
+/** The cap refusal thrown by step 1's Gate-2 branch, and only that. */
+function isAccountLimitRefusal(error: unknown): boolean {
+  return error instanceof Error && error.message === ACCOUNT_LIMIT_MESSAGE;
+}
+
 // Initialize auth - handles the startup flow
 export const initializeAuthThunk = createAsyncThunk(
   "auth/initialize",
@@ -1049,13 +1161,58 @@ export const initializeAuthThunk = createAsyncThunk(
         !requestNewAccessTokenThunk.fulfilled.match(result) ||
         !result.payload
       ) {
-        throw new Error(
+        throw new StoredSessionRestoreError(
           (typeof result.payload === "string" && result.payload) ||
-            "Could not restore the stored session."
+            "Could not restore the stored session.",
+          requestNewAccessTokenThunk.rejected.match(result)
+            ? Boolean(result.meta.credentialRejected)
+            : // Fulfilled carrying no access token: the exchange produced no
+              // session, which is a property of the credential rather than of
+              // the connection that plainly worked.
+              true
         );
       }
     } catch (error) {
       handleError(error, "Auth initialization failed:");
+
+      // ── WHICH FAILURE WAS THIS? Three answers, three different endings. ──
+      //
+      // The distinction has to be REAL rather than best-effort, in both
+      // directions: tearing down on a transport failure signs a user out for
+      // opening the app offline, and marking on one badges healthy accounts as
+      // needing a re-authentication every time someone loses signal.
+      const restoreFailure =
+        error instanceof StoredSessionRestoreError ? error : null;
+
+      // 1. TRANSPORT FAILURE — the server was never reached, so nothing has
+      //    been learned about the stored credential. Leave the account
+      //    selected, leave the map alone, mark nothing, and above all do NOT
+      //    record a deliberate sign-out: this used to fire on ANY error, so a
+      //    single offline launch signed the user out and PERSISTED it, against
+      //    the transition core's own rule that a transport failure is not a
+      //    dead account. The session is restored by the next launch, or sooner
+      //    by the reactive refresh on the first request that takes a 401/403.
+      if (restoreFailure && !restoreFailure.credentialRejected) {
+        throw error;
+      }
+
+      // 2. THE SERVER REFUSED THE CREDENTIAL — mark the account before the
+      //    teardown clears the pointer to it. Launch is the most common way a
+      //    revoked credential is discovered, and without this it took a second
+      //    failure (the user tapping the account in the switcher) to surface
+      //    what the first one already proved.
+      if (restoreFailure?.credentialRejected) {
+        const rejectedAccountId = (getState() as RootState).sublay.accounts
+          .activeAccountId;
+        if (rejectedAccountId) {
+          dispatch(
+            setAccountNeedsReauth({
+              userId: rejectedAccountId,
+              needsReauth: true,
+            })
+          );
+        }
+      }
 
       // Land signed-out with the account entries intact, exactly like a failed
       // remove/sign-out — one consistent answer to "a stored token turned out
@@ -1066,8 +1223,24 @@ export const initializeAuthThunk = createAsyncThunk(
       dispatch(clearUserInUserSlice());
       dispatch(baseApi.util.resetApiState());
       dispatch(resetAccountScopedState());
-      dispatch(setActiveAccount(null));
-      dispatch(setSignedOut(true));
+
+      // 3. REFUSED AT THE ACCOUNT CAP — the session still goes (the host
+      //    believes a user we could not admit is signed in, so acting as
+      //    anybody else would be acting as the wrong person), but the SELECTION
+      //    and the signed-out flag do not.
+      //
+      //    Persisting `signedOut: true` here is what wedged the app: nobody
+      //    signed out — an admission was refused — and the flag is exactly what
+      //    stops Phase A restoring a stored account, so every subsequent launch
+      //    reproduced the identical dead end with no route through. Leaving the
+      //    selection where it was means the next launch behaves as it would
+      //    have without the refused attempt, which is the same rule
+      //    `refuseAtAccountLimit` already applies on the OAuth path.
+      //    `accountLimitReached` stays raised for the UI to read.
+      if (!isAccountLimitRefusal(error)) {
+        dispatch(setActiveAccount(null));
+        dispatch(setSignedOut(true));
+      }
 
       // Rethrow so the reason is REACHABLE, not just logged. Swallowing left
       // it in a `console.error` that the log-level setter can silence, with no

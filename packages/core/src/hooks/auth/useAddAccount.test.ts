@@ -55,6 +55,39 @@ describe("useAddAccount", () => {
     expect(store.getState().sublay.chat.unreadConversationCount).toBeNull();
   });
 
+  it("records leaving as deliberate, so an ABANDONED flow does not activate another account", () => {
+    // `activeAccountId: null` means both "nobody has ever picked" and "the
+    // session was intentionally ended", and only the first should fall back to
+    // a stored account. Without the flag, a user who backs out of the sign-in
+    // screen and quits is silently signed into the OLDEST remembered account on
+    // the next launch — `useAccountSync` Phase A's first-account fallback.
+    const { result, store } = renderHookWithAxios(() => useAddAccount(), {
+      accessToken: "access-1",
+      refreshToken: "refresh-1",
+    });
+    act(() => {
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "user-1",
+          accounts: makeAccounts(2),
+          signedOut: false,
+        }),
+      );
+    });
+
+    act(() => {
+      result.current.addAccount();
+    });
+
+    expect(store.getState().sublay.accounts.activeAccountId).toBeNull();
+    expect(store.getState().sublay.accounts.signedOut).toBe(true);
+    // The entries survive — the whole point is that the other accounts are
+    // still there to switch back into.
+    expect(
+      Object.keys(store.getState().sublay.accounts.accounts),
+    ).toHaveLength(2);
+  });
+
   it("clears account-scoped feature state", () => {
     const { result, store } = renderHookWithAxios(() => useAddAccount());
     act(() => {

@@ -5,6 +5,7 @@ import { renderHookWithAxios, resetAxiosMocks } from "../../test-utils";
 import {
   setAccountMap,
   type AccountEntry,
+  type AccountMap,
 } from "../../store/slices/accountsSlice";
 import {
   registerAccountStorage,
@@ -30,12 +31,31 @@ function makeAccounts(): Record<string, AccountEntry> {
   };
 }
 
+/**
+ * The registered storage, with its writes held open on demand.
+ *
+ * `writes` records the maps that reached the adapter — the durability of the
+ * flag is a claim about STORAGE, so it has to be asserted there and not on the
+ * Redux value the next relaunch never reads.
+ */
+let storageWrites: AccountMap[];
+let holdWrites: (() => void) | null;
+
 beforeEach(() => {
   resetAccountTokenMints();
+  storageWrites = [];
+  holdWrites = null;
   registerAccountStorage(
     {
       getAccountMap: vi.fn().mockResolvedValue(null),
-      setAccountMap: vi.fn().mockResolvedValue(undefined),
+      setAccountMap: vi.fn(async (_projectId: string, map: AccountMap) => {
+        storageWrites.push(JSON.parse(JSON.stringify(map)) as AccountMap);
+        if (holdWrites) {
+          await new Promise<void>((resolve) => {
+            holdWrites = resolve;
+          });
+        }
+      }),
       deleteAccountMap: vi.fn().mockResolvedValue(undefined),
     },
     "test-project",
@@ -90,6 +110,54 @@ describe("useAccountPushToggle", () => {
     // No switch: the active account is untouched.
     expect(state.sublay.accounts.activeAccountId).toBe("user-1");
     expect(state.sublay.auth.accessToken).toBe("access-1");
+
+    // DURABLE, which is the entire point of the flag: the next launch reads it
+    // from storage, and reconciliation acts on what it finds there. A Redux-only
+    // write leaves the account silenced until the app is closed and unsilenced
+    // the moment it reopens.
+    expect(storageWrites).not.toHaveLength(0);
+    expect(
+      storageWrites[storageWrites.length - 1].accounts["user-2"].pushEnabled,
+    ).toBe(false);
+  });
+
+  it("does not resolve until the silenced flag has actually been stored", async () => {
+    // The other half, and it deletes just as green: `persistAccountMapFor`
+    // without an `await` reports the change complete while the write is still
+    // in flight — and the write contract REJECTS on failure, so an unawaited
+    // one swallows exactly the failure that decides whether the account is
+    // silenced on the next launch.
+    // The ACTIVE account deliberately: a non-active one mints first, and the
+    // mint persists its rotated credential through this same storage — so
+    // holding "the write" would hold the mint's and prove nothing about the
+    // toggle's. Here the toggle's persist is the only write there is.
+    const { result, axiosPublic } = render();
+    axiosPublic.mockResponse("delete", {});
+    holdWrites = () => {};
+
+    let settled = false;
+    const pending = result.current
+      .setAccountPushEnabled({ userId: "user-1", enabled: false })
+      .then(() => {
+        settled = true;
+      });
+
+    // The write has reached the adapter, carrying the silenced flag, and is
+    // being held open.
+    await waitFor(() =>
+      expect(
+        storageWrites.some(
+          (map) => map.accounts["user-1"]?.pushEnabled === false,
+        ),
+      ).toBe(true),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(settled).toBe(false);
+
+    // Release it; only now may the caller be told the change is done.
+    (holdWrites as unknown as () => void)();
+    await pending;
+    expect(settled).toBe(true);
   });
 
   it("writes the flag only AFTER the binding change succeeds", async () => {

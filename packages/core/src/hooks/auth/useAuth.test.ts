@@ -109,4 +109,23 @@ describe("useAuth", () => {
     );
     expect(axiosPublic.calls("post")).toHaveLength(0);
   });
+
+  it("requestNewAccessToken THROWS when there is no project either", async () => {
+    // The last path that still RESOLVED — with `undefined`, which is what the
+    // declared `Promise<string | undefined>` was advertising. It reads as a
+    // successful call that had nothing to do, and it is the one case a caller
+    // could not tell apart from a real refusal. Every other action on this hook
+    // throws the same error for a missing project.
+    const { result, axiosPublic } = renderHookWithAxios(() => useAuth(), {
+      // Null, not omitted: the harness defaults an omitted id, and null is the
+      // shape a provider-less (or not-yet-configured) context actually has.
+      projectId: null as unknown as string,
+      refreshToken: "refresh-1",
+    });
+
+    await expect(result.current.requestNewAccessToken()).rejects.toThrow(
+      "No projectId available.",
+    );
+    expect(axiosPublic.calls("post")).toHaveLength(0);
+  });
 });

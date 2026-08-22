@@ -405,6 +405,85 @@ describe("changePasswordThunk", () => {
     expect(axios.calls("post")[0].config?.headers?.Authorization).toBe(
       "Bearer access-1",
     );
+    // ...and NAMES THIS DEVICE'S SESSION. A password change ends every other
+    // session for the user, and the server cannot tell which one is asking —
+    // an access token carries no `jti` and is not stored — so without this
+    // field the caller is signed out of the app they are standing in at their
+    // next refresh, which is the outcome this whole behaviour exists to avoid.
+    expect(axios.calls("post")[0].body).toEqual({
+      password: "old",
+      newPassword: "new",
+      refreshToken: "refresh-1",
+    });
+  });
+
+  it("sends the ROTATED refresh token when the gate rotated one on the way in", async () => {
+    // `withAuth` runs the request through the auth gate, which pre-emptively
+    // rotates a near-expiry access token — and that exchange rotates the
+    // REFRESH token with it. Reading the value from the pre-gate snapshot
+    // therefore names a session the server has already superseded.
+    const store = makeSublayStore();
+    store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    store.dispatch(
+      setTokens({
+        accessToken: jwtExpiringIn(-60),
+        refreshToken: "refresh-1",
+      }),
+    );
+    const axios = mockAxiosPublic();
+
+    armAuthGate();
+    syncAuthGate({ accessToken: jwtExpiringIn(-60), initialized: true });
+    setAuthGateRefresher(async () => {
+      // What a real rotation does: writes the successor into the store.
+      store.dispatch(
+        setTokens({ accessToken: "access-2", refreshToken: "refresh-2" }),
+      );
+      syncAuthGate({ accessToken: "access-2", initialized: true });
+      return "access-2";
+    });
+
+    axios.mockResponse("post", {});
+
+    const result = await store.dispatch(
+      changePasswordThunk({
+        projectId: "project-1",
+        password: "old",
+        newPassword: "new",
+      }),
+    );
+
+    expect(changePasswordThunk.fulfilled.match(result)).toBe(true);
+    const [call] = axios.calls("post");
+    expect(call.config?.headers?.Authorization).toBe("Bearer access-2");
+    expect((call.body as { refreshToken?: string }).refreshToken).toBe(
+      "refresh-2",
+    );
+  });
+
+  it("still changes the password when no refresh token can be resolved", async () => {
+    // Fail-secure, not an error: with no session named, the server destroys
+    // every family for the user — this one included. A client that cannot name
+    // its session must still be able to change the password.
+    const store = makeSublayStore();
+    store.dispatch(setUser({ id: "user-1" } as AuthUser));
+    store.dispatch(setTokens({ accessToken: "access-1", refreshToken: null }));
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {});
+
+    const result = await store.dispatch(
+      changePasswordThunk({
+        projectId: "project-1",
+        password: "old",
+        newPassword: "new",
+      }),
+    );
+
+    expect(changePasswordThunk.fulfilled.match(result)).toBe(true);
+    expect(axios.calls("post")[0].body).toEqual({
+      password: "old",
+      newPassword: "new",
+    });
   });
 });
 
@@ -854,6 +933,10 @@ describe("initializeAuthThunk", () => {
       "user-1",
       "user-2",
     ]);
+    // ...and the one the server REFUSED is marked, so a switcher can show it as
+    // needing a sign-in without waiting for the user to tap it and fail again.
+    expect(state.sublay.accounts.accounts["user-1"].needsReauth).toBe(true);
+    expect(state.sublay.accounts.accounts["user-2"].needsReauth).toBeUndefined();
     // The request-path auth gate STILL opens. Withholding this would park
     // every outbound request behind the 5s ready-timeout fallback.
     expect(state.sublay.auth.initialized).toBe(true);
@@ -894,6 +977,57 @@ describe("initializeAuthThunk", () => {
     expect(state.sublay.accounts.activeAccountId).toBeNull();
     expect(state.sublay.accounts.signedOut).toBe(true);
     expect(state.sublay.accounts.accounts["user-1"]).toBeDefined();
+    // An entry carrying no usable credential is exactly an entry that needs a
+    // re-authentication — the same reading `activateStoredAccount` gives it.
+    expect(state.sublay.accounts.accounts["user-1"].needsReauth).toBe(true);
+  });
+
+  it("an OFFLINE launch keeps the stored account selected and records no sign-out", async () => {
+    // The failure this exists for: the init catch fired on ANY error and
+    // persisted `signedOut: true`, so opening the app once with no connection
+    // signed the user out — and the flag is what stops Phase A restoring the
+    // account, so the next launch showed the picker too. A transport failure
+    // says nothing about whether the credential is alive.
+    const store = makeSublayStore();
+    store.dispatch(setTokens({ accessToken: null, refreshToken: "refresh-1" }));
+    store.dispatch(
+      setAccountMap({
+        activeAccountId: "user-1",
+        accounts: {
+          "user-1": {
+            refreshToken: "refresh-1",
+            tokenExpiresAt: 0,
+            user: { id: "user-1", name: "A", email: null, avatar: null },
+          },
+        },
+      }),
+    );
+    const axios = mockAxiosPublic();
+    axios.mockNetworkError("post");
+
+    const result = await store.dispatch(
+      initializeAuthThunk({ projectId: "project-1" }),
+    );
+
+    // Still reported — the app can show "we could not reach the server".
+    expect(initializeAuthThunk.rejected.match(result)).toBe(true);
+
+    const state = store.getState();
+    // The account is STILL SELECTED and nothing was recorded as deliberate.
+    expect(state.sublay.accounts.activeAccountId).toBe("user-1");
+    expect(state.sublay.accounts.signedOut).toBe(false);
+    // The stored credential is untouched, so the next attempt has something to
+    // present.
+    expect(state.sublay.auth.refreshToken).toBe("refresh-1");
+    expect(state.sublay.accounts.accounts["user-1"].refreshToken).toBe(
+      "refresh-1",
+    );
+    // Nothing is marked: badging a healthy account as needing a re-sign-in
+    // every time someone opens the app on a train is worse than the gap.
+    expect(state.sublay.accounts.accounts["user-1"].needsReauth).toBeUndefined();
+    // The gate still opens — withholding it parks every outbound request behind
+    // the 5s ready-timeout fallback for the rest of the session.
+    expect(state.sublay.auth.initialized).toBe(true);
   });
 });
 
@@ -1340,11 +1474,18 @@ describe("account cap — the launch-path collision (Task 7.2)", () => {
     // The auth gate still opens — withholding it would park every outbound
     // request behind the 5s ready-timeout fallback, silently.
     expect(state.sublay.auth.initialized).toBe(true);
-    // Observably signed out, with a readable reason.
+    // Observably refused, with a readable reason.
     expect(state.sublay.accounts.accountLimitReached).toBe(true);
-    expect(state.sublay.accounts.signedOut).toBe(true);
-    expect(state.sublay.accounts.activeAccountId).toBeNull();
+    // ...but NOT recorded as a sign-out, and the selection is left where it
+    // was. Nobody signed out — an admission was refused — and persisting
+    // `signedOut` is what stopped Phase A restoring a stored account, so every
+    // subsequent launch reproduced this identical dead end.
+    expect(state.sublay.accounts.signedOut).toBe(false);
+    expect(state.sublay.accounts.activeAccountId).toBe("user-1");
+    // The session still goes: the host believes a user we could not admit is
+    // signed in, so acting as anybody else would be acting as the wrong person.
     expect(state.sublay.auth.accessToken).toBeNull();
+    expect(state.sublay.auth.refreshToken).toBeNull();
     // Entries intact — nothing was lost, the user can free a slot.
     expect(Object.keys(state.sublay.accounts.accounts)).toHaveLength(5);
   });
@@ -1393,8 +1534,8 @@ describe("account cap — the launch-path collision (Task 7.2)", () => {
 
     const state = store.getState();
     expect(state.sublay.auth.accessToken).toBeNull();
-    expect(state.sublay.accounts.activeAccountId).toBeNull();
-    expect(state.sublay.accounts.signedOut).toBe(true);
+    expect(state.sublay.accounts.activeAccountId).toBe("user-1");
+    expect(state.sublay.accounts.signedOut).toBe(false);
     expect(state.sublay.accounts.accountLimitReached).toBe(true);
     expect(state.sublay.auth.initialized).toBe(true);
   });

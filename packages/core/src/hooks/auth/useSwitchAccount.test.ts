@@ -59,8 +59,11 @@ describe("useSwitchAccount", () => {
     expect(call.body).toEqual({ refreshToken: "refresh-2" });
   });
 
-  it("is a no-op when switching to the already-active account", async () => {
-    const { result, store, axiosPublic } = renderHookWithAxios(() => useSwitchAccount());
+  it("is a no-op when switching to the already-active account WITH a live session", async () => {
+    const { result, store, axiosPublic } = renderHookWithAxios(
+      () => useSwitchAccount(),
+      { accessToken: "access-1", refreshToken: "refresh-1" },
+    );
     act(() => {
       store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }));
     });
@@ -69,7 +72,47 @@ describe("useSwitchAccount", () => {
       await result.current.switchAccount({ userId: "user-1" });
     });
 
+    // No exchange: the refresh endpoint ROTATES, so a switch into the account
+    // you are already in would spend a credential for nothing.
     expect(axiosPublic.calls("post")).toHaveLength(0);
+  });
+
+  it("re-establishes the session when the selected account has none", async () => {
+    // The selection can name an account whose session was torn down: a sign-in
+    // refused at the account cap restores the previous selection without its
+    // session, and an offline launch deliberately leaves the stored account
+    // selected. Keying the early return on the SELECTION ALONE made re-tapping
+    // that account a no-op, so the user's only route back into a session was to
+    // restart the app.
+    const { result, store, axiosPublic } = renderHookWithAxios(
+      () => useSwitchAccount(),
+      { accessToken: null, refreshToken: null },
+    );
+    act(() => {
+      store.dispatch(
+        setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }),
+      );
+    });
+
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-1-fresh",
+      refreshToken: "refresh-1-rotated",
+      user: makeAuthUser({ id: "user-1", name: "Alice" }),
+    });
+
+    await act(async () => {
+      await result.current.switchAccount({ userId: "user-1" });
+    });
+
+    const [call] = axiosPublic.calls("post");
+    expect(call.url).toBe("/test-project/auth/request-new-access-token");
+    expect(call.body).toEqual({ refreshToken: "refresh-1" });
+
+    const state = store.getState();
+    expect(state.sublay.accounts.activeAccountId).toBe("user-1");
+    expect(state.sublay.auth.accessToken).toBe("access-1-fresh");
+    expect(state.sublay.auth.refreshToken).toBe("refresh-1-rotated");
+    expect(result.current.error).toBeNull();
   });
 
   it("throws when the target account is not in the map", async () => {

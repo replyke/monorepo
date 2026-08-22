@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import messaging from "@react-native-firebase/messaging";
+import { handleError } from "@sublay/core";
 import type { PushTokenAdapter, PushDeviceIdentifier } from "@sublay/core";
 
 // @react-native-firebase/messaging covers both platforms with one library:
@@ -41,7 +42,18 @@ export const reactNativePushTokenAdapter: PushTokenAdapter = {
       reactNativePushTokenAdapter
         .getDeviceIdentifier({ projectId: _context.projectId })
         .then(onChange)
-        .catch(() => onChange(null));
+        .catch((error) => {
+          // REPORT IT, and emit nothing. `onChange(null)` is core's "no change"
+          // signal, so answering a FAILED re-derivation with it told the SDK
+          // the device token was unchanged when the truth is that nobody knows
+          // — leaving the device bound to a token the OS has already replaced,
+          // with no delivery, no error and no trace. The next rotation or
+          // `register()` retries.
+          handleError(
+            error,
+            "Failed to re-derive this device's push identifier after a token refresh"
+          );
+        });
     });
   },
 };

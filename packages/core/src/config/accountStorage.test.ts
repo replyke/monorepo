@@ -31,29 +31,49 @@ function makeSlowStorage(order: string[], delayMs = 20): AccountStorage {
   };
 }
 
-describe("accountStorage slot", () => {
-  it("is last-mount-wins and is never cleared by a later read", () => {
-    const first: AccountStorage = {
-      getAccountMap: vi.fn(),
-      setAccountMap: vi.fn(),
-      deleteAccountMap: vi.fn(),
-    };
-    const second: AccountStorage = {
-      getAccountMap: vi.fn(),
-      setAccountMap: vi.fn(),
-      deleteAccountMap: vi.fn(),
-    };
+function makeHandle(): AccountStorage {
+  return {
+    getAccountMap: vi.fn(),
+    setAccountMap: vi.fn(),
+    deleteAccountMap: vi.fn(),
+  };
+}
 
+describe("accountStorage slot", () => {
+  it("is last-mount-wins for the SAME project, and is never cleared by a later read", () => {
+    const first = makeHandle();
+    const second = makeHandle();
+
+    // A remount, a development hot reload, or a second provider for the same
+    // project: a fresh handle, the same id. All ordinary, all must keep working.
     registerAccountStorage(first, "project-1");
-    registerAccountStorage(second, "project-2");
+    registerAccountStorage(second, "project-1");
 
     // There is deliberately no deregistration: unmounting one of two mounted
     // providers must not strip the survivor's handle, because that would
     // silently turn an awaited persist into a no-op.
     expect(getRegisteredAccountStorage()).toEqual({
       storage: second,
-      projectId: "project-2",
+      projectId: "project-1",
     });
+  });
+
+  it("THROWS when a second provider mounts for a DIFFERENT project", () => {
+    // One project per app is the supported shape. Everything here is
+    // process-global, so the second project takes the shared world over rather
+    // than getting its own: the non-last project's switching stops working, and
+    // its mint writes a rotated successor that the persist guard refuses AFTER
+    // the exchange revoked the presented token — locking that account out for
+    // good. Failing at mount is the whole fix.
+    registerAccountStorage(makeHandle(), "project-1");
+
+    expect(() => registerAccountStorage(makeHandle(), "project-2")).toThrow(
+      /one project per app/i,
+    );
+
+    // ...and the first project keeps its handle, so nothing it later persists
+    // can land under the second project's key.
+    expect(getRegisteredAccountStorage()?.projectId).toBe("project-1");
   });
 });
 

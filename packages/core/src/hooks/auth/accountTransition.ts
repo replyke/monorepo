@@ -21,6 +21,7 @@ import {
   type GetSublayState,
   type MintedAccountLease,
 } from "../push/mintAccountAccessToken";
+import { isCredentialRejection } from "../../utils/credentialRejection";
 
 /**
  * The account-transition core.
@@ -285,21 +286,6 @@ function failTransition({
   if (!getState().sublay.accounts.activeAccountId) {
     dispatch(setSignedOut(true));
   }
-}
-
-/**
- * Whether the server refused the credential itself, as opposed to the request
- * failing to complete.
- *
- * 401/403 are the two the auth surface uses: a refused, expired or revoked
- * refresh token, and a family destroyed by reuse detection. A transport failure
- * carries no `response` at all and must NOT be read as a dead account.
- */
-function isCredentialRejection(error: unknown): boolean {
-  const status = (
-    error as { response?: { status?: number } } | null | undefined
-  )?.response?.status;
-  return status === 401 || status === 403;
 }
 
 /** The server's reason, when it gave one, else the error's own message. */

@@ -404,14 +404,39 @@ describe("mintAccountAccessToken", () => {
     expect(axiosPublic.calls("post")).toHaveLength(2);
   });
 
-  it("reports the presented token as live when the server did not rotate", async () => {
+  it("hands the leaseholder the SUCCESSOR to install, never the presented token", async () => {
+    // Re-pointed from a production-impossible injection: it used to mock a 200
+    // carrying an `accessToken` and no `refreshToken`, a shape the v7 server
+    // cannot produce — it rotates on every exchange, and inside the 30-second
+    // grace window it answers a re-presented token with the family's live
+    // successor. So the case that test pinned was the defensive fallback, and
+    // the case that actually happens — every single exchange — was pinned only
+    // through the MAP.
+    //
+    // The session value is what `activateStoredAccount` installs into Redux as
+    // the live credential, so handing back the presented one would put a
+    // revoked token behind the live session and destroy the family on its next
+    // refresh.
     const axiosPublic = mockAxiosPublic();
-    axiosPublic.mockResponse("post", { accessToken: "access-2" });
+    registerAccountStorage(
+      makeStorage(async () => {}),
+      "test-project",
+    );
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-2",
+      refreshToken: "refresh-2-successor",
+      user: { id: "user-2", name: "Bob" },
+    });
 
     const lease = await leaseAccountSession({ ...ctx(), userId: "user-2" });
 
-    expect(lease.session.refreshToken).toBe("refresh-2");
-    expect(lease.session.user).toBeNull();
+    expect(lease.session.refreshToken).toBe("refresh-2-successor");
+    expect(lease.session.accessToken).toBe("access-2");
+    expect(lease.session.user?.id).toBe("user-2");
+    // ...and the map agrees, so nothing can present the revoked copy either.
+    expect(
+      store.getState().sublay.accounts.accounts["user-2"].refreshToken,
+    ).toBe("refresh-2-successor");
     lease.release();
   });
 

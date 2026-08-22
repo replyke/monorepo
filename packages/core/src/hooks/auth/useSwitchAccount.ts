@@ -30,8 +30,22 @@ export default function useSwitchAccount(): UseSwitchAccountReturn {
   const switchAccount = useCallback(
     async ({ userId }: { userId: string }) => {
       if (!projectId) throw new Error("No projectId available");
-      if (userId === activeAccountId) return;
       if (!accounts[userId]) throw new Error(`Account ${userId} not found`);
+
+      // ALREADY THERE — but only if there is a session to be there in.
+      //
+      // The selection alone is not proof of one. Two paths leave
+      // `activeAccountId` naming an account whose session was torn down: a
+      // sign-in refused at the account cap, which restores the previous
+      // selection without restoring its session, and a launch that could not
+      // reach the server, which leaves the stored account selected on purpose.
+      // In both, this early return made re-tapping that account a no-op, so the
+      // only way back into a session was to restart the app. Requiring a live
+      // access token turns the re-tap into the recovery it looks like.
+      const hasLiveSession = Boolean(
+        store.getState().sublay.auth.accessToken
+      );
+      if (userId === activeAccountId && hasLiveSession) return;
 
       setIsSwitching(true);
       setError(null);

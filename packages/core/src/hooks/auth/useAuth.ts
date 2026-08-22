@@ -61,7 +61,16 @@ export interface UseAuthValues {
   signOut: () => Promise<void>;
   changePassword: (props: ChangePasswordProps) => Promise<void>;
   setPassword: (props: SetPasswordProps) => Promise<void>;
-  requestNewAccessToken: () => Promise<string | undefined>;
+  /**
+   * Rotates the stored refresh token and resolves with the new access token.
+   *
+   * Always resolves a token or THROWS — including when no project is
+   * configured, which every other action on this hook already treats as a
+   * thrown error. It used to resolve `undefined` there while every genuine
+   * failure threw, so the one value the type still advertised was
+   * indistinguishable from a call that simply had nothing to do.
+   */
+  requestNewAccessToken: () => Promise<string>;
 }
 
 export default function useAuth(): UseAuthValues {
@@ -159,7 +168,14 @@ export default function useAuth(): UseAuthValues {
   );
 
   const handleRequestNewAccessToken = useCallback(async () => {
-    if (!projectId) return;
+    // Throws, like every other action here. Resolving `undefined` on this path
+    // was the other half of the ambiguity below: a caller could not tell "there
+    // is no project" from "the refresh produced nothing", and the declared
+    // `string | undefined` advertised a resolved-undefined that no other path
+    // produces any more.
+    if (!projectId) {
+      throw new Error("No projectId available.");
+    }
 
     const result = await dispatch(requestNewAccessTokenThunk({ projectId }));
 
