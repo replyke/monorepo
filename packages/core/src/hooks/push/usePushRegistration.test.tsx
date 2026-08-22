@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { act, cleanup, waitFor } from "@testing-library/react";
+import { useEffect, type ReactNode } from "react";
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
+import { Provider } from "react-redux";
 
 import {
   renderHookWithStore,
@@ -8,6 +10,7 @@ import {
   jsonResponse,
   makeAuthUser,
   mockAxiosPublic,
+  makeRtkQueryStore,
   resetAxiosMocks,
   type FetchMockHandle,
   type RtkQueryStore,
@@ -16,12 +19,19 @@ import { setUser } from "../../store/slices/authSlice";
 import { setTokens } from "../../store/slices/authSlice";
 import {
   setAccountMap,
+  setAccountPushEnabled,
+  setAccountsReady,
+  registerAccountManager,
   type AccountEntry,
 } from "../../store/slices/accountsSlice";
 import {
   registerAccountStorage,
   resetAccountStorage,
 } from "../../config/accountStorage";
+import {
+  SublayContext,
+  type SublayContextValues,
+} from "../../context/sublay-context";
 import { resetAccountTokenMints } from "./mintAccountAccessToken";
 import usePushRegistration from "./usePushRegistration";
 import type {
@@ -123,6 +133,31 @@ function seedAccounts(
       }),
     );
   });
+}
+
+/**
+ * Re-registers account storage with a `setAccountMap` we can inspect, so a test
+ * can assert on WHAT was persisted and not merely that something was.
+ */
+function spyOnPersistedMaps() {
+  resetAccountStorage();
+  const setAccountMapSpy = vi.fn().mockResolvedValue(undefined);
+  registerAccountStorage(
+    {
+      getAccountMap: vi.fn().mockResolvedValue(null),
+      setAccountMap: setAccountMapSpy,
+      deleteAccountMap: vi.fn().mockResolvedValue(undefined),
+    },
+    "test-project",
+  );
+  return setAccountMapSpy;
+}
+
+/** Every map this device wrote, in order. */
+function persistedMaps(setAccountMapSpy: ReturnType<typeof vi.fn>) {
+  return setAccountMapSpy.mock.calls.map(
+    ([, map]) => map as { accounts: Record<string, AccountEntry> },
+  );
 }
 
 describe("usePushRegistration", () => {
@@ -409,7 +444,15 @@ describe("usePushRegistration", () => {
       expect(accounts["test-user-id"].needsPushRebind).toBeUndefined();
     });
 
-    it("marks NOTHING when re-registering the same device token", async () => {
+    it("re-registering the same device token marks ONLY the accounts it just enabled", async () => {
+      // THIS TEST USED TO ASSERT THE OPPOSITE, and pinned a bug in place. The
+      // reasoning it gave — "nothing about the other accounts\' bindings went
+      // stale" — is true of an account that was ALREADY bound and false of one
+      // that never had a binding at all. `register()` flips every
+      // never-asked account to enabled, and the marking was gated on the device
+      // token having changed, so on an unchanged token those accounts came out
+      // reported enabled by the public predicate, with no server binding and no
+      // mark: silent, and shown in the switcher as fine.
       fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({}));
       const axiosPublic = mockAxiosPublic();
       axiosPublic.mockResponse("post", {});
@@ -428,14 +471,21 @@ describe("usePushRegistration", () => {
         await result.current.register();
       });
 
-      // Nothing about the OTHER accounts' bindings went stale, so none of them
-      // may be told its notifications are paused. Marking here would surface
-      // "open to resume" on accounts that are working, and only opening each
-      // one individually would clear it.
       const accounts = store.getState().sublay.accounts.accounts;
+      // NEVER ASKED until this very call flipped it on. It now reports as
+      // push-enabled and has no binding — only the active account was
+      // registered — so it is marked, and the activation-time reconcile is what
+      // will actually bind it.
+      expect(accounts["user-4"].pushEnabled).toBe(true);
+      expect(accounts["user-4"].needsPushRebind).toBe(true);
+      // ALREADY explicitly enabled and already bound to this same identifier:
+      // nothing went stale, so it must NOT be told its notifications are
+      // paused. Marking it would surface "open to resume" on an account that is
+      // working, clearing only when it is individually opened.
       expect(accounts["user-2"].needsPushRebind).toBeUndefined();
+      // Silenced: nothing to repair.
       expect(accounts["user-3"].needsPushRebind).toBeUndefined();
-      expect(accounts["user-4"].needsPushRebind).toBeUndefined();
+      // Active: re-bound on the spot instead.
       expect(accounts["test-user-id"].needsPushRebind).toBeUndefined();
 
       // Still exchanges nothing, on the requests rather than on a call count.
@@ -444,6 +494,38 @@ describe("usePushRegistration", () => {
           .calls("post")
           .filter((c) => c.url.includes("request-new-access-token")),
       ).toHaveLength(0);
+    });
+
+    it("marks nothing at all on a repeat register() once every account has answered", async () => {
+      // The case the unchanged-token gate was written for, kept intact: a
+      // second tap on "Enable notifications" when there is nothing new to
+      // enable must leave every account alone.
+      fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({}));
+      const axiosPublic = mockAxiosPublic();
+      axiosPublic.mockResponse("post", {});
+
+      const adapter = makeAdapter();
+      const { result, store } = renderHookWithStore(
+        () => usePushRegistration(adapter),
+        { projectId: "test-project" },
+      );
+      seedAccounts(store, { platform: "ios", token: "device-token-1" });
+      // Every account has now expressed a preference, so this call flips none.
+      act(() => {
+        store.dispatch(
+          setAccountPushEnabled({ userId: "user-4", enabled: true }),
+        );
+      });
+
+      await act(async () => {
+        await result.current.register();
+      });
+
+      const accounts = store.getState().sublay.accounts.accounts;
+      expect(accounts["user-2"].needsPushRebind).toBeUndefined();
+      expect(accounts["user-3"].needsPushRebind).toBeUndefined();
+      expect(accounts["user-4"].needsPushRebind).toBeUndefined();
+      expect(accounts["test-user-id"].needsPushRebind).toBeUndefined();
     });
 
     it("unregister durably silences the account and keeps the device identifier", async () => {
@@ -515,6 +597,240 @@ describe("usePushRegistration", () => {
       // Discovery must never cost the user a permission prompt.
       expect(adapter.requestPermission).not.toHaveBeenCalled();
       expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
+    });
+
+    it("READS the current identifier once on mount when the adapter says that cannot prompt", async () => {
+      // THE NATIVE UPGRADE GAP. Both native subscriptions are ROTATION-ONLY —
+      // they emit when the OS hands over a NEW token, never merely because
+      // something subscribed — so an install that registered before this SDK
+      // persisted identifiers has a live server-side binding, no local
+      // identifier, and no event coming for months or ever. Every unbind path
+      // (sign-out, account removal, the per-account toggle) is gated on having
+      // one, so all three silently no-op. It is Expo AND React Native, not just
+      // React Native on iOS.
+      const store = makeRtkQueryStore();
+      store.dispatch(setUser(makeAuthUser()));
+      store.dispatch(
+        setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }),
+      );
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "test-user-id",
+          accounts: makeAccounts(),
+          deviceIdentifier: null,
+        }),
+      );
+
+      const adapter = makeAdapter({
+        canReadIdentifierWithoutPrompting: true,
+        subscribeToIdentifierChanges: vi.fn().mockReturnValue(() => {}),
+      });
+      renderHookWithStore(() => usePushRegistration(adapter), {
+        projectId: "test-project",
+        store,
+      });
+
+      await waitFor(() =>
+        expect(store.getState().sublay.accounts.deviceIdentifier).toEqual(DEVICE),
+      );
+      // Acquired WITHOUT waiting for a rotation and WITHOUT asking the user for
+      // anything — the declaration is exactly the promise that this call reads
+      // state the OS already holds.
+      expect(adapter.requestPermission).not.toHaveBeenCalled();
+      expect(adapter.getDeviceIdentifier).toHaveBeenCalledTimes(1);
+    });
+
+    it("does NOT read the identifier on mount for an adapter that has not declared it", async () => {
+      // The web adapter's `getDeviceIdentifier` calls `pushManager.subscribe()`,
+      // which can raise a permission prompt with no user gesture. It declares
+      // nothing here and must never be read on mount; it covers the same ground
+      // through a subscription that emits from `getSubscription()`.
+      const store = makeRtkQueryStore();
+      store.dispatch(setUser(makeAuthUser()));
+      const adapter = makeAdapter({
+        subscribeToIdentifierChanges: vi.fn().mockReturnValue(() => {}),
+      });
+      renderHookWithStore(() => usePushRegistration(adapter), {
+        projectId: "test-project",
+        store,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
+      expect(adapter.requestPermission).not.toHaveBeenCalled();
+      expect(store.getState().sublay.accounts.deviceIdentifier).toBeNull();
+    });
+
+    it("the mount read is a no-op when the identifier already matches the stored one", async () => {
+      // The steady state, which is nearly every launch: one adapter call, and
+      // nothing marked, nothing persisted, nothing sent.
+      const store = makeRtkQueryStore();
+      store.dispatch(setUser(makeAuthUser()));
+      store.dispatch(
+        setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }),
+      );
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "test-user-id",
+          accounts: makeAccounts(),
+          deviceIdentifier: DEVICE,
+        }),
+      );
+      const axiosPublic = mockAxiosPublic();
+
+      const adapter = makeAdapter({
+        canReadIdentifierWithoutPrompting: true,
+        subscribeToIdentifierChanges: vi.fn().mockReturnValue(() => {}),
+      });
+      renderHookWithStore(() => usePushRegistration(adapter), {
+        projectId: "test-project",
+        store,
+      });
+
+      await waitFor(() =>
+        expect(adapter.getDeviceIdentifier).toHaveBeenCalledTimes(1),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      const accounts = store.getState().sublay.accounts.accounts;
+      expect(accounts["user-2"].needsPushRebind).toBeUndefined();
+      expect(accounts["test-user-id"].needsPushRebind).toBeUndefined();
+      expect(axiosPublic.calls("post")).toHaveLength(0);
+    });
+
+    // ── THE MOUNT READ MUST NOT OUTRUN THE ACCOUNT RESTORE ──────────────────
+    //
+    // `applyIdentifierChange` persists the WHOLE account map. Run it before the
+    // stored accounts have been restored into the slice and it writes the empty
+    // map it can see over the real one on disk — every account on the device,
+    // gone, from a read nobody asked for. The two tests below hold the two gates
+    // that stop it; each fails if its gate is removed.
+    it("waits out the account manager's own registration before reading on mount", async () => {
+      // The provider that registers the manager is this hook's PARENT, and React
+      // flushes child effects BEFORE parent effects — so on the hook's first pass
+      // `accountManagerRegistered` is still false and the readiness gate would
+      // wave the read straight through. Waiting a microtask is what puts the
+      // registration on the state this effect reads.
+      const setAccountMapSpy = spyOnPersistedMaps();
+      const store = makeRtkQueryStore();
+      store.dispatch(setUser(makeAuthUser()));
+      store.dispatch(
+        setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }),
+      );
+
+      const adapter = makeAdapter({
+        canReadIdentifierWithoutPrompting: true,
+        subscribeToIdentifierChanges: vi.fn().mockReturnValue(() => {}),
+      });
+
+      function RegisterManagerOnMount({ children }: { children: ReactNode }) {
+        useEffect(() => {
+          store.dispatch(registerAccountManager());
+        }, []);
+        return <>{children}</>;
+      }
+
+      renderHook(() => usePushRegistration(adapter), {
+        wrapper: ({ children }: { children: ReactNode }) => (
+          <Provider store={store}>
+            <SublayContext.Provider
+              value={
+                {
+                  projectId: "test-project",
+                  project: null,
+                } as SublayContextValues
+              }
+            >
+              <RegisterManagerOnMount>{children}</RegisterManagerOnMount>
+            </SublayContext.Provider>
+          </Provider>
+        ),
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      // The manager did register — just a beat later than this hook's effect.
+      expect(store.getState().sublay.accounts.accountManagerRegistered).toBe(
+        true,
+      );
+      expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
+      expect(setAccountMapSpy).not.toHaveBeenCalled();
+      expect(store.getState().sublay.accounts.deviceIdentifier).toBeNull();
+
+      // Once the restore lands, the read proceeds against the real map.
+      act(() => {
+        store.dispatch(
+          setAccountMap({
+            activeAccountId: "test-user-id",
+            accounts: makeAccounts(),
+            deviceIdentifier: null,
+          }),
+        );
+        store.dispatch(setAccountsReady(true));
+      });
+
+      await waitFor(() =>
+        expect(store.getState().sublay.accounts.deviceIdentifier).toEqual(
+          DEVICE,
+        ),
+      );
+      const maps = persistedMaps(setAccountMapSpy);
+      expect(maps.length).toBeGreaterThan(0);
+      for (const map of maps) {
+        expect(Object.keys(map.accounts)).toHaveLength(4);
+      }
+    });
+
+    it("does not apply a mount-read identifier before the accounts are restored", async () => {
+      // Manager registered before the render, so the microtask gate is satisfied
+      // the moment it elapses and readiness is the only thing holding the read
+      // back. Storage has not answered yet: the slice holds no accounts.
+      const setAccountMapSpy = spyOnPersistedMaps();
+      const store = makeRtkQueryStore();
+      store.dispatch(setUser(makeAuthUser()));
+      store.dispatch(
+        setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }),
+      );
+      store.dispatch(registerAccountManager());
+
+      const adapter = makeAdapter({
+        canReadIdentifierWithoutPrompting: true,
+        subscribeToIdentifierChanges: vi.fn().mockReturnValue(() => {}),
+      });
+      renderHookWithStore(() => usePushRegistration(adapter), {
+        projectId: "test-project",
+        store,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      expect(store.getState().sublay.accounts.isReady).toBe(false);
+      expect(adapter.getDeviceIdentifier).not.toHaveBeenCalled();
+      expect(setAccountMapSpy).not.toHaveBeenCalled();
+      expect(store.getState().sublay.accounts.deviceIdentifier).toBeNull();
+
+      act(() => {
+        store.dispatch(
+          setAccountMap({
+            activeAccountId: "test-user-id",
+            accounts: makeAccounts(),
+            deviceIdentifier: null,
+          }),
+        );
+        store.dispatch(setAccountsReady(true));
+      });
+
+      await waitFor(() =>
+        expect(store.getState().sublay.accounts.deviceIdentifier).toEqual(
+          DEVICE,
+        ),
+      );
+      // Nothing was ever written from a pre-restore snapshot.
+      const maps = persistedMaps(setAccountMapSpy);
+      expect(maps.length).toBeGreaterThan(0);
+      for (const map of maps) {
+        expect(Object.keys(map.accounts)).toHaveLength(4);
+      }
     });
 
     it("mounts nothing when the adapter does not support subscription", () => {

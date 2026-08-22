@@ -10,6 +10,7 @@ import {
   setAccountMap,
   setDeviceIdentifier,
   setAccountNeedsPushRebind,
+  setAccountPushEnabled,
   type AccountEntry,
   type AccountMap,
 } from "../../store/slices/accountsSlice";
@@ -327,6 +328,64 @@ describe("markPushBindingsForRebind", () => {
     ).toBe(true);
     expect(written.length).toBeGreaterThan(0);
     expect(lastWritten().accounts["user-2"].needsPushRebind).toBe(true);
+  });
+
+  it("MARKS the active account when its own re-bind fails, so it is not silently quiet", async () => {
+    // The one account with no self-healing loop and no visible marker used to
+    // be the one the user is looking at: it is skipped by the marking loop (it
+    // is re-bound instead), and a failed re-bind was only logged. The feature's
+    // promise is that an account does not go quietly silent.
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockError("post", 500, { message: "nope" });
+
+    await expect(markPushBindingsForRebind(ctx())).resolves.toBeUndefined();
+
+    expect(
+      store.getState().sublay.accounts.accounts["user-1"].needsPushRebind,
+    ).toBe(true);
+    // Durable: the repair happens on a later reconcile, which may be launches
+    // away, so the mark has to reach storage like every other one.
+    expect(written.length).toBeGreaterThan(0);
+    expect(lastWritten().accounts["user-1"].needsPushRebind).toBe(true);
+  });
+
+  it("clears the active account's mark once a later re-bind succeeds", async () => {
+    // The other half: a mark that could only ever be raised would leave
+    // "notifications paused" standing on an account that has since repaired
+    // itself.
+    store.dispatch(
+      setAccountNeedsPushRebind({ userId: "user-1", needsRebind: true }),
+    );
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {});
+
+    await markPushBindingsForRebind(ctx());
+
+    expect(
+      store.getState().sublay.accounts.accounts["user-1"].needsPushRebind,
+    ).toBeUndefined();
+    expect(written.length).toBeGreaterThan(0);
+    expect(lastWritten().accounts["user-1"].needsPushRebind).toBeUndefined();
+  });
+
+  it("restricted to named accounts, marks only those — for a repeat register() on an unchanged token", async () => {
+    const axiosPublic = mockAxiosPublic();
+    axiosPublic.mockResponse("post", {});
+
+    // `user-4` is the shape `register()` produces: an absent preference it has
+    // just flipped to enabled, with no binding behind it. `user-2` was already
+    // enabled and already bound to this same identifier, so it is working and
+    // must not be told otherwise.
+    store.dispatch(
+      setAccountPushEnabled({ userId: "user-4", enabled: true }),
+    );
+
+    await markPushBindingsForRebind(ctx(), { accountIds: ["user-4"] });
+
+    const accounts = store.getState().sublay.accounts.accounts;
+    expect(accounts["user-4"].needsPushRebind).toBe(true);
+    expect(accounts["user-2"].needsPushRebind).toBeUndefined();
+    expect(accounts["user-3"].needsPushRebind).toBeUndefined();
   });
 
   it("is a clean no-op when no device identifier is stored", async () => {

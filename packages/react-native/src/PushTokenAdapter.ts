@@ -27,6 +27,16 @@ export const reactNativePushTokenAdapter: PushTokenAdapter = {
     return fcmToken ? { platform: "android", token: fcmToken } : null;
   },
 
+  // Neither `getToken()` nor `getAPNSToken()` prompts — permission was already
+  // granted by the time any token exists — which the refresh handler below
+  // already relies on when it re-derives through `getDeviceIdentifier`.
+  // Declaring it lets core read the current identifier ONCE ON MOUNT instead of
+  // waiting for `onTokenRefresh`, and that matters most here: the event carries
+  // an FCM token, so an APNs rotation on iOS never raises it at all, and an
+  // install that registered before this SDK persisted identifiers would sit
+  // with a live server-side binding it has no local identifier to unbind.
+  canReadIdentifierWithoutPrompting: true,
+
   // ⚠ `onTokenRefresh` emits an **FCM** token, while this adapter registers the
   // **APNs** token on iOS — so the emitted value is the wrong type entirely
   // there, and trusting it would bind an FCM string as an APNs device token.

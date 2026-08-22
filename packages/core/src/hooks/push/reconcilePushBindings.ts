@@ -272,24 +272,48 @@ export async function reconcileAccountPushBinding(
  * Marks are raised before the active account's request goes out, so an
  * identifier change that is interrupted mid-flight still leaves the record of
  * what needs repairing. The single persist at the end covers both.
+ *
+ * The active account is marked TOO when its own re-bind fails — it is the one
+ * account with no self-healing loop of its own, so without a mark it went
+ * quiet with nothing on screen to say so. The mark comes off again as soon as
+ * a later reconcile binds it.
  */
 export async function markPushBindingsForRebind(
-  ctx: PushReconcileContext
+  ctx: PushReconcileContext,
+  options?: {
+    /**
+     * Restrict marking to these background accounts. Omit to mark every
+     * opted-in background account, which is what a genuine identifier change
+     * calls for.
+     *
+     * The narrow form exists for the other reason an account can need a
+     * binding it does not have: a repeat `register()` on an UNCHANGED
+     * identifier, which flips accounts that had never expressed a preference
+     * to enabled. Those have no binding and nothing else would ever create
+     * one, while every already-bound account is exactly as valid as it was and
+     * must not be told its notifications are paused.
+     */
+    accountIds?: readonly string[];
+  }
 ): Promise<void> {
   const { sublay } = ctx.getState();
   if (!sublay.accounts.deviceIdentifier) return;
 
   const activeAccountId = sublay.accounts.activeAccountId;
-  let marked = false;
+  const restrictTo = options?.accountIds
+    ? new Set(options.accountIds)
+    : null;
+  let dirty = false;
 
   for (const [userId, entry] of Object.entries(sublay.accounts.accounts)) {
     // Explicit opt-in only, and the active account is repaired rather than
     // marked — see the header for both.
     if (userId === activeAccountId) continue;
+    if (restrictTo && !restrictTo.has(userId)) continue;
     if (!accountOptedIntoPush(entry)) continue;
 
     ctx.dispatch(setAccountNeedsPushRebind({ userId, needsRebind: true }));
-    marked = true;
+    dirty = true;
   }
 
   const activeEntry = activeAccountId
@@ -299,11 +323,44 @@ export async function markPushBindingsForRebind(
   if (activeAccountId && activeEntry && accountOptedIntoPush(activeEntry)) {
     try {
       await applyAccountPushBinding(ctx, activeAccountId, true);
+
+      // Bound — so if this account was carrying a mark from an earlier failure
+      // (see the catch below), it is repaired and the mark comes off. Re-read:
+      // the request above awaited a round trip and the account can be removed
+      // under it.
+      const current =
+        ctx.getState().sublay.accounts.accounts[activeAccountId];
+      if (current && accountNeedsPushRebind(current)) {
+        ctx.dispatch(
+          setAccountNeedsPushRebind({
+            userId: activeAccountId,
+            needsRebind: false,
+          })
+        );
+        dirty = true;
+      }
     } catch (error) {
-      // Best-effort, and logged rather than thrown: `register()` reports on the
+      // MARK IT TOO. The active account is the one the user is looking at, and
+      // it used to be the only account with neither self-healing nor a visible
+      // marker: it is skipped by the loop above (it is re-bound instead), so a
+      // failed re-bind left it silently unbound while the switcher reported it
+      // as fine. The mark is what makes "notifications paused — open to resume"
+      // true for it as well, and it is cleared by the next successful
+      // reconcile — `useAccountSync` Phase E on the next activation or the next
+      // identifier change, or the success branch just above.
+      //
+      // Still logged rather than thrown: `register()` reports on the
       // registration that already succeeded, and a device-token change has
-      // nobody to report to. The activation-time reconcile re-runs on the new
-      // identifier, so this account is not stranded by one failed request.
+      // nobody to report to.
+      if (ctx.getState().sublay.accounts.accounts[activeAccountId]) {
+        ctx.dispatch(
+          setAccountNeedsPushRebind({
+            userId: activeAccountId,
+            needsRebind: true,
+          })
+        );
+        dirty = true;
+      }
       handleError(
         error,
         `Failed to re-bind the push binding for account ${activeAccountId}`
@@ -311,5 +368,5 @@ export async function markPushBindingsForRebind(
     }
   }
 
-  if (marked) await persistAccounts(ctx);
+  if (dirty) await persistAccounts(ctx);
 }

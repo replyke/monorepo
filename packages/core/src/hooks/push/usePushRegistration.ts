@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "react-redux";
 import useProject from "../projects/useProject";
 import { useUser } from "../user";
@@ -12,6 +12,8 @@ import {
   setAccountPushEnabled,
   selectDeviceIdentifier,
   selectActiveAccountId,
+  selectAccountsReady,
+  selectAccountManagerRegistered,
   selectAccountMapSnapshot,
 } from "../../store/slices/accountsSlice";
 import { persistAccountMapFor } from "../../config/accountStorage";
@@ -76,6 +78,10 @@ function usePushRegistration(
   const store = useStore<{ sublay: SublayState }>();
   const deviceIdentifier = useSublaySelector(selectDeviceIdentifier);
   const activeAccountId = useSublaySelector(selectActiveAccountId);
+  const accountsReady = useSublaySelector(selectAccountsReady);
+  const accountManagerRegistered = useSublaySelector(
+    selectAccountManagerRegistered
+  );
   const [registerPushDevice, { isLoading: registering }] =
     useRegisterPushDeviceMutation();
   const [deregisterPushDevice, { isLoading: unregistering }] =
@@ -147,11 +153,19 @@ function usePushRegistration(
       // ABSENT ONLY. An account the user explicitly silenced keeps its `false`:
       // this call speaks for accounts that were never asked, not over accounts
       // that answered.
+      //
+      // RECORDED, not just applied: an account this call flips from "never
+      // asked" to enabled is now REPORTED as push-enabled and has no server
+      // binding — only the active account was registered above — so it needs
+      // marking even when this device's identifier is unchanged. See the
+      // marking call below.
+      const newlyEnabled: string[] = [];
       for (const [userId, entry] of Object.entries(
         getState().sublay.accounts.accounts
       )) {
         if (entry.pushEnabled === undefined) {
           dispatch(setAccountPushEnabled({ userId, enabled: true }));
+          newlyEnabled.push(userId);
         }
       }
 
@@ -169,15 +183,34 @@ function usePushRegistration(
       // exchanged for a background session. Each is repaired on its next
       // activation.
       //
-      // Only when the token genuinely CHANGED, the same gate the rotation
-      // handler applies. `register()` is callable more than once — a settings
-      // screen, or a second tap on "Enable notifications" — and re-registering
-      // the same token leaves every other account's binding exactly as valid as
-      // it was. Marking unconditionally would raise "notifications paused, open
-      // to resume" on accounts that are working, clearing only when each is
-      // individually opened.
-      if (!pushIdentifiersEqual(previousIdentifier, identifier)) {
-        await markPushBindingsForRebind({ dispatch, getState, projectId });
+      // TWO REASONS AN ACCOUNT CAN NEED THIS, AND THEY ARE NOT THE SAME SET.
+      //
+      //   1. The identifier genuinely CHANGED — every opted-in background
+      //      account's binding now points at a token this device no longer
+      //      holds, so all of them are marked.
+      //   2. The identifier is UNCHANGED but this call just flipped some
+      //      accounts from "never asked" to enabled. Marking every opted-in
+      //      account here would raise "notifications paused — open to resume"
+      //      on accounts that are working perfectly, clearing only when each is
+      //      individually opened. But the newly flipped ones are NOT working:
+      //      they are reported enabled by the public predicate, they have no
+      //      binding, and nothing else would ever create one — `register()`
+      //      registered the ACTIVE account only, and the activation-time
+      //      reconcile is what repairs a MARKED account. Leaving them unmarked
+      //      is exactly the "a mark is never dropped for something that needed
+      //      repairing" invariant this seam is built on, broken.
+      //
+      // A repeat `register()` that flips nothing still marks nothing, which is
+      // the case the second-tap gate was written for.
+      const identifierChanged = !pushIdentifiersEqual(
+        previousIdentifier,
+        identifier
+      );
+      if (identifierChanged || newlyEnabled.length > 0) {
+        await markPushBindingsForRebind(
+          { dispatch, getState, projectId },
+          identifierChanged ? undefined : { accountIds: newlyEnabled }
+        );
       }
 
       return true;
@@ -352,6 +385,81 @@ function usePushRegistration(
       unsubscribe?.();
     };
   }, [projectId, adapter]);
+
+  /**
+   * Reads this device's CURRENT push identifier once on mount — on the
+   * platforms where doing so cannot prompt.
+   *
+   * ⚠ THIS IS THE ONLY THING THAT CLOSES THE NATIVE UPGRADE GAP. Both native
+   * subscriptions above are ROTATION-ONLY: they emit when the OS hands over a
+   * NEW token and never merely because something subscribed. So an install
+   * that registered before this SDK persisted device identifiers — the
+   * previous release's `register()` stored nothing — has a live server-side
+   * binding, no local identifier, and no event coming. Every path that UNBINDS
+   * push is gated on having one (sign-out, account removal, the per-account
+   * toggle), so on those installs all three silently no-op, for as long as the
+   * token does not rotate: months, or never. It affects Expo and React Native
+   * alike, not just React Native on iOS.
+   *
+   * The fix is small because the constraint was never universal. Only the WEB
+   * adapter is forbidden from calling `getDeviceIdentifier` without a gesture
+   * (`pushManager.subscribe()` can prompt); both native adapters read a value
+   * the OS already holds — React Native's own subscription already re-derives
+   * through it on every refresh. So the adapter declares the capability and
+   * this reads it, instead of one platform's rule stranding the other two. Web
+   * is unaffected: it declares nothing here and keeps covering the same ground
+   * through its mount-emitting subscription.
+   *
+   * ONCE, and only after account storage has loaded. `applyIdentifierChange`
+   * dispatches `setDeviceIdentifier` and persists the whole account map, so
+   * running it before Phase A's read lands would race a map with no accounts in
+   * it against the one being restored. `usePushRegistration` is a descendant of
+   * the provider and React flushes child effects first, so the manager's
+   * registration is not visible on the first pass either — hence the same
+   * microtask-then-gate the store provider uses for its own bootstrap. An app
+   * with no `AccountManager` at all (core used directly, no platform storage)
+   * is not gated and reads immediately.
+   */
+  const [hasWaitedForManager, setHasWaitedForManager] = useState(false);
+  const hasReadIdentifierRef = useRef(false);
+
+  useEffect(() => {
+    Promise.resolve().then(() => setHasWaitedForManager(true));
+  }, []);
+
+  useEffect(() => {
+    if (!projectId) return;
+    if (!adapter.canReadIdentifierWithoutPrompting) return;
+    if (!hasWaitedForManager) return;
+    if (accountManagerRegistered && !accountsReady) return;
+    if (hasReadIdentifierRef.current) return;
+    hasReadIdentifierRef.current = true;
+
+    adapter
+      .getDeviceIdentifier({ projectId })
+      .then((identifier) => {
+        // `null` is "nothing to report", and an identifier equal to the stored
+        // one is a no-op inside `applyIdentifierChange` — so on the common case
+        // (already registered, nothing rotated) this costs one adapter call and
+        // changes nothing.
+        if (identifier) return applyIdentifierChangeRef.current(identifier);
+      })
+      .catch((error) => {
+        // Reported, never thrown: nothing asked for this and a failure must not
+        // break a mount. The next launch, the next rotation and the next
+        // `register()` all retry.
+        handleError(
+          error,
+          "Failed to read this device's push identifier on mount"
+        );
+      });
+  }, [
+    projectId,
+    adapter,
+    hasWaitedForManager,
+    accountManagerRegistered,
+    accountsReady,
+  ]);
 
   return { register, unregister, registering, unregistering };
 }

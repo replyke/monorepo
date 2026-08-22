@@ -3,8 +3,6 @@ import { useSublayDispatch, useSublaySelector } from "../../store/hooks";
 import { resetAuth } from "../../store/slices/authSlice";
 import { clearUser } from "../../store/slices/userSlice";
 import {
-  setActiveAccount,
-  setSignedOut,
   selectAccounts,
   selectAccountLimitReached,
   MAX_ACCOUNTS,
@@ -42,25 +40,43 @@ export default function useAddAccount(): UseAddAccountReturn {
   const addAccount = useCallback(() => {
     if (!canAddAccount) return;
 
-    // Clear active auth state so the sign-in UI appears.
-    // Existing accounts remain safely in the accounts map.
-    // After the user signs in, useAccountSync auto-upserts the new account.
+    // ── LOCAL ONLY. NOTHING HERE MAY REACH THE SHARED ACCOUNT MAP. ──────────
+    //
+    // Opening the sign-in screen is this surface's state, not the device's.
+    // The account map is persisted and, on web, broadcast to every other tab
+    // through `useAccountSync` Phase D — so anything written here is an
+    // instruction to every other tab as well.
+    //
+    // This used to dispatch `setActiveAccount(null)` and `setSignedOut(true)`.
+    // Phase C persisted that map, Phase D delivered it to the other tabs, and
+    // each of them read "nobody is active" as a sign-out and tore its own
+    // session down — persisted, and surviving a reload. MERELY OPENING the
+    // add-account screen signed the user out everywhere else, and abandoning
+    // the flow left them that way.
+    //
+    // Note that dropping the `signedOut` flag ALONE would not have fixed it:
+    // Phase D derives "nobody is active" from `activeAccountId` too
+    // (`!map.signedOut && map.activeAccountId ? … : null`), so the null
+    // selection was a second, independent teardown signal. Both had to stop
+    // being written.
+    //
+    // WHAT THE FLAG WAS FOR, AND WHY LEAVING IT OUT IS SAFE. It existed
+    // because clearing the selection made a persisted `activeAccountId: null`,
+    // which Phase A's first-account fallback reads as "nothing was ever
+    // picked" — so abandoning the flow and quitting landed the user in the
+    // OLDEST remembered account on the next launch. With the selection left
+    // alone there is no null to disambiguate: the map still names the account
+    // the user was in, and that is the one the next launch restores. The bug
+    // stays fixed, and by a shorter route.
+    //
+    // "Selected, with no live session" is already this codebase's canonical
+    // shape for *stepped out without signing out* — `refuseAtAccountLimit`
+    // restores exactly this state after a refused admission, and a launch that
+    // cannot reach the server leaves it deliberately. `useSwitchAccount` has an
+    // explicit `hasLiveSession` check for it, so re-tapping the account the
+    // user came from signs them back into it instead of no-opping.
     dispatch(resetAuth());
     dispatch(clearUser());
-    dispatch(setActiveAccount(null));
-    // RECORD THAT LEAVING WAS DELIBERATE. `activeAccountId: null` is ambiguous
-    // on its own — it is both "nobody has ever picked an account" and "the
-    // session was intentionally ended" — and only the first should fall back to
-    // a stored account. Without this, ABANDONING the flow (the user backs out
-    // of the sign-in screen and quits) left the map selecting nobody with the
-    // flag still false, so Phase A's first-account fallback silently activated
-    // the OLDEST remembered account on the next launch. The user asked to add
-    // an account, not to be moved into a different one.
-    //
-    // Cleared again the moment an account is activated — a completed sign-in
-    // dispatches `setActiveAccount(id)`, which is the defined clearing point —
-    // so this costs the successful path nothing.
-    dispatch(setSignedOut(true));
     dispatch(baseApi.util.resetApiState());
     // The outgoing account's feature state must not survive into the account
     // the user is about to sign into.

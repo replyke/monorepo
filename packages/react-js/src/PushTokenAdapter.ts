@@ -70,5 +70,12 @@ export const webPushTokenAdapter: PushTokenAdapter = {
 
   // Comparison-on-load rather than an event, and it deliberately never calls
   // `getDeviceIdentifier` above — see `webPushRotation.ts` for why.
+  // ⚠ DELIBERATELY NOT `canReadIdentifierWithoutPrompting`. The native adapters
+  // set it because their `getDeviceIdentifier` reads a token the OS already
+  // holds; this one calls `pushManager.subscribe()`, which can raise a
+  // permission prompt with no user gesture behind it. Web needs it least
+  // anyway: the subscription below emits on mount from `getSubscription()`,
+  // which is what already lets an upgrading web install acquire an identifier
+  // without another `register()`.
   subscribeToIdentifierChanges: subscribeToWebPushIdentifierChanges,
 };
