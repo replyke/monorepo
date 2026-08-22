@@ -44,7 +44,7 @@ function AccountList() {
 }
 ```
 
-Each account in `accounts` is a `StoredAccount`: the profile summary — `id`, `name`, `username`, `email`, `avatar` — plus two re-auth markers, `tokenExpiresAt` and `needsReauth`.
+Each account in `accounts` is a `StoredAccount`: the profile summary — `id`, `name`, `username`, `email`, `avatar` — plus two credential markers, `tokenExpiresAt` and `needsReauth`, and one notification marker, `needsPushRebind`.
 
 `username`, `email` and `avatar` may be `null`, and `username` may be absent entirely on an entry stored by an older SDK version — absent means *unknown*, not "the user has no username".
 
@@ -55,7 +55,7 @@ A stored account can stop working while it sits in the switcher. The two markers
 | Marker | Kind | What it catches |
 |--------|------|-----------------|
 | `tokenExpiresAt` | Proactive — decoded from the stored refresh token's `exp` claim, no network call | The token simply aged out. `0` means the expiry could not be read from the token, and sorts as already-expired |
-| `needsReauth` | Reactive — set when a switch into that account is actually refused | Everything expiry cannot see: reuse detection, a password change, a remote sign-out-all, an admin revocation. All of those kill the token family while `exp` is still far in the future |
+| `needsReauth` | Reactive — set when a transition into that account is actually refused, by a switch or by the restore at app launch | Everything expiry cannot see: reuse detection, a password change, a remote sign-out-all, an admin revocation. All of those kill the token family while `exp` is still far in the future. It is also set without a network call when the stored entry carries no usable credential at all |
 
 ```tsx
 const needsSignIn = (account) =>
@@ -63,6 +63,8 @@ const needsSignIn = (account) =>
 ```
 
 `needsReauth` clears the moment the account is successfully activated again — by a switch that works, or by signing into it afresh. A switch that failed because the request never reached the server does **not** set it: a flaky network is not a dead account.
+
+A third marker, `needsPushRebind`, is about notifications rather than credentials — see [Push Notifications Per Account](#push-notifications-per-account).
 
 Neither marker is a guarantee. `needsReauth: false` with a future expiry means *nothing has gone wrong that the SDK knows of*, so a switch can still fail — and when it does, the entry stays in the map precisely so you can render a re-auth affordance for it. See [When a transition fails](#when-a-transition-fails).
 
@@ -78,7 +80,7 @@ Persistence is owned by an `AccountManager` component that each platform package
 
 ### The five-account limit is a real limit, not an approximation
 
-Expo's SecureStore documents a **2048-byte ceiling per value**. Storing the whole account map as one value meant a map of several accounts could exceed it, and the failed write was logged and swallowed — so the map silently stopped persisting. `@sublay/expo` now writes one value per account behind a small index value, so five accounts fit comfortably with each value well inside the limit.
+Expo's SecureStore documents a **2048-byte ceiling per value**, and a whole account map does not reliably fit inside one. `@sublay/expo` therefore writes one value per account behind a small index value, so five accounts fit comfortably with each value well inside the limit.
 
 If a single account entry ever did exceed the budget, the adapter sheds `avatar` first, then `email`, and logs what it dropped — those are the two unbounded fields. `id`, `name`, `username`, the refresh token and the two re-auth markers are never shed: an entry missing those would load but be unusable, or would silently claim to be healthy.
 
@@ -140,7 +142,7 @@ function AccountSwitcher() {
 }
 ```
 
-Switching is asynchronous. The SDK revokes the current access token, sets the target account as active, and fetches a fresh access token using the stored refresh token.
+Switching is asynchronous, and the order is deliberate: the SDK exchanges the target account's stored refresh token for a live session **first**, and only once that succeeds does it clear the current session, select the target and install the new tokens. A target whose credential is dead therefore costs you nothing — the switch rejects and the account you were using is still signed in.
 
 ## Removing an Account
 
@@ -163,16 +165,14 @@ function RemoveAccountButton({ userId }: { userId: string }) {
 
 When the removed account is the currently active one, **the session ends and no account is left active** — the remaining accounts stay in the map, but the SDK does not sign the user into one of them. Render your own next screen (an account picker, or your sign-in UI) when `activeAccount` is `null`.
 
-<Warning>
-  **Breaking change.** Previously the SDK immediately activated the oldest remaining account and refreshed into it, so "remove this account" silently landed the user inside a different identity. Removing, signing out, and deleting an account now all leave `activeAccount` as `null`. Apps that relied on landing in a live session must render their own next screen.
-</Warning>
+Removing, signing out and deleting an account all leave `activeAccount` as `null` rather than landing the user inside a different identity, so your app owns what comes next.
 
 Removing an account sends a sign-out request that revokes the refresh token family **and** unbinds that account's push notifications on this device, in a single server transaction.
 
 <Warning>
-  **Breaking change: removal is atomic once push is involved.** When this device has a stored push identifier, the request asks for an unbind — and if it fails, **nothing is torn down**. The account keeps its entry and its credential, `removeAccount` rejects, and `error` carries the reason so the user can retry. It used to swallow the failure and remove the account locally anyway, which left the user receiving notifications from a removed account with the credential needed to fix it already deleted.
+  **Removal is atomic once push is involved.** When this device has a stored push identifier, the request asks for an unbind — and if the server refuses it, **nothing is torn down**. The account keeps its entry and its credential, `removeAccount` **rejects**, and `error` carries the reason so the user can retry. `await removeAccount(...)` therefore needs a `catch`.
 
-  The strictness is **scoped to requests that ask for an unbind**, deliberately. On a device that has never registered for push there is nothing for the guarantee to protect, so the previous best-effort behaviour is unchanged and an offline user can still remove an account locally.
+  The strictness is **scoped to a server refusal of the unbind itself** — `auth/device-deregistration-failed` or `auth/sign-out-failed`. Anything that never reached the sign-out handler is best-effort: no network, a throttled request, a body the server rejected. An offline user can still remove an account locally, and a device with no stored push identifier has nothing for the guarantee to protect.
 </Warning>
 
 ## Signing Out All Accounts
@@ -190,16 +190,14 @@ function SignOutAllButton() {
 `signOutAll` sends a sign-out request for every stored account's refresh token — each one revoking that account's token family and unbinding its push on this device — and then clears local auth state.
 
 <Warning>
-  **Breaking change: partial failures no longer wipe the map.** When the requests carry this device's push identifier, accounts whose request **succeeded** are removed and accounts whose request **failed** are kept with their credentials intact, and the call rejects with how many failed so the user can retry. It used to swallow every per-account failure and clear all accounts regardless. The live session ends either way — an access token is transient, not the credential the guarantee is about.
+  **A partial failure keeps the accounts it could not sign out.** When the requests carry this device's push identifier, accounts whose request **succeeded** are removed and accounts whose unbind the server **refused** are kept with their credentials intact; the call then **rejects** with how many failed, so the user can retry. The live session ends either way — an access token is transient, not the credential the guarantee is about.
 
-  Same scoping as removal: with no push identifier on the device, nothing is at stake, failures stay best-effort and all local state is still cleared — an offline user can always sign out.
+  Same scoping as removal: a transport failure is not a refusal, so an offline `signOutAll` still clears local state and resolves. With no push identifier on the device nothing is at stake either.
 </Warning>
 
 ## When a Transition Fails
 
 Every path that establishes a session for a stored account — `switchAccount`, and the automatic restore at app launch — has to exchange that account's stored refresh token for a live access token. That exchange can fail: the token expired, the server revoked it, or the stored entry is unusable.
-
-Those failures are now **observable**. They used to resolve as if the transition had succeeded, leaving the app pointed at an account with no session.
 
 **`switchAccount` rejects, and nothing else changes.** The target's credential is proven out of band *before* the current session is torn down, so a failure is a complete no-op against what you were using:
 
@@ -208,22 +206,40 @@ Those failures are now **observable**. They used to resolve as if the transition
 - If there was no previously active account — the picker state after `addAccount()` — nothing is selected and the app is marked signed out, so the next launch does not silently activate a different account.
 
 ```tsx
+import { AccountTransitionError } from "@sublay/react-js";
+
 try {
   await switchAccount({ userId });
 } catch (err) {
-  // The switch did not happen, and the account you were using is still
-  // signed in. `error` is also set on the hook. Prompt a re-auth for `userId`.
+  // The switch did not happen and the account you were using is still signed
+  // in. `error` is also set on the hook.
+  if (err instanceof AccountTransitionError && err.credentialRejected) {
+    promptSignIn(userId);   // the credential is dead
+  } else {
+    showRetry();            // the request never got an answer
+  }
 }
 ```
 
-<Warning>
-  **Behavior change from the first hardening release.** A failed switch used to
-  sign you out of the account you were already using: the teardown ran first, so
-  by the time the dead credential was discovered there was nothing left to
-  restore, and only the *selection* could be rolled back. Validating first
-  removes that entirely. If your app has a "recover from a failed switch"
-  branch that assumes the session is gone, it no longer fires.
-</Warning>
+### Telling a dead account from a dead network
+
+Both failures reject, and they call for opposite responses: one needs the user to sign in again,
+the other needs a retry when they have signal. `AccountTransitionError` carries the discriminator.
+
+<ResponseField name="AccountTransitionError.credentialRejected" type="boolean">
+  `true` when the **server refused** the stored credential — expired, revoked, reuse-detected,
+  invalidated by a password change or a remote sign-out-all — or when the stored entry carries no
+  usable credential at all. This is the only case in which `needsReauth` is set on that account.
+
+  `false` when the exchange never got an answer, or the rotated successor could not be persisted.
+  Nothing is marked, and the same account may well work on the next attempt.
+</ResponseField>
+
+`AccountTransitionError.message` carries the server's reason when it gave one, otherwise
+`ACCOUNT_TRANSITION_FAILED_MESSAGE`. Both the class and that constant are exported.
+
+Prompting a re-auth on every rejection is the mistake this discriminator exists to prevent: it
+tells a user on a train that their account is dead, and it does so every time they lose signal.
 
 <Note>
   A switch still costs exactly **one** token exchange. The refresh endpoint
@@ -231,9 +247,14 @@ try {
   post-swap refresh rather than adding a second call.
 </Note>
 
-**`removeAccount` rejects** on the same terms.
+**`removeAccount` rejects** on the same terms, and so do `signOutAll` and `useAuth().requestNewAccessToken`. None of the four signatures marks them as fallible, so nothing warns you at compile time — `await` them inside a `try`/`catch`, or an unhandled rejection surfaces as a React Native redbox or a browser `unhandledrejection`.
 
-**At app launch**, a stored session that cannot be restored lands the app **signed out with the account entries intact** — never silently switched into a different account. See [Durable signed-out state](#durable-signed-out-state).
+**At app launch**, the two failures part company:
+
+- **The server refused the stored credential.** The app lands **signed out with the account entries intact** — never silently switched into a different account — and that account is marked `needsReauth`, so the switcher can label it without the user having to discover it by tapping.
+- **The server was never reached.** Nothing is torn down, nothing is marked, and the account stays selected. Opening the app on a train does not sign anyone out; the session is restored on the next launch, or sooner by the automatic refresh on the first request that takes a `401`/`403`.
+
+See [Durable signed-out state](#durable-signed-out-state).
 
 ## Durable Signed-Out State
 
@@ -242,7 +263,8 @@ try {
 | Situation | `activeAccount` | `signedOut` | What happens on the next launch |
 |-----------|-----------------|-------------|---------------------------------|
 | Nothing has ever been selected | `null` | `false` | The first stored account is selected and restored |
-| The user deliberately signed out, removed the active account, deleted it, or a stored session turned out to be dead | `null` | `true` | **Nothing is auto-selected.** The app renders signed-out, and the user picks from the switcher |
+| The user deliberately signed out, removed the active account, deleted it, abandoned an `addAccount()` flow, or a stored credential was **refused** at launch | `null` | `true` | **Nothing is auto-selected.** The app renders signed-out, and the user picks from the switcher |
+| A launch could not reach the server | unchanged | unchanged | The stored account stays selected and its session is restored |
 
 `signedOut` is read from `useAccounts()` and is persisted alongside the account map, so it survives a relaunch. It clears the moment any account is successfully activated.
 
@@ -269,25 +291,47 @@ const { setAccountPushEnabled, isAccountPushEnabled } = useAccountPushToggle();
 await setAccountPushEnabled({ userId: "other-account-id", enabled: false });
 ```
 
-The preference is **durable**. An account silenced on this device stays silenced across switches and relaunches — including through the refresh-token rotation that rebuilds its stored entry on every launch — until it is turned back on. See [`useAccountPushToggle`](/hooks/push/use-account-push-toggle).
+The preference is **durable**. An account silenced on this device stays silenced across switches and relaunches — including through the refresh-token rotation that rebuilds its stored entry on every launch — until it is turned back on. It is stored per account in the account map, alongside the credential, and merged rather than overwritten every time that entry is rebuilt. See [`useAccountPushToggle`](/hooks/push/use-account-push-toggle).
 
 <Warning>
-  **The first `register()` on a device enables push for every stored account.** An account that has never expressed a preference reads as *enabled*, so opting in on one account binds all of them. This is the most surprising behaviour in this area; if your UI implies per-account opt-in, follow the first `register()` with explicit toggles.
+  **`register()` turns push on for every stored account that has never expressed a preference.** Permission is a device-level grant, so the call records what it enabled for the whole device: an account you deliberately silenced keeps its `false`, but the four other accounts that were never asked all become enabled. If your UI implies per-account opt-in, follow the first `register()` with explicit toggles.
+
+  The account the call was made from is bound immediately. The others are marked as needing a re-bind and are bound the next time the user switches into each — see [When notifications are paused](#when-notifications-are-paused). Nothing is ever bound for an account that has *not* expressed a preference: a plain sign-in on a device that already holds a push identifier creates no binding.
 </Warning>
 
 ### Signing out unbinds automatically
 
-Once this device has registered for push, `signOut()`, `removeAccount()` and `signOutAll()` each send its identifier with their sign-out request, and the server removes that account's push binding in the same transaction as the session teardown. Either both happen or neither does, and "neither" is reported rather than swallowed — see the warnings above. Devices that never registered send no identifier and behave exactly as they always did.
+Once this device has a stored push identifier, `signOut()`, `removeAccount()` and `signOutAll()` each send it with their sign-out request, and the server removes that account's push binding in the same transaction as the session teardown. Either both happen or neither does, and "neither" is reported rather than swallowed — see the warnings above. Devices with no stored identifier send none, have no unbind to protect, and sign out best-effort.
 
-Do **not** call `usePushRegistration().unregister()` in a logout flow. It is now a durable per-account preference, so using it as cleanup permanently silences that account's next session, and sign-out already unbinds. See [Turning push off](/sdk/push-notifications/overview#turning-push-off).
+Do **not** call `usePushRegistration().unregister()` in a logout flow. It is a durable per-account preference, so using it as cleanup permanently silences that account's next session, and sign-out already unbinds. See [Turning push off](/sdk/push-notifications/overview#turning-push-off).
 
-### Rotated device tokens repair themselves
+### When notifications are paused
 
-When the OS rotates the device's push token, every binding on the old token is dead. Wherever `usePushRegistration` is mounted, the SDK notices and re-binds each **enabled** stored account onto the new token with no further app involvement, leaving silenced accounts silenced. Detection lives in that hook and is gated on this device having registered at least once, so an app that never mounts it falls back to the next `register()`. See [Automatic token rotation](/hooks/push/use-push-registration#automatic-token-rotation) for the per-platform detail.
+When the OS rotates the device's push token, every binding on the old token is dead. Wherever `usePushRegistration` is mounted with an adapter that reports rotations, the SDK notices and records the new identifier. The **active** account is re-bound on the spot. Every other push-enabled account is **marked** as needing a re-bind and repaired the next time the user switches into it, using the live session that switch establishes.
+
+The marking is deliberate rather than a shortcut. Re-binding a background account would mean spending its stored refresh token on a one-time-use exchange, in the background, for an account the user is not looking at — and an interruption in the middle of that exchange locks the account out permanently. The cost is that a push-enabled account nobody opens goes quiet after a rotation until it is next opened, which is what the marker is for:
+
+```tsx
+const { accounts } = useAccounts();
+
+accounts.map((account) => (
+  <AccountRow
+    key={account.id}
+    account={account}
+    note={account.needsPushRebind ? "Notifications paused — open to resume" : null}
+  />
+));
+```
+
+`needsPushRebind` clears as soon as the account is re-bound. It is **not** `needsReauth` and the two should not read the same in your UI: `needsReauth` means the credential is dead and the user must sign in again, while `needsPushRebind` means the account works perfectly and is merely quiet. It is only ever raised for accounts that explicitly enabled push — an account that never asked for notifications has none to pause.
+
+See [Automatic token rotation](/hooks/push/use-push-registration#automatic-token-rotation) for which platforms report a rotation at all.
 
 ## Reaching the Account Limit
 
-Signing in a **sixth** account is refused. It used to be a silent no-op that left the app in a broken state — the account was not stored, but it was made active anyway — so the refusal now produces a real error.
+Signing in a **sixth** account is refused, with an error that names the cause: this device already remembers the maximum number of accounts, and signing out of one is what frees a slot. The limit is never raised and no account is evicted to make room — a map that fills up means users are being signed in without ever being signed out.
+
+A refusal at the cap does **not** persist a signed-out state. The selection is left exactly where it was, so the next launch is unaffected by the refused attempt and the user is never parked in a state they cannot get out of. `accountLimitReached` stays raised for your UI to read, and switching back into an account that already has an entry works even when the current selection has no live session.
 
 ### How the refusal reaches you
 
@@ -372,10 +416,20 @@ If the built-in hooks do not fit, the transition primitives are exported directl
 | `resetAccountScopedState` | Redux action that returns every account-scoped feature slice to its initial state. Subscribe your own slices to it. |
 | `resetAuth` / `clearUser` | The auth and user teardown actions. |
 | `selectAccounts`, `selectActiveAccountId`, `selectSignedOut`, `selectAccountLimitReached`, `selectDeviceIdentifier` | Selectors over the accounts slice. |
+| `setSignedOut` | Records that ending the session was deliberate. The three actions above clear the *session*; none of them touches the accounts slice, so a hand-rolled teardown that omits `setSignedOut(true)` leaves `signedOut: false` with an account still selected — and the next launch reads that as "nothing has ever been picked", restores the account and signs the app back in. `setActiveAccount` clears it again on the next activation, so nothing has to unset it by hand. |
+| `AccountTransitionError`, `ACCOUNT_TRANSITION_FAILED_MESSAGE` | What a failed transition rejects with, and its default message. `credentialRejected` separates a dead account from a failed request — see [Telling a dead account from a dead network](#telling-a-dead-account-from-a-dead-network). |
 
 The raw `setActiveAccount`, `upsertAccount` and `removeAccount` reducers are deliberately **not** exported. They only mutate local state: dispatching `setActiveAccount` can point the active id at an account that is not in the map, and dispatching `removeAccount` drops an account without signing it out server-side. Use `activateStoredAccount` and the `useRemoveAccount` hook instead — they perform the whole flow.
 
-`accountNeedsReauth(entry)` is exported alongside `isAccountPushEnabled` for reading the marker off a raw `AccountEntry`, since absent and `false` mean the same thing there.
+`accountNeedsReauth(entry)`, `accountNeedsPushRebind(entry)` and `isAccountPushEnabled(entry)` are exported for reading those fields off a raw `AccountEntry`, since absent and `false` do not always mean the same thing there. `isAccountPushEnabled` is **reported state** — the value a per-account switch renders as `checked`, with an absent preference reading as enabled. It is not the rule the SDK uses to decide whether to create a binding; that one requires an explicit opt-in and is internal, so no binding is ever created for an account that never asked.
+
+## One Project Per App
+
+One Sublay project per app is the supported shape. Account storage, the auth gate and the credential slot are one set of module-level singletons, so a second provider mounted for a *different* project id does not get its own world — it takes over the shared one, and the non-last project's account switching stops working while a rotated refresh token can be written under the wrong project's key, locking that account out permanently.
+
+Rather than let that happen quietly, mounting a second provider for a different project **throws immediately**, with a message naming both project ids. Remounting the *same* project — a hot reload, a provider that unmounts and mounts again, two providers for one project — is fine and is not affected.
+
+If you need to talk to two projects, run two apps, or drive the second project through [`@sublay/js`](/js-sdk/overview) or your own backend rather than mounting a second provider.
 
 ## See Also
 

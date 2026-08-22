@@ -63,11 +63,15 @@ All optional. Each is mapped to whichever platform(s) support it at dispatch tim
 </ParamField>
 
 <ParamField body="tag" type="string">
-  Display-replace key so notifications collapse in the UI (FCM `android.notification.tag`, Web `tag`).
+  Display-replace key so notifications collapse in the UI (FCM `android.notification.tag`, Web `tag`). Scoped per recipient, exactly like `collapseId` below.
 </ParamField>
 
 <ParamField body="collapseId" type="string">
-  Transport-level collapse identifier (APNs `apns-collapse-id`, FCM `collapse_key`) — supersedes an undelivered push with the same id.
+  Transport-level collapse identifier (APNs `apns-collapse-id`, FCM `collapse_key`) — a newer push supersedes an undelivered one carrying the same id **for the same account**.
+
+  **Scoped per recipient.** Two accounts signed in on one physical device share one transport destination, so the server appends a short digest of the recipient's id to the key you supply before handing it to the provider. Each account gets its own collapse namespace on the shared device and cannot supersede the other's notification, while collapsing within a single account behaves exactly as the field describes.
+
+  **Over-length keys are folded rather than refused.** APNs caps `apns-collapse-id` at 64 bytes. When your key plus the recipient digest would exceed that, the server replaces the whole scoped key with a fixed-width digest of it — still deterministic and still per-recipient, so collapsing keeps working — instead of letting APNs reject the send with `BadCollapseId`. FCM's `collapse_key` and the display `tag` have no comparable documented ceiling, so nothing is folded on those paths. The parameter itself has no maximum: any non-empty string is accepted.
 </ParamField>
 
 <ParamField body="threadId" type="string">
@@ -131,18 +135,45 @@ Returns `200` with a `results` map keyed by user ID. Every requested `userId` is
     ```
     Returned when `userIds` is empty, exceeds 100 entries, or required fields are missing.
   </Accordion>
-  <Accordion title="Forbidden — 403">
+  <Accordion title="Elevated Auth Required — 403">
     ```json
-    { "error": "Forbidden" }
+    {
+      "error": "Service or master key required.",
+      "code": "auth/elevated-auth-required"
+    }
     ```
     Returned when called with an end-user access token instead of a service/master key.
   </Accordion>
   <Accordion title="Bundle Not Installed — 403">
     ```json
-    { "error": "...", "code": "database/tables-not-available" }
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
     ```
   </Accordion>
+  <Accordion title="Bundle Provisioning — 503">
+    ```json
+    {
+      "code": "database/tables-provisioning",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "bundleId": "push"
+    }
+    ```
+    Returned while the `push` bundle is mid-install. Retry shortly.
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Internal server error.", "code": "push-send/server-error" }
+    ```
+    The fan-out itself failed. Nothing beyond this code is returned. Note that a
+    failure while pruning dead tokens *after* delivery does not reach here — the
+    pushes were delivered and the response is still `200`.
+  </Accordion>
 </AccordionGroup>
+
+**Rate limit:** 50 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
 
 ## See Also
 

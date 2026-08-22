@@ -13,9 +13,9 @@ icon: "plug"
   recovery once this resolves.
 </Warning>
 
-<Warning>
-  **Breaking change.** The SDK used to switch into the oldest remaining account after a deletion. It now ends the session and leaves nothing active — read `activeAccount` from [`useAccounts`](/hooks/auth/use-accounts) and render your own next screen when it is `null`.
-</Warning>
+<Note>
+  Deleting an account ends the session and leaves nothing active, even when other accounts remain stored — read `activeAccount` from [`useAccounts`](/hooks/auth/use-accounts) and render your own next screen when it is `null`.
+</Note>
 
 ## Usage Example
 

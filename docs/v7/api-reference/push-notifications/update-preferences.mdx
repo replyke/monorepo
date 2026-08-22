@@ -29,11 +29,21 @@ Returns `200` with the stored set (deduplicated).
 ## Error Responses
 
 <AccordionGroup>
-  <Accordion title="Unauthorized — 401 / 403">
+  <Accordion title="No Credential — 401">
+    Plain-text `Unauthorized`, with no JSON body and no `code`. Returned when the
+    request carries no `Authorization` header at all.
+  </Accordion>
+  <Accordion title="Rejected Credential — 403">
+    Plain-text `Forbidden`, with no JSON body and no `code`. Returned when the
+    access token is malformed, has the wrong signature, or has **expired** — the
+    common case, since access tokens live 30 minutes. Refresh the access token
+    and retry.
+  </Accordion>
+  <Accordion title="Acting As Another User — 403">
     ```json
     { "error": "Unauthorized", "code": "notification-preferences/unauthorized" }
     ```
-    `403 notification-preferences/unauthorized` when an end-user token names a `userId` other than its own. A `401` is returned when no valid credential is present.
+    Returned when an end-user token names a `userId` other than its own.
   </Accordion>
   <Accordion title="Missing User ID — 400">
     ```json
@@ -49,11 +59,35 @@ Returns `200` with the stored set (deduplicated).
   </Accordion>
   <Accordion title="Bundle Not Installed — 403">
     ```json
-    { "error": "...", "code": "database/tables-not-available" }
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
     ```
     Returned when the `push` bundle is not installed for this project.
   </Accordion>
+  <Accordion title="Bundle Provisioning — 503">
+    ```json
+    {
+      "code": "database/tables-provisioning",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "bundleId": "push"
+    }
+    ```
+    Returned while the `push` bundle is mid-install. Retry shortly.
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "notification-preferences/server-error"
+    }
+    ```
+  </Accordion>
 </AccordionGroup>
+
+**Rate limit:** 50 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
 
 ## See Also
 

@@ -71,10 +71,18 @@ The hook returns a `switchAccount` function that accepts:
 ## Returns
 
 <ResponseField name="switchAccount" type="function">
-  Async function that switches the active session. Calling it with the ID of
-  the already-active account is a no-op. Throws synchronously if the account is
-  not found or no `projectId` is available, and **rejects** if the session for
-  the target account could not be established — see below.
+  Async function that switches the active session. Throws synchronously if the
+  account is not found or no `projectId` is available, and **rejects** if the
+  session for the target account could not be established — see below. Its
+  signature is `({ userId }) => Promise<void>`, so nothing warns you at compile
+  time: `await switchAccount(...)` without a `catch` becomes an unhandled
+  rejection.
+
+  Calling it with the ID of the already-active account is a no-op **only while
+  that account has a live session**. When the selection names an account with no
+  session — after a refusal at the account limit, for instance — re-selecting it
+  runs the full transition, so the user has a way back in without restarting the
+  app.
 </ResponseField>
 
 <ResponseField name="isSwitching" type="boolean">
@@ -87,10 +95,6 @@ The hook returns a `switchAccount` function that accepts:
 </ResponseField>
 
 ## Failure Behavior
-
-<Warning>
-  **Breaking change.** A failed token refresh used to be swallowed: `switchAccount` resolved, `error` stayed `null`, and the app was left pointed at an account with no live session. It now rejects.
-</Warning>
 
 When the target account's stored refresh token cannot be exchanged for an access token — it expired, was revoked, or the stored entry has no usable token at all — the returned promise **rejects** and `error` is set.
 
@@ -105,23 +109,49 @@ tokens, and still has its cached data. Only the rejection happened.
 - Switching with *no* account active — the account-picker state after `addAccount()` — leaves nothing selected and marks the app signed out, so the next launch does not silently activate a different account.
 
 ```tsx
+import { AccountTransitionError } from "@sublay/react-js";
+
 const { switchAccount, error } = useSwitchAccount();
 
 async function onPick(userId: string) {
   try {
     await switchAccount({ userId });
     // Session is live for `userId`.
-  } catch {
+  } catch (err) {
     // Not switched, and nothing else changed — the previous account is still
-    // signed in. `error` holds the reason; prompt a re-auth for `userId`.
+    // signed in. `error` holds the reason.
+    if (err instanceof AccountTransitionError && err.credentialRejected) {
+      promptSignIn(userId);   // the server refused the credential
+    } else {
+      showRetry();            // the request never got an answer
+    }
   }
 }
 ```
 
+### Telling a dead account from a dead network
+
+The rejection is an `AccountTransitionError`, and its `credentialRejected` boolean is the only way
+to tell the two failures apart:
+
+<ResponseField name="credentialRejected" type="boolean">
+  `true` when the server **refused** the stored credential — expired, revoked, reuse-detected,
+  invalidated by a password change or a remote sign-out-all — or when the stored entry carries no
+  usable credential at all. This is exactly the case in which `needsReauth` is set.
+
+  `false` when the exchange never got an answer, or the rotated successor could not be persisted.
+  Nothing is marked and the same account may work on the next attempt.
+</ResponseField>
+
+Prompting a re-auth on every rejection tells a user with no signal that their account is dead, and
+does it again every time they lose signal — which is what this discriminator exists to prevent.
+`AccountTransitionError` and `ACCOUNT_TRANSITION_FAILED_MESSAGE` (its default message, used when
+the server gave no reason) are both exported.
+
 <Note>
-  **The switch costs exactly one token exchange, same as before.** The refresh
-  endpoint rotates the token it is given, so validating first replaces the old
-  post-swap refresh rather than adding a second call.
+  **The switch costs exactly one token exchange.** The refresh endpoint rotates
+  the token it is given, and validating the target's credential *is* that
+  exchange — it is not an extra probe in front of one.
 </Note>
 
 ## Integration Guide

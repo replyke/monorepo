@@ -6,19 +6,19 @@ icon: "plug"
 
 ## Overview
 
-`useRemoveAccount` signs out and removes a specific account from the stored accounts map. It sends a sign-out request to the server to revoke the account's refresh token family — and, once this device has registered for push, to unbind that account's push notifications in the **same transaction** — before removing any local state.
+`useRemoveAccount` signs out and removes a specific account from the stored accounts map. It sends a sign-out request to the server to revoke the account's refresh token family — and, once this device has a stored push identifier, to unbind that account's push notifications in the **same transaction** — before removing any local state.
 
 If the removed account is the currently active one, **the session ends and no account is left active**, even when other accounts remain stored. The app renders signed-out; choosing what happens next is yours.
 
 <Warning>
-  **Breaking change: removal is atomic once push is involved.** If this device has a stored push identifier, the sign-out request carries it, and a failed request now **tears nothing down**: `removeAccount` rejects, `error` carries the reason, and the account keeps its entry and its credential so the user can retry. It used to swallow the failure and remove the account locally regardless — which left the user receiving notifications from a removed account with the credential needed to fix it already deleted.
+  **Removal is atomic once push is involved.** If this device has a stored push identifier, the sign-out request carries it, and if the server **refuses the unbind** nothing is torn down: `removeAccount` **rejects**, `error` carries the reason, and the account keeps its entry and its credential so the user can retry. Its signature is `({ userId }) => Promise<void>`, so nothing warns you at compile time: `await removeAccount(...)` needs a `catch`.
 
-  This strictness is deliberately **scoped to requests that ask for an unbind**. On a device that has never registered for push (and so sends no device identifier), there is nothing for the guarantee to protect, and the previous best-effort behaviour is unchanged — an offline user can still remove an account locally.
+  The strictness is scoped to a **server refusal of the unbind itself** — the sign-out endpoint answering `auth/device-deregistration-failed` or `auth/sign-out-failed`, the two codes it returns when its transaction rolled back. Everything else is best-effort: no network, a throttled or migrating project, a rejected body, the generic `auth/server-error`, or a device with no stored push identifier. An offline user can still remove an account locally.
 </Warning>
 
-<Warning>
-  **Breaking change.** The SDK used to activate the next available account — insertion order, i.e. the oldest account ever added — and refresh into it, so removing an account silently signed the user into a different identity. It no longer does. Read `activeAccount` from [`useAccounts`](/hooks/auth/use-accounts) and render your own next screen when it is `null`.
-</Warning>
+<Note>
+  Removing an account never activates a different one. Read `activeAccount` from [`useAccounts`](/hooks/auth/use-accounts) and render your own next screen when it is `null`.
+</Note>
 
 ## Usage Example
 

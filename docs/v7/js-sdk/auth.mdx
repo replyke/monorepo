@@ -109,8 +109,18 @@ The whole argument is optional.
   Optional. The device the user is signing out on — `{ platform: "ios" | "android", token }`
   or `{ platform: "web", subscription }`. When supplied (and the project has the
   `push` bundle), the server deletes that user's push binding for the device in the
-  **same transaction** as the sign-out. Omit it and the request is identical to before
-  this field existed.
+  **same transaction** as the sign-out.
+
+  **It requires a refresh token.** The unbind is scoped to the refresh token's
+  subject — that is what stops one account removing another's binding on a shared
+  device — so with no token to resolve, the server returns `204` without ever
+  reading `pushDevice`. Rather than report a success that unbound nothing, this
+  call **throws** before issuing the request.
+
+  That is the case to watch in **host-managed mode**: a client built with
+  `getToken` and no `initialTokens` has an inert `setTokens`, so it never holds a
+  refresh token. Pass `refreshToken` alongside `pushDevice` there. A sign-out that
+  asks for no unbind is unaffected and still works with no credential at all.
 </ParamField>
 
 ```typescript
@@ -213,6 +223,8 @@ await sublay.auth.resetPassword({
 
 Changes the authenticated user's password after verifying the current one. Use this for an authenticated "change password" flow, as opposed to the token-based `resetPassword`.
 
+A password change ends **every other session** for that user and deletes every push binding they hold — see [Change Password](/api-reference/auth/change-password). The session making the call survives only if it names itself.
+
 ```typescript
 const { success, message } = await sublay.auth.changePassword({
   password: "currentP@ss",
@@ -226,6 +238,12 @@ const { success, message } = await sublay.auth.changePassword({
 
 <ParamField body="newPassword" type="string" required>
   The new password to set.
+</ParamField>
+
+<ParamField body="refreshToken" type="string">
+  The session to keep. Defaults to the SDK's stored refresh token in SDK-managed mode, so you normally do not pass it.
+
+  In host-managed mode the SDK holds no refresh token, so pass the one your host holds. With no refresh token resolvable, the password still changes and **every** session ends including this one — the fail-secure default, not an error. Your next request then `401`s and the host re-authenticates.
 </ParamField>
 
 **Returns** — `Promise<{ success: boolean; message: string }>`

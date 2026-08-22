@@ -45,7 +45,8 @@ function ActiveAccountLabel() {
 
 <ResponseField name="accounts" type="StoredAccount[]">
   Array of all stored accounts, derived from the accounts map in Redux state.
-  Each one carries the profile summary plus the two re-auth markers below.
+  Each one carries the profile summary, the two credential markers below, and
+  the `needsPushRebind` notification marker.
 </ResponseField>
 
 <ResponseField name="activeAccount" type="StoredAccount | null">
@@ -58,10 +59,13 @@ function ActiveAccountLabel() {
 
 <ResponseField name="signedOut" type="boolean">
   `true` when there is no active account **because the user deliberately signed
-  out** — or removed the active account, deleted it, or a stored session turned
-  out to be dead — as opposed to "nothing has ever been selected". Both look
-  like `activeAccount === null`; this is what tells them apart, and it is
-  persisted, so it survives a relaunch.
+  out** — or removed the active account, deleted it, abandoned an `addAccount()`
+  flow, or had a stored credential refused at launch — as opposed to "nothing
+  has ever been selected". Both look like `activeAccount === null`; this is what
+  tells them apart, and it is persisted, so it survives a relaunch.
+
+  A launch that could not *reach* the server does not set it: the stored account
+  stays selected and its session is restored later. Only a refusal counts.
 
   While it is `true`, the SDK will not auto-select a stored account at launch.
   It clears as soon as any account is successfully activated.
@@ -84,7 +88,8 @@ function ActiveAccountLabel() {
 | `email` | `string \| null` | Email address |
 | `avatar` | `string \| null` | Avatar URL |
 | `tokenExpiresAt` | `number` | When this account's stored refresh token expires, as an epoch in **milliseconds**. `0` means unknown |
-| `needsReauth` | `boolean` | `true` once a switch into this account has actually been refused by the server |
+| `needsReauth` | `boolean` | `true` once a transition into this account has actually been refused — the credential is dead |
+| `needsPushRebind` | `boolean` | `true` when this account's notifications are paused until it is next opened |
 
 `StoredAccount` is a superset of the `AccountSummary` shape stored in the
 account map, so code that only reads `id`/`name`/`username`/`email`/`avatar` is
@@ -107,16 +112,22 @@ neither is sufficient on its own:
 </ResponseField>
 
 <ResponseField name="needsReauth" type="boolean">
-  **Reactive.** Set when a switch into this account is refused by the server,
-  and cleared the moment the account is successfully activated again — whether
-  by a switch that works or by signing into it afresh.
+  **Reactive.** Set when a transition into this account is refused — by a switch,
+  or by the automatic restore at app launch, which is the most common way a
+  revoked credential is discovered. Cleared the moment the account is
+  successfully activated again, whether by a switch that works or by signing
+  into it afresh.
 
   This catches every death `tokenExpiresAt` cannot see: reuse detection, a
   password change, a remote sign-out-all, an admin revocation. All of those
-  destroy the token family while `exp` is still comfortably in the future.
+  destroy the token family while `exp` is still comfortably in the future. It is
+  also set without any network call when the stored entry carries no usable
+  credential at all, which is the same conclusion reached sooner.
 
   A failed switch that could not reach the server does **not** set it — a flaky
-  network is not a dead account.
+  network is not a dead account. `AccountTransitionError.credentialRejected` is
+  the same distinction, reported to the caller at the moment of failure; see
+  [`useSwitchAccount`](/hooks/auth/use-switch-account#telling-a-dead-account-from-a-dead-network).
 </ResponseField>
 
 ```tsx
@@ -134,7 +145,29 @@ accounts.map((account) => (
 ));
 ```
 
-Neither marker is a promise: `needsReauth: false` with a future
+### Notifications paused: `needsPushRebind`
+
+<ResponseField name="needsPushRebind" type="boolean">
+  `true` when this account's push binding points at a device token this device no
+  longer holds, because the token rotated while the account was in the
+  background.
+
+  Its credential is fine and its data is fine — only the notification routing is
+  stale. Switching into the account re-creates the binding and clears this, so
+  the useful thing to render is an invitation to open it rather than a sign-in
+  prompt: *"Notifications paused — open to resume."*
+
+  Only ever raised for accounts that explicitly enabled push on this device. An
+  account that never asked for notifications has none to pause.
+</ResponseField>
+
+**Do not conflate it with `needsReauth`.** They mean opposite things about the
+account's health, and saying the wrong one is wrong in both directions: telling
+a user to sign in again when their notifications are merely stale asks for a
+password they do not need, and treating a paused account as fine hides the one
+thing a tap would fix.
+
+Neither credential marker is a promise: `needsReauth: false` with a future
 `tokenExpiresAt` means *nothing has gone wrong that the SDK knows of*, not that
 the next switch is guaranteed to succeed. A switch can still fail, and when it
 does the current session is left untouched — see
@@ -142,12 +175,12 @@ does the current session is left untouched — see
 
 On Expo, `avatar` and then `email` may be dropped from a stored entry if it
 would otherwise exceed SecureStore's per-value limit. `id`, `name`, `username`,
-the credential and both re-auth markers are never dropped. See
+the credential and the markers are never dropped. See
 [Where accounts are stored](/sdk/authentication/multi-account#where-accounts-are-stored).
 
 ## Rendering the Signed-Out State
 
-Because the SDK no longer auto-selects an account after a sign-out, removal or deletion, `activeAccount` can be `null` while `accounts` is non-empty. That is the account-picker state:
+No account is auto-selected after a sign-out, removal or deletion, so `activeAccount` can be `null` while `accounts` is non-empty. That is the account-picker state:
 
 ```tsx
 const { accounts, activeAccount, signedOut } = useAccounts();

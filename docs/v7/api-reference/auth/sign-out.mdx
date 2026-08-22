@@ -56,7 +56,8 @@ Details worth knowing:
 - **The binding is user-scoped.** The unbind targets only the signing-out user's row for that device. Other accounts bound to the same device are untouched.
 - **An expired refresh token still unbinds.** Session destruction requires a live token, but the unbind accepts an authentic-but-expired one (its signature still proves which user it was minted for) up to 90 days past expiry. Beyond that bound the token is refused as an unbind credential and the request falls back to a plain `204`.
 - **A destroyed token family still unbinds.** If the session was already ended by a prior sign-out-all or by refresh-token reuse detection, the binding is still removed.
-- **Projects without the `push` bundle are unaffected on the success path.** The `pushDevice` is ignored and the endpoint returns `204` exactly as it does without one — this route carries no bundle requirement. The one exception is the bundle lookup itself: it runs whenever `pushDevice` is supplied, and if it cannot be resolved the request fails with `auth/server-error` rather than reporting a sign-out that did not happen.
+- **Projects without the `push` bundle are unaffected on the success path.** The route itself carries no bundle gate — it is never refused with `database/tables-not-available`. When `pushDevice` is supplied the server looks the bundle up, and on a project that does not have it the `pushDevice` is ignored and the endpoint returns `204` exactly as it does without one. The one exception is the lookup itself: if it cannot be resolved the request fails with `auth/server-error` rather than reporting a sign-out that did not happen.
+- **A device identifier matching no binding still returns `204`.** The unbind is scoped to the signing-out user, so a key that matches no row of theirs removes nothing and the sign-out completes. The server records that outcome in its own logs; there is no separate response for it.
 - **A malformed or wrong-signature token still returns `204`.** There is no user to scope an unbind to and no session to destroy, so the endpoint keeps its permissive behavior rather than blocking sign-out.
 
 ## Response
@@ -65,7 +66,7 @@ Returns `204 No Content` on success. No response body.
 
 ## Error Responses
 
-The three `500`s below are reachable only when `pushDevice` is supplied, and every one of them means **nothing was committed** — the session and the push binding are both still in place, and the request can be retried. The `400` is ordinary body validation and can be returned with or without a `pushDevice`.
+The three `500`s below are reachable only when `pushDevice` is supplied, and every one of them means **nothing was committed** — the session and the push binding are both still in place, and the request can be retried. Everything after them is decided before the handler runs and can be returned with or without a `pushDevice`.
 
 <AccordionGroup>
   <Accordion title="Push Deregistration Failed — 500">
@@ -109,7 +110,35 @@ The three `500`s below are reachable only when `pushDevice` is supplied, and eve
     Returned when `pushDevice` is malformed — for example `platform: "ios"` with no
     `token`, or `platform: "web"` with no `subscription`.
   </Accordion>
+  <Accordion title="Project Pending Deletion — 423">
+    ```json
+    {
+      "error": "This project is pending deletion and is not available.",
+      "code": "project/pending-deletion"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Project Migrating — 503">
+    ```json
+    { "error": "...", "code": "project/migrating" }
+    ```
+    Returned while the project is mid-migration.
+  </Accordion>
 </AccordionGroup>
+
+**Rate limit:** 50 requests per 5 minutes per IP. Exceeding it returns `429` with the plain-text message `Too many sign out attempts, please wait 5 minutes` and no `code`.
+
+The budget is sized for a fan-out: signing out of every stored account issues one request per account in parallel, so a five-account sign-out spends five of the fifty. The limiter keys on IP, so several users behind one address share the budget.
+
+<Note>
+  **A rejection that never reached this endpoint is not an unbind failure.** The `423`, `503` and
+  `429` above — and a `400` — are decided before the handler runs, so no unbind was attempted and no
+  push binding is at risk. Exactly two responses mean the server tried to unbind and could not:
+  `auth/device-deregistration-failed` and `auth/sign-out-failed`. The third `500`,
+  `auth/server-error`, is raised before any unbind runs and is not one of them. A client that blocks
+  account removal on *any* failure makes an account unremovable whenever the project is throttled or
+  migrating.
+</Note>
 
 ## See Also
 

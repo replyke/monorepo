@@ -118,7 +118,16 @@ function SignInButton() {
 
 <ResponseField name="signOut" type="function">
   Sign out the current account. Sends a sign-out request to the server to revoke
-  the refresh token family, then clears local auth state. Throws on error.
+  the refresh token family — and, once this device has a stored push identifier, to
+  unbind that account's notifications in the same transaction — then clears
+  local auth state.
+
+  **It rejects only when the server refuses the unbind.** In that case nothing is
+  torn down locally either: the account keeps its entry and its credential so the
+  user can retry, rather than being left receiving notifications from an account
+  they can no longer reach. Every other failure — no network, a throttled or
+  otherwise rejected request, a device that never registered for push — still
+  signs out locally, because a user must always be able to sign out.
 
   **It does not sign you into another account.** If other accounts are stored,
   they stay in the map but none is activated — see
@@ -130,11 +139,24 @@ function SignInButton() {
   `{ password: string; newPassword: string }`. The current password must be
   correct. Throws if verification fails.
 
-  A password change invalidates that user's refresh tokens elsewhere, including
-  any stored on another device. A stored account killed that way still has a
-  valid-looking expiry, so it is only discovered by trying — which is what
-  `needsReauth` on [`useAccounts`](/hooks/auth/use-accounts#telling-a-live-account-from-a-dead-one)
+  **Every other session for that user ends, and the caller's does not.** The hook
+  sends the active account's stored refresh token with the request, which is how
+  the server knows which session to spare — the route is authenticated by an
+  access token, which names no session. The user stays signed in where they are
+  standing; every other device must sign in again with the new password. The
+  change also clears that user's push bindings on every device; the calling
+  device re-binds from its live session and the others re-bind when next opened.
+  See [Change Password](/api-reference/auth/change-password).
+
+  Other accounts stored on **this** device are killed by it too, and a stored
+  account killed that way still has a valid-looking expiry, so it is only
+  discovered by trying — which is what `needsReauth` on
+  [`useAccounts`](/hooks/auth/use-accounts#telling-a-live-account-from-a-dead-one)
   records.
+
+  An access token minted before the change keeps working until it expires, up to
+  30 minutes, so "other devices no longer work" is about their refresh, not their
+  next request.
 </ResponseField>
 
 <ResponseField name="setPassword" type="function">
@@ -146,19 +168,13 @@ function SignInButton() {
 
 <ResponseField name="requestNewAccessToken" type="function">
   Manually trigger an access token refresh using the stored refresh token.
-  Resolves with the new access token string, and **throws** if the refresh
-  fails or if there is no stored refresh token to present. Returns `undefined`
-  only when no `projectId` is available. The SDK handles refresh automatically
-  in most cases; use this only when you need to force a refresh.
-
-  <Warning>
-    **Breaking change.** It previously returned `undefined` on
-    failure, which was indistinguishable from a call that had nothing to do.
-    The underlying `requestNewAccessTokenThunk` likewise now **rejects** —
-    rather than fulfilling with `undefined` — when no refresh token is present.
-    Integrators branching on `fulfilled.match(result)` for that case will see
-    the opposite branch.
-  </Warning>
+  Declared `() => Promise<string>`: it resolves with the new access token and
+  **rejects** on every path that cannot produce one — a failed refresh, no
+  stored refresh token to present, or no `projectId`. It never resolves
+  `undefined`. The underlying `requestNewAccessTokenThunk` rejects in the same
+  cases, so `fulfilled.match(result)` is `false` when no refresh token is
+  present. The SDK handles refresh
+  automatically in most cases; use this only when you need to force a refresh.
 
   This refreshes the **active** account only — it presents whatever refresh
   token is in auth state. Switching to a *stored* account no longer goes through

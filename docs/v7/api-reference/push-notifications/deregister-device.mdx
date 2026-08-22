@@ -50,10 +50,22 @@ Returns `200` on success, including when no matching registration existed.
 ## Error Responses
 
 <AccordionGroup>
-  <Accordion title="Unauthorized — 401">
+  <Accordion title="No Credential — 401">
+    Plain-text `Unauthorized`, with no JSON body and no `code`. Returned when the
+    request carries no `Authorization` header at all.
+  </Accordion>
+  <Accordion title="Rejected Credential — 403">
+    Plain-text `Forbidden`, with no JSON body and no `code`. Returned when the
+    access token is malformed, has the wrong signature, or has **expired** — the
+    common case, since access tokens live 30 minutes. Refresh the access token
+    and retry; do not treat this as a permanent refusal.
+  </Accordion>
+  <Accordion title="Service Key Rejected — 401">
     ```json
     { "error": "Unauthorized", "code": "push-device/unauthorized" }
     ```
+    Returned when a service or master key is used. This endpoint has no
+    impersonation path by design (see [Security note](/api-reference/push-notifications/register-device#security-note)).
   </Accordion>
   <Accordion title="Invalid Body — 400">
     ```json
@@ -62,10 +74,32 @@ Returns `200` on success, including when no matching registration existed.
   </Accordion>
   <Accordion title="Bundle Not Installed — 403">
     ```json
-    { "error": "...", "code": "database/tables-not-available" }
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
     ```
   </Accordion>
+  <Accordion title="Bundle Provisioning — 503">
+    ```json
+    {
+      "code": "database/tables-provisioning",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "bundleId": "push"
+    }
+    ```
+    Returned while the `push` bundle is mid-install. Retry shortly.
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Internal server error.", "code": "push-device/server-error" }
+    ```
+    The deletion could not be performed. No diagnostic detail is returned; retry.
+  </Accordion>
 </AccordionGroup>
+
+**Rate limit:** 50 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
 
 ## See Also
 

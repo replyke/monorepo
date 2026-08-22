@@ -66,14 +66,23 @@ Authenticates an existing user by email and password. Returns an access token, r
     }
     ```
   </Accordion>
-  <Accordion title="Invalid Credentials — 403">
+  <Accordion title="Invalid Credentials — 403 or 400">
     ```json
     {
       "error": "Invalid credentials.",
       "code": "auth/invalid-credentials"
     }
     ```
-    Returned when the user exists but has no password set (e.g., OAuth-only account).
+    `403` when the user exists but has no password set (e.g. an OAuth-only account).
+
+    The **same code also arrives as `400`** for a malformed request body — a missing or non-string `email` or `password`. Sign-in is the one auth route whose body validation reports `auth/invalid-credentials` rather than `auth/invalid-body`, so this code has two statuses. Branch on the status as well as the code if you need to tell "fix your request" from "these credentials will never work".
+
+    ```json
+    {
+      "error": "...",
+      "code": "auth/invalid-credentials"
+    }
+    ```
   </Accordion>
   <Accordion title="Wrong Password — 401">
     ```json
@@ -83,7 +92,17 @@ Authenticates an existing user by email and password. Returns an access token, r
     }
     ```
   </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "auth/server-error"
+    }
+    ```
+  </Accordion>
 </AccordionGroup>
+
+**Rate limit:** 25 requests per 5 minutes per IP. Exceeding it returns `429` with the plain-text message `Too many sign in attempts, please wait 5 minutes` and no `code`.
 
 ## See Also
 

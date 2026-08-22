@@ -188,7 +188,7 @@ Run the app on a **real device** (simulators/emulators don't receive push on iOS
 
 Use `usePushRegistration` with the adapter for your platform. Call `register()` in response to a deliberate user action — not on mount — because requesting OS push permission is a one-shot prompt that users cannot undo.
 
-Once per device is enough. The SDK persists the device identifier and, wherever `usePushRegistration` is mounted, re-binds automatically when the OS rotates the token, so there is no "call it again on every launch to be safe" step — see [Device Lifecycle](#device-lifecycle).
+Once per device is enough. The SDK persists the device identifier and, wherever `usePushRegistration` is mounted, handles an OS token rotation itself, so there is no "call it again on every launch to be safe" step — see [Device Lifecycle](#device-lifecycle).
 
 ```tsx
 // Expo
@@ -266,7 +266,7 @@ await sublay.push.send({
   sound: "notification.wav",   // custom sound
   channelId: "messages",       // Android channel (see below)
   badge: 3,                    // iOS app-icon badge
-  tag: "conv_xyz789",          // collapse a conversation into one notification
+  tag: "conv_xyz789",          // one entry per conversation, per account
   priority: "high",
 });
 ```
@@ -279,8 +279,8 @@ await sublay.push.send({
 | `priority` | iOS, Android | `"high"` (default) wakes the device; `"normal"` is power-considerate. |
 | `subtitle` | iOS | Line under the title. |
 | `imageUrl` | iOS, Android, Web | Big-picture image. iOS needs a Notification Service Extension — see below. |
-| `tag` | Android, Web | Display-replace key so notifications collapse instead of stacking. |
-| `collapseId` | iOS, Android | Transport-level collapse — a newer push supersedes an undelivered one. |
+| `tag` | Android, Web | Display-replace key so notifications collapse instead of stacking. Scoped per recipient. |
+| `collapseId` | iOS, Android | Transport-level collapse — a newer push supersedes an undelivered one **for the same account**. Scoped per recipient, and folded to a digest when an over-length key would exceed the APNs 64-byte cap. |
 | `threadId` | iOS | Notification grouping. |
 | `ttl` | iOS, Android | Time-to-live in **seconds** for offline devices. |
 | `mutableContent` | iOS | Enables your Notification Service Extension. Set automatically when `imageUrl` is present. |
@@ -406,8 +406,8 @@ The chat-message path builds its `data` from the send context rather than notifi
 - **Re-registration:** registering the same physical device again (same token or endpoint) **as the same user** updates the existing record instead of duplicating it.
 - **Multiple accounts per device:** registering the same device as a *different* user adds a second binding rather than reassigning the first. A device signed into several accounts receives notifications for all of them, each copy carrying its own `recipientUserId`.
 - **Stale token cleanup:** a token or subscription permanently rejected by APNs, FCM, or Web Push during a send is automatically deleted — and because a dead token is dead for the whole device, **every** account bound to that token is unbound, not just the one that was being sent to. No separate cleanup pass is needed.
-- **Token rotation:** device tokens rotate (reinstall, OS refresh, backup restore), which kills every binding on the old token. The SDK detects this and re-binds every **enabled** account onto the new token with no app involvement beyond keeping `usePushRegistration` mounted — detection lives in that hook and is gated on this device having registered at least once. Rotation is picked up immediately on Expo and Android, and on the next page load on Web (which has no in-page rotation event). iOS APNs rotation under bare React Native is the one gap, and is picked up by the next `register()`. See [Automatic token rotation](/sdk/push-notifications/overview#automatic-token-rotation).
-- **Signing out unbinds automatically:** once this device has registered, `signOut()`, `removeAccount()` and `signOutAll()` pass its identifier with the sign-out request, and the server deletes that account's push binding in the **same transaction** as the session teardown. If the unbind fails nothing commits — the sign-out fails and the account keeps its credential so the user can retry, rather than being left receiving notifications from an account it can no longer reach. A device that never registered sends no identifier, has no unbind to protect, and signs out exactly as it always did. Other accounts on the device are unaffected.
+- **Token rotation:** device tokens rotate (reinstall, OS refresh, backup restore), which kills every binding on the old token. The SDK detects this wherever `usePushRegistration` is mounted with an adapter that reports rotations: it records the new identifier, re-binds the **active** account immediately, and marks every other push-enabled account as needing a re-bind, repairing each on its next activation rather than spending its stored credential in the background. Rotation is reported on Expo and on Android, and on the next page load on Web (which has no in-page rotation event). iOS APNs rotation under bare React Native is the one gap, and is picked up by the next `register()`. See [Automatic token rotation](/sdk/push-notifications/overview#automatic-token-rotation).
+- **Signing out unbinds automatically:** once this device has a stored push identifier, `signOut()`, `removeAccount()` and `signOutAll()` pass its identifier with the sign-out request, and the server deletes that account's push binding in the **same transaction** as the session teardown. If the server refuses the unbind nothing commits — the sign-out fails and the account keeps its credential so the user can retry, rather than being left receiving notifications from an account it can no longer reach. A device with no stored identifier sends none, has no unbind to protect, and signs out best-effort. Other accounts on the device are unaffected.
 - **Per-account control:** `unregister()` silences the **active** account on this device as a durable preference, and [`useAccountPushToggle`](/hooks/push/use-account-push-toggle) does the same for any stored account without switching to it. Neither is a logout step — see the [warning on the SDK page](/sdk/push-notifications/overview#turning-push-off).
 
 ## References

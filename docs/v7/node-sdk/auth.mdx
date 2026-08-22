@@ -87,8 +87,8 @@ await sublay.auth.signOut({ refreshToken });
   Optional. The device the user is signing out on — `{ platform: "ios" | "android", token }`
   or `{ platform: "web", subscription }`. When supplied (and the project has the
   `push` bundle), the server deletes that user's push binding for the device in the
-  **same transaction** as the sign-out. Omit it and the request is identical to before
-  this field existed.
+  **same transaction** as the sign-out. Omit it and the sign-out revokes the token
+  family only, leaving any push binding in place.
 </ParamField>
 
 ```typescript
@@ -239,6 +239,8 @@ const { success } = await sublay.auth.sendVerificationEmail({
 
 Changes a user's password, verifying their current password first. Use this for an authenticated "change password" flow (as opposed to the token-based `resetPassword`).
 
+A password change ends **every session** for that user and deletes every push binding they hold, unless one session is named to be spared — see [Change Password](/api-reference/auth/change-password).
+
 ```typescript
 const { success, message } = await sublay.auth.changePassword({
   userId: "usr_abc123",
@@ -257,6 +259,12 @@ const { success, message } = await sublay.auth.changePassword({
 
 <ParamField body="newPassword" type="string" required>
   The new password to set.
+</ParamField>
+
+<ParamField body="refreshToken" type="string">
+  The session to spare, named by the refresh token that device holds — typically one your own client just sent you. Its family survives while every other device must sign in again.
+
+  Omit it and every session for the user ends, which is usually right for a server-side caller acting on someone's behalf: it holds no refresh token, and revoking everything is the fail-secure outcome rather than an error. A token that fails verification, or belongs to a different user, is ignored — it can never preserve someone else's session.
 </ParamField>
 
 **Returns** — `Promise<{ success: boolean; message: string }>`

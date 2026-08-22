@@ -176,7 +176,39 @@ On success, returns HTTP `201` with:
     }
     ```
   </Accordion>
+  <Accordion title="Duplicate User Field — 409">
+    ```json
+    {
+      "error": "A user with this <field> already exists in this project",
+      "field": "<field>",
+      "code": "DUPLICATE_USER_FIELD"
+    }
+    ```
+    The catch-all uniqueness conflict, raised for any unique column the two
+    conflicts above do not name. `field` identifies the column.
+  </Accordion>
+  <Accordion title="Storage Quota Reached — 429">
+    ```json
+    {
+      "error": "Quota reached for storageFileBytes. Current: …, Action size: …, Limit: …",
+      "code": "project/quota-reached",
+      "details": { "current": 0, "actionSize": 0, "limit": 0, "metric": "storageFileBytes" }
+    }
+    ```
+    Returned when an uploaded avatar or banner would take the project past its
+    plan's file-storage limit. No user is created.
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "auth/server-error"
+    }
+    ```
+  </Accordion>
 </AccordionGroup>
+
+**Rate limit:** 5 requests per 5 minutes per IP. Exceeding it returns `429` with the plain-text message `Too many sign up attempts, please wait 5 minutes` and no `code` — distinct from the quota `429` above, which carries a JSON body.
 
 ## See Also
 

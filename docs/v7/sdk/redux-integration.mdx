@@ -105,17 +105,23 @@ All integration exports are available from `@sublay/react-js`:
 |--------|------|---------|
 | `sublayReducers` | `Reducer` | Combined reducer for all Sublay feature slices. Mount under the `sublay` key. |
 | `sublayApiReducer` | `Reducer` | RTK Query API reducer. Mount under the `sublayApi` key. |
-| `sublayApiMiddleware` | `Middleware` | RTK Query middleware for cache invalidation and subscriptions. |
-| `sublayMiddleware` | `Middleware[]` | Combined array of all required Sublay middleware. Spread into your middleware chain. |
+| `sublayMiddleware` | `Middleware[]` | Every middleware Sublay requires — the RTK Query middleware that drives cache invalidation and subscriptions, plus the SDK's own. Spread it into your middleware chain; the pieces are not published individually. |
+| `sublayApi` | `Api` | The RTK Query API object itself — distinct from the `sublayApi` *reducer key* it is mounted under. Use `sublayApi.util` for cache operations such as `resetApiState()`. |
 | `SublayIntegrationProvider` | `React.FC` | Context provider for integration mode. |
 | `resetAccountScopedState` | `ActionCreator` | Dispatched by the SDK on every account change. Subscribe your own slices to it — see below. |
 | `resetAuth` / `clearUser` | `ActionCreator` | The auth and current-user teardown actions. |
-| `activateStoredAccount` | `function` | Selects a stored account and establishes its session, rolling the selection back on failure. A plain function, callable from a thunk or effect body. |
+| `activateStoredAccount` | `function` | Validates a stored account's credential, then tears the current session down and makes that account active. Takes `dispatch` **and `getState`** — both are required. Rejects with an `AccountTransitionError` when the credential cannot be exchanged, leaving the live session, the selection and both entries untouched; the only writes a failure makes are a `needsReauth` mark on the target when the credential was refused, and `signedOut` when no account was active. A plain function, callable from a thunk or effect body. |
+| `AccountTransitionError` | `class` | What `activateStoredAccount` rejects with. Its `credentialRejected` boolean separates a dead account from a failed request — see [When a transition fails](/sdk/authentication/multi-account#when-a-transition-fails). |
+| `ACCOUNT_TRANSITION_FAILED_MESSAGE` | `string` | The default message on that error, for matching or re-use in your own copy. |
+| `ACCOUNT_LIMIT_MESSAGE` | `string` | The message the sign-in paths reject with when the device already remembers `MAX_ACCOUNTS` accounts. |
+| `setSignedOut` | `ActionCreator` | Records that ending the session was deliberate. Dispatch `setSignedOut(true)` in a hand-rolled teardown — the three teardown actions above only clear the session, so without it the next launch reads "nothing was ever selected", re-activates the account and signs the app back in. `setActiveAccount` clears it again on the next activation. |
 | `setSublayLogLevel` | `function` | Sets SDK console logging to `"error"` (default), `"warn"` or `"silent"`. Process-global; not a provider prop. |
 | `selectAccounts`, `selectActiveAccountId`, `selectSignedOut`, `selectAccountLimitReached`, `selectDeviceIdentifier` | `Selector` | Selectors over the accounts slice. |
 | `MAX_ACCOUNTS` | `number` | The stored-account limit (5). |
-| `isAccountPushEnabled` | `function` | Reads an account entry's per-device push preference. Use it rather than testing `entry.pushEnabled`: an absent flag means "never expressed a preference", which reads as enabled. |
-| `AccountStorage` | `type` | The storage contract an `AccountManager` implements. Its two write methods **reject** when a write does not land — do not swallow the failure if you implement your own. |
+| `isAccountPushEnabled` | `function` | Reads an account entry's per-device push preference **for display**. Use it rather than testing `entry.pushEnabled`: an absent flag means "never expressed a preference", which reads as enabled. It is what a per-account switch renders as `checked`, and is not the rule the SDK uses to decide whether to create a binding — that one requires an explicit opt-in and is internal, so no binding is ever created for an account that has not asked for one. |
+| `accountNeedsReauth` | `function` | Reads an account entry's "this credential is dead" marker — set when a transition into that account was refused, and set without a network call when the entry carries no usable credential at all. |
+| `accountNeedsPushRebind` | `function` | Reads an account entry's "notifications are paused until this account is next opened" marker. Distinct from `accountNeedsReauth` — see [`useAccounts`](/hooks/auth/use-accounts). |
+| `AccountStorage` | `type` | The storage contract an `AccountManager` implements. See [The storage contract](#the-storage-contract) for what an implementation must guarantee. |
 
 <Note>
   The raw `setActiveAccount`, `upsertAccount` and `removeAccount` reducers are
@@ -125,6 +131,33 @@ All integration exports are available from `@sublay/react-js`:
   `activateStoredAccount` and the `useRemoveAccount` hook, which perform the
   whole flow.
 </Note>
+
+## The Storage Contract
+
+`AccountStorage` is the interface an `AccountManager` implements, and the platform packages
+supply one each. If you write your own, three rules govern it:
+
+```ts
+interface AccountStorage {
+  getAccountMap(projectId: string): Promise<AccountMap | null>;
+  setAccountMap(projectId: string, map: AccountMap): Promise<void>;
+  deleteAccountMap(projectId: string): Promise<void>;
+}
+```
+
+- **`getAccountMap` is tolerant.** An unreadable, corrupt or unrecognized store resolves `null`
+  rather than throwing. Nothing useful can be done with a read failure at the call sites, and a
+  throw takes the whole bootstrap down.
+- **`setAccountMap` and `deleteAccountMap` must reject when the write does not land.** Logging the
+  failure on the way out is fine; resolving anyway is not. The SDK awaits these writes and treats a
+  resolved promise as "this is durably stored" — most consequentially for a rotated refresh token,
+  where believing a failed write means re-presenting a revoked token and destroying that account's
+  whole token family.
+- **No locking of your own is needed.** Core serializes every call per `projectId`.
+
+One project per app is the supported shape, and account storage enforces it: mounting a second
+provider for a *different* project id throws at mount, with a message naming both project ids. See
+[One project per app](/sdk/authentication/multi-account#one-project-per-app).
 
 ## Clearing Your Own State on an Account Change
 
@@ -145,7 +178,7 @@ const yourFeatureSlice = createSlice({
 });
 ```
 
-RTK Query caches are handled separately by `baseApi.util.resetApiState()`, which the SDK dispatches alongside.
+RTK Query caches are handled separately by `sublayApi.util.resetApiState()`, which the SDK dispatches alongside.
 
 ## State Shape
 

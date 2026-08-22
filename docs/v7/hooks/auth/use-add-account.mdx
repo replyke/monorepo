@@ -53,6 +53,16 @@ function AddAccountButton() {
   along with the outgoing account's cached API data and account-scoped feature
   state. The existing accounts map is preserved. After calling this function,
   the app should display sign-in UI for the new account.
+
+  It also records the departure as deliberate, by setting `signedOut`. That
+  matters when the user **abandons** the flow — backs out of the sign-in screen
+  and quits the app — because `activeAccount: null` on its own also means
+  "nobody has ever picked an account", which the next launch would resolve by
+  activating the oldest remembered account. The user asked to add an account,
+  not to be moved into a different one. A completed sign-in clears the flag
+  again, so the successful path is unaffected.
+
+  A no-op when `canAddAccount` is `false`.
 </ResponseField>
 
 <ResponseField name="canAddAccount" type="boolean">

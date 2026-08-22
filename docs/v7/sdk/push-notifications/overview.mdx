@@ -13,7 +13,7 @@ This page covers **registering devices from your client SDK**. For the full feat
 
 Use `usePushRegistration` with the adapter for your platform. Call `register()` in response to a deliberate user action — not on mount — because requesting OS push permission is a one-shot prompt that users cannot undo.
 
-You only need to call it **once per device**, not on every launch. The SDK stores the device identifier and keeps the bindings in step on its own: wherever `usePushRegistration` is mounted, it watches for OS token rotations and re-binds every enabled account onto the new token automatically. See [Automatic token rotation](#automatic-token-rotation).
+You only need to call it **once per device**, not on every launch. The SDK stores the device identifier and keeps the bindings in step on its own: wherever `usePushRegistration` is mounted, it watches for OS token rotations, re-binds the active account onto the new token and marks the other push-enabled accounts for repair on their next activation. See [Automatic token rotation](#automatic-token-rotation).
 
 ```tsx
 // Expo
@@ -57,14 +57,34 @@ One key matters specifically to multi-account apps:
 A single physical device can be signed into several accounts at once, and each signed-in account is bound to the device separately. When a notification is sent to more than one of them, the device receives **one notification per account**, each stamped with its own `recipientUserId`. Read it before routing, so a tap on a notification for a background account switches to that account rather than opening the wrong session's screen:
 
 ```tsx
+import { AccountTransitionError } from "@sublay/react-js";
+
 async function handleNotificationTap(data: Record<string, string>) {
   if (data.recipientUserId && data.recipientUserId !== user?.id) {
     // Bring the account this notification belongs to into focus first.
-    await switchAccount({ userId: data.recipientUserId });
+    try {
+      await switchAccount({ userId: data.recipientUserId });
+    } catch (err) {
+      // The switch rejected, so you are still in the previous account and
+      // navigating now would open the wrong session's screen. Stay put and
+      // tell the user what to do about it.
+      if (err instanceof AccountTransitionError && err.credentialRejected) {
+        promptSignIn(data.recipientUserId);
+      } else {
+        showRetry();
+      }
+      return;
+    }
   }
   navigateTo(data);
 }
 ```
+
+`switchAccount` **rejects** when the target account's stored credential cannot be exchanged, and
+it changes nothing when it does — you stay signed in where you were. Without the `catch` the
+rejection is unhandled and the deep link is silently dropped, which reads to the user as a
+notification that does nothing. See [Telling a dead account from a dead
+network](/sdk/authentication/multi-account#telling-a-dead-account-from-a-dead-network).
 
 <Note>
   **`recipientUserId` is reserved and server-stamped.** It is added per device at dispatch time, on both the automatic notification paths and server-side `push.send()` calls. If your backend puts a value under the same key in `data`, the server's value **wins** — an account-routing key has to be trustworthy. Dashboard test sends carry no `recipientUserId`, because they target a pasted token rather than a registered account.
@@ -84,9 +104,9 @@ async function handleDisablePush() {
 ```
 
 <Warning>
-  **Do not call `unregister()` in your logout flow.** It is no longer a logout-time cleanup step, and using it as one is actively harmful in two ways:
+  **Do not call `unregister()` in your logout flow.** It is a user-facing preference, not a cleanup step, and using it as one is harmful in two ways:
 
-  1. **Signing out already deregisters.** Once this device has registered, `signOut()`, `removeAccount()` and `signOutAll()` send its identifier with the sign-out request, and the server deletes the push binding in the *same transaction* as the session teardown — atomically, or not at all, with a failure reported rather than swallowed. There is nothing left for `unregister()` to clean up.
+  1. **Signing out already deregisters.** Once this device has a stored push identifier, `signOut()`, `removeAccount()` and `signOutAll()` send it with the sign-out request, and the server deletes the push binding in the *same transaction* as the session teardown — atomically, or not at all, with a failure reported rather than swallowed. There is nothing left for `unregister()` to clean up.
   2. **It permanently silences the account.** Because the flag is durable, an `unregister()` at logout means the next time that user signs in they get **no notifications at all**, with no obvious cause and nothing in your UI that turned it off.
 
   Wire `unregister()` to a notification switch the user controls, and nothing else.
@@ -126,20 +146,24 @@ Silencing a background account unbinds it server-side without switching to it. S
 </Note>
 
 <Warning>
-  **The first `register()` on a device turns push on for every stored account.** Absent means "never expressed a preference", which reads as *enabled* — so a device already holding four other signed-in accounts binds all of them, not just the one the user was looking at when they tapped the button. Turn individual accounts back off with the toggle above.
+  **`register()` turns push on for every stored account that has never expressed a preference.** Permission is a device-level grant, so a device already holding four other signed-in accounts enables all of them, not just the one the user was looking at when they tapped the button. An account that was deliberately silenced stays silenced. Turn individual accounts back off with the toggle above.
+
+  The account `register()` was called from is bound immediately; the others are marked for a re-bind and bound the next time the user switches into each. An account that has *not* expressed a preference is never bound — signing in on a device that already holds a push identifier creates no binding on its own.
 </Warning>
 
 ## Automatic Token Rotation
 
 Device push tokens rotate — on reinstall, on an OS-initiated refresh, after a backup restore. When that happens every binding on the old token is dead.
 
-The SDK handles this without the app doing anything. `usePushRegistration` subscribes to the platform's token-change signal (gated on this device having registered at least once, so apps that never use push subscribe to nothing), and on a change it records the new identifier and re-binds every **enabled** stored account onto it. Silenced accounts stay silenced.
+The SDK handles this without the app doing anything. `usePushRegistration` subscribes to the platform's token-change signal — mounted whenever the adapter offers one, so an app whose adapter omits it subscribes to nothing — and on a change it records the new identifier, re-binds the **active** account on the spot, and **marks** every other push-enabled account as needing a re-bind. Each marked account is repaired the next time the user switches into it, from the live session that switch establishes. Silenced accounts stay silenced.
+
+Marking rather than re-binding is what keeps a background account safe: re-binding one would mean spending its stored refresh token on a one-time-use exchange while nobody is looking at it, and an interruption mid-exchange locks that account out for good. The marker is durable and readable as `needsPushRebind` — see [When notifications are paused](/sdk/authentication/multi-account#when-notifications-are-paused).
 
 | Platform | How rotation is detected |
 |----------|--------------------------|
-| Expo | `expo-notifications`' token listener — reported immediately |
-| React Native | Firebase `onTokenRefresh` — immediate on Android. On iOS the event carries an FCM token while the adapter registers APNs, so APNs rotation is only picked up by the next `register()` |
-| Web | No in-page event exists (`pushsubscriptionchange` fires inside *your* service worker), so the SDK compares the browser's existing subscription against the stored one on mount. It never re-subscribes and never prompts |
+| Expo | `expo-notifications`' token listener. Rotation-only: it fires when the OS hands over a new token, never merely because something subscribed |
+| React Native | Firebase `onTokenRefresh`, also rotation-only. Android is covered. On iOS the event carries an FCM token while the adapter registers APNs, so APNs rotation is not reported by it at all and is picked up by the next `register()` or `unregister()` |
+| Web | No in-page event exists (`pushsubscriptionchange` fires inside *your* service worker), so the SDK compares the browser's existing subscription against the stored one on mount. It never re-subscribes and never prompts — which also means web is the one platform where a device that has never stored an identifier can acquire one without calling `register()` again |
 
 Nothing here asks the user for anything — receiving a refreshed token is not a permission prompt.
 

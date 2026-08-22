@@ -8,10 +8,12 @@ icon: "toggle-on"
 
 One physical device can hold several signed-in accounts, and each of them is bound to the device separately. `useAccountPushToggle` is the switch for that binding — **per account, per device** — and it works on accounts the user is not currently signed into.
 
-The stored flag is **durable intent**: it survives switches, relaunches, and the refresh-token rotation that rebuilds an account's stored entry on every launch. The server-side binding is disposable state that the SDK reconciles back to match the flag.
+The stored flag is **durable intent**: it lives in the account map next to that account's credential, in the same platform storage, and it is *merged* into the entry rather than overwriting it — so it survives switches, relaunches, and the refresh-token rotation that rebuilds the entry on every launch and every transition. An account silenced here is still silenced after the app is force-quit and reopened, and stays silenced until something explicitly turns it back on. The server-side binding is disposable state that the SDK reconciles back to match the flag.
+
+The flag has **three** states, not two. `true` and `false` are choices the user made; *absent* means the account has never been asked. Absent reads as enabled when *describing* an account — which is what `isAccountPushEnabled` below returns, and what a switch should render — but it is never treated as consent to create a binding. Nothing is bound for an account that has not explicitly opted in.
 
 <Note>
-  Requires the `push` bundle. Reconciling is a no-op until this device has registered at least once via [`usePushRegistration`](/hooks/push/use-push-registration) — there is nothing bound to turn off.
+  Requires the `push` bundle. Reconciling is a no-op until this device has a stored push identifier — there is nothing to bind or unbind. [`usePushRegistration`](/hooks/push/use-push-registration) is what records one, through `register()`, `unregister()`, or its rotation subscription.
 </Note>
 
 ## Usage Example
@@ -61,7 +63,9 @@ function PerAccountNotificationSettings() {
 </ResponseField>
 
 <ResponseField name="isAccountPushEnabled" type="(userId: string) => boolean">
-  Whether a stored account currently wants push on this device. An account stored before this field existed reads as **enabled** — absent means "never expressed a preference", not "off". Returns `false` for an unknown id.
+  Whether a stored account currently wants push on this device — the value to render as a switch's `checked`. An account that has never expressed a preference reads as **enabled**: absent means "never asked", not "off". Returns `false` for an unknown id.
+
+  It is reported state, not the rule that decides whether a binding exists. An account reading as enabled purely because it never answered has no binding until it explicitly opts in — through this toggle, or through a [`register()`](/hooks/push/use-push-registration) that records a preference for every account that never had one.
 </ResponseField>
 
 <ResponseField name="isUpdating" type="boolean">
@@ -79,6 +83,8 @@ function PerAccountNotificationSettings() {
 This is deliberate and it is not a UI preference: the SDK must never report an account as push-enabled while nothing is actually bound, or as silenced while a binding survives. What you render on failure — a reverted switch, a retry affordance, an inline error — is entirely yours.
 
 Failing here destroys nothing. The account stays, its credential stays, and the user can retry.
+
+An account whose binding is stale because this device's push token rotated while it was in the background is a different situation, reported separately as `needsPushRebind` on [`useAccounts`](/hooks/auth/use-accounts) and repaired by switching into the account — not by toggling it.
 
 ## Turning Off a Background Account
 

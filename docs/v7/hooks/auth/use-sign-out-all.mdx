@@ -6,12 +6,12 @@ icon: "plug"
 
 ## Overview
 
-`useSignOutAll` signs out every stored account simultaneously. It sends a sign-out request for each account's refresh token — and, once this device has registered for push, unbinds each account's push notifications in the same transaction — then clears local auth state.
+`useSignOutAll` signs out every stored account simultaneously. It sends a sign-out request for each account's refresh token — and, once this device has a stored push identifier, unbinds each account's push notifications in the same transaction — then clears local auth state.
 
 <Warning>
-  **Breaking change: partial failures no longer wipe the map.** When the requests carry this device's push identifier, accounts whose request **succeeded** are removed and accounts whose request **failed** are kept with their credentials intact, and the call **rejects** with how many failed so the user can retry. It used to swallow every failure and clear all accounts regardless. The live session ends either way — an access token is transient state, not the credential the guarantee is about.
+  **A partial failure keeps the accounts it could not sign out.** When the requests carry this device's push identifier, accounts whose request **succeeded** are removed and accounts whose unbind the server **refused** are kept with their credentials intact; the call then **rejects** with how many failed, so the user can retry. Its signature is `() => Promise<void>`, so nothing warns you at compile time: `await signOutAll()` needs a `catch`. The live session ends either way — an access token is transient state, not the credential the guarantee is about.
 
-  As with [`useRemoveAccount`](/hooks/auth/use-remove-account), this is **scoped to requests that ask for an unbind**. On a device that has never registered for push, nothing is at stake and the previous best-effort behaviour is unchanged: failures are logged and all local state is still cleared, so an offline user can always sign out.
+  As with [`useRemoveAccount`](/hooks/auth/use-remove-account), only a **server refusal of the unbind** blocks — `auth/device-deregistration-failed` or `auth/sign-out-failed`. A transport failure carries no response and is not one, so an offline `signOutAll` clears all local state and resolves; so does a device that has never registered for push. A user can always sign out.
 </Warning>
 
 ## Usage Example
