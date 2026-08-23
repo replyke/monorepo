@@ -98,6 +98,29 @@ describe("readStoredAccountEntry", () => {
     }
   });
 
+  it("normalizes a present non-string username to null", () => {
+    const entry = readStoredAccountEntry("user-1", {
+      refreshToken: "r1",
+      user: { id: "user-1", username: { value: "alice" } },
+    });
+
+    expect(entry).not.toBeNull();
+    expect(entry!.user.username).toBeNull();
+  });
+
+  it("leaves an absent username absent", () => {
+    // `AccountSummary` documents absent as *unknown*, not "has no username" —
+    // an entry written before the field existed depends on the difference, so
+    // this must not be filled in with `null`.
+    const entry = readStoredAccountEntry("user-1", {
+      refreshToken: "r1",
+      user: { id: "user-1" },
+    });
+
+    expect(entry).not.toBeNull();
+    expect("username" in entry!.user).toBe(false);
+  });
+
   it("normalizes non-string display fields to null rather than dropping the entry", () => {
     // These reach a render. An object where a string belongs takes the account
     // switcher down with "Objects are not valid as a React child".
