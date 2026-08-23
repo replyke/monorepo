@@ -481,8 +481,11 @@ async function readIndex(projectId: string): Promise<IndexRead> {
       signedOut: candidate.signedOut ?? false,
       deviceIdentifier: candidate.deviceIdentifier ?? null,
       // Absent reads as `false` — an index written before this field existed is
-      // precisely the population the one-shot read exists for.
-      pushIdentifierProbed: candidate.pushIdentifierProbed ?? false,
+      // precisely the population the one-shot read exists for. Anything that is
+      // not literally `true` reads the same way: this is parsed from a store we
+      // do not control, and a truthy non-boolean would read as already-probed
+      // and skip the probe, which is the one outcome the flag exists to prevent.
+      pushIdentifierProbed: candidate.pushIdentifierProbed === true,
       accountIds: candidate.accountIds.filter(
         (id): id is string => typeof id === "string"
       ),
