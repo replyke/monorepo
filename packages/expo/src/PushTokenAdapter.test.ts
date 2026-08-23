@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
 const requestPermissionsAsync = vi.fn();
+const getPermissionsAsync = vi.fn();
 const getDevicePushTokenAsync = vi.fn();
 const addPushTokenListener = vi.fn();
 
 vi.mock("expo-notifications", () => ({
   requestPermissionsAsync: (...args: unknown[]) => requestPermissionsAsync(...args),
+  getPermissionsAsync: (...args: unknown[]) => getPermissionsAsync(...args),
   getDevicePushTokenAsync: (...args: unknown[]) => getDevicePushTokenAsync(...args),
   addPushTokenListener: (...args: unknown[]) => addPushTokenListener(...args),
 }));
@@ -49,6 +51,54 @@ describe("expoPushTokenAdapter.requestPermission", () => {
   it("returns false when permission is denied", async () => {
     requestPermissionsAsync.mockResolvedValue({ status: "denied" });
     await expect(expoPushTokenAdapter.requestPermission()).resolves.toBe(false);
+  });
+});
+
+/**
+ * `hasPermission` is the gate core puts in front of its mount-time identifier
+ * read: without a grant there is no binding this release could have created, so
+ * nothing is read and nothing is stored. It is therefore load-bearing for
+ * consent — a wrong answer here stores a device push token for a user who was
+ * never asked — and it must never be the thing that does the asking.
+ */
+describe("expoPushTokenAdapter.hasPermission", () => {
+  it("returns true only for a granted status", async () => {
+    getPermissionsAsync.mockResolvedValue({ status: "granted" });
+    await expect(expoPushTokenAdapter.hasPermission!()).resolves.toBe(true);
+  });
+
+  it("returns false when permission was denied", async () => {
+    getPermissionsAsync.mockResolvedValue({ status: "denied" });
+    await expect(expoPushTokenAdapter.hasPermission!()).resolves.toBe(false);
+  });
+
+  it("returns false when the user has not been asked yet", async () => {
+    // `undetermined` is the brand-new install. It must read as "no grant":
+    // treating it as permitted is exactly how a device token gets stored for a
+    // user who never saw a prompt.
+    getPermissionsAsync.mockResolvedValue({ status: "undetermined" });
+    await expect(expoPushTokenAdapter.hasPermission!()).resolves.toBe(false);
+  });
+
+  it("READS the status and never prompts", async () => {
+    // The whole point of a separate method: `requestPermissionsAsync` is the
+    // only call that may show the user anything, and it lives behind
+    // `requestPermission()`. Core calls this one on mount, with no user
+    // gesture, so a prompt here would be an unprompted system dialog.
+    getPermissionsAsync.mockResolvedValue({ status: "granted" });
+
+    await expoPushTokenAdapter.hasPermission!();
+
+    expect(getPermissionsAsync).toHaveBeenCalledTimes(1);
+    expect(requestPermissionsAsync).not.toHaveBeenCalled();
+    expect(getDevicePushTokenAsync).not.toHaveBeenCalled();
+  });
+
+  it("is declared, so core has a gate to close", async () => {
+    // An adapter that omits it is not gated AT ALL — core reads the identifier
+    // unconditionally. Declaring it is what opts this adapter into the
+    // permission check.
+    expect(typeof expoPushTokenAdapter.hasPermission).toBe("function");
   });
 });
 

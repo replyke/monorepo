@@ -105,6 +105,9 @@ function makeMap(
     activeAccountId: ids[0] ?? null,
     accounts,
     signedOut: false,
+    // A loaded map always carries this concretely (`?? false` on read), so a
+    // map built for a round-trip comparison has to carry it too.
+    pushIdentifierProbed: false,
     ...overrides,
   };
 }
@@ -618,6 +621,7 @@ describe("secureStoreStorage — first write", () => {
       accounts: {},
       signedOut: false,
       deviceIdentifier: null,
+      pushIdentifierProbed: false,
     });
   });
 });
@@ -737,6 +741,7 @@ describe("secureStoreStorage — v1 → v2 migration", () => {
       accounts: { a: v1Entry("a"), b: v1Entry("b") },
       signedOut: false,
       deviceIdentifier: null,
+      pushIdentifierProbed: false,
     });
     expect(loaded!.accounts.b.refreshToken).toBe("refresh-token-for-b");
   });
@@ -860,6 +865,7 @@ describe("secureStoreStorage — v1 → v2 migration", () => {
       accounts: {},
       signedOut: false,
       deviceIdentifier: null,
+      pushIdentifierProbed: false,
     });
     expect(fake.keys()).toEqual([INDEX_KEY]);
     expect(JSON.parse(fake.raw(INDEX_KEY)!)).toMatchObject({
@@ -1081,5 +1087,197 @@ describe("secureStoreStorage — v1 → v2 migration", () => {
       "useAccountSync",
       "useProject",
     ]);
+  });
+});
+
+/**
+ * `pushIdentifierProbed`, the one field this adapter has to hand-roll a slot
+ * for.
+ *
+ * Everything else about an account map survives because `AccountEntry` values
+ * are JSON-serialized whole. The device-level fields are different: they live
+ * on the INDEX, which this file builds field by field, so a field the
+ * `StoredIndex` interface does not name is a field `@sublay/expo` silently
+ * drops on every write while `react-js` and `react-native` — which serialize
+ * the whole map — persist it correctly.
+ *
+ * That is not hypothetical. This flag WAS missing here, and the cost was
+ * specific: `usePushRegistration` bypasses the notification-permission gate
+ * exactly once per device, and this flag is the only thing that makes "once"
+ * survive a relaunch. Dropped on write, it read `false` on every launch, so the
+ * one-shot re-armed and re-fired forever — and the brand-new-install protection
+ * `useAccountSync` Phase A installs (burn the flag when storage holds no map)
+ * was defeated, because the burn never reached disk.
+ */
+describe("secureStoreStorage — the push one-shot flag", () => {
+  it("round-trips pushIdentifierProbed: true", async () => {
+    const fake = installFakeStore();
+    await secureStoreStorage.setAccountMap(
+      PROJECT,
+      makeMap(["a"], { pushIdentifierProbed: true })
+    );
+
+    // On the index, not on the account — it is device state, one copy for the
+    // whole map.
+    expect(JSON.parse(fake.raw(INDEX_KEY)!).pushIdentifierProbed).toBe(true);
+    expect(JSON.parse(fake.raw(accountKey("a"))!).pushIdentifierProbed).toBeUndefined();
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(loaded!.pushIdentifierProbed).toBe(true);
+  });
+
+  it("survives the writes that follow — a rotation must not re-arm the one-shot", async () => {
+    // The flag is burned once and then carried by every later persist. A
+    // refresh-token rotation is the commonest of those, and it goes through the
+    // same `base` literal, so this is where a dropped field would show up as
+    // "the one-shot fires again on the next launch".
+    await secureStoreStorage.setAccountMap(
+      PROJECT,
+      makeMap(["a"], { pushIdentifierProbed: true })
+    );
+    await secureStoreStorage.setAccountMap(
+      PROJECT,
+      makeMap(["a"], { pushIdentifierProbed: true }, (id) =>
+        makeEntry(id, { refreshToken: "rotated-token" })
+      )
+    );
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(loaded!.accounts.a.refreshToken).toBe("rotated-token");
+    expect(loaded!.pushIdentifierProbed).toBe(true);
+  });
+
+  it("keeps the flag when an account is added and when one is removed", async () => {
+    // Both of those take the announce/commit/sweep path, which writes the index
+    // more than once — the empty-announcement literal included.
+    await secureStoreStorage.setAccountMap(
+      PROJECT,
+      makeMap(["a"], { pushIdentifierProbed: true })
+    );
+    await secureStoreStorage.setAccountMap(
+      PROJECT,
+      makeMap(["a", "b"], { pushIdentifierProbed: true })
+    );
+    expect(
+      (await secureStoreStorage.getAccountMap(PROJECT))!.pushIdentifierProbed
+    ).toBe(true);
+
+    await secureStoreStorage.setAccountMap(
+      PROJECT,
+      makeMap(["b"], { pushIdentifierProbed: true })
+    );
+    expect(
+      (await secureStoreStorage.getAccountMap(PROJECT))!.pushIdentifierProbed
+    ).toBe(true);
+  });
+
+  it("THE BRAND-NEW INSTALL: launch two must not re-open the permission bypass", async () => {
+    // The sequence `useAccountSync` Phase A + `usePushRegistration` implement,
+    // replayed against real storage.
+    //
+    // LAUNCH ONE. Nothing stored, so Phase A dispatches `markPushIdentifierProbed()`
+    // — a device that has never stored an account cannot be carrying a binding
+    // from an older release. The app then signs in, and that first real write is
+    // what has to carry the burn out to disk.
+    const fake = installFakeStore();
+    expect(await secureStoreStorage.getAccountMap(PROJECT)).toBeNull();
+
+    await secureStoreStorage.setAccountMap(PROJECT, {
+      activeAccountId: "a",
+      accounts: { a: makeEntry("a") },
+      signedOut: false,
+      // No identifier: this app mounts `usePushRegistration` only after
+      // sign-in, and the user has not been near a permission prompt.
+      deviceIdentifier: null,
+      pushIdentifierProbed: true,
+    });
+
+    // LAUNCH TWO. The map is read back, and this is the exact state
+    // `usePushRegistration` evaluates its bypass against.
+    const relaunched = (await secureStoreStorage.getAccountMap(PROJECT))!;
+    expect(Object.keys(relaunched.accounts).length).toBeGreaterThan(0);
+    expect(relaunched.deviceIdentifier).toBeNull();
+
+    // Both of the bypass's own conditions are met — accounts stored, no
+    // identifier — so the flag is the ONLY thing standing between this install
+    // and a device token stored without a permission grant.
+    const probePending = !relaunched.pushIdentifierProbed;
+    const ignorePermission =
+      probePending &&
+      relaunched.deviceIdentifier === null &&
+      Object.keys(relaunched.accounts).length > 0;
+    expect(ignorePermission).toBe(false);
+
+    expect(JSON.parse(fake.raw(INDEX_KEY)!).pushIdentifierProbed).toBe(true);
+  });
+
+  it("an index written before the field existed reads as armed", async () => {
+    // The population the one-shot is FOR. Absent must read `false`, never be
+    // treated as already spent.
+    const fake = installFakeStore();
+    await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a"]));
+    const index = JSON.parse(fake.raw(INDEX_KEY)!);
+    delete index.pushIdentifierProbed;
+    fake.store.set(INDEX_KEY, JSON.stringify(index));
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(loaded!.pushIdentifierProbed).toBe(false);
+  });
+
+  it("a converted v1 map arrives armed — an upgrading install is the point", async () => {
+    // A v1 map can coexist with live `PushDevices` rows (push shipped in 7.5.0,
+    // the v1 format ran through 7.11.1), so these are precisely the installs
+    // that may hold a binding with no local identifier. Marking them probed
+    // would spend the one-shot on them before it ever ran.
+    const fake = installFakeStore();
+    fake.store.set(
+      INDEX_KEY,
+      JSON.stringify({
+        activeAccountId: "a",
+        accounts: {
+          a: {
+            refreshToken: "refresh-token-for-a",
+            tokenExpiresAt: 1893456000000,
+            user: { id: "a", name: "User a", email: "a@example.com", avatar: null },
+          },
+        },
+      })
+    );
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(loaded!.pushIdentifierProbed).toBe(false);
+    // ...and the index the conversion committed says the same, so the second
+    // launch reads it back armed rather than spending it.
+    expect(JSON.parse(fake.raw(INDEX_KEY)!).pushIdentifierProbed).toBe(false);
+    expect(
+      (await secureStoreStorage.getAccountMap(PROJECT))!.pushIdentifierProbed
+    ).toBe(false);
+  });
+
+  it("an interrupted first write leaves the flag armed, not spent", async () => {
+    // The empty-announcement literal describes the EMPTY map that was committed
+    // before, not the incoming one — so an interruption between the
+    // announcement and the commit must not leave an index claiming a read that
+    // never happened.
+    const fake = installFakeStore();
+    let ops = 0;
+    setItemAsync.mockImplementation(async (key: string, value: string) => {
+      ops += 1;
+      if (ops === 2) throw new Error("interrupted"); // the first value write
+      fake.store.set(key, value);
+    });
+
+    await expect(
+      secureStoreStorage.setAccountMap(
+        PROJECT,
+        makeMap(["a"], { pushIdentifierProbed: true })
+      )
+    ).rejects.toThrow("interrupted");
+
+    setItemAsync.mockImplementation(async (key: string, value: string) => {
+      fake.store.set(key, value);
+    });
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(loaded!.pushIdentifierProbed).toBe(false);
   });
 });

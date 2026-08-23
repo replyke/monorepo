@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 
 const {
   requestPermission,
+  hasPermission,
   getToken,
   getAPNSToken,
   onTokenRefresh,
@@ -9,6 +10,7 @@ const {
   messagingFn,
 } = vi.hoisted(() => {
   const requestPermission = vi.fn();
+  const hasPermission = vi.fn();
   const getToken = vi.fn();
   const getAPNSToken = vi.fn();
   const onTokenRefresh = vi.fn();
@@ -16,6 +18,7 @@ const {
 
   const messagingFn: any = vi.fn(() => ({
     requestPermission,
+    hasPermission,
     getToken,
     getAPNSToken,
     onTokenRefresh,
@@ -29,6 +32,7 @@ const {
 
   return {
     requestPermission,
+    hasPermission,
     getToken,
     getAPNSToken,
     onTokenRefresh,
@@ -79,6 +83,79 @@ describe("reactNativePushTokenAdapter.requestPermission", () => {
   it("returns false when denied", async () => {
     requestPermission.mockResolvedValue(0); // DENIED
     await expect(reactNativePushTokenAdapter.requestPermission()).resolves.toBe(false);
+  });
+});
+
+/**
+ * `hasPermission` is the gate core puts in front of its mount-time identifier
+ * read: without a grant there is no binding this release could have created, so
+ * nothing is read and nothing is stored. It is load-bearing for consent — a
+ * wrong answer stores a device push token for a user who was never asked — and
+ * it must never be the thing that does the asking.
+ *
+ * Firebase makes this an ENUM, not a boolean, and two of its values mean "yes".
+ * Mapping only `AUTHORIZED` would read every provisionally-authorized iOS
+ * install as unpermitted, which is wrong in the direction that hurts: those
+ * devices DO receive (quiet) notifications and DO carry a live binding, so
+ * gating them out leaves that binding unreachable by every unbind path.
+ */
+describe("reactNativePushTokenAdapter.hasPermission", () => {
+  it("returns true when authorized", async () => {
+    hasPermission.mockResolvedValue(1); // AUTHORIZED
+    await expect(reactNativePushTokenAdapter.hasPermission!()).resolves.toBe(true);
+  });
+
+  it("returns true when PROVISIONALLY authorized — the second granted state", async () => {
+    // iOS quiet notifications: granted without a prompt. A real grant with a
+    // real token, so it must not read as "no permission".
+    hasPermission.mockResolvedValue(2); // PROVISIONAL
+    await expect(reactNativePushTokenAdapter.hasPermission!()).resolves.toBe(true);
+  });
+
+  it("returns false when denied", async () => {
+    hasPermission.mockResolvedValue(0); // DENIED
+    await expect(reactNativePushTokenAdapter.hasPermission!()).resolves.toBe(false);
+  });
+
+  it("returns false when the user has not been asked yet", async () => {
+    // NOT_DETERMINED is the brand-new install. Treating it as permitted is
+    // exactly how a device token gets stored for a user who never saw a prompt.
+    hasPermission.mockResolvedValue(-1); // NOT_DETERMINED
+    await expect(reactNativePushTokenAdapter.hasPermission!()).resolves.toBe(false);
+  });
+
+  it("maps the same two states as requestPermission — one grant rule, not two", async () => {
+    // The two must agree: `register()` binds on `requestPermission()` and core
+    // gates the mount read on `hasPermission()`. If the read were stricter, a
+    // provisionally-authorized device could bind through `register()` and then
+    // be unable to reach that binding again.
+    for (const status of [-1, 0, 1, 2]) {
+      requestPermission.mockResolvedValue(status);
+      hasPermission.mockResolvedValue(status);
+      expect(await reactNativePushTokenAdapter.hasPermission!()).toBe(
+        await reactNativePushTokenAdapter.requestPermission(),
+      );
+    }
+  });
+
+  it("READS the status and never prompts", async () => {
+    // `requestPermission()` is the only call that may show the user anything.
+    // Core calls `hasPermission()` on mount with no user gesture, so a prompt
+    // here would be an unprompted system dialog.
+    hasPermission.mockResolvedValue(1);
+
+    await reactNativePushTokenAdapter.hasPermission!();
+
+    expect(hasPermission).toHaveBeenCalledTimes(1);
+    expect(requestPermission).not.toHaveBeenCalled();
+    expect(getToken).not.toHaveBeenCalled();
+    expect(getAPNSToken).not.toHaveBeenCalled();
+  });
+
+  it("is declared, so core has a gate to close", () => {
+    // An adapter that omits it is not gated AT ALL — core reads the identifier
+    // unconditionally.
+    expect(typeof reactNativePushTokenAdapter.hasPermission).toBe("function");
   });
 });
 

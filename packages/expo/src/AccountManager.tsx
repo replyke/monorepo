@@ -30,6 +30,15 @@ interface StoredIndex {
   activeAccountId: string | null;
   signedOut: boolean;
   deviceIdentifier: AccountMap["deviceIdentifier"];
+  /**
+   * See `AccountMap.pushIdentifierProbed`. Device state, like
+   * `deviceIdentifier` — and, like it, it MUST have a slot here: this index is
+   * the only thing this adapter persists, so a field the interface does not
+   * name is a field the Expo package silently drops on every write. It was
+   * missing once, which left the one-time permission-ignoring push read
+   * re-arming on every launch of an Expo app.
+   */
+  pushIdentifierProbed: boolean;
   /** Committed accounts, in order. */
   accountIds: string[];
   /**
@@ -351,6 +360,12 @@ function readV1Map(parsed: unknown): AccountMap | null {
     // `usePushRegistration`, which is why neither of those is gated on already
     // having one.
     deviceIdentifier: null,
+    // `false` for the same two reasons: v1 recorded nothing to carry forward,
+    // and a concrete value (not an absence) keeps this load and every later v2
+    // load byte-identical. `false` is also the only correct value — an
+    // upgrading install is exactly the population the one-time
+    // permission-ignoring read exists for, so it must arrive here still armed.
+    pushIdentifierProbed: false,
   };
 }
 
@@ -397,6 +412,12 @@ async function migrateFromV1(projectId: string, map: AccountMap): Promise<void> 
     activeAccountId: map.activeAccountId,
     signedOut: map.signedOut ?? false,
     deviceIdentifier: null,
+    // `false`, and deliberately so. A v1 map is by definition an UPGRADING
+    // install — exactly the population the one-time permission-ignoring read
+    // exists to rescue, since a v1 map can coexist with live `PushDevices` rows
+    // (see `readV1Map`). Writing `true` here would spend the one-shot on the
+    // very devices it was written for, before it ever ran.
+    pushIdentifierProbed: false,
     accountIds: ids,
     pending: [],
   });
@@ -459,6 +480,9 @@ async function readIndex(projectId: string): Promise<IndexRead> {
       activeAccountId: candidate.activeAccountId ?? null,
       signedOut: candidate.signedOut ?? false,
       deviceIdentifier: candidate.deviceIdentifier ?? null,
+      // Absent reads as `false` — an index written before this field existed is
+      // precisely the population the one-shot read exists for.
+      pushIdentifierProbed: candidate.pushIdentifierProbed ?? false,
       accountIds: candidate.accountIds.filter(
         (id): id is string => typeof id === "string"
       ),
@@ -586,6 +610,7 @@ export const secureStoreStorage: AccountStorage = {
       accounts,
       signedOut: index.signedOut,
       deviceIdentifier: index.deviceIdentifier ?? null,
+      pushIdentifierProbed: index.pushIdentifierProbed ?? false,
     };
   },
 
@@ -653,6 +678,7 @@ export const secureStoreStorage: AccountStorage = {
         activeAccountId: map.activeAccountId,
         signedOut: map.signedOut ?? false,
         deviceIdentifier: map.deviceIdentifier ?? null,
+        pushIdentifierProbed: map.pushIdentifierProbed ?? false,
         accountIds: nextIds,
         pending: orphans,
       };
@@ -680,6 +706,12 @@ export const secureStoreStorage: AccountStorage = {
           activeAccountId: null,
           signedOut: false,
           deviceIdentifier: null,
+          // `false`, for the same reason as `deviceIdentifier` above: this
+          // index describes the EMPTY map that was committed before, not the
+          // incoming one. An interruption here must leave the one-shot armed —
+          // claiming it was already spent would be asserting something no read
+          // ever established. The commit at step 3 carries the real value.
+          pushIdentifierProbed: false,
           accountIds: [],
           pending: toAnnounce,
         });
