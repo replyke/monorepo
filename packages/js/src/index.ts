@@ -141,7 +141,13 @@ export type {
   PushEventType,
   MuteDuration,
   NotificationPreferences,
+  PushDeviceIdentifier,
+  WebPushSubscription,
 } from "./interfaces/Push";
+export type {
+  SignOutResult,
+  PushUnbindSkipReason,
+} from "./modules/auth/signOut";
 export type { UpdateNotificationPreferencesProps } from "./modules/push/updateNotificationPreferences";
 export type {
   MuteConversationProps,
