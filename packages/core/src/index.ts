@@ -140,6 +140,22 @@ export { ACCOUNT_LIMIT_MESSAGE } from "./store/slices/authThunks";
 
 // -- account storage
 export type { AccountStorage } from "./interfaces/AccountStorage";
+
+// -- persisted-account validation (for the storage adapters in expo /
+//    react-js / react-native), alongside the store internals above
+//
+// Not part of the app-facing surface. It is exported only because the three
+// adapters live in separately published packages and consume core through its
+// single entry point, so a module they can all import is the only way this
+// logic exists once. An app has no persisted map to validate — core is the
+// only writer — and these names carry no compatibility promise.
+export {
+  readStoredAccountEntry,
+  readStoredDeviceIdentifier,
+  readStoredMapFields,
+  readStoredAccountMap,
+  type StoredMapFields,
+} from "./config/storedAccountMap";
 export {
   MAX_ACCOUNTS,
   // `isAccountPushEnabled` is REPORTED STATE — what a per-account push switch
