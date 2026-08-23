@@ -40,7 +40,12 @@ function AccountList() {
         <li key={account.id}>
           {account.name ?? account.email}
           <button
-            onClick={() => removeAccount({ userId: account.id })}
+            onClick={() =>
+              removeAccount({ userId: account.id }).catch(() => {
+                /* Rejects when the server refuses the push unbind; `error`
+                   below carries the reason and nothing was torn down. */
+              })
+            }
             disabled={isRemoving}
           >
             Remove
@@ -62,7 +67,12 @@ function AccountItem({ userId }: { userId: string }) {
   return (
     <Button
       title="Remove"
-      onPress={() => removeAccount({ userId })}
+      onPress={() =>
+        removeAccount({ userId }).catch(() => {
+          /* Read `error` from the hook; without a catch this is an
+             unhandled rejection. */
+        })
+      }
       disabled={isRemoving}
     />
   );

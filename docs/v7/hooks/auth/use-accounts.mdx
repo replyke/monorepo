@@ -59,9 +59,8 @@ function ActiveAccountLabel() {
 
 <ResponseField name="signedOut" type="boolean">
   `true` when there is no active account **because the user deliberately signed
-  out** — or removed the active account, deleted it, abandoned an `addAccount()`
-  flow, or had a stored credential refused at launch — as opposed to "nothing
-  has ever been selected". Both look like `activeAccount === null`; this is what
+  out** — or removed the active account, deleted it, or had a stored credential
+  refused at launch — as opposed to "nothing has ever been selected". Both look like `activeAccount === null`; this is what
   tells them apart, and it is persisted, so it survives a relaunch.
 
   A launch that could not *reach* the server does not set it: the stored account

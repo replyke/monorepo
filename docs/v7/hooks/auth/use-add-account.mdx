@@ -54,13 +54,18 @@ function AddAccountButton() {
   state. The existing accounts map is preserved. After calling this function,
   the app should display sign-in UI for the new account.
 
-  It also records the departure as deliberate, by setting `signedOut`. That
-  matters when the user **abandons** the flow — backs out of the sign-in screen
-  and quits the app — because `activeAccount: null` on its own also means
-  "nobody has ever picked an account", which the next launch would resolve by
-  activating the oldest remembered account. The user asked to add an account,
-  not to be moved into a different one. A completed sign-in clears the flag
-  again, so the successful path is unaffected.
+  **Nothing it does reaches the stored account map.** The selection is left
+  exactly where it was and `signedOut` is not touched — opening a sign-in screen
+  is this surface's state, not the device's. On the web the map is broadcast to
+  every other tab, so a write here would be an instruction to all of them.
+
+  That is also what makes **abandoning** the flow safe. The user backs out and
+  quits; the map still names the account they were in, so the next launch
+  restores that account rather than moving them into a different one. Until
+  then this surface is in the shape the SDK uses everywhere for *stepped out
+  without signing out*: an account is still selected, but there is no live
+  session behind it. Re-tapping that same account in a switcher signs back into
+  it rather than no-opping.
 
   A no-op when `canAddAccount` is `false`.
 </ResponseField>

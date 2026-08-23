@@ -52,7 +52,7 @@ Content-Type: application/json
 
 The response includes a new `accessToken` and a rotated `refreshToken`. Always store and use the latest refresh token — reusing a revoked one will invalidate the entire session. Each rotated refresh token is valid for another **30 days**, so active users stay signed in indefinitely. Only if a refresh token goes unused for 30 days will it expire and require the user to sign in again.
 
-See [Request New Access Token](/api-reference/auth/request-new-access-token) for full details.
+See [Request New Access Token](/api-reference/auth/request-access-token) for full details.
 
 ## SDK Token Management
 

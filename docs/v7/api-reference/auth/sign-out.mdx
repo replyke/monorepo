@@ -83,7 +83,7 @@ Because that promise is what clients act on, the body rides only on a committed 
 
 ## Error Responses
 
-The three `500`s below are reachable only when `pushDevice` is supplied, and every one of them means **nothing was committed** — the session and the push binding are both still in place, and the request can be retried. Everything after them is decided before the handler runs and can be returned with or without a `pushDevice`.
+The first two `500`s below are reachable only when `pushDevice` is supplied; the generic one is reachable with or without it. Every `500` means **nothing was committed** — the session, and the push binding when there was one at stake, are both still in place, and the request can be retried. Everything after them is decided before the handler runs and can be returned with or without a `pushDevice`.
 
 <AccordionGroup>
   <Accordion title="Push Deregistration Failed — 500">
@@ -124,6 +124,18 @@ The three `500`s below are reachable only when `pushDevice` is supplied, and eve
     ```
     Returned when `pushDevice` is malformed — for example `platform: "ios"` with no
     `token`, or `platform: "web"` with no `subscription`.
+  </Accordion>
+  <Accordion title="Quota Reached — 429">
+    ```json
+    {
+      "error": "Quota reached for apiCallsPerMonth. Current: …, Action size: …, Limit: …",
+      "code": "project/quota-reached",
+      "details": { "current": 0, "actionSize": 0, "limit": 0, "metric": "apiCallsPerMonth" }
+    }
+    ```
+    Returned when the project has spent its monthly API-call allowance and is on
+    a plan that hard-blocks at the limit. Distinct from the rate-limit `429`
+    below, which is plain text with no `code`.
   </Accordion>
   <Accordion title="Project Pending Deletion — 423">
     ```json

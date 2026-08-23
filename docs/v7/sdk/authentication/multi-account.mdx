@@ -96,6 +96,8 @@ Apps that bring their own Redux store use `SublayIntegrationProvider`. **Import 
 
 Calling `addAccount` clears the current auth state, which causes the app to display the sign-in UI. The previously stored accounts remain in the accounts map and are not affected. After the user signs in to the new account, it is added to the map automatically.
 
+It clears the **session** and nothing else: the account the user came from stays selected, and `signedOut` is untouched. So abandoning the flow — backing out and quitting — leaves them where they were, and the next launch restores that account. On the web this also means opening the flow says nothing to the app's other tabs, which keep their sessions.
+
 ```tsx
 import { useAddAccount } from "@sublay/react-js";
 
@@ -128,7 +130,12 @@ function AccountSwitcher() {
           {account.name}
           {account.id !== activeAccount?.id && (
             <button
-              onClick={() => switchAccount({ userId: account.id })}
+              onClick={() =>
+                switchAccount({ userId: account.id }).catch(() => {
+                  /* `error` below carries the reason; you stay signed in
+                     where you were. */
+                })
+              }
               disabled={isSwitching}
             >
               Switch
@@ -154,7 +161,14 @@ function RemoveAccountButton({ userId }: { userId: string }) {
 
   return (
     <>
-      <button onClick={() => removeAccount({ userId })} disabled={isRemoving}>
+      <button
+        onClick={() =>
+          removeAccount({ userId }).catch(() => {
+            /* `error` below carries the reason; nothing was torn down. */
+          })
+        }
+        disabled={isRemoving}
+      >
         Remove Account
       </button>
       {error && <p>{error}</p>}
@@ -183,7 +197,13 @@ import { useSignOutAll } from "@sublay/react-js";
 function SignOutAllButton() {
   const { signOutAll } = useSignOutAll();
 
-  return <button onClick={signOutAll}>Sign Out All Accounts</button>;
+  const handleClick = () =>
+    signOutAll().catch((err) => {
+      // Some accounts were kept — see the warning below.
+      showError(err);
+    });
+
+  return <button onClick={handleClick}>Sign Out All Accounts</button>;
 }
 ```
 
@@ -203,7 +223,7 @@ Every path that establishes a session for a stored account — `switchAccount`, 
 
 - The previously active account is **still active, with a live session** — same tokens, same user, same cached data. Nothing was signed out.
 - **Both account entries survive.** The account that failed to restore stays in the map, which is what lets you render a "session expired — sign in again" affordance for it, and its `needsReauth` marker is set when the server was the one that refused.
-- If there was no previously active account — the picker state after `addAccount()` — nothing is selected and the app is marked signed out, so the next launch does not silently activate a different account.
+- If **nothing was active** when the transition was attempted — the picker state the user lands in after signing out — nothing is selected and the app is marked signed out, so the next launch does not silently activate a different account.
 
 ```tsx
 import { AccountTransitionError } from "@sublay/react-js";
@@ -263,7 +283,7 @@ See [Durable signed-out state](#durable-signed-out-state).
 | Situation | `activeAccount` | `signedOut` | What happens on the next launch |
 |-----------|-----------------|-------------|---------------------------------|
 | Nothing has ever been selected | `null` | `false` | The first stored account is selected and restored |
-| The user deliberately signed out, removed the active account, deleted it, abandoned an `addAccount()` flow, or a stored credential was **refused** at launch | `null` | `true` | **Nothing is auto-selected.** The app renders signed-out, and the user picks from the switcher |
+| The user deliberately signed out, removed the active account, deleted it, or a stored credential was **refused** at launch | `null` | `true` | **Nothing is auto-selected.** The app renders signed-out, and the user picks from the switcher |
 | A launch could not reach the server | unchanged | unchanged | The stored account stays selected and its session is restored |
 
 `signedOut` is read from `useAccounts()` and is persisted alongside the account map, so it survives a relaunch. It clears the moment any account is successfully activated.
@@ -383,7 +403,7 @@ No session, ever: a refused sign-in really did create one on the server, and the
 What changes locally depends on the path:
 
 - **Sign-up, email sign-in and external verification** are refused *before* the SDK touches your session, so whatever account was active stays signed in.
-- **OAuth** cannot be: the redirect hands over tokens before identity is known, so the previous session is already gone by the time the limit is discovered. The previous account is re-*selected*, but its session is **not** re-established — the app renders signed-out with that account selected, and the user signs in again from the picker. Started from `addAccount()` (which already cleared the selection), the app simply stays on the sign-in screen.
+- **OAuth** cannot be: the redirect hands over tokens before identity is known, so the previous session is already gone by the time the limit is discovered. The previous account is re-*selected*, but its session is **not** re-established — the app renders signed-out with that account selected, and the user signs in again from the picker. This holds whether or not the flow was started from `addAccount()`: that call leaves the selection alone, so there is always a previous account to restore unless there genuinely was none.
 
 ### `canAddAccount` vs `accountLimitReached`
 

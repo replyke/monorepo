@@ -277,7 +277,7 @@ const { success, message } = await sublay.auth.changePassword({
 </ParamField>
 
 <ParamField body="pushDevice" type="object">
-  This device, so its push binding survives the change. Same value you pass to `push.register` and `auth.signOut`: `{ platform: "ios" | "android", token }` or `{ platform: "web", subscription }`.
+  This device, so its push binding survives the change. Same value `auth.signOut` takes and the same one [Register Device](/api-reference/push-notifications/register-device) was called with: `{ platform: "ios" | "android", token }` or `{ platform: "web", subscription }`. (`@sublay/js`'s own `push` module covers preferences only — device registration is the REST endpoint, or `usePushRegistration` in the React packages.)
 
   Omit it and every push binding for the user is deleted, this device's included — and nothing re-binds it until the app cold-starts, switches accounts or rotates its token, so it stops notifying until then.
 </ParamField>

@@ -18,7 +18,13 @@ function SignInForm() {
   const { initialized, accessToken, signInWithEmailAndPassword, signOut } = useAuth();
 
   if (!initialized) return <p>Loading...</p>;
-  if (accessToken) return <button onClick={signOut}>Sign Out</button>;
+  if (accessToken) {
+    // `signOut` rejects when the server refuses the push unbind — in which
+    // case nothing was torn down and the user should retry.
+    return (
+      <button onClick={() => signOut().catch(showError)}>Sign Out</button>
+    );
+  }
 
   return (
     <button

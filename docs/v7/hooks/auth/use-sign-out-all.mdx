@@ -43,7 +43,16 @@ import { useSignOutAll } from "@sublay/react-native";
 function SignOutAllButton() {
   const { signOutAll } = useSignOutAll();
 
-  return <Button title="Sign Out All" onPress={signOutAll} />;
+  const handlePress = async () => {
+    try {
+      await signOutAll();
+    } catch (err) {
+      // Some accounts were kept — surface the reason and let the user retry.
+      showError(err);
+    }
+  };
+
+  return <Button title="Sign Out All" onPress={handlePress} />;
 }
 ```
 </CodeGroup>
@@ -52,10 +61,15 @@ function SignOutAllButton() {
 
 <ResponseField name="signOutAll" type="function">
   Async function that signs out all accounts. Sends a server-side sign-out
-  request for each stored refresh token, clears the accounts map, resets auth
-  state, resets the API cache, and returns every account-scoped feature slice
-  (chat, notifications, entity/space lists, collections, table views) to its
-  initial state. Throws if the operation fails at the Redux thunk level.
+  request for each stored refresh token, then resets auth state, resets the API
+  cache, and returns every account-scoped feature slice (chat, notifications,
+  entity/space lists, collections, table views) to its initial state. The live
+  session ends either way.
+
+  The accounts map is cleared entirely when every request came back clean. When
+  the server refused an unbind for one or more accounts, those accounts keep
+  their entries and credentials, every other account is still removed, and the
+  promise **rejects** — see the warning above.
 </ResponseField>
 
 <Note>

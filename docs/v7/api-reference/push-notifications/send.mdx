@@ -65,7 +65,7 @@ All optional. Each is mapped to whichever platform(s) support it at dispatch tim
 <ParamField body="tag" type="string">
   Display-replace key so notifications collapse in the UI (FCM `android.notification.tag`, Web `tag`). Scoped per recipient, exactly like `collapseId` below.
 
-  **The device receives a different string than you sent.** Scoping appends a short digest of the recipient's user id, so a push sent with `tag: "thread-42"` arrives carrying something like `thread-42.9f3c1a8b`. Client code that reads the delivered `tag` — a service worker matching open notifications, for instance — must not compare it to the value it sent. Match on a prefix, or carry your own key in `data` instead, which is passed through untouched.
+  **The device receives a different string than you sent.** Scoping appends `~` and a short digest of the recipient's user id, so a push sent with `tag: "thread-42"` arrives carrying something like `thread-42~9f3c1a8b`. Client code that reads the delivered `tag` — a service worker matching open notifications, for instance — must not compare it to the value it sent. Match on a prefix, or carry your own key in `data` instead, which is passed through untouched.
 </ParamField>
 
 <ParamField body="collapseId" type="string">
