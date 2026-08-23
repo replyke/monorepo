@@ -164,8 +164,16 @@ export class AccountStorageProjectMismatchError extends Error {
  * A clean no-op, never a hang and never a throw.
  *
  * **The `projectId` argument is a guard, not a convenience.** The slot is
- * last-mount-wins across the whole process (see the header), so with two
- * providers mounted for two different projects it holds whichever mounted last.
+ * last-mount-wins across the whole process (see the header), but only among
+ * providers for the SAME project: `registerAccountStorage` throws
+ * `AccountStorageMultiProjectError` when a second provider mounts for a
+ * different one, so the slot never comes to hold a project the app did not
+ * mount for. This check is the backstop behind that one, covering the ways a
+ * caller can still arrive with a mismatched id — a subtree mounted for another
+ * project whose writes were already in flight when the mount-time throw tore it
+ * down, and the `resetAccountStorage` test seam, which re-points the slot with
+ * no mount at all.
+ *
  * Writing to the slot's project unconditionally would be harmless for
  * `useAccountSync` — which passes its own handle and catches anyway — but not
  * for the mint path: a mint that landed its rotated successor under another
