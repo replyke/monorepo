@@ -135,10 +135,24 @@ await sublay.auth.signOut({
 ```
 
 <Warning>
-  If the unbind fails, **nothing is committed** — the call rejects with `500` /
-  `auth/device-deregistration-failed`, the session survives, and the SDK's stored
-  tokens are left in place so you can retry. Never treat a failed `signOut` as
-  signed out.
+  **A failed unbind is the only failure that keeps you signed in.** If the unbind
+  fails, nothing is committed — the call rejects with `500` /
+  `auth/device-deregistration-failed` (or `auth/sign-out-failed`), the session
+  survives, and the SDK's stored tokens are left in place so you can retry. Never
+  treat *that* rejection as signed out.
+
+  Every other failure — a `429` from the rate limiter or a quota gate, a `423`, a
+  `503`, a `400` on the body, a dropped connection — never touched a push binding,
+  so `signOut` clears the local tokens and **resolves**: a user must always be able
+  to sign out. The server-side session can outlive that teardown; it ends when the
+  refresh token expires, or on the next successful `signOut` from a client that
+  still holds one.
+
+  If you do get the unbind rejection and decide to abandon the session locally
+  anyway, `sublay.clearTokens()` drops the SDK's stored tokens (SDK-managed mode;
+  it is a no-op when the host owns the token). That gives up the credential a retry
+  would need, so the binding then clears only when that account next registers on
+  this device, or when the server prunes the token as undeliverable.
 </Warning>
 
 **Returns** — `Promise<{ pushUnbindSkipped: boolean; pushUnbindSkipReason?: "no-refresh-token" | "push-unbind-status-unknown" }>`
