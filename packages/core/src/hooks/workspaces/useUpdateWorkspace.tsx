@@ -28,15 +28,9 @@ function useUpdateWorkspace(): (
         throw new Error("Please pass a workspaceId");
       }
 
-      // Client SDKs never send an actor `userId` — acting on behalf of another
-      // user is the node-sdk service-key capability. Strip it defensively in
-      // case a caller casts around the props type.
-      const body: Record<string, any> = { ...rest };
-      delete body.userId;
-
       const response = await axios.patch<Workspace>(
         `/${projectId}/workspaces/${workspaceId}`,
-        body
+        rest
       );
 
       return response.data;

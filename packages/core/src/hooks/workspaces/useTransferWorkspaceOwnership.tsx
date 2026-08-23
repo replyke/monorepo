@@ -40,15 +40,10 @@ function useTransferWorkspaceOwnership(): (
         throw new Error("Please pass a newOwnerId");
       }
 
-      // Client SDKs never send an actor `userId` — acting on behalf of another
-      // user is the node-sdk service-key capability. Strip it defensively in
-      // case a caller casts around the props type.
-      const body: Record<string, any> = { ...rest };
-      delete body.userId;
-
+      // `newOwnerId` addresses the TARGET and rides in the body.
       const response = await axios.post<Workspace>(
         `/${projectId}/workspaces/${workspaceId}/transfer-ownership`,
-        body
+        rest
       );
 
       return response.data;

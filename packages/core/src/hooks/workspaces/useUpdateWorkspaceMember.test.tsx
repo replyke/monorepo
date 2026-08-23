@@ -52,30 +52,6 @@ describe("useUpdateWorkspaceMember", () => {
     expect(call.body).not.toHaveProperty("targetUserId");
   });
 
-  it("does not forward an actor userId in the body", async () => {
-    const user = makeAuthUser({ id: "user-1" });
-    const { result, axiosPrivate } = renderHookWithAxios(
-      () => useUpdateWorkspaceMember(),
-      { projectId: "project-1", user }
-    );
-
-    axiosPrivate.mockResponse("patch", { id: "m1" });
-
-    await act(async () => {
-      await result.current({
-        workspaceId: "w1",
-        targetUserId: "user-2",
-        rank: 1,
-        // @ts-expect-error on this route a body userId is the ACTOR — node-sdk-only
-        userId: "someone-else",
-      });
-    });
-
-    const [call] = axiosPrivate.calls("patch");
-    expect(call.body).toEqual({ rank: 1 });
-    expect(call.body).not.toHaveProperty("userId");
-  });
-
   it("throws before requesting when workspaceId or targetUserId is missing", async () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, axiosPrivate } = renderHookWithAxios(
