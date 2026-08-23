@@ -200,12 +200,24 @@ function readStoredEntry(userId: string, value: unknown): AccountEntry | null {
   // cannot equal the string key, so it lands here too.
   if (user.id !== undefined && user.id !== userId) return null;
 
+  // The display fields are normalized rather than passed through: they are the
+  // ones that reach a render, and an object where a string belongs takes the
+  // switcher down with "Objects are not valid as a React child". `null` is
+  // already their absent value, so degrading to it costs nothing.
+  const asStringOrNull = (v: unknown) => (typeof v === "string" ? v : null);
+
   return {
     ...candidate,
     refreshToken: candidate.refreshToken,
     tokenExpiresAt:
       typeof candidate.tokenExpiresAt === "number" ? candidate.tokenExpiresAt : 0,
-    user: { ...user, id: userId },
+    user: {
+      ...user,
+      id: userId,
+      name: asStringOrNull(user.name),
+      email: asStringOrNull(user.email),
+      avatar: asStringOrNull(user.avatar),
+    },
   } as unknown as AccountEntry;
 }
 

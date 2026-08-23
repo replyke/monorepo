@@ -1411,6 +1411,30 @@ describe("secureStoreStorage — malformed persisted values", () => {
     expect(loaded!.activeAccountId).toBe("a");
   });
 
+  it("normalizes non-string display fields rather than dropping the entry", async () => {
+    const fake = installFakeStore();
+    await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a"]));
+    // These three are the fields that reach a render — an object where a string
+    // belongs takes the switcher down with "Objects are not valid as a React
+    // child". `null` is already their absent value, so degrading costs nothing,
+    // and a bad display field is not a bad credential: the entry survives.
+    fake.store.set(
+      accountKey("a"),
+      JSON.stringify({
+        refreshToken: "refresh-token-for-a",
+        tokenExpiresAt: 111,
+        user: { id: "a", name: { first: "Ada" }, email: 42, avatar: ["u"] },
+      })
+    );
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    const user = loaded!.accounts.a.user as unknown as Record<string, unknown>;
+    expect(user.name).toBeNull();
+    expect(user.email).toBeNull();
+    expect(user.avatar).toBeNull();
+    expect(loaded!.accounts.a.refreshToken).toBe("refresh-token-for-a");
+  });
+
   it("drops only the bad entry — its well-formed siblings survive", async () => {
     const fake = installFakeStore();
     await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a", "b", "c"]));
