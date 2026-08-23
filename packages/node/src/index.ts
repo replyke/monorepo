@@ -181,6 +181,8 @@ export type {
   PushEventType,
   MuteDuration,
   NotificationPreferences,
+  PushDeviceIdentifier,
+  WebPushSubscription,
 } from "./interfaces/Push";
 export type { UpdateNotificationPreferencesProps } from "./modules/push/updateNotificationPreferences";
 export type {

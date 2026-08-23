@@ -39,6 +39,34 @@ describe("node-sdk auth — request shaping", () => {
     });
   });
 
+  it("signOut forwards the optional pushDevice identifier for atomic push deregistration", async () => {
+    const { client, projectInstance } = makeClient();
+    await signOut(client, {
+      refreshToken: "rt1",
+      pushDevice: { platform: "android", token: "device-token-1" },
+    });
+    expect(projectInstance.post).toHaveBeenCalledWith("/auth/sign-out", {
+      refreshToken: "rt1",
+      pushDevice: { platform: "android", token: "device-token-1" },
+    });
+  });
+
+  it("signOut forwards a web pushDevice identifier as a subscription", async () => {
+    const { client, projectInstance } = makeClient();
+    const subscription = {
+      endpoint: "https://push.example/abc",
+      keys: { p256dh: "p", auth: "a" },
+    };
+    await signOut(client, {
+      refreshToken: "rt1",
+      pushDevice: { platform: "web", subscription },
+    });
+    expect(projectInstance.post).toHaveBeenCalledWith("/auth/sign-out", {
+      refreshToken: "rt1",
+      pushDevice: { platform: "web", subscription },
+    });
+  });
+
   it("requestNewAccessToken posts the full body to /auth/request-new-access-token", async () => {
     const { client, projectInstance } = makeClient();
     await requestNewAccessToken(client, { refreshToken: "rt1" });
@@ -82,6 +110,26 @@ describe("node-sdk auth — request shaping", () => {
       userId: "u1",
       password: "old-pw",
       newPassword: "new-pw",
+    });
+  });
+
+  it("changePassword FORWARDS an optional pushDevice, naming the device to spare", async () => {
+    // A password change deletes every push binding that user holds. A
+    // service-key caller usually has no device to name and should omit this —
+    // but when its own client told it which handset it is on, naming that
+    // device keeps it receiving notifications while every other one goes quiet.
+    const { client, projectInstance } = makeClient();
+    await changePassword(client, {
+      userId: "u1",
+      password: "old-pw",
+      newPassword: "new-pw",
+      pushDevice: { platform: "ios", token: "device-of-the-handset-to-keep" },
+    });
+    expect(projectInstance.post).toHaveBeenCalledWith("/auth/change-password", {
+      userId: "u1",
+      password: "old-pw",
+      newPassword: "new-pw",
+      pushDevice: { platform: "ios", token: "device-of-the-handset-to-keep" },
     });
   });
 
