@@ -1281,3 +1281,173 @@ describe("secureStoreStorage — the push one-shot flag", () => {
     expect(loaded!.pushIdentifierProbed).toBe(false);
   });
 });
+describe("secureStoreStorage — malformed persisted values", () => {
+  // SecureStore is not a store this adapter owns. Its bytes can be anything a
+  // previous release, a partial write, a restored device backup or a tampering
+  // user left behind, and a `as StoredIndex` / `as AccountEntry` on a
+  // `JSON.parse` result checks none of it. These are the cases where the cast
+  // used to be doing validation duty it cannot do.
+
+  /** Writes a well-formed map, then corrupts one field of the committed index. */
+  function corruptIndex(
+    fake: ReturnType<typeof installFakeStore>,
+    mutate: (index: Record<string, unknown>) => void
+  ) {
+    const index = JSON.parse(fake.raw(INDEX_KEY)!);
+    mutate(index);
+    fake.store.set(INDEX_KEY, JSON.stringify(index));
+  }
+
+  it("reads a non-boolean signedOut as NOT signed out", async () => {
+    const fake = installFakeStore();
+    await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a"]));
+    // The trap `?? false` walks into: a truthy STRING. `signedOut` suppresses
+    // account restoration outright, so accepting this would leave the user
+    // staring at a signed-out app with their credentials sitting on disk.
+    corruptIndex(fake, (index) => {
+      index.signedOut = "false";
+    });
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(loaded!.signedOut).toBe(false);
+    expect(Object.keys(loaded!.accounts)).toEqual(["a"]);
+  });
+
+  it("reads a non-string activeAccountId as nothing selected", async () => {
+    for (const value of [42, true, { id: "a" }, ["a"]]) {
+      const fake = installFakeStore();
+      await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a"]));
+      corruptIndex(fake, (index) => {
+        index.activeAccountId = value;
+      });
+
+      const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+      // `AccountMap.activeAccountId` is `string | null`, and core compares it
+      // against account keys. `null` reads as "nothing selected", which core
+      // already knows how to resolve.
+      expect(loaded!.activeAccountId).toBeNull();
+      // The accounts themselves are untouched — only the pointer was bad.
+      expect(Object.keys(loaded!.accounts)).toEqual(["a"]);
+    }
+  });
+
+  it("reads a malformed device identifier as no identifier", async () => {
+    const malformed: unknown[] = [
+      // Native, missing or unusable token.
+      { platform: "ios" },
+      { platform: "ios", token: 12 },
+      { platform: "ios", token: "" },
+      { platform: "android", token: null },
+      // Web, half-formed: `subscription.keys` is what throws later, in code
+      // that is nowhere near this read.
+      { platform: "web", subscription: { endpoint: "https://push.example/x" } },
+      { platform: "web", subscription: { keys: { p256dh: "p", auth: "a" } } },
+      {
+        platform: "web",
+        subscription: { endpoint: "https://push.example/x", keys: { p256dh: "p" } },
+      },
+      {
+        platform: "web",
+        subscription: { endpoint: "https://push.example/x", keys: "p256dh=p" },
+      },
+      { platform: "web", subscription: null },
+      // Neither shape at all.
+      { platform: "windows", token: "t" },
+      "apns-token",
+      42,
+    ];
+
+    for (const value of malformed) {
+      const fake = installFakeStore();
+      await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a"]));
+      corruptIndex(fake, (index) => {
+        index.deviceIdentifier = value;
+      });
+
+      const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+      expect(loaded!.deviceIdentifier).toBeNull();
+      // Nothing half-accepted: the web shape in particular must never arrive
+      // with an endpoint but no keys, which is what throws downstream.
+      expect(Object.keys(loaded!.accounts)).toEqual(["a"]);
+    }
+  });
+
+  it("keeps a well-formed identifier of either shape", async () => {
+    const valid = [
+      { platform: "ios", token: "apns-token" },
+      {
+        platform: "web",
+        subscription: {
+          endpoint: "https://push.example/x",
+          keys: { p256dh: "p256dh-key", auth: "auth-key" },
+        },
+      },
+    ] as const;
+
+    for (const deviceIdentifier of valid) {
+      installFakeStore();
+      await secureStoreStorage.setAccountMap(
+        PROJECT,
+        makeMap(["a"], { deviceIdentifier })
+      );
+      const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+      expect(loaded!.deviceIdentifier).toEqual(deviceIdentifier);
+    }
+  });
+
+  it("drops an entry whose user.id disagrees with the key it was filed under", async () => {
+    const fake = installFakeStore();
+    await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a", "b"]));
+    // `b`'s session, sitting under `a`'s key. Either half could be the truth,
+    // so there is no repair — only a guess about whose credential this is, and
+    // guessing wrong hands one user another user's session.
+    fake.store.set(accountKey("a"), JSON.stringify(makeEntry("b")));
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(Object.keys(loaded!.accounts)).toEqual(["b"]);
+    expect(loaded!.accounts.b.refreshToken).toBe("refresh-token-for-b");
+    // The pointer is still returned verbatim, dangling: resolving it is core's
+    // decision, not storage's.
+    expect(loaded!.activeAccountId).toBe("a");
+  });
+
+  it("drops only the bad entry — its well-formed siblings survive", async () => {
+    const fake = installFakeStore();
+    await secureStoreStorage.setAccountMap(PROJECT, makeMap(["a", "b", "c"]));
+    // No refresh token: there is no session here to preserve.
+    fake.store.set(accountKey("b"), JSON.stringify({ user: { id: "b" } }));
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(Object.keys(loaded!.accounts).sort()).toEqual(["a", "c"]);
+    expect(loaded!.accounts.a.refreshToken).toBe("refresh-token-for-a");
+    expect(loaded!.accounts.c.refreshToken).toBe("refresh-token-for-c");
+  });
+
+  it("applies the same identity rule to a v1 map", async () => {
+    const fake = installFakeStore();
+    fake.store.set(
+      INDEX_KEY,
+      JSON.stringify({
+        activeAccountId: "a",
+        accounts: {
+          a: {
+            refreshToken: "refresh-token-for-a",
+            tokenExpiresAt: 1893456000000,
+            user: { id: "a", name: "User a", email: null, avatar: null },
+          },
+          // Filed under `b`, claims to be `c`. Dropped rather than written to a
+          // per-account key under either id.
+          b: {
+            refreshToken: "refresh-token-for-c",
+            tokenExpiresAt: 1893456000000,
+            user: { id: "c", name: "User c", email: null, avatar: null },
+          },
+        },
+      })
+    );
+
+    const loaded = await secureStoreStorage.getAccountMap(PROJECT);
+    expect(Object.keys(loaded!.accounts)).toEqual(["a"]);
+    expect(fake.keys().sort()).toEqual([INDEX_KEY, accountKey("a")].sort());
+  });
+});
