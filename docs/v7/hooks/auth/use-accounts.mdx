@@ -50,7 +50,14 @@ function ActiveAccountLabel() {
 </ResponseField>
 
 <ResponseField name="activeAccount" type="StoredAccount | null">
-  The account currently marked as active, or `null` if no session is active.
+  The account currently **selected**, or `null` when nothing is selected.
+
+  Selection and session are not the same thing, and the gap between them is a
+  state your UI has to render. An account can be selected with no live session
+  behind it — during an [`addAccount()`](/hooks/auth/use-add-account) flow, or
+  after a sign-in was refused at the account limit. Read `accessToken` from
+  [`useAuth`](/hooks/auth/use-auth) for whether a session exists; read this for
+  whose account the app is pointed at.
 </ResponseField>
 
 <ResponseField name="accountCount" type="number">
@@ -182,12 +189,22 @@ the credential and the markers are never dropped. See
 No account is auto-selected after a sign-out, removal or deletion, so `activeAccount` can be `null` while `accounts` is non-empty. That is the account-picker state:
 
 ```tsx
-const { accounts, activeAccount, signedOut } = useAccounts();
+import { useAccounts, useAuth } from "@sublay/react-js";
 
-if (activeAccount) return <App />;
+const { initialized, accessToken } = useAuth();
+const { accounts, signedOut } = useAccounts();
+
+if (!initialized) return <Splash />;
+if (accessToken) return <App />;
 if (signedOut && accounts.length > 0) return <AccountPicker accounts={accounts} />;
 return <SignIn />;
 ```
+
+Branch on `accessToken`, not on `activeAccount`. A selection is not a session:
+`addAccount()` leaves the previous account selected while it clears the session,
+so a selection-based gate would render your app for an account that has no
+tokens behind it. `signedOut` then separates the picker state from a device
+where nobody has ever signed in.
 
 ## Integration Guide
 

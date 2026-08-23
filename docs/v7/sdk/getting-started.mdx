@@ -95,7 +95,9 @@ function Header() {
   return (
     <div>
       <p>Signed in as {user.username}</p>
-      <button onClick={() => signOut()}>Sign out</button>
+      {/* `signOut` rejects when the server refuses to unbind this device's
+          push — nothing is torn down, so surface it and let the user retry. */}
+      <button onClick={() => signOut().catch(showError)}>Sign out</button>
     </div>
   );
 }

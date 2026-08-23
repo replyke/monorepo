@@ -95,7 +95,7 @@ They answer different questions and are both needed:
 |---|---|
 | `signUpWithEmailAndPassword` | Yes — before any network call |
 | `signInWithEmailAndPassword` | Yes — after the account is resolved |
-| External auth (`signedToken`) | The provider's `auth/initialize` action rejects with the reason; the app lands signed-out |
+| External auth (`signedToken`) | The provider's `auth/initialize` action rejects with the reason; the app **renders** signed-out, with the selection left where it was |
 | OAuth, web and Expo | **No** — the flag is the only channel |
 
 It is also readable from [`useAccounts`](/hooks/auth/use-accounts).

@@ -365,7 +365,7 @@ Every sign-in path is covered, but they cannot all report the same way:
 |---|---|---|
 | `signUpWithEmailAndPassword` | The call **rejects** | Before any network call — a sign-up is a new account by definition. If the map fills *while the request is in flight*, the refusal comes after it instead, and the created user record persists (see below) |
 | `signInWithEmailAndPassword` | The call **rejects** | After authentication, once the server has said which account this is |
-| External auth (`signedToken`) | The app lands signed-out with the flag set; the reason rides the rejected `auth/initialize` action | After the token is verified |
+| External auth (`signedToken`) | The app **renders** signed-out with the flag set — the session is gone, but the selection stands and `signedOut` is not written; the reason rides the rejected `auth/initialize` action | After the token is verified |
 | OAuth (web and Expo) | `accountLimitReached` only — **nothing throws** | After the provider returns |
 
 The rejecting calls throw an `Error` whose message is exported as `ACCOUNT_LIMIT_MESSAGE`, so you can recognise the case without matching on a string you do not own:

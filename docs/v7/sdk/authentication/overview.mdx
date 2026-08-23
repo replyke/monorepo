@@ -50,7 +50,9 @@ function AuthExample() {
   if (!accessToken) return <p>Not signed in.</p>;
 
   return (
-    <button onClick={() => signOut()}>Sign out</button>
+    // `signOut` rejects when the server refuses the push unbind — nothing was
+    // torn down, so surface it and let the user retry.
+    <button onClick={() => signOut().catch(showError)}>Sign out</button>
   );
 }
 ```

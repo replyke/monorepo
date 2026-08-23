@@ -129,7 +129,7 @@ A refusal leaves the currently active account signed in, leaves the accounts map
 
 ## Sign Out
 
-`signOut` revokes the current session's entire token family on the server and clears local auth state.
+`signOut` revokes the current session's entire token family on the server and clears local auth state. Once this device has a stored push identifier it also asks the server to unbind that account's push notifications, in the same transaction as the session teardown.
 
 ```tsx
 import { useAuth } from "@sublay/react-js";
@@ -137,13 +137,19 @@ import { useAuth } from "@sublay/react-js";
 function SignOutButton() {
   const { signOut } = useAuth();
 
-  return <button onClick={() => signOut()}>Sign Out</button>;
+  return (
+    <button onClick={() => signOut().catch(showError)}>Sign Out</button>
+  );
 }
 ```
+
+`signOut` **rejects** when the server refuses that unbind, and in that case nothing was torn down on either side — the session survives so the user can retry. Its signature is `() => Promise<void>`, so nothing warns you at compile time; without the `catch` the rejection is unhandled and your UI reports a sign-out that did not happen. Every other failure — no network, a throttled or otherwise rejected request, a device that never registered for push — still signs out locally, because a user must always be able to sign out. See [`useAuth`](/hooks/auth/use-auth).
 
 ## Change Password
 
 Users who signed up with email/password can change their password while authenticated. The current password must be provided for verification.
+
+**A password change ends every *other* session for that user**, so their other devices must sign in again with the new password. The session making the call survives — the server reads which session is asking off the access token the request already carries, so nothing extra is sent. It also removes that user's push bindings on every other device while keeping this one's, which the hook arranges by sending the device identifier it already holds. See [`useAuth`](/hooks/auth/use-auth) and [Change Password](/api-reference/auth/change-password).
 
 ```tsx
 import { useAuth } from "@sublay/react-js";
@@ -177,6 +183,8 @@ function ChangePasswordForm() {
 ## Password Reset
 
 Users who forget their password can request a reset email. Sublay sends a link to the registered email address. The link expires after 1 hour.
+
+Completing the reset revokes **every** session for that user and removes **every** push binding they hold, on every device — including the one they are standing on. They sign in again everywhere, and each device re-binds for push on its own once it is next opened. The reset itself is completed by the page the link points to, which collects the new password and calls the [Reset Password](/api-reference/auth/reset-password) endpoint — there is no React hook for that step.
 
 ```tsx
 import { useRequestPasswordReset } from "@sublay/react-js";
