@@ -98,7 +98,22 @@ export default function useAccountPushToggle(): UseAccountPushToggleValues {
           selectAccountMapSnapshot(getState()),
         );
       } catch (err) {
-        // The flag was never written, so the previous value stands.
+        // WHICH STEP FAILED DECIDES WHAT SURVIVED, and this branch covers all
+        // of them:
+        //
+        //  - the binding change threw → nothing was dispatched, the previous
+        //    flag stands, and memory and server still agree.
+        //  - the PERSIST threw → the binding change already succeeded and the
+        //    flag IS written in memory. That is not a lie about server state
+        //    (the header's invariant — never report enabled while nothing is
+        //    bound — still holds, because the write only happens after the
+        //    binding landed); what is missing is DURABILITY. The next launch
+        //    reads the pre-toggle flag from storage, so the intent is lost
+        //    rather than misreported, and the reconcile re-applies it.
+        //
+        // So do NOT roll the flag back here: on the persist failure it matches
+        // the server, and reverting it would be the one variant that does
+        // misreport. The rethrow is what tells the caller to retry.
         handleError(err, "Failed to update push notifications for account");
         setError(
           err instanceof Error
