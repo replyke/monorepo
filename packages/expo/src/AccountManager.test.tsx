@@ -11,7 +11,17 @@ vi.mock("expo-secure-store", () => ({
   deleteItemAsync: (...args: unknown[]) => deleteItemAsync(...args),
 }));
 
-vi.mock("@sublay/core", () => ({
+// The persisted-value validators the adapter imports from `@sublay/core` are
+// REAL here, not stubs: they are the behaviour under test below. They are
+// pulled in through `vi.importActual` on core's source path rather than an
+// ordinary import so that TypeScript never resolves the specifier — each
+// package compiles with `rootDir: ./src`, and a static cross-package import
+// would fail the build with TS6059. The module is type-only in its own
+// imports, so nothing of core's runtime comes with it.
+vi.mock("@sublay/core", async () => ({
+  ...(await vi.importActual<Record<string, unknown>>(
+    "../../core/src/config/storedAccountMap"
+  )),
   useAccountSync: vi.fn(),
   useProject: vi.fn(),
   handleError: (...args: unknown[]) => handleError(...args),
@@ -1078,12 +1088,23 @@ describe("secureStoreStorage — v1 → v2 migration", () => {
     // (or for `persistAccountMapFor`, which takes it) while the read still held
     // it would wait on itself forever. The adapter therefore writes through
     // `expo-secure-store` directly. The `@sublay/core` mock at the top of this
-    // file has exactly three exports, so an import of either function would fail
-    // this suite at module load — this assertion states the rule the mock
+    // file exposes exactly the list below, so an import of either function would
+    // fail this suite at module load — this assertion states the rule the mock
     // enforces.
+    //
+    // The list is an ALLOWLIST, not a count: it grows when the adapter takes a
+    // genuinely new dependency on core, and every addition has to be one that
+    // cannot touch storage. The four `readStored*` validators qualify — they are
+    // pure functions over already-parsed JSON, with no I/O and no reference to
+    // the mutex. Neither `runAccountStorageOp` nor `persistAccountMapFor` may
+    // ever appear here, which is the whole point of the assertion.
     const core = await import("@sublay/core");
     expect(Object.keys(core).sort()).toEqual([
       "handleError",
+      "readStoredAccountEntry",
+      "readStoredAccountMap",
+      "readStoredDeviceIdentifier",
+      "readStoredMapFields",
       "useAccountSync",
       "useProject",
     ]);

@@ -1,11 +1,12 @@
 import * as SecureStore from "expo-secure-store";
-import { useAccountSync, useProject, handleError } from "@sublay/core";
-import type {
-  AccountStorage,
-  AccountMap,
-  AccountEntry,
-  PushDeviceIdentifier,
+import {
+  useAccountSync,
+  useProject,
+  handleError,
+  readStoredAccountEntry,
+  readStoredMapFields,
 } from "@sublay/core";
+import type { AccountStorage, AccountMap, AccountEntry } from "@sublay/core";
 
 // expo-secure-store rejects keys containing `:` on iOS — keys must match
 // /^[A-Za-z0-9._-]+$/. Use `_` as the separator instead.
@@ -148,136 +149,20 @@ function serializeEntry(userId: string, entry: AccountEntry): string {
  * adapter does not own and cannot constrain. A `as StoredIndex` or
  * `as AccountEntry` on a `JSON.parse` result is a claim about that data, not a
  * check of it: the compiler is satisfied and every field is still whatever the
- * bytes said. These functions are where the claim is actually earned. They live
- * OUTSIDE the v1 shim block below on purpose — the v2 read path depends on
- * them, so deleting the shim must not take them with it.
+ * bytes said.
+ *
+ * The rules themselves live in `@sublay/core`'s `config/storedAccountMap`,
+ * because `react-js` and `react-native` read the same fields back out of their
+ * own stores and a guard that exists in one adapter is not a guard. What is
+ * imported here is the part that is layout-independent — `readStoredAccountEntry`
+ * (what makes an entry an entry, and the key ↔ `user.id` identity rule) and
+ * `readStoredMapFields` (the four device/selection fields every layout carries,
+ * each narrowed to its own type). The index fields that are this layout's alone
+ * — `v`, `accountIds`, `pending` — are narrowed in `readIndex` below.
+ *
+ * These imports are used by the v2 read path, NOT only by the v1 shim below:
+ * deleting the shim must not take them with it.
  * ──────────────────────────────────────────────────────────────────────────── */
-
-/**
- * The rules a persisted account entry has to satisfy at EITHER layout, stated
- * once. Returns the entry with its identity settled, or `null` if it is not an
- * entry.
- *
- * WHAT MAKES AN ENTRY AN ENTRY. A refresh token and a user object: without the
- * token there is no session to preserve, and without the user there is nobody
- * to preserve it for. Both are required, and an entry missing either is
- * rejected rather than patched up — a half-entry that loads is worse than one
- * that never appears.
- *
- * IDENTITY MUST AGREE WITH THE KEY. An entry whose own `user.id` names someone
- * other than the account key it was filed under is REJECTED, not repaired.
- * Either half could be the truth and there is no way to tell which, so any
- * repair is a guess about whose credential this is — and guessing wrong files a
- * live session under the wrong account, which is the exact failure the
- * multi-account work exists to prevent. Dropping it costs one re-sign-in.
- *
- * An ABSENT id is not a conflict: v1 keyed its map by `user.id`, and v2 derives
- * the key from it too, so the key is a sound identity for an entry that does
- * not carry one. It is filled in from the key, which is why every entry this
- * returns is guaranteed to agree with its key.
- *
- * `tokenExpiresAt` is normalized to a number, defaulting to `0` when the stored
- * value is not one. `0` reads as "expired", which renders a re-auth affordance
- * — the safe direction to be wrong in, since the alternative is claiming a
- * credential is live. Every other field is carried through untouched: this is a
- * gate on the fields the adapter itself depends on, not a whitelist of the
- * account shape, so a field core adds later survives a round trip without
- * having to be named here.
- */
-function readStoredEntry(userId: string, value: unknown): AccountEntry | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const candidate = value as Record<string, unknown>;
-
-  if (typeof candidate.refreshToken !== "string" || candidate.refreshToken === "")
-    return null;
-
-  const rawUser = candidate.user;
-  if (!rawUser || typeof rawUser !== "object" || Array.isArray(rawUser))
-    return null;
-  const user = rawUser as Record<string, unknown>;
-
-  // Present-but-different is a conflict, whatever its type — a non-string id
-  // cannot equal the string key, so it lands here too.
-  if (user.id !== undefined && user.id !== userId) return null;
-
-  // The display fields are normalized rather than passed through: they are the
-  // ones that reach a render, and an object where a string belongs takes the
-  // switcher down with "Objects are not valid as a React child". `null` is
-  // already their absent value, so degrading to it costs nothing.
-  const asStringOrNull = (v: unknown) => (typeof v === "string" ? v : null);
-
-  return {
-    ...candidate,
-    refreshToken: candidate.refreshToken,
-    tokenExpiresAt:
-      typeof candidate.tokenExpiresAt === "number" ? candidate.tokenExpiresAt : 0,
-    user: {
-      ...user,
-      id: userId,
-      name: asStringOrNull(user.name),
-      email: asStringOrNull(user.email),
-      avatar: asStringOrNull(user.avatar),
-    },
-  } as unknown as AccountEntry;
-}
-
-/**
- * The stored device identifier, or `null` if it is not one.
- *
- * Two valid shapes, native and web, mirroring `PushDeviceIdentifier`. The web
- * one is nested, and a HALF-formed subscription is the case that matters: an
- * object carrying an `endpoint` but no `keys` satisfies a cast and then throws
- * the moment anything reads `subscription.keys.p256dh`. Each shape is therefore
- * accepted whole or not at all.
- *
- * Empty strings are rejected alongside missing ones. Neither the OS nor the
- * browser hands out an empty token, endpoint or key, and an identifier that
- * routes nowhere is worse than none: `null` leaves the re-acquisition paths
- * (`usePushRegistration`'s mount read, the rotation subscription) free to fetch
- * a real one, while a present-but-useless value looks to every one of them like
- * an identifier already in hand.
- */
-function readDeviceIdentifier(value: unknown): PushDeviceIdentifier | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const candidate = value as Record<string, unknown>;
-  const platform = candidate.platform;
-
-  if (platform === "ios" || platform === "android") {
-    const token = candidate.token;
-    if (typeof token !== "string" || token === "") return null;
-    return { platform, token };
-  }
-
-  if (platform === "web") {
-    const rawSubscription = candidate.subscription;
-    if (
-      !rawSubscription ||
-      typeof rawSubscription !== "object" ||
-      Array.isArray(rawSubscription)
-    )
-      return null;
-    const subscription = rawSubscription as Record<string, unknown>;
-
-    const endpoint = subscription.endpoint;
-    if (typeof endpoint !== "string" || endpoint === "") return null;
-
-    const rawKeys = subscription.keys;
-    if (!rawKeys || typeof rawKeys !== "object" || Array.isArray(rawKeys))
-      return null;
-    const keys = rawKeys as Record<string, unknown>;
-    const p256dh = keys.p256dh;
-    const auth = keys.auth;
-    if (typeof p256dh !== "string" || p256dh === "") return null;
-    if (typeof auth !== "string" || auth === "") return null;
-
-    return {
-      platform: "web",
-      subscription: { endpoint, keys: { p256dh, auth } },
-    };
-  }
-
-  return null;
-}
 
 /* ────────────────────────────────────────────────────────────────────────────
  * v1 → v2 STORAGE SHIM
@@ -368,7 +253,7 @@ function readDeviceIdentifier(value: unknown): PushDeviceIdentifier | null {
  *       user: { id, name, email, avatar } }
  *
  * Whether it is an entry at all — and whether it agrees with the key it was
- * filed under — is `readStoredEntry`'s question, and both layouts ask it the
+ * filed under — is `readStoredAccountEntry`'s question, and both layouts ask it the
  * same way. What is left here is the part that is genuinely v1's: projecting
  * the four fields v1 recorded and leaving every later one absent.
  *
@@ -384,17 +269,17 @@ function readDeviceIdentifier(value: unknown): PushDeviceIdentifier | null {
  * turns the absent case into a recorded choice.
  */
 function readV1Entry(userId: string, value: unknown): AccountEntry | null {
-  const entry = readStoredEntry(userId, value);
+  const entry = readStoredAccountEntry(userId, value);
   if (!entry) return null;
 
   const user = entry.user;
   return {
     refreshToken: entry.refreshToken,
-    // Every v1 writer emitted `tokenExpiresAt`, so `readStoredEntry`'s `0`
+    // Every v1 writer emitted `tokenExpiresAt`, so `readStoredAccountEntry`'s `0`
     // default is defensive only.
     tokenExpiresAt: entry.tokenExpiresAt,
     user: {
-      // Already reconciled with the key by `readStoredEntry` — v1 keyed the map
+      // Already reconciled with the key by `readStoredAccountEntry` — v1 keyed the map
       // by `user.id`, so the key is a sound identity for an entry that lost it.
       id: user.id,
       name: typeof user.name === "string" ? user.name : null,
@@ -603,30 +488,13 @@ async function readIndex(projectId: string): Promise<IndexRead> {
     kind: "index",
     index: {
       v: INDEX_VERSION,
-      // Anything that is not a string is not an account id, and `?? null` would
-      // have let one through: a number, an object, an array — all non-nullish,
-      // all violating `AccountMap`'s type, all flowing straight into the
-      // selection logic in core that decides which session to restore. `null`
-      // is the safe reading: "nothing selected", which core already knows how
-      // to resolve (see `useAccountSync` Phase A).
-      activeAccountId:
-        typeof candidate.activeAccountId === "string"
-          ? candidate.activeAccountId
-          : null,
-      // Only a literal `true` means signed out. `?? false` accepted any truthy
-      // value, and this flag suppresses account restoration outright — a stored
-      // `"false"` is a truthy string, and would have kept the user staring at a
-      // signed-out app with their credentials sitting on disk.
-      signedOut: candidate.signedOut === true,
-      // Whole or nothing: a half-formed identifier throws later, where the
-      // thrower is not the reader. See `readDeviceIdentifier`.
-      deviceIdentifier: readDeviceIdentifier(candidate.deviceIdentifier),
-      // Absent reads as `false` — an index written before this field existed is
-      // precisely the population the one-shot read exists for. Anything that is
-      // not literally `true` reads the same way: this is parsed from a store we
-      // do not control, and a truthy non-boolean would read as already-probed
-      // and skip the probe, which is the one outcome the flag exists to prevent.
-      pushIdentifierProbed: candidate.pushIdentifierProbed === true,
+      // `activeAccountId`, `signedOut`, `deviceIdentifier` and
+      // `pushIdentifierProbed` mean the same thing in every layout, so their
+      // narrowing lives in core — including WHY each default is the safe
+      // reading of a field the bytes did not supply. See `readStoredMapFields`.
+      ...readStoredMapFields(candidate),
+      // The rest is this layout's alone: there is no `accountIds` or `pending`
+      // in a whole-map store, so nothing to share.
       accountIds: candidate.accountIds.filter(
         (id): id is string => typeof id === "string"
       ),
@@ -749,8 +617,8 @@ export const secureStoreStorage: AccountStorage = {
       // session filed under the wrong account id, which is precisely what this
       // layout exists to prevent. Rejected, not repaired, and rejected alone:
       // one bad value costs its own account, never the map. See
-      // `readStoredEntry`.
-      const entry = readStoredEntry(id, parsed);
+      // `readStoredAccountEntry`.
+      const entry = readStoredAccountEntry(id, parsed);
       if (entry) accounts[id] = entry;
     }
 
