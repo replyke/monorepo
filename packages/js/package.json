@@ -1,6 +1,6 @@
 {
   "name": "@sublay/js",
-  "version": "7.7.1",
+  "version": "7.8.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
