@@ -109,6 +109,14 @@ export function readStoredAccountEntry(
       name: asStringOrNull(user.name),
       email: asStringOrNull(user.email),
       avatar: asStringOrNull(user.avatar),
+      // `username` is the one display field whose ABSENCE carries meaning —
+      // `AccountSummary` documents absent as *unknown*, not "has no username",
+      // and entries written before the field existed rely on that. So it is
+      // normalized only when present: a stored `{ value: "alice" }` degrades to
+      // `null`, while a missing key stays missing.
+      ...("username" in user
+        ? { username: asStringOrNull(user.username) }
+        : {}),
     },
   } as unknown as AccountEntry;
 }
