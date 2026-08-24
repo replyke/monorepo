@@ -10,7 +10,7 @@ export interface UpdateWorkspaceInheritFlagProps {
  * Flip whether capabilities held on an ancestor "reach" into this workspace.
  * Owner-only in both directions (own owner or an ancestor owner), and blocked
  * (403 `workspace/inherit-enforced`) when the project enforces its default.
- * The actor is the bearer-token user — no `userId` is sent.
+ * The actor is the bearer-token user — no actor field is sent.
  */
 export async function updateWorkspaceInheritFlag(
   client: SublayHttpClient,

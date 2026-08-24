@@ -15,21 +15,15 @@ export interface TransferWorkspaceOwnershipProps {
 
 /**
  * Hand the workspace to a new owner. Owner-only (own owner or an ancestor
- * owner). The actor is the bearer-token user — no `userId` is sent;
+ * owner). The actor is the bearer-token user — no actor field is sent;
  * `newOwnerId` addresses the TARGET, not the actor.
  */
 export async function transferWorkspaceOwnership(
   client: SublayHttpClient,
   data: TransferWorkspaceOwnershipProps
 ): Promise<Workspace> {
-  const { workspaceId, ...rest } = data;
-
-  // Client SDKs never send an actor `userId` — acting on behalf of another
-  // user is the node-sdk service-key capability. Strip it defensively in
-  // case a caller casts around the props type. (`newOwnerId` is the TARGET
-  // and stays.)
-  const body: Record<string, any> = { ...rest };
-  delete body.userId;
+  // `newOwnerId` addresses the TARGET and rides in the body.
+  const { workspaceId, ...body } = data;
 
   const response = await client.projectInstance.post<Workspace>(
     `/workspaces/${workspaceId}/transfer-ownership`,

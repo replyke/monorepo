@@ -22,13 +22,7 @@ export async function fetchWorkspaceMembers(
   client: SublayHttpClient,
   data: FetchWorkspaceMembersProps
 ): Promise<WorkspaceRosterResponse | WorkspaceRosterCountsResponse> {
-  const { workspaceId, ...rest } = data;
-
-  // Client SDKs never send an actor `userId` — acting on behalf of another
-  // user is the node-sdk service-key capability. Strip it defensively in
-  // case a caller casts around the props type.
-  const params: Record<string, any> = { ...rest };
-  delete params.userId;
+  const { workspaceId, ...params } = data;
 
   const response = await client.projectInstance.get<
     WorkspaceRosterResponse | WorkspaceRosterCountsResponse

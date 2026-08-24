@@ -9,7 +9,7 @@ export interface RemoveWorkspaceMemberProps {
 /**
  * Remove a member from this workspace. Requires the `remove-member` capability
  * and is rank-bounded. The workspace owner cannot be removed (409
- * `workspace/sole-owner`) — transfer ownership first. No `userId` body is sent;
+ * `workspace/sole-owner`) — transfer ownership first. No actor field is sent;
  * the actor comes from the token.
  */
 export async function removeWorkspaceMember(

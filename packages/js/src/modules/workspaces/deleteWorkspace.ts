@@ -10,8 +10,8 @@ export interface DeleteWorkspaceResponse {
 
 /**
  * Owner-only delete (own owner or an ancestor owner). Cascades the whole
- * subtree transactionally. The actor is the bearer-token user — no `userId`
- * body is sent.
+ * subtree transactionally. The actor is the bearer-token user — no actor
+ * field is sent.
  */
 export async function deleteWorkspace(
   client: SublayHttpClient,

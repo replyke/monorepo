@@ -27,9 +27,10 @@ import { makeClient } from "./helpers/client";
 /**
  * Recursively asserts that no acting-user `userId` leaks into a client call.
  * The bearer token is the actor for @sublay/js, so the server derives the
- * actor — sending a `userId` would be Rule A's classic porting mistake (403 /
- * silently ignored). node-sdk deliberately DOES send one (service keys act on
- * behalf of a named user); porting those functions here must strip it.
+ * actor — sending an `actingUserId` that names anyone but the token's own user
+ * would be Rule A's classic porting mistake (403 from the server). node-sdk
+ * deliberately DOES send one (service keys act on behalf of a named user); the
+ * @sublay/js props types simply never carry it.
  *
  * NOTE: two shapes legitimately carry a user id and are asserted separately:
  *   - `createWorkspaceInvite`'s body `userId` addresses the invite TARGET.
@@ -395,111 +396,19 @@ describe("js-sdk workspaces — authority request shaping", () => {
   });
 });
 
-describe("js-sdk workspaces — a smuggled actor userId never reaches the wire (Rule A)", () => {
-  // Each test below smuggles an actor `userId` past the props type and asserts
-  // the wrapper drops it. Passing a CLEAN payload and asserting nothing dirty
-  // comes out would be a tautology against a verbatim spread — these fail if
-  // the strip is removed.
+describe("js-sdk workspaces — no actor field on the client surface (Rule A)", () => {
+  // @sublay/js never exposes an acting-user field: the bearer token IS the
+  // actor. There is deliberately no defensive strip — a caller who casts past
+  // the props type and hand-writes an actor gets a 403 from the server rather
+  // than a silently swallowed field. What the tests below lock in is that the
+  // wrappers never MANUFACTURE an actor, and that the target user ids that do
+  // exist (the invitee, the `:userId` path segment) still reach the wire.
 
-  it("createWorkspace strips a smuggled actor userId from the body", async () => {
+  it("the destructuring functions never manufacture an actor userId", async () => {
     const { client, projectInstance } = makeClient();
-    await createWorkspace(client, {
-      name: "Team",
-      metadata: { owner: "x" },
-      parentWorkspaceId: "w-parent",
-      // @ts-expect-error a body userId here is the ACTOR (act-as-user) — node-sdk-only
-      userId: "someone-else",
-    });
-    const [, body] = projectInstance.post.mock.calls[0];
-    expect(body).toEqual({
-      name: "Team",
-      metadata: { owner: "x" },
-      parentWorkspaceId: "w-parent",
-    });
-    expect(body).not.toHaveProperty("userId");
-  });
-
-  it("fetchManyWorkspaces strips a smuggled actor userId from the query params", async () => {
-    const { client, projectInstance } = makeClient();
-    await fetchManyWorkspaces(client, {
-      page: 1,
-      limit: 5,
-      // @ts-expect-error the server honors a `userId` query param only for service keys
-      userId: "someone-else",
-    });
-    const [, config] = projectInstance.get.mock.calls[0];
-    expect(config?.params).toEqual({ page: 1, limit: 5 });
-    expect(config?.params).not.toHaveProperty("userId");
-  });
-
-  it("updateWorkspace strips a smuggled actor userId from the body", async () => {
-    const { client, projectInstance } = makeClient();
-    await updateWorkspace(client, {
-      workspaceId: "w1",
-      name: "Renamed",
-      // @ts-expect-error a body userId here would be the ACTOR — node-sdk-only
-      userId: "someone-else",
-    });
-    const [url, body] = projectInstance.patch.mock.calls[0];
-    expect(url).toBe("/workspaces/w1");
-    expect(body).toEqual({ name: "Renamed" });
-    expect(body).not.toHaveProperty("userId");
-  });
-
-  it("transferWorkspaceOwnership strips a smuggled actor userId but keeps newOwnerId", async () => {
-    const { client, projectInstance } = makeClient();
-    await transferWorkspaceOwnership(client, {
-      workspaceId: "w1",
-      newOwnerId: "u-new",
-      previousOwnerDisposition: "demote",
-      // @ts-expect-error a body userId here would be the ACTOR — node-sdk-only
-      userId: "someone-else",
-    });
-    const [, body] = projectInstance.post.mock.calls[0];
-    // `newOwnerId` names the TARGET and must survive the strip.
-    expect(body).toEqual({
-      newOwnerId: "u-new",
-      previousOwnerDisposition: "demote",
-    });
-    expect(body).not.toHaveProperty("userId");
-  });
-
-  it("updateWorkspaceMember strips a smuggled actor userId from the body", async () => {
-    const { client, projectInstance } = makeClient();
-    await updateWorkspaceMember(client, {
-      workspaceId: "w1",
-      targetUserId: "u-t",
-      rank: 1,
-      // @ts-expect-error on this route the server reads a body userId as the ACTOR
-      userId: "someone-else",
-    });
-    const [url, body] = projectInstance.patch.mock.calls[0];
-    // The TARGET rides in the path; the actor is the token subject.
-    expect(url).toBe("/workspaces/w1/members/u-t");
-    expect(body).toEqual({ rank: 1 });
-    expect(body).not.toHaveProperty("userId");
-    expect(body).not.toHaveProperty("targetUserId");
-  });
-
-  it("fetchWorkspaceMembers strips a smuggled actor userId from the query params", async () => {
-    const { client, projectInstance } = makeClient();
-    await fetchWorkspaceMembers(client, {
-      workspaceId: "w1",
-      countOnly: true,
-      // @ts-expect-error a userId query param here would be an actor override
-      userId: "someone-else",
-    });
-    const [url, config] = projectInstance.get.mock.calls[0];
-    expect(url).toBe("/workspaces/w1/members");
-    expect(config?.params).toEqual({ countOnly: true });
-    expect(config?.params).not.toHaveProperty("userId");
-  });
-
-  it("the non-spreading functions cannot leak a smuggled actor userId either", async () => {
-    const { client, projectInstance } = makeClient();
-    // These destructure named fields rather than spreading, so a smuggled
-    // `userId` is dropped by construction. The sweep locks that in — it fails
-    // the day one of them is refactored to a verbatim spread.
+    // These pick named fields rather than spreading, so a smuggled `userId` is
+    // dropped by construction. The sweep locks that in — it fails the day one
+    // of them is refactored to a verbatim spread.
     await fetchWorkspace(client, {
       workspaceId: "w1",
       include: "memberCount",
@@ -590,7 +499,7 @@ describe("js-sdk workspaces — a smuggled actor userId never reaches the wire (
     expect(body).toEqual({ userId: "invitee1", rank: 1 });
   });
 
-  it("the member routes keep the TARGET user in the PATH after the strip", async () => {
+  it("the member routes keep the TARGET user in the PATH", async () => {
     const { client, projectInstance } = makeClient();
     await updateWorkspaceMember(client, {
       workspaceId: "w1",
