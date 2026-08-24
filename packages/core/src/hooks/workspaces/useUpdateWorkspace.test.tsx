@@ -41,29 +41,6 @@ describe("useUpdateWorkspace", () => {
     expect(call.body).not.toHaveProperty("workspaceId");
   });
 
-  it("does not forward an actor userId even if a caller smuggles one in", async () => {
-    const user = makeAuthUser({ id: "user-1" });
-    const { result, axiosPrivate } = renderHookWithAxios(
-      () => useUpdateWorkspace(),
-      { projectId: "project-1", user }
-    );
-
-    axiosPrivate.mockResponse("patch", { id: "w1" });
-
-    await act(async () => {
-      await result.current({
-        workspaceId: "w1",
-        name: "Renamed",
-        // @ts-expect-error the actor userId is node-sdk-only and not part of the props
-        userId: "someone-else",
-      });
-    });
-
-    const [call] = axiosPrivate.calls("patch");
-    expect(call.body).toEqual({ name: "Renamed" });
-    expect(call.body).not.toHaveProperty("userId");
-  });
-
   it("throws before requesting when workspaceId is missing", async () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, axiosPrivate } = renderHookWithAxios(

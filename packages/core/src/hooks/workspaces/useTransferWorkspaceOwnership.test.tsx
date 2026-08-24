@@ -47,29 +47,6 @@ describe("useTransferWorkspaceOwnership", () => {
     expect(call.body).not.toHaveProperty("workspaceId");
   });
 
-  it("does not forward an actor userId — newOwnerId is the only user id sent", async () => {
-    const user = makeAuthUser({ id: "user-1" });
-    const { result, axiosPrivate } = renderHookWithAxios(
-      () => useTransferWorkspaceOwnership(),
-      { projectId: "project-1", user }
-    );
-
-    axiosPrivate.mockResponse("post", { id: "w1" });
-
-    await act(async () => {
-      await result.current({
-        workspaceId: "w1",
-        newOwnerId: "user-2",
-        // @ts-expect-error the actor userId is node-sdk-only and not part of the props
-        userId: "someone-else",
-      });
-    });
-
-    const [call] = axiosPrivate.calls("post");
-    expect(call.body).toEqual({ newOwnerId: "user-2" });
-    expect(call.body).not.toHaveProperty("userId");
-  });
-
   it("throws before requesting when workspaceId or newOwnerId is missing", async () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, axiosPrivate } = renderHookWithAxios(

@@ -47,15 +47,9 @@ function useUpdateWorkspaceMember(): (
         throw new Error("Please pass a targetUserId");
       }
 
-      // On this route the server reads a body `userId` as the ACTOR (the
-      // service-key act-as-user path). Client SDKs never send one — the actor
-      // is always the bearer-token user — so strip it defensively.
-      const body: Record<string, any> = { ...rest };
-      delete body.userId;
-
       const response = await axios.patch<WorkspaceMember>(
         `/${projectId}/workspaces/${workspaceId}/members/${targetUserId}`,
-        body
+        rest
       );
 
       return response.data;

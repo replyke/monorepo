@@ -12,7 +12,7 @@ export interface FetchManyWorkspacesParams {
 
 /**
  * Leaf fetcher for the caller's direct-membership + owned workspaces. The actor
- * is derived from the bearer token — no `userId` is sent.
+ * is derived from the bearer token — no actor field is sent.
  */
 function useFetchManyWorkspaces(): (
   params?: FetchManyWorkspacesParams
