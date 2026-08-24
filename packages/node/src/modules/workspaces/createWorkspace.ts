@@ -4,7 +4,7 @@ import { Workspace } from "../../interfaces/Workspace";
 export interface CreateWorkspaceProps {
   // The user the workspace is created as (becomes the owner). Required for the
   // service key — the server derives no session user from a service key.
-  userId: string;
+  actingUserId: string;
   name: string;
   metadata?: Record<string, any>;
   // Optional parent for child creation; absent → root workspace.

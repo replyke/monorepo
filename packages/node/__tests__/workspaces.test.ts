@@ -24,11 +24,11 @@ import {
 import { makeClient } from "./helpers/mockClient";
 
 describe("node-sdk workspaces (lifecycle + ownership) — request shaping", () => {
-  it("createWorkspace posts the full body (incl. service-key userId) to /workspaces", async () => {
+  it("createWorkspace posts the full body (incl. service-key actingUserId) to /workspaces", async () => {
     const { client, projectInstance } = makeClient();
-    await createWorkspace(client, { userId: "u1", name: "Acme" });
+    await createWorkspace(client, { actingUserId: "u1", name: "Acme" });
     expect(projectInstance.post).toHaveBeenCalledWith("/workspaces", {
-      userId: "u1",
+      actingUserId: "u1",
       name: "Acme",
     });
   });
@@ -36,13 +36,13 @@ describe("node-sdk workspaces (lifecycle + ownership) — request shaping", () =
   it("createWorkspace forwards parentWorkspaceId + metadata for child creation", async () => {
     const { client, projectInstance } = makeClient();
     await createWorkspace(client, {
-      userId: "u1",
+      actingUserId: "u1",
       name: "Team",
       metadata: { color: "blue" },
       parentWorkspaceId: "w-parent",
     });
     expect(projectInstance.post).toHaveBeenCalledWith("/workspaces", {
-      userId: "u1",
+      actingUserId: "u1",
       name: "Team",
       metadata: { color: "blue" },
       parentWorkspaceId: "w-parent",
@@ -67,9 +67,9 @@ describe("node-sdk workspaces (lifecycle + ownership) — request shaping", () =
 
   it("fetchManyWorkspaces hits /workspaces with the full body as params", async () => {
     const { client, projectInstance } = makeClient();
-    await fetchManyWorkspaces(client, { userId: "u1", page: 2, limit: 10 });
+    await fetchManyWorkspaces(client, { actingUserId: "u1", page: 2, limit: 10 });
     expect(projectInstance.get).toHaveBeenCalledWith("/workspaces", {
-      params: { userId: "u1", page: 2, limit: 10 },
+      params: { actingUserId: "u1", page: 2, limit: 10 },
     });
   });
 
@@ -77,35 +77,35 @@ describe("node-sdk workspaces (lifecycle + ownership) — request shaping", () =
     const { client, projectInstance } = makeClient();
     await updateWorkspace(client, {
       workspaceId: "w1",
-      userId: "u1",
+      actingUserId: "u1",
       name: "Renamed",
       metadata: { k: 1 },
     });
     expect(projectInstance.patch).toHaveBeenCalledWith("/workspaces/w1", {
-      userId: "u1",
+      actingUserId: "u1",
       name: "Renamed",
       metadata: { k: 1 },
     });
   });
 
-  it("updateWorkspaceInheritFlag patches /workspaces/:id/inherit-flag with userId + flag", async () => {
+  it("updateWorkspaceInheritFlag patches /workspaces/:id/inherit-flag with actingUserId + flag", async () => {
     const { client, projectInstance } = makeClient();
     await updateWorkspaceInheritFlag(client, {
       workspaceId: "w1",
-      userId: "u1",
+      actingUserId: "u1",
       inheritsFromParent: true,
     });
     expect(projectInstance.patch).toHaveBeenCalledWith(
       "/workspaces/w1/inherit-flag",
-      { userId: "u1", inheritsFromParent: true }
+      { actingUserId: "u1", inheritsFromParent: true }
     );
   });
 
-  it("deleteWorkspace sends the acting userId in the request body (data)", async () => {
+  it("deleteWorkspace sends the acting actingUserId in the request body (data)", async () => {
     const { client, projectInstance } = makeClient();
-    await deleteWorkspace(client, { workspaceId: "w1", userId: "u1" });
+    await deleteWorkspace(client, { workspaceId: "w1", actingUserId: "u1" });
     expect(projectInstance.delete).toHaveBeenCalledWith("/workspaces/w1", {
-      data: { userId: "u1" },
+      data: { actingUserId: "u1" },
     });
   });
 
@@ -113,7 +113,7 @@ describe("node-sdk workspaces (lifecycle + ownership) — request shaping", () =
     const { client, projectInstance } = makeClient();
     await transferWorkspaceOwnership(client, {
       workspaceId: "w1",
-      userId: "u1",
+      actingUserId: "u1",
       newOwnerId: "u2",
       previousOwnerDisposition: "demote",
       previousOwnerRank: 5,
@@ -122,7 +122,7 @@ describe("node-sdk workspaces (lifecycle + ownership) — request shaping", () =
     expect(projectInstance.post).toHaveBeenCalledWith(
       "/workspaces/w1/transfer-ownership",
       {
-        userId: "u1",
+        actingUserId: "u1",
         newOwnerId: "u2",
         previousOwnerDisposition: "demote",
         previousOwnerRank: 5,
@@ -156,54 +156,54 @@ describe("node-sdk workspaces (membership) — request shaping", () => {
     );
   });
 
-  it("updateWorkspaceMember puts target in the path, actor userId in the body", async () => {
+  it("updateWorkspaceMember puts target in the path, actor actingUserId in the body", async () => {
     const { client, projectInstance } = makeClient();
     await updateWorkspaceMember(client, {
       workspaceId: "w1",
       targetUserId: "target1",
-      userId: "actor1",
+      actingUserId: "actor1",
       capabilities: ["invite"],
       rank: 3,
       title: "Lead",
     });
     expect(projectInstance.patch).toHaveBeenCalledWith(
       "/workspaces/w1/members/target1",
-      { userId: "actor1", capabilities: ["invite"], rank: 3, title: "Lead" }
+      { actingUserId: "actor1", capabilities: ["invite"], rank: 3, title: "Lead" }
     );
   });
 
-  it("removeWorkspaceMember puts target in the path and sends actor userId in the body (data)", async () => {
+  it("removeWorkspaceMember puts target in the path and sends actor actingUserId in the body (data)", async () => {
     const { client, projectInstance } = makeClient();
     await removeWorkspaceMember(client, {
       workspaceId: "w1",
       targetUserId: "target1",
-      userId: "actor1",
+      actingUserId: "actor1",
     });
     expect(projectInstance.delete).toHaveBeenCalledWith(
       "/workspaces/w1/members/target1",
-      { data: { userId: "actor1" } }
+      { data: { actingUserId: "actor1" } }
     );
   });
 
-  it("leaveWorkspace deletes /members/me with the acting userId in the body (data)", async () => {
+  it("leaveWorkspace deletes /members/me with the acting actingUserId in the body (data)", async () => {
     const { client, projectInstance } = makeClient();
-    await leaveWorkspace(client, { workspaceId: "w1", userId: "u1" });
+    await leaveWorkspace(client, { workspaceId: "w1", actingUserId: "u1" });
     expect(projectInstance.delete).toHaveBeenCalledWith(
       "/workspaces/w1/members/me",
-      { data: { userId: "u1" } }
+      { data: { actingUserId: "u1" } }
     );
   });
 
-  it("removeWorkspaceMemberFromSubtree puts target in the path and posts the acting userId", async () => {
+  it("removeWorkspaceMemberFromSubtree puts target in the path and posts the acting actingUserId", async () => {
     const { client, projectInstance } = makeClient();
     await removeWorkspaceMemberFromSubtree(client, {
       workspaceId: "w1",
       targetUserId: "target1",
-      userId: "actor1",
+      actingUserId: "actor1",
     });
     expect(projectInstance.post).toHaveBeenCalledWith(
       "/workspaces/w1/members/target1/remove-from-subtree",
-      { userId: "actor1" }
+      { actingUserId: "actor1" }
     );
   });
 });
@@ -261,40 +261,40 @@ describe("node-sdk workspaces (invitations) — request shaping", () => {
     );
   });
 
-  it("acceptWorkspaceInvite posts the accepting userId to the non-:id-scoped accept route", async () => {
+  it("acceptWorkspaceInvite posts the accepting actingUserId to the non-:id-scoped accept route", async () => {
     const { client, projectInstance } = makeClient();
-    await acceptWorkspaceInvite(client, { inviteId: "i1", userId: "u1" });
+    await acceptWorkspaceInvite(client, { inviteId: "i1", actingUserId: "u1" });
     expect(projectInstance.post).toHaveBeenCalledWith(
       "/workspace-invites/i1/accept",
-      { userId: "u1" }
+      { actingUserId: "u1" }
     );
   });
 
-  it("declineWorkspaceInvite posts the declining userId to the non-:id-scoped decline route", async () => {
+  it("declineWorkspaceInvite posts the declining actingUserId to the non-:id-scoped decline route", async () => {
     const { client, projectInstance } = makeClient();
-    await declineWorkspaceInvite(client, { inviteId: "i1", userId: "u1" });
+    await declineWorkspaceInvite(client, { inviteId: "i1", actingUserId: "u1" });
     expect(projectInstance.post).toHaveBeenCalledWith(
       "/workspace-invites/i1/decline",
-      { userId: "u1" }
+      { actingUserId: "u1" }
     );
   });
 
-  it("fetchMyWorkspaceInvites hits /me/workspace-invites with the userId as a param", async () => {
+  it("fetchMyWorkspaceInvites hits /me/workspace-invites with the actingUserId as a param", async () => {
     const { client, projectInstance } = makeClient();
-    await fetchMyWorkspaceInvites(client, { userId: "u1" });
+    await fetchMyWorkspaceInvites(client, { actingUserId: "u1" });
     expect(projectInstance.get).toHaveBeenCalledWith("/me/workspace-invites", {
-      params: { userId: "u1" },
+      params: { actingUserId: "u1" },
     });
   });
 });
 
 describe("node-sdk workspaces (authority) — request shaping", () => {
-  it("fetchWorkspaceAuthority hits the authority route with the target userId as a param", async () => {
+  it("fetchWorkspaceAuthority hits the authority route with the acting user as a param", async () => {
     const { client, projectInstance } = makeClient();
-    await fetchWorkspaceAuthority(client, { workspaceId: "w1", userId: "u1" });
+    await fetchWorkspaceAuthority(client, { workspaceId: "w1", actingUserId: "u1" });
     expect(projectInstance.get).toHaveBeenCalledWith(
       "/workspaces/w1/authority/me",
-      { params: { userId: "u1" } }
+      { params: { actingUserId: "u1" } }
     );
   });
 });
@@ -305,7 +305,7 @@ describe("node-sdk workspaces — response mapping", () => {
     const workspace = { id: "w1", name: "Acme" };
     projectInstance.post.mockResolvedValueOnce({ data: workspace });
     await expect(
-      createWorkspace(client, { userId: "u1", name: "Acme" })
+      createWorkspace(client, { actingUserId: "u1", name: "Acme" })
     ).resolves.toEqual(workspace);
   });
 
@@ -317,7 +317,7 @@ describe("node-sdk workspaces — response mapping", () => {
     };
     projectInstance.get.mockResolvedValueOnce({ data: envelope });
     await expect(
-      fetchManyWorkspaces(client, { userId: "u1" })
+      fetchManyWorkspaces(client, { actingUserId: "u1" })
     ).resolves.toEqual(envelope);
   });
 
@@ -345,7 +345,7 @@ describe("node-sdk workspaces — response mapping", () => {
     const result = { success: true, workspaceId: "w1" };
     projectInstance.post.mockResolvedValueOnce({ data: result });
     await expect(
-      acceptWorkspaceInvite(client, { inviteId: "i1", userId: "u1" })
+      acceptWorkspaceInvite(client, { inviteId: "i1", actingUserId: "u1" })
     ).resolves.toEqual(result);
   });
 
@@ -359,7 +359,7 @@ describe("node-sdk workspaces — response mapping", () => {
     };
     projectInstance.get.mockResolvedValueOnce({ data: authority });
     await expect(
-      fetchWorkspaceAuthority(client, { workspaceId: "w1", userId: "u1" })
+      fetchWorkspaceAuthority(client, { workspaceId: "w1", actingUserId: "u1" })
     ).resolves.toEqual(authority);
   });
 });

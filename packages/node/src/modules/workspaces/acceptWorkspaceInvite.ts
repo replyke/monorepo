@@ -4,7 +4,7 @@ export interface AcceptWorkspaceInviteProps {
   inviteId: string;
   // The accepting user (must BE the invite's target; must have a verified
   // email). Required for the service key (act-as-user).
-  userId: string;
+  actingUserId: string;
 }
 
 export interface AcceptWorkspaceInviteResponse {
@@ -21,10 +21,10 @@ export async function acceptWorkspaceInvite(
   client: SublayHttpClient,
   data: AcceptWorkspaceInviteProps
 ): Promise<AcceptWorkspaceInviteResponse> {
-  const { inviteId, userId } = data;
+  const { inviteId, actingUserId } = data;
   const response = await client.projectInstance.post<AcceptWorkspaceInviteResponse>(
     `/workspace-invites/${inviteId}/accept`,
-    { userId }
+    { actingUserId }
   );
   return response.data;
 }

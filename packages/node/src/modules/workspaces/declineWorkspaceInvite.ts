@@ -5,7 +5,7 @@ export interface DeclineWorkspaceInviteProps {
   // The declining user (must BE the invite's target, and must be verified —
   // a service key does NOT bypass the verified-email gate).
   // Required for the service key (act-as-user).
-  userId: string;
+  actingUserId: string;
 }
 
 export interface DeclineWorkspaceInviteResponse {
@@ -17,10 +17,10 @@ export async function declineWorkspaceInvite(
   client: SublayHttpClient,
   data: DeclineWorkspaceInviteProps
 ): Promise<DeclineWorkspaceInviteResponse> {
-  const { inviteId, userId } = data;
+  const { inviteId, actingUserId } = data;
   const response = await client.projectInstance.post<DeclineWorkspaceInviteResponse>(
     `/workspace-invites/${inviteId}/decline`,
-    { userId }
+    { actingUserId }
   );
   return response.data;
 }

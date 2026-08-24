@@ -5,7 +5,7 @@ import { PaginatedResponse } from "../../interfaces/IPaginatedResponse";
 export interface FetchManyWorkspacesProps {
   // The user whose direct-membership + owned workspaces to list. Required for
   // the service key (act-as-user).
-  userId: string;
+  actingUserId: string;
   page?: number;
   limit?: number;
   include?: string;

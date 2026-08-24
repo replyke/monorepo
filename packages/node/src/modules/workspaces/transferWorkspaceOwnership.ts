@@ -5,7 +5,7 @@ export interface TransferWorkspaceOwnershipProps {
   workspaceId: string;
   // The acting user (own owner or an ancestor owner). Required for the service
   // key (act-as-user).
-  userId: string;
+  actingUserId: string;
   // The new owner — any verified user in the tenant (need not be a member).
   newOwnerId: string;
   // Disposition of the previous owner. Defaults server-side: an ancestor-owner

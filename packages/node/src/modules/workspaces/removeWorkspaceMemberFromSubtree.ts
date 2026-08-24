@@ -7,7 +7,7 @@ export interface RemoveWorkspaceMemberFromSubtreeProps {
   targetUserId: string;
   // The acting user (requires `remove-member`, rank-bounded per node). Required
   // for the service key (act-as-user).
-  userId: string;
+  actingUserId: string;
 }
 
 /**
@@ -23,11 +23,11 @@ export async function removeWorkspaceMemberFromSubtree(
   client: SublayHttpClient,
   data: RemoveWorkspaceMemberFromSubtreeProps
 ): Promise<RemoveWorkspaceMemberFromSubtreeResponse> {
-  const { workspaceId, targetUserId, userId } = data;
+  const { workspaceId, targetUserId, actingUserId } = data;
   const response =
     await client.projectInstance.post<RemoveWorkspaceMemberFromSubtreeResponse>(
       `/workspaces/${workspaceId}/members/${targetUserId}/remove-from-subtree`,
-      { userId }
+      { actingUserId }
     );
   return response.data;
 }

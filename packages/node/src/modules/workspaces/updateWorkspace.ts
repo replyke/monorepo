@@ -5,7 +5,7 @@ export interface UpdateWorkspaceProps {
   workspaceId: string;
   // The user the edit is performed as (subject to the edit-workspace capability
   // or ownership). Required for the service key (act-as-user).
-  userId: string;
+  actingUserId: string;
   name?: string;
   metadata?: Record<string, any>;
 }

@@ -3,9 +3,9 @@ import { WorkspaceAuthority } from "../../interfaces/Workspace";
 
 export interface FetchWorkspaceAuthorityProps {
   workspaceId: string;
-  // The user whose resolved standing to read. With a service key this is the
-  // target user (the service-key `userId` variant); required here.
-  userId: string;
+  // The acting user whose resolved standing to read (the service-key
+  // `?actingUserId=` variant); required here.
+  actingUserId: string;
 }
 
 /**
@@ -18,10 +18,10 @@ export async function fetchWorkspaceAuthority(
   client: SublayHttpClient,
   data: FetchWorkspaceAuthorityProps
 ): Promise<WorkspaceAuthority> {
-  const { workspaceId, userId } = data;
+  const { workspaceId, actingUserId } = data;
   const response = await client.projectInstance.get<WorkspaceAuthority>(
     `/workspaces/${workspaceId}/authority/me`,
-    { params: { userId } }
+    { params: { actingUserId } }
   );
   return response.data;
 }

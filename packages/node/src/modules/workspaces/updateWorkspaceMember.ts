@@ -6,9 +6,9 @@ export interface UpdateWorkspaceMemberProps {
   // The target member's user id (path param).
   targetUserId: string;
   // The acting user. Required for the service key (act-as-user). NOTE: this is
-  // sent as `userId` in the body — on this route the path `:userId` addresses
-  // the target, and the body `userId` addresses the actor.
-  userId: string;
+  // sent as `actingUserId` in the body — on this route the path `:userId`
+  // addresses the target, and the body `actingUserId` addresses the actor.
+  actingUserId: string;
   // Powerful fields (require `edit-member-access` + rank rules + no-escalation).
   capabilities?: string[];
   permissions?: string[];
