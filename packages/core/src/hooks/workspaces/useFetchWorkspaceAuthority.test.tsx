@@ -26,6 +26,9 @@ describe("useFetchWorkspaceAuthority", () => {
       capabilities: ["invite"],
       permissions: [],
       rank: 3,
+      // Always present on this read, and degenerate: an offset from you to
+      // yourself is 0 (null when you hold no member row on the workspace).
+      relativeRank: 0,
     };
     axiosPrivate.mockResponse("get", authority);
 

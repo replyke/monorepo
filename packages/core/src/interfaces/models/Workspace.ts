@@ -110,17 +110,34 @@ export interface WorkspaceRosterReason {
     | "ancestor-owner"
     | "reach-holder"
     | "descendant-member";
-  // `member` carries `rank`/`capabilities`/`permissions`/`title`/`metadata`;
-  // `ancestor-owner`/`reach-holder` carry `viaWorkspaceId` (reach-holder also
-  // `capabilities`); `descendant-member` carries `workspaceId` + `rank`/
-  // `capabilities`. `owner` carries none.
+  // `member` carries `rank`/`relativeRank`/`capabilities`/`permissions`/
+  // `title`/`metadata`; `ancestor-owner`/`reach-holder` carry `viaWorkspaceId`
+  // (reach-holder also `capabilities`); `descendant-member` carries
+  // `workspaceId` + `rank`/`capabilities` but never `relativeRank`. `owner`
+  // carries none.
   //
-  // The authority-bearing fields (`rank`, `capabilities`, `permissions`) are
-  // additionally OMITTED (absent, not null) on OTHER users' entries unless the
-  // caller operates people on the workspace (holds `invite`, `remove-member`,
-  // `edit-member-access` or `edit-member-profile`) or is an owner/ancestor-owner.
-  // The caller's OWN entry always carries them.
+  // The authority-bearing fields (`rank`, `relativeRank`, `capabilities`,
+  // `permissions`) are additionally OMITTED (absent, not null) on OTHER users'
+  // entries unless the caller operates people on the workspace (holds `invite`,
+  // `remove-member`, `edit-member-access` or `edit-member-profile`) or is an
+  // owner/ancestor-owner. The caller's OWN entry always carries them.
   rank?: number;
+  /**
+   * The SAME ladder position, expressed as an offset from the CALLER: `1` = one
+   * rung below you, `0` = your peer, `-3` = three rungs above you. The caller's
+   * own anchor is their member row on this workspace if they hold one, and apex
+   * (one step above rank 0) if they do not — so a rank-0 member reads back as
+   * `relativeRank: 1` for an owner.
+   *
+   * Authority-bearing and fenced WITH `rank`, never beside it: it is `rank`
+   * minus a number the caller already knows, so leaking it leaks `rank` exactly.
+   *
+   * Present on same-node `member` reasons only. `descendant-member` entries
+   * carry `rank` but NEVER `relativeRank` — rank is per-workspace, so an offset
+   * measured against your standing on THIS node would be arithmetic across two
+   * different ladders. Use their absolute `rank` there.
+   */
+  relativeRank?: number;
   capabilities?: WorkspaceCapability[];
   permissions?: string[];
   title?: string | null;
@@ -172,6 +189,13 @@ export interface WorkspaceMemberStanding {
   capabilities?: WorkspaceCapability[];
   permissions?: string[];
   rank?: number | null;
+  /**
+   * `rank` expressed as an offset from the CALLER (negative = senior to you).
+   * `null` exactly when `rank` is `null` — a target with no direct member row
+   * here sits outside the ladder and has no position to measure. Fenced with
+   * `rank`: absent (not null) for a caller who may not see it.
+   */
+  relativeRank?: number | null;
   title: string | null;
   metadata: Record<string, any>;
 }
@@ -182,4 +206,13 @@ export interface WorkspaceAuthority {
   capabilities: WorkspaceCapability[];
   permissions: string[];
   rank: number | null;
+  /**
+   * `rank` as an offset from the caller — structurally degenerate on this
+   * endpoint, because the caller IS the subject: `0` when you hold a member row
+   * on this workspace, `null` when you do not. Returned anyway so all three
+   * workspace reads carry both coordinates and a client never has to
+   * special-case which one it is reading. Never fenced here — this read is
+   * inherently about yourself, so there is no one else's `rank` to reconstruct.
+   */
+  relativeRank: number | null;
 }

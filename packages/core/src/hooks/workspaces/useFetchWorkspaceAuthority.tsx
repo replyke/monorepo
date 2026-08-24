@@ -9,8 +9,13 @@ export interface FetchWorkspaceAuthorityProps {
 
 /**
  * Authority-as-a-service read — the bearer-token user's resolved standing
- * (`{ reasons, capabilities, permissions, rank }`) on the workspace. A
- * permission check is a one-line `.includes()` on the result.
+ * (`{ reasons, capabilities, permissions, rank, relativeRank }`) on the
+ * workspace. A permission check is a one-line `.includes()` on the result.
+ *
+ * `relativeRank` is degenerate on this endpoint — an offset from yourself to
+ * yourself is `0`, or `null` when you hold no member row here. It is returned
+ * so all three workspace reads carry both coordinates; `rank` is the field to
+ * read here.
  */
 function useFetchWorkspaceAuthority(): (
   props: FetchWorkspaceAuthorityProps

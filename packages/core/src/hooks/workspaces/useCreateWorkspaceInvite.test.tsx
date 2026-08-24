@@ -65,6 +65,34 @@ describe("useCreateWorkspaceInvite", () => {
     expect(call.body).toEqual({ userId: "invitee1", rank: 1 });
   });
 
+  it("forwards relativeRank verbatim, and sends neither rank field when both are omitted", async () => {
+    const user = makeAuthUser({ id: "user-1" });
+    const { result, axiosPrivate } = renderHookWithAxios(
+      () => useCreateWorkspaceInvite(),
+      { projectId: "project-1", user }
+    );
+
+    axiosPrivate.mockResponse("post", { id: "i3" }, 201);
+    axiosPrivate.mockResponse("post", { id: "i4" }, 201);
+
+    await act(async () => {
+      await result.current({
+        workspaceId: "w1",
+        email: "a@b.co",
+        relativeRank: 1,
+      });
+      // Neither rank field: the SDK sends nothing and the server applies its
+      // one-below-the-inviter default. It must NOT invent a rank client-side.
+      await result.current({ workspaceId: "w1", email: "c@d.co" });
+    });
+
+    const [relative, neither] = axiosPrivate.calls("post");
+    expect(relative.body).toEqual({ email: "a@b.co", relativeRank: 1 });
+    expect(neither.body).toEqual({ email: "c@d.co" });
+    expect(neither.body).not.toHaveProperty("rank");
+    expect(neither.body).not.toHaveProperty("relativeRank");
+  });
+
   it("throws before requesting when workspaceId is missing", async () => {
     const user = makeAuthUser({ id: "user-1" });
     const { result, axiosPrivate } = renderHookWithAxios(

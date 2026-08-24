@@ -12,8 +12,12 @@ export interface FetchWorkspaceMemberStandingProps {
 
 /**
  * Read one user's resolved standing on a workspace (`{ user, reasons,
- * capabilities, permissions, rank, title, metadata }`), covering every relation
- * — owner, ancestor-owner, member, reach-holder.
+ * capabilities, permissions, rank, relativeRank, title, metadata }`), covering
+ * every relation — owner, ancestor-owner, member, reach-holder.
+ *
+ * `relativeRank` is the target's `rank` as an offset from YOU (negative =
+ * senior to you), and is fenced with `rank`: both are absent, not null, for a
+ * caller who may not see the target's authority.
  */
 function useFetchWorkspaceMemberStanding(): (
   props: FetchWorkspaceMemberStandingProps
