@@ -6,12 +6,28 @@ description: "Full server-side workspace surface — CRUD, membership, invitatio
 The `workspaces` module is the developer's **authorization-server SDK** for the [Workspaces bundle](/data-models/workspace). It exposes the full surface: workspace CRUD, membership management, the invitation lifecycle, and the service-key **authority read** you use to make your own app-level decisions.
 
 <Note>
-  **Requires the `workspaces` bundle.** See [Bundles](/bundles) to install it. Because this is a **service-key** SDK, most calls take an explicit `userId` — the user the action is performed **as** (the service key can [act as any user](/node-sdk/overview)). For `fetchWorkspaceAuthority`, `userId` is the target whose standing to resolve.
+  **Requires the `workspaces` bundle.** See [Bundles](/bundles) to install it. Because this is a **service-key** SDK, most calls take an explicit `actingUserId` — the user the action is performed **as** (the service key can [act as any user](/node-sdk/overview)). For `fetchWorkspaceAuthority`, `actingUserId` is the user whose standing is resolved.
 </Note>
 
 <Note>
-  **This SDK is not required in order to manage workspaces.** All 21 endpoints are equally available to a browser or mobile app through the [`@sublay/core` hooks](/sdk/workspaces/overview) and [`@sublay/js`](/js-sdk/workspaces), acting as the signed-in user and subject to the same ownership / capability / rank rules. What the node SDK adds is the actor `userId` — performing an action **as some other named user** — which only a service/master key may do.
+  **This SDK is not required in order to manage workspaces.** All 21 endpoints are equally available to a browser or mobile app through the [`@sublay/core` hooks](/sdk/workspaces/overview) and [`@sublay/js`](/js-sdk/workspaces), acting as the signed-in user and subject to the same ownership / capability / rank rules. What the node SDK adds is the acting-user field `actingUserId` — performing an action **as some other named user** — which only a service/master key may do.
 </Note>
+
+<Warning>
+  **`actingUserId` is not yet enforced on four endpoints:** `updateWorkspace`,
+  `updateWorkspaceInheritFlag`, `deleteWorkspace`, and
+  `transferWorkspaceOwnership`. These take their actor only from the route's
+  capability/owner guard, and that guard grants a service or master key full
+  authority *before* it resolves the named user — so the user you name is never
+  looked up, and the call succeeds with **full owner authority regardless of who
+  you name**, including a user with no standing on the workspace at all. Naming a
+  non-owner will **not** stop the call, and `deleteWorkspace` cascades the whole
+  subtree. On these four the value you pass is **discarded entirely** — not read,
+  not stored, not carried on any webhook — so it is not an audit trail either.
+  Gate the call in your own backend. Enforcement — binding a key to the named user's real
+  authority — lands in a follow-up change. Every other function on this page does
+  resolve the named user and enforces their real standing.
+</Warning>
 
 Read the concepts first: [capabilities vs permissions](/data-models/workspace-member#the-two-arrays-capabilities-vs-permissions), [rank](/data-models/workspace-member#rank-semantics), [reach & ownership](/data-models/workspace#reach-and-the-wall-door-rule), and the [identity-matched, no-token invite model](/data-models/workspace-invitation#acceptance-model).
 
@@ -23,7 +39,7 @@ Read the concepts first: [capabilities vs permissions](/data-models/workspace-me
 
 ```typescript
 const workspace = await sublay.workspaces.createWorkspace({
-  userId: "usr_owner",           // becomes the owner
+  actingUserId: "usr_owner",      // becomes the owner
   name: "Acme Inc",
   parentWorkspaceId: null,        // omit/null → root; set → child
 });
@@ -32,10 +48,10 @@ const workspace = await sublay.workspaces.createWorkspace({
 Root creation requires the acting user to have a **verified email**. Child creation requires the `create-sub-workspace` capability on the parent; the creator becomes the child's owner.
 
 <Warning>
-  **A service key does NOT bypass the verified-email gate.** The `userId` you act as must itself be verified, or the call returns `403 workspace/email-not-verified`. This matches `acceptWorkspaceInvite` and `transferWorkspaceOwnership` — all three doors into ownership check it, so **every** workspace owner has a confirmed email. A key lets you act *as* a user; it does not make that user verified.
+  **A service key does NOT bypass the verified-email gate.** The `actingUserId` you act as must itself be verified, or the call returns `403 workspace/email-not-verified`. This matches `acceptWorkspaceInvite` and `transferWorkspaceOwnership` — all three doors into ownership check it, so **every** workspace owner has a confirmed email. A key lets you act *as* a user; it does not make that user verified.
 </Warning>
 
-<ParamField body="userId" type="string" required>The user the workspace is created as (becomes the owner).</ParamField>
+<ParamField body="actingUserId" type="string" required>The user the workspace is created as (becomes the owner).</ParamField>
 <ParamField body="name" type="string" required>Display name (1–100 characters).</ParamField>
 <ParamField body="metadata" type="object">Opaque developer data.</ParamField>
 <ParamField body="parentWorkspaceId" type="string">Parent for child creation; absent/`null` → root.</ParamField>
@@ -58,13 +74,13 @@ Lists a user's direct-membership + owned workspaces (paginated).
 
 ```typescript
 const { data, pagination } = await sublay.workspaces.fetchManyWorkspaces({
-  userId: "usr_owner",
+  actingUserId: "usr_owner",
   page: 1,
   limit: 20,
 });
 ```
 
-<ParamField body="userId" type="string" required>The user whose workspaces to list.</ParamField>
+<ParamField body="actingUserId" type="string" required>The user whose workspaces to list.</ParamField>
 <ParamField body="page" type="number" />
 <ParamField body="limit" type="number" />
 <ParamField body="include" type="string" />
@@ -74,7 +90,7 @@ const { data, pagination } = await sublay.workspaces.fetchManyWorkspaces({
 ```typescript
 await sublay.workspaces.updateWorkspace({
   workspaceId: "ws_abc",
-  userId: "usr_editor",
+  actingUserId: "usr_editor",
   name: "Acme Corp",
 });
 ```
@@ -82,7 +98,7 @@ await sublay.workspaces.updateWorkspace({
 Edits name/metadata (gated by `edit-workspace` or owner). Does **not** flip the inherit flag.
 
 <ParamField body="workspaceId" type="string" required />
-<ParamField body="userId" type="string" required>The acting user.</ParamField>
+<ParamField body="actingUserId" type="string" required>The user to act as. **Not yet enforced on this call** — see the warning at the top of this page.</ParamField>
 <ParamField body="name" type="string" />
 <ParamField body="metadata" type="object" />
 
@@ -91,7 +107,7 @@ Edits name/metadata (gated by `edit-workspace` or owner). Does **not** flip the 
 ```typescript
 await sublay.workspaces.updateWorkspaceInheritFlag({
   workspaceId: "ws_child",
-  userId: "usr_owner",       // own owner or ancestor owner
+  actingUserId: "usr_owner",   // not yet enforced on this call
   inheritsFromParent: true,
 });
 ```
@@ -99,7 +115,7 @@ await sublay.workspaces.updateWorkspaceInheritFlag({
 Owner-only in both directions; subject to the enforced-default lock.
 
 <ParamField body="workspaceId" type="string" required />
-<ParamField body="userId" type="string" required>Must be own owner or an ancestor owner.</ParamField>
+<ParamField body="actingUserId" type="string" required>The user to act as. **Not yet enforced on this call** — see the warning at the top of this page.</ParamField>
 <ParamField body="inheritsFromParent" type="boolean" required />
 
 ### deleteWorkspace
@@ -107,21 +123,21 @@ Owner-only in both directions; subject to the enforced-default lock.
 ```typescript
 const { message } = await sublay.workspaces.deleteWorkspace({
   workspaceId: "ws_abc",
-  userId: "usr_owner",
+  actingUserId: "usr_owner",
 });
 ```
 
 Owner-only; cascades the subtree and fires `workspace.deleted` per deleted workspace — and **no** `workspace.member.removed` events for the memberships it tears down (see [Webhooks](/sdk/workspaces/webhooks)).
 
 <ParamField body="workspaceId" type="string" required />
-<ParamField body="userId" type="string" required>Must be own owner or an ancestor owner.</ParamField>
+<ParamField body="actingUserId" type="string" required>The user to act as. **Not yet enforced on this call** — see the warning at the top of this page. This call cascade-deletes the whole subtree, so gate it in your own backend.</ParamField>
 
 ### transferWorkspaceOwnership
 
 ```typescript
 const workspace = await sublay.workspaces.transferWorkspaceOwnership({
   workspaceId: "ws_abc",
-  userId: "usr_owner",                  // own owner or ancestor owner
+  actingUserId: "usr_owner",            // not yet enforced on this call
   newOwnerId: "usr_new",                // must be verified
   previousOwnerDisposition: "demote",
   previousOwnerRank: 0,
@@ -129,7 +145,7 @@ const workspace = await sublay.workspaces.transferWorkspaceOwnership({
 ```
 
 <ParamField body="workspaceId" type="string" required />
-<ParamField body="userId" type="string" required>The acting user (own owner or ancestor owner).</ParamField>
+<ParamField body="actingUserId" type="string" required>The user to act as. **Not yet enforced on this call** — see the warning at the top of this page.</ParamField>
 <ParamField body="newOwnerId" type="string" required>The new owner (any verified user).</ParamField>
 <ParamField body="previousOwnerDisposition" type="string">`"demote"` or `"remove"`.</ParamField>
 <ParamField body="previousOwnerRank" type="number">On demote; defaults to `0`.</ParamField>
@@ -185,7 +201,7 @@ Returns `WorkspaceMemberStanding`. On its `user` field **only `id` is guaranteed
 await sublay.workspaces.updateWorkspaceMember({
   workspaceId: "ws_abc",
   targetUserId: "usr_pat",
-  userId: "usr_admin",
+  actingUserId: "usr_admin",
   capabilities: ["view", "invite"],
   rank: 3,
 });
@@ -195,7 +211,7 @@ Powerful fields require `edit-member-access` + rank rules + no-escalation; cosme
 
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="targetUserId" type="string" required>The member being edited (path).</ParamField>
-<ParamField body="userId" type="string" required>The acting user (body).</ParamField>
+<ParamField body="actingUserId" type="string" required>The acting user (body).</ParamField>
 <ParamField body="capabilities" type="string[]" />
 <ParamField body="permissions" type="string[]" />
 <ParamField body="rank" type="number" />
@@ -208,7 +224,7 @@ Powerful fields require `edit-member-access` + rank rules + no-escalation; cosme
 await sublay.workspaces.removeWorkspaceMember({
   workspaceId: "ws_abc",
   targetUserId: "usr_pat",
-  userId: "usr_admin",
+  actingUserId: "usr_admin",
 });
 ```
 
@@ -216,18 +232,18 @@ Requires `remove-member` (rank-bounded); sole-owner protected.
 
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="targetUserId" type="string" required>The member to remove.</ParamField>
-<ParamField body="userId" type="string" required>The acting user.</ParamField>
+<ParamField body="actingUserId" type="string" required>The acting user.</ParamField>
 
 ### leaveWorkspace
 
 ```typescript
-await sublay.workspaces.leaveWorkspace({ workspaceId: "ws_abc", userId: "usr_pat" });
+await sublay.workspaces.leaveWorkspace({ workspaceId: "ws_abc", actingUserId: "usr_pat" });
 ```
 
 Removes the given user's own membership on this node only.
 
 <ParamField body="workspaceId" type="string" required />
-<ParamField body="userId" type="string" required>The user leaving.</ParamField>
+<ParamField body="actingUserId" type="string" required>The user leaving.</ParamField>
 
 ### removeWorkspaceMemberFromSubtree
 
@@ -235,13 +251,13 @@ Removes the given user's own membership on this node only.
 const result = await sublay.workspaces.removeWorkspaceMemberFromSubtree({
   workspaceId: "ws_root",
   targetUserId: "usr_pat",
-  userId: "usr_admin",
+  actingUserId: "usr_admin",
 });
 // result: { removedCount, removed, skippedCount, skipped }
 
 if (result.skippedCount > 0) {
   // NOT fully offboarded — memberships survived in branches the ACTING user
-  // (`userId`) cannot reach. `id`/`name` are null where they have no standing.
+  // (`actingUserId`) cannot reach. `id`/`name` are null where they have no standing.
   console.warn("Still a member of", result.skippedCount, "workspace(s):", result.skipped);
 }
 ```
@@ -249,12 +265,12 @@ if (result.skippedCount > 0) {
 Blocks with `409 workspace/owns-descendants` (and a report) if the target owns any descendant workspace.
 
 <Note>
-  **`skippedCount` is `0` from this SDK.** The sweep is partial only for a **non-owner** actor, and a service key reaches the whole subtree via the god-path regardless of which acting `userId` you name — so a server-side sweep always clears every descendant. The field is part of the shared response shape (see the [browser SDK](/js-sdk/workspaces) and the [hook](/hooks/workspaces/use-remove-workspace-member-from-subtree), where a non-owner actor *can* get a partial sweep). Assert on it anyway if you proxy this call on behalf of an end user, rather than assuming `removedCount` means the user is fully offboarded.
+  **`skippedCount` is `0` from this SDK.** The sweep is partial only for a **non-owner** actor, and a service key reaches the whole subtree via the god-path regardless of which `actingUserId` you name — so a server-side sweep always clears every descendant. The field is part of the shared response shape (see the [browser SDK](/js-sdk/workspaces) and the [hook](/hooks/workspaces/use-remove-workspace-member-from-subtree), where a non-owner actor *can* get a partial sweep). Assert on it anyway if you proxy this call on behalf of an end user, rather than assuming `removedCount` means the user is fully offboarded.
 </Note>
 
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="targetUserId" type="string" required>The user to offboard.</ParamField>
-<ParamField body="userId" type="string" required>The acting user.</ParamField>
+<ParamField body="actingUserId" type="string" required>The acting user.</ParamField>
 
 ---
 
@@ -314,27 +330,27 @@ Refreshes a lapsed pending invite (14-day expiry) and resends the email. Termina
 ```typescript
 const { workspaceId } = await sublay.workspaces.acceptWorkspaceInvite({
   inviteId: "inv_1",
-  userId: "usr_pat",   // must BE the target and be verified
+  actingUserId: "usr_pat", // must BE the target and be verified
 });
 ```
 
 Identity-matched + verified-email. Idempotent when already a member/owner.
 
 <ParamField body="inviteId" type="string" required />
-<ParamField body="userId" type="string" required>The accepting user (must be the target and verified).</ParamField>
+<ParamField body="actingUserId" type="string" required>The accepting user (must be the target and verified).</ParamField>
 
 ### declineWorkspaceInvite
 
 ```typescript
-await sublay.workspaces.declineWorkspaceInvite({ inviteId: "inv_1", userId: "usr_pat" });
+await sublay.workspaces.declineWorkspaceInvite({ inviteId: "inv_1", actingUserId: "usr_pat" });
 ```
 
-Identity-matched + verified-email — the same gate as accept, so an unverified squatter on someone else's address cannot burn their invite. A service key does **not** bypass it: the `userId` you act as must itself be verified, or the call returns `403 workspace/email-not-verified`.
+Identity-matched + verified-email — the same gate as accept, so an unverified squatter on someone else's address cannot burn their invite. A service key does **not** bypass it: the `actingUserId` you act as must itself be verified, or the call returns `403 workspace/email-not-verified`.
 
 ### fetchMyWorkspaceInvites
 
 ```typescript
-const { data } = await sublay.workspaces.fetchMyWorkspaceInvites({ userId: "usr_pat" });
+const { data } = await sublay.workspaces.fetchMyWorkspaceInvites({ actingUserId: "usr_pat" });
 ```
 
 The user's **inbox** — their live pending invites addressed *to them* across every workspace (matched by `userId`). The per-workspace **outbox** counterpart is [`fetchWorkspaceInvites`](#fetchworkspaceinvites).
@@ -350,7 +366,7 @@ The **service-key authority read** — the crux of the server-side surface. Reso
 ```typescript
 const authority = await sublay.workspaces.fetchWorkspaceAuthority({
   workspaceId: "ws_abc",
-  userId: "usr_pat",     // the target whose standing to resolve
+  actingUserId: "usr_pat",   // the user to act as; their standing is resolved
 });
 
 // { reasons: [{ type, viaWorkspaceId? }], capabilities, permissions, rank }
@@ -360,7 +376,7 @@ if (authority.permissions.includes("deploy")) {
 ```
 
 <ParamField body="workspaceId" type="string" required />
-<ParamField body="userId" type="string" required>The target user whose resolved standing to read.</ParamField>
+<ParamField body="actingUserId" type="string" required>The acting user whose resolved standing to read.</ParamField>
 
 `reasons` entries carry `viaWorkspaceId` on `ancestor-owner` / `reach-holder`, naming the ancestor responsible — so when a user has authority you did not expect, you can tell exactly which node to go fix. `capabilities` is the fully-resolved set, and **`view` is implied by every other capability**: any user with standing carries it, while a user with no relation at all comes back with `reasons: []` and an empty capability set.
 

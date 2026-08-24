@@ -5,7 +5,7 @@ description: "Framework-agnostic client surface for workspaces — the full 21-e
 
 The `workspaces` module in `@sublay/js` is the **client-side** surface of the [Workspaces bundle](/data-models/workspace). It covers **all 21 endpoints** — workspace CRUD, membership management, the full invitation lifecycle, and the authority read — so a members-management UI needs no server-side code.
 
-The actor is always derived from the **bearer token**. **No actor `userId` is ever sent from the client**, and the wrappers strip one if a caller smuggles it in. Acting on behalf of a *different* user is the [node SDK](/node-sdk/workspaces) service-key capability, and it is the only difference in reach between the two SDKs for this bundle — **not** a restriction on which operations a client may perform.
+The actor is always derived from the **bearer token**. **No actor field is ever sent from the client** — the props types simply do not carry one, and a call that hand-writes `actingUserId` past the types to name a user other than the token's own is rejected by the server with a `403`. Acting on behalf of a *different* user is the [node SDK](/node-sdk/workspaces) service-key capability, and it is the only difference in reach between the two SDKs for this bundle — **not** a restriction on which operations a client may perform.
 
 <Note>
   **Requires the `workspaces` bundle.** See [Bundles](/bundles) to install it.
@@ -14,7 +14,7 @@ The actor is always derived from the **bearer token**. **No actor `userId` is ev
 Every call is authorized against the **signed-in user's own standing** on the workspace: owner-only, capability-gated, rank-bounded, visibility-gated, or self-service. Each function below states which. (`fetchWorkspace` is the one read that also works without a token, returning the workspace when visibility permits.) Read the concepts first: [capabilities vs permissions](/data-models/workspace-member#the-two-arrays-capabilities-vs-permissions), [rank](/data-models/workspace-member#rank-semantics), [reach & ownership](/data-models/workspace#reach-and-the-wall-door-rule), and the [identity-matched, no-token invite model](/data-models/workspace-invitation#acceptance-model).
 
 <Tip>
-  A `userId` that names a **target** is fully available on the client — the invitee `userId` on `createWorkspaceInvite`, and the `targetUserId` path param on the member functions. Only the *actor* `userId` is node-SDK-only.
+  A `userId` that names a **target** is fully available on the client — the invitee `userId` on `createWorkspaceInvite`, and the `targetUserId` path param on the member functions. Only the *actor* field, `actingUserId`, is node-SDK-only.
 </Tip>
 
 ---

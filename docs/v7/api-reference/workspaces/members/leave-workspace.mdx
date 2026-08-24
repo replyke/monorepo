@@ -18,8 +18,8 @@ Removes the caller's own membership on **this node only** (self-service, no capa
 
 ## Body Parameters
 
-<ParamField body="userId" type="string">
-  Service/master keys only — the user whose membership to remove (sent in the body so the act-as-user path works on `DELETE`).
+<ParamField body="actingUserId" type="string">
+  Service/master keys only — the user to act as, whose membership is removed (sent in the body so the act-as-user path works on `DELETE`).
 </ParamField>
 
 ## Response

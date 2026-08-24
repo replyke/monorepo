@@ -14,7 +14,7 @@ This read is inherently a **self** read (or a privileged-key read of a named use
   There is **no** convenience `?permission=` check and **no** `can()` middleware. Sublay never consumes your opaque `permissions`, so a permission check is a one-line `.includes()` on the returned record:
 
   ```ts
-  const authority = await sublay.workspaces.fetchWorkspaceAuthority({ workspaceId, userId });
+  const authority = await sublay.workspaces.fetchWorkspaceAuthority({ workspaceId, actingUserId });
   if (authority.permissions.includes("deploy")) { /* allow */ }
   ```
 </Note>
@@ -27,8 +27,8 @@ This read is inherently a **self** read (or a privileged-key read of a named use
 
 ## Query Parameters
 
-<ParamField query="userId" type="string">
-  Service/master keys only — the target user whose standing to resolve (the service-key variant). With a client token the actor is derived from the token and this is ignored.
+<ParamField query="actingUserId" type="string">
+  Service/master keys only — the user to act as, whose standing is resolved. With a client token the actor is derived from the token and this is ignored.
 </ParamField>
 
 ## Response

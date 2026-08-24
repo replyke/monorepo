@@ -6,7 +6,7 @@ description: "Create a root or child workspace"
 
 Creates a workspace. The authenticated caller becomes the `ownerId`. Omit `parentWorkspaceId` to create a **root** workspace; pass it to create a **child**.
 
-- **Root creation** requires the creator to have a **verified email** (else `403 workspace/email-not-verified`). This is **not** a key-bypass gate: a service or master key acting as a named `userId` still requires *that* user to be verified. On a purely external-auth project this makes root creation unavailable — see [the external-auth limitation](/data-models/workspace-invitation#v1-external-auth-limitation).
+- **Root creation** requires the creator to have a **verified email** (else `403 workspace/email-not-verified`). This is **not** a key-bypass gate: a service or master key acting as a named `actingUserId` still requires *that* user to be verified. On a purely external-auth project this makes root creation unavailable — see [the external-auth limitation](/data-models/workspace-invitation#v1-external-auth-limitation).
 - **Child creation** requires the `create-sub-workspace` capability on the parent (held directly or via reach). The creator becomes the **child's** owner. No separate verified-email gate (the capability-holder is already a verified member up-tree).
 
 <Note>
@@ -27,7 +27,7 @@ Creates a workspace. The authenticated caller becomes the `ownerId`. Omit `paren
   Optional UUID of a parent workspace. Absent → root workspace. Requires the `create-sub-workspace` capability on the parent.
 </ParamField>
 
-<ParamField body="userId" type="string">
+<ParamField body="actingUserId" type="string">
   Service/master keys only — the user to act as (the created workspace's owner). A plain user token may only act as itself and this field is ignored. The named user must satisfy the same gates a self-driven call would: for a **root** workspace they must have a **verified email**.
 </ParamField>
 
@@ -42,7 +42,7 @@ Returns the created [Workspace](/data-models/workspace) object.
     ```json
     { "error": "A verified email is required to create a root workspace.", "code": "workspace/email-not-verified" }
     ```
-    Also returned when a **service or master key** creates a root workspace on behalf of an unverified `userId` — keys do not bypass this gate. Ownership has exactly three doors (create, accept an invite, receive a transfer) and all three enforce it identically, which is what guarantees every workspace participant has a confirmed email.
+    Also returned when a **service or master key** creates a root workspace on behalf of an unverified `actingUserId` — keys do not bypass this gate. Ownership has exactly three doors (create, accept an invite, receive a transfer) and all three enforce it identically, which is what guarantees every workspace participant has a confirmed email.
   </Accordion>
   <Accordion title="Unauthorized — 403">
     ```json
