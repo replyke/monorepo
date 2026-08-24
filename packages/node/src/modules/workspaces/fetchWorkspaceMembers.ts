@@ -11,6 +11,15 @@ export interface FetchWorkspaceMembersProps {
   include?: string;
   // Numbers-only escape hatch — returns per-reason counts + distinct-user total.
   countOnly?: boolean;
+  // Act as a named user (service/master key only). Naming one means being BOUND
+  // by that user — this call resolves and is checked against THEIR authority,
+  // exactly as their own token would be. Omit it to act as the app itself
+  // (unbounded). A user token may only name itself.
+  //
+  // Here that means the roster's authority-field fence evaluates against them:
+  // a key acting as a member who does not operate people receives entries
+  // WITHOUT `rank`/`capabilities`/`permissions` for other users.
+  actingUserId?: string;
 }
 
 /**

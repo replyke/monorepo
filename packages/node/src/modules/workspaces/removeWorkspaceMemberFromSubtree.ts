@@ -6,7 +6,9 @@ export interface RemoveWorkspaceMemberFromSubtreeProps {
   // The user to offboard from this node and every descendant (path param).
   targetUserId: string;
   // The acting user (requires `remove-member`, rank-bounded per node). Required
-  // for the service key (act-as-user).
+  // for the service key (act-as-user) — there is no unbounded path on this
+  // route, and the sweep only reaches what THIS user reaches. Name the owner
+  // for a full-subtree sweep.
   actingUserId: string;
 }
 
@@ -16,8 +18,11 @@ export interface RemoveWorkspaceMemberFromSubtreeProps {
  * user OWNS any descendant workspace — transfer or delete those first.
  *
  * The response also carries `skippedCount` / `skipped` (memberships the sweep
- * could NOT reach). A service key reaches the whole subtree, so these are `0` /
- * `[]` here — but assert on them rather than reading `removedCount` alone.
+ * could NOT reach). These reflect the ACTING USER, not the key: `actingUserId`
+ * is required here, so the sweep is scoped to that user's per-node reach and a
+ * sealed descendant they cannot reach is left standing. Name the workspace
+ * OWNER for a guaranteed full sweep, and always assert on `skippedCount` rather
+ * than reading `removedCount` alone.
  */
 export async function removeWorkspaceMemberFromSubtree(
   client: SublayHttpClient,

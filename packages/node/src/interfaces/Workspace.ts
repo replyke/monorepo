@@ -123,6 +123,10 @@ export interface WorkspaceRosterReason {
   // caller operates people on the workspace (holds `invite`, `remove-member`,
   // `edit-member-access` or `edit-member-profile`) or is an owner/ancestor-owner.
   // The caller's OWN entry always carries them.
+  //
+  // "The caller" is the ACTING USER: a service/master key that passes
+  // `actingUserId` is fenced exactly as that user would be, not as a key. Only
+  // a key naming nobody sees every field on every entry.
   rank?: number;
   capabilities?: string[];
   permissions?: string[];
@@ -173,6 +177,9 @@ export interface WorkspaceMemberStanding {
   // caller operates people on the workspace (holds `invite`, `remove-member`,
   // `edit-member-access` or `edit-member-profile`), is an owner/ancestor-owner,
   // or is asking about THEMSELVES — a caller always sees their own access.
+  //
+  // "The caller" is the ACTING USER: a service/master key that passes
+  // `actingUserId` is fenced exactly as that user would be, not as a key.
   capabilities?: string[];
   permissions?: string[];
   rank?: number | null;
