@@ -14,6 +14,14 @@ Creates an invitation, addressed by **exactly one** of `email`, `userId`, or `us
 
 The invited `capabilities`/`permissions` are validated against the inviter's own resolved set on the workspace — no-escalation on both arrays. The `rank` floor applies **only when the inviter has a direct member row** on the workspace: then the invited rank must be strictly larger (less senior) than the inviter's own. A **reach-holder** inviter (holding `invite` via an open inherit chain, with no direct row) is not in the workspace's rank ladder and may invite at any rank.
 
+The inviter is the caller's own token subject, or — for a service/master key — the `actingUserId` it names. Both floors are skipped for an owner or ancestor owner, and for a key that names nobody.
+
+<Note>
+  **A tier cannot grow itself.** Because the rank floor is strict, a rank-5 manager with a direct member row can invite rank 6, 7, 8… but **never another rank 5**. Minting a peer needs someone above that tier, and no ranked member at all clears the floor for **rank 0**. If your product has a server-driven "add a manager" action, act as the owner for it.
+
+  As stated above, the floor only binds an inviter who holds a **direct member row** here — an owner or ancestor owner, a reach-holder with no direct row, and a key naming nobody all skip it and may invite at any rank, rank 0 included.
+</Note>
+
 **Duplicate handling:**
 - Inviting an **existing member** → `409` (change the grant via [Update Member](/api-reference/workspaces/members/update-member)).
 - A **live** invite (`pending` and not past `expiresAt`) for the same target → **idempotent refresh** (updates the grant, resets a 14-day expiry).
@@ -57,6 +65,10 @@ Invite-by-email to an address that already has an account resolves and stores th
   Optional initial cosmetic title.
 </ParamField>
 
+<ParamField body="actingUserId" type="string">
+  Service/master keys only — the **inviter** to act as. Enforced: the no-escalation and rank floors above run against *that* user's resolved standing, so a key naming a rank-5 manager may only invite at rank 6+ and only with capabilities that manager holds. Omit it to invite as the app itself (unbounded; `invitedBy` then falls back to the workspace owner). Distinct from `userId` above, which addresses the **invitee**. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
 ## Response
 
 Returns the created [WorkspaceInvitation](/data-models/workspace-invitation) object.
@@ -72,6 +84,11 @@ Returns the created [WorkspaceInvitation](/data-models/workspace-invitation) obj
   <Accordion title="No Escalation — 403">
     ```json
     { "error": "You may only grant capabilities/permissions you hold.", "code": "workspace/no-escalation" }
+    ```
+  </Accordion>
+  <Accordion title="Insufficient Rank — 403">
+    ```json
+    { "error": "You may only invite at a rank strictly below your own.", "code": "workspace/insufficient-rank" }
     ```
   </Accordion>
   <Accordion title="Missing Invite Accept URL — 409">

@@ -71,16 +71,84 @@ With a client token, every endpoint in the bundle resolves the actor from that t
 <Warning>
   **Seeing the roster and seeing people's *authority* are two different tiers.** Any relation may read the roster and one member's standing — who is there, their `reasons`, `title` and `metadata`. But the authority-bearing fields — **`capabilities`, `permissions`, `rank`** — are **omitted** (absent, not `null`) unless the caller holds one of the four people-operating capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) or is the `owner` / an `ancestor-owner`.
 
-  A caller **always** sees their own — their own roster row, their own standing, and the [authority read](/api-reference/workspaces/fetch-authority), which is inherently a self read and never fenced. So a plain member can always discover their own access; they just cannot enumerate everyone else's. Service/master keys are never fenced. Type the three fields as optional on client surfaces.
+  A caller **always** sees their own — their own roster row, their own standing, and the [authority read](/api-reference/workspaces/fetch-authority), which is inherently a self read and never fenced. So a plain member can always discover their own access; they just cannot enumerate everyone else's. A service/master key acting as **itself** is never fenced; one that **names** an `actingUserId` is fenced exactly as that user is — see [Acting on behalf of a user](#acting-on-behalf-of-a-user). Type the three fields as optional on client surfaces.
 </Warning>
 
 <Note>
-  **What actually needs a service key: acting on behalf of a *different* user.** Several endpoints accept an actor field, `actingUserId`, so a service/master key can perform an action *as* some named user. That parameter is **[node SDK](/node-sdk/workspaces) only** — `@sublay/core` and `@sublay/js` never expose it, because a client's actor is always the token's own user. (There is no client-side strip: a call that hand-writes `actingUserId` past the types is bound by the same rule as any user token — naming a user other than the token's own is rejected with a `403`.) This is the *only* difference in reach between the client SDKs and the node SDK for this bundle; it is **not** a restriction on which operations a client may perform.
-
-  **Four endpoints do not enforce it yet.** On [`delete-workspace`](/api-reference/workspaces/delete-workspace), [`update-workspace`](/api-reference/workspaces/update-workspace), [`update-inherit-flag`](/api-reference/workspaces/update-inherit-flag) and [`transfer-ownership`](/api-reference/workspaces/transfer-ownership), the guard grants a key full authority *before* it resolves the named user, so the value is discarded and the call runs with owner authority no matter who you name. Naming a non-owner will not stop a destructive call. Each of those pages carries the details; enforcement lands in a follow-up change.
+  **What actually needs a service key: acting on behalf of a *different* user.** Nearly every endpoint accepts an actor field, `actingUserId`, so a service/master key can perform an action *as* some named user. That parameter is **[node SDK](/node-sdk/workspaces) only** — `@sublay/core` and `@sublay/js` never expose it, because a client's actor is always the token's own user. (There is no client-side strip: a call that hand-writes `actingUserId` past the types is bound by the same rule as any user token — naming a user other than the token's own is rejected with a `403`.) This is the *only* difference in reach between the client SDKs and the node SDK for this bundle; it is **not** a restriction on which operations a client may perform. The rule that governs it is [below](#acting-on-behalf-of-a-user).
 
   Note that a **target**-identifying `userId` is a different thing and is fully available on the client: the invitee `userId` on [`useCreateWorkspaceInvite`](/hooks/workspaces/use-create-workspace-invite), and the `targetUserId` path param on the member hooks.
 </Note>
+
+## Acting on behalf of a user
+
+One rule governs every workspace endpoint, with no exceptions:
+
+<Info>
+  **If a request acts as Bob, then for all intents and purposes it *is* Bob.** Reads and writes alike. The credential decides only *whether* you may name someone other than yourself — never how much authority you get once you have.
+</Info>
+
+A service or master key therefore has exactly two modes:
+
+| Mode | Wire shape | Authority |
+|------|-----------|-----------|
+| **The app itself** | no `actingUserId` | Unbounded. Every capability, owner-only and rank check is skipped. |
+| **A named user** | `actingUserId: "<uuid>"` | Exactly that user's. Their capabilities, their rank, their visibility, their fencing — the same answer their own token would get. |
+
+A plain user token has only one mode: itself. Naming anyone else is a `403 workspace/unauthorized`.
+
+Naming an acting user is not a hint or an audit field. It **binds**: if the named user would be refused, so are you. That covers the capability gate, the owner-only gate, the rank guard, [no-escalation](/data-models/workspace-member#no-privilege-escalation), roster/standing [fencing](#what-a-client-app-can-do), and the visibility `404` on a workspace the named user has no relation to.
+
+### The unrestricted path names a user
+
+Backends that need to do something a normal member could not — reset a team, seed an org, repair a bad grant — should act **as the workspace owner**, not as nobody:
+
+```typescript
+// ✅ Unrestricted, and carried out under a named user id.
+await sublay.workspaces.updateWorkspaceMember({
+  workspaceId,
+  targetUserId,
+  rank: 0,
+  actingUserId: workspace.ownerId,
+});
+```
+
+The owner resolves the full capability vocabulary and apex rank, so nothing is out of reach, and the resulting webhooks carry that user id rather than nothing.
+
+<Warning>
+  **This is naming, not authentication.** A service key may name *any* UUID, and the server does not verify that it belongs to a live account — it only checks whether the id matches the workspace's `ownerId` (or a membership row). Two consequences:
+
+  - The user id on a webhook tells you what the caller **claimed**, with the same trust level as the key itself. It is not evidence a person acted.
+  - `ownerId` is a plain column, not a foreign key — deliberately, so deleting a user cannot cascade away every workspace they own. So acting as the id of a **deleted** owner still resolves full owner authority. If your product deletes accounts, transfer ownership as part of that teardown; do not rely on the id going stale to revoke anything.
+
+  If you need attribution you can actually trust, record it in your own system at the point you decide to make the call.
+</Warning>
+
+On roughly half the bundle the actor is **required**, so acting-as-a-user is not merely the good practice — it is the only path, and omitting `actingUserId` is a `400 workspace/missing-user-id` rather than a bypass. Those routes are the ones whose result *belongs to* a specific person: creating a workspace, listing your workspaces or your invites, reading your own authority, accepting or declining an invite, leaving, and the three member-management writes (`updateWorkspaceMember`, `removeWorkspaceMember`, `removeWorkspaceMemberFromSubtree`).
+
+The unbounded path survives on the rest — the guard-only routes (`updateWorkspace`, `updateWorkspaceInheritFlag`, `deleteWorkspace`, `transferWorkspaceOwnership`, the invite outbox reads and `revoke`/`resend`), the three reads, and `createWorkspaceInvite`.
+
+### Consequence: accepting an invite on someone's behalf
+
+[`acceptWorkspaceInvite`](/api-reference/workspaces/invitations/accept-invite) is bound like everything else, so a backend auto-join flow must satisfy the invitee's own gates:
+
+- the invitation must be **actually addressed to** the named user (by `userId`, or by an email that matches their account) — accepting Alice's invite while naming Bob is a `404 workspace/invite-not-found`;
+- the named user's **email must be verified** — otherwise `403 workspace/email-not-verified`.
+
+The same two gates apply to [`declineWorkspaceInvite`](/api-reference/workspaces/invitations/decline-invite). There is no key bypass for either: ownership and membership have exactly three doors (create, accept an invite, receive a transfer) and all three enforce verification identically.
+
+### Consequence: a tier cannot grow itself
+
+Rank is strict — you may only act on, and invite at, a rank **strictly below** your own (smaller number = more senior). So a rank-5 manager can mint rank 6, 7, 8… but **not another rank 5**. Minting a peer requires someone *above* that tier:
+
+| To create… | Act as… |
+|---|---|
+| a rank-6 member, as a rank-5 manager | that manager (`actingUserId: manager.id`) |
+| **another rank-5 manager** | someone ranked 0–4, or the owner |
+| **a rank-0 member** | the **owner** — no ranked member clears the floor |
+
+This is not new behavior, but it is easy to hit for the first time when a backend stops running as an implicit owner. If your "add a manager" button is server-driven, act as the owner for it. The floor applies only to an inviter with a **direct member row** on the workspace, so it is skipped for an owner or ancestor owner, for a cross-node [reach](/data-models/workspace#reach-and-the-wall-door-rule) holder with no direct row, and for a key naming nobody.
+
 
 ## Quick start
 

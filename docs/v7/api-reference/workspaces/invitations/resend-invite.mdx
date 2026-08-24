@@ -24,6 +24,12 @@ Refreshes a pending invitation — sets `expiresAt = now + 14 days` and resends 
   The invitation UUID.
 </ParamField>
 
+## Body Parameters
+
+<ParamField body="actingUserId" type="string">
+  Service/master keys only — the user to act as. Enforced: the `invite` capability (or ownership) is required *of the named user*. Omit it to act as the app itself (unbounded). See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
 ## Response
 
 Returns the refreshed [WorkspaceInvitation](/data-models/workspace-invitation) object.

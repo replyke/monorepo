@@ -12,6 +12,12 @@ Returns the workspace's **live** pending invites (`status = 'pending' AND expire
   The workspace UUID.
 </ParamField>
 
+## Query Parameters
+
+<ParamField query="actingUserId" type="string">
+  Service/master keys only — the user to act as. Enforced: the `invite` capability (or ownership) is required *of the named user*. Omit it to read as the app itself (unbounded). See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
 ## Response
 
 ```json

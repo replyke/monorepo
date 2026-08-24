@@ -24,6 +24,10 @@ Returns the roster as a **single unified array, one entry per distinct user**, e
   When `true`, returns per-reason counts + a distinct-user total instead of the array (never materializes the roster). Honors the same includes.
 </ParamField>
 
+<ParamField query="actingUserId" type="string">
+  Service/master keys only — the user to act as. Enforced: roster visibility **and** the authority-field fence below both evaluate against the named user, so a key acting as a plain member receives the fenced view. Omit it to read as the app itself (unfenced). See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
 ## Reasons
 
 Each entry's `reasons[]` contains `{ type, ...detail }` objects. A user present for several reasons is **one** entry carrying multiple reasons.
@@ -41,7 +45,7 @@ Each entry's `reasons[]` contains `{ type, ...detail }` objects. A user present 
 
   - holds one of the four people-operating capabilities on this workspace — `invite`, `remove-member`, `edit-member-access`, `edit-member-profile`; **or**
   - is the workspace's `owner` or an `ancestor-owner`; **or**
-  - is a service/master key.
+  - is a service/master key acting as **itself** (naming no `actingUserId`). A key that **does** name one is fenced exactly as that user is — see [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
 
   The caller's **own** entry always carries them in full, so anyone can discover their own access. Who is on the roster — `user`, the reason `type`s, `title`, `metadata`, `viaWorkspaceId`, `workspaceId` — stays visible to any relation. Treat the three fields as optional in your types.
 </Warning>

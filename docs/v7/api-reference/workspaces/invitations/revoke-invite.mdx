@@ -16,6 +16,12 @@ Marks a pending invitation `revoked`. Requires the `invite` capability (or owner
   The invitation UUID.
 </ParamField>
 
+## Body Parameters
+
+<ParamField body="actingUserId" type="string">
+  Service/master keys only — the user to act as. Enforced: the `invite` capability (or ownership) is required *of the named user*. Omit it to act as the app itself (unbounded). See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
 ## Response
 
 ```json

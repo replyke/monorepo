@@ -11,6 +11,10 @@ Accepts an invitation. Note the path is **not** `:id`-scoped — it is addressed
 - The caller must have a **verified email** — required to accept **any** invite (userId- or email-addressed). An unverified accept returns `workspace/email-not-verified` so your app can prompt verification.
 - Knowing the `inviteId` does **not** let a non-target accept.
 
+<Warning>
+  **A service/master key does not bypass either gate.** Naming an `actingUserId` means *being* that user, so a backend auto-join flow must satisfy the invitee's own conditions: the invitation must be **actually addressed to** the named user (otherwise `404 workspace/invite-not-found` — accepting Alice's invite while naming Bob does not work), and that user's **email must be verified** (otherwise `403 workspace/email-not-verified`). And there is **no** unbounded path here to fall back on: an acceptance has to land on somebody's membership row, so `actingUserId` is **required** for a key — omitting it is a `400 workspace/missing-user-id`, not a bypass. If your onboarding pre-accepts invites server-side, verify the address first. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</Warning>
+
 On accept, the stored grant is applied and the `WorkspaceMember` is created **transactionally**; the invite is marked `accepted`. Fires **both** `workspace.invite.accepted` **and** `workspace.member.added` (invitation-lifecycle vs roster-sync — intentionally two streams).
 
 **Idempotence:** if the caller is already a member (or owner), accept is a **no-op** — the invite is marked `accepted`, no duplicate row is created, the existing grant is **not** overwritten, and **no** `workspace.member.added` fires.
@@ -24,7 +28,7 @@ On accept, the stored grant is applied and the `WorkspaceMember` is created **tr
 ## Body Parameters
 
 <ParamField body="actingUserId" type="string">
-  Service/master keys only — the accepting user (must be the invite's target and verified).
+  Service/master keys only — the accepting user. Enforced: both gates above run against *that* user. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
 </ParamField>
 
 ## Response

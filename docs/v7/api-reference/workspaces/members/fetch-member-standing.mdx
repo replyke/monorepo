@@ -16,7 +16,7 @@ Requires **roster visibility** — any relation to the workspace (owner, ancesto
   - holds one of the four people-operating capabilities on this workspace — `invite`, `remove-member`, `edit-member-access`, `edit-member-profile`; **or**
   - is the workspace's `owner` or an `ancestor-owner`; **or**
   - is asking about **themselves** (a caller always sees their own access); **or**
-  - is a service/master key.
+  - is a service/master key acting as **itself** (naming no `actingUserId`). A key that **does** name one is fenced exactly as that user is — see [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
 
   Everything else — `user`, `reasons`, `title`, `metadata` — is visible to any relation. Treat these three fields as optional in your types.
 </Warning>
@@ -29,6 +29,12 @@ Requires **roster visibility** — any relation to the workspace (owner, ancesto
 
 <ParamField path="userId" type="string" required>
   The target user whose standing to read.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="actingUserId" type="string">
+  Service/master keys only — the user to act as. Enforced: roster visibility **and** the authority-field fence above both evaluate against the named user, so a key acting as a plain member receives the fenced standing (and the full one when asking about that user themselves). Omit it to read as the app itself (unfenced). See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
 </ParamField>
 
 ## Response

@@ -25,12 +25,8 @@ Deletion **cascades** the entire subtree in one transaction, bottom-up: invitati
 ## Body Parameters
 
 <ParamField body="actingUserId" type="string">
-  Service/master keys only — the user to act as. **Not enforced on this endpoint yet** (see the warning below). Sent in the request body so the act-as-user path works on `DELETE`.
+  Service/master keys only — the user to act as. Sent in the request body so the act-as-user path works on `DELETE`. **Enforced:** the owner-only guard runs against the named user, so a key naming a non-owner is refused exactly as that user would be. Omit it to act as the app itself (unbounded) — but on a call that cascade-deletes the whole subtree, prefer naming the owner so the request carries a user id. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
 </ParamField>
-
-<Warning>
-  **`actingUserId` is not enforced on this endpoint yet.** The guard on this route resolves authority *after* the master/service-key bypass, so for a key the named user is never looked up. The call runs with **full owner authority regardless of who you name** — including a user with no standing on this workspace at all. Naming a non-owner will **not** stop the call, and this endpoint **cascade-deletes the entire subtree**. The value is **discarded entirely** — it is not read, not stored, and not carried on the `workspace.deleted` webhook, so it is not an audit trail either. Gate destructive calls in your own backend. Enforcement — binding a key to the named user's real authority — lands in a follow-up change.
-</Warning>
 
 ## Response
 

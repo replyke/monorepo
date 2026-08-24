@@ -18,6 +18,10 @@ Returns a single [Workspace](/data-models/workspace), filtered by the caller's r
   Comma-separated include flags. `memberCount` adds the workspace's **direct** member count as `memberCount` on the object.
 </ParamField>
 
+<ParamField query="actingUserId" type="string">
+  Service/master keys only — the user to act as. Enforced: visibility resolves against the named user, so a key acting as someone with no relation to this workspace gets the same `404` that user would. Omit it to read as the app itself (unbounded). See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
 ## Response
 
 Returns the [Workspace](/data-models/workspace) object.
