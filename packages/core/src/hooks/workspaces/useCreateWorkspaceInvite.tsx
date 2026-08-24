@@ -25,6 +25,11 @@ export interface CreateWorkspaceInviteProps {
    * 400. Sending NEITHER defaults to `relativeRank: 1`, one rung below the
    * inviter, which is well defined for every actor and can never fail the rank
    * floor.
+   *
+   * ⚠️ That default is for a NEW invitation. Re-inviting a target who already
+   * has a live pending invite updates it in place, and there omitting both rank
+   * fields PRESERVES the stored rank instead of re-defaulting it. See the
+   * function doc below.
    */
   rank?: number;
   /**
@@ -34,7 +39,7 @@ export interface CreateWorkspaceInviteProps {
    *
    * Must be `>= 1` on a write. `0` would mean "a peer", which the assign rule
    * forbids (you cannot clone your own authority), and a negative offset would
-   * mint someone senior to you; both are a 400.
+   * mint someone senior to you; both are a 400. Both rank fields are also capped at `2147483647` (int4), and the RESOLVED sum is bounded too — an in-range anchor plus an in-range offset can still overflow, which is a 400 rather than a 500.
    *
    * The anchor is the inviter's OWN rank if they hold a member row on this
    * workspace, and apex (one step above rank 0) if they do not — so an owner's
@@ -56,6 +61,17 @@ export interface CreateWorkspaceInviteProps {
  * `relativeRank` (an offset from the inviter) — never both. Omitting both
  * defaults to `relativeRank: 1`, one rung below the inviter, which is the
  * documented happy path and can never fail the rank floor.
+ *
+ * ⚠️ This route doubles as an UPSERT, and the default above applies only to a
+ * NEW invitation. Re-inviting a target who already holds a live pending invite
+ * refreshes THAT invitation in place — same id, expiry reset — and on that
+ * branch an omitted grant field is PRESERVED, not re-defaulted or blanked:
+ * `rank`, `capabilities`, `permissions` and `title` all keep their stored
+ * values. A "Resend invitation" button that posts only the address therefore
+ * cannot silently re-rank the invitee to one below whoever clicked it. An
+ * explicit value still overwrites, and an explicit `relativeRank` re-resolves
+ * against the CURRENT caller. Full semantics:
+ * https://docs.sublay.io/api-reference/workspaces/invitations/create-invite
  */
 function useCreateWorkspaceInvite(): (
   props: CreateWorkspaceInviteProps

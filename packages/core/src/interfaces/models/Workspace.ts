@@ -118,9 +118,24 @@ export interface WorkspaceRosterReason {
   //
   // The authority-bearing fields (`rank`, `relativeRank`, `capabilities`,
   // `permissions`) are additionally OMITTED (absent, not null) on OTHER users'
-  // entries unless the caller operates people on the workspace (holds `invite`,
+  // entries unless the caller operates people there (holds `invite`,
   // `remove-member`, `edit-member-access` or `edit-member-profile`) or is an
   // owner/ancestor-owner. The caller's OWN entry always carries them.
+  //
+  // ⚠️ "There" means PER NODE, not per request. A `descendant-member` reason
+  // describes another workspace's ladder, and is judged by the caller's standing
+  // on THAT node — not on the one they asked about. So `include=descendants` can
+  // return a mix: full fields on nodes where you operate people, stripped fields
+  // on nodes where you do not, in the same response. Seeing a descendant's
+  // roster at all (sealing) and seeing its members' authority (this fence) are
+  // separate tiers, and clearing the first does not clear the second.
+  //
+  // This is NOT "the parent buys you nothing" — the per-node check runs against
+  // RESOLVED standing, which folds in ownership and reach. A people-operating
+  // capability flows down an unbroken open inherit chain and clears the fence on
+  // every node it reaches; an owner/ancestor-owner clears it everywhere beneath
+  // them. Only a SEALED node (`inheritsFromParent: false`) blocks the descent,
+  // and there your standing on the parent is genuinely worth nothing.
   rank?: number;
   /**
    * The SAME ladder position, expressed as an offset from the CALLER: `1` = one
@@ -136,6 +151,13 @@ export interface WorkspaceRosterReason {
    * carry `rank` but NEVER `relativeRank` — rank is per-workspace, so an offset
    * measured against your standing on THIS node would be arithmetic across two
    * different ladders. Use their absolute `rank` there.
+   *
+   * Note the deliberate asymmetry with the fence described above: the FENCE is
+   * per node (a descendant row may or may not carry `rank` depending on your
+   * standing there), but PRESENCE of `relativeRank` is not — it is absent on
+   * every `descendant-member` row, unconditionally, however much authority you
+   * hold. A field that appears and disappears by who is asking is worse to
+   * consume than one that is uniformly absent.
    */
   relativeRank?: number;
   capabilities?: WorkspaceCapability[];

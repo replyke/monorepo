@@ -18,7 +18,7 @@ export interface UpdateWorkspaceMemberProps {
   /**
    * `rank`'s relative twin: an offset from the ACTOR (`1` = one rung below me),
    * resolved to an absolute rank at write time and stored absolute. Must be
-   * `>= 1`; mutually exclusive with `rank` (sending both is a 400).
+   * `>= 1`; mutually exclusive with `rank` (sending both is a 400). Both rank fields are also capped at `2147483647` (int4), and the RESOLVED sum is bounded too — an in-range anchor plus an in-range offset can still overflow, which is a 400 rather than a 500.
    *
    * The anchor is the actor's own rank if they hold a member row on this
    * workspace, apex otherwise. A SNAPSHOT — frozen at write time, it does not
