@@ -67,7 +67,9 @@ export interface Workspace {
   inheritsFromParent: boolean;
   createdAt: string;
   updatedAt: string;
-  // Present only when `include=memberCount` is requested on a single read.
+  // The workspace's DIRECT member count. Present only when
+  // `include=memberCount` is requested, on either the single-workspace read or
+  // the list; absent otherwise (not `null`, not `0`).
   memberCount?: number;
 }
 

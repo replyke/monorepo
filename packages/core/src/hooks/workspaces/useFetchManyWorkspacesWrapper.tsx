@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Workspace } from "../../interfaces/models/Workspace";
+import {
+  Workspace,
+  WorkspaceIncludeParam,
+} from "../../interfaces/models/Workspace";
 import useFetchManyWorkspaces from "./useFetchManyWorkspaces";
 import { handleError } from "../../utils/handleError";
 
 export interface UseFetchManyWorkspacesWrapperProps {
   limit?: number;
-  include?: string;
+  /**
+   * Include flags, as an array or a comma-separated string. `memberCount` adds
+   * each accumulated workspace's DIRECT member count.
+   */
+  include?: WorkspaceIncludeParam;
 }
 
 export interface UseFetchManyWorkspacesWrapperValues {
@@ -25,6 +32,14 @@ function useFetchManyWorkspacesWrapper(
   props: UseFetchManyWorkspacesWrapperProps = {}
 ): UseFetchManyWorkspacesWrapperValues {
   const { limit = 10, include } = props;
+
+  // Normalized ONCE to the string the wire actually carries, and it is the
+  // string — never `include` itself — that goes into the dep arrays below and
+  // into the fetcher. `include` may be an array, and an inline `["memberCount"]`
+  // is a fresh reference every render: raw in a dep array it re-fires the reset
+  // effect, which re-renders, which re-fires it, for an unbounded request loop.
+  // Same fix as `reputationKey` in `useFetchManyEntitiesWrapper`.
+  const includeKey = Array.isArray(include) ? include.join(",") : include;
 
   const fetchManyWorkspaces = useFetchManyWorkspaces();
 
@@ -47,7 +62,11 @@ function useFetchManyWorkspacesWrapper(
 
       setPage(1);
 
-      const response = await fetchManyWorkspaces({ page: 1, limit, include });
+      const response = await fetchManyWorkspaces({
+        page: 1,
+        limit,
+        include: includeKey,
+      });
 
       if (response) {
         const { data: newWorkspaces, pagination } = response;
@@ -61,7 +80,7 @@ function useFetchManyWorkspacesWrapper(
       loading.current = false;
       setLoadingState(false);
     }
-  }, [fetchManyWorkspaces, limit, include]);
+  }, [fetchManyWorkspaces, limit, includeKey]);
 
   const loadMore = () => {
     if (loading.current || !hasMore.current) return;
@@ -77,7 +96,11 @@ function useFetchManyWorkspacesWrapper(
       loading.current = true;
       setLoadingState(true);
       try {
-        const response = await fetchManyWorkspaces({ page, limit, include });
+        const response = await fetchManyWorkspaces({
+          page,
+          limit,
+          include: includeKey,
+        });
 
         if (response) {
           const { data: newWorkspaces, pagination } = response;
@@ -96,7 +119,7 @@ function useFetchManyWorkspacesWrapper(
     if (page > 1 && hasMore.current && !loading.current) {
       loadMoreWorkspaces();
     }
-  }, [page, fetchManyWorkspaces, limit, include]);
+  }, [page, fetchManyWorkspaces, limit, includeKey]);
 
   return {
     workspaces,
