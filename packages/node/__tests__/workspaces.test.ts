@@ -52,8 +52,10 @@ describe("node-sdk workspaces (lifecycle + ownership) — request shaping", () =
   it("fetchWorkspace hits /workspaces/:id with no params when no include", async () => {
     const { client, projectInstance } = makeClient();
     await fetchWorkspace(client, { workspaceId: "w1" });
+    // Everything but `workspaceId` is a query param, so an id-only call sends an
+    // EMPTY params object — axios appends no query string for it.
     expect(projectInstance.get).toHaveBeenCalledWith("/workspaces/w1", {
-      params: undefined,
+      params: {},
     });
   });
 
@@ -152,7 +154,10 @@ describe("node-sdk workspaces (membership) — request shaping", () => {
       targetUserId: "target1",
     });
     expect(projectInstance.get).toHaveBeenCalledWith(
-      "/workspaces/w1/members/target1"
+      "/workspaces/w1/members/target1",
+      // No `actingUserId` given, so the params object is empty and no query
+      // string is appended.
+      { params: {} }
     );
   });
 
@@ -170,6 +175,24 @@ describe("node-sdk workspaces (membership) — request shaping", () => {
       "/workspaces/w1/members/target1",
       { actingUserId: "actor1", capabilities: ["invite"], rank: 3, title: "Lead" }
     );
+  });
+
+  it("updateWorkspaceMember forwards relativeRank as the alternative rank coordinate", async () => {
+    const { client, projectInstance } = makeClient();
+    await updateWorkspaceMember(client, {
+      workspaceId: "w1",
+      targetUserId: "target1",
+      actingUserId: "actor1",
+      relativeRank: 1,
+    });
+    expect(projectInstance.patch).toHaveBeenCalledWith(
+      "/workspaces/w1/members/target1",
+      { actingUserId: "actor1", relativeRank: 1 }
+    );
+    const [, body] = projectInstance.patch.mock.calls[0];
+    // The two coordinates are mutually exclusive on the wire. The offset is
+    // anchored on `actingUserId`'s rank, not the key's.
+    expect(body).not.toHaveProperty("rank");
   });
 
   it("removeWorkspaceMember puts target in the path and sends actor actingUserId in the body (data)", async () => {
@@ -237,10 +260,35 @@ describe("node-sdk workspaces (invitations) — request shaping", () => {
     );
   });
 
+  it("createWorkspaceInvite forwards relativeRank, and sends neither rank field when both are omitted", async () => {
+    const { client, projectInstance } = makeClient();
+    await createWorkspaceInvite(client, {
+      workspaceId: "w1",
+      email: "a@b.co",
+      actingUserId: "actor1",
+      relativeRank: 1,
+    });
+    expect(projectInstance.post).toHaveBeenCalledWith("/workspaces/w1/invites", {
+      email: "a@b.co",
+      actingUserId: "actor1",
+      relativeRank: 1,
+    });
+
+    // Neither coordinate: the SDK sends nothing and the server applies its
+    // one-below-the-inviter default. It must NOT invent a rank client-side.
+    await createWorkspaceInvite(client, { workspaceId: "w1", email: "c@d.co" });
+    const [, body] = projectInstance.post.mock.calls[1];
+    expect(body).toEqual({ email: "c@d.co" });
+    expect(body).not.toHaveProperty("rank");
+    expect(body).not.toHaveProperty("relativeRank");
+  });
+
   it("fetchWorkspaceInvites hits /workspaces/:id/invites", async () => {
     const { client, projectInstance } = makeClient();
     await fetchWorkspaceInvites(client, { workspaceId: "w1" });
-    expect(projectInstance.get).toHaveBeenCalledWith("/workspaces/w1/invites");
+    expect(projectInstance.get).toHaveBeenCalledWith("/workspaces/w1/invites", {
+      params: {},
+    });
   });
 
   it("revokeWorkspaceInvite posts to the revoke route with an empty body", async () => {

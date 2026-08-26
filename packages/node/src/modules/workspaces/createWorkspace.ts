@@ -15,6 +15,10 @@ export async function createWorkspace(
   client: SublayHttpClient,
   data: CreateWorkspaceProps
 ): Promise<Workspace> {
+  // `data` is sent to the server whole. The workspaces endpoints refuse any
+  // undeclared top-level field with a 400, so pass only the fields declared on
+  // `CreateWorkspaceProps` — spreading a wider object (`{ ...template }`) fails
+  // the request rather than having the extras ignored.
   const response = await client.projectInstance.post<Workspace>(
     "/workspaces",
     data

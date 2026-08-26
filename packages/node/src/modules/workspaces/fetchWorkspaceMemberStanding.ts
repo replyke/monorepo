@@ -13,10 +13,19 @@ export interface FetchWorkspaceMemberStandingProps {
   // Here that means the same authority-field fence as the roster read: a key
   // acting as a member who does not operate people (and is not asking about
   // themselves) receives the standing WITHOUT
-  // `rank`/`capabilities`/`permissions`.
+  // `rank`/`relativeRank`/`capabilities`/`permissions`.
   actingUserId?: string;
 }
 
+/**
+ * Read one user's resolved standing on a workspace (`reasons`, `capabilities`,
+ * `permissions`, `rank`, `relativeRank`, `title`, `metadata`).
+ *
+ * `relativeRank` is the target's `rank` as an offset from the CALLER — the
+ * acting user when one is named, negative meaning senior to them — and is
+ * fenced with `rank`: both are absent, not null, for a caller who may not see
+ * the target's authority. `null` when `rank` is `null`.
+ */
 export async function fetchWorkspaceMemberStanding(
   client: SublayHttpClient,
   data: FetchWorkspaceMemberStandingProps

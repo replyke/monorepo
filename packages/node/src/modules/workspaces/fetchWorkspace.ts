@@ -3,7 +3,9 @@ import { Workspace } from "../../interfaces/Workspace";
 
 export interface FetchWorkspaceProps {
   workspaceId: string;
-  // Comma-separated include flags; `memberCount` adds the direct member count.
+  // Comma-separated include flags. `memberCount` adds the workspace's DIRECT
+  // member count to the response; omit it and the field is absent. The same
+  // flag works on `fetchManyWorkspaces`. An unrecognized flag is ignored.
   include?: string;
   // Act as a named user (service/master key only). Naming one means being BOUND
   // by that user — this call resolves and is checked against THEIR authority,

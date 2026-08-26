@@ -18,7 +18,7 @@ export interface FetchWorkspaceMembersProps {
   //
   // Here that means the roster's authority-field fence evaluates against them:
   // a key acting as a member who does not operate people receives entries
-  // WITHOUT `rank`/`capabilities`/`permissions` for other users.
+  // WITHOUT `rank`/`relativeRank`/`capabilities`/`permissions` for other users.
   actingUserId?: string;
 }
 
@@ -26,6 +26,13 @@ export interface FetchWorkspaceMembersProps {
  * Unified roster read — one entry per distinct user, each with a `reasons`
  * array. Always returned in full (never paginated). With `countOnly=true` the
  * shape is `WorkspaceRosterCountsResponse` instead.
+ *
+ * Same-node `member` reasons carry both rank coordinates: absolute `rank` and
+ * `relativeRank`, the offset from the CALLER (the acting user when one is
+ * named): `1` = one rung below them, `-3` = three above. Both are fenced
+ * together and both are absent for a caller who does not operate people here.
+ * `descendant-member` reasons carry `rank` only — those ranks belong to another
+ * node's ladder.
  */
 export async function fetchWorkspaceMembers(
   client: SublayHttpClient,

@@ -70,8 +70,9 @@ export interface Workspace {
   inheritsFromParent: boolean;
   createdAt: string;
   updatedAt: string;
-  // Present only when `include=memberCount` is requested on a single-workspace
-  // read — the workspace's DIRECT member count.
+  // The workspace's DIRECT member count — descendants and reach-holders are not
+  // counted. Present only when `include=memberCount` is requested, on either the
+  // single-workspace read or the list; absent otherwise (not `null`, not `0`).
   memberCount?: number;
 }
 
@@ -113,21 +114,60 @@ export interface WorkspaceRosterReason {
     | "ancestor-owner"
     | "reach-holder"
     | "descendant-member";
-  // `member` carries `rank`/`capabilities`/`permissions`/`title`/`metadata`;
-  // `ancestor-owner`/`reach-holder` carry `viaWorkspaceId` (reach-holder also
-  // `capabilities`); `descendant-member` carries `workspaceId` + `rank`/
-  // `capabilities`. `owner` carries none.
+  // `member` carries `rank`/`relativeRank`/`capabilities`/`permissions`/
+  // `title`/`metadata`; `ancestor-owner`/`reach-holder` carry `viaWorkspaceId`
+  // (reach-holder also `capabilities`); `descendant-member` carries
+  // `workspaceId` + `rank`/`capabilities` but never `relativeRank`. `owner`
+  // carries none.
   //
-  // The authority-bearing fields (`rank`, `capabilities`, `permissions`) are
-  // additionally OMITTED (absent, not null) on OTHER users' entries unless the
-  // caller operates people on the workspace (holds `invite`, `remove-member`,
-  // `edit-member-access` or `edit-member-profile`) or is an owner/ancestor-owner.
-  // The caller's OWN entry always carries them.
+  // The authority-bearing fields (`rank`, `relativeRank`, `capabilities`,
+  // `permissions`) are additionally OMITTED (absent, not null) on OTHER users'
+  // entries unless the caller operates people there (holds `invite`,
+  // `remove-member`, `edit-member-access` or `edit-member-profile`) or is an
+  // owner/ancestor-owner. The caller's OWN entry always carries them.
+  //
+  // ⚠️ "There" means PER NODE, not per request. A `descendant-member` reason
+  // describes another workspace's ladder, and is judged by the caller's standing
+  // on THAT node — not on the one they asked about. So `include=descendants` can
+  // return a mix: full fields on nodes where you operate people, stripped fields
+  // on nodes where you do not, in the same response. Seeing a descendant's
+  // roster at all (sealing) and seeing its members' authority (this fence) are
+  // separate tiers, and clearing the first does not clear the second.
+  //
+  // This is NOT "the parent buys you nothing" — the per-node check runs against
+  // RESOLVED standing, which folds in ownership and reach. A people-operating
+  // capability flows down an unbroken open inherit chain and clears the fence on
+  // every node it reaches; an owner/ancestor-owner clears it everywhere beneath
+  // them. Only a SEALED node (`inheritsFromParent: false`) blocks the descent,
+  // and there your standing on the parent is genuinely worth nothing.
   //
   // "The caller" is the ACTING USER: a service/master key that passes
   // `actingUserId` is fenced exactly as that user would be, not as a key. Only
   // a key naming nobody sees every field on every entry.
   rank?: number;
+  /**
+   * The SAME ladder position, expressed as an offset from the CALLER: `1` = one
+   * rung below you, `0` = your peer, `-3` = three rungs above you. The caller's
+   * own anchor is their member row on this workspace if they hold one, and apex
+   * (one step above rank 0) if they do not — so a rank-0 member reads back as
+   * `relativeRank: 1` for an owner.
+   *
+   * Authority-bearing and fenced WITH `rank`, never beside it: it is `rank`
+   * minus a number the caller already knows, so leaking it leaks `rank` exactly.
+   *
+   * Present on same-node `member` reasons only. `descendant-member` entries
+   * carry `rank` but NEVER `relativeRank` — rank is per-workspace, so an offset
+   * measured against your standing on THIS node would be arithmetic across two
+   * different ladders. Use their absolute `rank` there.
+   *
+   * Note the deliberate asymmetry with the fence described above: the FENCE is
+   * per node (a descendant row may or may not carry `rank` depending on your
+   * standing there), but PRESENCE of `relativeRank` is not — it is absent on
+   * every `descendant-member` row, unconditionally, however much authority you
+   * hold. A field that appears and disappears by who is asking is worse to
+   * consume than one that is uniformly absent.
+   */
+  relativeRank?: number;
   capabilities?: string[];
   permissions?: string[];
   title?: string | null;
@@ -183,6 +223,13 @@ export interface WorkspaceMemberStanding {
   capabilities?: string[];
   permissions?: string[];
   rank?: number | null;
+  /**
+   * `rank` expressed as an offset from the CALLER (negative = senior to you).
+   * `null` exactly when `rank` is `null` — a target with no direct member row
+   * here sits outside the ladder and has no position to measure. Fenced with
+   * `rank`: absent (not null) for a caller who may not see it.
+   */
+  relativeRank?: number | null;
   title: string | null;
   metadata: Record<string, any>;
 }
@@ -193,6 +240,13 @@ export interface WorkspaceAuthority {
   capabilities: string[];
   permissions: string[];
   rank: number | null;
+  /*
+   * No `relativeRank` here, deliberately. It is an offset from the caller, and
+   * this read's subject IS the caller, so it could only ever be `0` — a
+   * constant dressed as a coordinate. `rank` is the field to read. The field is
+   * meaningful on the roster and member-standing reads, where the subject is
+   * somebody else.
+   */
 }
 
 /**
