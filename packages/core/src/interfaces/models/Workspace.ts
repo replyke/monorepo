@@ -230,13 +230,11 @@ export interface WorkspaceAuthority {
   capabilities: WorkspaceCapability[];
   permissions: string[];
   rank: number | null;
-  /**
-   * `rank` as an offset from the caller — structurally degenerate on this
-   * endpoint, because the caller IS the subject: `0` when you hold a member row
-   * on this workspace, `null` when you do not. Returned anyway so all three
-   * workspace reads carry both coordinates and a client never has to
-   * special-case which one it is reading. Never fenced here — this read is
-   * inherently about yourself, so there is no one else's `rank` to reconstruct.
+  /*
+   * No `relativeRank` here, deliberately. It is an offset from the caller, and
+   * this read's subject IS the caller, so it could only ever be `0` — a
+   * constant dressed as a coordinate. `rank` is the field to read. The field is
+   * meaningful on the roster and member-standing reads, where the subject is
+   * somebody else.
    */
-  relativeRank: number | null;
 }
