@@ -27,6 +27,17 @@ export interface FetchManyChatMessagesProps extends SpaceReputationContextParams
   sort?: "asc" | "desc";
   /** When `true`, the server populates the `files` field on each message. */
   includeFiles?: boolean;
+  /**
+   * When `true`, the server populates the `grants` reputation-grant summary on
+   * each message. Opt-in for the same reason `includeFiles` is: it costs an
+   * extra aggregate query per page, so conversations that don't render grants
+   * must not pay for it.
+   *
+   * On a project without the `reputation` bundle the server still returns the
+   * summary — zero-filled, never omitted — so the field's shape doesn't depend
+   * on bundle state.
+   */
+  includeGrants?: boolean;
   filters?: MessageFilters;
 }
 
@@ -66,6 +77,7 @@ function useFetchManyChatMessages(): (
         limit = 50,
         sort,
         includeFiles,
+        includeGrants,
         filters,
         spaceReputation,
         spaceReputationId,
@@ -87,7 +99,13 @@ function useFetchManyChatMessages(): (
       if (parentId) params.parentId = parentId;
       if (before) params.before = before;
       if (after) params.after = after;
-      if (includeFiles) params.include = "files";
+      // Both tokens ride the ONE `include` param the endpoint accepts, so they
+      // must compose rather than overwrite each other. The server splits on
+      // commas and trims, so `files,grants` reaches both parsers intact.
+      const includeTokens: string[] = [];
+      if (includeFiles) includeTokens.push("files");
+      if (includeGrants) includeTokens.push("grants");
+      if (includeTokens.length > 0) params.include = includeTokens.join(",");
       if (filters) params.filters = filters;
 
       const response = await axios.get<FetchManyChatMessagesResponse>(

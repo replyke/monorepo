@@ -1,6 +1,7 @@
 import { GifData } from "./Comment";
 import { File } from "./File";
 import { Mention } from "./Mention";
+import { GrantSummary } from "./ReputationGrant";
 import { User } from "./User";
 
 export interface ChatMessage {
@@ -26,6 +27,16 @@ export interface ChatMessage {
   reactionCounts: Record<string, number>;
   // emojis the requesting user has reacted with on this message (computed server-side)
   userReactions: string[];
+  // Reputation-grant summary. Opt-in — present exactly when the read asked for
+  // it (`includeGrants: true` on the message hooks), and kept live afterwards
+  // by the `message:grant` socket event.
+  //
+  // Optional ONLY along that opt-in axis: once requested, the server always
+  // returns the object — zero-filled (`{ total: 0, count: 0, viewerTotal: 0 }`)
+  // rather than omitted — on projects with no grants and on projects without
+  // the reputation bundle alike. So `grants` being undefined means "nobody
+  // asked", never "this project has no grants".
+  grants?: GrantSummary;
   editedAt: string | null;
   userDeletedAt: string | null;
   moderationStatus: "approved" | "removed" | null;

@@ -24,6 +24,7 @@ import {
   setSocketConnected,
   setTypingUsers,
   updateReactions,
+  updateGrants,
   setConversation,
   setUnreadSummary,
   selectConversationList,
@@ -425,6 +426,29 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           userId: payload.userId,
           emoji: payload.emoji,
           delta: payload.delta,
+          currentUserId: currentUserIdRef.current ?? "",
+        })
+      );
+    });
+
+    // ── message:grant ───────────────────────────────────────────────────────
+    socket.on("message:grant", (payload) => {
+      // Same conversationId fallback as message:reaction: an undefined
+      // conversationId misses the message bucket entirely, so recover it from
+      // the loaded message rather than dropping the event.
+      const conversationId =
+        payload.conversationId ??
+        findMessage(payload.messageId)?.conversationId;
+      if (!conversationId) return;
+
+      dispatch(
+        updateGrants({
+          conversationId,
+          messageId: payload.messageId,
+          grant: payload.grant,
+          // The server sends `{ total, count }` only — `viewerTotal` is
+          // per-viewer and is derived in the reducer.
+          summary: payload.summary,
           currentUserId: currentUserIdRef.current ?? "",
         })
       );

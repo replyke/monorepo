@@ -345,6 +345,18 @@ export {
   type FetchEventRsvpsProps,
 } from "./hooks/events";
 
+// -- reputation
+export {
+  useCreateReputationGrant,
+  useFetchManyReputationGrants,
+  useFetchManyReputationGrantsWrapper,
+  type CreateReputationGrantProps,
+  type FetchManyReputationGrantsProps,
+  type FetchManyReputationGrantsResponse,
+  type UseFetchManyReputationGrantsWrapperProps,
+  type UseFetchManyReputationGrantsWrapperValues,
+} from "./hooks/reputation";
+
 // -- entity lists
 export {
   useEntityList,
@@ -758,6 +770,12 @@ export type {
   RsvpCounts,
 } from "./interfaces/models/Event";
 export type { Collection } from "./interfaces/models/Collection";
+export type {
+  ReputationGrant,
+  ReputationGrantSourceType,
+  ReputationGrantTargetType,
+  GrantSummary,
+} from "./interfaces/models/ReputationGrant";
 export type {
   TableRow,
   TableQuery,

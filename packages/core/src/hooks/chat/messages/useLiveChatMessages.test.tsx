@@ -39,6 +39,53 @@ describe("useLiveChatMessages", () => {
     expect(call.config?.params).toMatchObject({ sort: "desc", limit: 50 });
   });
 
+  it("forwards includeGrants to the request, composing it with includeFiles", async () => {
+    // Without this the canonical conversation surface can never load existing
+    // grants — `message:grant` only covers grants issued while it's open.
+    const { result, axiosPrivate } = renderHookWithAxios(
+      () =>
+        useLiveChatMessages({
+          conversationId: "conversation-1",
+          includeFiles: true,
+          includeGrants: true,
+        }),
+      {
+        beforeRender: ({ axiosPrivate }) =>
+          axiosPrivate.mockResponse("get", {
+            messages: [],
+            hasMore: false,
+            oldestCreatedAt: null,
+            newestCreatedAt: null,
+          }),
+      },
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const [call] = axiosPrivate.calls("get");
+    expect(call.config?.params.include).toBe("files,grants");
+  });
+
+  it("omits include when includeGrants is not requested", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(
+      () => useLiveChatMessages({ conversationId: "conversation-1" }),
+      {
+        beforeRender: ({ axiosPrivate }) =>
+          axiosPrivate.mockResponse("get", {
+            messages: [],
+            hasMore: false,
+            oldestCreatedAt: null,
+            newestCreatedAt: null,
+          }),
+      },
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const [call] = axiosPrivate.calls("get");
+    expect(call.config?.params).not.toHaveProperty("include");
+  });
+
   it("fetches thread replies in ascending order when parentId is provided", async () => {
     const reply = makeChatMessage({
       id: "reply-1",

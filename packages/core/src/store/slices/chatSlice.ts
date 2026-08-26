@@ -5,6 +5,7 @@ import type {
   ConversationPreview,
 } from "../../interfaces/models/Conversation";
 import type { ChatMessage } from "../../interfaces/models/ChatMessage";
+import type { ReputationGrant } from "../../interfaces/models/ReputationGrant";
 import type { SublayState } from "../sublayReducers";
 
 // ─── Sub-state shapes ────────────────────────────────────────────────────────
@@ -514,6 +515,65 @@ const chatSlice = createSlice({
       }
     },
 
+    /**
+     * Apply a reputation grant that landed on a message.
+     *
+     * Dispatched by ChatProvider on `message:grant` socket events. Silently
+     * no-ops when the conversation bucket or the message isn't loaded — the
+     * same guard shape as `updateReactions`.
+     *
+     * `total`/`count` come straight from the server, which recomputes them from
+     * the table on every event so a client that missed one still reconciles.
+     * `viewerTotal` is NOT in the payload — it is per-viewer and this is a room
+     * broadcast — so it is derived here from the grant's own `senderId` and
+     * `amount`, exactly as `updateReactions` derives `userReactions` from
+     * `userId` + `delta`.
+     *
+     * ## The seam with the fetched summary
+     * A message loaded with `includeGrants: true` already carries a summary.
+     * The two mechanisms compose because only ONE field is incremental: the
+     * absolute `total`/`count` are overwritten (so they can never drift or
+     * double-count), and `viewerTotal` accrues on top of the fetched baseline.
+     *
+     * When the message was fetched WITHOUT `includeGrants` there is no
+     * baseline, so `viewerTotal` starts at 0 and reflects only grants seen
+     * live. `total`/`count` are exact either way. An app that renders the
+     * viewer's own figure should pass `includeGrants: true`.
+     */
+    updateGrants(
+      state,
+      action: PayloadAction<{
+        conversationId: string;
+        messageId: string;
+        grant: ReputationGrant;
+        summary: { total: number; count: number };
+        currentUserId: string;
+      }>
+    ) {
+      const { conversationId, messageId, grant, summary, currentUserId } =
+        action.payload;
+
+      const bucket = state.messages[conversationId];
+      if (!bucket) return;
+
+      const message = bucket.items.find((m) => m.id === messageId);
+      if (!message) return;
+
+      const previousViewerTotal = message.grants?.viewerTotal ?? 0;
+      // The server only broadcasts positive grants, but the amount guard keeps
+      // this honest if that ever changes.
+      const viewerDelta =
+        currentUserId && grant.senderId === currentUserId && grant.amount > 0
+          ? grant.amount
+          : 0;
+
+      message.grants = {
+        total: summary.total,
+        count: summary.count,
+        viewerTotal: previousViewerTotal + viewerDelta,
+      };
+    },
+
     // ── Thread actions ───────────────────────────────────────────────────────
 
     setThreadReplies(
@@ -595,6 +655,7 @@ export const {
   failOptimisticMessage,
   removeMessage,
   updateReactions,
+  updateGrants,
   setThreadReplies,
   setThreadLoading,
   setTypingUsers,

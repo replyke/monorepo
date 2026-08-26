@@ -7,6 +7,7 @@ import type { User } from "../interfaces/models/User";
 import type { Conversation, ConversationPreview } from "../interfaces/models/Conversation";
 import type { ConversationMember } from "../interfaces/models/ConversationMember";
 import type { ChatMessage } from "../interfaces/models/ChatMessage";
+import type { ReputationGrant } from "../interfaces/models/ReputationGrant";
 
 export function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
   return {
@@ -279,6 +280,26 @@ export function makeEntity(overrides: Partial<Entity> = {}): Entity {
     moderatedById: null,
     moderatedByType: null,
     moderationReason: null,
+    ...overrides,
+  };
+}
+
+export function makeReputationGrant(
+  overrides: Partial<ReputationGrant> = {},
+): ReputationGrant {
+  return {
+    id: "grant-1",
+    sourceType: "user",
+    senderId: "user-1",
+    recipientId: "user-2",
+    amount: 10,
+    spaceId: null,
+    targetType: null,
+    targetId: null,
+    note: null,
+    metadata: null,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
     ...overrides,
   };
 }

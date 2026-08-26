@@ -3,6 +3,7 @@ import { User } from "./User";
 import { Space } from "./Space";
 import { ReactionCounts, ReactionType } from "./Reaction";
 import { File } from "./File";
+import { GrantSummary } from "./ReputationGrant";
 
 export interface TopComment {
   id: string;
@@ -49,6 +50,7 @@ export interface Entity {
   nsfwEffective: boolean; // Computed live: entity.nsfw OR the entity's space's effective NSFW
   topComment: TopComment | null; // Optional field for top comment. As long as there is at least one comment it will be populated
   isSaved?: boolean; // Optional field populated when include contains "saved" - indicates if current user saved this entity
+  grants?: GrantSummary; // Optional - reputation-grant summary, populated when include contains "grants". Zero-filled (never omitted) on projects without the grants table.
   createdAt: string; // Use camelCase for `created_at`
   updatedAt: string; // Use camelCase for `updated_at`
   deletedAt: string | null; // Use camelCase for `updated_at`
@@ -60,6 +62,12 @@ export interface Entity {
   moderationReason: string | null;
 }
 
-export type EntityInclude = "space" | "user" | "topComment" | "saved" | "files";
+export type EntityInclude =
+  | "space"
+  | "user"
+  | "topComment"
+  | "saved"
+  | "files"
+  | "grants";
 export type EntityIncludeArray = EntityInclude[];
 export type EntityIncludeParam = string | EntityIncludeArray;

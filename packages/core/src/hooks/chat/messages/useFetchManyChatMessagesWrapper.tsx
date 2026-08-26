@@ -20,6 +20,11 @@ export interface UseFetchManyChatMessagesWrapperProps extends SpaceReputationCon
   sort?: "asc" | "desc";
   /** When `true`, the server populates the `files` field on each message. */
   includeFiles?: boolean;
+  /**
+   * When `true`, the server populates the `grants` reputation-grant summary on
+   * each message.
+   */
+  includeGrants?: boolean;
   filters?: MessageFilters;
 }
 
@@ -48,6 +53,7 @@ function useFetchManyChatMessagesWrapper(
     limit = 50,
     sort = "desc",
     includeFiles,
+    includeGrants,
     filters,
     spaceReputation,
     spaceReputationId,
@@ -95,6 +101,7 @@ function useFetchManyChatMessagesWrapper(
         limit,
         sort,
         includeFiles,
+        includeGrants,
         filters,
         ...reputation,
       });
@@ -109,7 +116,7 @@ function useFetchManyChatMessagesWrapper(
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchMany, conversationId, parentId, limit, sort, includeFiles, filtersKey, reputationKey, advanceCursor]);
+  }, [fetchMany, conversationId, parentId, limit, sort, includeFiles, includeGrants, filtersKey, reputationKey, advanceCursor]);
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current || !cursorRef.current) return;
@@ -122,6 +129,7 @@ function useFetchManyChatMessagesWrapper(
         limit,
         sort,
         includeFiles,
+        includeGrants,
         filters,
         ...reputation,
         ...(sort === "asc"
@@ -139,7 +147,7 @@ function useFetchManyChatMessagesWrapper(
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchMany, conversationId, parentId, limit, sort, includeFiles, filtersKey, reputationKey, advanceCursor]);
+  }, [fetchMany, conversationId, parentId, limit, sort, includeFiles, includeGrants, filtersKey, reputationKey, advanceCursor]);
 
   useEffect(() => {
     refetch();
