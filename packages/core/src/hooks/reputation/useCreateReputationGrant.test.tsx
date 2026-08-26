@@ -65,6 +65,34 @@ describe("useCreateReputationGrant", () => {
     expect(call.body).not.toHaveProperty("actingUserId");
   });
 
+  it("pins the nullability contract: note/spaceId accept null, metadata does not", async () => {
+    // COMPILE-TIME assertions — the runtime call is incidental. The server's
+    // shared `metadataSchema` is `z.record(...).optional()` with NO
+    // `.nullable()`, while `note` and `spaceId` are `.nullable().optional()`.
+    // The `@ts-expect-error` below fails the typecheck if anyone re-adds
+    // `| null` to `metadata`, which would hand callers a shape the server
+    // answers with 400 reputation-grant/invalid-body.
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    axiosPrivate.mockResponse("post", makeReputationGrant(), 201);
+
+    await act(async () => {
+      await result.current({
+        recipientId: "user-2",
+        amount: 5,
+        // Both genuinely nullable server-side.
+        spaceId: null,
+        note: null,
+        // @ts-expect-error metadata is not nullable — omit the key instead.
+        metadata: null,
+      });
+    });
+
+    expect(axiosPrivate.calls("post")).toHaveLength(1);
+  });
+
   it("throws before making a request when there is no project", async () => {
     const { result, axiosPrivate } = renderHookWithAxios(
       () => useCreateReputationGrant(),

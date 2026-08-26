@@ -52,6 +52,9 @@ export interface ReputationGrant {
   targetType: ReputationGrantTargetType | null;
   targetId: string | null;
   note: string | null;
+  // Nullable on READ (the column is null when the grant was created without
+  // metadata) — unlike the create/mint request props, where an explicit null is
+  // rejected. Don't "harmonize" the two: they are different directions.
   metadata: Record<string, any> | null;
   createdAt: string;
   updatedAt: string;
