@@ -8,6 +8,14 @@ icon: "plug"
 
 `useFetchWorkspaceMembers` returns a callable for the [unified roster](/api-reference/workspaces/members/list-members): one entry per distinct user, each with a `reasons` array. Always returned in full (never paginated). With `countOnly`, the shape is `WorkspaceRosterCountsResponse` instead.
 
+<Warning>
+  **No `page` / `limit` on this roster.** It is never paginated. `FetchWorkspaceMembersProps` carries only `workspaceId`, `include` and `countOnly`, and the hook builds its query string from exactly those three — so a `page` or `limit` hand-written past the types is never even sent. Calling the [REST route](/api-reference/workspaces/members/list-members) directly does not help either: that endpoint declares `include`, `countOnly`, `actingUserId` and `projectId`, and refuses anything else — `?page=2&limit=10` comes back as `{ "error": "Unrecognized keys: \"page\", \"limit\"", "code": "workspace/invalid-query" }`.
+
+  The response is `{ data, total }` — no `pagination` object, because there is no pagination. `total` equals `data.length`.
+
+  For counts, pass `countOnly` — it returns per-reason counts and a distinct-user total without materializing the roster array. For a windowed UI, slice `roster.data` client-side.
+</Warning>
+
 ## Usage Example
 
 ```tsx
@@ -44,10 +52,12 @@ function Roster({ workspaceId }: { workspaceId: string }) {
 
 `WorkspaceRosterResponse` (`{ data, total }`), or `WorkspaceRosterCountsResponse` (`{ counts, total, distinctUsers }`) when `countOnly` is set.
 
-Each `WorkspaceRosterEntry` is `{ user, reasons }`, where a reason is `{ type, ...detail }` — `member` carries `rank` / `capabilities` / `permissions` / `title` / `metadata`, `ancestor-owner` and `reach-holder` carry `viaWorkspaceId` (reach-holder also `capabilities`), and `descendant-member` carries `workspaceId` / `rank` / `capabilities`.
+Each `WorkspaceRosterEntry` is `{ user, reasons }`, where a reason is `{ type, ...detail }` — `member` carries `rank` / `relativeRank` / `capabilities` / `permissions` / `title` / `metadata`, `ancestor-owner` and `reach-holder` carry `viaWorkspaceId` (reach-holder also `capabilities`), and `descendant-member` carries `workspaceId` / `rank` / `capabilities` — **never `relativeRank`**, since rank is per-workspace and an offset across two ladders would be meaningless.
 
 <Warning>
-  **`rank`, `capabilities` and `permissions` are fenced on other users' entries.** They are **omitted** (absent — not `null`) unless the signed-in user holds one of the four people-operating capabilities on this workspace (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) or is the `owner` / an `ancestor-owner`. The caller's **own** entry always carries them, so anyone can discover their own access. Who is on the roster (`user`, reason `type`s, `title`, `metadata`, `viaWorkspaceId`) stays visible to any relation — read the three fenced fields defensively (`reason.capabilities ?? []`).
+  **`rank`, `relativeRank`, `capabilities` and `permissions` are fenced on other users' entries.** They are **omitted** (absent — not `null`) unless the signed-in user holds one of the four people-operating capabilities on this workspace (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) or is the `owner` / an `ancestor-owner`. The caller's **own** entry always carries them, so anyone can discover their own access. Who is on the roster (`user`, reason `type`s, `title`, `metadata`, `viaWorkspaceId`) stays visible to any relation — read the four fenced fields defensively (`reason.capabilities ?? []`). `relativeRank` is a member's position as an **offset from you** (`1` = one rung below you, `-3` = three above), and it is fenced *with* `rank` because it is `rank` minus a number you already know.
+
+  **The gate is per node.** With `include=descendants`, each `descendant-member` reason is judged against your resolved standing on *its own* workspace, not on the one you asked about — so operating people on the parent does not unfence a **sealed** child's ranks and capabilities. Seeing a descendant's roster and seeing its members' authority are two different tiers. (`relativeRank` is a separate matter: it is uniformly absent on descendant rows for everyone.)
 </Warning>
 
 ## Related

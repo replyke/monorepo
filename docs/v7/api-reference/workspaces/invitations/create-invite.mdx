@@ -12,7 +12,9 @@ Creates an invitation, addressed by **exactly one** of `email`, `userId`, or `us
   This applies **even when the invitee already has an account** — there is no special case. See [Project settings](/sdk/workspaces/overview#project-settings) for how to configure it.
 </Warning>
 
-The invited `capabilities`/`permissions` are validated against the inviter's own resolved set on the workspace — no-escalation on both arrays. The `rank` floor applies **only when the inviter has a direct member row** on the workspace: then the invited rank must be strictly larger (less senior) than the inviter's own. A **reach-holder** inviter (holding `invite` via an open inherit chain, with no direct row) is not in the workspace's rank ladder and may invite at any rank.
+The invited `capabilities`/`permissions` are validated against the inviter's own resolved set on the workspace — no-escalation on both arrays. The rank floor applies **only when the inviter has a direct member row** on the workspace: then the invited rank must be strictly larger (less senior) than the inviter's own. A **reach-holder** inviter (holding `invite` via an open inherit chain, with no direct row) is not in the workspace's rank ladder and may invite at any rank.
+
+The invited rank is named in **either coordinate** — `rank` (absolute) or `relativeRank` (an offset from the inviter) — and they are **mutually exclusive**. Supplying **neither** applies the default, `relativeRank: 1`: one rung below the inviter. Whichever arrives, it is resolved to an absolute number here and stored absolute on the invitation row. See [choosing a rank](/sdk/workspaces/overview#choosing-a-rank).
 
 The inviter is the caller's own token subject, or — for a service/master key — the `actingUserId` it names. Both floors are skipped for an owner or ancestor owner, and for a key that names nobody.
 
@@ -22,12 +24,32 @@ The inviter is the caller's own token subject, or — for a service/master key �
   As stated above, the floor only binds an inviter who holds a **direct member row** here — an owner or ancestor owner, a reach-holder with no direct row, and a key naming nobody all skip it and may invite at any rank, rank 0 included.
 </Note>
 
+<Warning>
+  **Omitting the rank field is the easiest way in the whole API to mint rank 0.** The default is `relativeRank: 1` — one rung below the inviter — and *apex* is where an inviter with no member row on this workspace stands. So for an **owner**, an **ancestor owner**, a **reach-holder** with no direct row, or a **service/master key acting as itself**, one below apex **is rank 0**: the most senior rung on the ladder, handed out by leaving a field off.
+
+  That is semantically right — one below apex *is* the top rung — and it is not changing. But it inverts the intuition that omitting a field is the cautious choice, and it lands squarely on the path this page calls the happy path. The scenario to watch is the **backend invite flow**: a server route that invites people with a service key, sending an address and capabilities and no rank, mints a workspace full of rank-0 members — each one able to manage everyone else, and none of them manageable by anyone but the owner. If a service-key flow wants new members at the **bottom** of the ladder, it must name a coordinate (`rank: 10`, or `relativeRank` against an `actingUserId` who actually sits in the ladder) rather than rely on the default.
+
+  **The milder collision applies to in-ladder inviters.** A rank-0 lead who invites six people with no rank field gets six rank-1 members, and equals cannot act on equals — none of those six can manage each other; only the lead can. Often correct for a flat team, and worth deciding on purpose rather than discovering later. If your product has tiers, name one on the invite.
+</Warning>
+
 **Duplicate handling:**
 - Inviting an **existing member** → `409` (change the grant via [Update Member](/api-reference/workspaces/members/update-member)).
-- A **live** invite (`pending` and not past `expiresAt`) for the same target → **idempotent refresh** (updates the grant, resets a 14-day expiry).
+- A **live** invite (`pending` and not past `expiresAt`) for the same target → the existing invitation is **updated in place**, under the same `id`, and its 14-day expiry restarts. See [what a re-invite does to the grant](#what-a-re-invite-does-to-the-grant) — it is not a plain replace.
 - A **terminal** (`accepted`/`declined`/`revoked`) or **effectively-expired** invite does **not** block — a fresh `pending` is created. (An `accepted` invite means the user is already a member, so re-inviting them returns `409` instead.)
 
 Invite-by-email to an address that already has an account resolves and stores the `userId` at creation. The account lookup is **case-insensitive**, so an account stored as `Jane@Example.com` is still bound when invited as `jane@example.com`.
+
+### What a re-invite does to the grant
+
+This endpoint doubles as an **upsert**, so a second call for a target who already has a live invite edits that invitation rather than creating a second one. On that path, each grant field — `rank`/`relativeRank`, `capabilities`, `permissions`, `title` — is handled independently:
+
+- **Omitted → preserved.** The stored value is kept as-is. It is *not* re-defaulted, and not blanked. This is what makes a bare "Resend invitation" button that sends only the address safe: a deliberate `rank: 10` contractor invite stays at rank 10 no matter who presses it.
+- **Explicitly supplied → overwritten.** Refreshing a grant is a real use of this route, so naming a value still changes it. An explicitly empty array (`capabilities: []`) is a value, not an omission, and does clear the field.
+- **An explicit `relativeRank` re-resolves against the *current* caller.** The offset is anchored on whoever is calling now, not on whoever created the invitation — so `relativeRank: 1` sent by a rank-3 member rewrites the invitation to rank 4, while the same field sent by the owner rewrites it to rank 0. If you mean "leave the rank alone", send neither rank field.
+
+<Note>
+  A re-invite may **preserve** a rank the current caller could not have minted themselves — omission is not a write, so no floor is re-applied to it. That is deliberate and matches [Resend Invite](/api-reference/workspaces/invitations/resend-invite), which extends the very same invitation, rank intact, on the same `invite` capability. Values you *do* supply are floored normally.
+</Note>
 
 ## Path Parameters
 
@@ -43,6 +65,10 @@ Invite-by-email to an address that already has an account resolves and stores th
 
 <ParamField body="userId" type="string">
   Invitee user id (existing users only). Here `userId` is the invite **target**, not an acting user.
+
+  This route is the **one exception** to a bundle-wide rule: on every other workspace route a body or query `userId` is rejected with a `400`, because there it can only be a stale spelling of the actor. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+
+  **The exception is the body only.** A query `?userId=` is rejected here exactly as it is everywhere else — `400 workspace/invalid-query` — because this endpoint never reads one, so in the query string it can only be the stale actor spelling. Send the invitee in the JSON body.
 </ParamField>
 
 <ParamField body="username" type="string">
@@ -50,23 +76,35 @@ Invite-by-email to an address that already has an account resolves and stores th
 </ParamField>
 
 <ParamField body="capabilities" type="string[]">
-  Capabilities to apply on accept. Defaults to `[]`. Subject to no-escalation.
+  Capabilities to apply on accept. Subject to no-escalation. Defaults to `[]` on a **new** invitation; on a [re-invite](#what-a-re-invite-does-to-the-grant) omitting it **preserves** the stored set, while `[]` explicitly clears it.
 </ParamField>
 
 <ParamField body="permissions" type="string[]">
-  Opaque permissions to apply on accept. Defaults to `[]`. Subject to no-escalation.
+  Opaque permissions to apply on accept. Subject to no-escalation. Defaults to `[]` on a **new** invitation; on a [re-invite](#what-a-re-invite-does-to-the-grant) omitting it **preserves** the stored set, while `[]` explicitly clears it.
 </ParamField>
 
-<ParamField body="rank" type="number" required>
-  Initial rank to apply on accept. For a direct-member inviter it must be strictly larger (less senior) than their own; a reach-holder inviter (no direct row) may set any rank.
+<ParamField body="rank" type="number">
+  Initial **absolute** rank to apply on accept, from `0` to `2147483647`. For a direct-member inviter it must be strictly larger (less senior) than their own; a reach-holder inviter (no direct row) may set any rank.
+
+  **No longer required.** Omit it and `relativeRank` both, and the server applies `relativeRank: 1` on a **new** invitation — or, on a [re-invite](#what-a-re-invite-does-to-the-grant), preserves the rank already stored. Mutually exclusive with `relativeRank` — sending both is a `400`.
+</ParamField>
+
+<ParamField body="relativeRank" type="number" default="1">
+  Initial rank expressed as an **offset from the inviter**: `1` = one rung below me, `2` = two rungs below. Must be `1` – `2147483647` — `0` would mean "a peer", which the assign rule forbids, and a negative offset would mint someone senior to the inviter; both are a `400`. The **resolved** rank is bounded too, so an in-range offset that overflows once anchored is also a `400`, never a `500`.
+
+  The offset is anchored on the inviter's **own rank if they hold a member row on this workspace**, and on **apex** (one step above rank 0) if they do not — so an owner's `relativeRank: 1` lands on rank `0`, while a rank-3 member's lands on rank `4`. The anchor turns on the row, not on what kind of actor the inviter is: an ancestor owner who *also* holds a row here measures from that row.
+
+  Relative input passes the rank floor by construction, which is why it is the default.
+
+  **Each resolution is a snapshot.** The offset is resolved against the caller *at the moment of the call* and frozen on the invitation as an absolute number — it does not track the inviter's later promotions or demotions. It is a snapshot of the request, not of the invitation: sending `relativeRank` again on a [re-invite](#what-a-re-invite-does-to-the-grant) takes a **fresh** snapshot against whoever is calling then, and overwrites the stored rank. Omitting both rank fields on a re-invite takes no snapshot at all and preserves what is stored.
 </ParamField>
 
 <ParamField body="title" type="string">
-  Optional initial cosmetic title.
+  Optional initial cosmetic title. On a [re-invite](#what-a-re-invite-does-to-the-grant), omitting it preserves the stored title; sending `null` clears it.
 </ParamField>
 
 <ParamField body="actingUserId" type="string">
-  Service/master keys only — the **inviter** to act as. Enforced: the no-escalation and rank floors above run against *that* user's resolved standing, so a key naming a rank-5 manager may only invite at rank 6+ and only with capabilities that manager holds. Omit it to invite as the app itself (unbounded; `invitedBy` then falls back to the workspace owner). Distinct from `userId` above, which addresses the **invitee**. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+  Service/master keys only — the **inviter** to act as. Enforced: the no-escalation and rank floors above run against *that* user's resolved standing, so a key naming a rank-5 manager may only invite at rank 6+ and only with capabilities that manager holds. Omit it to invite as the app itself (unbounded; `invitedBy` then falls back to the workspace owner) — but omit means **absent**: `actingUserId: ""` or `null` is a `400`, not a fall-through to that mode. Every top-level field this endpoint does not declare is a `400` too — `Unrecognized key: "…"`, in the body and the query string alike, for every caller. The fields this endpoint *does* declare are accepted on their own terms: `username` reaches the server intact and behaves identically to `email` and `userId`. The **body** `userId` is the one declared field on the bundle that names a person and is not the actor, so it carries a carve-out from the bundle-wide `userId` rejection; a query `userId` is refused here as everywhere else. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user) and [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
 </ParamField>
 
 ## Response
@@ -78,24 +116,72 @@ Returns the created [WorkspaceInvitation](/data-models/workspace-invitation) obj
 <AccordionGroup>
   <Accordion title="Already a Member — 409">
     ```json
-    { "error": "That user is already a member.", "code": "workspace/already-member" }
+    { "error": "That user is already a member. Change their grant via edit-member-access.", "code": "workspace/already-member" }
+    ```
+
+    Inviting the workspace's **owner** shares the code with a message of its own:
+
+    ```json
+    { "error": "That user already owns this workspace.", "code": "workspace/already-member" }
     ```
   </Accordion>
   <Accordion title="No Escalation — 403">
+    The offending values are named. Capabilities:
+
     ```json
-    { "error": "You may only grant capabilities/permissions you hold.", "code": "workspace/no-escalation" }
+    { "error": "Cannot invite with capabilities you do not hold: edit-member-access.", "code": "workspace/no-escalation" }
+    ```
+
+    …and permissions:
+
+    ```json
+    { "error": "Cannot invite with permissions you do not hold: deploy.", "code": "workspace/no-escalation" }
     ```
   </Accordion>
   <Accordion title="Insufficient Rank — 403">
     ```json
     { "error": "You may only invite at a rank strictly below your own.", "code": "workspace/insufficient-rank" }
     ```
+    Checked against the **resolved absolute** rank, so absolute and relative input face the identical floor. A `relativeRank` of `1` or more can never trip it.
+  </Accordion>
+  <Accordion title="Rank out of range — 400">
+    ```json
+    { "error": "The resolved rank (2147483648) is out of range — ranks are integers from 0 to 2147483647.", "code": "workspace/invalid-body" }
+    ```
+    Raised **after** the offset is resolved, which is where an overflow is created: `relativeRank: 1` sent by a rank-`2147483647` inviter is two individually-valid numbers whose sum is not storable. Out-of-range `rank` / `relativeRank` **input** is refused earlier by the schema, with the same code.
+  </Accordion>
+  <Accordion title="Both rank coordinates supplied — 400">
+    ```json
+    { "error": "relativeRank: Provide either rank (absolute) or relativeRank (offset from you), not both", "code": "workspace/invalid-body" }
+    ```
+    A schema rejection, so the message is prefixed with the field it was reported against. One coordinate system per request. Supplying both is refused rather than resolved by precedence — either reading could grant a rank you did not intend.
   </Accordion>
   <Accordion title="Missing Invite Accept URL — 409">
     ```json
     { "error": "This project has no workspaces.inviteAcceptUrl configured...", "code": "workspace/missing-invite-accept-url" }
     ```
     A **project misconfiguration**, not a bad request — the payload is fine and the caller is authorized. Set [`workspaces.inviteAcceptUrl`](/sdk/workspaces/overview#project-settings) in your project settings and retry the identical request.
+  </Accordion>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
+  </Accordion>
+  <Accordion title="Undeclared Field — 400">
+    ```json
+    { "error": "Unrecognized key: \"onBehalfOf\"", "code": "workspace/invalid-body" }
+    ```
+    Every workspaces endpoint declares its fields exactly, and a top-level field it does not declare is refused rather than ignored — in the request body and in the query string alike, for every caller. Two or more at once are named together: `Unrecognized keys: "onBehalfOf", "impersonate"`. An offender in the query string carries `workspace/invalid-query` instead. Send only the fields documented above, plus `actingUserId` and `projectId`, which every workspaces route accepts. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+  </Accordion>
+  <Accordion title="Unparsed Body — 400">
+    ```json
+    {
+      "error": "This request carries a body with content-type \"text/plain;charset=UTF-8\", which no parser reads, so any `actingUserId` inside it was discarded and this request names no acting user. Send the body as application/json.",
+      "code": "workspace/invalid-body"
+    }
+    ```
+    Returned when a service/master key sends a body with a `Content-Type` other than `application/json` **and** no `actingUserId` was read. Sublay parses only `application/json`, so the actor inside such a body is discarded and the request would fall through to the unbounded path. `fetch()` sends `text/plain;charset=UTF-8` when you pass a stringified body and set no headers — set the header. An empty JSON body and a bodiless request both pass. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
   </Accordion>
 </AccordionGroup>
 

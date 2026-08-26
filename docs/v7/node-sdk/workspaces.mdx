@@ -6,7 +6,7 @@ description: "Full server-side workspace surface — CRUD, membership, invitatio
 The `workspaces` module is the developer's **authorization-server SDK** for the [Workspaces bundle](/data-models/workspace). It exposes the full surface: workspace CRUD, membership management, the invitation lifecycle, and the service-key **authority read** you use to make your own app-level decisions.
 
 <Note>
-  **Requires the `workspaces` bundle.** See [Bundles](/bundles) to install it. Because this is a **service-key** SDK, every call **accepts** an `actingUserId` — the user the action is performed **as** (the service key can [act as any user](/node-sdk/overview)). Whether it is required or optional is **per route** — see the note below. For `fetchWorkspaceAuthority`, `actingUserId` is the user whose standing is resolved.
+  **Requires the `workspaces` bundle.** See [Bundles](/bundles) to install it. Because this is a **service-key** SDK, every call **accepts** an `actingUserId` — the user the action is performed **as** (the service key can [act as any user](/node-sdk/overview)). Whether it is required or optional is **per route** — see the notes below. For `fetchWorkspaceAuthority`, `actingUserId` is the user whose standing is resolved.
 </Note>
 
 <Note>
@@ -19,7 +19,8 @@ The `workspaces` module is the developer's **authorization-server SDK** for the 
   capability gate, the owner-only gate, the rank guard, no-escalation, and the
   roster/standing fencing. If that user would be refused, so are you. Omitting
   `actingUserId` is the only unbounded mode — that request is the *app itself*,
-  not a person.
+  not a person — and it exists only on the routes that have an unbounded path at
+  all (see the two notes below).
 
   So an unrestricted backend action should be performed **as the workspace
   owner**, not by omitting the actor: the owner resolves the full capability
@@ -35,16 +36,89 @@ The `workspaces` module is the developer's **authorization-server SDK** for the 
 </Warning>
 
 <Note>
-  **On many routes the actor is required, not optional.** `actingUserId` must be
-  supplied by a key on the routes whose result belongs to a specific person:
+  **On many routes the actor is required, not optional.** These ten routes have
+  **no unbounded path on the server** — their result belongs to a specific
+  person, so a key must name one:
+
   `createWorkspace`, `fetchManyWorkspaces`, `fetchMyWorkspaceInvites`,
   `fetchWorkspaceAuthority`, `acceptWorkspaceInvite`, `declineWorkspaceInvite`,
-  `leaveWorkspace`, `updateWorkspaceMember`, `removeWorkspaceMember` and
-  `removeWorkspaceMemberFromSubtree`. Omitting it there is a
-  `400 workspace/missing-user-id`, never a bypass. Everywhere else it is
-  optional and omitting it runs unbounded.
+  `leaveWorkspace`, `updateWorkspaceMember`, `removeWorkspaceMember`,
+  `removeWorkspaceMemberFromSubtree`.
+
+  Omitting `actingUserId` on any of them is a `400 workspace/missing-user-id`,
+  never a bypass. `actingUserId` is typed **required** on all ten.
 </Note>
 
+<Note>
+  **Four more are typed required *here* even though the REST endpoint allows
+  omission.** `updateWorkspace`, `updateWorkspaceInheritFlag`, `deleteWorkspace`
+  and `transferWorkspaceOwnership` are guard-only routes: over REST, a key that
+  omits `actingUserId` runs as the app itself and passes the owner-only gate
+  unbounded. This SDK nevertheless declares `actingUserId` **required** on all
+  four, so TypeScript will not let you omit it.
+
+  That is an SDK-level guardrail, not a different server rule — these are the
+  four most destructive owner-only calls (`deleteWorkspace` cascades the whole
+  subtree), and every one of them is better off carrying a user id. If you
+  genuinely need the unbounded path on one of them, call the
+  [REST endpoint](/api-reference/workspaces/delete-workspace) directly; the
+  server accepts it.
+
+  On the remaining seven — `fetchWorkspace`, `fetchWorkspaceMembers`,
+  `fetchWorkspaceMemberStanding`, `createWorkspaceInvite`,
+  `fetchWorkspaceInvites`, `revokeWorkspaceInvite`, `resendWorkspaceInvite` —
+  `actingUserId` is optional in both the SDK and the API, and omitting it runs
+  unbounded.
+</Note>
+
+<Warning>
+  **Absent, not falsy — and undeclared fields are refused, not ignored.**
+  `actingUserId: ""` or `null` is a `400`, not a fall-through to the app-itself
+  mode, so `actingUserId: user?.id ?? ""` fails loudly rather than quietly
+  acquiring full authority.
+
+  Every workspaces endpoint also declares its fields exactly, and refuses any
+  top-level field it does not declare — in the body and in the query string
+  alike, for every caller — with
+  `{ "error": "Unrecognized key: \"onBehalfOf\"", "code": "workspace/invalid-body" }`
+  (plural `Unrecognized keys: "a", "b"` for two or more, and
+  `workspace/invalid-query` when the offender was in the query string). So
+  `onBehalfOf`, `impersonate` and `acting_user_id` all fail at the wire rather
+  than being dropped on the way to an unbounded call. A `userId` anywhere in a
+  body or query is refused with a message of its own — the sole exception is the
+  invitee in `createWorkspaceInvite`'s **body**, and even there a query
+  `?userId=` is refused like everywhere else. A non-UUID id in a path is a
+  `400 workspace/invalid-params` rather than a `500`. Full list with the
+  reasoning: [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+
+  One of those rules cannot bite you through this SDK: a body whose content-type
+  no parser reads is refused on the unbounded path, and this SDK serializes every
+  body it sends as `application/json`. It is a hazard for hand-rolled `fetch()`
+  calls, not for `sublay.workspaces.*`.
+</Warning>
+
+<Warning>
+  **Pass only the documented fields — the props object is sent whole.**
+  `createWorkspace` and its siblings hand your object straight to the request
+  body, so a convenience spread carries whatever else it holds into the request,
+  and the endpoint refuses it:
+
+  ```typescript
+  // ❌ 400 — `slug` and `plan` are not fields of this endpoint.
+  await sublay.workspaces.createWorkspace({ ...orgTemplate, actingUserId });
+
+  // ✅ Name the fields.
+  await sublay.workspaces.createWorkspace({
+    actingUserId,
+    name: orgTemplate.name,
+    metadata: { slug: orgTemplate.slug, plan: orgTemplate.plan },
+  });
+  ```
+
+  Your own data belongs in `metadata`, which is opaque to Sublay and accepts any
+  JSON. Strictness governs **top-level** keys only, so nothing inside `metadata`
+  is inspected.
+</Warning>
 
 Read the concepts first: [capabilities vs permissions](/data-models/workspace-member#the-two-arrays-capabilities-vs-permissions), [rank](/data-models/workspace-member#rank-semantics), [reach & ownership](/data-models/workspace#reach-and-the-wall-door-rule), and the [identity-matched, no-token invite model](/data-models/workspace-invitation#acceptance-model).
 
@@ -83,7 +157,7 @@ const workspace = await sublay.workspaces.fetchWorkspace({
 ```
 
 <ParamField body="workspaceId" type="string" required>The workspace UUID.</ParamField>
-<ParamField body="include" type="string">Comma-separated include flags; `memberCount` adds the direct member count.</ParamField>
+<ParamField body="include" type="string">Comma-separated include flags, sent as a query param. `memberCount` adds the workspace's direct member count; omit it and the field is absent. An unrecognized flag value is ignored.</ParamField>
 <ParamField body="actingUserId" type="string">Optional — the user to act as. Sent as a query param. Visibility resolves against them, so a key acting as someone with no relation to this workspace gets that user's `404`. Omit to read as the app itself.</ParamField>
 
 ### fetchManyWorkspaces
@@ -95,13 +169,14 @@ const { data, pagination } = await sublay.workspaces.fetchManyWorkspaces({
   actingUserId: "usr_owner",
   page: 1,
   limit: 20,
+  include: "memberCount", // each row gains a `memberCount`
 });
 ```
 
 <ParamField body="actingUserId" type="string" required>The user whose workspaces to list.</ParamField>
 <ParamField body="page" type="number" />
 <ParamField body="limit" type="number" />
-<ParamField body="include" type="string" />
+<ParamField body="include" type="string">Comma-separated include flags, sent as a query param. `memberCount` adds a `memberCount` to **every row** — the workspace's direct member count, resolved in one grouped query over the returned page rather than one request per row. Omit it and the field is absent from each row.</ParamField>
 
 ### updateWorkspace
 
@@ -116,7 +191,7 @@ await sublay.workspaces.updateWorkspace({
 Edits name/metadata (gated by `edit-workspace` or owner). Does **not** flip the inherit flag.
 
 <ParamField body="workspaceId" type="string" required />
-<ParamField body="actingUserId" type="string" required>The user to act as — must hold `edit-workspace` on this workspace, or own it.</ParamField>
+<ParamField body="actingUserId" type="string" required>The user to act as — must hold `edit-workspace` on this workspace, or own it. Required by this SDK's types; the [REST endpoint](/api-reference/workspaces/update-workspace) also accepts it omitted (runs unbounded).</ParamField>
 <ParamField body="name" type="string" />
 <ParamField body="metadata" type="object" />
 
@@ -133,7 +208,7 @@ await sublay.workspaces.updateWorkspaceInheritFlag({
 Owner-only in both directions; subject to the enforced-default lock.
 
 <ParamField body="workspaceId" type="string" required />
-<ParamField body="actingUserId" type="string" required>The user to act as — must own this workspace or an ancestor.</ParamField>
+<ParamField body="actingUserId" type="string" required>The user to act as — must own this workspace or an ancestor. Required by this SDK's types; the [REST endpoint](/api-reference/workspaces/update-inherit-flag) also accepts it omitted (runs unbounded).</ParamField>
 <ParamField body="inheritsFromParent" type="boolean" required />
 
 ### deleteWorkspace
@@ -148,7 +223,7 @@ const { message } = await sublay.workspaces.deleteWorkspace({
 Owner-only; cascades the subtree and fires `workspace.deleted` per deleted workspace — and **no** `workspace.member.removed` events for the memberships it tears down (see [Webhooks](/sdk/workspaces/webhooks)).
 
 <ParamField body="workspaceId" type="string" required />
-<ParamField body="actingUserId" type="string" required>The user to act as — must own this workspace or an ancestor. This call cascade-deletes the whole subtree, so name the owner deliberately.</ParamField>
+<ParamField body="actingUserId" type="string" required>The user to act as — must own this workspace or an ancestor. This call cascade-deletes the whole subtree, so name the owner deliberately. Required by this SDK's types; the [REST endpoint](/api-reference/workspaces/delete-workspace) also accepts it omitted (runs unbounded) — which is precisely why the type does not.</ParamField>
 
 ### transferWorkspaceOwnership
 
@@ -163,10 +238,10 @@ const workspace = await sublay.workspaces.transferWorkspaceOwnership({
 ```
 
 <ParamField body="workspaceId" type="string" required />
-<ParamField body="actingUserId" type="string" required>The user to act as — must own this workspace or an ancestor.</ParamField>
+<ParamField body="actingUserId" type="string" required>The user to act as — must own this workspace or an ancestor. Required by this SDK's types; the [REST endpoint](/api-reference/workspaces/transfer-ownership) also accepts it omitted (runs unbounded).</ParamField>
 <ParamField body="newOwnerId" type="string" required>The new owner (any verified user).</ParamField>
-<ParamField body="previousOwnerDisposition" type="string">`"demote"` or `"remove"`.</ParamField>
-<ParamField body="previousOwnerRank" type="number">On demote; defaults to `0`.</ParamField>
+<ParamField body="previousOwnerDisposition" type="string">`"demote"` or `"remove"`. Defaults to `"remove"` when omitted.</ParamField>
+<ParamField body="previousOwnerRank" type="number">On demote, the ex-owner's rank (absolute only). Defaults to **one rung below the acting user's anchor** — `0` when the actor is apex (an owner or ancestor owner with no member row here, which is the usual case), or one below their own row when the named `actingUserId` sits in this workspace's ladder. (A key naming nobody also anchors at apex, but this SDK requires `actingUserId` here, so that shape is only reachable over REST.)</ParamField>
 <ParamField body="previousOwnerCapabilities" type="string[]" />
 
 ---
@@ -178,7 +253,9 @@ const workspace = await sublay.workspaces.transferWorkspaceOwnership({
 Returns the [unified roster](/api-reference/workspaces/members/list-members) (`WorkspaceRosterResponse`), or `WorkspaceRosterCountsResponse` when `countOnly` is set.
 
 <Note>
-  The roster fences the authority-bearing reason fields (`rank`, `capabilities`, `permissions`) from callers who cannot manage people on the workspace. A service key acting as **itself** is never fenced — it always sees them. Pass `actingUserId` and the fence evaluates against **that user** instead, so a key acting as a plain member receives the same partial roster that member would. The SDK types mark the three fields optional for that reason.
+  The roster fences the authority-bearing reason fields (`rank`, `relativeRank`, `capabilities`, `permissions`) from callers who cannot manage people on the workspace — **per node**, so with `include=descendants` each `descendant-member` reason is judged against the acting user's resolved standing on *that* descendant, and authority over the parent does not unfence a **sealed** child. A service key acting as **itself** is never fenced — it always sees them. Pass `actingUserId` and the fence evaluates against **that user** instead, so a key acting as a plain member receives the same partial roster that member would. The SDK types mark the four fields optional for that reason.
+
+  A `member` reason carries both rank coordinates: absolute `rank`, and `relativeRank` — that member's position as an offset from **the caller**, meaning the acting user when you name one. `descendant-member` reasons carry `rank` only, since their ranks belong to another node's ladder.
 </Note>
 
 ```typescript
@@ -213,7 +290,7 @@ const standing = await sublay.workspaces.fetchWorkspaceMemberStanding({
 
 Returns `WorkspaceMemberStanding`. On its `user` field **only `id` is guaranteed** (`WorkspaceStandingUser`): the server returns the full user record when the user row still exists and falls back to `{ id }` alone when it does not — a deleted user with a lingering membership row is a reachable case. Read the rest defensively (`standing.user.username ?? "Deleted user"`).
 
-`reasons` is an array of structured `{ type, viaWorkspaceId? }` entries — the same shape a roster entry's `reasons` carries — so you learn not just the kind of standing but which ancestor grants it. `capabilities` / `permissions` / `rank` are typed **optional** because the server omits them for callers who cannot manage people. A service key acting as **itself** is never fenced, so on a call with no `actingUserId` they are always present; pass one and the fence evaluates against that user, who may well not see them.
+`reasons` is an array of structured `{ type, viaWorkspaceId? }` entries — the same shape a roster entry's `reasons` carries — so you learn not just the kind of standing but which ancestor grants it. `capabilities` / `permissions` / `rank` / `relativeRank` are typed **optional** because the server omits them for callers who cannot manage people (`relativeRank` is fenced with `rank` — it is `rank` minus an anchor the caller already knows). A service key acting as **itself** is never fenced, so on a call with no `actingUserId` they are always present; pass one and the fence evaluates against that user, who may well not see them.
 
 ### updateWorkspaceMember
 
@@ -229,12 +306,15 @@ await sublay.workspaces.updateWorkspaceMember({
 
 Powerful fields require `edit-member-access` + rank rules + no-escalation; cosmetic fields require `edit-member-profile`.
 
+Rank moves in **either coordinate** — `rank` (absolute) or `relativeRank` (an offset from `actingUserId`), never both. Omitting both means **rank unchanged**. See [choosing a rank](/sdk/workspaces/overview#choosing-a-rank).
+
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="targetUserId" type="string" required>The member being edited (path).</ParamField>
-<ParamField body="actingUserId" type="string" required>The acting user (body).</ParamField>
+<ParamField body="actingUserId" type="string" required>The acting user (body). Required by the **server** here, not just by the types: this route has no unbounded path, so omitting it is a `400 workspace/missing-user-id`. Every gate — both capability tiers, the rank guard, the assign rule, no-escalation — runs against this user. Act as the owner for an unrestricted edit.</ParamField>
 <ParamField body="capabilities" type="string[]" />
 <ParamField body="permissions" type="string[]" />
-<ParamField body="rank" type="number" />
+<ParamField body="rank" type="number">Absolute. Mutually exclusive with `relativeRank`; omit both to leave rank unchanged.</ParamField>
+<ParamField body="relativeRank" type="number">An offset from the **acting user** — `1` = one rung below them. Must be `>= 1`. Anchored on their member row on this workspace if they hold one, apex otherwise, so a key acting as the owner resolves `relativeRank: 1` to rank `0`. Resolved to an absolute rank at write time and frozen. No default.</ParamField>
 <ParamField body="title" type="string" />
 <ParamField body="metadata" type="object" />
 
@@ -304,13 +384,16 @@ const invite = await sublay.workspaces.createWorkspaceInvite({
   email: "pat@example.com",   // OR userId / username
   capabilities: ["view"],
   permissions: ["deploy"],
-  rank: 5,
+  // One rung below the inviter. Omitting both rank fields means exactly this.
+  relativeRank: 1,
 });
 ```
 
 Requires the `invite` capability. Here `userId`/`username` (if used) address the invite **target**; the **inviter** is `actingUserId`, or the app itself when you omit it. Email matching against existing accounts is **case-insensitive**.
 
-The invited grant is floored by the inviter's own standing: no-escalation on `capabilities`/`permissions`, and a `rank` strictly below the inviter's own. Both floors are skipped for an owner, and for a key naming nobody.
+The invited grant is floored by the inviter's own standing: no-escalation on `capabilities`/`permissions`, and a rank strictly below the inviter's own. Both floors are skipped for an owner, and for a key naming nobody.
+
+The invited rank is named in **either coordinate** — `rank` (absolute) or `relativeRank` (an offset from the inviter) — and they are mutually exclusive. Supplying **neither** applies `relativeRank: 1`, one rung below the inviter, which is well defined for every actor shape (a key naming nobody anchors at apex, so its default lands on rank `0`) and by construction never trips the rank floor.
 
 <Note>
   **A tier cannot grow itself.** Acting as a rank-5 manager with a direct member row you can invite rank 6, 7, 8… but **never another rank 5**, and no ranked member clears the floor for rank 0. The floor binds only an inviter with a **direct member row** on the workspace — an owner or ancestor owner, a reach-holder with no direct row, and a key naming nobody all skip it entirely. If your product has a server-driven "add a manager" action, act as the owner for it. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
@@ -326,7 +409,8 @@ The invited grant is floored by the inviter's own standing: no-escalation on `ca
 <ParamField body="username" type="string">Invite target username.</ParamField>
 <ParamField body="capabilities" type="string[]" />
 <ParamField body="permissions" type="string[]" />
-<ParamField body="rank" type="number" required />
+<ParamField body="rank" type="number">Absolute. **Not required** — mutually exclusive with `relativeRank`, and omitting both applies the `relativeRank: 1` default.</ParamField>
+<ParamField body="relativeRank" type="number" default="1">An offset from the inviter — `1` = one rung below them. Must be `>= 1`. Anchored on the inviter's member row on this workspace if they hold one, apex otherwise. A **snapshot**: resolved to an absolute rank here and frozen, so a later promotion or demotion of the inviter does not move the pending invite. Note the collision caveat, which is at its sharpest here: a key acting as **itself** (no `actingUserId`) has no member row, so it anchors at **apex** and the default mints **rank 0** — the most senior rung — for every invitee. A backend invite flow that wants people at the *bottom* of the ladder must name an absolute `rank`, or name an `actingUserId` who actually sits in the ladder. For an in-ladder inviter the default instead puts a whole cohort on one rung, where equals cannot manage each other. See [choosing a rank](/sdk/workspaces/overview#choosing-a-rank).</ParamField>
 <ParamField body="title" type="string" />
 <ParamField body="actingUserId" type="string">Optional — the **inviter** to act as. The no-escalation and rank floors run against their standing. Omit to invite as the app itself (unbounded; `invitedBy` then falls back to the workspace owner). Distinct from `userId`, which is the invitee.</ParamField>
 
@@ -416,6 +500,6 @@ if (authority.permissions.includes("deploy")) {
 <ParamField body="workspaceId" type="string" required />
 <ParamField body="actingUserId" type="string" required>The acting user whose resolved standing to read.</ParamField>
 
-`reasons` entries carry `viaWorkspaceId` on `ancestor-owner` / `reach-holder`, naming the ancestor responsible — so when a user has authority you did not expect, you can tell exactly which node to go fix. `capabilities` is the fully-resolved set, and **`view` is implied by every other capability**: any user with standing carries it, while a user with no relation at all comes back with `reasons: []` and an empty capability set.
+`reasons` entries carry `viaWorkspaceId` on `ancestor-owner` / `reach-holder`, naming the ancestor responsible — so when a user has authority you did not expect, you can tell exactly which node to go fix. `capabilities` is the fully-resolved set, and **`view` is implied by every other capability**: any user with standing carries it, while a user with no relation at all comes back with `reasons: []` and an empty capability set. There is no `relativeRank` on this read — it is an offset from the caller, and here the caller is the subject, so `rank` is the coordinate it reports.
 
 Sublay never consumes your opaque `permissions` — there is deliberately no `?permission=` check or `can()` helper.

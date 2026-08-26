@@ -11,7 +11,7 @@ icon: "plug"
 **Authorization:** requires roster visibility on the workspace — **any relation** (owner, ancestor-owner, member, reach-holder), the same gate as [`useFetchWorkspaceMembers`](/hooks/workspaces/use-fetch-workspace-members). The signed-in user is the actor; `targetUserId` names **who is being read**, not who is asking.
 
 <Warning>
-  **`capabilities`, `permissions` and `rank` are fenced.** They are **omitted from the response** (absent — not `null`) unless the signed-in user holds one of the four people-operating capabilities on this workspace (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`), is the `owner` / an `ancestor-owner`, or is reading **their own** standing. The three fields are optional in the SDK type — read them defensively (`standing.capabilities ?? []`). Everything else (`user`, `reasons`, `title`, `metadata`) is visible to any relation.
+  **`capabilities`, `permissions`, `rank` and `relativeRank` are fenced.** They are **omitted from the response** (absent — not `null`) unless the signed-in user holds one of the four people-operating capabilities on this workspace (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`), is the `owner` / an `ancestor-owner`, or is reading **their own** standing. The gate is scoped to **this** workspace — it is a per-node verdict, and your resolved standing here includes what reaches in from an open inherit chain but not what a **sealed** boundary blocks. The four fields are optional in the SDK type — read them defensively (`standing.capabilities ?? []`). Everything else (`user`, `reasons`, `title`, `metadata`) is visible to any relation. `relativeRank` is fenced *with* `rank`, not beside it: it is `rank` minus your own anchor, a number you already know, so leaking it would leak `rank` exactly.
 </Warning>
 
 ## Usage Example
@@ -33,7 +33,7 @@ function MemberDetail({
       workspaceId,
       targetUserId,
     });
-    // { user, reasons, title, metadata } — plus capabilities/permissions/rank
+    // { user, reasons, title, metadata } — plus capabilities/permissions/rank/relativeRank
     // when you may see them (see the fencing warning above).
   };
 }
@@ -60,6 +60,7 @@ function MemberDetail({
 | `capabilities` | `string[]?` | The **resolved** capability set (direct + reach + ownership). **Fenced** — see the warning above. **`view` is implied by every other capability**, so anyone with standing carries it. |
 | `permissions` | `string[]?` | **Per-node** permissions (direct membership on this workspace only; may be empty). **Fenced.** |
 | `rank` | `number \| null` (optional) | Direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders. **Fenced.** |
+| `relativeRank` | `number \| null` (optional) | The target's position as an **offset from you**: `2` = two rungs below you, `-3` = three rungs *above* you, `0` = your peer. `null` exactly when `rank` is. Your own anchor is your member row here if you hold one, apex otherwise. **Fenced** with `rank`. |
 | `title` | `string \| null` | Cosmetic title. |
 | `metadata` | `Record<string, any>` | Opaque member metadata. |
 

@@ -19,7 +19,7 @@ Returns a single [Workspace](/data-models/workspace), filtered by the caller's r
 </ParamField>
 
 <ParamField query="actingUserId" type="string">
-  Service/master keys only — the user to act as. Enforced: visibility resolves against the named user, so a key acting as someone with no relation to this workspace gets the same `404` that user would. Omit it to read as the app itself (unbounded). See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+  Service/master keys only — the user to act as. Enforced: visibility resolves against the named user, so a key acting as someone with no relation to this workspace gets the same `404` that user would. Omit it to read as the app itself (unbounded) — where "omit" means **absent**: `actingUserId: ""` or `null` is a `400`, not a fall-through to that mode. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
 </ParamField>
 
 ## Response
@@ -33,6 +33,12 @@ Returns the [Workspace](/data-models/workspace) object.
     ```json
     { "error": "Workspace not found.", "code": "workspace/not-found" }
     ```
+  </Accordion>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
   </Accordion>
 </AccordionGroup>
 

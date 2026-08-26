@@ -27,8 +27,10 @@ On accept, the stored grant is applied and the `WorkspaceMember` is created **tr
 
 ## Body Parameters
 
-<ParamField body="actingUserId" type="string">
-  Service/master keys only — the accepting user. Enforced: both gates above run against *that* user. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+<ParamField body="actingUserId" type="string" required>
+  Service/master keys only — the accepting user. **Required for a key:** an acceptance has to land on somebody's membership row, so there is no unbounded path — a key that names nobody is refused with `400 workspace/missing-user-id`. Enforced: both gates above run against *that* user.
+
+  A plain user token omits it — the actor is the token's own user. The field is **not** ignored for such a token: sending your *own* user id is a harmless no-op, but sending **anyone else's** is a `403 workspace/unauthorized`. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
 </ParamField>
 
 ## Response
@@ -62,6 +64,36 @@ On accept, the stored grant is applied and the `WorkspaceMember` is created **tr
     ```json
     { "error": "Invitation not found.", "code": "workspace/invite-not-found" }
     ```
+  </Accordion>
+  <Accordion title="Invite Terminal — 409">
+    ```json
+    { "error": "This invitation is no longer pending.", "code": "workspace/invite-terminal" }
+    ```
+    The invitation is already `accepted`, `declined`, or `revoked`.
+  </Accordion>
+  <Accordion title="Acting User Not Found — 404">
+    ```json
+    { "error": "Acting user not found.", "code": "workspace/invalid-target" }
+    ```
+    The `actingUserId` a key named does not exist in this project. Naming is not authentication — the id is only looked up here.
+  </Accordion>
+  <Accordion title="Missing Acting User — 400">
+    ```json
+    { "error": "Missing user ID", "code": "workspace/missing-user-id" }
+    ```
+    A service/master key called this route without naming an `actingUserId`. An acceptance creates *someone's* membership row, so there is nobody for it to land on.
+  </Accordion>
+  <Accordion title="Acted as Another User — 403">
+    ```json
+    { "error": "Unauthorized", "code": "workspace/unauthorized" }
+    ```
+    A plain user token sent an `actingUserId` naming a **different** user. Only a service/master key may act as someone else.
+  </Accordion>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid invitation id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
   </Accordion>
 </AccordionGroup>
 

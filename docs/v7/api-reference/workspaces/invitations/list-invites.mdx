@@ -28,4 +28,15 @@ Each item is a [WorkspaceInvitation](/data-models/workspace-invitation) object.
 
 This is a workspace's **outbox**. For the invites addressed **to** a user, see [List My Invites](/api-reference/workspaces/invitations/list-my-invites).
 
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
+  </Accordion>
+</AccordionGroup>
+
 See also: [useFetchWorkspaceInvites](/hooks/workspaces/use-fetch-workspace-invites)

@@ -26,6 +26,10 @@ Deletion **cascades** the entire subtree in one transaction, bottom-up: invitati
 
 <ParamField body="actingUserId" type="string">
   Service/master keys only — the user to act as. Sent in the request body so the act-as-user path works on `DELETE`. **Enforced:** the owner-only guard runs against the named user, so a key naming a non-owner is refused exactly as that user would be. Omit it to act as the app itself (unbounded) — but on a call that cascade-deletes the whole subtree, prefer naming the owner so the request carries a user id. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+
+  The [node SDK](/node-sdk/workspaces) is stricter than this endpoint: it types `actingUserId` as **required** here, so omitting it is only possible by calling the REST route directly.
+
+  Several shapes are refused rather than ignored on this path. `actingUserId: ""` or `null` is a `400` — it reads as an *attempt* to name someone, not as "nobody". So is **every top-level field this endpoint does not declare**, in the body and in the query string alike, for every caller: `onBehalfOf`, `acting_user_id` and `impersonate` all come back as `Unrecognized key: "…"` rather than being quietly dropped. A key that differs from `actingUserId` only in capitalization — `actingUserID`, `actinguserid` — is refused too, but with a "did you mean `actingUserId`?" message instead of the generic one. And when the request names nobody, so is any body whose `Content-Type` is not `application/json` — an unparsed body discards the `actingUserId` inside it just as surely as a misspelling would. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
 </ParamField>
 
 ## Response
@@ -39,7 +43,28 @@ Deletion **cascades** the entire subtree in one transaction, bottom-up: invitati
 <AccordionGroup>
   <Accordion title="Unauthorized — 403">
     ```json
-    { "error": "Only the owner or an ancestor owner may delete a workspace.", "code": "workspace/unauthorized" }
+    { "error": "Owner access required", "code": "workspace/unauthorized" }
     ```
+  </Accordion>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
+  </Accordion>
+  <Accordion title="Undeclared Field — 400">
+    ```json
+    { "error": "Unrecognized key: \"onBehalfOf\"", "code": "workspace/invalid-body" }
+    ```
+    Every workspaces endpoint declares its fields exactly, and a top-level field it does not declare is refused rather than ignored — in the request body and in the query string alike, for every caller. Two or more at once are named together: `Unrecognized keys: "onBehalfOf", "impersonate"`. An offender in the query string carries `workspace/invalid-query` instead. Send only the fields documented above, plus `actingUserId` and `projectId`, which every workspaces route accepts. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+  </Accordion>
+  <Accordion title="Unparsed Body — 400">
+    ```json
+    {
+      "error": "This request carries a body with content-type \"text/plain;charset=UTF-8\", which no parser reads, so any `actingUserId` inside it was discarded and this request names no acting user. Send the body as application/json.",
+      "code": "workspace/invalid-body"
+    }
+    ```
+    Returned when a service/master key sends a body with a `Content-Type` other than `application/json` **and** no `actingUserId` was read. Sublay parses only `application/json`, so the actor inside such a body is discarded and the request would fall through to the unbounded path. `fetch()` sends `text/plain;charset=UTF-8` when you pass a stringified body and set no headers — set the header. An empty JSON body and a bodiless request both pass. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
   </Accordion>
 </AccordionGroup>

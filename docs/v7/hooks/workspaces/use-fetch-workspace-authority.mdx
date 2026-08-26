@@ -57,7 +57,7 @@ function InviteGate({ workspaceId }: { workspaceId: string }) {
   **`view` is implied by every other capability.** Any user with standing resolves with `view` in `capabilities`, including a member whose stored `capabilities` array is empty. A user with no relation at all resolves to `reasons: []` and an empty capability set — so `capabilities.includes("view")` is a reliable "does this user have any standing here" check.
 </Note>
 
-Unlike the [member-standing read](/hooks/workspaces/use-fetch-workspace-member-standing), this hook is inherently a **self** read, so `capabilities` / `permissions` / `rank` are never fenced here.
+Unlike the [member-standing read](/hooks/workspaces/use-fetch-workspace-member-standing), this hook is inherently a **self** read, so `capabilities` / `permissions` / `rank` are never fenced here — the fence exists to stop a caller reconstructing *someone else's* rank, and there is nobody else in this payload.
 
 ## Related
 

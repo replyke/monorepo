@@ -18,7 +18,7 @@ Acceptance is **identity-matched + verified-email, with no token** — see [Acce
 | `email` | `string \| null` | The invitee email, stored **normalized** (lowercase + trim). `null` for `userId`/`username`-addressed invites. |
 | `capabilities` | `string[]` | The [capabilities](/data-models/workspace-member#capabilities-the-closed-vocabulary) to apply on accept. |
 | `permissions` | `string[]` | The opaque [permissions](/data-models/workspace-member#permissions-opaque) to apply on accept. |
-| `rank` | `number` | The initial [rank](/data-models/workspace-member#rank-semantics) to apply on accept. |
+| `rank` | `number` | The initial [rank](/data-models/workspace-member#rank-semantics) to apply on accept — always **absolute**, whichever coordinate the inviter used. A [`relativeRank`](/data-models/workspace-member#two-coordinates-rank-and-relativerank) offset (or the default, one rung below the inviter) is resolved to a number when the invitation is created and **frozen** here; it does not follow the inviter's rank afterwards. |
 | `title` | `string \| null` | Optional initial cosmetic title. |
 | `status` | `"pending" \| "accepted" \| "declined" \| "revoked"` | Invitation status. **There is no `expired` status** — expiry is lazy (see below). |
 | `expiresAt` | `string` | Absolute expiry timestamp (ISO). Set to now + **14 days**. |

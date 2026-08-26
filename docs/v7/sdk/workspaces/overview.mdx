@@ -35,7 +35,7 @@ Three project-level settings configure this bundle. They live under `workspaces`
 | Setting | Type | Default | What it does |
 |---------|------|---------|--------------|
 | `workspaces.inviteAcceptUrl` | `string` | *(none)* | The page in **your** app that surfaces workspace invitations. Invitation emails deep-link to it, with a fixed `?workspaceInviteId=<id>` appended (any query string you already have on the URL is preserved). **Required before any invitation can be created** — see the warning below. |
-| `workspaces.inheritsDefault` | `boolean` | `false` | The [`inheritsFromParent`](/data-models/workspace#reach-and-the-wall-door-rule) flag new workspaces are **born with**. `false` (the default) means every workspace starts **sealed** — no downward reach. Set it to `true` if your product wants an org's authority to flow into sub-workspaces by default. This is read at create time only; it is never accepted from client input, and changing it does not retroactively alter existing workspaces. |
+| `workspaces.inheritsDefault` | `boolean` | `false` | The [`inheritsFromParent`](/data-models/workspace#reach-and-the-wall-door-rule) flag new workspaces are **born with**. `false` (the default) means every workspace starts **sealed** — no downward reach. Set it to `true` if your product wants an org's authority to flow into sub-workspaces by default. This is read at create time only; it is never accepted from client input — sending `inheritsFromParent` on [Create Workspace](/api-reference/workspaces/create-workspace) is a `400`, not a silent override — and changing it does not retroactively alter existing workspaces. |
 | `workspaces.inheritEnforced` | `boolean` | `false` | Locks `inheritsFromParent` to the project default so workspace **owners cannot flip it**. While `true`, [`useUpdateWorkspaceInheritFlag`](/hooks/workspaces/use-update-workspace-inherit-flag) fails with `403 workspace/inherit-enforced`. Use it when the wall/door policy is a product decision rather than a per-team one. |
 
 <Warning>
@@ -69,9 +69,11 @@ With a client token, every endpoint in the bundle resolves the actor from that t
 </Note>
 
 <Warning>
-  **Seeing the roster and seeing people's *authority* are two different tiers.** Any relation may read the roster and one member's standing — who is there, their `reasons`, `title` and `metadata`. But the authority-bearing fields — **`capabilities`, `permissions`, `rank`** — are **omitted** (absent, not `null`) unless the caller holds one of the four people-operating capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) or is the `owner` / an `ancestor-owner`.
+  **Seeing the roster and seeing people's *authority* are two different tiers.** Any relation may read the roster and one member's standing — who is there, their `reasons`, `title` and `metadata`. But the authority-bearing fields — **`capabilities`, `permissions`, `rank`, `relativeRank`** — are **omitted** (absent, not `null`) unless the caller holds one of the four people-operating capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) or is the `owner` / an `ancestor-owner`.
 
-  A caller **always** sees their own — their own roster row, their own standing, and the [authority read](/api-reference/workspaces/fetch-authority), which is inherently a self read and never fenced. So a plain member can always discover their own access; they just cannot enumerate everyone else's. A service/master key acting as **itself** is never fenced; one that **names** an `actingUserId` is fenced exactly as that user is — see [Acting on behalf of a user](#acting-on-behalf-of-a-user). Type the three fields as optional on client surfaces.
+  A caller **always** sees their own — their own roster row, their own standing, and the [authority read](/api-reference/workspaces/fetch-authority), which is inherently a self read and never fenced. So a plain member can always discover their own access; they just cannot enumerate everyone else's. A service/master key acting as **itself** is never fenced; one that **names** an `actingUserId` is fenced exactly as that user is — see [Acting on behalf of a user](#acting-on-behalf-of-a-user). Type all four fields as optional on client surfaces. (`relativeRank` is fenced *with* `rank` because it is `rank` minus a number the caller already knows — leaking it would leak `rank` exactly.)
+
+  **The gate is answered per node, not once per request.** Every row a response returns is judged against your **resolved** standing on the workspace *that row belongs to* — including capabilities [reaching](/data-models/workspace#reach-and-the-wall-door-rule) in through an unbroken open inherit chain, and ownership from any ancestor, but not authority a **sealed** node blocks. The place this bites is [`include=descendants`](/api-reference/workspaces/members/list-members) on the roster: a `descendant-member` row is judged on its own node, so holding `invite` on a parent does not unfence a sealed child's ranks and capabilities. Being allowed to *see* a descendant's roster (sealing) and being allowed to see its members' **authority** (the fence) are two tiers, and passing the first does not pass the second.
 </Warning>
 
 <Note>
@@ -92,10 +94,14 @@ A service or master key therefore has exactly two modes:
 
 | Mode | Wire shape | Authority |
 |------|-----------|-----------|
-| **The app itself** | no `actingUserId` | Unbounded. Every capability, owner-only and rank check is skipped. |
+| **The app itself** | the field is **absent** | Unbounded — where the route has an unbounded path at all. Every capability, owner-only and rank check is skipped. |
 | **A named user** | `actingUserId: "<uuid>"` | Exactly that user's. Their capabilities, their rank, their visibility, their fencing — the same answer their own token would get. |
 
-A plain user token has only one mode: itself. Naming anyone else is a `403 workspace/unauthorized`.
+<Warning>
+  **"The app itself" means the field is *absent*, not falsy.** `actingUserId: ""` and `actingUserId: null` are a caller *attempting* to name someone, and they are a `400`, never a fall-through to the unbounded mode. So `actingUserId: user?.id ?? ""` — the shape a backend reaches for naturally — fails loudly instead of quietly acquiring full authority. That is the point: a request that believed it was binding to a user must never be promoted to the app itself. Only omitting the key entirely (or sending `undefined`, which is indistinguishable from omission) selects that mode. See [Shapes the server rejects](#shapes-the-server-rejects).
+</Warning>
+
+A plain user token has only one mode: itself. Sending your **own** user id is a harmless no-op — the resolved actor is the same either way — but naming **anyone else** is a `403 workspace/unauthorized`. The field is never silently ignored for a user token.
 
 Naming an acting user is not a hint or an audit field. It **binds**: if the named user would be refused, so are you. That covers the capability gate, the owner-only gate, the rank guard, [no-escalation](/data-models/workspace-member#no-privilege-escalation), roster/standing [fencing](#what-a-client-app-can-do), and the visibility `404` on a workspace the named user has no relation to.
 
@@ -128,6 +134,167 @@ On roughly half the bundle the actor is **required**, so acting-as-a-user is not
 
 The unbounded path survives on the rest — the guard-only routes (`updateWorkspace`, `updateWorkspaceInheritFlag`, `deleteWorkspace`, `transferWorkspaceOwnership`, the invite outbox reads and `revoke`/`resend`), the three reads, and `createWorkspaceInvite`.
 
+<Note>
+  **The [node SDK](/node-sdk/workspaces) types are stricter than the wire on four of those routes.** `updateWorkspace`, `updateWorkspaceInheritFlag`, `deleteWorkspace` and `transferWorkspaceOwnership` accept an omitted actor over REST — that request runs as the app itself — but the node SDK declares `actingUserId` **required** on all four, so TypeScript will not let you omit it. That is a deliberate guardrail on the four most destructive owner-only calls, not a different server rule. Reach the unbounded path on them by calling the REST endpoint directly.
+</Note>
+
+### Shapes the server rejects
+
+Eight request shapes are refused outright rather than ignored, all of them `400`s. Seven carry `workspace/invalid-body` or `workspace/invalid-query`, depending on which side of the request the offending field sat on; the eighth is a malformed path parameter, which carries `workspace/invalid-params`.
+
+They come from **two layers**, and knowing which one answered tells you what to fix:
+
+1. **A gate**, mounted ahead of every route on the bundle. It reads the raw request, so it behaves identically whichever endpoint you call and whatever that route declares.
+2. **Each route's own body and query schemas.** All 21 routes validate *both* sides, and every schema declares exactly the fields its endpoint accepts. A top-level field it does not declare is refused, not stripped. On the query side one check runs ahead of the schema and reads the raw query string rather than the parsed one — the length limit below — so it too behaves identically on every route.
+
+<AccordionGroup>
+  <Accordion title="A body or query `userId` — 400">
+    ```json
+    {
+      "error": "`userId` is not the acting user on workspace routes — it addresses the target. Use `actingUserId` to act on behalf of a user.",
+      "code": "workspace/invalid-body"
+    }
+    ```
+
+    On a workspace route `userId` **never** names the caller — it addresses the request *target*. The rejection is unconditional: it fires for user tokens and keys alike, on every route, and even when a correct `actingUserId` is also present, because a request carrying both is malformed regardless. It is checked at the gate, on the raw request, ahead of any route's own schema.
+
+    **One exception:** the invitee `userId` in the **body** of [Create Invite](/api-reference/workspaces/invitations/create-invite), where the field has always meant the target. The carve-out covers that body field and nothing else — a query `?userId=` is refused on Create Invite exactly as it is everywhere else, because no workspace route reads one, so there it can only be the stale actor spelling. The path parameter `:userId` (on the member routes) is untouched — that is the target too.
+  </Accordion>
+
+  <Accordion title="An empty or null `actingUserId` — 400">
+    ```json
+    { "error": "Invalid actingUserId.", "code": "workspace/invalid-body" }
+    ```
+
+    The actor is read by **presence**, not truthiness. `""`, `null` and a non-UUID string are all a caller *attempting* to name someone, and they fail here rather than falling through to the unbounded mode. On a route with no capability guard the rejection comes from the schema instead and reads `actingUserId: Invalid UUID format` — same status, same code, same outcome.
+
+    This is the trap behind `actingUserId: user?.id ?? ""`. A backend writing that believes it is binding the call to a user; if the empty string read as "named nobody" it would instead receive full owner authority on routes including `DELETE /workspaces/:id`. Only an absent key (or `undefined`, which is indistinguishable from omission) selects the app-itself mode.
+  </Accordion>
+
+  <Accordion title="A near-miss spelling of `actingUserId` — 400">
+    ```json
+    {
+      "error": "`actingUserID` is not a recognized field — did you mean `actingUserId`? A misspelled acting user names nobody, which would run this request unbound instead of on that user's behalf.",
+      "code": "workspace/invalid-body"
+    }
+    ```
+
+    A key that differs from `actingUserId` only in capitalization — `actingUserID`, `ActingUserId`, `actinguserid` — gets this precise message rather than the generic one below. It fires on **every** request, user tokens included, where a typo cannot escalate anything but still means your stated intent was silently dropped.
+
+    This is message quality, not a second line of defence: any other misspelling (`acting_user_id`, `actingUseId`, `ACTING-USER-ID`) is refused too, one accordion down, as a field the endpoint does not declare.
+  </Accordion>
+
+  <Accordion title="Any field the endpoint does not declare — 400">
+    ```json
+    { "error": "Unrecognized key: \"onBehalfOf\"", "code": "workspace/invalid-body" }
+    ```
+
+    Every workspaces endpoint declares its fields exactly and refuses a top-level field it does not declare, in the body and in the query string alike, for every caller. Two or more at once are named together — `Unrecognized keys: "onBehalfOf", "impersonate"` — and an offender in the query string carries `workspace/invalid-query`.
+
+    That is a categorical rule, not a list of bad names. `onBehalfOf`, `impersonate`, `acting_user_id`, `ACTING-USER-ID`, `actingUserId ` with a trailing space, `requestId`, `traceId`, `sort` — none of them is a field of any workspaces route, so all of them fail at the wire, whatever they carry. The rule is the same for a service key and for a signed-in user: a request the API cannot fully read is answered rather than half-honored.
+
+    Two consequences worth designing around:
+
+    - **Send only the documented fields.** The SDKs pass your props object to the request body as-is, so `createWorkspace({ ...orgTemplate })` carries every extra key `orgTemplate` holds into the request and fails. Name the fields you mean; put your own data in `metadata`, which is opaque to Sublay and accepts any JSON.
+    - **A field this API declares is never judged by its name.** `username` on [Create Invite](/api-reference/workspaces/invitations/create-invite), `newOwnerId` on [Transfer Ownership](/api-reference/workspaces/transfer-ownership), `userId` as an invitee — all real fields, all accepted on their own terms.
+
+    Two query parameters are the exception: `_` and `_t`, the automatic cache-busters some HTTP clients append, are dropped before the request is read. Nothing else is reserved — in particular tracing and correlation identifiers are *not*, because distributed tracing propagates in HTTP **headers** (`traceparent`, `X-B3-*`, `X-Amzn-Trace-Id`), never in the query string.
+  </Accordion>
+
+  <Accordion title="A query string with 1,000 or more parameters — 400">
+    ```json
+    {
+      "error": "Too many query parameters: 1000 `&`-separated segments, and the limit is 999. The query parser silently discards everything past 1000 of them — including `actingUserId`, which would run this request unbound instead of on that user's behalf. Empty segments and unparseable ones count too.",
+      "code": "workspace/invalid-query"
+    }
+    ```
+
+    A workspaces request whose raw query string holds **1,000 or more `&`-separated segments** is refused before anything else about it is examined. The most any workspaces request may carry is 999; the largest query vocabulary on the bundle is five parameters, so no real call comes near it.
+
+    **This is a rule about the query string's length, not about which names are in it.** The parser's budget is spent per `&`-separated segment, and a segment that parses to nothing spends it just the same — so 1,000 bare ampersands (`?&&&…`), 1,000 copies of `__proto__=1` (a name the parser discards on sight, leaving no key behind), and 1,000 copies of an ordinary *declared* parameter such as `include=` all reach the limit identically and are all refused identically. Which names you used has nothing to do with it, and neither does whether any of them is reserved.
+
+    What makes the limit worth a rule is that the parser truncates **silently**: past the budget, everything beyond it is discarded with no error and no trace, and `actingUserId` goes with it. On this bundle a request naming no acting user is the app itself, so a silently dropped actor is a request that runs unbounded while its caller believes it was scoped to one person. Counting segments on the raw URL is the only rule that can close that — how many segments you sent is not a property of any field name, and after truncation there is nothing left in the parsed request for a schema or an allowlist to inspect.
+  </Accordion>
+
+  <Accordion title="A repeated or nested `_` / `_t` — 400">
+    ```json
+    {
+      "error": "`_` must be a single value. Repeating it (or nesting it) can push other query parameters past the parser's limit, silently discarding them — including `actingUserId`, which would run this request unbound instead of on that user's behalf.",
+      "code": "workspace/invalid-query"
+    }
+    ```
+
+    The two cache-busters are stripped before the strict schema runs, so no schema ever sees the shape they arrived in — this rule is what stands in for one on those two names. Each must arrive exactly once, as a scalar: `?_=1699000000` passes, `?_=1&_=2` (an array) and `?_[a]=1` (an object) do not. Repeating a *declared* parameter needs no rule of its own: its schema expects a single value, receives an array, and refuses it.
+
+    This is a rule about the **shape** those two names arrive in, and it is not what keeps a long query string from losing `actingUserId` — a query string long enough to be truncated is refused by the length limit above, whatever names it uses, and that check runs first.
+  </Accordion>
+
+  <Accordion title="A body no parser read, when the request names nobody — 400">
+    ```json
+    {
+      "error": "This request carries a body with content-type \"text/plain;charset=UTF-8\", which no parser reads, so any `actingUserId` inside it was discarded and this request names no acting user. Send the body as application/json.",
+      "code": "workspace/invalid-body"
+    }
+    ```
+
+    Sublay parses `application/json` and nothing else. A body sent as `text/plain`, `application/x-www-form-urlencoded` or `application/vnd.api+json` is read off the wire and thrown away — so an `actingUserId` inside it never reaches the server, and the request names nobody through no fault of its spelling. This is the one shape the schemas cannot catch: with an unparsed content-type the server is handed an empty body, which has no unrecognized key in it.
+
+    **This is the `fetch()` default.** `fetch(url, { method: "DELETE", body: JSON.stringify({ actingUserId }) })` with no `headers` sends `text/plain;charset=UTF-8`. Set `"Content-Type": "application/json"`. Client libraries that set it for you — axios, the Sublay [node SDK](/node-sdk/workspaces), [`@sublay/js`](/js-sdk/workspaces) — never hit this.
+
+    Detected by **media type**, not by "is the body empty": a legitimate `{}` sent as JSON is indistinguishable from a discarded body after the fact, so an empty JSON body and a bodiless request both pass.
+  </Accordion>
+
+  <Accordion title="A path parameter that is not a UUID — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+
+    Every `:id`, `:workspaceId`, `:userId` and `:inviteId` on the bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` echoing driver internals. The message names which parameter — *workspace id*, *user id*, *invitation id*.
+
+    On `DELETE /workspaces/:id/members/me` the `me` segment is a literal rather than a `:userId`, so it is never UUID-checked — the `:id` still is.
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  **Why this bundle is stricter than the rest of the API.** Elsewhere in Sublay an undeclared field is dropped and the request proceeds. Here it is refused, and the reason is what an unreadable field can *mean* on this bundle.
+
+  A service/master key that names **no** acting user runs unbounded, with owner authority over a whole workspace hierarchy. So absence-of-actor is not a neutral state — it is the signal that grants full authority. A caller who writes `onBehalfOf: "<bob>"`, or `acting_user_id`, or spells the field correctly inside a body no parser read, believes the request is scoped to Bob; under a permissive rule it would instead receive the app's full authority, silently, in production, on routes that cascade-delete a subtree.
+
+  Guessing which stray fields "look like" an actor cannot work: an open input space can always be shown a name nobody enumerated, and every miss lands on the unbounded path. Refusing categorically fails the other way — a field we forgot to declare is a `400` on first use, in development, fixed the same day.
+</Note>
+
+<Note>
+  **The guarantee covers TOP-LEVEL keys.** State it with that scope rather than as "unknown fields are impossible":
+
+  - `metadata` is caller-owned JSON and is never inspected, so `{"metadata":{"actingUserId":"<bob>"}}` parses, names nobody, and runs as the app. That is correct — `metadata` is your data — but it is not an actor channel.
+  - A nested or wrapped actor is **refused**, not ignored — the wrapper itself is an undeclared top-level key: `{ data: { actingUserId } }` and `?ctx[actingUserId]=` both come back `400 Unrecognized key: "data"` / `"ctx"`, and an array-wrapped body is `400 Invalid input: expected object, received array`. (Don't confuse this with the node SDK's `{ data: { actingUserId } }` axios *config* for DELETE bodies — that sends `{ actingUserId }` as the body and works.)
+
+  What makes that safe is not the field rules but the gate itself — no request reaches the unbounded path without clearing it. Spell `actingUserId` at the top level and none of this applies.
+</Note>
+
+<Note>
+  **The content-type rule is the one asymmetric check — deliberately.** It applies **only** when a service/master key named nobody. Under a user token, or a key that **did** name an actor, a `text/plain` body is merely an empty one, exactly as on every other bundle.
+
+  The reason is what a *dropped* body could mean on each path. Under a token the actor comes from the token no matter what you send, so nothing lost in transit can change who is acting — there is no authority to gain. Under a key naming nobody, a body the server could not read is exactly the shape of an actor it failed to receive: one missing header, and a request the caller believed was bound to one person runs as the app.
+
+  Everything else on this page — the `userId` rejection, the undeclared-field rule, the cache-buster rule — applies uniformly to every caller.
+</Note>
+
+<Note>
+  **Don't confuse these `400`s with the missing-actor `400`.** Two different failures, two different codes, checked in a fixed order.
+
+  - `workspace/invalid-body` / `workspace/invalid-query` — **the request is malformed.** It carries a `userId`, a field the endpoint does not declare, an unreadable body, or a bad `actingUserId`. Checked **first**, before the route runs.
+  - `workspace/missing-user-id` — **the route's own rule.** On the ten routes whose actor is [required](#acting-on-behalf-of-a-user) a key must name someone, and there is no unbounded path to fall back on. Nothing about the request's shape is wrong; it is simply an operation that has to belong to a person.
+
+  On `POST /workspaces` a key with no `actingUserId` and a clean request gets `workspace/missing-user-id` — but the same call carrying an undeclared field, or sent with a `text/plain` body, gets `workspace/invalid-body` instead. Fix what the message names; the missing-actor error appears once the request is otherwise well formed.
+
+  Read the code, not the status: both are `400`, and only the code tells you whether to add an actor or repair the request.
+</Note>
+
+<Note>
+  **A request that never reaches the gate cannot be unbounded either.** Unbounded authority is *earned* by clearing the gate, not inferred from an absent field. If some future route, router or ordering mistake ever skipped it, the request would fall through to "no actor, no privilege" — a `400` or `403` — rather than silently to app-level authority. The practical guarantee for you: a malformed workspaces request fails loudly, never with more authority than you intended.
+</Note>
+
 ### Consequence: accepting an invite on someone's behalf
 
 [`acceptWorkspaceInvite`](/api-reference/workspaces/invitations/accept-invite) is bound like everything else, so a backend auto-join flow must satisfy the invitee's own gates:
@@ -147,8 +314,73 @@ Rank is strict — you may only act on, and invite at, a rank **strictly below**
 | **another rank-5 manager** | someone ranked 0–4, or the owner |
 | **a rank-0 member** | the **owner** — no ranked member clears the floor |
 
-This is not new behavior, but it is easy to hit for the first time when a backend stops running as an implicit owner. If your "add a manager" button is server-driven, act as the owner for it. The floor applies only to an inviter with a **direct member row** on the workspace, so it is skipped for an owner or ancestor owner, for a cross-node [reach](/data-models/workspace#reach-and-the-wall-door-rule) holder with no direct row, and for a key naming nobody.
+This is not new behavior, but it is easy to hit for the first time when a backend stops running as an implicit owner. If your "add a manager" button is server-driven, act as the owner for it. The floor applies only to an actor with a **direct member row** on the workspace, so it is skipped for an owner or ancestor owner, and for a cross-node [reach](/data-models/workspace#reach-and-the-wall-door-rule) holder with no direct row.
 
+<Note>
+  **"A key naming nobody" skips the floor on [Create Invite](/api-reference/workspaces/invitations/create-invite) — and nowhere else.** Invite is the one rank-assigning route with an unbounded path left, so a key that names no inviter genuinely faces no floor there. [Update Member](/api-reference/workspaces/members/update-member) has **no** unbounded path: its actor is required, so a key naming nobody is a `400 workspace/missing-user-id` rather than an exemption. On that route a key is always somebody, and faces exactly that somebody's floors.
+</Note>
+
+## Choosing a rank
+
+Almost every rule the ladder enforces is **relative** — act only on someone strictly below you, assign only strictly below yourself (minting rank 0 is the one absolute exception, below) — so rank can be named in either coordinate, on [Create Invite](/api-reference/workspaces/invitations/create-invite) and [Update Member](/api-reference/workspaces/members/update-member) alike:
+
+```tsx
+const createWorkspaceInvite = useCreateWorkspaceInvite();
+
+// Relative — "one rung below me". Usually what you mean.
+await createWorkspaceInvite({ workspaceId, email, relativeRank: 1 });
+
+// Absolute — a specific position on the ladder.
+await createWorkspaceInvite({ workspaceId, email, rank: 10 });
+```
+
+The same two fields exist on the `@sublay/js` and `@sublay/node` equivalents — this is a server-side rule, not a hook convenience.
+
+The two are **mutually exclusive**: sending both is a `400`. Storage stays absolute — a relative offset is resolved to a number at write time and the member row holds that number.
+
+Reads return **both**. The roster and member-standing reads each carry `rank` (absolute) alongside `relativeRank` (that member's position as an offset from *you*, where `-3` means "three rungs above you"). So there is no "write 2, read 5" asymmetry to reconcile — you can read back in the same coordinate you wrote in. The authority read carries `rank` only: its subject is *you*, so an offset from yourself could only ever be `0`.
+
+<Info>
+  **`relativeRank: 1` is the happy path, and the invite default.** Omit *both* rank fields on an invite and the server applies `relativeRank: 1` — one rung below the inviter. That is well defined for every actor (an inviter with no member row here anchors at apex, so their default lands on rank 0) and, by construction, it can never fail the rank floor. There is no equivalent default on [Update Member](/api-reference/workspaces/members/update-member): omitting both there means **rank unchanged**, so editing someone's capabilities never quietly moves them on the ladder.
+</Info>
+
+### The anchor is your member row, not your job title
+
+An offset is measured from **your own rank on this workspace if you hold a member row here**, and from **apex** (one step above rank 0) if you do not.
+
+Owners, ancestor owners, reach holders and keys acting as themselves normally have no row on the node in question, so they normally anchor at apex — but that is a coincidence of the common case, not the rule. An ancestor owner who *also* sits in this node's roster measures from that row: Alice owns `root` and is rank 3 on `child`, so on `child` her `relativeRank: 1` resolves to rank **4**, and she reads `child`'s rank-0 member back as `-3`. See [rank semantics](/data-models/workspace-member#the-anchor-your-member-row-not-what-kind-of-actor-you-are).
+
+One consequence worth knowing: because an in-ladder anchor is `>= 0` and a write offset is `>= 1`, **a direct member can never mint rank 0 through the relative form** — the arithmetic simply cannot reach it. The absolute form does not need a special case either. Naming `rank: 0` outright is refused by the ordinary **assign rule**, which requires a strictly larger number than your own: an actor with a member row here is at rank `>= 0`, and nothing is strictly below `0`. They get `403 workspace/insufficient-rank` — *"You may only set ranks strictly below your own."* on [Update Member](/api-reference/workspaces/members/update-member), or *"You may only invite at a rank strictly below your own."* on [Create Invite](/api-reference/workspaces/invitations/create-invite).
+
+There is **no separate "only the owner may assign rank 0" check** — owners are the only minters of rank 0 because they skip the rank block entirely, not because a guard names them. So rank 0 is reachable by the owner, and by any actor with **no member row on this workspace** — an ancestor owner or a [reach](/data-models/workspace#reach-and-the-wall-door-rule) holder — who skips or clears the same floor and, from `relativeRank: 1`, anchors at apex and lands on 0. On [Create Invite](/api-reference/workspaces/invitations/create-invite) only, a **key naming nobody** joins that list; on [Update Member](/api-reference/workspaces/members/update-member) it cannot, because the actor is required there (see the note [above](#consequence-a-tier-cannot-grow-itself)).
+
+<Warning>
+  **A relative offset is a snapshot, not a live link.** It is resolved once, at write time, and frozen as an absolute number. Invite at `relativeRank: 1` while you are rank 1 and they land on rank 2 — get promoted to rank 0 later and they are still 2, now two rungs below you rather than one. Nothing re-derives.
+
+  (`relativeRank` on a **read** is the opposite: recomputed per request against whoever is asking, so the same member shows a different `relativeRank` to different callers. Only `rank` is caller-independent.)
+</Warning>
+
+<Warning>
+  **Omitting the rank field is the easiest way in the whole API to mint rank 0.** "One rung below me" is measured from your anchor, and an inviter with **no member row on this workspace** anchors at apex — so for an **owner**, an **ancestor owner**, a **reach holder** with no direct row, or a **service/master key acting as itself**, the default lands on **rank 0**, the most senior rung there is. Everything else in this bundle gates that rung carefully; the default reaches it by leaving a field off.
+
+  It is semantically correct — one below apex *is* the top rung — and it is not changing. But it inverts the usual instinct that omitting a field is the conservative choice. The case to watch is a **backend invite flow**: a server route that invites people with a service key and no rank field creates a workspace of rank-0 members, each able to manage all the others and none manageable by anyone but the owner. A service-key flow that wants new members at the **bottom** of the ladder has to name a coordinate — an absolute `rank`, or a `relativeRank` anchored on an `actingUserId` who actually sits in the ladder.
+
+  **The milder version applies to in-ladder inviters.** A lead at rank 0 who invites six people with no rank field gets six rank-1 members — and equals cannot act on equals, so none of those six can manage each other. Only the lead can manage any of them. That is often exactly right for a flat team. But if your product has tiers, say so on the invite instead of discovering the flat layer later.
+</Warning>
+
+### When you want absolute instead
+
+`rank` is the escape hatch, and it is the right call whenever the number means something in your product rather than something about the caller. It buys more freedom and costs more care: naming a rank you are not entitled to grant is a `403 workspace/insufficient-rank`, and `rank: 0` is simply the extreme case of that — no one holding a row on this workspace can name it. A relative offset clears the **rank floor** by construction — but that is the floor specifically, not a blanket exemption from the rank checks.
+
+One pattern some apps like — **not** the prescribed approach, just one that works — is a set of named tier constants with gaps left for later:
+
+```tsx
+const TIER = { ADMIN: 0, MANAGER: 10, STAFF: 20 } as const;
+
+await createWorkspaceInvite({ workspaceId, email, rank: TIER.MANAGER });
+```
+
+Apps built this way will naturally prefer absolute input — they already know the number they want, and computing `TIER.MANAGER - myRank` just to send it relatively would be a detour. That is precisely why absolute stays. Apps whose hierarchy is a real chain of command, where "under me" is the actual intent, are better served by `relativeRank`. Neither is deprecated.
 
 ## Quick start
 

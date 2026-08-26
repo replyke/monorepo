@@ -39,7 +39,7 @@ There are exactly **7** capabilities. Sublay ships **no** built-in `owner`/`admi
 | `view` | See the workspace's existence + name/metadata. The auditor floor — **implied by every other capability** (you cannot manage what you cannot see), and by standing itself: the resolver adds `view` to anyone with any relation to the workspace, including a member whose stored `capabilities` array is empty. You never need to grant it explicitly. |
 | `invite` | The **whole** invitation lifecycle on this workspace: send, revoke, resend, and list pending invites. |
 | `remove-member` | Remove an existing member (subject to the [rank rule](#rank-semantics)). |
-| `edit-member-access` | Edit a member's **powerful** fields: `capabilities`, `permissions`, and `rank` (fenced by no-escalation + rank). |
+| `edit-member-access` | Edit a member's **powerful** fields: `capabilities`, `permissions`, and rank — in either coordinate, `rank` or `relativeRank` (fenced by no-escalation + rank). |
 | `edit-member-profile` | Edit a member's **cosmetic** fields: `title` and `metadata`. Carries no authority. |
 | `create-sub-workspace` | Create a child workspace (the creator becomes its owner). |
 | `edit-workspace` | Edit this workspace's own name and metadata. Does **not** include the inherit flag. |
@@ -49,7 +49,11 @@ The four **people-operating** capabilities (`invite`, `remove-member`, `edit-mem
 <Note>
   **Two tiers, not one.** Reading the roster at all — [`GET /workspaces/:id/members`](/api-reference/workspaces/members/list-members) and [`GET /workspaces/:id/members/:userId`](/api-reference/workspaces/members/fetch-member-standing) — needs only **some relation** to the workspace (owner, ancestor-owner, member, or reach-holder); that tier shows *who* is there, plus each member's `title` and `metadata`.
 
-  The authority-bearing fields — **`capabilities`, `permissions`, `rank`** — are **omitted** from other users' entries unless the caller holds one of the four people-operating capabilities above, or is the `owner` / an `ancestor-owner` (a service/master key acting as **itself** is never fenced; one naming an [`actingUserId`](/sdk/workspaces/overview#acting-on-behalf-of-a-user) is fenced exactly as that user is). A caller always sees their **own** — their own roster row, their own standing, and the [authority read](/api-reference/workspaces/fetch-authority) — so no one is ever blind to their own access.
+  The authority-bearing fields — **`capabilities`, `permissions`, `rank`, `relativeRank`** — are **omitted** from other users' entries unless the caller holds one of the four people-operating capabilities above, or is the `owner` / an `ancestor-owner` (a service/master key acting as **itself** is never fenced; one naming an [`actingUserId`](/sdk/workspaces/overview#acting-on-behalf-of-a-user) is fenced exactly as that user is). A caller always sees their **own** — their own roster row, their own standing, and the [authority read](/api-reference/workspaces/fetch-authority) — so no one is ever blind to their own access.
+
+  **That gate is per node, not per request.** It is answered separately for every workspace whose members a response describes, against your **resolved** standing on *that* workspace — which includes capabilities [reaching](/data-models/workspace#reach-and-the-wall-door-rule) in through an unbroken open inherit chain and ownership from any ancestor, but not authority that stops at a **sealed** boundary. So on [`GET /workspaces/:id/members?include=descendants`](/api-reference/workspaces/members/list-members), each `descendant-member` row is judged on the descendant it belongs to: operating people on the parent does not unfence a sealed child, and the roster never shows you more of a node than that node's own roster read would.
+
+  `relativeRank` is fenced *with* `rank` rather than beside it, because it is `rank` minus a number the caller already knows — handing it to a fenced caller would hand them `rank` itself. Note that fencing and *presence* are different questions on descendant rows: `relativeRank` is uniformly absent there for everyone (ranks from two ladders cannot be subtracted), while the fence above is decided node by node.
 </Note>
 
 **Owner-only, deliberately NOT capabilities:** deleting a workspace, transferring ownership, and flipping the inherit flag. **Self-service, no capability needed:** accepting/declining your own invite, leaving, and editing your own `title`.
@@ -70,6 +74,50 @@ A free-form array of developer-defined strings, opaque to Sublay. Unlike capabil
 - **Initial rank** is chosen on the [invitation](/data-models/workspace-invitation).
 
 **Cross-node rank is not compared.** When authority reaches into a *descendant* via an open chain, the actor and target sit in different, non-comparable rosters — so cross-node actions are **not** rank-checked; they are authorized by capability + open chain + ownership. The rank guard runs **only** when actor and target share a member row on the **same** workspace. A cross-node reacher may therefore set any rank in the descendant. The owner (god path) is always the backstop able to re-rank or remove any member.
+
+### Two coordinates: `rank` and `relativeRank`
+
+Both governance rules above are **relative** — act only on someone strictly below you, assign only strictly below yourself — so the API lets you name a rank in either coordinate:
+
+| Field | Means | Domain |
+|---|---|---|
+| `rank` | An **absolute** position on this workspace's ladder. | `0` – `2147483647` on a write |
+| `relativeRank` | An **offset from you**. `1` = one rung below me, `2` = two rungs below. | `1` – `2147483647` on a write, **any integer** on a read |
+
+The ceiling is the ladder's storage type (`int4`). Both the value you send **and** the resolved sum are bounded, so an offset that is legal on its own but overflows once anchored — `relativeRank: 1` from a rank-`2147483647` actor — is a `400 workspace/invalid-body` at the edge rather than a `500` from the database.
+
+They are **mutually exclusive** — sending both on the same write is a `400`. Storage is always absolute: a relative offset is resolved to an absolute number at write time and that is what the member row holds.
+
+On reads, the same field runs the other way: the roster and member-standing reads return `relativeRank` alongside `rank`, expressing that member's position **as an offset from you**. (The [authority read](/api-reference/workspaces/fetch-authority) carries `rank` only — its subject is *you*, so an offset from yourself could only ever be `0`.) The read domain is wider than the write domain — `-3` means "three rungs *above* you", `0` means "your peer". That asymmetry is one validation rule, not two concepts.
+
+#### The anchor: your member row, not what kind of actor you are
+
+A relative offset is measured from the caller's **own row on this workspace** if they hold one, and from **apex** (one step above rank 0) if they do not.
+
+<Warning>
+  **Phrase this on the row, not on the actor.** It is tempting to say "owners, ancestor owners, reach holders and service keys anchor at apex" — that is usually true and it is *wrong in general*. An ancestor owner may **also** hold a member row on the node they are acting on, and then they measure from that row.
+
+  Alice owns `root` and is **rank 3** on `child`. On `child`:
+
+  - her `relativeRank: 1` resolves to rank **4** — not 0;
+  - she reads `child`'s rank-0 member back as `relativeRank: -3`.
+
+  Write and read stay mutually consistent, and this is the correct behavior: on `child` she stands *in* the ladder, so she measures from where she stands.
+</Warning>
+
+This makes "only the owner mints rank 0" fall out of the rules instead of being a separate guard — there is no rank-0 check anywhere in the bundle. Through the **relative** form the arithmetic settles it: an in-ladder anchor is `>= 0` and a write offset is `>= 1`, so **a direct member can never produce rank 0**. Through the **absolute** form the assign rule settles it: `0` is not strictly larger than any rank `>= 0`, so an actor with a row here is refused (`403 workspace/insufficient-rank`). Rank 0 is therefore reachable by the owner — who skips the rank rules entirely — and by any other actor with **no row on this node**, who skips them too and anchors at apex.
+
+#### A relative offset is a snapshot, not a live link
+
+<Warning>
+  **`relativeRank` is resolved once, at write time, and frozen.** It does not track the actor's later rank changes.
+
+  Invite someone at `relativeRank: 1` while you are rank 1 and they land on rank **2**. If you are later promoted to rank 0, they stay at 2 — now two rungs below you, not one. Nothing re-derives.
+
+  If your product wants a relationship that survives re-ranking, model it in your own data; the ladder stores plain numbers.
+</Warning>
+
+`relativeRank` on a **read** is the opposite: computed fresh on every request against whoever is asking, so two callers reading the same roster see different `relativeRank` values for the same member. Only `rank` is stable across callers.
 
 ## No privilege escalation
 

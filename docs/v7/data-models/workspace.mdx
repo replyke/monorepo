@@ -28,7 +28,7 @@ A workspace can optionally contain copies of itself:
 | `inheritsFromParent` | `boolean` | Whether capabilities held on an ancestor **reach** into this node. **Off by default (strict).** Server-set at creation from the project default; owner-only to flip afterwards. See [Reach & the wall/door rule](#reach-and-the-wall-door-rule). |
 | `createdAt` | `string` | ISO timestamp when the workspace was created. |
 | `updatedAt` | `string` | ISO timestamp when the workspace was last updated. |
-| `memberCount` | `number \| undefined` | The workspace's **direct** member count. Present only when `include=memberCount` is requested on a single-workspace read. |
+| `memberCount` | `number \| undefined` | The workspace's **direct** member count — descendants and reach-holders excluded. Present only when `include=memberCount` is requested, on the single-workspace read or the list alike; absent otherwise, not `null` or `0`. |
 
 ## Ownership
 

@@ -12,7 +12,7 @@ icon: "plug"
 
 - The new owner must be a **verified** user in the tenant — they need not already be a member.
 - The new owner's existing member row (if any) is removed, keeping `ownerId` and member rows disjoint.
-- The previous owner is **demoted** into a fresh member row or **removed**. It defaults to `remove` when an *ancestor* owner reassigns; on a voluntary self-transfer the outgoing owner chooses. On demote, rank defaults to `0`.
+- The previous owner is **demoted** into a fresh member row or **removed**. It defaults to `remove` whenever the field is omitted — on a voluntary self-transfer as much as on an ancestor-owner reassign; pass `"demote"` to keep them on the roster. On demote, rank defaults to **one rung below you** — `0` when you are apex (the usual case), or one below your own row if you are an ancestor owner who also sits in this workspace's ladder.
 
 ## Usage Example
 
@@ -46,11 +46,11 @@ function TransferOwnership({ workspaceId }: { workspaceId: string }) {
 </ParamField>
 
 <ParamField path="previousOwnerDisposition" type='"demote" | "remove"'>
-  What happens to the outgoing owner. Defaults server-side (ancestor-owner reassign → `remove`).
+  What happens to the outgoing owner. Defaults to `remove` when omitted, on every path.
 </ParamField>
 
 <ParamField path="previousOwnerRank" type="number">
-  On demote, the ex-owner's rank. Defaults to `0`.
+  On demote, the ex-owner's rank. **Absolute only** — no relative form. Defaults to **one rung below your own anchor**: `0` when you are apex (an owner or ancestor owner with no member row here), or `yourRank + 1` when you do hold a row here, so the default never seats the outgoing owner above you. An explicit value is honored verbatim.
 </ParamField>
 
 <ParamField path="previousOwnerCapabilities" type="WorkspaceCapability[]">
