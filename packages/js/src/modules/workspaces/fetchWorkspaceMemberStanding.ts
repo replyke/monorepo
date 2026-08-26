@@ -10,7 +10,11 @@ export interface FetchWorkspaceMemberStandingProps {
 
 /**
  * Read one user's resolved standing on a workspace (`reasons`, `capabilities`,
- * `permissions`, `rank`, `title`, `metadata`).
+ * `permissions`, `rank`, `relativeRank`, `title`, `metadata`).
+ *
+ * `relativeRank` is the target's `rank` as an offset from YOU (negative =
+ * senior to you), and is fenced with `rank`: both are absent, not null, for a
+ * caller who may not see the target's authority.
  */
 export async function fetchWorkspaceMemberStanding(
   client: SublayHttpClient,

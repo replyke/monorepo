@@ -310,6 +310,43 @@ describe("js-sdk workspaces — invitation request shaping", () => {
     expectNoActorUserIdAnywhere(projectInstance);
   });
 
+  it("createWorkspaceInvite forwards relativeRank, and sends neither rank field when both are omitted", async () => {
+    const { client, projectInstance } = makeClient();
+    await createWorkspaceInvite(client, {
+      workspaceId: "w1",
+      email: "a@b.co",
+      relativeRank: 1,
+    });
+    expect(projectInstance.post).toHaveBeenCalledWith("/workspaces/w1/invites", {
+      email: "a@b.co",
+      relativeRank: 1,
+    });
+
+    // Neither coordinate: the SDK sends nothing and the server applies its
+    // one-below-the-inviter default. It must NOT invent a rank client-side.
+    await createWorkspaceInvite(client, { workspaceId: "w1", email: "c@d.co" });
+    const [, body] = projectInstance.post.mock.calls[1];
+    expect(body).toEqual({ email: "c@d.co" });
+    expect(body).not.toHaveProperty("rank");
+    expect(body).not.toHaveProperty("relativeRank");
+  });
+
+  it("updateWorkspaceMember forwards relativeRank as the alternative rank coordinate", async () => {
+    const { client, projectInstance } = makeClient();
+    await updateWorkspaceMember(client, {
+      workspaceId: "w1",
+      targetUserId: "u-target",
+      relativeRank: 1,
+    });
+    expect(projectInstance.patch).toHaveBeenCalledWith(
+      "/workspaces/w1/members/u-target",
+      { relativeRank: 1 }
+    );
+    const [, body] = projectInstance.patch.mock.calls[0];
+    // The two coordinates are mutually exclusive on the wire.
+    expect(body).not.toHaveProperty("rank");
+  });
+
   it("fetchWorkspaceInvites GETs /workspaces/:id/invites with no params (unpaginated)", async () => {
     const { client, projectInstance } = makeClient();
     await fetchWorkspaceInvites(client, { workspaceId: "w1" });
