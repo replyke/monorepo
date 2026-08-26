@@ -19,6 +19,11 @@ export interface FetchWorkspaceMembersProps {
  * Unified roster read — one entry per distinct user, each with a `reasons`
  * array. Always returned in full (never paginated). With `countOnly` the shape
  * is `WorkspaceRosterCountsResponse`.
+ *
+ * Same-node `member` reasons carry both rank coordinates: absolute `rank` and
+ * `relativeRank`, the offset from you (`1` = one rung below you, `-3` = three
+ * above). Both are fenced together and both are absent for a caller who does
+ * not operate people here. `descendant-member` reasons carry `rank` only.
  */
 function useFetchWorkspaceMembers(): (
   props: FetchWorkspaceMembersProps
