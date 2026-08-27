@@ -177,9 +177,13 @@ describe("useFetchManyReputationGrants", () => {
       useFetchManyReputationGrants()
     );
 
-    await expect(result.current({ targetId: "entity-1" })).rejects.toThrow(
-      "targetType and targetId must be supplied together."
-    );
+    await expect(
+      // @ts-expect-error a half-filled target does not typecheck — the runtime
+      // throw is the defense for plain-JS callers, who get no type checking at
+      // all. This directive is also the type-level assertion: it fails the
+      // build if the props ever stop being a both-or-neither union.
+      result.current({ targetId: "entity-1" })
+    ).rejects.toThrow("targetType and targetId must be supplied together.");
     expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 

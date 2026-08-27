@@ -1,25 +1,35 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   GrantSummary,
+  NullableReputationGrantTargetFilter,
   ReputationGrant,
-  ReputationGrantTargetType,
 } from "../../interfaces/models/ReputationGrant";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
-import useFetchManyReputationGrants from "./useFetchManyReputationGrants";
+import useFetchManyReputationGrants, {
+  FetchManyReputationGrantsProps,
+} from "./useFetchManyReputationGrants";
 import { handleError } from "../../utils/handleError";
 
-export interface UseFetchManyReputationGrantsWrapperProps
+interface UseFetchManyReputationGrantsWrapperBaseProps
   extends SpaceReputationContextParams {
   limit?: number;
   /** What this user received. */
   recipientId?: string | null;
   /** What this user sent. */
   senderId?: string | null;
-  /** Who rewarded this item — supplied together with `targetId`. */
-  targetType?: ReputationGrantTargetType | null;
-  targetId?: string | null;
   include?: string | string[];
 }
+
+/**
+ * The third filter shape — "who rewarded this item" — is the
+ * {@link NullableReputationGrantTargetFilter} pair: both fields or neither,
+ * with `null` accepted for "neither" because these are React props rather than
+ * a wire body. The hook's `canFetch` gate repeats the rule at runtime for
+ * plain-JS callers.
+ */
+export type UseFetchManyReputationGrantsWrapperProps =
+  UseFetchManyReputationGrantsWrapperBaseProps &
+    NullableReputationGrantTargetFilter;
 
 export interface UseFetchManyReputationGrantsWrapperValues {
   grants: ReputationGrant[];
@@ -39,8 +49,9 @@ export interface UseFetchManyReputationGrantsWrapperValues {
  * the reset path and the load-more path, so a filter can never be applied to
  * page 1 and silently dropped from page 2.
  *
- * The server requires exactly one filter shape. With none supplied the hook
- * stays idle rather than issuing a request it knows will 400.
+ * The server requires exactly one filter shape, and requires `targetType` and
+ * `targetId` to arrive together. With no filter supplied — or with a half-filled
+ * target — the hook stays idle rather than issuing a request it knows will 400.
  */
 function useFetchManyReputationGrantsWrapper(
   props: UseFetchManyReputationGrantsWrapperProps = {}
@@ -87,26 +98,38 @@ function useFetchManyReputationGrantsWrapper(
   const includeParam = Array.isArray(include) ? include.join(",") : include;
 
   const hasTarget = Boolean(targetType && targetId);
+  // A HALF-filled target is its own reason to stay idle, and is not visible in
+  // `filterCount`: `{ recipientId, targetType }` counts as one shape, so
+  // without this the wrapper would fire, the leaf fetcher would throw the
+  // both-or-neither error, and `handleError` would swallow it — a silent
+  // no-result list. The types make this unreachable from TypeScript; plain-JS
+  // callers land here.
+  const halfTarget = Boolean(targetType) !== Boolean(targetId);
   const filterCount = [
     Boolean(recipientId),
     Boolean(senderId),
     hasTarget,
   ].filter(Boolean).length;
-  const canFetch = filterCount === 1;
+  const canFetch = filterCount === 1 && !halfTarget;
 
   const buildParams = useCallback(
-    (pageArg: number) => ({
-      page: pageArg,
-      limit,
-      recipientId: recipientId ?? undefined,
-      senderId: senderId ?? undefined,
-      targetType: (targetType ?? undefined) as
-        | ReputationGrantTargetType
-        | undefined,
-      targetId: targetId ?? undefined,
-      include: includeParam,
-      ...reputation,
-    }),
+    (pageArg: number): FetchManyReputationGrantsProps => {
+      const base = {
+        page: pageArg,
+        limit,
+        recipientId: recipientId ?? undefined,
+        senderId: senderId ?? undefined,
+        include: includeParam,
+        ...reputation,
+      };
+      // The target pair is attached in one branch rather than as two
+      // `?? undefined` fields: spreading them individually would widen both to
+      // `T | undefined`, which satisfies neither branch of the leaf's
+      // both-or-neither union.
+      return targetType && targetId
+        ? { ...base, targetType, targetId }
+        : base;
+    },
     [
       limit,
       recipientId,

@@ -433,17 +433,18 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
     // ── message:grant ───────────────────────────────────────────────────────
     socket.on("message:grant", (payload) => {
-      // Same conversationId fallback as message:reaction: an undefined
-      // conversationId misses the message bucket entirely, so recover it from
-      // the loaded message rather than dropping the event.
-      const conversationId =
-        payload.conversationId ??
-        findMessage(payload.messageId)?.conversationId;
-      if (!conversationId) return;
-
+      // No conversationId fallback here, unlike message:reaction directly
+      // above. That one guards against servers predating the conversationId
+      // fix; `message:grant` shipped with the field mandatory from its first
+      // release — `emitGrantSocketEvent` reads it off the resolved chat-message
+      // target and sets it unconditionally on the single emit site, and the
+      // server's own socket typings declare it required across the whole
+      // message-scoped family. There is no deployed server that omits it, so a
+      // fallback here would be unreachable code hiding a contract, not
+      // resilience.
       dispatch(
         updateGrants({
-          conversationId,
+          conversationId: payload.conversationId,
           messageId: payload.messageId,
           grant: payload.grant,
           // The server sends `{ total, count }` only — `viewerTotal` is

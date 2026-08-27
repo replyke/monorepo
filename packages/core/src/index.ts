@@ -774,6 +774,8 @@ export type {
   ReputationGrant,
   ReputationGrantSourceType,
   ReputationGrantTargetType,
+  ReputationGrantTargetFilter,
+  NullableReputationGrantTargetFilter,
   GrantSummary,
 } from "./interfaces/models/ReputationGrant";
 export type {

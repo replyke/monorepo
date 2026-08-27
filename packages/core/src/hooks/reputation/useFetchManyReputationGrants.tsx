@@ -4,13 +4,13 @@ import useAxiosPrivate from "../../config/useAxiosPrivate";
 import {
   GrantSummary,
   ReputationGrant,
-  ReputationGrantTargetType,
+  ReputationGrantTargetFilter,
 } from "../../interfaces/models/ReputationGrant";
 import { PaginatedResponse } from "../../interfaces/PaginatedResponse";
 import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
-export interface FetchManyReputationGrantsProps
+interface FetchManyReputationGrantsBaseProps
   extends SpaceReputationContextParams {
   page?: number;
   limit?: number; // capped at 100 server-side
@@ -18,12 +18,23 @@ export interface FetchManyReputationGrantsProps
   recipientId?: string;
   /** What this user sent. */
   senderId?: string;
-  /** Who rewarded this item — supplied together with `targetId`. */
-  targetType?: ReputationGrantTargetType;
-  targetId?: string;
   /** Associations to expand. Only `"user"` is supported (hydrates both parties). */
   include?: string | string[];
 }
+
+/**
+ * The third filter shape — "who rewarded this item" — is the
+ * {@link ReputationGrantTargetFilter} pair, so a half-filled target is a
+ * compile error rather than a `400 reputation-grant/invalid-filter`. The
+ * runtime check inside the hook stays as the defense for plain-JS callers.
+ *
+ * Mutual exclusivity between the three shapes is NOT expressed in the type: a
+ * three-way exclusive union would multiply out across every pagination and
+ * space-reputation field and make the props unreadable, for a rule the hook
+ * already reports at runtime. Only the both-or-neither pairing is typed.
+ */
+export type FetchManyReputationGrantsProps =
+  FetchManyReputationGrantsBaseProps & ReputationGrantTargetFilter;
 
 /**
  * The `summary` block rides alongside the page envelope, and only on the

@@ -498,4 +498,59 @@ describe("ChatProvider — message-scoped socket events", () => {
 
     expect(selectMessages("conversation-1")(store.getState())[0].content).toBe("hello");
   });
+
+  // message:grant is the one message-scoped event with NO omit-conversationId
+  // variant below. It shipped with the field mandatory on its single emit site
+  // (`emitGrantSocketEvent` reads it off the resolved chat-message target), so
+  // no deployed server omits it and the handler reads `payload.conversationId`
+  // directly rather than carrying a fallback that can never run.
+  it("applies message:grant scoped by the payload's conversationId", async () => {
+    const { store } = await renderWithLoadedMessage("user-me");
+
+    act(() => {
+      fakeSocket.trigger("message:grant", {
+        messageId: "message-1",
+        conversationId: "conversation-1",
+        grant: { id: "grant-1", senderId: "user-other", amount: 50 },
+        summary: { total: 50, count: 1 },
+      });
+    });
+
+    const [message] = selectMessages("conversation-1")(store.getState());
+    // viewerTotal stays 0: the grant came from somebody else.
+    expect(message.grants).toEqual({ total: 50, count: 1, viewerTotal: 0 });
+  });
+
+  it("derives viewerTotal from my own message:grant (echo from another device)", async () => {
+    const { store } = await renderWithLoadedMessage("user-me");
+
+    act(() => {
+      fakeSocket.trigger("message:grant", {
+        messageId: "message-1",
+        conversationId: "conversation-1",
+        grant: { id: "grant-1", senderId: "user-me", amount: 50 },
+        summary: { total: 50, count: 1 },
+      });
+    });
+
+    const [message] = selectMessages("conversation-1")(store.getState());
+    expect(message.grants).toEqual({ total: 50, count: 1, viewerTotal: 50 });
+  });
+
+  it("ignores a message:grant for a conversation whose messages aren't loaded", async () => {
+    const { store } = await renderWithLoadedMessage("user-me");
+
+    act(() => {
+      fakeSocket.trigger("message:grant", {
+        messageId: "message-1",
+        conversationId: "conversation-unloaded",
+        grant: { id: "grant-1", senderId: "user-other", amount: 50 },
+        summary: { total: 50, count: 1 },
+      });
+    });
+
+    expect(
+      selectMessages("conversation-1")(store.getState())[0].grants,
+    ).toBeUndefined();
+  });
 });

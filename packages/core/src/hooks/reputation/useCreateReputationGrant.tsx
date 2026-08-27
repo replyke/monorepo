@@ -3,10 +3,10 @@ import useAxiosPrivate from "../../config/useAxiosPrivate";
 import useProject from "../projects/useProject";
 import {
   ReputationGrant,
-  ReputationGrantTargetType,
+  ReputationGrantTargetFilter,
 } from "../../interfaces/models/ReputationGrant";
 
-export interface CreateReputationGrantProps {
+interface CreateReputationGrantBaseProps {
   /** The user receiving the reputation. Cannot be the logged-in user. */
   recipientId: string;
   /**
@@ -31,10 +31,16 @@ export interface CreateReputationGrantProps {
    * `400 reputation-grant/invalid-body`. Omit the key to mean "no metadata".
    */
   metadata?: Record<string, any>;
-  /** `targetType` and `targetId` must be supplied together, or not at all. */
-  targetType?: ReputationGrantTargetType;
-  targetId?: string;
 }
+
+/**
+ * `targetType` and `targetId` are supplied together or not at all — the
+ * both-or-neither pair is carried by {@link ReputationGrantTargetFilter}, so a
+ * half-filled target is a compile error. The runtime check inside the hook
+ * stays as the defense for plain-JS callers, who get no type checking at all.
+ */
+export type CreateReputationGrantProps = CreateReputationGrantBaseProps &
+  ReputationGrantTargetFilter;
 
 /**
  * Transfers reputation from the logged-in user to another user.

@@ -27,15 +27,26 @@ export interface ChatMessage {
   reactionCounts: Record<string, number>;
   // emojis the requesting user has reacted with on this message (computed server-side)
   userReactions: string[];
-  // Reputation-grant summary. Opt-in — present exactly when the read asked for
-  // it (`includeGrants: true` on the message hooks), and kept live afterwards
-  // by the `message:grant` socket event.
+  // Reputation-grant summary. Opt-in on the READ — the server populates it
+  // exactly when the hook is called with `includeGrants: true`, and once
+  // requested it always returns the object, zero-filled
+  // (`{ total: 0, count: 0, viewerTotal: 0 }`) rather than omitted, on projects
+  // with no grants and on projects without the reputation bundle alike. So a
+  // present-but-zero summary never means "this project has no grants".
   //
-  // Optional ONLY along that opt-in axis: once requested, the server always
-  // returns the object — zero-filled (`{ total: 0, count: 0, viewerTotal: 0 }`)
-  // rather than omitted — on projects with no grants and on projects without
-  // the reputation bundle alike. So `grants` being undefined means "nobody
-  // asked", never "this project has no grants".
+  // Presence is NOT a record of what the read asked for, though: `chatSlice`'s
+  // `updateGrants` writes this field on every loaded copy of the message when a
+  // `message:grant` socket event arrives, whether or not the fetch that loaded
+  // it opted in. A message read without `includeGrants` therefore GAINS the
+  // field the moment someone grants on it while the conversation is open.
+  //
+  // That is deliberate, and preserving the opt-in state instead would be worse:
+  // the reducer cannot tell an opted-out message from one that simply has no
+  // grants yet, so honouring the axis would mean dropping live grants on the
+  // floor for the exact conversations that are watching for them.
+  //
+  // What `undefined` reliably means is therefore "nobody asked AND no grant has
+  // landed since" — treat it as "unknown", not as "zero".
   grants?: GrantSummary;
   editedAt: string | null;
   userDeletedAt: string | null;

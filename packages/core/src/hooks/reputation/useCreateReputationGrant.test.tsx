@@ -133,6 +133,10 @@ describe("useCreateReputationGrant", () => {
     );
 
     await expect(
+      // @ts-expect-error a half-filled target does not typecheck — the runtime
+      // throw is the defense for plain-JS callers, who get no type checking at
+      // all. This directive is also the type-level assertion: it fails the
+      // build if the props ever stop being a both-or-neither union.
       result.current({
         recipientId: "user-2",
         amount: 5,
@@ -140,6 +144,39 @@ describe("useCreateReputationGrant", () => {
       })
     ).rejects.toThrow("targetType and targetId must be supplied together.");
     expect(axiosPrivate.calls("post")).toHaveLength(0);
+  });
+
+  it("accepts a complete target pair and a targetless grant", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    // `mockResponse` is a `…Once` mock, so each call needs its own.
+    axiosPrivate.mockResponse("post", makeReputationGrant());
+    await act(async () => {
+      await result.current({
+        recipientId: "user-2",
+        amount: 5,
+        targetType: "entity",
+        targetId: "entity-1",
+      });
+    });
+
+    axiosPrivate.mockResponse("post", makeReputationGrant());
+    await act(async () => {
+      await result.current({ recipientId: "user-2", amount: 5 });
+    });
+
+    const calls = axiosPrivate.calls("post");
+    expect(calls).toHaveLength(2);
+    expect(calls[0].body).toMatchObject({
+      targetType: "entity",
+      targetId: "entity-1",
+    });
+    expect(calls[1].body).toMatchObject({
+      targetType: undefined,
+      targetId: undefined,
+    });
   });
 
   it("rejects when the server returns an error response", async () => {

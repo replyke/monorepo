@@ -149,9 +149,18 @@ function useLiveChatMessages({
     };
 
     initialFetch();
-    // Only re-run when the conversation/thread identity changes
+    // Re-runs on the conversation/thread identity AND on the two include
+    // flags, which change what a message row CONTAINS: flipping `includeGrants`
+    // (or `includeFiles`) on a mounted hook has to refetch, or the caller has
+    // toggled a prop that silently does nothing until the conversation changes.
+    //
+    // `fetchPage` is deliberately left out even though it is called here. It is
+    // a `useCallback` over exactly these deps plus `fetchMany`/`dispatch`, so
+    // listing it would add nothing but the risk of a refetch loop if either of
+    // those two ever stops being stable. The two flags are primitives, so no
+    // re-render can re-arm this effect on identity alone.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, conversationId, parentId]);
+  }, [projectId, conversationId, parentId, includeFiles, includeGrants]);
 
   // Load more messages:
   // - Main stream: fetch older messages using `before` cursor (oldest loaded createdAt)

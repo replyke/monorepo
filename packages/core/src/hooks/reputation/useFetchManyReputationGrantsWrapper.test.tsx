@@ -6,7 +6,9 @@ import {
   resetAxiosMocks,
   makeReputationGrant,
 } from "../../test-utils";
-import useFetchManyReputationGrantsWrapper from "./useFetchManyReputationGrantsWrapper";
+import useFetchManyReputationGrantsWrapper, {
+  type UseFetchManyReputationGrantsWrapperValues,
+} from "./useFetchManyReputationGrantsWrapper";
 import type { FetchManyReputationGrantsResponse } from "./useFetchManyReputationGrants";
 import type { ReputationGrant } from "../../interfaces/models/ReputationGrant";
 
@@ -186,5 +188,88 @@ describe("useFetchManyReputationGrantsWrapper", () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(axiosPrivate.calls("get")).toHaveLength(0);
+  });
+
+  it("stays idle on a half-filled target, alone or beside another filter", async () => {
+    // `filterCount` alone does not catch this: `{ recipientId, targetType }`
+    // reads as exactly one shape, so without the `halfTarget` gate the wrapper
+    // fires, the leaf fetcher throws the both-or-neither error, and
+    // `handleError` swallows it — a silently empty list instead of an idle one.
+    //
+    // Each `@ts-expect-error` doubles as the type-level assertion: none of
+    // these four shapes compiles, and the directive fails the build if that
+    // ever stops being true. Only a plain-JS caller can reach the runtime gate.
+    const idle = async (
+      render: () => {
+        result: { current: UseFetchManyReputationGrantsWrapperValues };
+        axiosPrivate: { calls: (method: "get") => unknown[] };
+      }
+    ) => {
+      const { result, axiosPrivate } = render();
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(axiosPrivate.calls("get")).toHaveLength(0);
+      expect(result.current.grants).toEqual([]);
+      expect(result.current.summary).toBeNull();
+      expect(result.current.hasMore).toBe(false);
+      resetAxiosMocks();
+    };
+
+    await idle(() =>
+      renderHookWithAxios(() =>
+        // @ts-expect-error targetType without targetId is a half-filled target.
+        useFetchManyReputationGrantsWrapper({ targetType: "entity" })
+      )
+    );
+    await idle(() =>
+      renderHookWithAxios(() =>
+        // @ts-expect-error targetId without targetType is a half-filled target.
+        useFetchManyReputationGrantsWrapper({ targetId: "entity-1" })
+      )
+    );
+    await idle(() =>
+      renderHookWithAxios(() =>
+        // @ts-expect-error recipientId does not license a lone targetType.
+        useFetchManyReputationGrantsWrapper({
+          recipientId: "user-2",
+          targetType: "entity",
+        })
+      )
+    );
+    await idle(() =>
+      renderHookWithAxios(() =>
+        // @ts-expect-error recipientId does not license a lone targetId.
+        useFetchManyReputationGrantsWrapper({
+          recipientId: "user-2",
+          targetId: "entity-1",
+        })
+      )
+    );
+  });
+
+  it("starts fetching once the missing half of the target arrives", async () => {
+    const { result, axiosPrivate, rerender } = renderHookWithAxios(
+      ({ targetId }: { targetId: string | null }) =>
+        // @ts-expect-error the transitional half-pair is exactly what a plain-JS
+        // caller produces while the id is still loading.
+        useFetchManyReputationGrantsWrapper({ targetType: "entity", targetId }),
+      {
+        initialProps: { targetId: null as string | null },
+        beforeRender: ({ axiosPrivate }) =>
+          axiosPrivate.mockResponse("get", makePage([makeReputationGrant()], false)),
+      }
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(axiosPrivate.calls("get")).toHaveLength(0);
+
+    rerender({ targetId: "entity-1" });
+
+    await waitFor(() => expect(axiosPrivate.calls("get")).toHaveLength(1));
+    expect(axiosPrivate.calls("get")[0].config?.params).toEqual({
+      page: 1,
+      limit: 10,
+      targetType: "entity",
+      targetId: "entity-1",
+    });
   });
 });
