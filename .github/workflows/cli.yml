@@ -3,8 +3,12 @@
 # registry/ is watched alongside packages/cli/ because the two are one
 # product: the CLI's fetchFile() downloads whatever registry/**/registry.json
 # says it should, so a registry-only change can break `sublay add` without
-# the CLI source moving at all. playground/ is deliberately not watched —
-# it is a manual Vite harness with nothing this job would run.
+# the CLI source moving at all — and because the registry is served straight
+# off this branch, it breaks for every user the moment it merges. Building the
+# CLI can't see that, so the integrity step below checks the registry metadata
+# itself: every registryUrl points at its own directory, and every files[].path
+# exists on disk. playground/ is deliberately not watched — it is a manual Vite
+# harness with nothing this job would run.
 #
 # See .github/workflows/test.yml for why each group gets its own workflow
 # file instead of a job in a shared one.
@@ -44,6 +48,12 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+
+      # Runs before install/build on purpose: it is a pure JSON + filesystem
+      # check on Node built-ins, it needs no dependencies and no build output,
+      # and a broken registry is the failure mode this job exists to catch.
+      - name: Check registry integrity
+        run: node .github/scripts/check-registry-integrity.mjs
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
