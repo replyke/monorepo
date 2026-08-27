@@ -22,6 +22,7 @@ export const PUSH_EVENT_TYPES = [
   "event-invite",
   "event-updated",
   "event-cancelled",
+  "reputation-grant",
   "message",
 ] as const;
 

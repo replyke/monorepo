@@ -1,3 +1,4 @@
+import { GrantSummary } from "./ReputationGrant";
 import { GifData } from "./Comment";
 import { File } from "./File";
 import { Mention } from "./Mention";
@@ -18,6 +19,13 @@ export interface ChatMessage {
   threadReplyCount: number;
   reactionCounts: Record<string, number>; // emoji → count
   userReactions: string[];               // emojis the requesting user reacted with
+  /**
+   * Reputation-grant summary. Opt-in — present exactly when the read requested
+   * `include=grants`. Once requested the server always returns the object,
+   * zero-filled rather than omitted, on projects with no grants and on projects
+   * without the reputation bundle alike.
+   */
+  grants?: GrantSummary;
   editedAt: string | null;
   userDeletedAt: string | null;
   moderationStatus: "approved" | "removed" | null;

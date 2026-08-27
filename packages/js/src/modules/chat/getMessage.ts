@@ -6,6 +6,11 @@ import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
 export interface GetMessageProps extends SpaceReputationContextParams {
   conversationId: string;
   messageId: string;
+  /**
+   * Comma-separated associations to populate. Only `"grants"` is supported
+   * here — it attaches the message's reputation-grant summary.
+   */
+  include?: string;
 }
 
 export async function getMessage(

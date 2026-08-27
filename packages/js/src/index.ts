@@ -14,6 +14,7 @@ import * as Follows from "./modules/follows";
 import * as Connections from "./modules/connections";
 import * as AppNotifications from "./modules/app-notifications";
 import * as Reports from "./modules/reports";
+import * as Reputation from "./modules/reputation";
 import * as Search from "./modules/search";
 import * as Storage from "./modules/storage";
 import * as OAuth from "./modules/oauth";
@@ -45,6 +46,7 @@ export class SublayClient {
   public connections: BoundModule<typeof Connections>;
   public appNotifications: BoundModule<typeof AppNotifications>;
   public reports: BoundModule<typeof Reports>;
+  public reputation: BoundModule<typeof Reputation>;
   public search: BoundModule<typeof Search>;
   public storage: BoundModule<typeof Storage>;
   public oauth: BoundModule<typeof OAuth>;
@@ -65,6 +67,7 @@ export class SublayClient {
     this.connections = bindModule(Connections, this.http);
     this.appNotifications = bindModule(AppNotifications, this.http);
     this.reports = bindModule(Reports, this.http);
+    this.reputation = bindModule(Reputation, this.http);
     this.search = bindModule(Search, this.http);
     this.storage = bindModule(Storage, this.http);
     this.oauth = bindModule(OAuth, this.http);
@@ -118,6 +121,18 @@ export type {
   SpaceReputationUserParams,
 } from "./interfaces/SpaceReputation";
 export type { UserSearchParams } from "./interfaces/UserSearch";
+export type {
+  ReputationGrant,
+  ReputationGrantSourceType,
+  ReputationGrantTargetType,
+  ReputationGrantTargetFilter,
+  GrantSummary,
+} from "./interfaces/ReputationGrant";
+export type { CreateGrantProps } from "./modules/reputation/createGrant";
+export type {
+  ListGrantsProps,
+  ListGrantsResponse,
+} from "./modules/reputation/listGrants";
 export type {
   Workspace,
   WorkspaceMember,
