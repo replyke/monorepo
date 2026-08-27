@@ -17,31 +17,41 @@ allowBuilds:
   # the union of the two intents, not a reversal of either.
   esbuild: true
   # Same reasoning as esbuild above: cli's toolchain (tsup/vite) needs its
-  # build script to run; a clean install otherwise exits non-zero once pnpm
-  # actually enforces ERR_PNPM_IGNORED_BUILDS for it (pnpm 10 only warns,
-  # but this closes the gap for anyone on a newer pnpm).
+  # build script to run. This entry is load-bearing, not defensive: pnpm 11
+  # (the version pinned in package.json's packageManager field) hard-fails a
+  # clean install with ERR_PNPM_IGNORED_BUILDS on an unapproved build script,
+  # where pnpm 10 only warned. Removing it breaks `pnpm install` outright.
   '@swc/core': true
 minimumReleaseAgeExclude:
   # pnpm's install-delay guard would otherwise refuse @sublay releases that
-  # are younger than the configured minimum age, which blocks the registry
-  # and playground from consuming a package we just published ourselves.
-  # No `minimumReleaseAge` is actually configured today, so this list is
-  # inert until one is.
+  # are younger than the configured minimum age — i.e. refuse a package we
+  # just published ourselves. This is doubly inert today: no
+  # `minimumReleaseAge` is configured at all, and every @sublay dependency
+  # in this workspace (registry's and playground's) now resolves through
+  # `workspace:*` to local source rather than from npm, so nothing here is
+  # subject to the guard in the first place. It stays as the standing rule
+  # for the moment either of those changes.
   #
-  # Bare package names on purpose. pnpm parses each entry as either a name
-  # (or name glob), which exempts every version of it, or `name@<exact
-  # versions>` — and it really does mean exact: `@sublay/core@*` is not a
-  # wildcard, it is rejected outright with ERR_PNPM_INVALID_MINIMUM_RELEASE_
-  # AGE_EXCLUDE ("Use exact versions only"). A pinned version would also
-  # have to track whatever pnpm-lock.yaml currently resolves — which is the
-  # published version, NOT the workspace source version in each
-  # package.json, a distinction that already went wrong here once: these
-  # were pinned to 7.13.0 (the workspace version) while the lockfile
-  # resolved 7.12.0, so the entries matched nothing and excluded nothing,
-  # silently. Names never go stale.
-  - '@sublay/ui-core-react-js'
-  - '@sublay/ui-core-react-native'
-  - '@sublay/core'
-  - '@sublay/expo'
-  - '@sublay/react-js'
-  - '@sublay/react-native'
+  # Note the exemption covers matched packages only, not their transitive
+  # third-party deps: if a young @sublay release exactly pins a young
+  # non-@sublay package, that install fails with
+  # ERR_PNPM_NO_MATURE_MATCHING_VERSION rather than silently downgrading.
+  #
+  # A bare NAME GLOB on purpose, covering the whole scope. pnpm parses each
+  # entry as either a name (or name glob), which exempts every version of
+  # it, or `name@<exact versions>` — and it really does mean exact:
+  # `@sublay/core@*` is not a wildcard, it is rejected outright with
+  # ERR_PNPM_INVALID_MINIMUM_RELEASE_AGE_EXCLUDE ("Use exact versions
+  # only"). A pinned version would also have to track whatever
+  # pnpm-lock.yaml currently resolves — which is the published version, NOT
+  # the workspace source version in each package.json, a distinction that
+  # already went wrong here once: these were pinned to 7.13.0 (the
+  # workspace version) while the lockfile resolved 7.12.0, so the entries
+  # matched nothing and excluded nothing, silently.
+  #
+  # The scope glob replaces what used to be six enumerated names, which had
+  # gone stale in the other direction: the consolidation added @sublay/cli,
+  # @sublay/node and @sublay/js to this repo and none of them was ever
+  # added to the list. One glob covers all nine and every future package,
+  # with nothing to keep in sync.
+  - '@sublay/*'

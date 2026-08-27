@@ -8,8 +8,8 @@
     "build": "tsc && vite build"
   },
   "dependencies": {
-    "@sublay/react-js": "^7.0.0",
-    "@sublay/ui-core-react-js": "^7.0.0",
+    "@sublay/react-js": "workspace:*",
+    "@sublay/ui-core-react-js": "workspace:*",
     "framer-motion": "^12.0.0",
     "lucide-react": "^0.552.0",
     "react": "19.2.5",

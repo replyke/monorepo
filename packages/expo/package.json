@@ -52,6 +52,7 @@
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.1.0",
+    "@types/react": "^19.2.14",
     "@vitejs/plugin-react-swc": "^3.0.0",
     "expo-linking": "^8.0.12",
     "expo-notifications": "^0.32.11",
