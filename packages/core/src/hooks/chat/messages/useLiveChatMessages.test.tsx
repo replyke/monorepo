@@ -39,6 +39,110 @@ describe("useLiveChatMessages", () => {
     expect(call.config?.params).toMatchObject({ sort: "desc", limit: 50 });
   });
 
+  it("forwards includeGrants to the request, composing it with includeFiles", async () => {
+    // Without this the canonical conversation surface can never load existing
+    // grants — `message:grant` only covers grants issued while it's open.
+    const { result, axiosPrivate } = renderHookWithAxios(
+      () =>
+        useLiveChatMessages({
+          conversationId: "conversation-1",
+          includeFiles: true,
+          includeGrants: true,
+        }),
+      {
+        beforeRender: ({ axiosPrivate }) =>
+          axiosPrivate.mockResponse("get", {
+            messages: [],
+            hasMore: false,
+            oldestCreatedAt: null,
+            newestCreatedAt: null,
+          }),
+      },
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const [call] = axiosPrivate.calls("get");
+    expect(call.config?.params.include).toBe("files,grants");
+  });
+
+  it("refetches when includeGrants or includeFiles flips on a mounted hook", async () => {
+    // The initial-fetch effect deliberately lists the two include flags: they
+    // change what a message row CONTAINS, so a caller toggling one on a
+    // mounted conversation must get a fresh page rather than silence.
+    const page = {
+      messages: [],
+      hasMore: false,
+      oldestCreatedAt: null,
+      newestCreatedAt: null,
+    };
+
+    const { result, axiosPrivate, rerender } = renderHookWithAxios(
+      ({
+        includeFiles,
+        includeGrants,
+      }: {
+        includeFiles: boolean;
+        includeGrants: boolean;
+      }) =>
+        useLiveChatMessages({
+          conversationId: "conversation-1",
+          includeFiles,
+          includeGrants,
+        }),
+      {
+        initialProps: { includeFiles: false, includeGrants: false },
+        beforeRender: ({ axiosPrivate }) =>
+          axiosPrivate.mockResponse("get", page),
+      },
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(axiosPrivate.calls("get")).toHaveLength(1);
+    expect(axiosPrivate.calls("get")[0].config?.params.include).toBeUndefined();
+
+    axiosPrivate.mockResponse("get", page);
+    rerender({ includeFiles: false, includeGrants: true });
+
+    await waitFor(() => expect(axiosPrivate.calls("get")).toHaveLength(2));
+    expect(axiosPrivate.calls("get")[1].config?.params.include).toBe("grants");
+
+    axiosPrivate.mockResponse("get", page);
+    rerender({ includeFiles: true, includeGrants: true });
+
+    await waitFor(() => expect(axiosPrivate.calls("get")).toHaveLength(3));
+    expect(axiosPrivate.calls("get")[2].config?.params.include).toBe(
+      "files,grants",
+    );
+
+    // A re-render that changes neither flag must NOT re-arm the effect — the
+    // deps are primitives precisely so this cannot loop.
+    rerender({ includeFiles: true, includeGrants: true });
+    rerender({ includeFiles: true, includeGrants: true });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(axiosPrivate.calls("get")).toHaveLength(3);
+  });
+
+  it("omits include when includeGrants is not requested", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(
+      () => useLiveChatMessages({ conversationId: "conversation-1" }),
+      {
+        beforeRender: ({ axiosPrivate }) =>
+          axiosPrivate.mockResponse("get", {
+            messages: [],
+            hasMore: false,
+            oldestCreatedAt: null,
+            newestCreatedAt: null,
+          }),
+      },
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const [call] = axiosPrivate.calls("get");
+    expect(call.config?.params).not.toHaveProperty("include");
+  });
+
   it("fetches thread replies in ascending order when parentId is provided", async () => {
     const reply = makeChatMessage({
       id: "reply-1",

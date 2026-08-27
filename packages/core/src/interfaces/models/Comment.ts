@@ -2,6 +2,7 @@ import { Entity } from "./Entity";
 import { Mention } from "./Mention";
 import { User } from "./User";
 import { ReactionCounts, ReactionType } from "./Reaction";
+import { GrantSummary } from "./ReputationGrant";
 
 export interface GifData {
   id: string;
@@ -32,6 +33,7 @@ export interface Comment {
   reactionCounts: ReactionCounts; // v7 reaction system - counts for all 8 reaction types
   userReaction?: ReactionType | null; // v7 - current user's reaction (populated when authenticated)
   repliesCount: number; // Count of replies
+  grants?: GrantSummary; // Optional - reputation-grant summary, populated when include contains "grants". Zero-filled (never omitted) on projects without the grants table.
   metadata: Record<string, any>; // JSON object that could contain any other data about the comment which is relevant. Limited to 10KB size.
   createdAt: string; // Timestamp for creation
   updatedAt: string; // Timestamp for updating
@@ -48,6 +50,11 @@ export interface Comment {
   moderationReason: string | null;
 }
 
-export type CommentInclude = "user" | "entity" | "space" | "parent";
+export type CommentInclude =
+  | "user"
+  | "entity"
+  | "space"
+  | "parent"
+  | "grants";
 export type CommentIncludeArray = CommentInclude[];
 export type CommentIncludeParam = CommentInclude | CommentIncludeArray;

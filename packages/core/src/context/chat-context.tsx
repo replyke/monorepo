@@ -24,6 +24,7 @@ import {
   setSocketConnected,
   setTypingUsers,
   updateReactions,
+  updateGrants,
   setConversation,
   setUnreadSummary,
   selectConversationList,
@@ -425,6 +426,30 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           userId: payload.userId,
           emoji: payload.emoji,
           delta: payload.delta,
+          currentUserId: currentUserIdRef.current ?? "",
+        })
+      );
+    });
+
+    // ── message:grant ───────────────────────────────────────────────────────
+    socket.on("message:grant", (payload) => {
+      // No conversationId fallback here, unlike message:reaction directly
+      // above. That one guards against servers predating the conversationId
+      // fix; `message:grant` shipped with the field mandatory from its first
+      // release — `emitGrantSocketEvent` reads it off the resolved chat-message
+      // target and sets it unconditionally on the single emit site, and the
+      // server's own socket typings declare it required across the whole
+      // message-scoped family. There is no deployed server that omits it, so a
+      // fallback here would be unreachable code hiding a contract, not
+      // resilience.
+      dispatch(
+        updateGrants({
+          conversationId: payload.conversationId,
+          messageId: payload.messageId,
+          grant: payload.grant,
+          // The server sends `{ total, count }` only — `viewerTotal` is
+          // per-viewer and is derived in the reducer.
+          summary: payload.summary,
           currentUserId: currentUserIdRef.current ?? "",
         })
       );

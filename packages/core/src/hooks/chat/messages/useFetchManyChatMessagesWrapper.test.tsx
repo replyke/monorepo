@@ -38,6 +38,51 @@ describe("useFetchManyChatMessagesWrapper", () => {
     expect(call.config?.params).toMatchObject({ limit: 50, sort: "desc" });
   });
 
+  it("forwards includeGrants on both the first page and load-more", async () => {
+    const first = makeChatMessage({
+      id: "message-1",
+      createdAt: "2024-01-02T00:00:00.000Z",
+    });
+
+    const { result, axiosPrivate } = renderHookWithAxios(
+      () =>
+        useFetchManyChatMessagesWrapper({
+          conversationId: "conversation-1",
+          includeGrants: true,
+        }),
+      {
+        beforeRender: ({ axiosPrivate }) =>
+          axiosPrivate.mockResponse("get", {
+            messages: [first],
+            hasMore: true,
+            oldestCreatedAt: first.createdAt,
+            newestCreatedAt: first.createdAt,
+          }),
+      },
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    axiosPrivate.mockResponse("get", {
+      messages: [],
+      hasMore: false,
+      oldestCreatedAt: null,
+      newestCreatedAt: null,
+    });
+
+    act(() => {
+      result.current.loadMore();
+    });
+
+    await waitFor(() => expect(result.current.hasMore).toBe(false));
+
+    const calls = axiosPrivate.calls("get");
+    expect(calls).toHaveLength(2);
+    // Dropping it on page 2 would make grants vanish as the user scrolls back.
+    expect(calls[0].config?.params.include).toBe("grants");
+    expect(calls[1].config?.params.include).toBe("grants");
+  });
+
   it("loads more using the oldest cursor for desc sort", async () => {
     const first = makeChatMessage({
       id: "message-1",

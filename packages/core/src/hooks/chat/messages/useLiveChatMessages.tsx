@@ -23,6 +23,13 @@ export interface UseLiveChatMessagesProps {
   parentId?: string | null;
   limit?: number;
   includeFiles?: boolean;
+  /**
+   * When `true`, each message carries its `grants` reputation-grant summary.
+   * Needed for grants to survive a reload or a scroll into history — the
+   * `message:grant` socket event only covers grants issued while the
+   * conversation is open.
+   */
+  includeGrants?: boolean;
 }
 
 export interface UseLiveChatMessagesValues {
@@ -48,6 +55,7 @@ function useLiveChatMessages({
   parentId,
   limit = 50,
   includeFiles,
+  includeGrants,
 }: UseLiveChatMessagesProps): UseLiveChatMessagesValues {
   const dispatch = useSublayDispatch();
   const { projectId } = useProject();
@@ -94,6 +102,7 @@ function useLiveChatMessages({
           limit,
           sort: isThread ? "asc" : "desc",
           includeFiles,
+          includeGrants,
         });
 
         if (isThread) {
@@ -116,7 +125,7 @@ function useLiveChatMessages({
         handleError(err, "Failed to load messages");
       }
     },
-    [projectId, conversationId, parentId, isThread, limit, includeFiles, fetchMany, dispatch]
+    [projectId, conversationId, parentId, isThread, limit, includeFiles, includeGrants, fetchMany, dispatch]
   );
 
   // Initial fetch on mount
@@ -140,9 +149,18 @@ function useLiveChatMessages({
     };
 
     initialFetch();
-    // Only re-run when the conversation/thread identity changes
+    // Re-runs on the conversation/thread identity AND on the two include
+    // flags, which change what a message row CONTAINS: flipping `includeGrants`
+    // (or `includeFiles`) on a mounted hook has to refetch, or the caller has
+    // toggled a prop that silently does nothing until the conversation changes.
+    //
+    // `fetchPage` is deliberately left out even though it is called here. It is
+    // a `useCallback` over exactly these deps plus `fetchMany`/`dispatch`, so
+    // listing it would add nothing but the risk of a refetch loop if either of
+    // those two ever stops being stable. The two flags are primitives, so no
+    // re-render can re-arm this effect on identity alone.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, conversationId, parentId]);
+  }, [projectId, conversationId, parentId, includeFiles, includeGrants]);
 
   // Load more messages:
   // - Main stream: fetch older messages using `before` cursor (oldest loaded createdAt)
@@ -165,6 +183,7 @@ function useLiveChatMessages({
           limit,
           sort: "asc",
           includeFiles,
+          includeGrants,
         });
         dispatch(
           setThreadReplies({
@@ -188,7 +207,7 @@ function useLiveChatMessages({
     dispatch(setMessagesLoading({ conversationId, loading: true }));
     await fetchPage(before);
     dispatch(setMessagesLoading({ conversationId, loading: false }));
-  }, [loading, hasMore, isThread, parentId, projectId, conversationId, limit, includeFiles, fetchMany, dispatch, fetchPage]);
+  }, [loading, hasMore, isThread, parentId, projectId, conversationId, limit, includeFiles, includeGrants, fetchMany, dispatch, fetchPage]);
 
   return { messages, loading, hasMore, loadOlder };
 }

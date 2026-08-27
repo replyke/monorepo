@@ -1,4 +1,5 @@
 import type { ChatMessage } from "../interfaces/models/ChatMessage";
+import type { ReputationGrant } from "../interfaces/models/ReputationGrant";
 import type {
   Conversation,
   ConversationPreview,
@@ -39,6 +40,20 @@ export interface ServerToClientEvents {
     userId: string;
     delta: 1 | -1;
     reactionCounts: Record<string, number>;
+  }) => void;
+  // A reputation grant landed on a message in this conversation. `grant` is the
+  // full created row (its `senderId` is null for an app mint); `summary` is the
+  // message's recomputed positive-grant totals.
+  //
+  // `summary` carries NO `viewerTotal`, unlike the HTTP read surfaces: this is a
+  // room broadcast and that figure is per-viewer, so one number would be wrong
+  // for every recipient but one. Clients derive their own from `grant.senderId`
+  // + `grant.amount`, exactly as they do from `message:reaction`'s `delta`.
+  "message:grant": (payload: {
+    messageId: string;
+    conversationId: string;
+    grant: ReputationGrant;
+    summary: { total: number; count: number };
   }) => void;
   "thread:reply_count": (payload: {
     messageId: string;

@@ -3,9 +3,14 @@ import { describe, it, expect } from "vitest";
 import reducer, {
   insertConversationPreview,
   removeConversationPreview,
+  updateGrants,
   type ChatState,
 } from "./chatSlice";
-import { makeConversationPreview } from "../../test-utils";
+import {
+  makeChatMessage,
+  makeConversationPreview,
+  makeReputationGrant,
+} from "../../test-utils";
 
 function baseState(overrides: Partial<ChatState> = {}): ChatState {
   return {
@@ -180,5 +185,355 @@ describe("chatSlice — removeConversationPreview", () => {
     expect(state.conversationList.items).toHaveLength(1);
     expect(state.totalUnreadCount).toBe(5);
     expect(state.unreadConversationCount).toBe(3);
+  });
+});
+
+describe("chatSlice — updateGrants", () => {
+  function stateWithMessage(messageId = "message-1", grants?: {
+    total: number;
+    count: number;
+    viewerTotal: number;
+  }) {
+    return baseState({
+      messages: {
+        "conversation-1": {
+          items: [makeChatMessage({ id: messageId, grants })],
+          loading: false,
+          hasMore: false,
+          oldestMessageId: messageId,
+          newestMessageId: messageId,
+        },
+      },
+    });
+  }
+
+  it("writes the server's total/count onto the message", () => {
+    let state = stateWithMessage();
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "message-1",
+        grant: makeReputationGrant({ senderId: "user-9", amount: 30 }),
+        summary: { total: 30, count: 1 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(state.messages["conversation-1"].items[0].grants).toEqual({
+      total: 30,
+      count: 1,
+      // Somebody else's grant — the viewer's own total is untouched.
+      viewerTotal: 0,
+    });
+  });
+
+  it("derives viewerTotal locally when the viewer is the granter (the payload has none)", () => {
+    let state = stateWithMessage("message-1", {
+      total: 30,
+      count: 1,
+      viewerTotal: 5,
+    });
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "message-1",
+        grant: makeReputationGrant({ senderId: "viewer-1", amount: 20 }),
+        summary: { total: 50, count: 2 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(state.messages["conversation-1"].items[0].grants).toEqual({
+      total: 50,
+      count: 2,
+      viewerTotal: 25,
+    });
+  });
+
+  it("leaves viewerTotal alone for an app mint (null senderId)", () => {
+    let state = stateWithMessage("message-1", {
+      total: 10,
+      count: 1,
+      viewerTotal: 10,
+    });
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "message-1",
+        grant: makeReputationGrant({
+          sourceType: "app",
+          senderId: null,
+          amount: 40,
+        }),
+        summary: { total: 50, count: 2 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(state.messages["conversation-1"].items[0].grants).toEqual({
+      total: 50,
+      count: 2,
+      viewerTotal: 10,
+    });
+  });
+
+  it("stays coherent across the fetch→socket seam: server totals are absolute, viewerTotal accrues on the fetched baseline", () => {
+    // Baseline as it arrives from an `includeGrants: true` page fetch: 100
+    // total across 4 grants, 20 of which this viewer sent.
+    let state = stateWithMessage("message-1", {
+      total: 100,
+      count: 4,
+      viewerTotal: 20,
+    });
+
+    // Somebody else grants 30. total/count come straight from the server's
+    // recompute; the viewer's own figure must not move.
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "message-1",
+        grant: makeReputationGrant({ senderId: "user-9", amount: 30 }),
+        summary: { total: 130, count: 5 },
+        currentUserId: "viewer-1",
+      })
+    );
+    expect(state.messages["conversation-1"].items[0].grants).toEqual({
+      total: 130,
+      count: 5,
+      viewerTotal: 20,
+    });
+
+    // Then the viewer grants 15 themselves.
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "message-1",
+        grant: makeReputationGrant({ senderId: "viewer-1", amount: 15 }),
+        summary: { total: 145, count: 6 },
+        currentUserId: "viewer-1",
+      })
+    );
+    expect(state.messages["conversation-1"].items[0].grants).toEqual({
+      total: 145,
+      count: 6,
+      // 20 from the fetch + 15 from this event — the two mechanisms compose
+      // without double-counting, because only viewerTotal is incremental.
+      viewerTotal: 35,
+    });
+  });
+
+  it("seeds a summary from the event when the message was fetched without includeGrants", () => {
+    // total/count are still exact (the server recomputes them per event);
+    // viewerTotal starts from 0 because no baseline was ever loaded.
+    let state = stateWithMessage("message-1");
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "message-1",
+        grant: makeReputationGrant({ senderId: "viewer-1", amount: 15 }),
+        summary: { total: 145, count: 6 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(state.messages["conversation-1"].items[0].grants).toEqual({
+      total: 145,
+      count: 6,
+      viewerTotal: 15,
+    });
+  });
+
+  it("no-ops when the conversation bucket is not loaded", () => {
+    const state = baseState();
+
+    const next = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "message-1",
+        grant: makeReputationGrant(),
+        summary: { total: 10, count: 1 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(next.messages["conversation-1"]).toBeUndefined();
+  });
+
+  it("applies a grant that landed on a thread reply", () => {
+    // Thread replies live in `threads[parentMessageId]`, never in the
+    // conversation bucket: the server's message list filters
+    // `parentMessageId: null`, so the two are disjoint on the fetch path.
+    // `useLiveChatMessages` still passes `includeGrants` on the thread fetch,
+    // which makes replies a grants-rendering surface — so the socket path has
+    // to reach them too.
+    let state = baseState({
+      messages: {
+        "conversation-1": {
+          items: [makeChatMessage({ id: "parent-1" })],
+          loading: false,
+          hasMore: false,
+          oldestMessageId: "parent-1",
+          newestMessageId: "parent-1",
+        },
+      },
+      threads: {
+        "parent-1": {
+          items: [
+            makeChatMessage({ id: "reply-1" }),
+            makeChatMessage({
+              id: "reply-2",
+              grants: { total: 10, count: 1, viewerTotal: 10 },
+            }),
+          ],
+          loading: false,
+          hasMore: false,
+        },
+      },
+    });
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "reply-2",
+        grant: makeReputationGrant({ senderId: "viewer-1", amount: 25 }),
+        summary: { total: 35, count: 2 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(state.threads["parent-1"].items[1].grants).toEqual({
+      total: 35,
+      count: 2,
+      // 10 from the fetched baseline + 25 the viewer just sent
+      viewerTotal: 35,
+    });
+    // Untouched neighbours
+    expect(state.threads["parent-1"].items[0].grants).toBeUndefined();
+    expect(state.messages["conversation-1"].items[0].grants).toBeUndefined();
+  });
+
+  it("patches both copies when a reply is in the thread bucket AND the main stream", () => {
+    // `message:created` is emitted for thread replies too, so a reply that
+    // arrived live is appended to the conversation bucket as well. Both copies
+    // are rendered, so both have to move.
+    let state = baseState({
+      messages: {
+        "conversation-1": {
+          items: [makeChatMessage({ id: "reply-1" })],
+          loading: false,
+          hasMore: false,
+          oldestMessageId: "reply-1",
+          newestMessageId: "reply-1",
+        },
+      },
+      threads: {
+        "parent-1": {
+          items: [makeChatMessage({ id: "reply-1" })],
+          loading: false,
+          hasMore: false,
+        },
+      },
+    });
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "reply-1",
+        grant: makeReputationGrant({ senderId: "user-9", amount: 12 }),
+        summary: { total: 12, count: 1 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    const expected = { total: 12, count: 1, viewerTotal: 0 };
+    expect(state.messages["conversation-1"].items[0].grants).toEqual(expected);
+    expect(state.threads["parent-1"].items[0].grants).toEqual(expected);
+  });
+
+  it("applies a thread-reply grant even when the conversation bucket was never created", () => {
+    let state = baseState({
+      threads: {
+        "parent-1": {
+          items: [makeChatMessage({ id: "reply-1" })],
+          loading: false,
+          hasMore: false,
+        },
+      },
+    });
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "reply-1",
+        grant: makeReputationGrant({ senderId: "user-9", amount: 7 }),
+        summary: { total: 7, count: 1 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(state.threads["parent-1"].items[0].grants).toEqual({
+      total: 7,
+      count: 1,
+      viewerTotal: 0,
+    });
+    // No bucket is invented for the conversation.
+    expect(state.messages["conversation-1"]).toBeUndefined();
+  });
+
+  it("no-ops when the message is loaded in neither bucket", () => {
+    let state = baseState({
+      threads: {
+        "parent-1": {
+          items: [makeChatMessage({ id: "reply-1" })],
+          loading: false,
+          hasMore: false,
+        },
+      },
+    });
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "message-absent",
+        grant: makeReputationGrant(),
+        summary: { total: 10, count: 1 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(state.threads["parent-1"].items[0].grants).toBeUndefined();
+    expect(state.messages["conversation-1"]).toBeUndefined();
+  });
+
+  it("no-ops when the message is not loaded", () => {
+    let state = stateWithMessage("message-1");
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "message-absent",
+        grant: makeReputationGrant(),
+        summary: { total: 10, count: 1 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(state.messages["conversation-1"].items[0].grants).toBeUndefined();
   });
 });

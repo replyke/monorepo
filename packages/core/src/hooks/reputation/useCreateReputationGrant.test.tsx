@@ -1,0 +1,231 @@
+import { describe, it, expect, afterEach } from "vitest";
+import { act } from "@testing-library/react";
+
+import {
+  renderHookWithAxios,
+  resetAxiosMocks,
+  makeReputationGrant,
+} from "../../test-utils";
+import useCreateReputationGrant from "./useCreateReputationGrant";
+import type { ReputationGrant } from "../../interfaces/models/ReputationGrant";
+
+afterEach(() => {
+  resetAxiosMocks();
+});
+
+describe("useCreateReputationGrant", () => {
+  it("posts to /:projectId/reputation-grants with the server's exact field names", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    const grant = makeReputationGrant({ amount: 25 });
+    axiosPrivate.mockResponse("post", grant, 201);
+
+    let returned: ReputationGrant | undefined;
+    await act(async () => {
+      returned = await result.current({
+        recipientId: "user-2",
+        amount: 25,
+        spaceId: "space-1",
+        note: "great answer",
+        metadata: { source: "answer-card" },
+        targetType: "comment",
+        targetId: "comment-1",
+      });
+    });
+
+    expect(returned).toEqual(grant);
+
+    const [call] = axiosPrivate.calls("post");
+    expect(call.url).toBe("/test-project/reputation-grants");
+    expect(call.body).toEqual({
+      recipientId: "user-2",
+      amount: 25,
+      spaceId: "space-1",
+      note: "great answer",
+      metadata: { source: "answer-card" },
+      targetType: "comment",
+      targetId: "comment-1",
+    });
+  });
+
+  it("never sends actingUserId — the sender comes from the user token", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    axiosPrivate.mockResponse("post", makeReputationGrant(), 201);
+
+    await act(async () => {
+      await result.current({ recipientId: "user-2", amount: 5 });
+    });
+
+    const [call] = axiosPrivate.calls("post");
+    expect(call.body).not.toHaveProperty("actingUserId");
+  });
+
+  it("pins the nullability contract: note/spaceId accept null, metadata does not", async () => {
+    // COMPILE-TIME assertions — the runtime call is incidental. The server's
+    // shared `metadataSchema` is `z.record(...).optional()` with NO
+    // `.nullable()`, while `note` and `spaceId` are `.nullable().optional()`.
+    // The `@ts-expect-error` below fails the typecheck if anyone re-adds
+    // `| null` to `metadata`, which would hand callers a shape the server
+    // answers with 400 reputation-grant/invalid-body.
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    axiosPrivate.mockResponse("post", makeReputationGrant(), 201);
+
+    await act(async () => {
+      await result.current({
+        recipientId: "user-2",
+        amount: 5,
+        // Both genuinely nullable server-side.
+        spaceId: null,
+        note: null,
+        // @ts-expect-error metadata is not nullable — omit the key instead.
+        metadata: null,
+      });
+    });
+
+    expect(axiosPrivate.calls("post")).toHaveLength(1);
+  });
+
+  it("throws before making a request when there is no project", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(
+      () => useCreateReputationGrant(),
+      { projectId: "" }
+    );
+
+    await expect(
+      result.current({ recipientId: "user-2", amount: 5 })
+    ).rejects.toThrow("No projectId available.");
+    expect(axiosPrivate.calls("post")).toHaveLength(0);
+  });
+
+  it("throws before making a request when recipientId is missing", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    await expect(
+      result.current({ amount: 5 } as never)
+    ).rejects.toThrow("recipientId is required.");
+    expect(axiosPrivate.calls("post")).toHaveLength(0);
+  });
+
+  it("throws before making a request when amount is missing", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    await expect(
+      result.current({ recipientId: "user-2" } as never)
+    ).rejects.toThrow("amount is required.");
+    expect(axiosPrivate.calls("post")).toHaveLength(0);
+  });
+
+  it("throws before making a request when only one half of the target is supplied", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    await expect(
+      // @ts-expect-error a half-filled target does not typecheck — the runtime
+      // throw is the defense for plain-JS callers, who get no type checking at
+      // all. This directive is also the type-level assertion: it fails the
+      // build if the props ever stop being a both-or-neither union.
+      result.current({
+        recipientId: "user-2",
+        amount: 5,
+        targetType: "entity",
+      })
+    ).rejects.toThrow("targetType and targetId must be supplied together.");
+    expect(axiosPrivate.calls("post")).toHaveLength(0);
+  });
+
+  it("rejects an explicit null target at compile time — the empty branch is undefined, not null", async () => {
+    // COMPILE-TIME assertions, same shape as the `metadata: null` case above
+    // and for the same reason: the server's `targetType`/`targetId` are
+    // `.optional()` with NO `.nullable()`, so a body carrying `targetType:
+    // null` is answered with 400 reputation-grant/invalid-body rather than
+    // read as "no target" — and this hook forwards the pair verbatim, so the
+    // null would reach the wire. Omit both keys instead.
+    //
+    // These are the SDK write props, so they use the strict
+    // `ReputationGrantTargetFilter` whose empty branch is `?: undefined`; the
+    // directives go unused — failing the build — if anyone widens it to
+    // `?: null`. The wrapper hook is the deliberate exception, and has its own
+    // positive test.
+    //
+    // Nothing throws at runtime: both halves are falsy, so the both-or-neither
+    // guard sees "neither" and the request goes out. The type is the only line
+    // of defense here, which is exactly why it is pinned.
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    axiosPrivate.mockResponse("post", makeReputationGrant(), 201);
+    await act(async () => {
+      await result.current({
+        recipientId: "user-2",
+        amount: 5,
+        // @ts-expect-error the target pair is not nullable — omit both keys.
+        targetType: null,
+        // @ts-expect-error the target pair is not nullable — omit both keys.
+        targetId: null,
+      });
+    });
+
+    expect(axiosPrivate.calls("post")).toHaveLength(1);
+  });
+
+  it("accepts a complete target pair and a targetless grant", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    // `mockResponse` is a `…Once` mock, so each call needs its own.
+    axiosPrivate.mockResponse("post", makeReputationGrant());
+    await act(async () => {
+      await result.current({
+        recipientId: "user-2",
+        amount: 5,
+        targetType: "entity",
+        targetId: "entity-1",
+      });
+    });
+
+    axiosPrivate.mockResponse("post", makeReputationGrant());
+    await act(async () => {
+      await result.current({ recipientId: "user-2", amount: 5 });
+    });
+
+    const calls = axiosPrivate.calls("post");
+    expect(calls).toHaveLength(2);
+    expect(calls[0].body).toMatchObject({
+      targetType: "entity",
+      targetId: "entity-1",
+    });
+    expect(calls[1].body).toMatchObject({
+      targetType: undefined,
+      targetId: undefined,
+    });
+  });
+
+  it("rejects when the server returns an error response", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    axiosPrivate.mockError("post", 409, {
+      code: "reputation-grant/insufficient-reputation",
+    });
+
+    await expect(
+      result.current({ recipientId: "user-2", amount: 5 })
+    ).rejects.toMatchObject({ response: { status: 409 } });
+  });
+});

@@ -76,6 +76,55 @@ describe("useFetchManyChatMessages", () => {
     });
   });
 
+  it("sends include=grants when includeGrants is set", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchManyChatMessages());
+
+    axiosPrivate.mockResponse("get", makePage());
+
+    await act(async () => {
+      await result.current({
+        conversationId: "conversation-1",
+        includeGrants: true,
+      });
+    });
+
+    const [call] = axiosPrivate.calls("get");
+    expect(call.config?.params.include).toBe("grants");
+  });
+
+  it("composes both tokens into one include param when files and grants are both requested", async () => {
+    // The endpoint takes a single `include`, so the two must not overwrite each
+    // other. The server splits on commas and trims, so this reaches both of its
+    // parsers intact.
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchManyChatMessages());
+
+    axiosPrivate.mockResponse("get", makePage());
+
+    await act(async () => {
+      await result.current({
+        conversationId: "conversation-1",
+        includeFiles: true,
+        includeGrants: true,
+      });
+    });
+
+    const [call] = axiosPrivate.calls("get");
+    expect(call.config?.params.include).toBe("files,grants");
+  });
+
+  it("omits include entirely when neither token is requested", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() => useFetchManyChatMessages());
+
+    axiosPrivate.mockResponse("get", makePage());
+
+    await act(async () => {
+      await result.current({ conversationId: "conversation-1" });
+    });
+
+    const [call] = axiosPrivate.calls("get");
+    expect(call.config?.params).not.toHaveProperty("include");
+  });
+
   it("rejects when the server returns an error response", async () => {
     const { result, axiosPrivate } = renderHookWithAxios(() => useFetchManyChatMessages());
 
