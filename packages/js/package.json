@@ -7,6 +7,15 @@
     "dist"
   ],
   "description": "Official JavaScript SDK for Sublay",
+  "bugs": {
+    "url": "https://discord.com/invite/REKxnCJzPz"
+  },
+  "homepage": "https://docs.sublay.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sublay-io/monorepo.git",
+    "directory": "packages/js"
+  },
   "scripts": {
     "build": "tsup src/index.ts --dts --format cjs,esm",
     "build:types": "tsc --emitDeclarationOnly",
@@ -22,7 +31,7 @@
     "publish-prod:minor": "pnpm version:minor && pnpm publish-prod"
   },
   "author": "Sublay team",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
   },
