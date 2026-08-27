@@ -5,13 +5,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Building
-- `pnpm run build-all` - Builds all packages in the monorepo in dependency order
+- `pnpm run react:build-all` - Builds the react-family packages (core, react-js, react-native, expo) in dependency order
 - Individual package builds: `pnpm --filter @sublay/[package-name] run build`
 - Each package builds to ESM and CJS formats using TypeScript
 
 ### Publishing
-- `pnpm run publish-prod` - Publishes all packages to production
-- `pnpm run publish-beta` - Publishes all packages with beta tag
+Scripts are grouped by publish group, and every group carries a `{group}:` prefix — no group is the unprefixed default.
+- `pnpm run react:publish-prod` / `react:publish-beta` - Publishes the react-family packages
+- `pnpm run ui-core:publish-prod` / `ui-core:publish-beta` - Publishes the ui-core packages
+- Add `:patch` or `:minor` to version first, e.g. `pnpm run react:publish-beta:patch`
 
 ## Architecture Overview
 
