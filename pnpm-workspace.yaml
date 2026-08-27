@@ -1,7 +1,28 @@
 packages:
   - "packages/**/*"
+  # registry and playground live at the repo root, not under packages/, so
+  # they need listing explicitly — the glob above will never reach them.
+  # Both are private dev-only members of the cli group: registry holds the
+  # component sources `sublay add` installs, playground is a manual Vite
+  # harness for eyeballing them.
+  - "registry"
+  - "playground"
 allowBuilds:
   '@firebase/util': true
   protobufjs: true
-ignoredBuiltDependencies:
-  - esbuild
+  # cli's own workspace opted esbuild in because it genuinely needs the
+  # build (tsup for @sublay/cli, vite for playground). The monorepo had it
+  # under ignoredBuiltDependencies instead, but only to stop pnpm failing
+  # on an unapproved build script it had no consumer for — allowing it is
+  # the union of the two intents, not a reversal of either.
+  esbuild: true
+minimumReleaseAgeExclude:
+  # pnpm's install-delay guard would otherwise refuse @sublay releases that
+  # are younger than the configured minimum age, which blocks the registry
+  # and playground from consuming a package we just published ourselves.
+  - '@sublay/ui-core-react-js@7.1.0'
+  - '@sublay/ui-core-react-native@7.1.0'
+  - '@sublay/core@7.6.1'
+  - '@sublay/expo@7.6.1'
+  - '@sublay/react-js@7.6.1'
+  - '@sublay/react-native@7.6.1'
