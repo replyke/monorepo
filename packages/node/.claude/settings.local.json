@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.sublay.io)",
+      "WebFetch(domain:docs.sublay.io)",
+      "WebFetch(domain:docs.sublay.io)"
+    ],
+    "deny": []
+  }
+}

@@ -1,0 +1,15 @@
+import { SublayHttpClient } from "../../core/client";
+import { HostedApp } from "../../interfaces/HostedApp";
+
+export interface FetchHostedAppProps {
+  appId: string;
+}
+
+export async function fetchHostedApp(
+  client: SublayHttpClient,
+  data: FetchHostedAppProps
+): Promise<HostedApp> {
+  const path = `/hosted-apps/${data.appId}`;
+  const response = await client.internalInstance.get<HostedApp>(path);
+  return response.data;
+}

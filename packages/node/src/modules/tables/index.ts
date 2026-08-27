@@ -1,0 +1,9 @@
+export { find } from "./find";
+export { findOne } from "./findOne";
+export { create } from "./create";
+export { bulkCreate } from "./bulkCreate";
+export { update } from "./update";
+export { deleteRow } from "./deleteRow";
+export { bulkDelete } from "./bulkDelete";
+export { restore } from "./restore";
+export { createTableAccessor } from "./createTableAccessor";
