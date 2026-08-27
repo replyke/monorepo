@@ -111,6 +111,41 @@ function refreshCursors(bucket: MessagesBucket): void {
     realItems.length > 0 ? realItems[realItems.length - 1].id : null;
 }
 
+/**
+ * Every loaded copy of one message, across both buckets it can live in.
+ *
+ * The main stream (`state.messages[conversationId]`) and thread buckets
+ * (`state.threads[parentMessageId]`) are populated from disjoint fetches: the
+ * server's message list filters `parentMessageId: null`, so a thread reply is
+ * normally reachable ONLY through its thread bucket. A reply that arrived live
+ * via `message:created` is also appended to the conversation bucket though, so
+ * the two copies can coexist and both must be patched — hence a list rather
+ * than a first-match.
+ *
+ * `threads` is keyed by parentMessageId, which message-scoped socket payloads
+ * don't carry, so the thread side is a scan. It is bounded by the number of
+ * open threads (in practice zero or one).
+ */
+function findLoadedMessages(
+  state: ChatState,
+  conversationId: string,
+  messageId: string
+): ChatMessage[] {
+  const found: ChatMessage[] = [];
+
+  const inConversation = state.messages[conversationId]?.items.find(
+    (m) => m.id === messageId
+  );
+  if (inConversation) found.push(inConversation);
+
+  for (const bucket of Object.values(state.threads)) {
+    const reply = bucket.items.find((m) => m.id === messageId);
+    if (reply) found.push(reply);
+  }
+
+  return found;
+}
+
 // ─── Slice ───────────────────────────────────────────────────────────────────
 
 // Not exported directly — use the actions below and the default reducer export.
@@ -519,8 +554,14 @@ const chatSlice = createSlice({
      * Apply a reputation grant that landed on a message.
      *
      * Dispatched by ChatProvider on `message:grant` socket events. Silently
-     * no-ops when the conversation bucket or the message isn't loaded — the
-     * same guard shape as `updateReactions`.
+     * no-ops when the message isn't loaded anywhere.
+     *
+     * Unlike `updateReactions`, this looks in the thread buckets as well as the
+     * conversation bucket (see `findLoadedMessages`). Thread replies are a
+     * grants-rendering surface — `useLiveChatMessages` passes `includeGrants`
+     * on the thread fetch path too — so a reducer that only reached
+     * `state.messages` would render a reply's grant total on load and then
+     * never update it live.
      *
      * `total`/`count` come straight from the server, which recomputes them from
      * the table on every event so a client that missed one still reconciles.
@@ -553,13 +594,9 @@ const chatSlice = createSlice({
       const { conversationId, messageId, grant, summary, currentUserId } =
         action.payload;
 
-      const bucket = state.messages[conversationId];
-      if (!bucket) return;
+      const messages = findLoadedMessages(state, conversationId, messageId);
+      if (messages.length === 0) return;
 
-      const message = bucket.items.find((m) => m.id === messageId);
-      if (!message) return;
-
-      const previousViewerTotal = message.grants?.viewerTotal ?? 0;
       // The server only broadcasts positive grants, but the amount guard keeps
       // this honest if that ever changes.
       const viewerDelta =
@@ -567,11 +604,14 @@ const chatSlice = createSlice({
           ? grant.amount
           : 0;
 
-      message.grants = {
-        total: summary.total,
-        count: summary.count,
-        viewerTotal: previousViewerTotal + viewerDelta,
-      };
+      for (const message of messages) {
+        const previousViewerTotal = message.grants?.viewerTotal ?? 0;
+        message.grants = {
+          total: summary.total,
+          count: summary.count,
+          viewerTotal: previousViewerTotal + viewerDelta,
+        };
+      }
     },
 
     // ── Thread actions ───────────────────────────────────────────────────────

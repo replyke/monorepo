@@ -370,6 +370,156 @@ describe("chatSlice — updateGrants", () => {
     expect(next.messages["conversation-1"]).toBeUndefined();
   });
 
+  it("applies a grant that landed on a thread reply", () => {
+    // Thread replies live in `threads[parentMessageId]`, never in the
+    // conversation bucket: the server's message list filters
+    // `parentMessageId: null`, so the two are disjoint on the fetch path.
+    // `useLiveChatMessages` still passes `includeGrants` on the thread fetch,
+    // which makes replies a grants-rendering surface — so the socket path has
+    // to reach them too.
+    let state = baseState({
+      messages: {
+        "conversation-1": {
+          items: [makeChatMessage({ id: "parent-1" })],
+          loading: false,
+          hasMore: false,
+          oldestMessageId: "parent-1",
+          newestMessageId: "parent-1",
+        },
+      },
+      threads: {
+        "parent-1": {
+          items: [
+            makeChatMessage({ id: "reply-1" }),
+            makeChatMessage({
+              id: "reply-2",
+              grants: { total: 10, count: 1, viewerTotal: 10 },
+            }),
+          ],
+          loading: false,
+          hasMore: false,
+        },
+      },
+    });
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "reply-2",
+        grant: makeReputationGrant({ senderId: "viewer-1", amount: 25 }),
+        summary: { total: 35, count: 2 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(state.threads["parent-1"].items[1].grants).toEqual({
+      total: 35,
+      count: 2,
+      // 10 from the fetched baseline + 25 the viewer just sent
+      viewerTotal: 35,
+    });
+    // Untouched neighbours
+    expect(state.threads["parent-1"].items[0].grants).toBeUndefined();
+    expect(state.messages["conversation-1"].items[0].grants).toBeUndefined();
+  });
+
+  it("patches both copies when a reply is in the thread bucket AND the main stream", () => {
+    // `message:created` is emitted for thread replies too, so a reply that
+    // arrived live is appended to the conversation bucket as well. Both copies
+    // are rendered, so both have to move.
+    let state = baseState({
+      messages: {
+        "conversation-1": {
+          items: [makeChatMessage({ id: "reply-1" })],
+          loading: false,
+          hasMore: false,
+          oldestMessageId: "reply-1",
+          newestMessageId: "reply-1",
+        },
+      },
+      threads: {
+        "parent-1": {
+          items: [makeChatMessage({ id: "reply-1" })],
+          loading: false,
+          hasMore: false,
+        },
+      },
+    });
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "reply-1",
+        grant: makeReputationGrant({ senderId: "user-9", amount: 12 }),
+        summary: { total: 12, count: 1 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    const expected = { total: 12, count: 1, viewerTotal: 0 };
+    expect(state.messages["conversation-1"].items[0].grants).toEqual(expected);
+    expect(state.threads["parent-1"].items[0].grants).toEqual(expected);
+  });
+
+  it("applies a thread-reply grant even when the conversation bucket was never created", () => {
+    let state = baseState({
+      threads: {
+        "parent-1": {
+          items: [makeChatMessage({ id: "reply-1" })],
+          loading: false,
+          hasMore: false,
+        },
+      },
+    });
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "reply-1",
+        grant: makeReputationGrant({ senderId: "user-9", amount: 7 }),
+        summary: { total: 7, count: 1 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(state.threads["parent-1"].items[0].grants).toEqual({
+      total: 7,
+      count: 1,
+      viewerTotal: 0,
+    });
+    // No bucket is invented for the conversation.
+    expect(state.messages["conversation-1"]).toBeUndefined();
+  });
+
+  it("no-ops when the message is loaded in neither bucket", () => {
+    let state = baseState({
+      threads: {
+        "parent-1": {
+          items: [makeChatMessage({ id: "reply-1" })],
+          loading: false,
+          hasMore: false,
+        },
+      },
+    });
+
+    state = reducer(
+      state,
+      updateGrants({
+        conversationId: "conversation-1",
+        messageId: "message-absent",
+        grant: makeReputationGrant(),
+        summary: { total: 10, count: 1 },
+        currentUserId: "viewer-1",
+      })
+    );
+
+    expect(state.threads["parent-1"].items[0].grants).toBeUndefined();
+    expect(state.messages["conversation-1"]).toBeUndefined();
+  });
+
   it("no-ops when the message is not loaded", () => {
     let state = stateWithMessage("message-1");
 
