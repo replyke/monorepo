@@ -238,6 +238,36 @@ Triggered when a space moderator approves the user's pending membership request.
 | `spaceSlug` | `string \| null \| undefined` | URL slug of the space. |
 | `spaceAvatar` | `string \| null \| undefined` | Avatar URL of the space. |
 
+### `reputation-grant`
+
+Triggered when a user is granted reputation — by another user, or by the app. **Only positive grants notify**; a negative grant (an app deduction) is silent.
+
+**Action**: computed per grant. With a target it is that target's action (`"open-entity"`, `"open-comment"`, or `"open-chat-message"`). With no target it is `"open-profile"` for a user grant (opening the granter) and `"do-nothing"` for an app mint, which has no granter to open.
+
+| Metadata Field | Type | Description |
+|----------------|------|-------------|
+| `grantId` | `string` | ID of the [ReputationGrant](/data-models/reputation-grant). |
+| `amount` | `number` | The amount granted. Always positive here. |
+| `sourceType` | `"user" \| "app"` | `"user"` = a debited transfer, `"app"` = a mint. |
+| `note` | `string \| null \| undefined` | The granter's note, if any. |
+| `granterId` | `string \| null \| undefined` | The sender. Absent for a mint — the app has no user identity. |
+| `granterName` | `string \| null \| undefined` | Display name of the granter. |
+| `granterUsername` | `string \| null \| undefined` | Username of the granter. |
+| `granterForeignId` | `string \| null \| undefined` | Your system's ID for the granter. |
+| `granterAvatar` | `string \| null \| undefined` | Avatar URL of the granter. |
+| `spaceId` | `string \| null \| undefined` | The bucket the grant moved in. Absent/null = the project-general bucket. |
+| `spaceShortId` | `string \| null \| undefined` | Short ID of that space. |
+| `spaceSlug` | `string \| null \| undefined` | URL slug of that space. |
+| `targetType` | `"entity" \| "comment" \| "chat-message" \| null \| undefined` | What the grant was for, if anything. |
+| `targetId` | `string \| null \| undefined` | ID of the rewarded record. |
+| `entityId`, `entityShortId`, `entityForeignId` | `string \| null \| undefined` | Id forms of an entity target. |
+| `commentId`, `commentForeignId` | `string \| null \| undefined` | Id forms of a comment target. A comment target also carries `entityId`, since a comment can only be opened inside its entity. |
+| `messageId`, `conversationId` | `string \| null \| undefined` | Id forms of a chat-message target. Both are needed to place a message. |
+
+<Note>
+  The granter is carried under `granter*` keys, **never** `initiatorId`. A notification whose `metadata.initiatorId` is blocked by the recipient is suppressed entirely — and an app-mediated transfer between two users who blocked each other is required to succeed *and* to notify.
+</Note>
+
 ### `system`
 
 A manually triggered notification from the project dashboard.
@@ -263,6 +293,7 @@ A manually triggered notification from the project dashboard.
 
 ## See Also
 
+- [ReputationGrant](/data-models/reputation-grant)
 - [useAppNotifications hook](/hooks/app-notifications/use-app-notifications)
 - [Fetch Notifications](/api-reference/app-notifications/fetch-notifications)
 - [Notification Templates](/sdk/app-notifications/notification-templates)

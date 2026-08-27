@@ -39,7 +39,7 @@ The caller must be a member. Former members (who left) can only read messages up
 </ParamField>
 
 <ParamField query="include" type="string">
-  Comma-separated list of extra fields to include. Currently supports `files`. Example: `include=files`.
+  Comma-separated list of extra fields to include: `files` (attachments) and `grants` (the [reputation-grant summary](/data-models/reputation-grant#grantsummary)). Combine them as `include=files,grants`.
 </ParamField>
 
 <ParamField query="filters" type="object">

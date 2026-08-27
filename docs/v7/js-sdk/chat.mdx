@@ -366,7 +366,7 @@ const withReplies = await sublay.chat.listMessages({
 </ParamField>
 
 <ParamField body="include" type="string">
-  Comma-separated associations to populate, e.g. `"files"`.
+  Comma-separated associations to populate: `"files"` (message attachments) and `"grants"` (each message's [reputation-grant summary](/data-models/reputation-grant#grantsummary)). Combine them as `"files,grants"`.
 </ParamField>
 
 <ParamField body="filters" type="MessageFilters">
@@ -461,6 +461,10 @@ const message = await sublay.chat.getMessage({
 
 <ParamField body="messageId" type="string" required>
   The message ID.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated associations to populate. Only `"grants"` is supported here — it attaches the message's [reputation-grant summary](/data-models/reputation-grant#grantsummary) at `message.grants`.
 </ParamField>
 
 <SpaceReputationParams variant="context" field="body" />

@@ -67,6 +67,9 @@ function MessagesWithReplies({ conversationId }: { conversationId: string }) {
 <ParamField path="includeFiles" type="boolean">
   When `true`, the server populates the `files` field on each message.
 </ParamField>
+<ParamField path="includeGrants" type="boolean">
+  When `true`, each message carries its [reputation-grant summary](/data-models/reputation-grant#grantsummary) at `message.grants` — `{ total, count, viewerTotal }` over positive grants. Populated by the `reputation` bundle; on a project without it the summary comes back zero-filled rather than missing.
+</ParamField>
 
 <SpaceReputationParams variant="context" field="path" />
 

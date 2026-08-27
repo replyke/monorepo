@@ -56,6 +56,9 @@ function MessageList({ conversationId }: { conversationId: string }) {
 <ParamField body="includeFiles" type="boolean">
   When `true`, the server populates the `files` field on each message. Omitted by default to keep payloads small.
 </ParamField>
+<ParamField body="includeGrants" type="boolean">
+  When `true`, each message carries its [reputation-grant summary](/data-models/reputation-grant#grantsummary) at `message.grants` — `{ total, count, viewerTotal }` over positive grants. Populated by the `reputation` bundle; on a project without it the summary comes back zero-filled rather than missing.
+</ParamField>
 
 ## Returns
 

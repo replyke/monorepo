@@ -40,7 +40,7 @@ On top of core, you choose which of these to install. Most are independent — i
 | `notifications` | [App Notifications](/sdk/app-notifications/overview) | In-app notification system |
 | `push` | [Push Notifications](/push-notifications) | Native OS push delivery to iOS, Android, and Web |
 | `ai-search` | [Semantic Search & AI](/sdk/search/overview) | Content embeddings, semantic search, and the AI ask endpoint |
-| `reputation` | [Reputation](/data-models/reputation) | Per-space reputation buckets, with a maintained overall total on each user |
+| `reputation` | [Reputation](/data-models/reputation), [ReputationGrant](/data-models/reputation-grant) | Per-space reputation buckets with a maintained overall total on each user, plus reputation grants — reputation deliberately given by a user or minted by your app |
 
 ### Bundle dependencies
 
@@ -62,7 +62,7 @@ Installing a bundle is an asynchronous operation — the dashboard shows it as *
 <Warning>
   **Removing a bundle is destructive.** Uninstalling drops the bundle's tables and the data in them, and clears references to that data from other bundles. For example, removing the `spaces` bundle deletes all spaces and clears the `spaceId` on any entities, comments, or conversations that pointed at a space. There is no undo — back up anything you need first.
 
-  Uninstalling the `reputation` bundle is doubly lossy: it drops the reputation buckets table **and** zeroes the `reputation` column on every user. Reinstalling starts fresh from zero — past scores are not recomputed. See [Reputation](/data-models/reputation).
+  Uninstalling the `reputation` bundle is doubly lossy: it drops the reputation buckets table and the grants table — destroying all grant history — **and** zeroes the `reputation` column on every user. Reinstalling starts fresh from zero — past scores are not recomputed. See [Reputation](/data-models/reputation).
 </Warning>
 
 ## What happens if a bundle isn't installed

@@ -1,0 +1,93 @@
+---
+title: "useFetchManyReputationGrantsWrapper"
+description: "Stateful, paginated reputation-grants list with load-more and refresh"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchManyReputationGrantsWrapper` wraps [`useFetchManyReputationGrants`](/hooks/reputation/use-fetch-many-reputation-grants) into a ready-to-render list: it holds the accumulated `grants`, tracks `loading` / `hasMore`, keeps the target `summary`, and exposes `loadMore` and `refresh`.
+
+Changing any filter prop (or calling `refresh`) resets the list to page 1.
+
+The server requires exactly one filter shape. With none supplied — or with two — the hook stays **idle** rather than issuing a request it knows will fail: `grants` is empty, `summary` is `null`, `loading` is `false`, and `hasMore` is `false`. That makes it safe to mount with a `targetId` that hasn't resolved yet.
+
+Requires the `reputation` bundle.
+
+## Usage Example
+
+```tsx
+import { useFetchManyReputationGrantsWrapper } from "@sublay/react-js";
+
+function WhoRewardedThis({ commentId }: { commentId: string }) {
+  const { grants, summary, loading, hasMore, loadMore, refresh } =
+    useFetchManyReputationGrantsWrapper({
+      targetType: "comment",
+      targetId: commentId,
+      include: ["user"],
+      limit: 20,
+    });
+
+  return (
+    <>
+      <h4>
+        {summary?.total ?? 0} points from {summary?.count ?? 0} people
+      </h4>
+      {grants.map((g) => (
+        <div key={g.id}>
+          {g.sender?.name ?? "Someone"} gave {g.amount}
+          {g.note ? ` — "${g.note}"` : ""}
+        </div>
+      ))}
+      {hasMore && (
+        <button disabled={loading} onClick={loadMore}>
+          Load more
+        </button>
+      )}
+    </>
+  );
+}
+```
+
+Call `refresh` after issuing a grant to pull the new row and updated totals.
+
+## Parameters
+
+<ParamField path="recipientId" type="string | null">What this user received.</ParamField>
+<ParamField path="senderId" type="string | null">What this user sent.</ParamField>
+<ParamField path="targetType" type='"entity" | "comment" | "chat-message" | null'>
+  Who rewarded this item. Supplied together with `targetId`.
+</ParamField>
+<ParamField path="targetId" type="string | null">The rewarded record's ID. Supplied together with `targetType`.</ParamField>
+<ParamField path="limit" type="number">Page size. Defaults to `10`. The server's maximum is `100`; a larger value is rejected with `400 reputation-grant/invalid-query` rather than clamped.</ParamField>
+<ParamField path="include" type="string | string[]">
+  Associations to expand. Only `"user"` is supported — it hydrates both the sender and the recipient.
+</ParamField>
+<ParamField path="spaceReputation" type="object">
+  Opt-in per-user space reputation on the hydrated users. `{ spaceId: "context" }` scores each user against that grant's own space. See [Reputation](/data-models/reputation#reading-space-scoped-reputation).
+</ParamField>
+
+## Returns
+
+<ResponseField name="grants" type="ReputationGrant[]">The accumulated [grants](/data-models/reputation-grant), newest first.</ResponseField>
+<ResponseField name="summary" type="GrantSummary | null">
+  `{ total, count, viewerTotal }` for the target. Populated **only** on the target filter shape; `null` otherwise.
+</ResponseField>
+<ResponseField name="loading" type="boolean">`true` while fetching.</ResponseField>
+<ResponseField name="hasMore" type="boolean">Whether more pages remain.</ResponseField>
+<ResponseField name="loadMore" type="() => void">Advance to the next page and append.</ResponseField>
+<ResponseField name="refresh" type="() => void">Re-run the query from page 1.</ResponseField>
+
+<Note>
+  **Chat-message targets are private to their conversation.** With `targetType: "chat-message"`, the list is populated only when the logged-in user is a member of that message's conversation — someone who has left it still counts; for anyone outside it, `grants` stays empty and `summary` comes back as `{ total: 0, count: 0, viewerTotal: 0 }` rather than erroring. The `recipientId` / `senderId` shapes apply the same test per row, so a user's own feed keeps the grants made on messages in their own conversations while a caller outside them never sees those rows. Grants on a message moderation has removed are hidden on both shapes, members included. See [useFetchManyReputationGrants](/hooks/reputation/use-fetch-many-reputation-grants#chat-message-targets).
+</Note>
+
+<Note>
+  `summary` is set from the first page and is not re-read by `loadMore` — it describes the whole target, not the rows loaded so far. Because grant lists are never block-filtered, the rows you render always add up to it.
+</Note>
+
+## See Also
+
+- [useFetchManyReputationGrants](/hooks/reputation/use-fetch-many-reputation-grants)
+- [Reputation Grants Overview](/sdk/reputation/overview)
+- [Fetch Many Reputation Grants API](/api-reference/reputation-grants/fetch-many-reputation-grants)

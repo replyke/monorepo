@@ -1,0 +1,150 @@
+---
+title: "Fetch Many Reputation Grants"
+api: "GET /v7/:projectId/reputation-grants"
+description: "List positive reputation grants by recipient, by sender, or by rewarded item"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+Returns a paginated list of reputation grants, newest first. Requires authentication (user token, service key, or master key) and the `reputation` bundle.
+
+<Warning>
+  **Only positive grants are ever returned — for every caller.** The `amount > 0` filter is baked into the query, so negative grants (your app's private moderation deductions) are unreachable here for a service or master key exactly as they are for a user token. Read them from [Fetch User Grant History](/api-reference/reputation-grants/fetch-user-grant-history) instead.
+</Warning>
+
+## One filter shape per request
+
+Exactly one filter is required, and the three shapes are **mutually exclusive** — they are not AND-ed:
+
+| Shape | Parameters | Answers |
+|-------|-----------|---------|
+| By recipient | `recipientId` | What this user received. |
+| By sender | `senderId` | What this user sent. |
+| By target | `targetType` + `targetId` | Who rewarded this item. |
+
+Grants pointing at a **chat message** are private to that conversation, which is what makes the choice of shape matter — see [Chat-message targets](#chat-message-targets-are-private) below.
+
+Supplying none returns `400 reputation-grant/missing-filter`; supplying more than one returns `400 reputation-grant/invalid-filter`. Combining shapes is rejected rather than intersected, because a target list narrowed by sender would render rows that no longer reconcile with the `summary` printed above them.
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page. Defaults to `20`; the maximum is `100`. A larger value is rejected with `400 reputation-grant/invalid-query`, not silently clamped.
+</ParamField>
+
+<ParamField query="recipientId" type="string">
+  UUID. Grants credited to this user.
+</ParamField>
+
+<ParamField query="senderId" type="string">
+  UUID. Grants sent by this user.
+</ParamField>
+
+<ParamField query="targetType" type="string">
+  `"entity"`, `"comment"`, or `"chat-message"`. Supplied together with `targetId`.
+</ParamField>
+
+<ParamField query="targetId" type="string">
+  UUID of the rewarded record. Supplied together with `targetType`.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated associations to expand. Only `"user"` is supported — it hydrates **both** the sender and the recipient on every row.
+</ParamField>
+
+## Chat-message targets are private
+
+A grant row carries `targetType`, `targetId` and the granter's free-text `note`, and `include=user` hydrates both parties. On a `chat-message` target those facts describe a private conversation — who is talking to whom, and what one of them said about it — so the grant is exactly as private as the message it points at. Both filter shapes ask the same question — *can this caller see the underlying message?* — and answer it the same way:
+
+- **The target shape is gated on conversation membership.** `targetType=chat-message` returns rows only to a caller who is a **member** of the message's conversation. The membership test is the one [Fetch Message](/api-reference/chat/messages/fetch-message) applies: any membership row counts, so a user who has left the conversation still reads the grants on a message chat itself still returns to them. Everyone else gets `200` with an empty `data` array, `totalItems: 0`, and the zero summary `{ "total": 0, "count": 0, "viewerTotal": 0 }` — never a `403`, because an error would itself confirm the message exists. That covers a user who was never a member, and every user token on a project without the `chat` bundle, where there is no membership to have. The answer is byte-identical to the one a completely made-up message ID returns.
+- **The `recipientId` and `senderId` shapes carry the same test into the query.** A chat-message-targeted grant stays in these feeds for a caller who can see the message, and is excluded from both the page and `totalItems` for one who cannot. The predicate rides the same `where` clause the `COUNT` uses, so a filtered page and a filtered total always move together and `hasMore` never asserts rows the caller may not read. A user's own "reputation I received / sent" feed therefore includes the grants made on messages in their own conversations, and reconciles with the reputation shown on their profile.
+- **A message removed by moderation takes its grants with it.** A `removed` message is invisible on every chat surface, so both shapes hide its grants: the target shape answers the same empty page, and the user-keyed shapes drop the rows from the page and `totalItems`. That holds for a member of the conversation as much as for a stranger.
+
+Service and master keys are exempt on both shapes: they pass the target-shape membership gate unconditionally, and the user-keyed shapes apply no membership predicate to them at all — so a backend can enumerate every grant it minted, removed messages included. They are the app's own backend, which has no membership and is already trusted to mint grants and to read every conversation. They hold no viewer identity, so `viewerTotal` is `0` for them while `total` and `count` are real.
+
+Entity and comment targets are unaffected — those items are public, and both shapes return them normally. Grants with no target at all are returned by every shape.
+
+<Note>
+  The inline `grants` summary on the chat surfaces needs none of this. [List Messages](/api-reference/chat/messages/list-messages) and [Fetch Message](/api-reference/chat/messages/fetch-message) already refuse a non-member with `403 chat/not-a-member` before they read a message, so `include=grants` there is behind the conversation gate already.
+</Note>
+
+### Space-scoped reputation
+
+Grants carry their own `spaceId`, so this is a **context** endpoint: `spaceReputation: { spaceId: "context" }` scores each hydrated user against *that grant's own* space. The same granter appearing on two grants in different spaces therefore gets two correct numbers rather than one overwriting the other. Requires the `reputation` bundle — which this endpoint already does.
+
+<SpaceReputationParams variant="context" field="query" />
+
+## Response
+
+Returns `200` with the standard paginated envelope:
+
+```json
+{
+  "data": [ /* ReputationGrant[] */ ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "totalPages": 3,
+    "totalItems": 47,
+    "hasMore": true
+  }
+}
+```
+
+On the **target** shape only, a `summary` block rides alongside the envelope, so a standalone "who rewarded this" view doesn't have to fetch the parent item just to learn the totals:
+
+```json
+{
+  "data": [ /* ... */ ],
+  "pagination": { /* ... */ },
+  "summary": { "total": 120, "count": 4, "viewerTotal": 20 }
+}
+```
+
+`viewerTotal` is the calling user's own summed grants on the target, and is `0` for a service or master key, which has no viewer identity. The other two shapes return no `summary` key at all.
+
+See [ReputationGrant](/data-models/reputation-grant) for the row shape and [GrantSummary](/data-models/reputation-grant#grantsummary) for the summary.
+
+<Note>
+  **Grant reads are never block-filtered.** Unlike entity and comment feeds, this endpoint has no `blockedFilter` and applies no block exclusion. Hiding a blocked granter's row while still counting their amount in the total would produce a "120 total, 70 shown" discrepancy no app can explain — so nothing is hidden, and the amounts you display always reconcile with the totals you display.
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Filter — 400">
+    ```json
+    { "error": "One filter is required: recipientId, senderId, or targetType + targetId.", "code": "reputation-grant/missing-filter" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Filter — 400">
+    ```json
+    { "error": "Filters are mutually exclusive: supply recipientId, senderId, or targetType + targetId — not more than one.", "code": "reputation-grant/invalid-filter" }
+    ```
+    Also returned when only one half of `targetType` / `targetId` is supplied.
+  </Accordion>
+  <Accordion title="Invalid Query — 400">
+    ```json
+    { "error": "limit: Too big: expected number to be <=100", "code": "reputation-grant/invalid-query" }
+    ```
+    Shape failures from the query schema: a `limit` above `100`, a non-positive `page`, a malformed UUID (`"recipientId: Invalid UUID format"`), or a `targetType` outside the three accepted values. The field path prefixes the message, so `error` reads `"<path>: <message>"`.
+  </Accordion>
+  <Accordion title="Tables Not Available — 403">
+    ```json
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["ReputationBuckets", "ReputationGrants"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
+    ```
+    The route names both of the `reputation` bundle's tables, so a project without the bundle is told about both.
+  </Accordion>
+</AccordionGroup>
+
+**Rate limit:** 100 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
+
+See also: [useFetchManyReputationGrants](/hooks/reputation/use-fetch-many-reputation-grants) · [useFetchManyReputationGrantsWrapper](/hooks/reputation/use-fetch-many-reputation-grants-wrapper) · [node-sdk](/v7/node-sdk/reputation) · [js-sdk](/v7/js-sdk/reputation)

@@ -20,7 +20,7 @@ Returns a single comment matching the given `foreignId` within the project. Usef
 </ParamField>
 
 <ParamField query="include" type="string">
-  Comma-separated list of associations to include. Valid values: `user`, `entity`, `space`, `parent`.
+  Comma-separated list of associations to include. Valid values: `user`, `entity`, `space`, `parent`, `grants` (the [reputation-grant summary](/data-models/reputation-grant#grantsummary)).
 </ParamField>
 
 ## Response
@@ -34,6 +34,10 @@ Returns a `200 OK` with the following shape:
 ```
 
 The `comment` field is a [Comment](/data-models/comment) object. If the comment has been removed (user-deleted or moderation-removed) and the viewer is not the author, identifying fields (`userId`, `user`, `content`, `gif`, `mentions`, `attachments`) are nulled out as a Reddit-style placeholder.
+
+<Note>
+  This endpoint **nests the record under a `comment` key**, unlike every other read surface, which returns the record bare. So a requested grants summary lives at `comment.grants` — see [GrantSummary](/data-models/reputation-grant#grantsummary).
+</Note>
 
 ## Error Responses
 

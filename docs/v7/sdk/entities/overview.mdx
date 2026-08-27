@@ -57,6 +57,7 @@ All fetch hooks accept an optional `include` parameter that populates related da
 | `"topComment"` | The top-voted comment on this entity |
 | `"saved"` | `isSaved: boolean` for the current authenticated user |
 | `"files"` | System-managed `File` objects attached to this entity |
+| `"grants"` | The entity's [reputation-grant summary](/data-models/reputation-grant#grantsummary) — `{ total, count, viewerTotal }` |
 
 ```tsx
 const entity = await fetchEntity({ entityId, include: ["user", "topComment"] });

@@ -59,7 +59,7 @@ Deleted comments in thread view appear as stripped placeholders to preserve tree
 </ParamField>
 
 <ParamField query="include" type="string">
-  Comma-separated list of associations to include. Valid values: `user`, `entity`, `space`.
+  Comma-separated list of associations to include. Valid values: `user`, `entity`, `space`, `grants` (the [reputation-grant summary](/data-models/reputation-grant#grantsummary). Note `parent` is accepted by validation on this endpoint but is only resolved on the single-comment reads.)
 
   <Note>
     Requesting `space` automatically includes `entity` as well, since space membership is resolved via the entity.

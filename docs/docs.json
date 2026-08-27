@@ -95,6 +95,10 @@
                 "pages": ["v7/sdk/reactions/overview"]
               },
               {
+                "group": "Reputation",
+                "pages": ["v7/sdk/reputation/overview"]
+              },
+              {
                 "group": "Spaces",
                 "pages": [
                   "v7/sdk/spaces/overview",
@@ -379,6 +383,14 @@
                   "v7/hooks/reactions/use-fetch-entity-reactions-wrapper",
                   "v7/hooks/reactions/use-fetch-comment-reactions",
                   "v7/hooks/reactions/use-fetch-comment-reactions-wrapper"
+                ]
+              },
+              {
+                "group": "Reputation",
+                "pages": [
+                  "v7/hooks/reputation/use-create-reputation-grant",
+                  "v7/hooks/reputation/use-fetch-many-reputation-grants",
+                  "v7/hooks/reputation/use-fetch-many-reputation-grants-wrapper"
                 ]
               },
               {
@@ -865,6 +877,15 @@
                 ]
               },
               {
+                "group": "Reputation Grant Endpoints",
+                "pages": [
+                  "v7/api-reference/reputation-grants/create-reputation-grant",
+                  "v7/api-reference/reputation-grants/mint-reputation-grant",
+                  "v7/api-reference/reputation-grants/fetch-many-reputation-grants",
+                  "v7/api-reference/reputation-grants/fetch-user-grant-history"
+                ]
+              },
+              {
                 "group": "Storage Endpoints",
                 "pages": [
                   "v7/api-reference/storage/upload-image",
@@ -892,6 +913,7 @@
                 "pages": [
                   "v7/data-models/user",
                   "v7/data-models/reputation",
+                  "v7/data-models/reputation-grant",
                   "v7/data-models/entity",
                   "v7/data-models/comment",
                   "v7/data-models/space",
@@ -940,6 +962,7 @@
                   "v7/node-sdk/spaces-moderation",
                   "v7/node-sdk/workspaces",
                   "v7/node-sdk/events",
+                  "v7/node-sdk/reputation",
                   "v7/node-sdk/chat",
                   "v7/node-sdk/search",
                   "v7/node-sdk/reports",
@@ -975,6 +998,7 @@
                   "v7/js-sdk/spaces-moderation",
                   "v7/js-sdk/workspaces",
                   "v7/js-sdk/events",
+                  "v7/js-sdk/reputation",
                   "v7/js-sdk/chat",
                   "v7/js-sdk/push-notifications",
                   "v7/js-sdk/search",

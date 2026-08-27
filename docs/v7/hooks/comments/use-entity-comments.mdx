@@ -48,7 +48,7 @@ function CommentTree({ entityId }: { entityId: string }) {
 </ParamField>
 
 <ParamField path="include" type="string | string[]">
-  Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`.
+  Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`, `"grants"`. On a comment feed, `"parent"` is accepted but not resolved — `parentComment` is populated only by the two single-comment reads.
 </ParamField>
 
 ## Return Values

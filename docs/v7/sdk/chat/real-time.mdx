@@ -18,6 +18,7 @@ description: "Typing indicators, unread counts, and marking conversations as rea
 | `message:deleted` | Marks the message as soft-deleted in the store |
 | `message:removed` | Sets `moderationStatus: "removed"` on the message |
 | `message:reaction` | Updates `reactionCounts` and `userReactions` on the message |
+| `message:grant` | A [reputation grant](/data-models/reputation-grant) landed on the message. Updates the message's `grants` summary in the store. The payload carries `{ messageId, conversationId, grant, summary }`, and `summary` is `{ total, count }` **only** — `viewerTotal` is per-viewer, so the SDK derives it from `grant.senderId` and `grant.amount`. Negative grants are never broadcast |
 | `thread:reply_count` | Updates `threadReplyCount` on the parent message |
 | `typing:start` | Adds the user to the typing list for that conversation |
 | `typing:stop` | Removes the user from the typing list |

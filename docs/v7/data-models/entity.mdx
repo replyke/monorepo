@@ -40,6 +40,7 @@ An entity is the central content unit in Sublay — it can represent a post, art
 | `metadata` | `Record<string, any>` | Custom key-value data (max 10 KB). |
 | `topComment` | `TopComment \| null` | The highest-voted comment. Populated when `include` contains `"topComment"`. |
 | `isSaved` | `boolean` | Whether the current user has saved this entity to a collection. Populated when `include` contains `"saved"`. |
+| `grants` | `GrantSummary \| undefined` | Per-item [reputation-grant](/data-models/reputation-grant) summary — `{ total, count, viewerTotal }` over **positive** grants. Populated when `include` contains `"grants"`. Zero-filled rather than omitted on a project with no grants, so `undefined` always means "nobody asked". |
 | `isDraft` | `boolean \| null` | Whether this entity is in draft state. |
 | `nsfw` | `boolean` | The entity's **own** NSFW flag. `false` by default. Set on create/update by the owner (or a service/master key), or by a space moderator via the [set-NSFW endpoint](/hooks/spaces/use-set-space-entity-nsfw). See [NSFW flagging](#nsfw-flagging). |
 | `nsfwEffective` | `boolean` | **Computed live, read-only.** `true` when the entity's own `nsfw` is `true` **or** its space is effectively NSFW: `entity.nsfw OR (space?.nsfwEffective ?? false)`. This is the value the `nsfwFilter` query param keys off. See [NSFW flagging](#nsfw-flagging). |
@@ -105,11 +106,13 @@ Pass an `include` array to populate optional fields:
 | `"topComment"` | `topComment` — top-voted comment |
 | `"saved"` | `isSaved` — whether current user saved this entity |
 | `"files"` | `files` — managed file records |
+| `"grants"` | `grants` — the reputation-grant summary |
 
 ## See Also
 
 - [Reaction](/data-models/reaction)
 - [File](/data-models/file)
+- [ReputationGrant](/data-models/reputation-grant)
 - [Space](/data-models/space)
 - [Fetch Entity](/api-reference/entities/fetch-entity)
 - [useEntity hook](/hooks/entities/use-entity)

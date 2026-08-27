@@ -321,7 +321,7 @@ const withReplies = await sublay.chat.listMessages({
 <ParamField body="after" type="string">ISO timestamp — messages created after this. Mutually exclusive with `before`.</ParamField>
 <ParamField body="limit" type="number">1–100, defaults to `50`.</ParamField>
 <ParamField body="sort" type='"asc" | "desc"' />
-<ParamField body="include" type="string">Comma-separated associations to populate, e.g. `"files"`.</ParamField>
+<ParamField body="include" type="string">Comma-separated associations to populate: `"files"` (message attachments) and `"grants"` (each message's [reputation-grant summary](/data-models/reputation-grant#grantsummary)). Combine them as `"files,grants"`.</ParamField>
 <ParamField body="filters" type="MessageFilters">Optional filters. `filters.hasReplies` (boolean): when `true`, returns only messages that have thread replies (`threadReplyCount > 0`); when `false`, only messages with none. Filters by thread replies, not quotings. Threads are one level deep, so `hasReplies: true` together with `parentId` always returns an empty list — the response's `notice` field explains why.</ParamField>
 <SpaceReputationParams variant="context" field="body" />
 
@@ -385,6 +385,7 @@ const message = await sublay.chat.getMessage({
 <ParamField body="conversationId" type="string" required />
 <ParamField body="messageId" type="string" required />
 <ParamField body="userId" type="string" required>The acting user (must be a member).</ParamField>
+<ParamField body="include" type="string">Comma-separated associations to populate. Only `"grants"` is supported here — it attaches the message's [reputation-grant summary](/data-models/reputation-grant#grantsummary) at `message.grants`.</ParamField>
 <SpaceReputationParams variant="context" field="body" />
 
 **Returns** — `Promise<ChatMessage>`

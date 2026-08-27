@@ -83,7 +83,7 @@ function UserComments({ userId }: { userId: string }) {
 </ParamField>
 
 <ParamField body="include" type="CommentIncludeParam" optional>
-  Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`.
+  Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`, `"grants"`. On a comment feed, `"parent"` is accepted but not resolved — `parentComment` is populated only by the two single-comment reads.
 </ParamField>
 
 ## Returns

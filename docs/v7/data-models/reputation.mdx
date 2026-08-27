@@ -22,6 +22,15 @@ A few rules govern buckets:
 - **Negative scores allowed** — there is no floor; a bucket can go below zero.
 - **Buckets are not returned directly** — there is no endpoint that lists raw buckets. You read reputation through the `reputation` total and the opt-in `spaceReputation` field described below.
 
+## Where reputation comes from
+
+Reputation accrues two ways:
+
+- **Earned** — the system credits a user for what they do: creating entities and comments, and receiving votes and reactions on them. These changes are not individually recorded.
+- **Granted** — reputation is deliberately *given*, either by another user (a transfer that debits their bucket) or by your app (a mint that creates it from nothing, or destroys it). Every grant is persisted as a [ReputationGrant](/data-models/reputation-grant) record, so a user's grant history is readable while their earned history is not.
+
+Grants ship with this bundle — every project that has reputation has them, with no separate opt-in. A transfer never moves reputation between the general bucket and a space bucket: it lands in the recipient's bucket for the same space it left. See [ReputationGrant](/data-models/reputation-grant) and the [Reputation Grants SDK overview](/sdk/reputation/overview).
+
 ## The maintained total
 
 Every user object still carries a `reputation` field, and default API responses are unchanged. `reputation` is the **maintained overall total** — the sum of all of that user's buckets (general plus every space). It is always present, whether or not a space is in context.
@@ -109,10 +118,11 @@ Project-wide user search (`search-users`) and the self-relative follows/connecti
 
 ## Uninstalling is lossy
 
-Removing the `reputation` bundle drops the buckets table **and** zeroes the `reputation` column on every user. Reinstalling starts fresh from zero — past scores are not recomputed. Back up anything you need before uninstalling. See [Bundles](/bundles).
+Removing the `reputation` bundle drops the buckets table and the grants table — destroying all grant history — **and** zeroes the `reputation` column on every user. Reinstalling starts fresh from zero — past scores are not recomputed. Back up anything you need before uninstalling. See [Bundles](/bundles).
 
 ## See Also
 
 - [Bundles](/bundles)
+- [ReputationGrant data model](/data-models/reputation-grant)
 - [User data model](/data-models/user)
 - [Space data model](/data-models/space)

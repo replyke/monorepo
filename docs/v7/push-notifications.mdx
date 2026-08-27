@@ -357,7 +357,7 @@ Three keys are on every automatic push:
 | Key | Value |
 |-----|-------|
 | `type` | The event type, e.g. `entity-comment`, `new-follow`, `event-invite`, `message`. |
-| `action` | A canonical routing hint — one of `open-comment`, `open-entity`, `open-profile`, `open-space`, `open-event`, or `open-conversation` (message path). |
+| `action` | A canonical routing hint — one of `open-comment`, `open-entity`, `open-profile`, `open-space`, `open-event`, `open-chat-message`, `open-conversation` (message path), or `do-nothing`. |
 | `recipientUserId` | The id of the account this copy of the notification is for. Stamped per device at dispatch time — see below. |
 
 Beyond those three keys, each push forwards **every identifier form** for each object the notification references, so you can route on whichever id your app uses (UUID, short id, foreign id, slug, or username). Per referenced object:
@@ -369,6 +369,8 @@ Beyond those three keys, each push forwards **every identifier form** for each o
 | Space | `spaceId`, `spaceShortId`, `spaceSlug` |
 | RSVP event | `eventId`, `eventShortId` |
 | Initiator (the acting user) | `initiatorId`, `initiatorUsername`, `initiatorForeignId` (users have no short id) |
+| Chat message | `messageId`, `conversationId` (both are needed to place a message) |
+| Granter (the user who gave reputation) | `granterId`, `granterUsername`, `granterForeignId` |
 | Connection | `connectionId` |
 
 Which of those apply depends on the event type:
@@ -381,6 +383,7 @@ Which of those apply depends on the event type:
 | `connection-request`, `connection-accepted` | `open-profile` | `connectionId` + Initiator keys |
 | `space-membership-approved` | `open-space` | Space keys |
 | `event-invite`, `event-updated`, `event-cancelled` | `open-event` | RSVP-event + parent-Space keys + Initiator keys |
+| `reputation-grant` | `open-entity` / `open-comment` / `open-chat-message` / `open-profile` / `do-nothing` | Granter keys + whichever target's keys apply (Entity, Comment, or Chat message) + Space keys |
 | `message` (chat) | `open-conversation` | `conversationId`, `messageId` |
 
 <Note>

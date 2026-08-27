@@ -34,6 +34,7 @@ A `ChatMessage` represents a single message in a conversation. Messages support 
 | `moderatedById` | `string \| null` | ID of the moderator (user or client). |
 | `moderatedByType` | `"client" \| "user" \| null` | Whether the moderator was a client (dashboard/API key) or a user. |
 | `moderationReason` | `string \| null` | Optional reason recorded with the moderation action. |
+| `grants` | `GrantSummary \| undefined` | Per-item [reputation-grant](/data-models/reputation-grant) summary — `{ total, count, viewerTotal }` over **positive** grants. Populated when the read asks for grants (`includeGrants: true` on the React message hooks, or a `"grants"` token in the `include` string on the REST and server SDKs). Zero-filled rather than omitted on a project with no grants, so `undefined` always means "nobody asked". |
 | `createdAt` | `Date` | Timestamp when the message was sent. |
 | `updatedAt` | `Date` | Timestamp of the last update to this record. |
 
@@ -96,3 +97,4 @@ When a user deletes their own message, the row is retained as a placeholder. `us
 - [Conversation](/data-models/conversation) — the conversation this message belongs to
 - [ConversationMember](/data-models/conversation-member) — membership records that track read state
 - [File](/data-models/file) — file attachments linked to a message
+- [ReputationGrant](/data-models/reputation-grant) — grants that can be attached to a message, and the live `message:grant` broadcast

@@ -20,6 +20,10 @@ Returns a single [ChatMessage](/data-models/chat-message) by ID, fully populated
 
 ## Query Parameters
 
+<ParamField query="include" type="string">
+  Comma-separated list of extra fields to include. Supports `grants` — the [reputation-grant summary](/data-models/reputation-grant#grantsummary) for this message.
+</ParamField>
+
 ### Space-scoped reputation
 
 This endpoint has a space in context, so it accepts the opt-in reputation params. They add a `spaceReputation` field to the message sender's `user`, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation) for the full contract.
