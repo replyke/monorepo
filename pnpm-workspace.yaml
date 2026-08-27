@@ -16,6 +16,11 @@ allowBuilds:
   # on an unapproved build script it had no consumer for — allowing it is
   # the union of the two intents, not a reversal of either.
   esbuild: true
+  # Same reasoning as esbuild above: cli's toolchain (tsup/vite) needs its
+  # build script to run; a clean install otherwise exits non-zero once pnpm
+  # actually enforces ERR_PNPM_IGNORED_BUILDS for it (pnpm 10 only warns,
+  # but this closes the gap for anyone on a newer pnpm).
+  '@swc/core': true
 minimumReleaseAgeExclude:
   # pnpm's install-delay guard would otherwise refuse @sublay releases that
   # are younger than the configured minimum age, which blocks the registry
