@@ -1,0 +1,169 @@
+---
+title: "Switch account"
+description: "Switch the active user account"
+icon: "plug"
+---
+
+## Overview
+
+`useSwitchAccount` switches the active session to a different stored account. It exchanges the target account's stored refresh token for a live session **first**, and only then clears the current auth state and swaps the new one in. If that exchange fails, nothing is touched — you stay signed in where you were.
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useAccounts, useSwitchAccount } from "@sublay/react-js";
+
+function AccountSwitcher() {
+  const { accounts, activeAccount } = useAccounts();
+  const { switchAccount, isSwitching, error } = useSwitchAccount();
+
+  return (
+    <ul>
+      {accounts.map((account) => (
+        <li key={account.id}>
+          {account.name ?? account.email}
+          {/* Both markers, so a dead account is labelled before it is tapped. */}
+          {(account.needsReauth || account.tokenExpiresAt <= Date.now()) && (
+            <span> — sign in again</span>
+          )}
+          {account.id !== activeAccount?.id && (
+            <button
+              onClick={() =>
+                switchAccount({ userId: account.id }).catch(() => {
+                  /* Rejects when the stored credential is refused; `error` below
+                     carries the reason and you stay signed in where you were. */
+                })
+              }
+              disabled={isSwitching}
+            >
+              Switch
+            </button>
+          )}
+        </li>
+      ))}
+      {error && <p>{error}</p>}
+    </ul>
+  );
+}
+```
+
+```tsx React Native
+import { useSwitchAccount } from "@sublay/react-native";
+
+function SwitchButton({ userId }: { userId: string }) {
+  const { switchAccount, isSwitching } = useSwitchAccount();
+
+  return (
+    <Button
+      title="Switch"
+      onPress={() =>
+        switchAccount({ userId }).catch(() => {
+          /* Read `error` from the hook; without a catch this is an
+             unhandled rejection. */
+        })
+      }
+      disabled={isSwitching}
+    />
+  );
+}
+```
+</CodeGroup>
+
+## Parameters
+
+The hook returns a `switchAccount` function that accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the account to switch to. Must be present in the stored accounts map.
+</ParamField>
+
+## Returns
+
+<ResponseField name="switchAccount" type="function">
+  Async function that switches the active session. Throws synchronously if the
+  account is not found or no `projectId` is available, and **rejects** if the
+  session for the target account could not be established — see below. Its
+  signature is `({ userId }) => Promise<void>`, so nothing warns you at compile
+  time: `await switchAccount(...)` without a `catch` becomes an unhandled
+  rejection.
+
+  Calling it with the ID of the already-active account is a no-op **only while
+  that account has a live session**. When the selection names an account with no
+  session — after a refusal at the account limit, for instance — re-selecting it
+  runs the full transition, so the user has a way back in without restarting the
+  app.
+</ResponseField>
+
+<ResponseField name="isSwitching" type="boolean">
+  `true` while the switch is in progress (validating the target's stored
+  credential, then swapping the session over).
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the switch failed, or `null` if no error occurred.
+</ResponseField>
+
+## Failure Behavior
+
+When the target account's stored refresh token cannot be exchanged for an access token — it expired, was revoked, or the stored entry has no usable token at all — the returned promise **rejects** and `error` is set.
+
+**A failed switch leaves the current session completely intact.** The target's
+credential is validated out of band before anything is torn down, so on failure
+nothing has changed: the account you were using is still active, still holds its
+tokens, and still has its cached data. Only the rejection happened.
+
+- The previously active account is still active, with a live session. Nothing was signed out.
+- **Both entries remain in the accounts map**, including the one that failed. That entry is what lets you render a "session expired" prompt for it.
+- When the server was the one that refused the credential, that account's `needsReauth` is set, so the switcher can label it without trying again. A switch that failed because the request never reached the server does **not** set it.
+- Switching with *no* account active — the account-picker state a user lands in after signing out — leaves nothing selected and marks the app signed out, so the next launch does not silently activate a different account.
+
+```tsx
+import { AccountTransitionError } from "@sublay/react-js";
+
+const { switchAccount, error } = useSwitchAccount();
+
+async function onPick(userId: string) {
+  try {
+    await switchAccount({ userId });
+    // Session is live for `userId`.
+  } catch (err) {
+    // Not switched, and nothing else changed — the previous account is still
+    // signed in. `error` holds the reason.
+    if (err instanceof AccountTransitionError && err.credentialRejected) {
+      promptSignIn(userId);   // the server refused the credential
+    } else {
+      showRetry();            // the request never got an answer
+    }
+  }
+}
+```
+
+### Telling a dead account from a dead network
+
+The rejection is an `AccountTransitionError`, and its `credentialRejected` boolean is the only way
+to tell the two failures apart:
+
+<ResponseField name="credentialRejected" type="boolean">
+  `true` when the server **refused** the stored credential — expired, revoked, reuse-detected,
+  invalidated by a password change or a remote sign-out-all — or when the stored entry carries no
+  usable credential at all. This is exactly the case in which `needsReauth` is set.
+
+  `false` when the exchange never got an answer, or the rotated successor could not be persisted.
+  Nothing is marked and the same account may work on the next attempt.
+</ResponseField>
+
+Prompting a re-auth on every rejection tells a user with no signal that their account is dead, and
+does it again every time they lose signal — which is what this discriminator exists to prevent.
+`AccountTransitionError` and `ACCOUNT_TRANSITION_FAILED_MESSAGE` (its default message, used when
+the server gave no reason) are both exported.
+
+<Note>
+  **The switch costs exactly one token exchange.** The refresh endpoint rotates
+  the token it is given, and validating the target's credential *is* that
+  exchange — it is not an extra probe in front of one.
+</Note>
+
+## Integration Guide
+
+For multi-account integration guidance, see [Multi-Account](/sdk/authentication/multi-account).

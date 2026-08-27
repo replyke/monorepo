@@ -1,0 +1,105 @@
+---
+title: "Google"
+description: "Create an OAuth 2.0 client in the Google Cloud Console and wire it into Sublay"
+---
+
+Google is the most straightforward of the four providers: you create an **OAuth 2.0 client** in the Google Cloud Console, register Sublay's callback URL, and copy the resulting **Client ID** and **Client secret** into the Sublay dashboard. There are no keys to download or secrets to rotate.
+
+<Note>
+  New to the overall flow? Read [Configuring OAuth
+  Providers](/sdk/authentication/oauth-providers/overview) first — it explains
+  the redirect chain and the Sublay callback URL that every step below refers to.
+</Note>
+
+By the end you'll have two values to paste into the Sublay dashboard:
+
+| Sublay field | Comes from |
+| --- | --- |
+| **Client ID** | Your OAuth 2.0 client ID |
+| **Client Secret** | Your OAuth 2.0 client secret |
+
+Everything happens in [console.cloud.google.com](https://console.cloud.google.com). Any Google account works — no paid developer account is required.
+
+## Step 1 — Create or select a project
+
+At the top of the Google Cloud Console, use the project picker to **create a new project** (or select an existing one). All of the credentials below live inside this project.
+
+## Step 2 — Configure the OAuth consent screen
+
+Google won't let you create credentials until the consent screen exists. This is the screen users see when they authorize your app.
+
+<Steps>
+  <Step title="Open the consent screen">
+    Go to **APIs & Services → OAuth consent screen**. Choose **User Type: External** so any Google user can sign in, then **Create**.
+  </Step>
+  <Step title="Fill in the app details">
+    Enter an **App name**, a **User support email**, and a **Developer contact email**. The rest can be left blank for a basic setup.
+  </Step>
+  <Step title="Leave scopes at the defaults">
+    You don't need to add any scopes here. Sublay requests `openid`, `email`, and `profile`, which Google treats as **non-sensitive** — they require no Google verification. Save and continue.
+  </Step>
+  <Step title="Decide who can sign in">
+    While the app is in **Testing** mode, only Google accounts you add under **Test users** can sign in. To allow any Google user, click **Publish app** (**Back to testing** returns you to the restricted state). Publishing an app that uses only these non-sensitive scopes does **not** trigger Google's verification review.
+  </Step>
+</Steps>
+
+## Step 3 — Create an OAuth 2.0 client ID
+
+<Steps>
+  <Step title="Start a new credential">
+    Go to **APIs & Services → Credentials**, click **Create Credentials**, and choose **OAuth client ID**.
+  </Step>
+  <Step title="Choose the application type">
+    Set **Application type** to **Web application**. This is correct even for mobile and Expo apps — the sign-in happens through Sublay's server-side redirect flow, so Google only ever talks to Sublay's web endpoint, not your app directly.
+  </Step>
+  <Step title="Register the Sublay callback URL">
+    Under **Authorized redirect URIs**, click **Add URI** and enter, exactly:
+
+    ```
+    https://api.sublay.io/v7/oauth/callback
+    ```
+
+    <Warning>
+      This is **Sublay's** endpoint, not your app's return URL. Google sends the
+      user back to Sublay here, and Sublay then forwards them to your app. Do
+      **not** put your own app's URL in this box.
+    </Warning>
+
+    You can leave **Authorized JavaScript origins** empty — this redirect flow doesn't use it. (If a field forces a value, `https://api.sublay.io` is the origin to use.)
+  </Step>
+  <Step title="Create and copy the credentials">
+    Click **Create**. Google shows your **Client ID** and **Client secret** — copy both. If you need them again later, download the credentials JSON from the client's detail page (the **Client ID** stays visible there, but the secret may not be shown inline again).
+  </Step>
+</Steps>
+
+## Step 4 — Fill in the Sublay dashboard
+
+In your project dashboard, open **Settings → OAuth Providers → Add Provider → Google**, and complete the modal:
+
+| Field | Value |
+| --- | --- |
+| **Client ID** | The OAuth 2.0 client ID from Step 3 |
+| **Client Secret** | The OAuth 2.0 client secret from Step 3 |
+| **Allowed Redirect URIs** | Your app's return URL(s) — the `redirectAfterAuth` you pass in code (e.g. `https://yourapp.com/auth/callback` for web, or `myapp://auth/callback` for Expo/native) |
+| **Scopes** | Leave the defaults (`openid`, `email`, `profile`) |
+
+Click **Add Provider** to save and enable it.
+
+<Note>
+  **Allowed Redirect URIs** is a different thing from the callback URL you
+  registered in Google. In Google you registered where the provider returns the
+  user **to Sublay**; here you list where Sublay returns the user **to your app**.
+  Add every URL you'll use — production, staging, and local development.
+</Note>
+
+## Common pitfalls
+
+- **Wrong URL in Google** — the **Authorized redirect URI** in Google must be `https://api.sublay.io/v7/oauth/callback`, not your app's URL. Your app's URL goes in Sublay's **Allowed Redirect URIs** field instead.
+- **Redirect URI mismatch** — the `redirectAfterAuth` in your code and an entry in Sublay's **Allowed Redirect URIs** must match exactly, character for character (a trailing slash mismatch will fail).
+- **Stuck in Testing mode** — if sign-in works for you but not for other users, your consent screen is still in **Testing** and they aren't on the test-user list. Publish the app to open it up.
+- **Wrong application type** — pick **Web application**, not "Android", "iOS", or "Desktop", even for a mobile app. Sublay handles the redirect server-side.
+
+## See Also
+
+- [Configuring OAuth Providers](/sdk/authentication/oauth-providers/overview) — the shared setup overview
+- [OAuth](/sdk/authentication/oauth) — the runtime sign-in code

@@ -1,0 +1,59 @@
+---
+title: "Get VAPID Public Key"
+api: "GET /v7/:projectId/push-notifications/vapid-public-key"
+description: "Retrieve the project's VAPID public key for Web Push subscriptions"
+---
+
+Returns the VAPID (Voluntary Application Server Identification) public key for this project. The browser's `PushManager.subscribe()` requires this key as `applicationServerKey` when creating a Web Push subscription.
+
+This endpoint is intentionally **unauthenticated** — a VAPID public key is not a secret (only the matching private key, which is never returned by any endpoint, provides security). The `webPushTokenAdapter` calls this automatically before the user has signed in, which is a common browser pattern.
+
+Returns `{ publicKey: null }` if the `web-push` provider has not been configured for the project.
+
+Requires the `push` bundle.
+
+## Response
+
+<ResponseField name="publicKey" type="string | null">
+  The Base64url-encoded VAPID public key, or `null` if Web Push is not configured.
+</ResponseField>
+
+```json
+{ "publicKey": "BGE1YqnfxcY...Bm7uB4" }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Bundle Provisioning — 503">
+    ```json
+    {
+      "code": "database/tables-provisioning",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "bundleId": "push"
+    }
+    ```
+    Returned while the `push` bundle is mid-install. Retry shortly.
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Internal server error.", "code": "push-vapid-key/server-error" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+**Rate limit:** 50 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
+
+## See Also
+
+- [Push Notifications overview](/push-notifications)
+- [`usePushRegistration`](/hooks/push/use-push-registration)

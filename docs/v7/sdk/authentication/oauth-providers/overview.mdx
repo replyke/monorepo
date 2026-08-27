@@ -1,0 +1,105 @@
+---
+title: "Configuring OAuth Providers"
+description: "Register your app with Google, GitHub, Apple, or Facebook and wire the credentials into the Sublay dashboard"
+---
+
+Before your users can sign in with `useOAuthSignIn`, each provider has to be configured once in two places: the **provider's own developer console** (where you register your app and get credentials) and the **Sublay dashboard** (where you paste those credentials in). This page explains the parts that are identical for every provider. The per-provider pages then walk you through each console step by step.
+
+<Note>
+  This page covers the one-time **setup**. For the runtime code — the sign-in
+  button, the callback page, linking and unlinking identities — see
+  [OAuth](/sdk/authentication/oauth).
+</Note>
+
+## The redirect chain
+
+The single most important thing to understand is that there are **two different redirect URLs**, and mixing them up is the most common reason setup fails.
+
+When a user signs in, the browser hops through three places:
+
+```
+Your app  →  the provider (Google/Apple/…)  →  Sublay  →  your app
+```
+
+1. Your app hands off to the provider's authorization page.
+2. The provider sends the user **back to Sublay** — never straight back to you.
+3. Sublay processes the result and redirects to **your app** with tokens in the URL fragment.
+
+That means:
+
+| Redirect URL | Where it goes | Where you register it |
+| --- | --- | --- |
+| **Provider callback** | Back to **Sublay** | In the **provider's console** |
+| **`redirectAfterAuth`** | Back to **your app** | In the **Sublay dashboard** (Allowed Redirect URIs) |
+
+### The Sublay callback URL
+
+Every provider console asks for a callback / redirect / return URL. For **all four providers** it is the same value:
+
+```
+https://api.sublay.io/v7/oauth/callback
+```
+
+Register that exact string in the provider's console. It is Sublay's endpoint, not yours — the provider talks to Sublay, and Sublay forwards the user to your app afterward.
+
+## Step 1 — Register your app with the provider
+
+Each provider hands you a **Client ID** and, for most providers, a **Client Secret**. Pick your provider and follow its walkthrough:
+
+<CardGroup cols={2}>
+  <Card title="Apple" href="/sdk/authentication/oauth-providers/apple">
+    Services ID, Sign in with Apple key (.p8), Team ID, and Key ID.
+  </Card>
+  <Card title="Google" href="/sdk/authentication/oauth-providers/google">
+    OAuth 2.0 client in the Google Cloud Console.
+  </Card>
+  <Card title="GitHub" href="/sdk/authentication/oauth-providers/github">
+    A GitHub OAuth App with a client ID and secret.
+  </Card>
+  <Card title="Facebook" href="/sdk/authentication/oauth-providers/facebook">
+    A Facebook app with Facebook Login enabled.
+  </Card>
+</CardGroup>
+
+## Step 2 — Configure the provider in the Sublay dashboard
+
+In your project dashboard, open **Settings → OAuth Providers**, click **Add Provider**, choose the provider, and fill in the modal.
+
+For **Google, GitHub, and Facebook** the fields are:
+
+| Field | What to enter |
+| --- | --- |
+| **Client ID** | The client ID from the provider console |
+| **Client Secret** | The client secret from the provider console |
+| **Allowed Redirect URIs** | Your app's return URLs — see below |
+| **Scopes** | Pre-filled with sensible defaults; leave as-is unless you know you need more |
+
+**Apple is the exception.** Apple has no static client secret — Sublay generates one on the fly by signing a token with your key. So the Apple modal replaces "Client Secret" with **Team ID**, **Key ID**, and **Private Key (.p8 contents)**. See the [Apple page](/sdk/authentication/oauth-providers/apple) for exactly what goes where.
+
+### Allowed Redirect URIs
+
+This field is your app's return address — the same value you pass as `redirectAfterAuth` when you call `initiateOAuth` in code. Sublay only redirects back to URLs on this list, so it must match what your app sends **exactly**, character for character (a trailing slash mismatch will fail).
+
+Add every URL you'll use — production, staging, local development, and any deep links:
+
+- **Web** — a full HTTPS URL, e.g. `https://yourapp.com/auth/callback`
+- **Expo / native** — your custom-scheme deep link, e.g. `myapp://auth/callback`
+
+Each entry must be a valid URL. For local web development, `http://localhost:3000/auth/callback` is fine.
+
+### Scopes
+
+Scopes control what profile data the provider returns. Sublay pre-fills each provider with the defaults it needs to create a user (name and email in most cases), so you can leave them untouched for a standard setup. Add more only if your provider requires additional scopes for data you specifically need.
+
+## Step 3 — Enable and test
+
+Saving the provider enables it. Wire up the sign-in button as shown in [OAuth](/sdk/authentication/oauth) and run the flow end to end. If something fails, the two usual culprits are:
+
+1. **A redirect URI mismatch** — the value in your code, the Allowed Redirect URIs list, and (on the provider side) the registered callback URL must all agree.
+2. **A missing provider callback** — confirm `https://api.sublay.io/v7/oauth/callback` is registered in the provider's console.
+
+## See Also
+
+- [OAuth](/sdk/authentication/oauth) — the runtime code (sign-in, callback, linking)
+- [`useOAuthSignIn` hook reference](/hooks/auth/use-oauth-sign-in)
+- [`useOAuthIdentities` hook reference](/hooks/auth/use-oauth-identities)

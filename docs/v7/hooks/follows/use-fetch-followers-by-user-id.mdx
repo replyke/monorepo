@@ -1,0 +1,92 @@
+---
+title: "Fetch followers by user ID"
+description: "Fetch the followers of any user by their ID"
+icon: "plug"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+## Overview
+
+Returns a function that fetches the paginated list of followers for any user, identified by `userId`. Authentication is optional — the endpoint works without a token. When the caller is signed in, any user with a block between them and the caller, in either direction, is excluded from the results. Block filtering requires the `moderation` bundle.
+
+For fetching your own followers, see `useFetchFollowers`.
+
+## Usage Example
+
+```tsx
+import { useFetchFollowersByUserId } from "@sublay/react-js";
+
+function UserFollowers({ userId }: { userId: string }) {
+  const fetchFollowersByUserId = useFetchFollowersByUserId();
+  const [followers, setFollowers] = useState([]);
+
+  useEffect(() => {
+    fetchFollowersByUserId({ userId, page: 1 }).then((res) => {
+      setFollowers(res.data);
+    });
+  }, [userId]);
+
+  return (
+    <ul>
+      {followers.map(({ followId, user }) => (
+        <li key={followId}>{user.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user whose followers to fetch.
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number to fetch. Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Number of results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField path="query" type="string">
+  Optional search term. Filters the list to users whose username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField path="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
+<SpaceReputationParams variant="user" field="path" />
+
+## Returns
+
+Returns a `PaginatedResponse` containing an array of follower entries:
+
+<ResponseField name="data" type="FollowerWithFollowInfo[]">
+  Array of follower entries.
+  <Expandable title="FollowerWithFollowInfo properties">
+    <ResponseField name="followId" type="string">
+      ID of the follow record.
+    </ResponseField>
+    <ResponseField name="user" type="User">
+      The follower's user profile. When `spaceReputation` is requested, it carries an added `spaceReputation` number. See [User data model](/data-models/user) and [Reputation](/data-models/reputation).
+    </ResponseField>
+    <ResponseField name="followedAt" type="string">
+      ISO timestamp of when the follow was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata including `currentPage`, `totalPages`, `totalCount`, `hasNextPage`, and `hasPreviousPage`.
+</ResponseField>
+
+## Related
+
+- [useFetchFollowers](/hooks/follows/use-fetch-followers) — fetch the current user's own followers
+- [useFetchFollowersCountByUserId](/hooks/follows/use-fetch-followers-count-by-user-id) — get follower count for a user

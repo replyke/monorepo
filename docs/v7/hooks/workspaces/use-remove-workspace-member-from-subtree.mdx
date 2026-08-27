@@ -1,0 +1,94 @@
+---
+title: "Remove workspace member from subtree"
+description: "Offboarding convenience — remove a user from this workspace and the descendants you can reach"
+icon: "plug"
+---
+
+## Overview
+
+`useRemoveWorkspaceMemberFromSubtree` returns a callable that removes a user's **direct** memberships on this workspace and every descendant **you can reach**, in one action. Each deletion fires `workspace.member.removed`.
+
+**Authorization:** capability-gated + rank-bounded, evaluated **per node**. Requires `remove-member`, and the sweep is refused if you are outranked by the target at any node where you both hold a direct member row. An **owner** (or ancestor owner) reaches the whole subtree via the god-path; a **non-owner** only reaches descendants through an unbroken open inherit chain, so a **sealed** sub-workspace (`inheritsFromParent = false`) is left untouched for a non-owner.
+
+<Warning>
+  **A non-owner's sweep may be partial — check `skipped` before you call someone offboarded.** If the target still holds a membership in a descendant you cannot reach, it comes back in `skippedCount` / `skipped` instead of being removed. `removedCount` alone does **not** mean the user is gone from the subtree. An owner or ancestor owner always gets `skippedCount: 0`.
+</Warning>
+
+<Warning>
+  **Owned descendants block, they do not cascade.** Because owners have no member row, this sweep does not cover descendant workspaces the target *owns*. It fails with `409 workspace/owns-descendants` and reports them, rather than silently orphaning ownership. Reassign each via [`useTransferWorkspaceOwnership`](/hooks/workspaces/use-transfer-workspace-ownership) or delete it, then retry.
+</Warning>
+
+## Usage Example
+
+```tsx
+import { useRemoveWorkspaceMemberFromSubtree } from "@sublay/react-js";
+
+function OffboardButton({
+  workspaceId,
+  targetUserId,
+}: {
+  workspaceId: string;
+  targetUserId: string;
+}) {
+  const removeWorkspaceMemberFromSubtree =
+    useRemoveWorkspaceMemberFromSubtree();
+
+  const offboard = async () => {
+    const { removedCount, removed, skippedCount, skipped } =
+      await removeWorkspaceMemberFromSubtree({ workspaceId, targetUserId });
+
+    console.log(`Removed from ${removedCount} workspaces`, removed);
+
+    // Do NOT treat the user as offboarded on `removedCount` alone.
+    if (skippedCount > 0) {
+      const named = skipped.filter((w) => w.id !== null);
+      console.warn(
+        `Still a member of ${skippedCount} workspace(s) you cannot reach` +
+          (named.length
+            ? `: ${named.map((w) => w.name).join(", ")}`
+            : ` (identities withheld — ask an owner of those branches)`)
+      );
+    }
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID — the subtree root.
+</ParamField>
+
+<ParamField path="targetUserId" type="string" required>
+  The **target** user to offboard — a path param, not an acting user.
+</ParamField>
+
+## Returns
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `removedCount` | `number` | How many membership rows were torn down. |
+| `removed` | `{ workspaceId: string; userId: string }[]` | One entry per removed membership. |
+| `skippedCount` | `number` | How many memberships the target **retained** because your authority did not reach them. `0` for an owner or ancestor owner. Equals `skipped.length`. |
+| `skipped` | `{ id: string \| null; name: string \| null; reason: "out-of-reach" }[]` | One entry per retained membership. |
+
+### Reading `skipped`
+
+Each entry names a descendant where the target is **still a member** after this call.
+
+- `id` / `name` are `null` when you have no standing on that workspace. The call tells you a membership survived without disclosing the existence or name of a sealed sub-workspace you have no authority over — the same sealing fence [`useFetchWorkspaceMembers`](/hooks/workspaces/use-fetch-workspace-members) applies to `include=descendants`. Escalate to an owner or ancestor owner of that branch.
+- `reason` is currently always `"out-of-reach"`.
+- Only descendants where the target **actually still holds a direct membership** are listed — unreachable descendants they were never in are never disclosed.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/owns-descendants` | 409 | The target owns workspaces in this subtree; the response includes `ownedWorkspaces`. |
+| `workspace/insufficient-rank` | 403 | You are outranked by the target at some node in the sweep. |
+| `workspace/unauthorized` | 403 | You lack the `remove-member` capability. |
+
+## Related
+
+- [`useRemoveWorkspaceMember`](/hooks/workspaces/use-remove-workspace-member) — this node only
+- [Remove From Subtree API](/api-reference/workspaces/members/remove-from-subtree)

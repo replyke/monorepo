@@ -1,0 +1,79 @@
+---
+title: "Read Authority"
+api: "GET /v7/:projectId/workspaces/:id/authority/me"
+description: "The resolved standing of a user on a workspace — permissions as a service"
+---
+
+Returns the caller's **resolved standing** on a workspace: `{ reasons, capabilities, permissions, rank }`, computed via the [authority resolver](/data-models/workspace#reach-and-the-wall-door-rule) (fast-path + bounded ancestor climb). This is the endpoint your authorization server reads (via the [node SDK](/node-sdk/workspaces)) to make its own app-level decisions.
+
+`reasons` is an array of **structured entries** — `{ type, viaWorkspaceId? }` — distinguishing **`owner` / `ancestor-owner` / `member` / `reach-holder`**, so you always know *why* a user has what they have **and which workspace grants it**. It is the same object shape a [roster](/api-reference/workspaces/members/list-members) entry's `reasons` carries. `viaWorkspaceId` names the granting ancestor and is present on `ancestor-owner` / `reach-holder` only (`owner` / `member` are grants on the workspace itself). A user reaching in from several ancestors carries **one entry per granting ancestor**.
+
+This read is inherently a **self** read (or a privileged-key read of a named user), so `capabilities` / `permissions` / `rank` are always returned in full here — unlike the [member-standing read](/api-reference/workspaces/members/fetch-member-standing), which fences them. (The fence exists to stop a caller reconstructing *someone else's* rank; there is nobody else in this payload.)
+
+<Note>
+  There is **no** convenience `?permission=` check and **no** `can()` middleware. Sublay never consumes your opaque `permissions`, so a permission check is a one-line `.includes()` on the returned record:
+
+  ```ts
+  const authority = await sublay.workspaces.fetchWorkspaceAuthority({ workspaceId, actingUserId });
+  if (authority.permissions.includes("deploy")) { /* allow */ }
+  ```
+</Note>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="actingUserId" type="string" required>
+  Service/master keys only — the user to act as, whose standing is resolved. **Required for a key:** this route has no unbounded path (there is no such thing as "the app's standing"), so a key that names nobody is refused with `400 workspace/missing-user-id`.
+
+  A client token omits it — the subject is the token's own user. The field is **not** ignored for such a token: sending your *own* user id is a harmless no-op, but sending **anyone else's** is a `403 workspace/unauthorized`. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
+## Response
+
+```json
+{
+  "reasons": [
+    { "type": "member" },
+    { "type": "ancestor-owner", "viaWorkspaceId": "ws_root" }
+  ],
+  "capabilities": ["view", "invite", "remove-member"],
+  "permissions": ["deploy"],
+  "rank": 5
+}
+```
+
+- `reasons` — structured standings; `viaWorkspaceId` is present on `ancestor-owner` / `reach-holder` only.
+- `capabilities` — the fully-resolved set (direct + reach + ownership). **`view` is implied by every other capability** — any user with standing on the workspace resolves with `view`, including a member whose stored `capabilities` array is empty. A user with no relation at all resolves to an empty set.
+- `permissions` — **per-node** (the direct membership on this workspace only; may be empty). Does not cascade.
+- `rank` — the direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders.
+- There is **no `relativeRank`** on this read. It is an offset from the caller, and here the caller *is* the subject — so it could only ever be `0`, a constant dressed as a coordinate. `rank` is the position this endpoint reports. `relativeRank` is meaningful on the [roster](/api-reference/workspaces/members/list-members) and [member-standing](/api-reference/workspaces/members/fetch-member-standing) reads, where the subject is somebody else.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Acting User — 400">
+    ```json
+    { "error": "Missing user ID", "code": "workspace/missing-user-id" }
+    ```
+    A service/master key called this route without naming an `actingUserId`. The read resolves *a user's* standing, so there is nobody to resolve it for.
+  </Accordion>
+  <Accordion title="Acted as Another User — 403">
+    ```json
+    { "error": "Unauthorized", "code": "workspace/unauthorized" }
+    ```
+    A plain user token sent an `actingUserId` naming a **different** user. Only a service/master key may resolve someone else's standing.
+  </Accordion>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchWorkspaceAuthority](/hooks/workspaces/use-fetch-workspace-authority) · [fetchWorkspaceAuthority (node-sdk)](/node-sdk/workspaces) · [fetchWorkspaceAuthority (js-sdk)](/js-sdk/workspaces)

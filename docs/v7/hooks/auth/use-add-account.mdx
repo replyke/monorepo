@@ -1,0 +1,116 @@
+---
+title: "Add account"
+description: "Link a new user account to the current app instance"
+icon: "plug"
+---
+
+## Overview
+
+`useAddAccount` returns an `addAccount` function that clears the active auth state, allowing the user to sign into a new account. Previously stored accounts are not removed — they remain in the accounts map and can be restored with `useSwitchAccount`.
+
+After the user completes sign-in, the new account is added to the accounts map automatically.
+
+<Note>
+  5 accounts can be stored simultaneously. `canAddAccount` is `false` when the
+  limit is reached. All 5 genuinely persist on every platform — see
+  [Where accounts are stored](/sdk/authentication/multi-account#where-accounts-are-stored).
+</Note>
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useAddAccount } from "@sublay/react-js";
+
+function AddAccountButton() {
+  const { addAccount, canAddAccount } = useAddAccount();
+
+  return (
+    <button onClick={addAccount} disabled={!canAddAccount}>
+      Add Account
+    </button>
+  );
+}
+```
+
+```tsx React Native
+import { useAddAccount } from "@sublay/react-native";
+
+function AddAccountButton() {
+  const { addAccount, canAddAccount } = useAddAccount();
+
+  return (
+    <Button title="Add Account" onPress={addAccount} disabled={!canAddAccount} />
+  );
+}
+```
+</CodeGroup>
+
+## Returns
+
+<ResponseField name="addAccount" type="function">
+  Clears the current access token, refresh token, and user state from Redux,
+  along with the outgoing account's cached API data and account-scoped feature
+  state. The existing accounts map is preserved. After calling this function,
+  the app should display sign-in UI for the new account.
+
+  **Nothing it does reaches the stored account map.** The selection is left
+  exactly where it was and `signedOut` is not touched — opening a sign-in screen
+  is this surface's state, not the device's. On the web the map is broadcast to
+  every other tab, so a write here would be an instruction to all of them.
+
+  That is also what makes **abandoning** the flow safe. The user backs out and
+  quits; the map still names the account they were in, so the next launch
+  restores that account rather than moving them into a different one. Until
+  then this surface is in the shape the SDK uses everywhere for *stepped out
+  without signing out*: an account is still selected, but there is no live
+  session behind it. Re-tapping that same account in a switcher signs back into
+  it rather than no-opping.
+
+  A no-op when `canAddAccount` is `false`.
+</ResponseField>
+
+<ResponseField name="canAddAccount" type="boolean">
+  `true` if fewer than 5 accounts are currently stored. `false` at the limit.
+</ResponseField>
+
+<ResponseField name="accountLimitReached" type="boolean">
+  `true` when an account was actually **refused** admission because the map was
+  already full. Clears on the next successful admission and on any removal.
+</ResponseField>
+
+### `canAddAccount` vs `accountLimitReached`
+
+They answer different questions and are both needed:
+
+| | `canAddAccount` | `accountLimitReached` |
+|---|---|---|
+| Kind | Predicate — "is there room right now?" | Event — "did an admission just get refused?" |
+| Derived from | The map size, on every render | A refusal, latched in the store |
+| Typical use | Enable/disable the "Add account" button *before* the user commits | Render the error *after* a sign-in was rejected at the cap |
+
+`accountLimitReached` matters because not every refusal has a call to reject. It is set by **every** entry point that refuses an account:
+
+| Entry point | Also surfaces as an error? |
+|---|---|
+| `signUpWithEmailAndPassword` | Yes — before any network call |
+| `signInWithEmailAndPassword` | Yes — after the account is resolved |
+| External auth (`signedToken`) | The provider's `auth/initialize` action rejects with the reason; the app **renders** signed-out, with the selection left where it was |
+| OAuth, web and Expo | **No** — the flag is the only channel |
+
+It is also readable from [`useAccounts`](/hooks/auth/use-accounts).
+
+<Note>
+  `canAddAccount` is not a substitute. A sign-in can start without ever going
+  through `addAccount()` — a plain sign-in form, an OAuth return, or a map that
+  filled in another tab while a request was in flight — and only
+  `accountLimitReached` covers those. Conversely the flag is an event: it stays
+  `false` until something is actually refused, so it cannot pre-disable a button.
+</Note>
+
+For what the refusal leaves behind on each path, see
+[Reaching the account limit](/sdk/authentication/multi-account#reaching-the-account-limit).
+
+## Integration Guide
+
+For multi-account integration guidance, see [Multi-Account](/sdk/authentication/multi-account).

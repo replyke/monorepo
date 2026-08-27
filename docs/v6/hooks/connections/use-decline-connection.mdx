@@ -1,0 +1,373 @@
+---
+title: "Use Decline Connection"
+---
+
+# `useDeclineConnection`
+
+## Overview
+
+The `useDeclineConnection` hook allows the current logged-in user to decline an incoming connection request. This permanently rejects the connection request and notifies the requester that their request was declined.
+
+## Usage Example
+
+```tsx
+import { useDeclineConnection } from "@replyke/react-js";
+
+function DeclineButton({ connectionId }: { connectionId: string }) {
+  const declineConnection = useDeclineConnection();
+
+  const handleDecline = async () => {
+    try {
+      const result = await declineConnection({ connectionId });
+      console.log(`Connection declined. Declined at: ${result.respondedAt}`);
+    } catch (error) {
+      console.error("Failed to decline connection:", error.message);
+    }
+  };
+
+  return <button onClick={handleDecline}>Decline</button>;
+}
+```
+
+## Advanced Usage with Confirmation
+
+```tsx
+import { useDeclineConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+function ConnectionRequestActions({
+  connectionId,
+  requesterName,
+  onDecline
+}: {
+  connectionId: string;
+  requesterName: string;
+  onDecline?: (connectionId: string) => void;
+}) {
+  const declineConnection = useDeclineConnection();
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isDeclining, setIsDeclining] = useState(false);
+
+  const handleDeclineClick = () => {
+    setShowConfirmation(true);
+  };
+
+  const confirmDecline = async () => {
+    setIsDeclining(true);
+    try {
+      const result = await declineConnection({ connectionId });
+      console.log(`Declined connection from ${requesterName}`, result);
+      onDecline?.(connectionId);
+      setShowConfirmation(false);
+    } catch (error) {
+      console.error(`Failed to decline connection from ${requesterName}:`, error);
+      alert("Failed to decline connection. Please try again.");
+    } finally {
+      setIsDeclining(false);
+    }
+  };
+
+  const cancelDecline = () => {
+    setShowConfirmation(false);
+  };
+
+  if (showConfirmation) {
+    return (
+      <div className="decline-confirmation">
+        <p>Are you sure you want to decline the connection request from {requesterName}?</p>
+        <div className="confirmation-actions">
+          <button
+            onClick={confirmDecline}
+            disabled={isDeclining}
+            className="decline-btn confirm"
+          >
+            {isDeclining ? "Declining..." : "Yes, Decline"}
+          </button>
+          <button
+            onClick={cancelDecline}
+            disabled={isDeclining}
+            className="cancel-btn"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={handleDeclineClick} className="decline-btn">
+      Decline
+    </button>
+  );
+}
+```
+
+## Usage in Connection Request Management
+
+```tsx
+import { useDeclineConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+interface ConnectionRequest {
+  id: string;
+  connectionId: string;
+  requester: {
+    username: string;
+    displayName?: string;
+    avatar?: string;
+  };
+  message?: string;
+  createdAt: string;
+}
+
+function ConnectionRequestCard({
+  request,
+  onStatusChange
+}: {
+  request: ConnectionRequest;
+  onStatusChange: (requestId: string, status: 'accepted' | 'declined') => void;
+}) {
+  const declineConnection = useDeclineConnection();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [status, setStatus] = useState<'pending' | 'accepted' | 'declined'>('pending');
+
+  const handleDecline = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to decline the connection request from ${
+        request.requester.displayName || request.requester.username
+      }?`
+    );
+
+    if (!confirmed) return;
+
+    setIsProcessing(true);
+    try {
+      const result = await declineConnection({
+        connectionId: request.connectionId
+      });
+
+      setStatus('declined');
+      onStatusChange(request.id, 'declined');
+
+      console.log(`Declined connection request from ${request.requester.username}`, result);
+    } catch (error) {
+      console.error("Failed to decline connection:", error);
+      alert("Failed to decline connection. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  if (status === 'declined') {
+    return (
+      <div className="connection-request-card declined">
+        <p>You declined the connection request from {request.requester.displayName || request.requester.username}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="connection-request-card">
+      <div className="requester-info">
+        {request.requester.avatar && (
+          <img
+            src={request.requester.avatar}
+            alt={`${request.requester.username} avatar`}
+            className="avatar"
+          />
+        )}
+        <div className="requester-details">
+          <h4>{request.requester.displayName || request.requester.username}</h4>
+          <p>@{request.requester.username}</p>
+          <small>{new Date(request.createdAt).toLocaleDateString()}</small>
+        </div>
+      </div>
+
+      {request.message && (
+        <div className="request-message">
+          <p>"{request.message}"</p>
+        </div>
+      )}
+
+      <div className="request-actions">
+        <button
+          onClick={handleDecline}
+          disabled={isProcessing}
+          className="decline-btn"
+        >
+          {isProcessing ? "Declining..." : "Decline"}
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+## Usage with Decline Reasons
+
+```tsx
+import { useDeclineConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+function DeclineWithReason({
+  connectionId,
+  requesterName,
+  onDecline
+}: {
+  connectionId: string;
+  requesterName: string;
+  onDecline: () => void;
+}) {
+  const declineConnection = useDeclineConnection();
+  const [showReasonForm, setShowReasonForm] = useState(false);
+  const [selectedReason, setSelectedReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
+  const [isDeclining, setIsDeclining] = useState(false);
+
+  const predefinedReasons = [
+    "I don't know this person",
+    "Not interested in connecting",
+    "Profile seems incomplete",
+    "Prefer to connect with people I know personally",
+    "Other"
+  ];
+
+  const handleDeclineClick = () => {
+    setShowReasonForm(true);
+  };
+
+  const handleSubmitDecline = async () => {
+    setIsDeclining(true);
+    try {
+      await declineConnection({ connectionId });
+
+      // Log the reason for analytics (optional)
+      const reason = selectedReason === "Other" ? customReason : selectedReason;
+      console.log(`Declined connection from ${requesterName}. Reason: ${reason}`);
+
+      onDecline();
+      setShowReasonForm(false);
+    } catch (error) {
+      console.error("Failed to decline connection:", error);
+      alert("Failed to decline connection. Please try again.");
+    } finally {
+      setIsDeclining(false);
+    }
+  };
+
+  if (showReasonForm) {
+    return (
+      <div className="decline-reason-form">
+        <h4>Why are you declining this connection?</h4>
+
+        <div className="reason-options">
+          {predefinedReasons.map(reason => (
+            <label key={reason} className="reason-option">
+              <input
+                type="radio"
+                name="declineReason"
+                value={reason}
+                checked={selectedReason === reason}
+                onChange={(e) => setSelectedReason(e.target.value)}
+              />
+              {reason}
+            </label>
+          ))}
+        </div>
+
+        {selectedReason === "Other" && (
+          <div className="custom-reason">
+            <textarea
+              value={customReason}
+              onChange={(e) => setCustomReason(e.target.value)}
+              placeholder="Please specify..."
+              maxLength={200}
+            />
+          </div>
+        )}
+
+        <div className="form-actions">
+          <button
+            onClick={() => setShowReasonForm(false)}
+            disabled={isDeclining}
+            className="cancel-btn"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmitDecline}
+            disabled={isDeclining || !selectedReason || (selectedReason === "Other" && !customReason.trim())}
+            className="decline-btn confirm"
+          >
+            {isDeclining ? "Declining..." : "Decline Request"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={handleDeclineClick} className="decline-btn">
+      Decline
+    </button>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following field:
+
+
+<ParamField path="connectionId" type="string" required>
+  The ID of the connection request to decline
+</ParamField>
+
+### Returns
+
+The function returns a Promise that resolves to a `ConnectionActionResponse` object containing:
+
+
+<ResponseField name="id" type="string">
+  The ID of the connection request
+</ResponseField>
+
+<ResponseField name="respondedAt" type="string">
+  ISO date string of when the request was declined
+</ResponseField>
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user is logged in
+- No connection ID is provided
+- Connection request doesn't exist or has already been processed
+- Network connection issues
+
+### Best Practices
+
+1. **Always confirm** - Show a confirmation dialog before declining connections
+2. **Provide feedback** - Let users know the action was successful
+3. **Handle errors gracefully** - Show user-friendly error messages
+4. **Consider reasons** - Optionally collect decline reasons for analytics
+5. **Update UI state** - Remove declined requests from the UI immediately
+
+### Use Cases
+
+This hook is commonly used in:
+- Connection request notification interfaces
+- Professional networking platforms
+- Social platform connection management
+- Mobile app notification handlers
+- User inbox/messages systems
+
+### Related Hooks
+
+- `useAcceptConnection` - Accept connection requests
+- `useRequestConnection` - Send new connection requests
+- `useFetchReceivedPendingConnections` - Get pending connection requests
+- `useConnectionManager` - Comprehensive connection state management

@@ -1,0 +1,42 @@
+---
+title: "Fetch space team"
+description: "Fetch all admins and moderators of a space"
+icon: "plug"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+## Overview
+
+`useFetchSpaceTeam` returns a callable function that fetches all admins and moderators of a space in a single non-paginated response. This is useful for displaying the space's leadership team.
+
+## Usage Example
+
+```tsx
+import { useFetchSpaceTeam } from "@sublay/react-js";
+
+function SpaceTeam({ spaceId }: { spaceId: string }) {
+  const fetchTeam = useFetchSpaceTeam();
+
+  const loadTeam = async () => {
+    const { data } = await fetchTeam({ spaceId });
+    data.forEach(({ user, role }) => {
+      console.log(user.displayName, role);
+    });
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="path" />
+
+## Returns
+
+<ResponseField name="data" type="SpaceMemberWithUser[]">
+  All admins and moderators with active status, including embedded user details. When `spaceReputation` is requested, each embedded user carries an added `spaceReputation` number. See [SpaceMember](/data-models/space-member) and [Reputation](/data-models/reputation).
+</ResponseField>

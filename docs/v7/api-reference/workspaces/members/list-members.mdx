@@ -1,0 +1,148 @@
+---
+title: "List Members"
+api: "GET /v7/:projectId/workspaces/:id/members"
+description: "The unified roster — one entry per distinct user, each with a reasons array"
+---
+
+Returns the roster as a **single unified array, one entry per distinct user**, each carrying a `reasons` array explaining *why* the user appears. Requires **roster visibility** — **any relation** to the workspace (owner, ancestor-owner, member, or reach-holder). A caller with no relation gets a `404`.
+
+**Always returned in full — never paginated.** `include` flags only *add* entries; they never change the shape. `countOnly` is the numbers-only escape hatch.
+
+<Warning>
+  **There is no `page` or `limit` on this route, and sending them is a `400`.** This route declares exactly the query parameters listed below, and anything else is refused rather than ignored — `?page=2&limit=10` comes back as `{ "error": "Unrecognized keys: \"page\", \"limit\"", "code": "workspace/invalid-query" }`. A paginating client therefore fails on its first call instead of receiving the **entire** roster every time and mistaking it for page 1.
+
+  The response carries no `pagination` object precisely because there is none. If you need numbers rather than rows — a seat count, a badge — use [`countOnly=true`](#query-parameters), which returns per-reason counts and a distinct-user total **without ever materializing the roster array**. If you need a windowed UI, slice client-side after the single read.
+</Warning>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="include" type="string">
+  Comma-separated add-on buckets. Default returns `owner` + direct `member`s. Options: `ancestorOwners`, `reachHolders`, `descendants`.
+</ParamField>
+
+<ParamField query="countOnly" type="boolean">
+  When `true`, returns per-reason counts + a distinct-user total instead of the array (never materializes the roster). Honors the same includes.
+</ParamField>
+
+<ParamField query="actingUserId" type="string">
+  Service/master keys only — the user to act as. Enforced: roster visibility **and** the authority-field fence below both evaluate against the named user, so a key acting as a plain member receives the fenced view. Omit it to read as the app itself (unfenced) — where "omit" means **absent**: `actingUserId: ""` or `null` is a `400`, not a fall-through to that mode. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user) and [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+</ParamField>
+
+<Note>
+  Those three, plus `projectId`, are the whole query vocabulary of this route. Any other parameter is a `400 workspace/invalid-query` — the two exceptions across the bundle are the cache-busters `_` and `_t`, which are dropped before the request is read. An unrecognized *value* inside `include` is a different matter: it is ignored, not rejected.
+</Note>
+
+## Reasons
+
+Each entry's `reasons[]` contains `{ type, ...detail }` objects. A user present for several reasons is **one** entry carrying multiple reasons.
+
+| `type` | Detail | Counted as a seat? |
+|--------|--------|--------------------|
+| `owner` | — | **Yes** |
+| `member` | `rank`, `relativeRank`, `capabilities`, `permissions`, `title`, `metadata` | **Yes** |
+| `ancestor-owner` | `viaWorkspaceId` | No (informational) |
+| `reach-holder` | `viaWorkspaceId`, `capabilities` | No (informational) |
+| `descendant-member` | `workspaceId`, `rank`, `capabilities` — **no `relativeRank`** | Counted under the `descendants` include |
+
+<Note>
+  **`descendant-member` rows carry `rank` but never `relativeRank`.** Rank is **per-workspace**, so an offset measured against your standing on *this* node against a rank on *another* node would be arithmetic across two different ladders — a number that looks authoritative and is wrong. The field is uniformly absent on descendant rows rather than present only where a per-node anchor happens to have been resolved, so its presence never depends on who is asking. Their absolute `rank` is still there.
+
+  **Presence and fencing follow different rules on these rows, deliberately.** `relativeRank` is *uniformly* absent from every `descendant-member` row for every caller, while the fence below is decided **per node**. Do not read the two as one rule. A field that shows up for some callers and not others is awkward to consume; an authority field that is fenced on some nodes and not others is a hole — so the cosmetic inconsistency is accepted and the security one is not.
+</Note>
+
+<Warning>
+  **The authority-bearing detail fields are fenced, and the gate is evaluated PER NODE — not once per request.** `capabilities`, `permissions`, `rank` and `relativeRank` are **omitted from a reason** (absent — not `null`) on **other users'** entries unless the caller, judged **on the workspace that reason belongs to**:
+
+  - holds one of the four people-operating capabilities there — `invite`, `remove-member`, `edit-member-access`, `edit-member-profile`; **or**
+  - is that workspace's `owner` or an `ancestor-owner`; **or**
+  - is a service/master key acting as **itself** (naming no `actingUserId`). A key that **does** name one is fenced exactly as that user is — see [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+
+  For `owner`, `member`, `ancestor-owner` and `reach-holder` reasons, that workspace **is** the one in the path. For a `descendant-member` reason it is the descendant named by the reason's own `workspaceId`, so the verdict is re-taken there. "Judged on that node" means your **resolved** standing there — which includes capabilities [reaching](/data-models/workspace#reach-and-the-wall-door-rule) in through an unbroken open inherit chain, and ownership from any ancestor. What it does *not* include is authority that stops at a **sealed** boundary.
+
+  The caller's **own** entry always carries them in full, on every node, so anyone can discover their own access. Who is on the roster — `user`, the reason `type`s, `title`, `metadata`, `viaWorkspaceId`, `workspaceId` — stays visible to any relation. Treat the four fields as optional in your types.
+
+  `relativeRank` is fenced **with** `rank`, not beside it: it is `rank` minus the caller's own anchor, a number the caller already knows, so returning it to a fenced caller would reconstruct the fenced `rank` exactly.
+</Warning>
+
+<Note>
+  **Worked example — operating people on the parent is not operating people on the child.** Workspace `P` has a **sealed** child `C` (`inheritsFromParent: false`). Bob holds `invite` on `P`; on `C` he is a plain rank-5 member with no capabilities. Dana is a rank-2 member of `C`.
+
+  Bob calls `GET /workspaces/P/members?include=descendants`:
+
+  - **Dana's `descendant-member` reason (node `C`)** — `workspaceId` only. Bob still learns *that* Dana is on `C`, because he has a relation to `C` and its roster is unsealed to him; but `rank`, `capabilities` and `permissions` are omitted, because on `C` he operates nobody. His `invite` on `P` buys him nothing there — the seal stops it from reaching down.
+  - **Bob's own `descendant-member` reason (node `C`)** — full. A caller always sees their own access.
+  - Had `C` been **open** instead of sealed, Bob's `invite` would reach into `C`, he would clear the fence there, and Dana's authority fields would be present — correctly.
+
+  Sealing ("may I see this roster at all?") and the fence ("may I see its members' authority?") are two different tiers, and clearing the first does not clear the second. On any given node, `include=descendants` hands you exactly the authority fields that node's own roster read (`GET /workspaces/C/members`) would hand you — never more.
+</Note>
+
+## Response (array mode)
+
+```json
+{
+  "data": [
+    {
+      "user": { "id": "u_pat" },
+      "reasons": [
+        { "type": "member", "rank": 5, "relativeRank": 2, "capabilities": ["view", "invite"], "permissions": [], "title": "Frontend Lead", "metadata": {} },
+        { "type": "ancestor-owner", "viaWorkspaceId": "ws_root" }
+      ]
+    }
+  ],
+  "total": 1
+}
+```
+
+The same roster read by a caller who cannot manage people here — the `member` reason keeps its identity fields but drops the authority-bearing ones:
+
+```json
+{
+  "data": [
+    {
+      "user": { "id": "u_pat" },
+      "reasons": [
+        { "type": "member", "title": "Frontend Lead", "metadata": {} },
+        { "type": "ancestor-owner", "viaWorkspaceId": "ws_root" }
+      ]
+    }
+  ],
+  "total": 1
+}
+```
+
+## Response (`countOnly=true`)
+
+```json
+{
+  "counts": { "owner": 1, "member": 12, "ancestorOwner": 2, "reachHolder": 3, "descendantMember": 40 },
+  "total": 13,
+  "distinctUsers": 52
+}
+```
+
+`total` is the **distinct-user seat number** (owner + direct members), **not** the sum of buckets (buckets overlap). Ancestor-owners and reach-holders are never counted as seats.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
+  </Accordion>
+  <Accordion title="Undeclared Query Parameter — 400">
+    ```json
+    { "error": "Unrecognized key: \"page\"", "code": "workspace/invalid-query" }
+    ```
+    This route declares `include`, `countOnly`, `actingUserId` and `projectId`, and refuses anything else rather than ignoring it. Two or more at once are named together: `Unrecognized keys: "page", "limit"`. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchWorkspaceMembers](/hooks/workspaces/use-fetch-workspace-members) · [Fetch Member Standing](/api-reference/workspaces/members/fetch-member-standing)

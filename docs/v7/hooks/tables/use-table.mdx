@@ -1,0 +1,120 @@
+---
+title: "Use table"
+description: "Read and mutate a custom table's rows with pagination, sorting, filtering, and soft-delete"
+icon: "table"
+---
+
+## Overview
+
+`useTable` is the React/React Native hook for a custom table's rows, backed by RTK Query against the `/db` surface. It returns the current page of rows plus loading/refetch state, query controls, and row CRUD actions. The query knobs (page, limit, sort, filters, `includeDeleted`) are stored in the `tables` Redux slice keyed by table name, so multiple consumers of the same table share one view.
+
+See [Custom Tables — Overview](/v7/sdk/tables/overview) for a guide, and [Custom Tables](/v7/custom-tables) for the feature concept.
+
+## Usage Example
+
+```tsx
+import { useTable } from "@sublay/react-js";
+
+interface EventRow {
+  id: string;
+  name: string;
+  capacity: number;
+  createdAt: string;
+}
+
+function Events() {
+  const {
+    rows,
+    pagination,
+    loading,
+    setPage,
+    setSort,
+    setFilters,
+    createRow,
+    updateRow,
+    deleteRow,
+  } = useTable<EventRow>("Events");
+
+  return (
+    <>
+      {loading && <Spinner />}
+      {rows.map((e) => (
+        <Row key={e.id} event={e} onSave={(d) => updateRow(e.id, d)} onDelete={() => deleteRow(e.id)} />
+      ))}
+      {pagination?.hasMore && <button onClick={() => setPage(pagination.page + 1)}>Next</button>}
+    </>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="tableName" type="string" required>
+  The **logical** custom-table name (without the `custom_` prefix). Must be stable across renders.
+</ParamField>
+
+<ParamField path="options" type="Partial<TableViewState>">
+  Optional initial view — any of `page`, `limit`, `sortBy`, `sortDir`, `filters`, `includeDeleted`. Used to seed the stored view the first time this table is read.
+</ParamField>
+
+## Return Values
+
+<ResponseField name="rows" type="T[]">
+  The current page of rows.
+</ResponseField>
+
+<ResponseField name="pagination" type="PaginationMetadata | null">
+  Pagination metadata (`page`, `pageSize`, `totalPages`, `totalItems`, `hasMore`), or `null` before the first load.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while the current query is in flight.
+</ResponseField>
+
+<ResponseField name="error" type="unknown">
+  The query error, if any.
+</ResponseField>
+
+<ResponseField name="refetch" type="() => void">
+  Re-runs the current query.
+</ResponseField>
+
+<ResponseField name="view" type="TableViewState">
+  The current stored view: `{ page, limit, sortBy, sortDir, filters, includeDeleted }`.
+</ResponseField>
+
+<ResponseField name="setView" type="(view: Partial<TableViewState>) => void">
+  Merge-updates the stored view.
+</ResponseField>
+
+<ResponseField name="setPage" type="(page: number) => void">
+  Changes the current page.
+</ResponseField>
+
+<ResponseField name="setFilters" type="(filters: DbFilter[]) => void">
+  Replaces the filter clauses (and resets to page 1). Each clause is `{ column, operator, value }`; operators are `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `in`, `contains`, `like`, `isNull`, AND-combined.
+</ResponseField>
+
+<ResponseField name="setSort" type="(sortBy?: string, sortDir?: 'asc' | 'desc') => void">
+  Sets the sort column/direction (and resets to page 1).
+</ResponseField>
+
+<ResponseField name="setIncludeDeleted" type="(includeDeleted: boolean) => void">
+  On a paranoid table, toggles whether soft-deleted rows are included (resets to page 1).
+</ResponseField>
+
+<ResponseField name="createRow" type="(data: Record<string, unknown>) => Promise<T>">
+  Inserts a row. Managed columns (`id`/`createdAt`/`updatedAt`/`deletedAt`) are server-set and rejected from the body.
+</ResponseField>
+
+<ResponseField name="updateRow" type="(rowId: string, data: Record<string, unknown>) => Promise<T>">
+  Updates a row; `updatedAt` is bumped automatically on a timestamped table.
+</ResponseField>
+
+<ResponseField name="deleteRow" type="(rowId: string, opts?: { force?: boolean }) => Promise<{ deleted: boolean; soft: boolean }>">
+  Deletes a row. Soft-deletes on a paranoid table by default; pass `{ force: true }` to hard-delete.
+</ResponseField>
+
+<ResponseField name="restoreRow" type="(rowId: string) => Promise<T>">
+  Clears `deletedAt` on a soft-deleted row (paranoid tables only).
+</ResponseField>

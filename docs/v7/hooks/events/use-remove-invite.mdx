@@ -1,0 +1,38 @@
+---
+title: "useRemoveInvite"
+description: "Revoke a user's invite to an event (host-only)"
+icon: "plug"
+---
+
+## Overview
+
+`useRemoveInvite` returns a callable that removes a user's invite. **Host-only.** Removing the invite revokes access to an `invite`-only event and also deletes that user's RSVP (decrementing the count). Removing a non-invited user is an idempotent no-op.
+
+## Usage Example
+
+```tsx
+import { useRemoveInvite } from "@sublay/react-js";
+
+function UninviteButton({ eventId }: { eventId: string }) {
+  const removeInvite = useRemoveInvite();
+  return (
+    <button onClick={() => removeInvite({ eventId, userId: "usr_guest" })}>
+      Remove invite
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="eventId" type="string" required>The event ID.</ParamField>
+<ParamField path="userId" type="string" required>The invitee to remove.</ParamField>
+
+## Returns
+
+Returns a `Promise<Event>` — the updated [Event](/data-models/event) with refreshed `rsvpCounts`.
+
+## See Also
+
+- [Remove Invite API](/api-reference/events/remove-invite)
+- [useAddInvite](/hooks/events/use-add-invite)

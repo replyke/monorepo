@@ -1,0 +1,374 @@
+---
+title: "Workspaces"
+description: "Framework-agnostic client surface for workspaces — the full 21-endpoint bundle"
+---
+
+The `workspaces` module in `@sublay/js` is the **client-side** surface of the [Workspaces bundle](/data-models/workspace). It covers **all 21 endpoints** — workspace CRUD, membership management, the full invitation lifecycle, and the authority read — so a members-management UI needs no server-side code.
+
+The actor is always derived from the **bearer token**. **No actor field is ever sent from the client** — the props types simply do not carry one, and a call that hand-writes `actingUserId` past the types to name a user other than the token's own is rejected by the server with a `403`. Acting on behalf of a *different* user is the [node SDK](/node-sdk/workspaces) service-key capability, and it is the only difference in reach between the two SDKs for this bundle — **not** a restriction on which operations a client may perform.
+
+<Note>
+  **Requires the `workspaces` bundle.** See [Bundles](/bundles) to install it.
+</Note>
+
+Every call is authorized against the **signed-in user's own standing** on the workspace: owner-only, capability-gated, rank-bounded, visibility-gated, or self-service. Each function below states which. (`fetchWorkspace` is the one read that also works without a token, returning the workspace when visibility permits.) Read the concepts first: [capabilities vs permissions](/data-models/workspace-member#the-two-arrays-capabilities-vs-permissions), [rank](/data-models/workspace-member#rank-semantics), [reach & ownership](/data-models/workspace#reach-and-the-wall-door-rule), and the [identity-matched, no-token invite model](/data-models/workspace-invitation#acceptance-model).
+
+<Tip>
+  A `userId` that names a **target** is fully available on the client — the invitee `userId` on `createWorkspaceInvite`, and the `targetUserId` path param on the member functions. Only the *actor* field, `actingUserId`, is node-SDK-only.
+</Tip>
+
+<Warning>
+  **Pass only the documented fields — the props object is sent whole.**
+  `createWorkspace` and its siblings hand your object straight to the request body, and every workspaces endpoint refuses a top-level field it does not declare: `{ "error": "Unrecognized key: \"slug\"", "code": "workspace/invalid-body" }` (plural `Unrecognized keys: "a", "b"` for two or more, `workspace/invalid-query` for a query-string offender).
+
+  ```typescript
+  // ❌ 400 — `slug` and `plan` are not fields of this endpoint.
+  await sublay.workspaces.createWorkspace({ ...orgTemplate });
+
+  // ✅ Name the fields; your own data belongs in `metadata`.
+  await sublay.workspaces.createWorkspace({
+    name: orgTemplate.name,
+    metadata: { slug: orgTemplate.slug, plan: orgTemplate.plan },
+  });
+  ```
+
+  Strictness governs **top-level** keys only, so nothing inside `metadata` is inspected. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+</Warning>
+
+---
+
+## Workspace lifecycle
+
+### createWorkspace
+
+The bearer-token user becomes the owner. Root creation requires a **verified email**; child creation requires `create-sub-workspace` on the parent.
+
+```typescript
+const workspace = await sublay.workspaces.createWorkspace({
+  name: "Acme Inc",
+  parentWorkspaceId: null,   // omit/null → root; set → child
+});
+```
+
+<ParamField body="name" type="string" required>Display name (1–100 characters).</ParamField>
+<ParamField body="metadata" type="object">Opaque developer data.</ParamField>
+<ParamField body="parentWorkspaceId" type="string">Parent for child creation.</ParamField>
+
+### fetchWorkspace
+
+```typescript
+const workspace = await sublay.workspaces.fetchWorkspace({
+  workspaceId: "ws_abc",
+  include: "memberCount",
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="include" type="string">Comma-separated include flags. `memberCount` adds the workspace's direct member count; omit it and the field is absent. An unrecognized flag value is ignored.</ParamField>
+
+### fetchManyWorkspaces
+
+Lists the bearer-token user's direct-membership + owned workspaces (paginated). Self-service.
+
+```typescript
+const { data, pagination } = await sublay.workspaces.fetchManyWorkspaces({
+  page: 1,
+  limit: 20,
+  include: "memberCount", // each row gains a `memberCount`
+});
+```
+
+<ParamField body="page" type="number" />
+<ParamField body="limit" type="number" />
+<ParamField body="include" type="string">Comma-separated include flags, sent as a query param. `memberCount` adds a `memberCount` to **every row** — the workspace's direct member count, resolved in one grouped query over the returned page rather than one request per row. Omit it and the field is absent from each row.</ParamField>
+
+### updateWorkspace
+
+Edits `name`/`metadata`. Requires the **`edit-workspace`** capability (or ownership). Does **not** flip the inherit flag.
+
+```typescript
+const workspace = await sublay.workspaces.updateWorkspace({
+  workspaceId: "ws_abc",
+  name: "Acme Corp",
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="name" type="string" />
+<ParamField body="metadata" type="object" />
+
+### updateWorkspaceInheritFlag
+
+Flips whether authority held on an ancestor reaches into this node. **Owner-only** in both directions (own owner or an ancestor owner) — not a capability. Blocked with `403 workspace/inherit-enforced` when the project enforces its default.
+
+```typescript
+const workspace = await sublay.workspaces.updateWorkspaceInheritFlag({
+  workspaceId: "ws_child",
+  inheritsFromParent: true,
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="inheritsFromParent" type="boolean" required>`true` = open/door, `false` = sealed/wall.</ParamField>
+
+### deleteWorkspace
+
+**Owner-only** (own owner or an ancestor owner). Cascades the whole subtree transactionally and fires `workspace.deleted` per deleted workspace — and **no** `workspace.member.removed` events for the memberships it tears down (see [Webhooks](/sdk/workspaces/webhooks)).
+
+```typescript
+const { message } = await sublay.workspaces.deleteWorkspace({ workspaceId: "ws_abc" });
+```
+
+<ParamField body="workspaceId" type="string" required />
+
+### transferWorkspaceOwnership
+
+**Owner-only** (own owner or an ancestor owner). `newOwnerId` addresses the **target** — any verified user in the tenant, who need not already be a member.
+
+```typescript
+const workspace = await sublay.workspaces.transferWorkspaceOwnership({
+  workspaceId: "ws_abc",
+  newOwnerId: "usr_new",
+  previousOwnerDisposition: "demote",
+  previousOwnerRank: 0,
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="newOwnerId" type="string" required>The new owner (any verified user).</ParamField>
+<ParamField body="previousOwnerDisposition" type="string">`"demote"` or `"remove"`. Defaults to `"remove"` when omitted.</ParamField>
+<ParamField body="previousOwnerRank" type="number">On demote, the ex-owner's rank (absolute only). Defaults to **one rung below the acting user's anchor** — `0` for the usual apex actor, or one below their own row if they sit in this workspace's ladder.</ParamField>
+<ParamField body="previousOwnerCapabilities" type="string[]" />
+
+---
+
+## Membership
+
+### fetchWorkspaceMembers
+
+The [unified roster](/api-reference/workspaces/members/list-members) — `WorkspaceRosterResponse`, or `WorkspaceRosterCountsResponse` with `countOnly`. Never paginated. Requires roster visibility — **any relation** to the workspace.
+
+<Warning>
+  **`rank`, `relativeRank`, `capabilities` and `permissions` are fenced on other users' entries.** They are omitted (absent — not `null`) unless the bearer-token user holds one of the four people-operating capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) or is the `owner` / an `ancestor-owner` — evaluated **per node**, so with `include=descendants` each `descendant-member` reason is judged on its own workspace and authority over the parent does not unfence a **sealed** child. The caller's own entry always carries them. Who is on the roster — `user`, reason `type`s, `title`, `metadata`, `viaWorkspaceId` — stays visible to any relation, so read the fenced fields defensively (`reason.capabilities ?? []`).
+
+  A `member` reason carries **both rank coordinates**: absolute `rank` and `relativeRank`, the member's position as an offset from you (`1` = one rung below you, `-3` = three above). `descendant-member` reasons carry `rank` only. `relativeRank` is fenced *with* `rank` because it is `rank` minus a number you already know.
+</Warning>
+
+```typescript
+const roster = await sublay.workspaces.fetchWorkspaceMembers({ workspaceId: "ws_abc" });
+const counts = await sublay.workspaces.fetchWorkspaceMembers({ workspaceId: "ws_abc", countOnly: true });
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="include" type="string">`ancestorOwners`, `reachHolders`, `descendants`.</ParamField>
+<ParamField body="countOnly" type="boolean" />
+
+### fetchWorkspaceMemberStanding
+
+One user's resolved standing, addressed by user id — works for any relation, including users with no direct member row. Requires roster visibility — **any relation** to the workspace.
+
+<Warning>
+  **`capabilities`, `permissions`, `rank` and `relativeRank` are fenced.** They are omitted unless the bearer-token user holds one of the four people-operating capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`), is the `owner` / an `ancestor-owner`, or is reading **their own** standing — all judged on **this** workspace, a per-node verdict that says nothing about any other node. `user`, `reasons`, `title` and `metadata` are always returned. `relativeRank` is the target's rank as an offset from you (negative = senior to you), `null` exactly when `rank` is.
+</Warning>
+
+```typescript
+const standing = await sublay.workspaces.fetchWorkspaceMemberStanding({
+  workspaceId: "ws_abc",
+  targetUserId: "usr_pat",
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="targetUserId" type="string" required>The **target** whose standing to read (path param, not an actor).</ParamField>
+
+Returns `WorkspaceMemberStanding`. On its `user` field **only `id` is guaranteed** (`WorkspaceStandingUser`): the server returns the full user record when the user row still exists and falls back to `{ id }` alone when it does not — a deleted user with a lingering membership row is a reachable case. Read the rest defensively (`standing.user.username ?? "Deleted user"`).
+
+`reasons` is an array of structured `{ type, viaWorkspaceId? }` entries — the same shape a roster entry's `reasons` carries — so you learn which ancestor grants an `ancestor-owner` / `reach-holder` standing.
+
+### updateWorkspaceMember
+
+Two capability tiers: **powerful** fields (`capabilities`, `permissions`, and rank as either `rank` or `relativeRank`) need `edit-member-access` plus the rank rule and [no-escalation](/data-models/workspace-member#no-privilege-escalation); **cosmetic** fields (`title`, `metadata`) need only `edit-member-profile`, and a member editing their own `title` needs nothing.
+
+Rank moves in **either coordinate**, never both; omitting both means **rank unchanged**. See [choosing a rank](/sdk/workspaces/overview#choosing-a-rank).
+
+```typescript
+const member = await sublay.workspaces.updateWorkspaceMember({
+  workspaceId: "ws_abc",
+  targetUserId: "usr_pat",
+  capabilities: ["view", "invite"],
+  rank: 3,
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="targetUserId" type="string" required>The member being edited (path param, not an actor).</ParamField>
+<ParamField body="capabilities" type="string[]" />
+<ParamField body="permissions" type="string[]" />
+<ParamField body="rank" type="number">Absolute. Mutually exclusive with `relativeRank`; omit both to leave rank unchanged.</ParamField>
+<ParamField body="relativeRank" type="number">An offset from you — `1` = one rung below me. Must be `>= 1`. Resolved to an absolute rank at write time and frozen. No default.</ParamField>
+<ParamField body="title" type="string" />
+<ParamField body="metadata" type="object" />
+
+### removeWorkspaceMember
+
+Removes a member from **this node only**. Requires `remove-member` and is **rank-bounded**; sole-owner protected.
+
+```typescript
+await sublay.workspaces.removeWorkspaceMember({
+  workspaceId: "ws_abc",
+  targetUserId: "usr_pat",
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="targetUserId" type="string" required>The member to remove (path param, not an actor).</ParamField>
+
+### removeWorkspaceMemberFromSubtree
+
+Removes the target's direct memberships on this workspace and every descendant you can reach. Requires `remove-member`, rank-bounded **per node**. Blocks with `409 workspace/owns-descendants` (and reports them) if the target owns any descendant workspace.
+
+```typescript
+const { removedCount, removed, skippedCount, skipped } =
+  await sublay.workspaces.removeWorkspaceMemberFromSubtree({
+    workspaceId: "ws_root",
+    targetUserId: "usr_pat",
+  });
+
+if (skippedCount > 0) {
+  // NOT fully offboarded — memberships survived in branches you cannot reach.
+  // `id`/`name` are null where you have no standing on that workspace.
+  console.warn("Still a member of", skippedCount, "workspace(s):", skipped);
+}
+```
+
+<Warning>
+  **A non-owner's sweep may be partial.** It stops at sealed sub-workspaces (`inheritsFromParent = false`), so the target can keep a membership you never saw. Always check `skippedCount` / `skipped` — `removedCount` alone does **not** mean the user is gone from the subtree. An owner or ancestor owner always gets `skippedCount: 0`. Where you have no standing on a skipped workspace its `id` and `name` come back `null`: you learn *that* a membership survived, not *where* — escalate to an owner of that branch.
+</Warning>
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="targetUserId" type="string" required>The user to offboard (path param, not an actor).</ParamField>
+
+### leaveWorkspace
+
+**Self-service** — removes the bearer-token user's *own* direct membership on this node only. No capability required. An owner cannot leave (`409 workspace/sole-owner`); transfer or delete first.
+
+```typescript
+await sublay.workspaces.leaveWorkspace({ workspaceId: "ws_abc" });
+```
+
+<ParamField body="workspaceId" type="string" required />
+
+---
+
+## Invitations
+
+### createWorkspaceInvite
+
+Requires the **`invite`** capability (or ownership); the inviter is the bearer-token user. Address the invitee by **exactly one** of `email`, `userId`, or `username` — here `userId`/`username` address the invite **target**, not an actor. Email matching against existing accounts is **case-insensitive**.
+
+<Warning>
+  **The project must have `workspaces.inviteAcceptUrl` configured**, or this call fails with `409 workspace/missing-invite-accept-url` and persists nothing — the invitation email would have nowhere to deep-link. It has no default. Applies even when the invitee already has an account. See [Project settings](/sdk/workspaces/overview#project-settings).
+</Warning>
+
+```typescript
+const invite = await sublay.workspaces.createWorkspaceInvite({
+  workspaceId: "ws_abc",
+  email: "pat@example.com",
+  capabilities: ["view"],
+  // One rung below me. Omitting both rank fields means exactly this.
+  relativeRank: 1,
+});
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="email" type="string">One of `email`/`userId`/`username`.</ParamField>
+<ParamField body="userId" type="string">Invite **target** user id.</ParamField>
+<ParamField body="username" type="string">Invite **target** username.</ParamField>
+<ParamField body="capabilities" type="string[]" />
+<ParamField body="permissions" type="string[]" />
+<ParamField body="rank" type="number">Absolute. **Not required** — mutually exclusive with `relativeRank`, and omitting both applies the `relativeRank: 1` default.</ParamField>
+<ParamField body="relativeRank" type="number" default="1">An offset from the inviter — `1` = one rung below me. Must be `>= 1`. Anchored on your own rank if you hold a member row here, apex otherwise. A **snapshot**: resolved to an absolute rank at invite time and frozen. Relying on the default puts everyone on the same rung, and equals cannot manage each other. Sharper case: an inviter with **no member row here** (the `owner`, an ancestor owner, a reach holder) anchors at apex, so their default mints **rank 0** — name a coordinate if that is not what you want. See [choosing a rank](/sdk/workspaces/overview#choosing-a-rank).</ParamField>
+<ParamField body="title" type="string" />
+
+### fetchWorkspaceInvites
+
+The workspace's **outbox** — the live pending invites *it has issued* (`status='pending' AND expiresAt > now`). Requires the `invite` capability (or ownership). Always returned in full; deliberately unpaginated.
+
+```typescript
+const { data } = await sublay.workspaces.fetchWorkspaceInvites({ workspaceId: "ws_abc" });
+```
+
+<ParamField body="workspaceId" type="string" required />
+
+<Warning>
+  Do not confuse this with [`fetchMyWorkspaceInvites`](#fetchmyworkspaceinvites). `fetchWorkspaceInvites` is scoped to **one workspace** and lists what **it sent out** (needs `invite`). `fetchMyWorkspaceInvites` is scoped to **the caller**, spans every workspace, and lists what was **addressed to them** (needs nothing).
+</Warning>
+
+### revokeWorkspaceInvite
+
+Marks a pending invitation `revoked`. Requires the `invite` capability (or ownership). Note the verb-suffixed **`POST .../revoke`** route — this is not a `DELETE`.
+
+```typescript
+await sublay.workspaces.revokeWorkspaceInvite({ workspaceId: "ws_abc", inviteId: "inv_1" });
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="inviteId" type="string" required />
+
+### resendWorkspaceInvite
+
+Refreshes a pending invite — resets a 14-day expiry and resends the email — valid even on one already past `expiresAt`. Terminal invites → `409`. Requires the `invite` capability (or ownership). Also a verb-suffixed **`POST .../resend`**. Returns the refreshed `WorkspaceInvitation`, carrying the new `expiresAt`. Like `createWorkspaceInvite`, it requires [`workspaces.inviteAcceptUrl`](/sdk/workspaces/overview#project-settings) on the project → otherwise `409 workspace/missing-invite-accept-url` with `expiresAt` untouched.
+
+```typescript
+const invite = await sublay.workspaces.resendWorkspaceInvite({ workspaceId: "ws_abc", inviteId: "inv_1" });
+```
+
+<ParamField body="workspaceId" type="string" required />
+<ParamField body="inviteId" type="string" required />
+
+### fetchMyWorkspaceInvites
+
+The caller's **inbox** — the bearer-token user's live pending invites across every workspace, matched by `userId` from the token. **Self-service**, and surfacing is not verification-gated — a user sees pending invites right after signup (which nudges them to verify). The verified check applies when they act on one (accept **or** decline).
+
+```typescript
+const { data } = await sublay.workspaces.fetchMyWorkspaceInvites();
+```
+
+### acceptWorkspaceInvite
+
+**Self-service** — identity-matched to the bearer-token user, and a **verified email is required**. The `inviteId` is non-secret. Idempotent when already a member/owner.
+
+```typescript
+const { workspaceId } = await sublay.workspaces.acceptWorkspaceInvite({ inviteId: "inv_1" });
+```
+
+<ParamField body="inviteId" type="string" required />
+
+### declineWorkspaceInvite
+
+**Self-service** — identity-matched, and a **verified email is required** (the same gate as accept, so an unverified squatter on someone else's address cannot burn their invite). Returns `403 workspace/email-not-verified` otherwise.
+
+```typescript
+await sublay.workspaces.declineWorkspaceInvite({ inviteId: "inv_1" });
+```
+
+<ParamField body="inviteId" type="string" required />
+
+---
+
+## Authority-as-a-service
+
+### fetchWorkspaceAuthority
+
+The bearer-token user's resolved standing on a workspace — `{ reasons, capabilities, permissions, rank }`. **Self-service**, so nothing is fenced here. (No `relativeRank`: it is an offset from you, and here the subject *is* you, so `rank` is the coordinate this read reports.) Drive your UI off this rather than guessing: a permission check is a one-line `.includes()` on the result.
+
+`reasons` is an array of structured `{ type, viaWorkspaceId? }` entries (`viaWorkspaceId` on `ancestor-owner` / `reach-holder` only). `capabilities` is the fully-resolved set and **`view` is implied by every other capability** — any user with standing carries it, while a stranger gets `reasons: []` and an empty set.
+
+```typescript
+const authority = await sublay.workspaces.fetchWorkspaceAuthority({ workspaceId: "ws_abc" });
+if (authority.capabilities.includes("invite")) { /* show the invite button */ }
+```
+
+<ParamField body="workspaceId" type="string" required />
+
+Sublay never consumes your opaque `permissions` — there is deliberately no `?permission=` check or `can()` helper.

@@ -1,0 +1,71 @@
+---
+title: "Delete Follow"
+api: "DELETE /api/v6/:projectId/follows/:followId"
+description: "Remove a follow relationship by its ID"
+auth: "bearer"
+---
+
+Remove a specific follow relationship by its ID.
+
+## Path Parameters
+
+<ParamField path="followId" type="string" required>
+  ID of the follow relationship to remove
+</ParamField>
+
+## Response
+
+<ResponseField name="message" type="string">
+  Success confirmation message
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Follow ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Invalid followId",
+      "code": "follow/invalid-follow-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Unauthorized - 403 Forbidden">
+    ```json
+    {
+      "error": "Unauthorized (not your follow relationship)",
+      "code": "follow/unauthorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Follow Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "Follow relationship not found",
+      "code": "follow/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "follow/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- User can only remove their own follow relationships
+- Returns success message on successful removal
+- Use this endpoint when you have the specific follow ID
+- Alternative: Use `DELETE api.sublay.io/api/v6/:projectId/users/:userId/follow` when you know the user ID
+- Rate limiting: 75 requests per 5 minutes

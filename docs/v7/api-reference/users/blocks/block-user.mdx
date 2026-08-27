@@ -1,0 +1,73 @@
+---
+title: "Block User"
+api: "POST /v7/:projectId/users/:userId/block"
+description: "Block a user by their ID"
+---
+
+Creates a block edge from the acting user (the blocker) to the specified user (the target). Blocking is **non-disclosing** — the blocked user is never notified and can never tell they've been blocked.
+
+On a **new** block, Sublay retroactively tears down the existing relationship between the two users in one transaction: any follow in either direction is removed, and any connection or pending connection request in either direction is removed. Nothing is restored on unblock. See [Block enforcement](/sdk/moderation/overview#blocking) for the full list of what a block prevents and hides.
+
+<Note>
+  **Requires the `moderation` bundle.** Blocking ships with reporting and suspensions as part of the trust & safety package. A project without the moderation bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Sublay user ID (UUID) of the user to block (the target).
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="actingUserId" type="string">
+  The user performing the block (the blocker). Only service/master keys may supply an `actingUserId` other than the caller's own; with a user token the blocker is derived from the token and this field is ignored.
+</ParamField>
+
+## Response
+
+On a **new** block, returns HTTP `201` with the created block record. Re-blocking an already-blocked user is an idempotent success and returns HTTP `200` with the existing record.
+
+<ResponseField name="id" type="string">
+  Unique block record ID (UUID).
+</ResponseField>
+
+<ResponseField name="blockerId" type="string">
+  ID of the user who created the block (the acting user).
+</ResponseField>
+
+<ResponseField name="blockedId" type="string">
+  ID of the user being blocked (the target).
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO timestamp of when the block was created.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Self-Block — 400">
+    ```json
+    {
+      "error": "A user cannot block themselves.",
+      "code": "block/self-block"
+    }
+    ```
+  </Accordion>
+  <Accordion title="User Not Found — 404">
+    ```json
+    {
+      "error": "One or both users involved in the block do not exist.",
+      "code": "block/user-not-found"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useBlockManager` hook](/hooks/blocks/use-block-manager)
+- [Unblock User](/api-reference/users/blocks/unblock-user)
+- [Get Block Status](/api-reference/users/blocks/get-block-status)
+- [Block data model](/data-models/block)

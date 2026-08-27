@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find old-docs/pages/api-endpoints/users -name '*.mdx' -exec bash -c 'cp \"\"$1\"\" \"\"api-reference/users/$(basename \"\"$1\"\")\"\"' _ {} ;)",
+      "Bash(find:*)",
+      "WebFetch(domain:mintlify.com)",
+      "WebSearch",
+      "WebFetch(domain:www.mintlify.com)",
+      "Bash(for:*)",
+      "Bash(do head -5 \"$file\")",
+      "Bash(done)",
+      "Bash(mint broken-links)",
+      "Bash(test:*)",
+      "Bash(node:*)",
+      "Bash(cat:*)",
+      "Bash(do head -3 \"$file\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

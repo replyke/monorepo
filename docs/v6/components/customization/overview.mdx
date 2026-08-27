@@ -1,0 +1,232 @@
+---
+title: "Customization Overview"
+description: "Customize components to match your brand"
+icon: "paintbrush"
+---
+
+# Customization
+
+Since you own the source code, you can customize **everything**: colors, layout, typography, functionality, and more.
+
+---
+
+## Philosophy
+
+The CLI approach enables true customization:
+
+<CardGroup cols={2}>
+  <Card title="Edit, Don't Configure" icon="code">
+    Customize by editing source files, not passing complex config objects.
+  </Card>
+
+  <Card title="Full Ownership" icon="key">
+    The code is in your project. Change anything you want.
+  </Card>
+
+  <Card title="No Limitations" icon="unlock">
+    Not restricted to what props expose. Modify layout, logic, features.
+  </Card>
+
+  <Card title="Self-Documenting" icon="book">
+    Components have clear file names, comments, and color palettes in headers.
+  </Card>
+</CardGroup>
+
+---
+
+## What You Can Customize
+
+<AccordionGroup>
+  <Accordion title="Colors & Theming" icon="palette">
+    Change any color: backgrounds, text, buttons, icons, borders.
+
+    - Inline styles: Find and replace hex codes
+    - Tailwind: Change utility classes or extend config
+
+    See [Colors & Theming](/components/customization/colors-theming)
+  </Accordion>
+
+  <Accordion title="Layout & Structure" icon="table-columns">
+    Rearrange, add, or remove UI elements.
+
+    - Add custom headers/footers
+    - Remove features you don't need
+    - Change component ordering
+    - Modify spacing and sizing
+
+    See [Layout & Structure](/components/customization/layout-structure)
+  </Accordion>
+
+  <Accordion title="Styling Variants" icon="wand-magic-sparkles">
+    Switch between inline styles and Tailwind CSS.
+
+    - Understand differences
+    - When to use each
+    - How to convert between them
+
+    See [Styling Variants](/components/customization/styling-variants)
+  </Accordion>
+
+  <Accordion title="Functionality Changes" icon="gears">
+    Modify behavior and add features.
+
+    - Add confirmation dialogs
+    - Change interaction logic
+    - Integrate with your systems
+    - Add analytics tracking
+
+    See [Adding Features](/components/customization/adding-features)
+  </Accordion>
+
+  <Accordion title="Typography" icon="font">
+    Change fonts, sizes, weights, line heights.
+
+    - Custom font families
+    - Adjust text sizing
+    - Modify spacing
+    - Change text styles
+  </Accordion>
+
+  <Accordion title="Icons & Assets" icon="image">
+    Replace icons with your own or use an icon library.
+
+    - Swap Unicode symbols with icon components
+    - Use your icon library (Font Awesome, Heroicons, etc.)
+    - Add custom graphics
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Quick Examples
+
+### Change Primary Color (Inline Styles)
+
+```tsx
+// File: components/comments-threaded/components/single-comment/vote-buttons.tsx
+
+// Find:
+<button style={{ color: '#3B82F6' }}>
+
+// Replace with:
+<button style={{ color: '#9333EA' }}>  // Purple
+```
+
+### Change Primary Color (Tailwind)
+
+```tsx
+// File: components/comments-threaded/components/single-comment/vote-buttons.tsx
+
+// Find:
+<button className="text-blue-600 hover:text-blue-700">
+
+// Replace with:
+<button className="text-purple-600 hover:text-purple-700">
+```
+
+### Add Custom Header
+
+```tsx
+// File: components/comments-threaded/components/threaded-comment-section.tsx
+
+return (
+  <div>
+    {/* Add custom header */}
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-2xl font-bold">Discussion</h2>
+      <span className="text-gray-500">{totalComments} comments</span>
+    </div>
+
+    <NewCommentForm />
+    <CommentsFeed />
+  </div>
+);
+```
+
+### Remove Feature
+
+```tsx
+// File: components/comments-threaded/components/single-comment/single-comment.tsx
+
+return (
+  <div>
+    <AuthorInfo />
+    <CommentBody />
+    {/* <VoteButtons /> */}  {/* Removed voting */}
+    <ReplyButton />
+  </div>
+);
+```
+
+---
+
+## Where to Make Changes
+
+| What to Change | Where to Look |
+|----------------|---------------|
+| Colors | Search for hex codes (#3B82F6) or Tailwind classes (text-blue-600) |
+| Layout | Main component files (threaded-comment-section.tsx, etc.) |
+| Typography | Any component file (search for fontSize, className with text-) |
+| Functionality | Component files and hooks/ directory |
+| Icons | Search for Unicode symbols (▲, ❤️) or icon elements |
+
+---
+
+## Tips for Customization
+
+<Steps>
+  <Step title="Read Color Palette Guides">
+    Many component files have color palette guides in their headers. Use these as reference.
+
+    ```tsx
+    /**
+     * COLOR PALETTE
+     * - #3B82F6 → Primary blue (upvotes, links)
+     * - #EF4444 → Red (downvotes, delete)
+     */
+    ```
+  </Step>
+
+  <Step title="Use Find & Replace">
+    To change colors globally, use your editor's find & replace:
+
+    - Find: `#3B82F6`
+    - Replace: `#9333EA`
+    - Scope: `components/comments-threaded/`
+  </Step>
+
+  <Step title="Test Incrementally">
+    Make one change at a time and test. Easier to debug if something breaks.
+  </Step>
+
+  <Step title="Version Control">
+    Commit changes frequently so you can revert if needed.
+
+    ```bash
+    git add src/components/comments-threaded/
+    git commit -m "Change primary color to purple"
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Colors & Theming" icon="palette" href="/components/customization/colors-theming">
+    Customize colors and dark mode
+  </Card>
+
+  <Card title="Layout & Structure" icon="table-columns" href="/components/customization/layout-structure">
+    Modify layout and add/remove elements
+  </Card>
+
+  <Card title="Styling Variants" icon="wand-magic-sparkles" href="/components/customization/styling-variants">
+    Inline styles vs Tailwind CSS
+  </Card>
+
+  <Card title="Adding Features" icon="plus" href="/components/customization/adding-features">
+    Add custom functionality
+  </Card>
+</CardGroup>

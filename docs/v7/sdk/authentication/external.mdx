@@ -1,0 +1,156 @@
+---
+title: "External Auth"
+description: "Integrating your own auth system via signed JWT"
+---
+
+If you already have a user authentication system (such as Clerk, Auth0, Firebase Auth, or your own backend), you can integrate it with Sublay without requiring users to create a separate Sublay account. Your backend signs a JWT with a project-specific private key; the SDK exchanges that JWT for Sublay tokens.
+
+## How It Works
+
+<Steps>
+  <Step title="Your backend signs a JWT">
+    After your own auth system verifies the user, your server signs a JWT using
+    your Sublay project's RSA private key. The token identifies the user by
+    their ID in your system.
+  </Step>
+  <Step title="The SDK exchanges the JWT">
+    Call `verifyExternalUser` (available via the `useAuth` hook or directly) with
+    the signed JWT. Sublay verifies the signature, looks up or creates the user,
+    and returns Sublay access and refresh tokens.
+  </Step>
+  <Step title="The user is authenticated">
+    From this point, the user is signed into Sublay and all SDK hooks work
+    normally. Token refresh is handled automatically.
+  </Step>
+</Steps>
+
+## JWT Requirements
+
+Your backend must sign the JWT using **RS256** (RSA 256-bit) with your project's private key. The payload must include:
+
+| Claim | Description |
+|-------|-------------|
+| `sub` | The user's ID in your system (becomes `foreignId` in Sublay) |
+| `iss` | Your Sublay project ID |
+| `userData` | Object with optional profile fields (see below) |
+
+### `userData` fields
+
+All fields in `userData` are optional. If a user already exists and any field has changed, Sublay updates the stored value.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `email` | `string` | User's email address |
+| `name` | `string` | Display name |
+| `username` | `string` | Unique username within the project |
+| `avatar` | `string` | URL of avatar image |
+| `bio` | `string` | Short bio text |
+| `location` | object | `{ latitude, longitude }` |
+| `birthdate` | `string` | ISO 8601 date string |
+| `metadata` | object | Public custom data |
+| `secureMetadata` | object | Private custom data |
+
+## Backend Example (Node.js)
+
+```ts
+import jwt from "jsonwebtoken";
+import fs from "fs";
+
+const privateKey = fs.readFileSync("sublay-private-key.pem");
+
+function createSublayJwt(userId: string, userData: object) {
+  return jwt.sign(
+    {
+      sub: userId,
+      iss: "your-sublay-project-id",
+      userData,
+    },
+    privateKey,
+    { algorithm: "RS256", expiresIn: "5m" }
+  );
+}
+```
+
+<Warning>
+  Keep your RSA private key on your server. Never expose it to the client.
+  The JWT should be generated server-side and passed to the frontend at
+  sign-in time.
+</Warning>
+
+## Frontend Integration
+
+Pass the signed JWT directly to `SublayProvider` (or `SublayIntegrationProvider` if you manage your own Redux store) via the `signedToken` prop. The SDK exchanges the token automatically on initialization — no manual API calls required.
+
+<CodeGroup>
+```tsx Standard setup
+import { SublayProvider } from "@sublay/react-js";
+
+function App() {
+  // Fetch or derive the signed JWT from your own auth system
+  const signedToken = useMyAuthSystem().sublayJwt;
+
+  return (
+    <SublayProvider projectId="your-project-id" signedToken={signedToken}>
+      <YourApp />
+    </SublayProvider>
+  );
+}
+```
+
+```tsx Integration mode (own Redux store)
+import { SublayIntegrationProvider } from "@sublay/react-js";
+
+function App() {
+  // Fetch or derive the signed JWT from your own auth system
+  const signedToken = useMyAuthSystem().sublayJwt;
+
+  return (
+    <Provider store={yourStore}>
+      <SublayIntegrationProvider projectId="your-project-id" signedToken={signedToken}>
+        <YourApp />
+      </SublayIntegrationProvider>
+    </Provider>
+  );
+}
+```
+</CodeGroup>
+
+Whenever `signedToken` changes (e.g., after a new user signs in), the SDK re-initializes auth with the updated token automatically.
+
+<Tip>
+  The `verify-external-user` exchange happens inside the provider — you never
+  need to call the endpoint manually. The provider creates the user if they do
+  not exist, updates their profile if any `userData` fields have changed, and
+  handles token refresh from that point forward.
+</Tip>
+
+## The Account Limit
+
+A device stores at most **5 accounts** ([Multi-Account](/sdk/authentication/multi-account)). If the verified token identifies a **sixth**, distinct user, the exchange is refused: the session Sublay just created is signed back out, the stored accounts are left untouched, and the app renders signed-out with `accountLimitReached` set.
+
+```tsx
+import { useAccounts } from "@sublay/react-js";
+
+function AccountLimitBanner() {
+  const { accountLimitReached, accounts } = useAccounts();
+  if (!accountLimitReached) return null;
+  return <p>This device already holds {accounts.length} accounts. Sign out of one to continue.</p>;
+}
+```
+
+Two consequences specific to this integration:
+
+- **A `signedToken` for an already-stored user is never refused.** The check is keyed on the user id Sublay resolves from the token, not on anything in `userData`, so returning users sign in normally at the limit.
+- **The refusal is not silent, and it does not fall back.** Because the provider exchanges the token on every launch, a refused exchange would otherwise repeat invisibly forever — or quietly restore some *other* stored account instead. Instead the SDK surfaces the reason and sets `accountLimitReached`. The auth gate still opens, so the app renders normally in its signed-out state rather than hanging.
+- **The refusal is not recorded as a sign-out.** Nobody signed out — an admission was refused — so the selection is left exactly where it was and `signedOut` is not set. The next launch therefore behaves as it would have without the refused attempt, rather than reproducing the same dead end forever. See [Reaching the account limit](/sdk/authentication/multi-account#reaching-the-account-limit).
+
+Apps in integration mode that never store multiple accounts cannot hit this: the limit is only reached once five distinct users have been admitted on the same device.
+
+## User Identity
+
+When a user signs in via external auth, Sublay stores the `sub` claim as `foreignId` on the user record and creates a `UserIdentity` entry with `provider: "external"`. On subsequent sign-ins, the user is looked up by identity first, then by `foreignId` as a fallback, then by email.
+
+## See Also
+
+- [Verify External User API reference](/api-reference/auth/verify-external-user)
+- [Authentication overview](/sdk/authentication/overview)

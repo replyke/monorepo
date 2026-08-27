@@ -1,0 +1,26 @@
+---
+title: "Get Following Count"
+api: "GET /v7/:projectId/users/:userId/following-count"
+description: "Get the number of users that a specific user follows"
+---
+
+Returns the total number of users that the specified user follows. Authentication is optional — the endpoint works without a token. When the caller is signed in, any user with a block between them and the caller, in either direction, is excluded from the count. Block filtering requires the `moderation` bundle.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Sublay user ID (UUID) of the user whose following count to retrieve.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200`:
+
+<ResponseField name="count" type="number">
+  Total number of users this user is following.
+</ResponseField>
+
+## See Also
+
+- [`useFetchFollowingCount` hook](/hooks/follows/use-fetch-following-count)
+- [`useFetchFollowingCountByUserId` hook](/hooks/follows/use-fetch-following-count-by-user-id)

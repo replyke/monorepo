@@ -1,0 +1,33 @@
+---
+title: "Overview"
+---
+
+In modern applications, establishing relationships between users is a cornerstone of personalized and dynamic content. These relationships enable users to curate their experiences, foster community interaction, and build meaningful connections. Sublay provides two types of user relationships to suit different application needs:
+
+<CardGroup cols={2}>
+  <Card title="Follow Relationships" icon="user-plus">
+    Unidirectional relationships where one user follows another (similar to Twitter/Instagram).
+
+    **Ideal for:**
+    - Social media feeds and content curation
+    - Creator/audience relationships
+    - Public content discovery
+    - One-way content subscriptions
+  </Card>
+
+  <Card title="Connection Relationships" icon="handshake">
+    Bidirectional relationships that require mutual acceptance (similar to LinkedIn/Facebook).
+
+    **Ideal for:**
+    - Professional networking
+    - Mutual friendship systems
+    - Private or restricted content sharing
+    - Collaborative features requiring reciprocal relationships
+  </Card>
+</CardGroup>
+
+Sublay simplifies the implementation of both relationship types with dedicated manager hooks:
+- **`useFollowManager`**: Manages follow/unfollow relationships
+- **`useConnectionManager`**: Manages connection requests, acceptance, and disconnection
+
+Unlike other functionalities, relationships in Sublay do not require any secondary context provider. You can simply use the relationship hooks directly in any of your components.

@@ -1,0 +1,56 @@
+---
+title: "Fetch comment"
+description: "Fetch a single comment by its ID"
+icon: "plug"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+## Overview
+
+`useFetchComment` returns a function that fetches a single comment by ID. The response wraps the comment in a `{ comment }` object to allow future expansion of the response shape.
+
+<Note>
+  If the comment author is block-edged with the signed-in caller, in either
+  direction, this returns `404` with `comment/not-found` — identical to a
+  comment that does not exist. An embedded `parentComment` is nulled under the
+  same rule. Requires the `moderation` bundle.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchComment } from "@sublay/react-js";
+
+function DeepLinkComment({ commentId }: { commentId: string }) {
+  const fetchComment = useFetchComment();
+
+  const load = async () => {
+    const { comment } = await fetchComment({
+      commentId,
+      include: ["user", "parent"],
+    });
+    console.log(comment);
+  };
+
+  return <button onClick={load}>Load Comment</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="commentId" type="string" required>
+  The ID of the comment to fetch.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Populate related data. Accepted values: `"user"`, `"entity"`, `"space"`, `"parent"`, `"grants"`.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="path" />
+
+## Returns
+
+<ResponseField name="comment" type="Comment">
+  The fetched comment. When `"parent"` is included, `comment.parentComment` is populated. When `spaceReputation` is requested, the embedded author carries an added `spaceReputation` number. See [Comment data model](/data-models/comment) and [Reputation](/data-models/reputation).
+</ResponseField>

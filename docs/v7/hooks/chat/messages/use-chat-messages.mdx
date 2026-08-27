@@ -1,0 +1,18 @@
+---
+title: "Use chat messages (deprecated)"
+description: "Deprecated alias for useLiveChatMessages"
+icon: "cube"
+---
+
+<Warning>
+  `useChatMessages` has been renamed to [`useLiveChatMessages`](/hooks/chat/messages/use-live-chat-messages). The old name still works as an alias and forwards to the new hook, but it is deprecated and will be removed in a future major version. Update your imports:
+
+  ```diff
+  - import { useChatMessages } from "@sublay/react-js";
+  + import { useLiveChatMessages } from "@sublay/react-js";
+  ```
+</Warning>
+
+The behaviour and signature are identical — see [`useLiveChatMessages`](/hooks/chat/messages/use-live-chat-messages) for full documentation.
+
+Looking to fetch a **filtered** or read-only list of messages (e.g. only messages that have replies)? Use [`useFetchManyChatMessages`](/hooks/chat/messages/use-fetch-many-chat-messages) instead.

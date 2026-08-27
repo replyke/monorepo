@@ -1,0 +1,73 @@
+---
+title: "Social Comments File Structure"
+description: "File organization for social comments"
+icon: "folder-tree"
+---
+
+# Social Comments File Structure
+
+Approximately 15 files organized for simplicity.
+
+---
+
+## Directory Tree
+
+```
+src/components/comments-social/
+├── index.ts
+├── components/
+│   ├── social-comment-section.tsx   # Main component
+│   ├── new-comment-form.tsx          # Comment input
+│   ├── sort-by-button.tsx            # Top/New/Old sorting
+│   ├── comments-feed/
+│   │   ├── comments-feed.tsx
+│   │   ├── single-comment.tsx        # Individual comment
+│   │   ├── heart-button.tsx          # Like button
+│   │   └── reply-button.tsx
+│   └── modals/
+├── hooks/
+│   └── use-social-comments.tsx
+├── utils/
+└── context/
+```
+
+---
+
+## Key Differences from Threaded
+
+- No vote buttons (heart button instead)
+- No threading lines (flat design)
+- Includes sort button component
+- Simpler nesting logic (max 2 levels)
+
+---
+
+## Common Customizations
+
+**Change heart color:**
+```tsx
+// Edit heart-button.tsx
+<span style={{ color: '#EC4899' }}>  {/* Pink heart */}
+  ❤️
+</span>
+```
+
+**Modify sort options:**
+```tsx
+// Edit social-comment-section.tsx
+const sortOptions = ['top', 'new'];  // Remove 'old'
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Features" icon="star" href="/components/components/social/features">
+    Feature overview
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/components/customization/overview">
+    Customize components
+  </Card>
+</CardGroup>

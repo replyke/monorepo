@@ -1,0 +1,424 @@
+---
+title: "Props & API Reference"
+description: "NotificationControl component props and configuration"
+icon: "sliders"
+---
+
+# Notification Control Props
+
+The `NotificationControl` component has a minimal API focused on flexibility and ease of use.
+
+---
+
+## Component Import
+
+```tsx
+import NotificationControl from './components/notifications-control';
+```
+
+---
+
+## Props Interface
+
+```tsx
+interface NotificationControlProps {
+  // Required: Custom trigger component (bell icon)
+  triggerComponent: React.ComponentType<{ unreadCount: number }>;
+
+  // Required: What happens when notification is clicked
+  onNotificationClick: (
+    notification: AppNotification.PotentiallyPopulatedUnifiedAppNotification
+  ) => void;
+
+  // Optional: Filter notifications by type
+  notificationTemplates?: AppNotification.NotificationTemplates;
+
+  // Optional: "View All" footer button callback
+  onViewAllNotifications?: () => void;
+
+  // Optional: Theme (styled variant only)
+  theme?: "auto" | "light" | "dark";
+}
+```
+
+---
+
+## Required Props
+
+### `triggerComponent`
+
+**Type:** `React.ComponentType<{ unreadCount: number }>`
+
+**Required:** Yes
+
+A React component that triggers the dropdown. Receives `unreadCount` as a prop.
+
+```tsx
+const BellTrigger = ({ unreadCount }: { unreadCount: number }) => (
+  <button className="relative">
+    🔔
+    {unreadCount > 0 && (
+      <span className="badge">{unreadCount}</span>
+    )}
+  </button>
+);
+
+<NotificationControl
+  triggerComponent={BellTrigger}
+  onNotificationClick={handleClick}
+/>
+```
+
+**Common patterns:**
+
+<Tabs>
+  <Tab title="Simple Icon">
+    ```tsx
+    const SimpleBell = ({ unreadCount }: { unreadCount: number }) => (
+      <button>
+        🔔 {unreadCount > 0 && `(${unreadCount})`}
+      </button>
+    );
+    ```
+  </Tab>
+
+  <Tab title="With Badge">
+    ```tsx
+    const BellWithBadge = ({ unreadCount }: { unreadCount: number }) => (
+      <div className="relative">
+        <Bell className="w-6 h-6" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {unreadCount}
+          </span>
+        )}
+      </div>
+    );
+    ```
+  </Tab>
+
+  <Tab title="With Animation">
+    ```tsx
+    const AnimatedBell = ({ unreadCount }: { unreadCount: number }) => (
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        className="relative"
+      >
+        <Bell className="w-6 h-6" />
+        {unreadCount > 0 && (
+          <motion.span
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="badge"
+          >
+            {unreadCount}
+          </motion.span>
+        )}
+      </motion.button>
+    );
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+### `onNotificationClick`
+
+**Type:** `(notification: UnifiedAppNotification) => void`
+
+**Required:** Yes
+
+Callback fired when a notification is clicked. Notification is automatically marked as read.
+
+```tsx
+<NotificationControl
+  triggerComponent={BellIcon}
+  onNotificationClick={(notification) => {
+    console.log('Clicked:', notification);
+
+    // Navigate based on notification type
+    if (notification.type === 'comment-reply') {
+      navigate(`/posts/${notification.metadata.entityId}#comment-${notification.metadata.commentId}`);
+    } else if (notification.type === 'new-follow') {
+      navigate(`/users/${notification.metadata.followerId}`);
+    }
+  }}
+/>
+```
+
+**Notification object structure:**
+
+```tsx
+interface UnifiedAppNotification {
+  id: string;
+  userId: string;
+  isRead: boolean;
+  createdAt: string;
+  type: "system" | "entity-comment" | "comment-reply" | "entity-mention" |
+        "comment-mention" | "entity-upvote" | "comment-upvote" | "new-follow" |
+        "connection-accepted" | "connection-request";
+  title: string;
+  content: string | null;
+  metadata: {
+    entityId?: string;
+    commentId?: string;
+    initiatorAvatar?: string;
+    buttonData?: {
+      text: string;
+      url: string;
+    };
+    // ... other fields vary by type
+  };
+}
+```
+
+---
+
+## Optional Props
+
+### `notificationTemplates`
+
+**Type:** `AppNotification.NotificationTemplates`
+
+**Default:** All notification types enabled
+
+Filter which notification types to display.
+
+```tsx
+<NotificationControl
+  triggerComponent={BellIcon}
+  onNotificationClick={handleClick}
+  notificationTemplates={{
+    'comment-reply': true,      // Show
+    'entity-mention': true,      // Show
+    'new-follow': true,          // Show
+    'system': false,             // Hide system notifications
+  }}
+/>
+```
+
+**Example: Only show comment-related notifications:**
+
+```tsx
+notificationTemplates={{
+  'comment-reply': true,
+  'comment-mention': true,
+  'entity-comment': true,
+}}
+```
+
+---
+
+### `onViewAllNotifications`
+
+**Type:** `() => void`
+
+**Default:** `undefined` (footer button hidden)
+
+Callback for "View all notifications" button in footer. When provided, a footer button appears.
+
+```tsx
+<NotificationControl
+  triggerComponent={BellIcon}
+  onNotificationClick={handleClick}
+  onViewAllNotifications={() => {
+    navigate('/notifications');
+  }}
+/>
+```
+
+When not provided, the footer button is not rendered.
+
+---
+
+### `theme`
+
+**Type:** `"auto" | "light" | "dark"`
+
+**Default:** `"auto"`
+
+**Only for styled (inline styles) variant.**
+
+Controls the color theme of the dropdown.
+
+<Tabs>
+  <Tab title="auto">
+    Uses `prefers-color-scheme` media query to detect system theme.
+
+    ```tsx
+    <NotificationControl
+      theme="auto"
+      {...props}
+    />
+    ```
+  </Tab>
+
+  <Tab title="light">
+    Forces light theme.
+
+    ```tsx
+    <NotificationControl
+      theme="light"
+      {...props}
+    />
+    ```
+  </Tab>
+
+  <Tab title="dark">
+    Forces dark theme.
+
+    ```tsx
+    <NotificationControl
+      theme="dark"
+      {...props}
+    />
+    ```
+  </Tab>
+</Tabs>
+
+**Wire to your app's theme state:**
+
+```tsx
+const [isDark, setIsDark] = useState(false);
+
+<NotificationControl
+  theme={isDark ? 'dark' : 'light'}
+  {...props}
+/>
+```
+
+<Note>
+**Tailwind variant** ignores this prop. Use Tailwind's dark mode system instead (add `dark` class to parent element).
+</Note>
+
+---
+
+## Complete Examples
+
+### Minimal Usage
+
+```tsx
+<NotificationControl
+  triggerComponent={({ unreadCount }) => <button>🔔 ({unreadCount})</button>}
+  onNotificationClick={(notif) => console.log(notif)}
+/>
+```
+
+---
+
+### With All Features
+
+```tsx
+import NotificationControl from './components/notifications-control';
+import { Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+
+function Header() {
+  const navigate = useNavigate();
+  const [isDark, setIsDark] = useState(false);
+
+  const BellIcon = ({ unreadCount }: { unreadCount: number }) => (
+    <button className="relative p-2 hover:bg-gray-100 rounded-full">
+      <Bell className="w-6 h-6" />
+      {unreadCount > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          {unreadCount > 9 ? '9+' : unreadCount}
+        </span>
+      )}
+    </button>
+  );
+
+  return (
+    <nav>
+      <NotificationControl
+        // Custom bell icon with badge
+        triggerComponent={BellIcon}
+
+        // Handle notification clicks with routing
+        onNotificationClick={(notification) => {
+          if (notification.type === 'comment-reply') {
+            navigate(`/posts/${notification.metadata.entityId}#comment-${notification.metadata.commentId}`);
+          } else if (notification.type === 'new-follow') {
+            navigate(`/users/${notification.metadata.followerId}`);
+          } else if (notification.type === 'entity-mention') {
+            navigate(`/entities/${notification.metadata.entityId}`);
+          }
+        }}
+
+        // Filter to specific notification types
+        notificationTemplates={{
+          'comment-reply': true,
+          'entity-mention': true,
+          'comment-mention': true,
+          'new-follow': true,
+          'entity-upvote': true,
+        }}
+
+        // "View All" button in footer
+        onViewAllNotifications={() => navigate('/notifications')}
+
+        // Theme (styled variant only)
+        theme={isDark ? 'dark' : 'light'}
+      />
+    </nav>
+  );
+}
+```
+
+---
+
+## Utility Functions
+
+The component includes utility functions you can use:
+
+```tsx
+// From utils/notification-utils.ts
+
+// Format timestamp as relative time
+formatRelativeTime(date: string | Date): string
+// Returns: "Just now", "5m ago", "2h ago", "3d ago", etc.
+
+// Truncate long text
+truncateText(text: string, maxLength: number = 60): string
+// Returns: "Long text here..." (adds ellipsis)
+```
+
+---
+
+## TypeScript Support
+
+Full TypeScript support with exported types:
+
+```tsx
+import NotificationControl from './components/notifications-control';
+import type { NotificationControlProps } from './components/notifications-control';
+
+const props: NotificationControlProps = {
+  triggerComponent: BellIcon,
+  onNotificationClick: handleClick,
+};
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Customization" icon="paintbrush" href="/components/components/notifications/customization">
+    Customize colors, layout, and behavior
+  </Card>
+
+  <Card title="Integration Examples" icon="code" href="/components/components/notifications/integration-examples">
+    See real-world examples
+  </Card>
+
+  <Card title="Installation" icon="download" href="/components/components/notifications/installation">
+    Installation guide
+  </Card>
+
+  <Card title="Overview" icon="bell" href="/components/components/notifications/overview">
+    Back to overview
+  </Card>
+</CardGroup>

@@ -1,0 +1,81 @@
+---
+title: "Resend Invite"
+api: "POST /v7/:projectId/workspaces/:id/invites/:inviteId/resend"
+description: "Refresh a lapsed pending invitation and resend the email"
+---
+
+Refreshes a pending invitation — sets `expiresAt = now + 14 days` and resends the email. **Valid on any `pending` invite, including one past `expiresAt`** (resend = refresh a lapsed invite). A **terminal** invite (`accepted`/`declined`/`revoked`) → `409`. Requires the `invite` capability (or owner).
+
+<Note>
+  Resend **emits no webhook** — the status stays `pending`, so there is no lifecycle transition.
+</Note>
+
+<Warning>
+  **Requires `workspaces.inviteAcceptUrl` on the project**, exactly as [Create Invite](/api-reference/workspaces/invitations/create-invite) does — resending an email that has nowhere to deep-link is equally pointless. Without it this endpoint returns `409 workspace/missing-invite-accept-url` and the invitation's `expiresAt` is left untouched. See [Project settings](/sdk/workspaces/overview#project-settings).
+</Warning>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="inviteId" type="string" required>
+  The invitation UUID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="actingUserId" type="string">
+  Service/master keys only — the user to act as. Enforced: the `invite` capability (or ownership) is required *of the named user*. Omit it to act as the app itself (unbounded). See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
+## Response
+
+Returns the refreshed [WorkspaceInvitation](/data-models/workspace-invitation) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invite Not Found — 404">
+    ```json
+    { "error": "Invitation not found.", "code": "workspace/invite-not-found" }
+    ```
+    Returned when no invitation with that id exists on this workspace — including when the id belongs to a *different* workspace's invitation.
+  </Accordion>
+  <Accordion title="Missing Invite Accept URL — 409">
+    ```json
+    { "error": "This project has no workspaces.inviteAcceptUrl configured...", "code": "workspace/missing-invite-accept-url" }
+    ```
+    A **project misconfiguration**, not a bad request. The row is not touched — `expiresAt` is unchanged and no email is sent. Set [`workspaces.inviteAcceptUrl`](/sdk/workspaces/overview#project-settings) and retry.
+  </Accordion>
+  <Accordion title="Terminal Invite — 409">
+    ```json
+    { "error": "This invitation is no longer pending.", "code": "workspace/invite-terminal" }
+    ```
+    The invitation is `accepted`, `declined`, or `revoked`. Note an invitation merely past its `expiresAt` is **not** terminal — resending one is the documented purpose of this endpoint.
+  </Accordion>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
+  </Accordion>
+  <Accordion title="Undeclared Field — 400">
+    ```json
+    { "error": "Unrecognized key: \"onBehalfOf\"", "code": "workspace/invalid-body" }
+    ```
+    Every workspaces endpoint declares its fields exactly, and a top-level field it does not declare is refused rather than ignored — in the request body and in the query string alike, for every caller. Two or more at once are named together: `Unrecognized keys: "onBehalfOf", "impersonate"`. An offender in the query string carries `workspace/invalid-query` instead. Send only the fields documented above, plus `actingUserId` and `projectId`, which every workspaces route accepts. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+  </Accordion>
+  <Accordion title="Unparsed Body — 400">
+    ```json
+    {
+      "error": "This request carries a body with content-type \"text/plain;charset=UTF-8\", which no parser reads, so any `actingUserId` inside it was discarded and this request names no acting user. Send the body as application/json.",
+      "code": "workspace/invalid-body"
+    }
+    ```
+    Returned when a service/master key sends a body with a `Content-Type` other than `application/json` **and** no `actingUserId` was read. Sublay parses only `application/json`, so the actor inside such a body is discarded and the request would fall through to the unbounded path. `fetch()` sends `text/plain;charset=UTF-8` when you pass a stringified body and set no headers — set the header. An empty JSON body and a bodiless request both pass. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+  </Accordion>
+</AccordionGroup>
+
+See also: [useResendWorkspaceInvite](/hooks/workspaces/use-resend-workspace-invite) · [Project settings](/sdk/workspaces/overview#project-settings)

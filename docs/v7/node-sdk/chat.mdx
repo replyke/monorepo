@@ -1,0 +1,659 @@
+---
+title: "Chat"
+description: "Conversations, messages, members, reactions, and read state from your server"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+The `chat` module is the server-side client for Sublay's messaging: direct and group conversations, messages (with GIFs, mentions, threads, quotes, and file attachments), membership, reactions, read state, and reporting.
+
+## Acting on behalf of a user
+
+Your service key has no implicit session user, so **every** chat call takes the user it acts as. Most functions take that user as `userId`; the few where `userId` already names a *target* take the actor as `actingUserId` instead (`createDirectConversation`, `addMember`, `removeMember`, `changeMemberRole`).
+
+<Warning>
+  **Membership is enforced against the acting user (resolve-then-check).** Sublay
+  resolves the named user first, then runs the normal conversation checks against
+  *that* user. So you can only act as a user who is genuinely a member of the
+  conversation, and admin-only actions (delete/update conversation, add/remove
+  members, change roles) require that user to be a group **admin**. A service key
+  cannot post into a conversation as a user who isn't in it.
+</Warning>
+
+<Note>
+  Naming a user other than the caller's own is gated to service/master keys. With
+  a service key, omitting the acting user returns `400 chat/missing-user-id`.
+</Note>
+
+---
+
+## Conversations
+
+### listConversations
+
+Lists the acting user's conversations, newest activity first. Uses **cursor (keyset) pagination** — pass the last item's `lastMessageAt` as `cursor` and its `createdAt` as `cursorCreatedAt` to get the next page.
+
+```typescript
+const { conversations, hasMore } = await sublay.chat.listConversations({
+  userId: "usr_abc123",
+  types: "direct,group",
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user whose conversations are listed.
+</ParamField>
+<ParamField body="types" type="string">
+  Comma-separated filter: any of `direct`, `group`, `space`.
+</ParamField>
+<ParamField body="cursor" type="string">
+  Keyset cursor — the `lastMessageAt` of the last item from the previous page.
+</ParamField>
+<ParamField body="cursorCreatedAt" type="string">
+  Tie-breaker cursor — the `createdAt` of the last item from the previous page.
+</ParamField>
+<ParamField body="limit" type="number">
+  Page size, 1–50. Defaults to `20`.
+</ParamField>
+
+**Returns** — `Promise<{ conversations: ConversationPreview[]; hasMore: boolean }>`
+
+Each `ConversationPreview` includes `otherMembers` — up to 5 active members other than the acting user (`id`, `name`, `username`, `avatar`) for `direct`/`group` conversations, so a DM/group can render the counterparty without a separate members fetch. Capped at 5 (use `memberCount` for the group total); empty for `space` conversations.
+
+---
+
+### createDirectConversation
+
+Creates (or returns the existing) one-to-one conversation between the acting user and a target user.
+
+```typescript
+const conversation = await sublay.chat.createDirectConversation({
+  actingUserId: "usr_abc123",
+  userId: "usr_def456",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The other participant (the target).
+</ParamField>
+<ParamField body="actingUserId" type="string" required>
+  The user initiating the DM.
+</ParamField>
+
+**Returns** — `Promise<Conversation>`
+
+---
+
+### createGroupConversation
+
+Creates a group conversation; the acting user becomes its admin.
+
+```typescript
+const conversation = await sublay.chat.createGroupConversation({
+  userId: "usr_abc123",
+  name: "Project Falcon",
+  memberIds: ["usr_def456", "usr_ghi789"],
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The acting user (becomes the group admin).
+</ParamField>
+<ParamField body="name" type="string">Group name.</ParamField>
+<ParamField body="description" type="string">Group description.</ParamField>
+<ParamField body="memberIds" type="string[]">Initial members to add.</ParamField>
+<ParamField body="metadata" type="object">Custom key-value data.</ParamField>
+
+**Returns** — `Promise<Conversation>`
+
+---
+
+### getConversation
+
+Fetches a single conversation the acting user is a member of.
+
+```typescript
+const conversation = await sublay.chat.getConversation({
+  conversationId: "cnv_abc123",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="userId" type="string" required>The acting user (must be a member).</ParamField>
+
+**Returns** — `Promise<Conversation>`
+
+---
+
+### updateConversation
+
+Updates a group conversation. Requires the acting user to be a group admin.
+
+```typescript
+const conversation = await sublay.chat.updateConversation({
+  conversationId: "cnv_abc123",
+  userId: "usr_abc123",
+  name: "Project Falcon (Q3)",
+  postingPermission: "admins",
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="userId" type="string" required>The acting user (must be a group admin).</ParamField>
+<ParamField body="name" type="string" />
+<ParamField body="description" type="string" />
+<ParamField body="avatarFileId" type="string | null">File id for the avatar, or `null` to clear it.</ParamField>
+<ParamField body="postingPermission" type='"members" | "admins"'>Space conversations only.</ParamField>
+
+**Returns** — `Promise<Conversation>`
+
+---
+
+### deleteConversation
+
+Deletes a group conversation. Requires the acting user to be a group admin.
+
+```typescript
+await sublay.chat.deleteConversation({
+  conversationId: "cnv_abc123",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="userId" type="string" required>The acting user (must be a group admin).</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### getUnreadCount
+
+Returns the acting user's unread totals across all conversations.
+
+```typescript
+const { totalUnread, unreadConversationCount } = await sublay.chat.getUnreadCount({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required />
+
+**Returns** — `Promise<{ totalUnread: number; unreadConversationCount: number }>`
+
+---
+
+## Members
+
+### listMembers
+
+```typescript
+const { data, pagination } = await sublay.chat.listMembers({
+  conversationId: "cnv_abc123",
+  userId: "usr_abc123",
+  limit: 50,
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="userId" type="string" required>The acting user (must be a member).</ParamField>
+<ParamField body="page" type="number">Defaults to `1`.</ParamField>
+<ParamField body="limit" type="number">1–100, defaults to `50`.</ParamField>
+<ParamField body="role" type='"admin" | "member"'>Filter by role.</ParamField>
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<PaginatedResponse<ConversationMember>>`
+
+---
+
+### addMember
+
+Adds a member to a group. Requires the acting caller to be a group admin.
+
+```typescript
+await sublay.chat.addMember({
+  conversationId: "cnv_abc123",
+  userId: "usr_new789",      // member to add
+  actingUserId: "usr_abc123", // the admin performing the action
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="userId" type="string" required>The member to add (the target).</ParamField>
+<ParamField body="actingUserId" type="string" required>The caller (must be a group admin).</ParamField>
+
+**Returns** — `Promise<ConversationMember>`
+
+---
+
+### removeMember
+
+Removes a member from a group. Requires the acting caller to be a group admin.
+
+```typescript
+await sublay.chat.removeMember({
+  conversationId: "cnv_abc123",
+  userId: "usr_new789",
+  actingUserId: "usr_abc123",
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="userId" type="string" required>The member to remove (the target).</ParamField>
+<ParamField body="actingUserId" type="string" required>The caller (must be a group admin).</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### changeMemberRole
+
+Promotes or demotes a member. Requires the acting caller to be a group admin.
+
+```typescript
+await sublay.chat.changeMemberRole({
+  conversationId: "cnv_abc123",
+  userId: "usr_new789",
+  role: "admin",
+  actingUserId: "usr_abc123",
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="userId" type="string" required>The member whose role changes (the target).</ParamField>
+<ParamField body="role" type='"admin" | "member"' required />
+<ParamField body="actingUserId" type="string" required>The caller (must be a group admin).</ParamField>
+
+**Returns** — `Promise<ConversationMember>`
+
+---
+
+### leaveConversation
+
+```typescript
+await sublay.chat.leaveConversation({
+  conversationId: "cnv_abc123",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="userId" type="string" required>The user leaving.</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+## Messages
+
+### listMessages
+
+Lists messages in a conversation. Uses **cursor pagination** — pass `before` (an ISO timestamp) to page backwards, or `after` to page forwards (`before`/`after` are mutually exclusive).
+
+```typescript
+const { messages, hasMore, oldestCreatedAt } = await sublay.chat.listMessages({
+  conversationId: "cnv_abc123",
+  userId: "usr_abc123",
+  limit: 50,
+});
+
+// Next (older) page:
+const older = await sublay.chat.listMessages({
+  conversationId: "cnv_abc123",
+  userId: "usr_abc123",
+  before: oldestCreatedAt!,
+});
+
+// Only messages that have thread replies.
+const withReplies = await sublay.chat.listMessages({
+  conversationId: "cnv_abc123",
+  userId: "usr_abc123",
+  filters: { hasReplies: true },
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="userId" type="string" required>The acting user (must be a member).</ParamField>
+<ParamField body="parentId" type="string">Restrict to replies of this message (thread view).</ParamField>
+<ParamField body="before" type="string">ISO timestamp — messages created before this. Mutually exclusive with `after`.</ParamField>
+<ParamField body="after" type="string">ISO timestamp — messages created after this. Mutually exclusive with `before`.</ParamField>
+<ParamField body="limit" type="number">1–100, defaults to `50`.</ParamField>
+<ParamField body="sort" type='"asc" | "desc"' />
+<ParamField body="include" type="string">Comma-separated associations to populate: `"files"` (message attachments) and `"grants"` (each message's [reputation-grant summary](/data-models/reputation-grant#grantsummary)). Combine them as `"files,grants"`.</ParamField>
+<ParamField body="filters" type="MessageFilters">Optional filters. `filters.hasReplies` (boolean): when `true`, returns only messages that have thread replies (`threadReplyCount > 0`); when `false`, only messages with none. Filters by thread replies, not quotings. Threads are one level deep, so `hasReplies: true` together with `parentId` always returns an empty list — the response's `notice` field explains why.</ParamField>
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<{ messages: ChatMessage[]; hasMore: boolean; oldestCreatedAt: string | null; newestCreatedAt: string | null }>`
+
+---
+
+### sendMessage
+
+Sends a message as the acting user. A message must have content, a GIF, or at least one file. When `files` are attached the request is sent as `multipart/form-data`; otherwise it's a JSON body.
+
+```typescript
+// Text + mention
+const message = await sublay.chat.sendMessage({
+  conversationId: "cnv_abc123",
+  userId: "usr_abc123",
+  content: "Welcome aboard!",
+  mentions: [{ type: "user", id: "usr_def456", username: "dana" }],
+});
+
+// With a file attachment
+import { readFile } from "node:fs/promises";
+const buffer = await readFile("./diagram.png");
+
+await sublay.chat.sendMessage({
+  conversationId: "cnv_abc123",
+  userId: "usr_abc123",
+  content: "See attached",
+  files: [{ file: new Uint8Array(buffer), filename: "diagram.png", mimeType: "image/png" }],
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="userId" type="string" required>The message author (must be a member).</ParamField>
+<ParamField body="content" type="string">Up to 4000 characters.</ParamField>
+<ParamField body="gif" type="GifData | null">An attached GIF object.</ParamField>
+<ParamField body="mentions" type="Mention[]">User/space mentions.</ParamField>
+<ParamField body="parentMessageId" type="string">Reply within a thread.</ParamField>
+<ParamField body="quotedMessageId" type="string">Quote another message.</ParamField>
+<ParamField body="metadata" type="object">Custom key-value data.</ParamField>
+<ParamField body="localId" type="string">Client-generated id echoed back on the created message (not stored).</ParamField>
+<ParamField body="files" type="ChatMessageFile[]">
+  Attachments: `{ file: Uint8Array | Blob; filename?: string; mimeType?: string }[]`, up to 10.
+</ParamField>
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<ChatMessage>`
+
+---
+
+### getMessage
+
+```typescript
+const message = await sublay.chat.getMessage({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="messageId" type="string" required />
+<ParamField body="userId" type="string" required>The acting user (must be a member).</ParamField>
+<ParamField body="include" type="string">Comma-separated associations to populate. Only `"grants"` is supported here — it attaches the message's [reputation-grant summary](/data-models/reputation-grant#grantsummary) at `message.grants`.</ParamField>
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<ChatMessage>`
+
+---
+
+### editMessage
+
+Edits a message. Requires the acting user to be the message author.
+
+```typescript
+const message = await sublay.chat.editMessage({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz",
+  userId: "usr_abc123",
+  content: "Edited text",
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="messageId" type="string" required />
+<ParamField body="userId" type="string" required>The acting user (must be the message author).</ParamField>
+<ParamField body="content" type="string" />
+<ParamField body="gif" type="GifData | null">A [GifData](/data-models/chat-message#gifdata) attachment, or `null` to clear it.</ParamField>
+<ParamField body="mentions" type="Mention[]" />
+<ParamField body="metadata" type="object | null" />
+
+**Returns** — `Promise<ChatMessage>`
+
+---
+
+### deleteMessage
+
+Soft-deletes a message. Requires the acting user to be the author or a group admin.
+
+```typescript
+await sublay.chat.deleteMessage({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="messageId" type="string" required />
+<ParamField body="userId" type="string" required>The acting user (author or group admin).</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### Reporting a message
+
+Message reports go through the shared reports API, not a chat-specific
+function — the same call that reports entities and comments.
+
+```typescript
+await sublay.reports.createReport({
+  targetType: "message",
+  targetId: "msg_xyz",
+  userId: "usr_abc123",
+  reason: "harassment",
+  details: "Targeted insults",
+});
+```
+
+`targetId` is the message id; the conversation is resolved server-side, so no
+`conversationId` is needed. The reporter must be a member of the conversation
+and cannot report their own message. See [createReport](/node-sdk/reports).
+
+---
+
+## Reactions
+
+### toggleReaction
+
+Adds or removes the acting user's emoji reaction on a message.
+
+```typescript
+const { delta, reactionCounts } = await sublay.chat.toggleReaction({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz",
+  emoji: "👍",
+  userId: "usr_abc123",
+});
+// delta === 1 when the reaction was added, -1 when it was removed
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="messageId" type="string" required />
+<ParamField body="emoji" type="string" required />
+<ParamField body="userId" type="string" required>The reacting user (must be a member).</ParamField>
+
+**Returns** — `Promise<{ reactionCounts: Record<string, number>; userReactions: string[]; delta: 1 | -1 }>` (`delta` is `1` if the reaction was added, `-1` if removed).
+
+---
+
+### listReactions
+
+Lists the users who reacted with a given emoji.
+
+```typescript
+const { data, pagination } = await sublay.chat.listReactions({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz",
+  emoji: "👍",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="messageId" type="string" required />
+<ParamField body="emoji" type="string" required>The emoji to list reactors for.</ParamField>
+<ParamField body="userId" type="string" required>The acting user (must be a member).</ParamField>
+<ParamField body="page" type="number">Defaults to `1`.</ParamField>
+<ParamField body="limit" type="number">1–100, defaults to `50`.</ParamField>
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<{ data: MessageReaction[]; pagination: { page; limit; total; hasMore } }>`
+
+---
+
+## Read state
+
+### markAsRead
+
+Marks the conversation read up to a given message.
+
+```typescript
+await sublay.chat.markAsRead({
+  conversationId: "cnv_abc123",
+  messageId: "msg_xyz",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="messageId" type="string" required>The message up to which the conversation is marked read.</ParamField>
+<ParamField body="userId" type="string" required>The acting user (must be a member).</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### muteConversation
+
+Sets or clears a user's mute on a conversation. Muting suppresses the `message` push for this conversation only; the message is still delivered. See [Notification Preferences & Mute](/notification-preferences).
+
+```typescript
+// Mute for a week
+await sublay.chat.muteConversation({
+  conversationId: "cnv_abc123",
+  duration: "1w",
+  userId: "usr_abc123",
+});
+
+// Unmute
+await sublay.chat.muteConversation({
+  conversationId: "cnv_abc123",
+  duration: null,
+  userId: "usr_abc123",
+});
+```
+
+<Note>
+  Like every other `chat` call, the Node SDK names the acting user with `userId` (the service key acts on that user's behalf). The user must be a member of the conversation, and the returned `currentMember` is that user's own row. End-user-token clients (the React hooks, the browser JS SDK) act on the signed-in user and omit `userId`.
+</Note>
+
+<ParamField body="conversationId" type="string" required />
+<ParamField body="duration" type='"8h" | "24h" | "1w" | "forever" | null' required>
+  The mute **duration choice**, or `null` to clear the mute. Send the choice, never a raw timestamp.
+</ParamField>
+<ParamField body="userId" type="string" required>The user whose mute is set (must be a member).</ParamField>
+
+**Returns** — `Promise<{ currentMember: ConversationMember }>` — that user's own member row.
+
+```typescript
+interface ConversationMember {
+  // ...
+  mutedForever?: boolean;    // true when muted indefinitely
+  mutedUntil?: string | null; // ISO timestamp for a timed mute; null otherwise
+}
+```
+
+<Info>
+  **"Forever" is an explicit signal.** A `forever` mute returns `mutedForever: true` with `mutedUntil: null`. A timed mute returns `mutedForever: false` with a real ISO `mutedUntil`. Read the boolean — never string-match a far-future date.
+</Info>
+
+---
+
+## Space conversations
+
+Each space has a single built-in conversation. These three live on **`client.spaces`** (they're `/spaces/...` routes), not on `client.chat`.
+
+### spaces.getSpaceConversation
+
+Fetches-or-creates a space's conversation and joins the acting user to it. The acting user must be a non-banned member of the space.
+
+```typescript
+const conversation = await sublay.spaces.getSpaceConversation({
+  spaceId: "spc_abc123",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="spaceId" type="string" required />
+<ParamField body="userId" type="string" required>The acting user (must be a space member).</ParamField>
+
+**Returns** — `Promise<Conversation>`
+
+---
+
+### spaces.moderateSpaceChatMessage
+
+Removes a message in a space conversation.
+
+<Note>
+  Unlike the conversation-scoped chat calls, the two space-chat moderation routes
+  are **service-key god-mode** — your service key passes the space-moderator check
+  automatically. `actingUserId` here is **attribution only** (who moderated); omit
+  it for a backend/system action.
+</Note>
+
+```typescript
+await sublay.spaces.moderateSpaceChatMessage({
+  spaceId: "spc_abc123",
+  messageId: "msg_xyz",
+  moderationStatus: "removed",
+  moderationReason: "Off-topic",
+  actingUserId: "usr_mod123",
+});
+```
+
+<ParamField body="spaceId" type="string" required />
+<ParamField body="messageId" type="string" required />
+<ParamField body="moderationStatus" type='"removed"' required />
+<ParamField body="moderationReason" type="string" />
+<ParamField body="actingUserId" type="string">Acting moderator, for attribution.</ParamField>
+
+**Returns** — `Promise<{ message: string; moderationStatus: string }>`
+
+---
+
+### spaces.handleSpaceChatReport
+
+Resolves a report against a space-conversation message: remove the message, ban the user, and/or dismiss.
+
+```typescript
+await sublay.spaces.handleSpaceChatReport({
+  spaceId: "spc_abc123",
+  reportId: "rpt_abc123",
+  actions: ["remove-message", "ban-user"],
+  messageId: "msg_xyz",
+  userId: "usr_offender",
+  reason: "Repeated harassment",
+  actingUserId: "usr_mod123",
+});
+```
+
+<ParamField body="spaceId" type="string" required />
+<ParamField body="reportId" type="string" required />
+<ParamField body="actions" type='("remove-message" | "ban-user" | "dismiss")[]' required>
+  `dismiss` cannot be combined with the other actions.
+</ParamField>
+<ParamField body="messageId" type="string">Required when actions include `remove-message`.</ParamField>
+<ParamField body="userId" type="string">The user to ban (target); required when actions include `ban-user`.</ParamField>
+<ParamField body="reason" type="string" />
+<ParamField body="summary" type="string">Stored as the report's resolution note.</ParamField>
+<ParamField body="actingUserId" type="string">Acting moderator, for attribution.</ParamField>
+
+**Returns** — `Promise<{ message: string; code: string }>`

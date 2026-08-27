@@ -1,0 +1,131 @@
+---
+title: "Space"
+description: "The shape of a Space object returned by the Spaces API and SDK"
+---
+
+A Space is a community container — a named area where users can post entities, discuss in threads, and interact under configurable membership and permission rules. Spaces support hierarchical nesting, customizable read/post permissions, and avatar and banner images.
+
+The API returns three space shapes depending on context:
+
+- **`Space`** — the standard shape, returned when fetching a list of spaces.
+- **`SpaceDetailed`** — returned when fetching a single space by ID, shortId, or slug. A superset of `Space` with added permission and hierarchy context.
+- **`SpacePreview`** — a minimal snapshot, never returned as a standalone response. Only appears embedded inside `SpaceDetailed` as the shape of `parentSpace` and each item in `childSpaces[]`.
+
+## Space
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique space identifier (UUID). |
+| `shortId` | `string` | Short human-readable ID for the space (URL-safe, generated automatically). |
+| `projectId` | `string` | The project this space belongs to. |
+| `slug` | `string \| null` | Optional URL-friendly slug. Unique per project when set. |
+| `name` | `string` | Display name of the space (3–100 characters). |
+| `description` | `string \| null` | Optional description (up to 1,000 characters). |
+| `userId` | `string` | ID of the space creator/owner. |
+| `avatarFileId` | `string \| null` | ID of the space's avatar image file. |
+| `avatarFile` | `File \| undefined` | Populated avatar file object. Only present when `include: "files"` is requested. |
+| `bannerFileId` | `string \| null` | ID of the space's banner image file. |
+| `bannerFile` | `File \| undefined` | Populated banner file object. Only present when `include: "files"` is requested. |
+| `readingPermission` | `"anyone" \| "members"` | Who can read content in the space. |
+| `postingPermission` | `"anyone" \| "members" \| "admins"` | Who can post content in the space. |
+| `visibility` | `"public" \| "unlisted" \| "private"` | Controls whether the space is *listed and discoverable* — independent of `readingPermission`, which controls who can read the content. `public` (the default) is listed in discovery and search; `unlisted` is hidden from discovery and search for non-members but still reachable by direct link/slug; `private` currently behaves exactly like `unlisted` (full existence-hiding is planned but not yet implemented). See [Visibility](#visibility) below. |
+| `nsfw` | `boolean` | The space's **own** NSFW flag. `false` by default. Set by space admins on [create](/hooks/spaces/use-create-space)/[update](/hooks/spaces/use-update-space) or by a project admin from the dashboard. See [NSFW flagging](#nsfw-flagging). |
+| `nsfwEffective` | `boolean` | **Denormalized, read-only.** `true` when this space's own `nsfw` is `true` **or** any ancestor space is NSFW. Maintained top-down on write and cascaded to descendants. This is the value the space `nsfwFilter` keys off, and it feeds each entity's live `nsfwEffective`. See [NSFW flagging](#nsfw-flagging). |
+| `requireJoinApproval` | `boolean` | Whether joining requires moderator/admin approval. When `true`, new joins enter `pending` status. |
+| `parentSpaceId` | `string \| null` | ID of the parent space, if this is a sub-space. |
+| `depth` | `number` | Nesting depth (0 for root spaces, incremented for each sub-level). Maximum depth is 10. |
+| `metadata` | `Record<string, any>` | Arbitrary key-value data attached to the space. Up to 1 MB. |
+| `isMember` | `boolean \| undefined` | Whether the authenticated user is a member of this space. Only present when the user is signed in. |
+| `membersCount` | `number` | Computed count of active members. |
+| `childSpacesCount` | `number` | Computed count of direct child spaces. |
+| `createdAt` | `Date` | Timestamp when the space was created. |
+| `updatedAt` | `Date` | Timestamp when the space was last updated. |
+
+## SpaceDetailed
+
+Returned when fetching a single space by ID, shortId, or slug. Includes all `Space` fields plus the following:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `memberPermissions` | `SpaceMemberPermissions \| null` | The authenticated user's resolved permissions in this space. `null` if the user is not a member. |
+| `parentSpace` | `SpacePreview \| null` | Preview of the parent space. `null` for root-level spaces. |
+| `childSpaces` | `SpacePreview[]` | Preview of up to 10 immediate child spaces. |
+
+## SpacePreview
+
+A minimal space shape used only as an embedded reference — never returned directly by any endpoint. Appears as `SpaceDetailed.parentSpace` (the space one level up) and inside `SpaceDetailed.childSpaces[]` (spaces one level down).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Space UUID. |
+| `shortId` | `string` | Short identifier. |
+| `name` | `string` | Display name. |
+| `slug` | `string \| null` | URL slug. |
+| `avatarFileId` | `string \| null` | Avatar file ID. |
+| `readingPermission` | `"anyone" \| "members" \| undefined` | Reading permission level. |
+| `visibility` | `"public" \| "unlisted" \| "private" \| undefined` | Listing/discoverability level. |
+| `parentSpaceId` | `string \| null \| undefined` | Parent space reference. |
+| `depth` | `number \| undefined` | Nesting depth. |
+
+## SpaceMemberPermissions
+
+Included in `SpaceDetailed.memberPermissions` for authenticated users who are members.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `isAdmin` | `boolean` | Whether the user is an admin of this space. |
+| `isModerator` | `boolean` | Whether the user is a moderator of this space. |
+| `isMember` | `boolean` | Whether the user has an active membership. |
+| `status` | `"pending" \| "active" \| "banned" \| null` | The user's membership status. |
+| `canPost` | `boolean` | Whether the user can post entities in this space. |
+| `canModerate` | `boolean` | Whether the user can perform moderation actions. |
+| `canRead` | `boolean` | Whether the user can read content in this space. |
+
+## Visibility
+
+`visibility` is a distinct axis from `readingPermission`. **Visibility governs whether the space object is *listed and discoverable*; reading permission governs who can *read the content* inside it.** The two are fully independent — you can have a `public` space that only members can read, or an `unlisted` space that anyone can read once they have the link.
+
+| Value | Behavior |
+|-------|----------|
+| `public` | **Default.** Listed in discovery and search, and resolvable by anyone. Matches all prior behavior. |
+| `unlisted` | Excluded from discovery lists and from search for non-members, but still reachable by direct link/slug. Joining works exactly as before (governed by the existing join/approval rules). |
+| `private` | Reserved for a future stage where the space's existence and metadata are hidden from non-members. **In this release, `private` behaves exactly like `unlisted`** — full existence-hiding is not yet implemented. |
+
+<Note>
+  `unlisted` is **not access control.** It only affects discoverability — it does not restrict who can read the content inside the space. To gate content, use `readingPermission`.
+</Note>
+
+Visibility can be set on [create](/api-reference/spaces/create-space) and [update](/api-reference/spaces/update-space), and changes take effect immediately and are freely reversible in both directions. A member of a space always continues to see it in surfaces that list their own spaces (e.g. `memberOf=true`, user spaces, mutual spaces) regardless of its visibility.
+
+## NSFW flagging
+
+NSFW is a separate axis from both `visibility` and `moderationStatus` — flagging a space (or entity) NSFW **labels** it, it does not hide or remove it. Every space carries its own `nsfw` boolean plus a denormalized `nsfwEffective`:
+
+- **`nsfw`** — the space's own flag, defaulting to `false`. Toggled by space admins (via [create](/hooks/spaces/use-create-space)/[update](/hooks/spaces/use-update-space)) or by project admins from the dashboard.
+- **`nsfwEffective`** — the denormalized rollup:
+
+  ```
+  nsfwEffective = own nsfw OR any ancestor space's nsfw
+  ```
+
+  It is maintained **on write**: creating a space under an NSFW parent inherits `nsfwEffective = true` even if its own `nsfw` is `false`, and toggling a space's own `nsfw` recomputes `nsfwEffective` top-down across its entire descendant subtree in the same transaction. A root space's `nsfwEffective` equals its own `nsfw`.
+
+Because `nsfwEffective` folds in the whole ancestor chain, it is what an entity's live `nsfwEffective` reads from — flagging a space instantly cascades to every entity within it and its sub-spaces. See [Entity → NSFW flagging](/data-models/entity#nsfw-flagging).
+
+To filter a list by effective NSFW, pass `nsfwFilter` to [Fetch many spaces](/hooks/spaces/use-fetch-many-spaces) (`include-all` default / `exclude` / `only`).
+
+<Note>
+  The space `nsfwFilter` keys off each space's own `nsfwEffective`, so `only` can return an NSFW child whose safe parent is omitted — results are **not** guaranteed to form a contiguous tree. Consumers building a tree from the result should not assume completeness.
+</Note>
+
+<Note>
+  Sublay only **labels** and **filters** NSFW content. It does **not** blur, age-gate, add interstitials, or store a per-viewer "show mature content" preference — presentation is the consuming app's responsibility.
+</Note>
+
+## Related
+
+- [Space Member data model](/data-models/space-member)
+- [useSpace hook](/hooks/spaces/use-space)
+- [Create Space API](/api-reference/spaces/create-space)
+- [Fetch Space API](/api-reference/spaces/fetch-space)
+- [Set space entity NSFW hook](/hooks/spaces/use-set-space-entity-nsfw)

@@ -1,0 +1,161 @@
+---
+title: "Verify External User"
+api: "POST /api/v6/:projectId/auth/verify-external-user"
+description: "Verify and authenticate a user from an external system using JWT"
+---
+
+Verifies a user identity using a signed JWT from an external project. If the user exists, it updates the profile. If not, it creates the user. Returns an access token, refresh token, and user data.
+
+## Body Parameters
+
+<ParamField body="userJwt" type="string" required>
+  Signed JWT issued by the external project containing user identity information
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates whether the verification was successful
+</ResponseField>
+
+<ResponseField name="accessToken" type="string">
+  JWT access token for authenticating API requests
+</ResponseField>
+
+<ResponseField name="refreshToken" type="string">
+  JWT refresh token for obtaining new access tokens
+</ResponseField>
+
+<ResponseField name="user" type="User Object">
+  The verified or newly created user object
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      Unique user identifier
+    </ResponseField>
+
+    <ResponseField name="email" type="string">
+      User's email address
+    </ResponseField>
+
+    <ResponseField name="username" type="string">
+      User's username
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      User's full name
+    </ResponseField>
+
+    <ResponseField name="avatar" type="string">
+      URL to user's avatar image
+    </ResponseField>
+
+    <ResponseField name="bio" type="string">
+      User's biography
+    </ResponseField>
+
+    <ResponseField name="location" type="object">
+      <Expandable title="properties">
+        <ResponseField name="type" type="string">
+          GeoJSON type (always "Point")
+        </ResponseField>
+
+        <ResponseField name="coordinates" type="number[]">
+          Array of [longitude, latitude]
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="birthdate" type="string">
+      User's birthdate in ISO 8601 format
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      Custom public metadata
+    </ResponseField>
+
+    <ResponseField name="suspensions" type="array">
+      Array of active suspensions
+    </ResponseField>
+
+    <ResponseField name="reputation" type="number">
+      User's reputation score
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      Account creation timestamp
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string">
+      Last update timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing JWT - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing userJwt",
+      "code": "auth/missing-jwt"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Missing Keys - 403 Forbidden">
+    ```json
+    {
+      "error": "Missing JWT keys",
+      "code": "auth/missing-keys"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid Token - 403 Forbidden">
+    ```json
+    {
+      "error": "Invalid token",
+      "code": "auth/invalid-token"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Project Mismatch - 403 Forbidden">
+    ```json
+    {
+      "error": "Project ID mismatch",
+      "code": "auth/project-mismatch"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Unexpected Missing User - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Unexpected error fetching user after login",
+      "code": "auth/missing-user"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "auth/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- The JWT is verified using the current or previous public key associated with the project.
+- On success, a secure HttpOnly cookie (`replyke-refresh-jwt`) is set.
+- The user is updated or created based on `foreignId` and optionally `email`.
+- Response includes tokens and user profile, including suspension info.

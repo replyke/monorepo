@@ -1,0 +1,49 @@
+---
+title: "Claude Code Plugin"
+description: "Install the Sublay plugin for Claude Code to give your coding agent an accurate, built-in map of the Sublay platform."
+icon: "plug"
+---
+
+Sublay ships an official **Claude Code plugin** that installs a skill teaching your coding agent what the platform can do — every model, bundle, and capability — so it builds on what already exists instead of reinventing it or inventing what isn't there.
+
+<Note>
+  This is complementary to the [MCP Server](/mcp-server). The **plugin** gives the agent a curated map of the platform that it reaches for automatically; the **MCP server** lets it pull exact field- and endpoint-level detail from the docs on demand. Installing the plugin also wires up the docs MCP for you.
+</Note>
+
+## Install
+
+In Claude Code, add the marketplace and install the plugin:
+
+```bash
+/plugin marketplace add sublay-io/claude-skills
+/plugin install sublay@sublay-io
+```
+
+The first command registers Sublay's plugin marketplace; the second installs the `sublay` plugin from it.
+
+## What you get
+
+<CardGroup cols={1}>
+  <Card title="implementation-expert skill" icon="map">
+    A complete, domain-organized map of Sublay — the mental model (project scoping, bundles, the Provider + Hook SDK pattern), every bundle, and each model and capability (entities, spaces, chat, custom tables, storage, semantic search & AI, and more). The agent consults it automatically when you work on anything Sublay-related, so it picks the right SDK hook, REST route, or dashboard surface.
+  </Card>
+  <Card title="Docs MCP, auto-connected" icon="brain-circuit">
+    The plugin bundles the public [docs MCP](/mcp-server) (`https://docs.sublay.io/mcp`, no auth), so when the agent needs exact hook signatures, params, or endpoint shapes, it can search the live docs without any extra setup.
+  </Card>
+</CardGroup>
+
+## How it behaves
+
+The skill is a **first point of contact, not a full spec**. It holds the shape of the platform — what exists and why — and defers precise, field-level detail to the docs (via the MCP or [docs.sublay.io](https://docs.sublay.io)). That keeps the agent from guessing at APIs while staying lightweight.
+
+You don't need to invoke it manually — Claude Code loads it when your request involves Sublay. You can also call it explicitly with `/sublay:implementation-expert`.
+
+## Updating
+
+When Sublay ships new skills or updates, run:
+
+```bash
+/plugin marketplace update sublay-io
+```
+
+then reinstall or update the plugin to pick up the latest version.

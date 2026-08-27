@@ -1,0 +1,164 @@
+---
+title: "Use entity list"
+description: "Manage a paginated entity feed with filtering, sorting, and infinite scroll"
+icon: "cube"
+---
+
+## Overview
+
+`useEntityList` is the primary hook for building entity feeds. Each call receives a unique `listId` that namespaces its Redux state, so multiple independent lists can coexist on the same page.
+
+See [Fetching Entities](/sdk/entity-lists/fetch-entities) for a full guide on using this hook.
+
+## Usage Example
+
+```tsx
+import { useEntityList } from "@sublay/react-js";
+import { useEffect } from "react";
+
+function Feed() {
+  const {
+    entities,
+    loading,
+    hasMore,
+    fetchEntities,
+    loadMore,
+  } = useEntityList({ listId: "main-feed" });
+
+  useEffect(() => {
+    fetchEntities({}, { sortBy: "hot" }, { limit: 20, include: ["user"] });
+  }, []);
+
+  return (
+    <>
+      {entities.map((e) => <div key={e.id}>{e.title}</div>)}
+      {hasMore && <button onClick={loadMore}>Load more</button>}
+    </>
+  );
+}
+```
+
+## Props
+
+<ParamField path="listId" type="string" required>
+  Unique identifier for this list. Used to namespace Redux state. Must be stable across renders.
+</ParamField>
+
+<ParamField path="infuseData" type="(foreignId: string) => Promise<Record<string, any> | null>">
+  Optional. A function called for each entity with a `foreignId`. Its result is merged into the entity under an `infusion` key. See [Infusing Data](/sdk/entity-lists/infuse-data).
+</ParamField>
+
+## Reputation
+
+The `config` object passed to `fetchEntities` accepts an optional `spaceReputation` object that opts each row's embedded author into an added `spaceReputation` number. See [Reputation](/data-models/reputation).
+
+<ParamField path="config.spaceReputation" type="object">
+  Opt-in. Adds a `spaceReputation` number to each row's embedded author. **This object is the primary form** — it replaces the deprecated flat config props below. This is a context surface, so `spaceId` accepts `"context"`.
+
+  <Expandable title="spaceReputation">
+    <ParamField name="spaceId" type='string | "none" | "context"' required>
+      Which bucket to read: a space **`<uuid>`** (that space's bucket), **`"none"`** (the project-general bucket), or **`"context"`** (server-derived per row from the request context — useful for mixed-space feeds). The empty string and the legacy `general` / `null` aliases are rejected (400). Missing buckets read as `0`.
+    </ParamField>
+    <ParamField name="includeDescendants" type="boolean">
+      Only honored when `spaceId` is an explicit space `<uuid>`. When `true`, `spaceReputation` is the subtree sum (the named space plus all of its descendants). Ignored for `"none"`; not allowed with `"context"`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="config.spaceReputationId" type="string" deprecated>
+  **Deprecated** — use `config.spaceReputation.spaceId`. The flat form; still accepted (the object wins if both are passed). Accepts a space `<uuid>`, `"none"`, or `"context"`.
+</ParamField>
+
+<ParamField path="config.spaceReputationDescendants" type="boolean" deprecated>
+  **Deprecated** — use `config.spaceReputation.includeDescendants`. Only honored alongside an explicit `config.spaceReputationId` `<uuid>`.
+</ParamField>
+
+## Return Values
+
+<ResponseField name="entities" type="Entity[]">
+  The current list of loaded entities.
+</ResponseField>
+
+<ResponseField name="infusedEntities" type="(Entity & { infusion: Record<string, any> })[]">
+  Entities merged with data from `infuseData`. Empty array if `infuseData` was not provided.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a fetch or load-more is in progress.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  `true` when there are more pages to load.
+</ResponseField>
+
+<ResponseField name="fetchEntities" type="(filters, sort?, config?, options?) => void">
+  Loads the first page with the given filters, sort, and config. Debounced by default (800ms). See [Fetching Entities](/sdk/entity-lists/fetch-entities) for the full parameter reference.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Appends the next page of results. Must be called after `fetchEntities` has been invoked at least once.
+</ResponseField>
+
+<ResponseField name="createEntity" type="(props: EntityListCreateEntityProps) => Promise<Entity | undefined>">
+  Creates a new entity and inserts it into the list. Accepts the same fields as `useCreateEntity`, plus `insertPosition: "first" | "last"`.
+</ResponseField>
+
+<ResponseField name="deleteEntity" type="(props: { entityId: string }) => Promise<void>">
+  Deletes an entity and removes it from the local list state.
+</ResponseField>
+
+<ResponseField name="sortBy" type='"createdAt" | "hot" | "top" | "controversial" | "metadata.field" | null'>
+  Current sort algorithm.
+</ResponseField>
+
+<ResponseField name="sortByReaction" type='"upvote" | "downvote" | "like" | "love" | "wow" | "sad" | "angry" | "funny" | null'>
+  Current reaction sort type (used when `sortBy` is `"top"`).
+</ResponseField>
+
+<ResponseField name="sortDir" type='"asc" | "desc" | null'>
+  Current sort direction.
+</ResponseField>
+
+<ResponseField name="sortType" type='"auto" | "numeric" | "text" | "boolean" | "timestamp" | null'>
+  Current sort type hint for metadata sorts.
+</ResponseField>
+
+<ResponseField name="timeFrame" type='"day" | "week" | "month" | "year" | null'>
+  Active time frame filter.
+</ResponseField>
+
+<ResponseField name="sourceId" type="string | null">
+  Active source ID filter (from config).
+</ResponseField>
+
+<ResponseField name="userId" type="string | null">
+  Active user ID filter.
+</ResponseField>
+
+<ResponseField name="followedOnly" type="boolean">
+  Whether the followed-only filter is active.
+</ResponseField>
+
+<ResponseField name="keywordsFilters" type="KeywordsFilters | null">
+  Active keywords filter.
+</ResponseField>
+
+<ResponseField name="titleFilters" type="TitleFilters | null">
+  Active title filter.
+</ResponseField>
+
+<ResponseField name="contentFilters" type="ContentFilters | null">
+  Active content filter.
+</ResponseField>
+
+<ResponseField name="attachmentsFilters" type="AttachmentsFilters | null">
+  Active attachments filter.
+</ResponseField>
+
+<ResponseField name="locationFilters" type="LocationFilters | null">
+  Active location filter.
+</ResponseField>
+
+<ResponseField name="metadataFilters" type="MetadataFilters | null">
+  Active metadata filter.
+</ResponseField>

@@ -1,0 +1,564 @@
+---
+title: "Users"
+description: "Fetch and update user profiles, check usernames, and act on a specific user's follow and connection graph"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+The `users` module reads and updates user profiles and lets the logged-in user act on the social graph of an **arbitrary target user**, addressed by `userId`.
+
+In the follow and connection helpers below, `userId` is always the **target** — the user being followed, the other party in a connection, or the user whose followers you're reading. The **actor** is always the logged-in token holder. To act on your own graph (your own followers, the users you follow, your own connections and pending requests), use the [`follows`](/v7/js-sdk/follows) and [`connections`](/v7/js-sdk/connections) modules instead.
+
+---
+
+### fetchUserById
+
+Fetches a user by their internal Sublay user ID.
+
+```typescript
+const user = await sublay.users.fetchUserById({ userId: "usr_abc123" });
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+<SpaceReputationParams variant="user" field="body" />
+
+**Returns** — `Promise<User>`
+
+---
+
+### fetchUserByForeignId
+
+Fetches a user by your application's own user identifier.
+
+```typescript
+const user = await sublay.users.fetchUserByForeignId({
+  foreignId: "external-user-42",
+});
+```
+
+<ParamField body="foreignId" type="string" required>
+  Your application's user identifier.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+<SpaceReputationParams variant="user" field="body" />
+
+**Returns** — `Promise<User>`
+
+---
+
+### fetchUserByUsername
+
+Fetches a user by their username.
+
+```typescript
+const user = await sublay.users.fetchUserByUsername({ username: "alice" });
+```
+
+<ParamField body="username" type="string" required>
+  The user's unique username.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+<SpaceReputationParams variant="user" field="body" />
+
+**Returns** — `Promise<User>`
+
+---
+
+### fetchUserSuggestions
+
+Returns users whose name or username matches a partial query string. Useful for mention autocomplete.
+
+```typescript
+const users = await sublay.users.fetchUserSuggestions({ query: "ali" });
+```
+
+<ParamField body="query" type="string" required>
+  Partial name or username to search for.
+</ParamField>
+
+<SpaceReputationParams variant="user" field="body" />
+
+**Returns** — `Promise<User[]>`
+
+---
+
+### checkUsernameAvailability
+
+Checks whether a username is available.
+
+```typescript
+const { available } = await sublay.users.checkUsernameAvailability({
+  username: "alice",
+});
+```
+
+<ParamField body="username" type="string" required>
+  The username to check.
+</ParamField>
+
+**Returns** — `Promise<{ available: boolean }>`
+
+---
+
+### updateUser
+
+Updates a user's profile, optionally uploading a new avatar and/or banner image. A user token may only update its own profile.
+
+```typescript
+const updatedUser = await sublay.users.updateUser({
+  userId: "usr_abc123",
+  name: "Alice Updated",
+  bio: "New bio",
+  location: { latitude: 37.7749, longitude: -122.4194 },
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID to update. A user token may only update itself.
+</ParamField>
+
+<ParamField body="name" type="string">
+  New display name.
+</ParamField>
+
+<ParamField body="username" type="string">
+  New username. Must be available.
+</ParamField>
+
+<ParamField body="avatar" type="string">
+  New avatar URL.
+</ParamField>
+
+<ParamField body="bio" type="string">
+  New bio text.
+</ParamField>
+
+<ParamField body="birthdate" type="string">
+  ISO 8601 date string for the user's birthdate.
+</ParamField>
+
+<ParamField body="location" type="object">
+  Geographic location `{ latitude: number; longitude: number }`, or `null` to clear it.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Updated public metadata (`Record<string, any>`).
+</ParamField>
+
+<ParamField body="secureMetadata" type="object">
+  Updated secure metadata (`Record<string, any>`, not exposed in public responses).
+</ParamField>
+
+<ParamField body="avatarFile" type="object">
+  A new avatar image to upload: `{ file: Blob | File; options: ImageOptions }`.
+</ParamField>
+
+<ParamField body="bannerFile" type="object">
+  A new banner image to upload: `{ file: Blob | File; options: ImageOptions }`.
+</ParamField>
+
+<Note>
+  When `avatarFile` or `bannerFile` is supplied the request is sent as
+  `multipart/form-data` carrying the browser `File`/`Blob`. The image `options`
+  (an `ImageOptions` object whose `mode` selects a processing strategy) are sent
+  alongside the file.
+</Note>
+
+```typescript
+// Uploading an avatar from an <input type="file"> element
+const input = document.querySelector<HTMLInputElement>("#avatar-input");
+const file = input.files[0];
+
+const updatedUser = await sublay.users.updateUser({
+  userId: "usr_abc123",
+  avatarFile: {
+    file,
+    options: {
+      mode: "exact-dimensions",
+      dimensions: { default: { width: 256, height: 256 } },
+      format: "webp",
+    },
+  },
+});
+```
+
+**Returns** — `Promise<AuthUser>`
+
+---
+
+### fetchFollowersByUserId
+
+Returns a paginated list of users following the target user.
+
+```typescript
+const { data, pagination } = await sublay.users.fetchFollowersByUserId({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose followers to fetch.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="query" type="string">
+  Optional search term. Filters the list to users whose username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField body="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
+<SpaceReputationParams variant="user" field="body" />
+
+**Returns** — `Promise<PaginatedResponse<FollowListItem>>`
+
+---
+
+### fetchFollowersCountByUserId
+
+Returns the total number of followers for the target user.
+
+```typescript
+const { count } = await sublay.users.fetchFollowersCountByUserId({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID.
+</ParamField>
+
+**Returns** — `Promise<{ count: number }>`
+
+---
+
+### fetchFollowingByUserId
+
+Returns a paginated list of users that the target user is following.
+
+```typescript
+const { data, pagination } = await sublay.users.fetchFollowingByUserId({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose following list to fetch.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="query" type="string">
+  Optional search term. Filters the list to users whose username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField body="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
+<SpaceReputationParams variant="user" field="body" />
+
+**Returns** — `Promise<PaginatedResponse<FollowListItem>>`
+
+---
+
+### fetchFollowingCountByUserId
+
+Returns the number of users the target user is following.
+
+```typescript
+const { count } = await sublay.users.fetchFollowingCountByUserId({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID.
+</ParamField>
+
+**Returns** — `Promise<{ count: number }>`
+
+---
+
+### fetchConnectionsByUserId
+
+Returns a paginated list of the target user's established connections.
+
+```typescript
+const { data, pagination } = await sublay.users.fetchConnectionsByUserId({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose connections to fetch.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="query" type="string">
+  Optional search term. Filters the list to connections whose connected user's username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField body="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
+<SpaceReputationParams variant="user" field="body" />
+
+**Returns** — `Promise<PaginatedResponse<EstablishedConnection>>`
+
+---
+
+### fetchConnectionsCountByUserId
+
+Returns the number of established connections for the target user.
+
+```typescript
+const { count } = await sublay.users.fetchConnectionsCountByUserId({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID.
+</ParamField>
+
+**Returns** — `Promise<{ count: number }>`
+
+---
+
+### createFollow
+
+The logged-in user follows the target user.
+
+```typescript
+const follow = await sublay.users.createFollow({ userId: "usr_target" });
+```
+
+<ParamField body="userId" type="string" required>
+  The user being followed (the target).
+</ParamField>
+
+**Returns** — `Promise<Follow>`
+
+---
+
+### deleteFollow
+
+The logged-in user unfollows the target user.
+
+```typescript
+await sublay.users.deleteFollow({ userId: "usr_target" });
+```
+
+<ParamField body="userId" type="string" required>
+  The user being unfollowed (the target).
+</ParamField>
+
+<Note>
+  This unfollows by the target's `userId`. To delete one of your own follow
+  relationships by its record ID, use
+  [`follows.deleteFollow`](/v7/js-sdk/follows), which takes a `followId`.
+</Note>
+
+**Returns** — `Promise<void>`
+
+---
+
+### fetchFollowStatus
+
+Returns whether the logged-in user follows the target user.
+
+```typescript
+const { isFollowing, followId } = await sublay.users.fetchFollowStatus({
+  userId: "usr_target",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user whose follow relationship is being checked (the target).
+</ParamField>
+
+**Returns** — `Promise<{ isFollowing: boolean; followId?: string; followedAt?: string }>`
+
+---
+
+### requestConnection
+
+Sends a connection request from the logged-in user to the target user.
+
+```typescript
+const connection = await sublay.users.requestConnection({
+  userId: "usr_target",
+  message: "Let's connect!",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user the connection is requested with (the target).
+</ParamField>
+
+<ParamField body="message" type="string">
+  Optional message to include with the request.
+</ParamField>
+
+**Returns** — `Promise<ConnectionRequestResponse>` — the created/pending connection.
+
+---
+
+### fetchConnectionStatus
+
+Returns the connection status between the logged-in user and the target user.
+
+```typescript
+const status = await sublay.users.fetchConnectionStatus({
+  userId: "usr_target",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The other user in the connection (the target).
+</ParamField>
+
+**Returns** — `Promise<ConnectionStatusResponse>`
+
+---
+
+### removeConnectionByUserId
+
+Removes the connection with the target user — withdrawing a sent request, declining a received one, or disconnecting an established connection, depending on the current state.
+
+```typescript
+const result = await sublay.users.removeConnectionByUserId({
+  userId: "usr_target",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The other user in the connection (the target).
+</ParamField>
+
+**Returns** — `Promise<RemoveConnectionByUserIdResponse>`
+
+## Blocking
+
+User-to-user **blocking** is part of the trust & safety [moderation bundle](/sdk/moderation/overview#blocking). These functions require that bundle; a project without it returns `403 database/tables-not-available`. The blocker is the **token holder** — there is no `actingUserId`.
+
+<Note>
+  Blocking severs interaction between two users across every Sublay surface and is **non-disclosing** — the blocked user is never notified. See [Moderation — Blocking](/sdk/moderation/overview#blocking) for the full enforcement behavior.
+</Note>
+
+---
+
+### createBlock
+
+Blocks a user. On a new block, existing follows and connections between the pair are torn down (both directions). Idempotent — re-blocking succeeds. Self-block is rejected server-side.
+
+```typescript
+const block = await sublay.users.createBlock({ userId: "usr_target" });
+```
+
+<ParamField body="userId" type="string" required>
+  The user being blocked (the target). The blocker is the token holder.
+</ParamField>
+
+**Returns** — `Promise<BlockResponse>` — `{ id, blockerId, blockedId, createdAt }`.
+
+---
+
+### deleteBlock
+
+Unblocks a user. Idempotent; restores nothing.
+
+```typescript
+await sublay.users.deleteBlock({ userId: "usr_target" });
+```
+
+<ParamField body="userId" type="string" required>
+  The user being unblocked (the target).
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### fetchBlockStatus
+
+Checks whether the token holder blocks the target user. **Outbound-only** — it never reveals whether the target has blocked the token holder.
+
+```typescript
+const { blocked, blockId } = await sublay.users.fetchBlockStatus({
+  userId: "usr_target",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user whose block relationship is being checked (the target).
+</ParamField>
+
+**Returns** — `Promise<BlockStatusResponse>` — `{ blocked: boolean; blockId?: string; createdAt?: string }`.
+
+---
+
+### fetchBlockedUsers
+
+Returns a paginated list of the users the token holder has blocked (their outbound blocks), each row carrying a public profile summary. This block list is **private** to the blocker.
+
+```typescript
+const { data, pagination } = await sublay.users.fetchBlockedUsers({
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`. Max `100`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<BlockedUserListItem>>`, where each `BlockedUserListItem` is `{ id, blockedUser, createdAt }`.

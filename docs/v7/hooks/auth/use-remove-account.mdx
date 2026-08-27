@@ -1,0 +1,110 @@
+---
+title: "Remove account"
+description: "Remove a linked account from the current app instance"
+icon: "plug"
+---
+
+## Overview
+
+`useRemoveAccount` signs out and removes a specific account from the stored accounts map. It sends a sign-out request to the server to revoke the account's refresh token family — and, once this device has a stored push identifier, to unbind that account's push notifications in the **same transaction** — before removing any local state.
+
+If the removed account is the currently active one, **the session ends and no account is left active**, even when other accounts remain stored. The app renders signed-out; choosing what happens next is yours.
+
+<Warning>
+  **Removal is atomic once push is involved.** If this device has a stored push identifier, the sign-out request carries it, and if the server **refuses the unbind** nothing is torn down: `removeAccount` **rejects**, `error` carries the reason, and the account keeps its entry and its credential so the user can retry. Its signature is `({ userId }) => Promise<void>`, so nothing warns you at compile time: `await removeAccount(...)` needs a `catch`.
+
+  The strictness is scoped to a **server refusal of the unbind itself** — the sign-out endpoint answering `auth/device-deregistration-failed` or `auth/sign-out-failed`, the two codes it returns when its transaction rolled back. Everything else is best-effort: no network, a throttled or migrating project, a rejected body, the generic `auth/server-error`, or a device with no stored push identifier. An offline user can still remove an account locally.
+
+  One more code arrives on a **success** and never blocks: `auth/push-unbind-status-unknown`, returned with `200` when the server signed the account out without attempting an unbind because it could not determine whether the project has push devices. `removeAccount` resolves, the account is removed, and the SDK warns — the binding may still be live, so it is worth surfacing, but it is not worth making an account unremovable over.
+
+  A stored push identifier is **device** state, not an account's consent: on native the SDK records one when the device already holds OS notification permission, whether or not this particular account ever registered. When the account had no binding, the unbind removes nothing and the removal completes exactly as it would without one.
+</Warning>
+
+<Note>
+  Removing an account never activates a different one. Read `activeAccount` from [`useAccounts`](/hooks/auth/use-accounts) and render your own next screen when it is `null`.
+</Note>
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useAccounts, useRemoveAccount } from "@sublay/react-js";
+
+function AccountList() {
+  const { accounts } = useAccounts();
+  const { removeAccount, isRemoving, error } = useRemoveAccount();
+
+  return (
+    <ul>
+      {accounts.map((account) => (
+        <li key={account.id}>
+          {account.name ?? account.email}
+          <button
+            onClick={() =>
+              removeAccount({ userId: account.id }).catch(() => {
+                /* Rejects when the server refuses the push unbind; `error`
+                   below carries the reason and nothing was torn down. */
+              })
+            }
+            disabled={isRemoving}
+          >
+            Remove
+          </button>
+        </li>
+      ))}
+      {error && <p>{error}</p>}
+    </ul>
+  );
+}
+```
+
+```tsx React Native
+import { useAccounts, useRemoveAccount } from "@sublay/react-native";
+
+function AccountItem({ userId }: { userId: string }) {
+  const { removeAccount, isRemoving } = useRemoveAccount();
+
+  return (
+    <Button
+      title="Remove"
+      onPress={() =>
+        removeAccount({ userId }).catch(() => {
+          /* Read `error` from the hook; without a catch this is an
+             unhandled rejection. */
+        })
+      }
+      disabled={isRemoving}
+    />
+  );
+}
+```
+</CodeGroup>
+
+## Parameters
+
+The hook returns a `removeAccount` function that accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the account to remove.
+</ParamField>
+
+## Returns
+
+<ResponseField name="removeAccount" type="function">
+  Async function that removes the specified account. Throws synchronously if
+  `userId` is not found in the accounts map or if no `projectId` is available.
+  Runtime errors during removal set `error` **and reject** the returned promise.
+  Removing a non-active account leaves the current session untouched.
+</ResponseField>
+
+<ResponseField name="isRemoving" type="boolean">
+  `true` while the removal is in progress.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the removal failed, or `null` if no error occurred.
+</ResponseField>
+
+## Integration Guide
+
+For multi-account integration guidance, see [Multi-Account](/sdk/authentication/multi-account).

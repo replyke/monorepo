@@ -1,0 +1,234 @@
+---
+title: "Space Members"
+description: "Join and leave spaces, and manage roles, approvals, and bans"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+The space membership functions let the logged-in user join and leave spaces, and let admins and moderators manage a space's membership — roles, pending approvals, and bans.
+
+---
+
+### joinSpace
+
+Joins a space as the logged-in user, or requests to join if the space requires approval.
+
+```typescript
+const result = await sublay.spaces.joinSpace({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+**Returns** — `Promise<JoinSpaceResponse>`
+
+---
+
+### leaveSpace
+
+Leaves a space as the logged-in user.
+
+```typescript
+const result = await sublay.spaces.leaveSpace({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+**Returns** — `Promise<LeaveSpaceResponse>`
+
+---
+
+### checkMyMembership
+
+Checks the logged-in user's membership status in a space.
+
+```typescript
+const membership = await sublay.spaces.checkMyMembership({
+  spaceId: "spc_abc123",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+**Returns** — `Promise<CheckMyMembershipResponse>`
+
+---
+
+### fetchSpaceMembers
+
+Fetches a paginated list of a space's members, filterable by role and status.
+
+```typescript
+const members = await sublay.spaces.fetchSpaceMembers({
+  spaceId: "spc_abc123",
+  role: "member",
+  status: "active",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  The page number to fetch.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  The number of members to return per page.
+</ParamField>
+
+<ParamField body="role" type="string">
+  Filter by role: `"admin"`, `"moderator"`, or `"member"`.
+</ParamField>
+
+<ParamField body="status" type="string">
+  Filter by status: `"pending"`, `"active"`, `"banned"`, or `"rejected"`.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<SpaceMembersResponse>`
+
+---
+
+### fetchSpaceTeam
+
+Fetches the team (admins and moderators) of a space.
+
+```typescript
+const team = await sublay.spaces.fetchSpaceTeam({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<SpaceTeamResponse>`
+
+---
+
+### updateMemberRole
+
+Updates a member's role within a space.
+
+```typescript
+const result = await sublay.spaces.updateMemberRole({
+  spaceId: "spc_abc123",
+  memberId: "mbr_xyz789",
+  role: "moderator",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="memberId" type="string" required>
+  The membership ID of the member to update.
+</ParamField>
+
+<ParamField body="role" type="string" required>
+  The new role: `"admin"`, `"moderator"`, or `"member"`.
+</ParamField>
+
+**Returns** — `Promise<UpdateMemberRoleResponse>`
+
+---
+
+### approveMembership
+
+Approves a pending membership request.
+
+```typescript
+const result = await sublay.spaces.approveMembership({
+  spaceId: "spc_abc123",
+  memberId: "mbr_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="memberId" type="string" required>
+  The membership ID of the pending member.
+</ParamField>
+
+**Returns** — `Promise<ApproveMemberResponse>`
+
+---
+
+### declineMembership
+
+Declines a pending membership request.
+
+```typescript
+const result = await sublay.spaces.declineMembership({
+  spaceId: "spc_abc123",
+  memberId: "mbr_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="memberId" type="string" required>
+  The membership ID of the pending member.
+</ParamField>
+
+**Returns** — `Promise<DeclineMemberResponse>`
+
+---
+
+### banMember
+
+Bans a member from a space.
+
+```typescript
+const result = await sublay.spaces.banMember({
+  spaceId: "spc_abc123",
+  memberId: "mbr_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="memberId" type="string" required>
+  The membership ID of the member to ban.
+</ParamField>
+
+**Returns** — `Promise<{ message: string; membership: { id: string; status: "banned" } }>`
+
+---
+
+### unbanMember
+
+Unbans a previously banned member.
+
+```typescript
+const result = await sublay.spaces.unbanMember({
+  spaceId: "spc_abc123",
+  memberId: "mbr_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="memberId" type="string" required>
+  The membership ID of the member to unban.
+</ParamField>
+
+**Returns** — `Promise<{ message: string; membership: { id: string; status: "active" } }>`

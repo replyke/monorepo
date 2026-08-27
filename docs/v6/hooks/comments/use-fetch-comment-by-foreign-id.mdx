@@ -1,0 +1,65 @@
+---
+title: "Use Fetch Comment By Foreign Id"
+---
+
+# `useFetchCommentByForeignId`
+
+## Overview
+
+The `useFetchCommentByForeignId` hook allows you to retrieve a specific comment by its foreign ID. It optionally includes the parent comment, making it useful for displaying threaded comment structures or fetching detailed comment data.
+
+
+## Usage Example
+
+```tsx
+import { useFetchCommentByForeignId } from "@replyke/react-js";
+
+function CommentDetails({ commentId }: { commentId: string }) {
+  const fetchCommentByForeignId = useFetchCommentByForeignId();
+
+  const handleFetchCommentByForeignId = async () => {
+    try {
+      const { comment, parentComment } = await fetchCommentByForeignId({
+        commentId,
+        withParent: true,
+      });
+
+      console.log("Fetched comment:", comment);
+      console.log("Parent comment:", parentComment);
+    } catch (error) {
+      console.error("Failed to fetch comment:", error.message);
+    }
+  };
+
+  return <button onClick={handleFetchCommentByForeignId}>Fetch Comment</button>;
+}
+```
+
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+
+<ParamField path="foreignId" type="string" required>
+  The foreign ID of the comment to fetch.
+</ParamField>
+
+<ParamField path="withParent" type="boolean">
+  Whether to include the parent comment.
+</ParamField>
+
+### Returns
+
+The function resolves with an object containing the comment and optionally its parent comment:
+
+
+<ResponseField name="comment" type="Comment">
+  The details of the fetched comment.
+</ResponseField>
+
+<ResponseField name="parentComment" type="Comment \">
+  null`
+</ResponseField>

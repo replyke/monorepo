@@ -1,0 +1,184 @@
+---
+title: "Send Push Notification"
+api: "POST /v7/:projectId/push-notifications/send"
+description: "Send a push notification to one or more users across all their registered devices"
+---
+
+Fans a push notification out to every registered device binding belonging to the listed users. The server dispatches to APNs (iOS), FCM (Android), and the Web Push protocol in parallel, using whichever platform credentials are configured for this project.
+
+Requires a service or master key (`Authorization: Bearer <serviceKey>`). End-user tokens are rejected — this endpoint is intended for your backend, not for end users calling it directly.
+
+Requires the `push` bundle.
+
+## Body Parameters
+
+<ParamField body="userIds" type="string[]" required>
+  Array of Sublay user IDs to notify. Between 1 and 100 IDs per request.
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  Notification title. Displayed as the bold heading on the device.
+</ParamField>
+
+<ParamField body="body" type="string" required>
+  Notification body text.
+</ParamField>
+
+<ParamField body="data" type="object">
+  Optional key-value data payload forwarded to the app alongside the notification. Values must be strings or serializable primitives. Use this to pass deep-link targets, IDs, or any context your app needs when the user taps the notification.
+
+  **`recipientUserId` is reserved.** The server stamps every dispatched copy with the id of the account that copy is for, so a device signed into several accounts can tell which one a notification belongs to. A value you supply under that key is overwritten — an account-routing key has to be trustworthy.
+</ParamField>
+
+<Note>
+  **One notification per account, not per device.** A physical device can be bound to several accounts at once. If two of the `userIds` are signed in on the same device, that device receives two notifications — one per account, each with its own `recipientUserId`.
+</Note>
+
+### Rich payload fields
+
+All optional. Each is mapped to whichever platform(s) support it at dispatch time and silently ignored on platforms that have no equivalent. See the [Push Notifications guide](/push-notifications#rich-notification-payloads) for the client-side setup some of these require (Android channels, the iOS Notification Service Extension, your web service worker).
+
+<ParamField body="sound" type="string">
+  Sound file to play. iOS: APNs `sound`. Android: governed by the channel on 8+ — pair with `channelId`. Web: forwarded to the service worker.
+</ParamField>
+
+<ParamField body="badge" type="number">
+  iOS app-icon badge count (APNs `badge`). No Android equivalent. The caller supplies the number; Sublay tracks no unread state.
+</ParamField>
+
+<ParamField body="channelId" type="string">
+  Android notification channel id (FCM `android.notification.channel_id`). The channel must be created client-side; on Android 8+ it owns sound/importance/vibration.
+</ParamField>
+
+<ParamField body="priority" type="string">
+  `"high"` or `"normal"`. iOS: APNs `apns-priority` (10/5). Android: FCM `android.priority`. `high` wakes the device for time-sensitive pushes. Defaults to `high` when omitted.
+</ParamField>
+
+<ParamField body="subtitle" type="string">
+  iOS subtitle line under the title (APNs `alert.subtitle`).
+</ParamField>
+
+<ParamField body="imageUrl" type="string">
+  Rich/big-picture image URL. Android (FCM `image`) and Web work out of the box. iOS additionally requires a Notification Service Extension in the app — the URL is forwarded in the payload and `mutable-content` is set automatically.
+</ParamField>
+
+<ParamField body="tag" type="string">
+  Display-replace key so notifications collapse in the UI (FCM `android.notification.tag`, Web `tag`). Scoped per recipient, exactly like `collapseId` below.
+
+  **The device receives a different string than you sent.** Scoping appends `~` and a short digest of the recipient's user id, so a push sent with `tag: "thread-42"` arrives carrying something like `thread-42~9f3c1a8b`. Client code that reads the delivered `tag` — a service worker matching open notifications, for instance — must not compare it to the value it sent. Match on a prefix, or carry your own key in `data` instead, which is passed through untouched.
+</ParamField>
+
+<ParamField body="collapseId" type="string">
+  Transport-level collapse identifier (APNs `apns-collapse-id`, FCM `collapse_key`) — a newer push supersedes an undelivered one carrying the same id **for the same account**.
+
+  **Scoped per recipient.** Two accounts signed in on one physical device share one transport destination, so the server appends a short digest of the recipient's id to the key you supply before handing it to the provider — the provider therefore sees a different string than you sent. Each account gets its own collapse namespace on the shared device and cannot supersede the other's notification, while collapsing within a single account behaves exactly as the field describes.
+
+  **Over-length keys are folded rather than refused.** APNs caps `apns-collapse-id` at 64 bytes. When your key plus the recipient digest would exceed that, the server replaces the whole scoped key with a fixed-width digest of it — still deterministic and still per-recipient, so collapsing keeps working — instead of letting APNs reject the send with `BadCollapseId`. FCM's `collapse_key` and the display `tag` have no comparable documented ceiling, so nothing is folded on those paths. The parameter itself has no maximum: any non-empty string is accepted.
+</ParamField>
+
+<ParamField body="threadId" type="string">
+  iOS notification grouping (APNs `thread-id`).
+</ParamField>
+
+<ParamField body="ttl" type="number">
+  Time-to-live in seconds for offline devices (APNs `apns-expiration` computed from now, FCM `android.ttl`).
+</ParamField>
+
+<ParamField body="mutableContent" type="boolean">
+  iOS `mutable-content` flag, enabling the app's Notification Service Extension to modify the payload (e.g. attach `imageUrl`). Set implicitly when `imageUrl` is provided.
+</ParamField>
+
+## Response
+
+Returns `200` with a `results` map keyed by user ID. Every requested `userId` is present in the response — users with no registered devices get an empty array rather than being omitted.
+
+```json
+{
+  "results": {
+    "usr_abc123": [
+      { "platform": "ios", "success": true },
+      { "platform": "android", "success": true }
+    ],
+    "usr_def456": [],
+    "usr_ghi789": [
+      { "platform": "web", "success": false, "reason": "credentials_not_configured" }
+    ]
+  }
+}
+```
+
+<ResponseField name="results" type="object">
+  Map from user ID to an array of per-device delivery results.
+  <Expandable title="per-device result fields">
+    <ResponseField name="platform" type='"ios" | "android" | "web"'>
+      The platform this result is for.
+    </ResponseField>
+    <ResponseField name="success" type="boolean">
+      Whether the push was accepted by the upstream provider (APNs, FCM, or Web Push).
+    </ResponseField>
+    <ResponseField name="reason" type="string">
+      Present only when `success` is `false`. Common values:
+      - `"credentials_not_configured"` — no provider config exists for this platform (or it is disabled)
+      - Provider-specific error codes returned by APNs/FCM/Web Push
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Note>
+  Tokens or subscriptions reported as permanently invalid by the upstream provider (e.g. APNs `BadDeviceToken`, FCM `UNREGISTERED`, Web Push HTTP 410) are automatically deleted during the send — no separate cleanup step is needed. A dead token is dead for the whole device, so **every** account bound to it is unbound, including accounts that were not part of this request.
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "...", "code": "push-send/invalid-body" }
+    ```
+    Returned when `userIds` is empty, exceeds 100 entries, or required fields are missing.
+  </Accordion>
+  <Accordion title="Elevated Auth Required — 403">
+    ```json
+    {
+      "error": "Service or master key required.",
+      "code": "auth/elevated-auth-required"
+    }
+    ```
+    Returned when called with an end-user access token instead of a service/master key.
+  </Accordion>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Bundle Provisioning — 503">
+    ```json
+    {
+      "code": "database/tables-provisioning",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "bundleId": "push"
+    }
+    ```
+    Returned while the `push` bundle is mid-install. Retry shortly.
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Internal server error.", "code": "push-send/server-error" }
+    ```
+    The fan-out itself failed. Nothing beyond this code is returned. Note that a
+    failure while pruning dead tokens *after* delivery does not reach here — the
+    pushes were delivered and the response is still `200`.
+  </Accordion>
+</AccordionGroup>
+
+**Rate limit:** 50 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
+
+## See Also
+
+- [Node SDK — push.send](/node-sdk/push-notifications)
+- [Register Device](/api-reference/push-notifications/register-device)
+- [Push Notifications overview](/push-notifications)

@@ -1,0 +1,82 @@
+---
+title: "Fetch Comment Reactions"
+api: "GET /v7/:projectId/comments/:commentId/reactions"
+description: "Get a paginated list of reactions on a comment"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+Returns a paginated list of reactions for a comment, each with the reacting user's profile. Useful for displaying "reacted by" lists or per-type reaction breakdowns.
+
+Authentication is optional — the endpoint works without a token. When the caller is signed in, reactions from users with a block between them and the caller, in either direction, are excluded from both the results and the count. Block filtering requires the `moderation` bundle.
+
+## Path Parameters
+
+<ParamField path="commentId" type="string" required>
+  The UUID of the comment.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField query="limit" type="number" default="20">
+  Number of reactions per page. Maximum `100`.
+</ParamField>
+
+<ParamField query="reactionType" type="string">
+  Filter to a specific reaction type. One of: `upvote`, `downvote`, `like`, `love`, `wow`, `sad`, `angry`, `funny`. When omitted, all types are returned.
+</ParamField>
+
+<ParamField query="sortDir" type="string" default="DESC">
+  Sort by creation time. `ASC` or `DESC`.
+</ParamField>
+
+### Space-scoped reputation
+
+This endpoint has a space in context, so it accepts the opt-in reputation params. They add a `spaceReputation` field to each reactor's `user`, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation) for the full contract.
+
+<SpaceReputationParams variant="context" field="query" />
+
+## Response
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "reactionType": "like",
+      "userId": "uuid",
+      "targetId": "commentId",
+      "targetType": "comment",
+      "user": {
+        "id": "uuid",
+        "name": "Alice",
+        "username": "alice",
+        "avatar": "https://...",
+        "reputation": 120
+      },
+      "createdAt": "2025-01-01T00:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 8,
+    "totalPages": 1,
+    "hasMore": false
+  }
+}
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Comment not found.", "code": "comment/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

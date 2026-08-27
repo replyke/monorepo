@@ -1,0 +1,457 @@
+---
+title: "Overview"
+description: "Build SaaS/team workspaces with invitations, per-member authority, and self-nesting"
+---
+
+[Workspaces](/data-models/workspace) give your app the B2B/SaaS collaboration layer: an account/team that people are invited into, with granular per-member authority and optional self-nesting (org → client → project). Unlike [Spaces](/sdk/spaces/overview) (a community shape), Workspaces is **invite-only** with an owner apex and a capability/permission model.
+
+<Note>
+  **Requires the `workspaces` bundle.** See [Bundles](/bundles) to add it.
+</Note>
+
+The React/React Native surface is a set of plain hooks re-exported from `@sublay/core` (there is **no** `WorkspaceProvider` and **no** Redux slice — the list uses the [Wrapper pattern](/hooks/workspaces/use-fetch-many-workspaces-wrapper), matching house style).
+
+## Key concepts
+
+- **[capabilities vs permissions](/data-models/workspace-member#the-two-arrays-capabilities-vs-permissions)** — Sublay enforces the closed `capabilities` vocabulary; it is blind to your opaque `permissions`.
+- **[Ownership](/data-models/workspace#ownership)** — one owner per workspace (the creator); ancestor owners are gods over descendants.
+- **[Reach & the wall/door rule](/data-models/workspace#reach-and-the-wall-door-rule)** — strict per-node by default; opt-in downward reach via the child-owned `inheritsFromParent` flag.
+- **[Invitations](/data-models/workspace-invitation#acceptance-model)** — identity-matched + verified-email, **no token**.
+
+## Project settings
+
+Three project-level settings configure this bundle. They live under `workspaces` in your project's `settings` blob — set them in the dashboard under **Settings → project settings**, or via the update-project-settings endpoint. All three are **absent by default**, and absent means the strict behavior in the table below.
+
+```json Project settings
+{
+  "workspaces": {
+    "inviteAcceptUrl": "https://app.example.com/invites",
+    "inheritsDefault": false,
+    "inheritEnforced": false
+  }
+}
+```
+
+| Setting | Type | Default | What it does |
+|---------|------|---------|--------------|
+| `workspaces.inviteAcceptUrl` | `string` | *(none)* | The page in **your** app that surfaces workspace invitations. Invitation emails deep-link to it, with a fixed `?workspaceInviteId=<id>` appended (any query string you already have on the URL is preserved). **Required before any invitation can be created** — see the warning below. |
+| `workspaces.inheritsDefault` | `boolean` | `false` | The [`inheritsFromParent`](/data-models/workspace#reach-and-the-wall-door-rule) flag new workspaces are **born with**. `false` (the default) means every workspace starts **sealed** — no downward reach. Set it to `true` if your product wants an org's authority to flow into sub-workspaces by default. This is read at create time only; it is never accepted from client input — sending `inheritsFromParent` on [Create Workspace](/api-reference/workspaces/create-workspace) is a `400`, not a silent override — and changing it does not retroactively alter existing workspaces. |
+| `workspaces.inheritEnforced` | `boolean` | `false` | Locks `inheritsFromParent` to the project default so workspace **owners cannot flip it**. While `true`, [`useUpdateWorkspaceInheritFlag`](/hooks/workspaces/use-update-workspace-inherit-flag) fails with `403 workspace/inherit-enforced`. Use it when the wall/door policy is a product decision rather than a per-team one. |
+
+<Warning>
+  **Set `workspaces.inviteAcceptUrl` before you ship invitations.** It has no default, so a freshly added bundle has none — and an invitation is delivered as an email whose only call to action is that deep-link.
+
+  Because of that, [Create Invite](/api-reference/workspaces/invitations/create-invite) and [Resend Invite](/api-reference/workspaces/invitations/resend-invite) **refuse outright** when it is unset, with `409 workspace/missing-invite-accept-url`. This applies **even when the invitee already has an account** — the in-app inbox is not a substitute for the emailed link, so the invite surface behaves the same for every invitee. Nothing is persisted and no email or webhook is emitted on the refusal; configure the setting and retry the identical request.
+</Warning>
+
+<Note>
+  The accept link carries **nothing secret**. Acceptance is identity-matched — the signed-in caller must *be* the invitation's target and have a verified email — so there is no token to leak and no domain allowlist to maintain. The email is a plain nudge into your app. See the [acceptance model](/data-models/workspace-invitation#acceptance-model).
+</Note>
+
+## What a client app can do
+
+**All 21 workspace endpoints are callable from a browser or mobile app with a normal signed-in user's bearer token** — including every management operation: editing a workspace, deleting it, transferring ownership, flipping the inherit flag, editing a member's capabilities/rank, removing a member, offboarding across a subtree, and the full invite lifecycle (create, list, revoke, resend). Every one of these is exposed as a `@sublay/core` hook and as a `@sublay/js` function. **A members-management panel needs no server-side code and no hand-rolled `fetch`.**
+
+With a client token, every endpoint in the bundle resolves the actor from that token and authorizes the action against **that user's own standing** on the workspace. Most routes enforce this in guard middleware ahead of the controller; the self-scoped ones (create a workspace, list your own, leave, accept or decline an invite, read your own invites or your own authority) carry no guard middleware and authorize inside the controller instead. The one endpoint that does not require a token at all is the single-workspace read, [`GET /workspaces/:id`](/api-reference/workspaces/fetch-workspace) — it takes an *optional* token and returns the workspace when visibility permits. Everything else requires a signed-in user, and whether the call then succeeds depends on their standing:
+
+| Rule | Meaning |
+|------|---------|
+| **Owner-only** | The caller must be the workspace's own owner, or an owner of an ancestor workspace. Not a capability — no capability grants it. |
+| **Capability-gated** | The caller's [resolved capability set](/hooks/workspaces/use-fetch-workspace-authority) (direct + reach + ownership) must contain the named capability, e.g. `invite`, `remove-member`, `edit-workspace`. |
+| **Rank-bounded** | On top of a capability, the caller may only act on members ranked strictly below them, and may only grant capabilities/permissions they themselves hold ([no-escalation](/data-models/workspace-member#no-privilege-escalation)). |
+| **Visibility** | The caller must be able to see the workspace / its roster at all. This gates three reads — the single workspace, the roster, and one member's standing. **Any relation** to the workspace (owner, ancestor-owner, member, reach-holder) satisfies it. It does *not* gate the authority read (see the note below). |
+| **Self-service** | Anyone signed in can do it for themselves — accept/decline an invite addressed to them, leave a workspace, read their own authority. |
+
+<Note>
+  **The authority read is the one read visibility does not gate.** [`GET /workspaces/:id/authority/me`](/api-reference/workspaces/fetch-authority) is mounted with authentication only — any signed-in user may call it for any workspace id. It returns `404` only when the workspace does not exist; a signed-in stranger gets `200` with `reasons: []` and empty `capabilities` / `permissions`, which is the correct "you have no standing here" answer for a UI gate. The consequence is that the route confirms a workspace *exists* to any signed-in user.
+
+  Its sibling read, one member's standing ([`GET /workspaces/:id/members/:userId`](/api-reference/workspaces/members/fetch-member-standing)), *is* visibility-gated and deliberately `404`s instead, so it never leaks existence. Do not assume the two behave alike.
+</Note>
+
+<Warning>
+  **Seeing the roster and seeing people's *authority* are two different tiers.** Any relation may read the roster and one member's standing — who is there, their `reasons`, `title` and `metadata`. But the authority-bearing fields — **`capabilities`, `permissions`, `rank`, `relativeRank`** — are **omitted** (absent, not `null`) unless the caller holds one of the four people-operating capabilities (`invite`, `remove-member`, `edit-member-access`, `edit-member-profile`) or is the `owner` / an `ancestor-owner`.
+
+  A caller **always** sees their own — their own roster row, their own standing, and the [authority read](/api-reference/workspaces/fetch-authority), which is inherently a self read and never fenced. So a plain member can always discover their own access; they just cannot enumerate everyone else's. A service/master key acting as **itself** is never fenced; one that **names** an `actingUserId` is fenced exactly as that user is — see [Acting on behalf of a user](#acting-on-behalf-of-a-user). Type all four fields as optional on client surfaces. (`relativeRank` is fenced *with* `rank` because it is `rank` minus a number the caller already knows — leaking it would leak `rank` exactly.)
+
+  **The gate is answered per node, not once per request.** Every row a response returns is judged against your **resolved** standing on the workspace *that row belongs to* — including capabilities [reaching](/data-models/workspace#reach-and-the-wall-door-rule) in through an unbroken open inherit chain, and ownership from any ancestor, but not authority a **sealed** node blocks. The place this bites is [`include=descendants`](/api-reference/workspaces/members/list-members) on the roster: a `descendant-member` row is judged on its own node, so holding `invite` on a parent does not unfence a sealed child's ranks and capabilities. Being allowed to *see* a descendant's roster (sealing) and being allowed to see its members' **authority** (the fence) are two tiers, and passing the first does not pass the second.
+</Warning>
+
+<Note>
+  **What actually needs a service key: acting on behalf of a *different* user.** Nearly every endpoint accepts an actor field, `actingUserId`, so a service/master key can perform an action *as* some named user. That parameter is **[node SDK](/node-sdk/workspaces) only** — `@sublay/core` and `@sublay/js` never expose it, because a client's actor is always the token's own user. (There is no client-side strip: a call that hand-writes `actingUserId` past the types is bound by the same rule as any user token — naming a user other than the token's own is rejected with a `403`.) This is the *only* difference in reach between the client SDKs and the node SDK for this bundle; it is **not** a restriction on which operations a client may perform. The rule that governs it is [below](#acting-on-behalf-of-a-user).
+
+  Note that a **target**-identifying `userId` is a different thing and is fully available on the client: the invitee `userId` on [`useCreateWorkspaceInvite`](/hooks/workspaces/use-create-workspace-invite), and the `targetUserId` path param on the member hooks.
+</Note>
+
+## Acting on behalf of a user
+
+One rule governs every workspace endpoint, with no exceptions:
+
+<Info>
+  **If a request acts as Bob, then for all intents and purposes it *is* Bob.** Reads and writes alike. The credential decides only *whether* you may name someone other than yourself — never how much authority you get once you have.
+</Info>
+
+A service or master key therefore has exactly two modes:
+
+| Mode | Wire shape | Authority |
+|------|-----------|-----------|
+| **The app itself** | the field is **absent** | Unbounded — where the route has an unbounded path at all. Every capability, owner-only and rank check is skipped. |
+| **A named user** | `actingUserId: "<uuid>"` | Exactly that user's. Their capabilities, their rank, their visibility, their fencing — the same answer their own token would get. |
+
+<Warning>
+  **"The app itself" means the field is *absent*, not falsy.** `actingUserId: ""` and `actingUserId: null` are a caller *attempting* to name someone, and they are a `400`, never a fall-through to the unbounded mode. So `actingUserId: user?.id ?? ""` — the shape a backend reaches for naturally — fails loudly instead of quietly acquiring full authority. That is the point: a request that believed it was binding to a user must never be promoted to the app itself. Only omitting the key entirely (or sending `undefined`, which is indistinguishable from omission) selects that mode. See [Shapes the server rejects](#shapes-the-server-rejects).
+</Warning>
+
+A plain user token has only one mode: itself. Sending your **own** user id is a harmless no-op — the resolved actor is the same either way — but naming **anyone else** is a `403 workspace/unauthorized`. The field is never silently ignored for a user token.
+
+Naming an acting user is not a hint or an audit field. It **binds**: if the named user would be refused, so are you. That covers the capability gate, the owner-only gate, the rank guard, [no-escalation](/data-models/workspace-member#no-privilege-escalation), roster/standing [fencing](#what-a-client-app-can-do), and the visibility `404` on a workspace the named user has no relation to.
+
+### The unrestricted path names a user
+
+Backends that need to do something a normal member could not — reset a team, seed an org, repair a bad grant — should act **as the workspace owner**, not as nobody:
+
+```typescript
+// ✅ Unrestricted, and carried out under a named user id.
+await sublay.workspaces.updateWorkspaceMember({
+  workspaceId,
+  targetUserId,
+  rank: 0,
+  actingUserId: workspace.ownerId,
+});
+```
+
+The owner resolves the full capability vocabulary and apex rank, so nothing is out of reach, and the resulting webhooks carry that user id rather than nothing.
+
+<Warning>
+  **This is naming, not authentication.** A service key may name *any* UUID, and the server does not verify that it belongs to a live account — it only checks whether the id matches the workspace's `ownerId` (or a membership row). Two consequences:
+
+  - The user id on a webhook tells you what the caller **claimed**, with the same trust level as the key itself. It is not evidence a person acted.
+  - `ownerId` is a plain column, not a foreign key — deliberately, so deleting a user cannot cascade away every workspace they own. So acting as the id of a **deleted** owner still resolves full owner authority. If your product deletes accounts, transfer ownership as part of that teardown; do not rely on the id going stale to revoke anything.
+
+  If you need attribution you can actually trust, record it in your own system at the point you decide to make the call.
+</Warning>
+
+On roughly half the bundle the actor is **required**, so acting-as-a-user is not merely the good practice — it is the only path, and omitting `actingUserId` is a `400 workspace/missing-user-id` rather than a bypass. Those routes are the ones whose result *belongs to* a specific person: creating a workspace, listing your workspaces or your invites, reading your own authority, accepting or declining an invite, leaving, and the three member-management writes (`updateWorkspaceMember`, `removeWorkspaceMember`, `removeWorkspaceMemberFromSubtree`).
+
+The unbounded path survives on the rest — the guard-only routes (`updateWorkspace`, `updateWorkspaceInheritFlag`, `deleteWorkspace`, `transferWorkspaceOwnership`, the invite outbox reads and `revoke`/`resend`), the three reads, and `createWorkspaceInvite`.
+
+<Note>
+  **The [node SDK](/node-sdk/workspaces) types are stricter than the wire on four of those routes.** `updateWorkspace`, `updateWorkspaceInheritFlag`, `deleteWorkspace` and `transferWorkspaceOwnership` accept an omitted actor over REST — that request runs as the app itself — but the node SDK declares `actingUserId` **required** on all four, so TypeScript will not let you omit it. That is a deliberate guardrail on the four most destructive owner-only calls, not a different server rule. Reach the unbounded path on them by calling the REST endpoint directly.
+</Note>
+
+### Shapes the server rejects
+
+Eight request shapes are refused outright rather than ignored, all of them `400`s. Seven carry `workspace/invalid-body` or `workspace/invalid-query`, depending on which side of the request the offending field sat on; the eighth is a malformed path parameter, which carries `workspace/invalid-params`.
+
+They come from **two layers**, and knowing which one answered tells you what to fix:
+
+1. **A gate**, mounted ahead of every route on the bundle. It reads the raw request, so it behaves identically whichever endpoint you call and whatever that route declares.
+2. **Each route's own body and query schemas.** All 21 routes validate *both* sides, and every schema declares exactly the fields its endpoint accepts. A top-level field it does not declare is refused, not stripped. On the query side one check runs ahead of the schema and reads the raw query string rather than the parsed one — the length limit below — so it too behaves identically on every route.
+
+<AccordionGroup>
+  <Accordion title="A body or query `userId` — 400">
+    ```json
+    {
+      "error": "`userId` is not the acting user on workspace routes — it addresses the target. Use `actingUserId` to act on behalf of a user.",
+      "code": "workspace/invalid-body"
+    }
+    ```
+
+    On a workspace route `userId` **never** names the caller — it addresses the request *target*. The rejection is unconditional: it fires for user tokens and keys alike, on every route, and even when a correct `actingUserId` is also present, because a request carrying both is malformed regardless. It is checked at the gate, on the raw request, ahead of any route's own schema.
+
+    **One exception:** the invitee `userId` in the **body** of [Create Invite](/api-reference/workspaces/invitations/create-invite), where the field has always meant the target. The carve-out covers that body field and nothing else — a query `?userId=` is refused on Create Invite exactly as it is everywhere else, because no workspace route reads one, so there it can only be the stale actor spelling. The path parameter `:userId` (on the member routes) is untouched — that is the target too.
+  </Accordion>
+
+  <Accordion title="An empty or null `actingUserId` — 400">
+    ```json
+    { "error": "Invalid actingUserId.", "code": "workspace/invalid-body" }
+    ```
+
+    The actor is read by **presence**, not truthiness. `""`, `null` and a non-UUID string are all a caller *attempting* to name someone, and they fail here rather than falling through to the unbounded mode. On a route with no capability guard the rejection comes from the schema instead and reads `actingUserId: Invalid UUID format` — same status, same code, same outcome.
+
+    This is the trap behind `actingUserId: user?.id ?? ""`. A backend writing that believes it is binding the call to a user; if the empty string read as "named nobody" it would instead receive full owner authority on routes including `DELETE /workspaces/:id`. Only an absent key (or `undefined`, which is indistinguishable from omission) selects the app-itself mode.
+  </Accordion>
+
+  <Accordion title="A near-miss spelling of `actingUserId` — 400">
+    ```json
+    {
+      "error": "`actingUserID` is not a recognized field — did you mean `actingUserId`? A misspelled acting user names nobody, which would run this request unbound instead of on that user's behalf.",
+      "code": "workspace/invalid-body"
+    }
+    ```
+
+    A key that differs from `actingUserId` only in capitalization — `actingUserID`, `ActingUserId`, `actinguserid` — gets this precise message rather than the generic one below. It fires on **every** request, user tokens included, where a typo cannot escalate anything but still means your stated intent was silently dropped.
+
+    This is message quality, not a second line of defence: any other misspelling (`acting_user_id`, `actingUseId`, `ACTING-USER-ID`) is refused too, one accordion down, as a field the endpoint does not declare.
+  </Accordion>
+
+  <Accordion title="Any field the endpoint does not declare — 400">
+    ```json
+    { "error": "Unrecognized key: \"onBehalfOf\"", "code": "workspace/invalid-body" }
+    ```
+
+    Every workspaces endpoint declares its fields exactly and refuses a top-level field it does not declare, in the body and in the query string alike, for every caller. Two or more at once are named together — `Unrecognized keys: "onBehalfOf", "impersonate"` — and an offender in the query string carries `workspace/invalid-query`.
+
+    That is a categorical rule, not a list of bad names. `onBehalfOf`, `impersonate`, `acting_user_id`, `ACTING-USER-ID`, `actingUserId ` with a trailing space, `requestId`, `traceId`, `sort` — none of them is a field of any workspaces route, so all of them fail at the wire, whatever they carry. The rule is the same for a service key and for a signed-in user: a request the API cannot fully read is answered rather than half-honored.
+
+    Two consequences worth designing around:
+
+    - **Send only the documented fields.** The SDKs pass your props object to the request body as-is, so `createWorkspace({ ...orgTemplate })` carries every extra key `orgTemplate` holds into the request and fails. Name the fields you mean; put your own data in `metadata`, which is opaque to Sublay and accepts any JSON.
+    - **A field this API declares is never judged by its name.** `username` on [Create Invite](/api-reference/workspaces/invitations/create-invite), `newOwnerId` on [Transfer Ownership](/api-reference/workspaces/transfer-ownership), `userId` as an invitee — all real fields, all accepted on their own terms.
+
+    Two query parameters are the exception: `_` and `_t`, the automatic cache-busters some HTTP clients append, are dropped before the request is read. Nothing else is reserved — in particular tracing and correlation identifiers are *not*, because distributed tracing propagates in HTTP **headers** (`traceparent`, `X-B3-*`, `X-Amzn-Trace-Id`), never in the query string.
+  </Accordion>
+
+  <Accordion title="A query string with 1,000 or more parameters — 400">
+    ```json
+    {
+      "error": "Too many query parameters: 1000 `&`-separated segments, and the limit is 999. The query parser silently discards everything past 1000 of them — including `actingUserId`, which would run this request unbound instead of on that user's behalf. Empty segments and unparseable ones count too.",
+      "code": "workspace/invalid-query"
+    }
+    ```
+
+    A workspaces request whose raw query string holds **1,000 or more `&`-separated segments** is refused before anything else about it is examined. The most any workspaces request may carry is 999; the largest query vocabulary on the bundle is five parameters, so no real call comes near it.
+
+    **This is a rule about the query string's length, not about which names are in it.** The parser's budget is spent per `&`-separated segment, and a segment that parses to nothing spends it just the same — so 1,000 bare ampersands (`?&&&…`), 1,000 copies of `__proto__=1` (a name the parser discards on sight, leaving no key behind), and 1,000 copies of an ordinary *declared* parameter such as `include=` all reach the limit identically and are all refused identically. Which names you used has nothing to do with it, and neither does whether any of them is reserved.
+
+    What makes the limit worth a rule is that the parser truncates **silently**: past the budget, everything beyond it is discarded with no error and no trace, and `actingUserId` goes with it. On this bundle a request naming no acting user is the app itself, so a silently dropped actor is a request that runs unbounded while its caller believes it was scoped to one person. Counting segments on the raw URL is the only rule that can close that — how many segments you sent is not a property of any field name, and after truncation there is nothing left in the parsed request for a schema or an allowlist to inspect.
+  </Accordion>
+
+  <Accordion title="A repeated or nested `_` / `_t` — 400">
+    ```json
+    {
+      "error": "`_` must be a single value. Repeating it (or nesting it) can push other query parameters past the parser's limit, silently discarding them — including `actingUserId`, which would run this request unbound instead of on that user's behalf.",
+      "code": "workspace/invalid-query"
+    }
+    ```
+
+    The two cache-busters are stripped before the strict schema runs, so no schema ever sees the shape they arrived in — this rule is what stands in for one on those two names. Each must arrive exactly once, as a scalar: `?_=1699000000` passes, `?_=1&_=2` (an array) and `?_[a]=1` (an object) do not. Repeating a *declared* parameter needs no rule of its own: its schema expects a single value, receives an array, and refuses it.
+
+    This is a rule about the **shape** those two names arrive in, and it is not what keeps a long query string from losing `actingUserId` — a query string long enough to be truncated is refused by the length limit above, whatever names it uses, and that check runs first.
+  </Accordion>
+
+  <Accordion title="A body no parser read, when the request names nobody — 400">
+    ```json
+    {
+      "error": "This request carries a body with content-type \"text/plain;charset=UTF-8\", which no parser reads, so any `actingUserId` inside it was discarded and this request names no acting user. Send the body as application/json.",
+      "code": "workspace/invalid-body"
+    }
+    ```
+
+    Sublay parses `application/json` and nothing else. A body sent as `text/plain`, `application/x-www-form-urlencoded` or `application/vnd.api+json` is read off the wire and thrown away — so an `actingUserId` inside it never reaches the server, and the request names nobody through no fault of its spelling. This is the one shape the schemas cannot catch: with an unparsed content-type the server is handed an empty body, which has no unrecognized key in it.
+
+    **This is the `fetch()` default.** `fetch(url, { method: "DELETE", body: JSON.stringify({ actingUserId }) })` with no `headers` sends `text/plain;charset=UTF-8`. Set `"Content-Type": "application/json"`. Client libraries that set it for you — axios, the Sublay [node SDK](/node-sdk/workspaces), [`@sublay/js`](/js-sdk/workspaces) — never hit this.
+
+    Detected by **media type**, not by "is the body empty": a legitimate `{}` sent as JSON is indistinguishable from a discarded body after the fact, so an empty JSON body and a bodiless request both pass.
+  </Accordion>
+
+  <Accordion title="A path parameter that is not a UUID — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+
+    Every `:id`, `:workspaceId`, `:userId` and `:inviteId` on the bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` echoing driver internals. The message names which parameter — *workspace id*, *user id*, *invitation id*.
+
+    On `DELETE /workspaces/:id/members/me` the `me` segment is a literal rather than a `:userId`, so it is never UUID-checked — the `:id` still is.
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  **Why this bundle is stricter than the rest of the API.** Elsewhere in Sublay an undeclared field is dropped and the request proceeds. Here it is refused, and the reason is what an unreadable field can *mean* on this bundle.
+
+  A service/master key that names **no** acting user runs unbounded, with owner authority over a whole workspace hierarchy. So absence-of-actor is not a neutral state — it is the signal that grants full authority. A caller who writes `onBehalfOf: "<bob>"`, or `acting_user_id`, or spells the field correctly inside a body no parser read, believes the request is scoped to Bob; under a permissive rule it would instead receive the app's full authority, silently, in production, on routes that cascade-delete a subtree.
+
+  Guessing which stray fields "look like" an actor cannot work: an open input space can always be shown a name nobody enumerated, and every miss lands on the unbounded path. Refusing categorically fails the other way — a field we forgot to declare is a `400` on first use, in development, fixed the same day.
+</Note>
+
+<Note>
+  **The guarantee covers TOP-LEVEL keys.** State it with that scope rather than as "unknown fields are impossible":
+
+  - `metadata` is caller-owned JSON and is never inspected, so `{"metadata":{"actingUserId":"<bob>"}}` parses, names nobody, and runs as the app. That is correct — `metadata` is your data — but it is not an actor channel.
+  - A nested or wrapped actor is **refused**, not ignored — the wrapper itself is an undeclared top-level key: `{ data: { actingUserId } }` and `?ctx[actingUserId]=` both come back `400 Unrecognized key: "data"` / `"ctx"`, and an array-wrapped body is `400 Invalid input: expected object, received array`. (Don't confuse this with the node SDK's `{ data: { actingUserId } }` axios *config* for DELETE bodies — that sends `{ actingUserId }` as the body and works.)
+
+  What makes that safe is not the field rules but the gate itself — no request reaches the unbounded path without clearing it. Spell `actingUserId` at the top level and none of this applies.
+</Note>
+
+<Note>
+  **The content-type rule is the one asymmetric check — deliberately.** It applies **only** when a service/master key named nobody. Under a user token, or a key that **did** name an actor, a `text/plain` body is merely an empty one, exactly as on every other bundle.
+
+  The reason is what a *dropped* body could mean on each path. Under a token the actor comes from the token no matter what you send, so nothing lost in transit can change who is acting — there is no authority to gain. Under a key naming nobody, a body the server could not read is exactly the shape of an actor it failed to receive: one missing header, and a request the caller believed was bound to one person runs as the app.
+
+  Everything else on this page — the `userId` rejection, the undeclared-field rule, the cache-buster rule — applies uniformly to every caller.
+</Note>
+
+<Note>
+  **Don't confuse these `400`s with the missing-actor `400`.** Two different failures, two different codes, checked in a fixed order.
+
+  - `workspace/invalid-body` / `workspace/invalid-query` — **the request is malformed.** It carries a `userId`, a field the endpoint does not declare, an unreadable body, or a bad `actingUserId`. Checked **first**, before the route runs.
+  - `workspace/missing-user-id` — **the route's own rule.** On the ten routes whose actor is [required](#acting-on-behalf-of-a-user) a key must name someone, and there is no unbounded path to fall back on. Nothing about the request's shape is wrong; it is simply an operation that has to belong to a person.
+
+  On `POST /workspaces` a key with no `actingUserId` and a clean request gets `workspace/missing-user-id` — but the same call carrying an undeclared field, or sent with a `text/plain` body, gets `workspace/invalid-body` instead. Fix what the message names; the missing-actor error appears once the request is otherwise well formed.
+
+  Read the code, not the status: both are `400`, and only the code tells you whether to add an actor or repair the request.
+</Note>
+
+<Note>
+  **A request that never reaches the gate cannot be unbounded either.** Unbounded authority is *earned* by clearing the gate, not inferred from an absent field. If some future route, router or ordering mistake ever skipped it, the request would fall through to "no actor, no privilege" — a `400` or `403` — rather than silently to app-level authority. The practical guarantee for you: a malformed workspaces request fails loudly, never with more authority than you intended.
+</Note>
+
+### Consequence: accepting an invite on someone's behalf
+
+[`acceptWorkspaceInvite`](/api-reference/workspaces/invitations/accept-invite) is bound like everything else, so a backend auto-join flow must satisfy the invitee's own gates:
+
+- the invitation must be **actually addressed to** the named user (by `userId`, or by an email that matches their account) — accepting Alice's invite while naming Bob is a `404 workspace/invite-not-found`;
+- the named user's **email must be verified** — otherwise `403 workspace/email-not-verified`.
+
+The same two gates apply to [`declineWorkspaceInvite`](/api-reference/workspaces/invitations/decline-invite). There is no key bypass for either: ownership and membership have exactly three doors (create, accept an invite, receive a transfer) and all three enforce verification identically.
+
+### Consequence: a tier cannot grow itself
+
+Rank is strict — you may only act on, and invite at, a rank **strictly below** your own (smaller number = more senior). So a rank-5 manager can mint rank 6, 7, 8… but **not another rank 5**. Minting a peer requires someone *above* that tier:
+
+| To create… | Act as… |
+|---|---|
+| a rank-6 member, as a rank-5 manager | that manager (`actingUserId: manager.id`) |
+| **another rank-5 manager** | someone ranked 0–4, or the owner |
+| **a rank-0 member** | the **owner** — no ranked member clears the floor |
+
+This is not new behavior, but it is easy to hit for the first time when a backend stops running as an implicit owner. If your "add a manager" button is server-driven, act as the owner for it. The floor applies only to an actor with a **direct member row** on the workspace, so it is skipped for an owner or ancestor owner, and for a cross-node [reach](/data-models/workspace#reach-and-the-wall-door-rule) holder with no direct row.
+
+<Note>
+  **"A key naming nobody" skips the floor on [Create Invite](/api-reference/workspaces/invitations/create-invite) — and nowhere else.** Invite is the one rank-assigning route with an unbounded path left, so a key that names no inviter genuinely faces no floor there. [Update Member](/api-reference/workspaces/members/update-member) has **no** unbounded path: its actor is required, so a key naming nobody is a `400 workspace/missing-user-id` rather than an exemption. On that route a key is always somebody, and faces exactly that somebody's floors.
+</Note>
+
+## Choosing a rank
+
+Almost every rule the ladder enforces is **relative** — act only on someone strictly below you, assign only strictly below yourself (minting rank 0 is the one absolute exception, below) — so rank can be named in either coordinate, on [Create Invite](/api-reference/workspaces/invitations/create-invite) and [Update Member](/api-reference/workspaces/members/update-member) alike:
+
+```tsx
+const createWorkspaceInvite = useCreateWorkspaceInvite();
+
+// Relative — "one rung below me". Usually what you mean.
+await createWorkspaceInvite({ workspaceId, email, relativeRank: 1 });
+
+// Absolute — a specific position on the ladder.
+await createWorkspaceInvite({ workspaceId, email, rank: 10 });
+```
+
+The same two fields exist on the `@sublay/js` and `@sublay/node` equivalents — this is a server-side rule, not a hook convenience.
+
+The two are **mutually exclusive**: sending both is a `400`. Storage stays absolute — a relative offset is resolved to a number at write time and the member row holds that number.
+
+Reads return **both**. The roster and member-standing reads each carry `rank` (absolute) alongside `relativeRank` (that member's position as an offset from *you*, where `-3` means "three rungs above you"). So there is no "write 2, read 5" asymmetry to reconcile — you can read back in the same coordinate you wrote in. The authority read carries `rank` only: its subject is *you*, so an offset from yourself could only ever be `0`.
+
+<Info>
+  **`relativeRank: 1` is the happy path, and the invite default.** Omit *both* rank fields on an invite and the server applies `relativeRank: 1` — one rung below the inviter. That is well defined for every actor (an inviter with no member row here anchors at apex, so their default lands on rank 0) and, by construction, it can never fail the rank floor. There is no equivalent default on [Update Member](/api-reference/workspaces/members/update-member): omitting both there means **rank unchanged**, so editing someone's capabilities never quietly moves them on the ladder.
+</Info>
+
+### The anchor is your member row, not your job title
+
+An offset is measured from **your own rank on this workspace if you hold a member row here**, and from **apex** (one step above rank 0) if you do not.
+
+Owners, ancestor owners, reach holders and keys acting as themselves normally have no row on the node in question, so they normally anchor at apex — but that is a coincidence of the common case, not the rule. An ancestor owner who *also* sits in this node's roster measures from that row: Alice owns `root` and is rank 3 on `child`, so on `child` her `relativeRank: 1` resolves to rank **4**, and she reads `child`'s rank-0 member back as `-3`. See [rank semantics](/data-models/workspace-member#the-anchor-your-member-row-not-what-kind-of-actor-you-are).
+
+One consequence worth knowing: because an in-ladder anchor is `>= 0` and a write offset is `>= 1`, **a direct member can never mint rank 0 through the relative form** — the arithmetic simply cannot reach it. The absolute form does not need a special case either. Naming `rank: 0` outright is refused by the ordinary **assign rule**, which requires a strictly larger number than your own: an actor with a member row here is at rank `>= 0`, and nothing is strictly below `0`. They get `403 workspace/insufficient-rank` — *"You may only set ranks strictly below your own."* on [Update Member](/api-reference/workspaces/members/update-member), or *"You may only invite at a rank strictly below your own."* on [Create Invite](/api-reference/workspaces/invitations/create-invite).
+
+There is **no separate "only the owner may assign rank 0" check** — owners are the only minters of rank 0 because they skip the rank block entirely, not because a guard names them. So rank 0 is reachable by the owner, and by any actor with **no member row on this workspace** — an ancestor owner or a [reach](/data-models/workspace#reach-and-the-wall-door-rule) holder — who skips or clears the same floor and, from `relativeRank: 1`, anchors at apex and lands on 0. On [Create Invite](/api-reference/workspaces/invitations/create-invite) only, a **key naming nobody** joins that list; on [Update Member](/api-reference/workspaces/members/update-member) it cannot, because the actor is required there (see the note [above](#consequence-a-tier-cannot-grow-itself)).
+
+<Warning>
+  **A relative offset is a snapshot, not a live link.** It is resolved once, at write time, and frozen as an absolute number. Invite at `relativeRank: 1` while you are rank 1 and they land on rank 2 — get promoted to rank 0 later and they are still 2, now two rungs below you rather than one. Nothing re-derives.
+
+  (`relativeRank` on a **read** is the opposite: recomputed per request against whoever is asking, so the same member shows a different `relativeRank` to different callers. Only `rank` is caller-independent.)
+</Warning>
+
+<Warning>
+  **Omitting the rank field is the easiest way in the whole API to mint rank 0.** "One rung below me" is measured from your anchor, and an inviter with **no member row on this workspace** anchors at apex — so for an **owner**, an **ancestor owner**, a **reach holder** with no direct row, or a **service/master key acting as itself**, the default lands on **rank 0**, the most senior rung there is. Everything else in this bundle gates that rung carefully; the default reaches it by leaving a field off.
+
+  It is semantically correct — one below apex *is* the top rung — and it is not changing. But it inverts the usual instinct that omitting a field is the conservative choice. The case to watch is a **backend invite flow**: a server route that invites people with a service key and no rank field creates a workspace of rank-0 members, each able to manage all the others and none manageable by anyone but the owner. A service-key flow that wants new members at the **bottom** of the ladder has to name a coordinate — an absolute `rank`, or a `relativeRank` anchored on an `actingUserId` who actually sits in the ladder.
+
+  **The milder version applies to in-ladder inviters.** A lead at rank 0 who invites six people with no rank field gets six rank-1 members — and equals cannot act on equals, so none of those six can manage each other. Only the lead can manage any of them. That is often exactly right for a flat team. But if your product has tiers, say so on the invite instead of discovering the flat layer later.
+</Warning>
+
+### When you want absolute instead
+
+`rank` is the escape hatch, and it is the right call whenever the number means something in your product rather than something about the caller. It buys more freedom and costs more care: naming a rank you are not entitled to grant is a `403 workspace/insufficient-rank`, and `rank: 0` is simply the extreme case of that — no one holding a row on this workspace can name it. A relative offset clears the **rank floor** by construction — but that is the floor specifically, not a blanket exemption from the rank checks.
+
+One pattern some apps like — **not** the prescribed approach, just one that works — is a set of named tier constants with gaps left for later:
+
+```tsx
+const TIER = { ADMIN: 0, MANAGER: 10, STAFF: 20 } as const;
+
+await createWorkspaceInvite({ workspaceId, email, rank: TIER.MANAGER });
+```
+
+Apps built this way will naturally prefer absolute input — they already know the number they want, and computing `TIER.MANAGER - myRank` just to send it relatively would be a detour. That is precisely why absolute stays. Apps whose hierarchy is a real chain of command, where "under me" is the actual intent, are better served by `relativeRank`. Neither is deprecated.
+
+## Quick start
+
+```tsx
+import {
+  useCreateWorkspace,
+  useCreateWorkspaceInvite,
+  useFetchMyWorkspaceInvites,
+  useAcceptWorkspaceInvite,
+} from "@sublay/react-js";
+
+function CreateTeam() {
+  const createWorkspace = useCreateWorkspace();
+
+  async function onCreate() {
+    const workspace = await createWorkspace({ name: "Acme Inc" });
+    console.log("owner:", workspace.ownerId);
+  }
+
+  return <button onClick={onCreate}>Create workspace</button>;
+}
+```
+
+## Hooks
+
+### Workspace lifecycle & ownership
+
+| Hook | Purpose | Authorization |
+|------|---------|---------------|
+| [`useCreateWorkspace`](/hooks/workspaces/use-create-workspace) | Create a root or child workspace | Verified email (root) / `create-sub-workspace` on the parent (child) |
+| [`useFetchWorkspace`](/hooks/workspaces/use-fetch-workspace) | Read a single workspace | Visibility |
+| [`useFetchManyWorkspaces`](/hooks/workspaces/use-fetch-many-workspaces) | Leaf fetcher for the caller's workspaces | Self-service |
+| [`useFetchManyWorkspacesWrapper`](/hooks/workspaces/use-fetch-many-workspaces-wrapper) | Paginated list with load-more | Self-service |
+| [`useUpdateWorkspace`](/hooks/workspaces/use-update-workspace) | Edit name / metadata | `edit-workspace` (or owner) |
+| [`useUpdateWorkspaceInheritFlag`](/hooks/workspaces/use-update-workspace-inherit-flag) | Flip `inheritsFromParent` | Owner-only |
+| [`useDeleteWorkspace`](/hooks/workspaces/use-delete-workspace) | Delete a workspace (cascades the subtree) | Owner-only |
+| [`useTransferWorkspaceOwnership`](/hooks/workspaces/use-transfer-workspace-ownership) | Hand the workspace to a new owner | Owner-only |
+
+### Membership
+
+| Hook | Purpose | Authorization |
+|------|---------|---------------|
+| [`useFetchWorkspaceMembers`](/hooks/workspaces/use-fetch-workspace-members) | The unified roster read | Visibility |
+| [`useFetchWorkspaceMemberStanding`](/hooks/workspaces/use-fetch-workspace-member-standing) | One user's resolved standing | Visibility |
+| [`useUpdateWorkspaceMember`](/hooks/workspaces/use-update-workspace-member) | Edit a member's access / profile | `edit-member-access` or `edit-member-profile`, rank-bounded |
+| [`useRemoveWorkspaceMember`](/hooks/workspaces/use-remove-workspace-member) | Remove a member from this node | `remove-member`, rank-bounded |
+| [`useRemoveWorkspaceMemberFromSubtree`](/hooks/workspaces/use-remove-workspace-member-from-subtree) | Offboard a user across the subtree | `remove-member`, rank-bounded per node |
+| [`useLeaveWorkspace`](/hooks/workspaces/use-leave-workspace) | Leave a workspace yourself | Self-service |
+
+### Invitations
+
+| Hook | Purpose | Authorization |
+|------|---------|---------------|
+| [`useCreateWorkspaceInvite`](/hooks/workspaces/use-create-workspace-invite) | Create an invitation | `invite` (or owner), rank + no-escalation |
+| [`useFetchWorkspaceInvites`](/hooks/workspaces/use-fetch-workspace-invites) | **Outbox** — invites *this workspace issued* | `invite` (or owner) |
+| [`useRevokeWorkspaceInvite`](/hooks/workspaces/use-revoke-workspace-invite) | Revoke a pending invitation | `invite` (or owner) |
+| [`useResendWorkspaceInvite`](/hooks/workspaces/use-resend-workspace-invite) | Refresh + resend a pending invitation | `invite` (or owner) |
+| [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) | **Inbox** — invites *addressed to me* | Self-service |
+| [`useAcceptWorkspaceInvite`](/hooks/workspaces/use-accept-workspace-invite) | Accept an invitation | Self-service + verified email |
+| [`useDeclineWorkspaceInvite`](/hooks/workspaces/use-decline-workspace-invite) | Decline an invitation | Self-service + verified email |
+
+<Warning>
+  [`useFetchWorkspaceInvites`](/hooks/workspaces/use-fetch-workspace-invites) and [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) are the two most confusable hooks in this bundle. The first is the **outbox** of one workspace (`GET /workspaces/:id/invites`) — who *this team* has invited and not yet heard back from; it powers the "Pending invitations" section of a members panel. The second is the signed-in user's **inbox** (`GET /me/workspace-invites`) across every workspace — it powers a "You've been invited" list.
+</Warning>
+
+### Authority
+
+| Hook | Purpose | Authorization |
+|------|---------|---------------|
+| [`useFetchWorkspaceAuthority`](/hooks/workspaces/use-fetch-workspace-authority) | Resolve the current user's standing | Self-service |
+
+<Tip>
+  Drive your UI off [`useFetchWorkspaceAuthority`](/hooks/workspaces/use-fetch-workspace-authority) rather than guessing: it returns `{ reasons, capabilities, permissions, rank }`, so showing the "Remove member" button is `authority.capabilities.includes("remove-member")`. `reasons` are structured `{ type, viaWorkspaceId? }` entries — the same shape a roster entry carries — so you can also show *which* ancestor grants an inherited standing. And because **`view` is implied by every other capability**, `capabilities.includes("view")` doubles as "does this user have any standing here at all".
+</Tip>

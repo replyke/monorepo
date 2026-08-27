@@ -1,0 +1,103 @@
+---
+title: "Mint Reputation Grant"
+api: "POST /v7/:projectId/reputation-grants/mint"
+description: "Create reputation from nothing — or destroy it — and credit a user's bucket"
+---
+
+Mints reputation: it is created from nothing and credited to a user, with no sender and nothing debited. A mint is the app speaking, not a person — contest payouts, bounty settlements, staff picks, welcome bonuses.
+
+A mint may also be **negative**, which is the only way to take reputation away: a moderation clawback, a decay sweep, or a correction to a mistaken grant. A negative mint may drive a bucket below zero (buckets have no floor).
+
+**Service or master key only.** A user token never reaches this route. Blocks are ignored, suspension is not consulted (there is no acting user), and a `chat-message` target is not membership-checked — the app is trusted.
+
+Requires the `reputation` bundle.
+
+## Body Parameters
+
+<ParamField body="recipientId" type="string" required>
+  UUID of the user credited — or, with a negative amount, debited.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Any **non-zero** whole number between `-2147483648` and `2147483647`. Negatives destroy reputation.
+</ParamField>
+
+<ParamField body="spaceId" type="string | null">
+  UUID of the space whose bucket is credited. Omitted or `null` means the project-general bucket. The space is validated before anything is written — a bucket for a space that does not exist would count toward its owner's profile total while being invisible in every space-scoped view. An ID that names no space is rejected with `404 reputation-grant/space-not-found`, and naming a space on a project without the `spaces` bundle is rejected with `403 database/tables-not-available`. [Transfers](/api-reference/reputation-grants/create-reputation-grant) are validated the same way.
+</ParamField>
+
+<ParamField body="note" type="string | null">
+  Free-text note. Trimmed, up to 2000 characters.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary key-value data. Up to 1 MB. Omit the key when unused — `null` is not accepted.
+</ParamField>
+
+<ParamField body="targetType" type="string">
+  What the grant is for: `"entity"`, `"comment"`, or `"chat-message"`. Must be supplied together with `targetId`.
+</ParamField>
+
+<ParamField body="targetId" type="string">
+  UUID of the rewarded record. Must be supplied together with `targetType`, and must exist at the time of granting.
+</ParamField>
+
+There is deliberately **no actor field**. The grant is written with a `null` `senderId` and `sourceType: "app"`.
+
+## Response
+
+Returns `201` with the created [ReputationGrant](/data-models/reputation-grant).
+
+A **positive** mint notifies the recipient and, for a `chat-message` target, broadcasts [`message:grant`](/sdk/chat/real-time) to the conversation. A **negative** mint is entirely silent: no notification, no broadcast, and invisible on every public read surface. Read it back from [Fetch User Grant History](/api-reference/reputation-grants/fetch-user-grant-history).
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "amount: amount must be non-zero", "code": "reputation-grant/invalid-body" }
+    ```
+    Also returned for a fractional amount (`"amount: Invalid input: expected int, received number"`) or one outside the signed 32-bit range (`"amount: Too big: expected number to be <=2147483647"`). Field-level failures are prefixed with the field path, so `error` reads `"<path>: <message>"`. The one whole-body rule has no path and so no prefix: supplying `targetType` without `targetId` (or the reverse) returns `"targetType and targetId must be supplied together"`.
+  </Accordion>
+  <Accordion title="Elevated Auth Required — 403">
+    ```json
+    { "error": "Service or master key required.", "code": "auth/elevated-auth-required" }
+    ```
+  </Accordion>
+  <Accordion title="Tables Not Available — 403">
+    ```json
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["Spaces"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
+    ```
+    The `reputation` bundle is missing, a `spaceId` was supplied on a project without `spaces`, or the target's bundle is absent (e.g. a `chat-message` target without `chat`). `missingTables` names exactly what is absent.
+  </Accordion>
+  <Accordion title="User Not Found — 404">
+    ```json
+    { "error": "The recipient of this grant does not exist.", "code": "reputation-grant/user-not-found" }
+    ```
+    Returned whether the recipient was already gone or was deleted while the mint was in flight — the two answers are byte-identical, and neither leaks the underlying constraint.
+  </Accordion>
+  <Accordion title="Space Not Found — 404">
+    ```json
+    { "error": "The space this grant targets does not exist.", "code": "reputation-grant/space-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Target Not Found — 404">
+    ```json
+    { "error": "The grant target does not exist.", "code": "reputation-grant/target-not-found" }
+    ```
+    The target record does not exist. A mint is not membership-checked, so a `chat-message` target only has to exist.
+  </Accordion>
+  <Accordion title="Conflict — 409">
+    ```json
+    { "error": "The grant conflicted with a concurrent write. Retry.", "code": "reputation-grant/conflict" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+**Rate limit:** 50 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
+
+See also: [node-sdk `mintGrant`](/v7/node-sdk/reputation) · [Create Reputation Grant](/api-reference/reputation-grants/create-reputation-grant)

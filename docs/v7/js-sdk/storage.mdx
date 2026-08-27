@@ -1,0 +1,222 @@
+---
+title: "Storage"
+description: "Upload, retrieve, and delete files and images from the browser"
+---
+
+The `storage` module uploads files and images to managed cloud storage and returns
+proxy URLs, plus reads and deletes existing files. Uploads are sent as
+`multipart/form-data` — pass a browser **`File`** (e.g. from an `<input type="file">`)
+or a **`Blob`**. There is no `Uint8Array` + `mimeType` path; the browser supplies
+the content type.
+
+<Note>
+  Uploads are attributed to the logged-in user automatically (from the token) —
+  there is no `userId` param. A user may delete files they own; reads are
+  project-scoped.
+</Note>
+
+---
+
+### uploadFile
+
+Uploads a generic file (PDF, video, document, …) without server-side processing.
+
+```typescript
+const input = document.querySelector('input[type="file"]');
+const file = input.files[0];
+
+const uploaded = await sublay.storage.uploadFile({
+  file,
+  filename: "report.pdf",
+  pathParts: ["documents", "reports"],
+  entityId: "ent_xyz789",
+});
+// uploaded.publicPath → proxy URL
+```
+
+<ParamField body="file" type="Blob | File" required>
+  The file to upload, as a browser `File` or `Blob`.
+</ParamField>
+
+<ParamField body="pathParts" type="string[]" required>
+  Storage path segments. The file is stored under the joined path with a UUID
+  sub-folder appended, e.g. `["documents", "reports"]` →
+  `documents/reports/<uuid>/<filename>`.
+</ParamField>
+
+<ParamField body="filename" type="string">
+  Filename for the multipart part. Defaults to the `File.name`, or `"upload"`.
+</ParamField>
+
+<ParamField body="position" type="number">
+  Display order when a record has multiple attachments.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Custom key-value data stored alongside the file record.
+</ParamField>
+
+<ParamField body="entityId" type="string">
+  Associates the file with an entity for cascade deletion. Only one of
+  `entityId` / `commentId` / `spaceId` may be set.
+</ParamField>
+
+<ParamField body="commentId" type="string">
+  Associates the file with a comment for cascade deletion.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Associates the file with a space.
+</ParamField>
+
+**Returns** — `Promise<UploadFileResponse>`:
+
+```typescript
+{
+  fileId: string;
+  type: string;
+  relativePath: string;
+  publicPath: string; // proxy URL
+  size: number;
+  mimeType: string;
+  createdAt: string;
+}
+```
+
+---
+
+### uploadImage
+
+Uploads an image, processes it server-side, and stores the original plus all
+requested variants. The `imageOptions` object is a discriminated union on `mode` —
+the other fields depend on the mode you pick.
+
+```typescript
+const input = document.querySelector('input[type="file"]');
+const file = input.files[0];
+
+const uploaded = await sublay.storage.uploadImage({
+  file,
+  filename: "avatar.png",
+  imageOptions: {
+    mode: "exact-dimensions",
+    dimensions: {
+      thumbnail: { width: 64, height: 64 },
+      card: { width: 400, height: 300 },
+    },
+    format: "webp",
+    quality: 85,
+  },
+  pathParts: ["avatars"],
+});
+// uploaded.variants → { thumbnail: {...}, card: {...} }
+```
+
+<ParamField body="file" type="Blob | File" required>
+  The image to upload, as a browser `File` or `Blob`. Must be a format the server
+  can process.
+</ParamField>
+
+<ParamField body="imageOptions" type="ImageOptions" required>
+  Image-processing configuration — a discriminated union on `mode`. The supported
+  modes and their required fields:
+
+  | `mode` | Required fields | Notes |
+  |--------|-----------------|-------|
+  | `exact-dimensions` | `dimensions` (`{ [variant]: { width, height } }`) | Fixed-size crops. |
+  | `aspect-ratio-width-based` | `aspectRatio`, `widths` (`{ [variant]: number }`) | Heights computed from the ratio. |
+  | `aspect-ratio-height-based` | `aspectRatio`, `heights` (`{ [variant]: number }`) | Widths computed from the ratio. |
+  | `original-aspect` | `sizes` (`{ [variant]: number }`) | Preserves source ratio; `fit` limited to `inside`/`outside`. |
+  | `multi-aspect-ratio` | `aspectRatios` (`{ width, height }[]`), `sizes` | 1–10 aspect ratios. |
+
+  All modes also accept optional `quality` (1–100), `format` (`webp` \| `jpeg` \|
+  `png` \| `original`), `stripExif` (boolean), and `fit` (`cover` \| `contain` \|
+  `inside` \| `outside`). Dimension/size values are 50–10000.
+</ParamField>
+
+<ParamField body="filename" type="string">
+  Filename for the multipart part. Defaults to the `File.name`, or `"upload"`.
+</ParamField>
+
+<ParamField body="pathParts" type="string[]">
+  Storage path segments. Defaults to `["images", "<fileId>"]`.
+</ParamField>
+
+<ParamField body="entityId" type="string">
+  Associates the image with an entity. Only one of `entityId` / `commentId` /
+  `spaceId` / `eventId` may be set.
+</ParamField>
+
+<ParamField body="commentId" type="string">
+  Associates the image with a comment.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Associates the image with a space.
+</ParamField>
+
+<ParamField body="eventId" type="string">
+  Associates the image with an event. Most apps attach event images inline via
+  `sublay.events.createEvent`/`updateEvent` (`cover` / `gallery`); use this only
+  to attach an image to an existing event out-of-band.
+</ParamField>
+
+**Returns** — `Promise<UploadImageResponse>`:
+
+```typescript
+{
+  fileId: string;
+  type: "image";
+  originalPath: string;
+  originalSize: number;
+  originalWidth: number;
+  originalHeight: number;
+  variants: Record<string, UploadedImageVariant>; // { path, width, height, size, format, publicPath }
+  format: string;
+  quality: number;
+  createdAt: string;
+}
+```
+
+---
+
+### getFile
+
+Fetches a file's metadata and proxy URLs by ID. For images, an `image` extension
+(variants, processing details) is included. Reads are project-scoped.
+
+```typescript
+const file = await sublay.storage.getFile({ fileId: "fil_abc123" });
+```
+
+<ParamField body="fileId" type="string" required>
+  The ID of the file to retrieve.
+</ParamField>
+
+**Returns** — `Promise<GetFileResponse>` — a flat projection carrying `fileId`,
+`type`, `originalPath`, `originalSize`, `originalMimeType`, `position`, `metadata`,
+`createdAt`/`updatedAt`, the optional association ids (`userId`, `entityId`,
+`commentId`, `spaceId`), and — for images — an `image` object with `variants`,
+`processingStatus`, `format`, `quality`, and `exifStripped`.
+
+---
+
+### deleteFile
+
+Deletes a file record and removes all associated storage objects (for images,
+every generated variant too).
+
+```typescript
+await sublay.storage.deleteFile({ fileId: "fil_abc123" });
+```
+
+<ParamField body="fileId" type="string" required>
+  The ID of the file to delete.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+<Note>
+  The call only succeeds when the logged-in user owns the file; otherwise it
+  returns `403`.
+</Note>

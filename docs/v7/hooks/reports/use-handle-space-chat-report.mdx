@@ -1,0 +1,101 @@
+---
+title: "Handle space chat report"
+description: "Action a chat message report as a space moderator"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that allows a space moderator to take action on a chat message report. Available actions are: remove the message, ban the message's author from the space, or dismiss the report.
+
+<Note>Requires the authenticated user to have `admin` or `moderator` role in the target space.</Note>
+
+<Info>
+  `ban-user` here is **space-scoped** — it sets the target's space membership to
+  banned. Project-wide suspension is a separate, dashboard-only action; a space
+  moderator cannot suspend a user across the whole project.
+</Info>
+
+## Usage Example
+
+```tsx
+import { useHandleSpaceChatReport } from "@sublay/react-js";
+
+function ChatReportActions({ report }) {
+  const handleSpaceChatReport = useHandleSpaceChatReport();
+
+  const removeMessage = async () => {
+    await handleSpaceChatReport({
+      spaceId: report.spaceId,
+      reportId: report.id,
+      messageId: report.targetId,
+      actions: ["remove-message"],
+      summary: "Removed message for harassment",
+    });
+  };
+
+  const dismiss = async () => {
+    await handleSpaceChatReport({
+      spaceId: report.spaceId,
+      reportId: report.id,
+      actions: ["dismiss"],
+      summary: "No violation found",
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={removeMessage}>Remove Message</button>
+      <button onClick={dismiss}>Dismiss</button>
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField body="spaceId" type="string" required>
+  The ID of the space the report belongs to.
+</ParamField>
+
+<ParamField body="reportId" type="string" required>
+  The ID of the report to action.
+</ParamField>
+
+<ParamField body="messageId" type="string">
+  The ID of the reported message. Required when `remove-message` is included in `actions`.
+</ParamField>
+
+<ParamField body="actions" type="Array<'remove-message' | 'ban-user' | 'dismiss'>" required>
+  One or more actions to take:
+
+  - `remove-message` — Removes the message.
+  - `ban-user` — Bans the message's author from the space (requires `userId`).
+  - `dismiss` — Marks the report as dismissed.
+</ParamField>
+
+<ParamField body="summary" type="string">
+  A moderator note describing the action taken.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The ID of the user to ban — the ban **target**, not the moderator. Required when `ban-user` is included in `actions`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  The reason for banning, if applicable.
+</ParamField>
+
+<ParamField body="actingUserId" type="string">
+  The moderator the action is attributed to. Service and master keys only.
+</ParamField>
+
+## Returns
+
+Returns `Promise<{ message: string; code: string }>`.
+
+## Notes
+
+- This is the chat equivalent of [`useHandleSpaceEntityReport`](/hooks/reports/use-handle-space-entity-report) and [`useHandleSpaceCommentReport`](/hooks/reports/use-handle-space-comment-report).
+- Message reports are created with [`useCreateReport`](/hooks/reports/use-create-report) using `type: "message"`.
+- To fetch pending reports, use [`useFetchModeratedReports`](/hooks/reports/use-fetch-moderated-reports).

@@ -1,0 +1,54 @@
+---
+title: "Delete workspace"
+description: "Owner-only delete that cascades the whole subtree"
+icon: "plug"
+---
+
+## Overview
+
+`useDeleteWorkspace` returns a callable that deletes a [workspace](/data-models/workspace). Deletion **cascades the entire subtree** in one transaction, bottom-up: invitations → members → workspaces. Each deleted workspace fires `workspace.deleted` — and **no** `workspace.member.removed` events for the memberships it tears down. Treat `workspace.deleted` as removing that workspace's whole roster; see [Webhooks & lifecycle](/sdk/workspaces/webhooks#deleting-a-workspace-does-not-emit-per-member-events).
+
+**Authorization:** owner-only. The signed-in user must be this workspace's own owner or an ancestor owner. **There is no `delete-workspace` capability.**
+
+<Warning>
+  Your own data tagged with a workspace id (docs, issues, etc.) is **not** deleted by Sublay. React to the [`workspace.deleted` webhook](/sdk/workspaces/webhooks) to clean up your own workspace-tagged data.
+</Warning>
+
+## Usage Example
+
+```tsx
+import { useDeleteWorkspace } from "@sublay/react-js";
+
+function DangerZone({ workspaceId }: { workspaceId: string }) {
+  const deleteWorkspace = useDeleteWorkspace();
+
+  const handleDelete = async () => {
+    const { message } = await deleteWorkspace({ workspaceId });
+    console.log(message);
+  };
+
+  return <button onClick={handleDelete}>Delete workspace</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Returns
+
+`{ message: string }`.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/unauthorized` | 403 | You are not the owner or an ancestor owner. |
+| `workspace/not-found` | 404 | No such workspace in this project. |
+
+## Related
+
+- [`useTransferWorkspaceOwnership`](/hooks/workspaces/use-transfer-workspace-ownership) — hand it over instead of deleting
+- [Delete Workspace API](/api-reference/workspaces/delete-workspace)

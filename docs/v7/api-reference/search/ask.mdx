@@ -1,0 +1,99 @@
+---
+title: "Ask Content"
+api: "POST /v7/:projectId/search/ask"
+description: "AI-powered Q&A grounded in your project's content"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+Answers a natural language question using content from your project as context. The endpoint first performs semantic retrieval to find relevant content, then sends the context to an LLM to generate a grounded answer. Responds via **Server-Sent Events (SSE)** for streaming output.
+
+**Requires a paid plan with semantic search enabled.**
+
+**Requires an authenticated user.** Send the user's access token as `Authorization: Bearer <token>`. Requests without a valid token are rejected before any work is done — missing token → `401`, invalid/expired token → `403` (refresh the access token and retry).
+
+## Body Parameters
+
+<ParamField body="query" type="string" required>
+  The question to answer. Typos and ambiguous phrasing are handled gracefully.
+</ParamField>
+
+<ParamField body="sourceTypes" type="string[]" default='["entity", "comment", "message"]'>
+  Content types to use as context. Any combination of `entity`, `comment`, `message`.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Restrict the context lookup to a specific space.
+</ParamField>
+
+<ParamField body="includeChildSpaces" type="boolean" default="false">
+  Only applies with a `spaceId`. When `true`, the context lookup also includes every space nested under it — children, grandchildren, the whole subtree at any depth — not just the named space. Use it to ask across a community and all of its channels at once. Ignored without a `spaceId`.
+</ParamField>
+
+<ParamField body="conversationId" type="string">
+  Restrict message context lookup to a specific conversation.
+</ParamField>
+
+<ParamField body="limit" type="number" default="20">
+  Maximum number of content chunks to retrieve for context. Maximum `50`.
+</ParamField>
+
+## Query Parameters
+
+### Space-scoped reputation
+
+This endpoint has a space in context, so it accepts the opt-in reputation params. They add a `spaceReputation` field to each source record's populated `user`, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation) for the full contract.
+
+<SpaceReputationParams variant="context" field="query" />
+
+## Response
+
+The response is a **Server-Sent Events** stream with `Content-Type: text/event-stream`. Three event types are emitted:
+
+**`token`** — streamed LLM answer tokens:
+```
+event: token
+data: {"content": "Based on"}
+
+event: token
+data: {"content": " the discussion..."}
+```
+
+**`sources`** — the content records used as context, sent after the answer is complete:
+```
+event: sources
+data: [{"sourceType": "entity", "similarity": 0.87, "record": {...}}, ...]
+```
+
+Each source object follows the same shape as the [Search Content](/api-reference/search/search-content) response — `sourceType`, `similarity`, and a fully populated `record`. An empty array is sent when no relevant context was found.
+
+**`done`** — signals the stream is finished:
+```
+event: done
+data: {}
+```
+
+<Note>
+  If no relevant content is found above the similarity threshold, the LLM response is skipped and the answer event immediately says "I couldn't find any relevant content to answer your question."
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Authentication Required — 401 / 403">
+    The endpoint requires an authenticated user. A missing token returns a bare `401`; an invalid or expired token returns a bare `403` — refresh the access token and retry. These are returned before streaming starts.
+  </Accordion>
+  <Accordion title="Plan Required — 403">
+    ```json
+    { "error": "Semantic search requires a paid plan", "code": "project/plan-required" }
+    ```
+    Only returned when headers have not yet been sent (i.e., before streaming starts).
+  </Accordion>
+  <Accordion title="Error Event (during stream)">
+    If an error occurs after streaming starts:
+    ```
+    event: error
+    data: {"error": "Internal server error"}
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,241 @@
+---
+title: "Use auth"
+description: "Access auth state and perform sign-up, sign-in, sign-out, and token management"
+icon: "cube"
+---
+
+## Overview
+
+`useAuth` is the primary authentication hook. It returns current token state and functions for all built-in auth operations: sign-up, sign-in, sign-out, password change, setting an initial password, and manual token refresh.
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useAuth } from "@sublay/react-js";
+
+function SignInForm() {
+  const { initialized, accessToken, signInWithEmailAndPassword, signOut } = useAuth();
+
+  if (!initialized) return <p>Loading...</p>;
+  if (accessToken) {
+    // `signOut` rejects when the server refuses the push unbind — in which
+    // case nothing was torn down and the user should retry.
+    return (
+      <button onClick={() => signOut().catch(showError)}>Sign Out</button>
+    );
+  }
+
+  return (
+    <button
+      onClick={() =>
+        signInWithEmailAndPassword({
+          email: "user@example.com",
+          password: "password123",
+        })
+      }
+    >
+      Sign In
+    </button>
+  );
+}
+```
+
+```tsx React Native
+import { useAuth } from "@sublay/react-native";
+
+function SignInButton() {
+  const { initialized, accessToken, signInWithEmailAndPassword } = useAuth();
+
+  if (!initialized) return null;
+  if (accessToken) return null;
+
+  return (
+    <Button
+      title="Sign In"
+      onPress={() =>
+        signInWithEmailAndPassword({
+          email: "user@example.com",
+          password: "password123",
+        })
+      }
+    />
+  );
+}
+```
+</CodeGroup>
+
+## Returns
+
+`useAuth` returns an object with the following fields:
+
+<ResponseField name="initialized" type="boolean">
+  `true` once the SDK has attempted to restore a session from the stored refresh
+  token. Always check this before rendering auth-dependent UI.
+</ResponseField>
+
+<ResponseField name="accessToken" type="string | null">
+  The current JWT access token, or `null` if no user is signed in. Expires every
+  30 minutes; the SDK refreshes it automatically.
+</ResponseField>
+
+<ResponseField name="refreshToken" type="string | null">
+  The current JWT refresh token, or `null` if no user is signed in.
+</ResponseField>
+
+<ResponseField name="setRefreshToken" type="function">
+  Manually set a refresh token in Redux state. Useful when integrating external
+  auth flows that hand tokens directly to the SDK.
+</ResponseField>
+
+<ResponseField name="signUpWithEmailAndPassword" type="function">
+  Create a new account and sign in. Accepts a `SignUpWithEmailAndPasswordProps`
+  object. Throws if registration fails.
+
+  **Parameters:**
+  - `email` (required) — User's email address
+  - `password` (required) — Password
+  - `name` (optional) — Display name
+  - `username` (optional) — Unique username
+  - `avatar` (optional) — Avatar URL
+  - `bio` (optional) — Bio text
+  - `location` (optional) — `{ latitude, longitude }`
+  - `birthdate` (optional) — Date of birth
+  - `metadata` (optional) — Public custom fields
+  - `secureMetadata` (optional) — Private custom fields
+  - `avatarFile` (optional) — Avatar image file to upload
+  - `avatarOptions` (optional) — Image processing options for the avatar
+  - `bannerFile` (optional) — Banner image file to upload
+  - `bannerOptions` (optional) — Image processing options for the banner
+
+  Also throws [`ACCOUNT_LIMIT_MESSAGE`](#the-account-limit) when the device
+  already stores 5 accounts. Normally this happens before any network call, so
+  no account is created — but if the fifth slot fills while the request is in
+  flight, the refusal lands after it and the created user record persists.
+</ResponseField>
+
+<ResponseField name="signInWithEmailAndPassword" type="function">
+  Sign in with an existing account. Accepts `{ email: string; password: string }`.
+  Throws if credentials are invalid, and throws
+  [`ACCOUNT_LIMIT_MESSAGE`](#the-account-limit) if this would be a **sixth**
+  account on the device. Signing back in to an account already stored on the
+  device always succeeds, even at the limit.
+</ResponseField>
+
+<ResponseField name="signOut" type="function">
+  Sign out the current account. Sends a sign-out request to the server to revoke
+  the refresh token family — and, once this device has a stored push identifier, to
+  unbind that account's notifications in the same transaction — then clears
+  local auth state.
+
+  **It rejects only when the server refuses the unbind.** In that case nothing is
+  torn down locally either: the account keeps its entry and its credential so the
+  user can retry, rather than being left receiving notifications from an account
+  they can no longer reach. Every other failure — no network, a throttled or
+  otherwise rejected request, a device that never registered for push — still
+  signs out locally, because a user must always be able to sign out.
+
+  **It does not sign you into another account.** If other accounts are stored,
+  they stay in the map but none is activated — see
+  [Multi-Account](/sdk/authentication/multi-account).
+</ResponseField>
+
+<ResponseField name="changePassword" type="function">
+  Change the password for the currently authenticated user. Accepts
+  `{ password: string; newPassword: string }`. The current password must be
+  correct. Throws if verification fails.
+
+  **Every other session for that user ends, and the caller's does not.** The
+  access token the request is authenticated with names the session it was minted
+  from, so the server knows which one is asking and nothing extra is sent. The
+  user stays signed in where they are standing; every other device must sign in
+  again with the new password.
+
+  **It also clears that user's push bindings on every *other* device, and keeps
+  this one's.** The hook sends the device identifier it already holds, which is
+  what lets the server single out the calling handset and spare exactly its
+  binding — so notifications keep arriving where the user is standing, and stop
+  on the devices they just locked out. Nothing re-binds a device from its live
+  session, so the others stay quiet until each is next opened. On a device that
+  has never registered for push there is no identifier to send and no binding to
+  keep, and every one of the user's bindings goes. See
+  [Change Password](/api-reference/auth/change-password).
+
+  Only this user's sessions are ended. Other accounts stored on this device
+  belong to other users and are untouched. The mirror case is the one to plan
+  for: when this user changes their password somewhere else, the copy of their
+  account stored here as a background account dies — and a stored account killed
+  that way still has a valid-looking expiry, so it is only discovered by trying,
+  which is what `needsReauth` on
+  [`useAccounts`](/hooks/auth/use-accounts#telling-a-live-account-from-a-dead-one)
+  records.
+
+  An access token minted before the change keeps working until it expires, up to
+  30 minutes, so "other devices no longer work" is about their refresh, not their
+  next request.
+</ResponseField>
+
+<ResponseField name="setPassword" type="function">
+  Set an **initial** password for an OAuth-only user who has no password yet.
+  Accepts `{ newPassword: string }`. Unlike `changePassword`, there is no
+  current password to verify. Throws if the user already has a password
+  (`auth/already-password-authenticated`) — use `changePassword` in that case.
+</ResponseField>
+
+<ResponseField name="requestNewAccessToken" type="function">
+  Manually trigger an access token refresh using the stored refresh token.
+  Declared `() => Promise<string>`: it resolves with the new access token and
+  **rejects** on every path that cannot produce one — a failed refresh, no
+  stored refresh token to present, or no `projectId`. It never resolves
+  `undefined`. The underlying `requestNewAccessTokenThunk` rejects in the same
+  cases, so `fulfilled.match(result)` is `false` when no refresh token is
+  present. The SDK handles refresh
+  automatically in most cases; use this only when you need to force a refresh.
+
+  This refreshes the **active** account only — it presents whatever refresh
+  token is in auth state. Switching to a *stored* account no longer goes through
+  this thunk: `switchAccount` exchanges the target's credential out of band,
+  before it touches the live session, so it cannot disturb the account you are
+  currently signed into. If you were observing `auth/requestNewAccessToken`
+  actions to detect account switches, watch the accounts slice instead. See
+  [When a transition fails](/sdk/authentication/multi-account#when-a-transition-fails).
+</ResponseField>
+
+## The Account Limit
+
+A device stores at most **5 accounts**. `signUpWithEmailAndPassword` and `signInWithEmailAndPassword` reject when a sixth would be added, throwing an `Error` whose message is exported as `ACCOUNT_LIMIT_MESSAGE`:
+
+```tsx
+import { useAuth, ACCOUNT_LIMIT_MESSAGE } from "@sublay/react-js";
+
+try {
+  await signInWithEmailAndPassword({ email, password });
+} catch (err) {
+  if (err instanceof Error && err.message === ACCOUNT_LIMIT_MESSAGE) {
+    // Prompt the user to sign out of one of the stored accounts.
+  }
+}
+```
+
+Two behaviours worth knowing:
+
+- **Sign-up is normally refused before the network call**; sign-in is refused after it, because only the server can say which account the credentials belong to. That is deliberate — checking the typed email against the stored accounts would lock users out of their own account whenever the stored email is stale, absent or cased differently. (A sign-up whose fifth slot fills *mid-request* is refused afterwards, and that user record does persist — see [what a refusal leaves behind](/sdk/authentication/multi-account#what-is-left-behind).)
+- **A refused sign-in leaves the currently active account signed in.** Nothing is torn down, the accounts map is untouched, and the session the server created for the refused attempt is signed back out, so nothing is left dangling.
+
+The same refusal also sets `accountLimitReached` on [`useAccounts`](/hooks/auth/use-accounts) and [`useAddAccount`](/hooks/auth/use-add-account). That flag is the **only** channel on the OAuth paths, which cannot reject their caller — see [Reaching the account limit](/sdk/authentication/multi-account#reaching-the-account-limit).
+
+## Controlling Error Logging
+
+Handled SDK failures are logged with `console.error`. To change or silence that:
+
+```ts
+import { setSublayLogLevel } from "@sublay/react-js";
+
+setSublayLogLevel("silent"); // "error" (default) | "warn" | "silent"
+```
+
+It is a bare setter rather than a `SublayProvider` prop because the setting is process-global — a prop would be silently last-mount-wins in an app that mounts two providers. It is coarse by design: it silences all SDK logging, including unexpected failures. Errors are still returned to the calling hooks; only the console output changes.
+
+## Integration Guide
+
+For full integration guidance, see [Built-in Auth](/sdk/authentication/built-in).

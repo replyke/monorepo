@@ -1,0 +1,100 @@
+---
+title: "Accept Invite"
+api: "POST /v7/:projectId/workspace-invites/:inviteId/accept"
+description: "Accept an invitation — identity-matched + verified-email, no token"
+---
+
+Accepts an invitation. Note the path is **not** `:id`-scoped — it is addressed by the (non-secret) invitation id.
+
+**Acceptance is identity-matched + verified-email, no token:**
+- The caller must **be** the invite's target (by `userId` or normalized `email`).
+- The caller must have a **verified email** — required to accept **any** invite (userId- or email-addressed). An unverified accept returns `workspace/email-not-verified` so your app can prompt verification.
+- Knowing the `inviteId` does **not** let a non-target accept.
+
+<Warning>
+  **A service/master key does not bypass either gate.** Naming an `actingUserId` means *being* that user, so a backend auto-join flow must satisfy the invitee's own conditions: the invitation must be **actually addressed to** the named user (otherwise `404 workspace/invite-not-found` — accepting Alice's invite while naming Bob does not work), and that user's **email must be verified** (otherwise `403 workspace/email-not-verified`). And there is **no** unbounded path here to fall back on: an acceptance has to land on somebody's membership row, so `actingUserId` is **required** for a key — omitting it is a `400 workspace/missing-user-id`, not a bypass. If your onboarding pre-accepts invites server-side, verify the address first. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</Warning>
+
+On accept, the stored grant is applied and the `WorkspaceMember` is created **transactionally**; the invite is marked `accepted`. Fires **both** `workspace.invite.accepted` **and** `workspace.member.added` (invitation-lifecycle vs roster-sync — intentionally two streams).
+
+**Idempotence:** if the caller is already a member (or owner), accept is a **no-op** — the invite is marked `accepted`, no duplicate row is created, the existing grant is **not** overwritten, and **no** `workspace.member.added` fires.
+
+## Path Parameters
+
+<ParamField path="inviteId" type="string" required>
+  The (non-secret) invitation UUID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="actingUserId" type="string" required>
+  Service/master keys only — the accepting user. **Required for a key:** an acceptance has to land on somebody's membership row, so there is no unbounded path — a key that names nobody is refused with `400 workspace/missing-user-id`. Enforced: both gates above run against *that* user.
+
+  A plain user token omits it — the actor is the token's own user. The field is **not** ignored for such a token: sending your *own* user id is a harmless no-op, but sending **anyone else's** is a `403 workspace/unauthorized`. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
+## Response
+
+```json
+{ "success": true, "workspaceId": "ws_abc" }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Email Not Verified — 403">
+    ```json
+    { "error": "A verified email is required to accept an invitation.", "code": "workspace/email-not-verified" }
+    ```
+  </Accordion>
+  <Accordion title="Not the Target — 404">
+    A caller who is not the invitation's target receives the **same** `404` as a
+    non-existent invitation — knowing an invite id must never confirm to a
+    non-target that it exists.
+    ```json
+    { "error": "Invitation not found.", "code": "workspace/invite-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Invite Expired — 409">
+    ```json
+    { "error": "This invitation has expired.", "code": "workspace/invite-expired" }
+    ```
+  </Accordion>
+  <Accordion title="Invite Not Found — 404">
+    ```json
+    { "error": "Invitation not found.", "code": "workspace/invite-not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Invite Terminal — 409">
+    ```json
+    { "error": "This invitation is no longer pending.", "code": "workspace/invite-terminal" }
+    ```
+    The invitation is already `accepted`, `declined`, or `revoked`.
+  </Accordion>
+  <Accordion title="Acting User Not Found — 404">
+    ```json
+    { "error": "Acting user not found.", "code": "workspace/invalid-target" }
+    ```
+    The `actingUserId` a key named does not exist in this project. Naming is not authentication — the id is only looked up here.
+  </Accordion>
+  <Accordion title="Missing Acting User — 400">
+    ```json
+    { "error": "Missing user ID", "code": "workspace/missing-user-id" }
+    ```
+    A service/master key called this route without naming an `actingUserId`. An acceptance creates *someone's* membership row, so there is nobody for it to land on.
+  </Accordion>
+  <Accordion title="Acted as Another User — 403">
+    ```json
+    { "error": "Unauthorized", "code": "workspace/unauthorized" }
+    ```
+    A plain user token sent an `actingUserId` naming a **different** user. Only a service/master key may act as someone else.
+  </Accordion>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid invitation id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
+  </Accordion>
+</AccordionGroup>
+
+See also: [useAcceptWorkspaceInvite](/hooks/workspaces/use-accept-workspace-invite)

@@ -1,0 +1,94 @@
+---
+title: "Confirm account deletion"
+description: "Verify the emailed code and permanently delete the authenticated user's account"
+icon: "plug"
+---
+
+## Overview
+
+`useConfirmAccountDeletion` returns a function that submits the confirmation code from [`useRequestAccountDeletion`](/hooks/auth/use-request-account-deletion) and **permanently deletes** the authenticated user's account. On success, the local session is torn down just like a sign-out: the deleted account is removed from the multi-account map and **no other account is activated**, even if the user has others signed in. The app renders signed-out.
+
+<Warning>
+  Deletion is **immediate and irreversible**. There is no grace period and no
+  recovery once this resolves.
+</Warning>
+
+<Note>
+  Deleting an account ends the session and leaves nothing active, even when other accounts remain stored — read `activeAccount` from [`useAccounts`](/hooks/auth/use-accounts) and render your own next screen when it is `null`.
+</Note>
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useConfirmAccountDeletion } from "@sublay/react-js";
+import { useState } from "react";
+
+function ConfirmDeletionForm() {
+  const confirmAccountDeletion = useConfirmAccountDeletion();
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await confirmAccountDeletion({ code });
+      // Account is gone and the session has been cleared.
+    } catch (err: any) {
+      setError(err.message ?? "Deletion failed.");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {error && <p>{error}</p>}
+      <input
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        placeholder="Enter the code from your email"
+      />
+      <button type="submit">Permanently delete my account</button>
+    </form>
+  );
+}
+```
+
+```tsx React Native
+import { useConfirmAccountDeletion } from "@sublay/react-native";
+
+function ConfirmDeletionScreen({ code }: { code: string }) {
+  const confirmAccountDeletion = useConfirmAccountDeletion();
+
+  return (
+    <Button
+      title="Permanently delete my account"
+      onPress={() => confirmAccountDeletion({ code })}
+    />
+  );
+}
+```
+</CodeGroup>
+
+## Parameters
+
+The returned function accepts:
+
+<ParamField path="code" type="string" required>
+  The one-time confirmation code the user received by email. Must match the most recently issued code exactly.
+</ParamField>
+
+## Returns
+
+The hook returns an async function that resolves to `void` on success. It throws if the code is invalid or expired, or if the deletion fails.
+
+<Note>
+  You don't need to call `signOut` afterward — the hook clears the local session
+  for you. Any other stored accounts stay in the map, but none of them is
+  activated; the app lands signed-out with the account picker available.
+</Note>
+
+## See Also
+
+- [`useRequestAccountDeletion`](/hooks/auth/use-request-account-deletion)
+- [Confirm Account Deletion API reference](/api-reference/auth/confirm-account-deletion)

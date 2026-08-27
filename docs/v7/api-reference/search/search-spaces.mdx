@@ -1,0 +1,51 @@
+---
+title: "Search Spaces"
+api: "POST /v7/:projectId/search/spaces"
+description: "Semantic search over project spaces"
+---
+
+Performs vector-similarity search over spaces in the project using AI embeddings. Returns the most semantically relevant spaces for the given query.
+
+**Requires a paid plan with semantic search enabled.**
+
+**Requires an authenticated user.** Send the user's access token as `Authorization: Bearer <token>` — missing token → `401`, invalid/expired token → `403` (refresh and retry).
+
+<Note>
+  Only `public` spaces are returned. Spaces with `visibility` of `"unlisted"` or `"private"` are never surfaced in search results for non-members. Hidden spaces stay indexed but filtered out, so re-listing a space (setting it back to `"public"`) makes it searchable again immediately with no rebuild. See [Space visibility](/data-models/space#visibility).
+</Note>
+
+## Body Parameters
+
+<ParamField body="query" type="string" required>
+  The natural language search query (e.g., a topic, name, or description).
+</ParamField>
+
+<ParamField body="limit" type="number" default="10">
+  Maximum number of spaces to return. Maximum `50`.
+</ParamField>
+
+## Response
+
+Returns an array of result objects ordered by similarity:
+
+```json
+[
+  {
+    "similarity": 0.89,
+    "record": { ...Space object... }
+  }
+]
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Authentication Required — 401 / 403">
+    The endpoint requires an authenticated user. A missing token returns a bare `401`; an invalid or expired token returns a bare `403` — refresh the access token and retry.
+  </Accordion>
+  <Accordion title="Plan Required — 403">
+    ```json
+    { "error": "Semantic search requires a paid plan", "code": "project/plan-required" }
+    ```
+  </Accordion>
+</AccordionGroup>

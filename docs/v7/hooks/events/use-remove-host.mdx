@@ -1,0 +1,38 @@
+---
+title: "useRemoveHost"
+description: "Revoke a user's host privileges on an event (host-only)"
+icon: "plug"
+---
+
+## Overview
+
+`useRemoveHost` returns a callable that removes a user from an event's `hostIds`. **Host-only.** Rejected with `event/last-host` (409) if the removal would leave the event with no hosts.
+
+## Usage Example
+
+```tsx
+import { useRemoveHost } from "@sublay/react-js";
+
+function RemoveCoHost({ eventId }: { eventId: string }) {
+  const removeHost = useRemoveHost();
+  return (
+    <button onClick={() => removeHost({ eventId, userId: "usr_cohost" })}>
+      Remove co-host
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="eventId" type="string" required>The event ID.</ParamField>
+<ParamField path="userId" type="string" required>The host to remove.</ParamField>
+
+## Returns
+
+Returns a `Promise<Event>` — the [Event](/data-models/event) with the new `hostIds`.
+
+## See Also
+
+- [Remove Host API](/api-reference/events/remove-host)
+- [useAddHost](/hooks/events/use-add-host)

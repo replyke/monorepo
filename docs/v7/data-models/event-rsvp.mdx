@@ -1,0 +1,44 @@
+---
+title: "EventRsvp"
+description: "The shape of an EventRsvp record returned by the event guest-list endpoint"
+---
+
+An `EventRsvp` records a single user's response to an event. There is at most one RSVP per user per event (enforced by a unique `(eventId, userId)` constraint). Setting, changing, or withdrawing an RSVP keeps the event's denormalized `rsvpCounts` in sync.
+
+Individual RSVP records are returned by the named guest-list endpoint ([Fetch Event RSVPs](/api-reference/events/fetch-event-rsvps)). The aggregate `rsvpCounts` are always available directly on the [Event](/data-models/event), and the caller's own status can be surfaced as `userRsvp` via the `userRsvp` include.
+
+## EventRsvp
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique RSVP identifier (UUID). |
+| `eventId` | `string` | The event this RSVP belongs to. |
+| `userId` | `string` | The user who RSVP'd. |
+| `user` | `User \| null` | Populated user object. Present on guest-list reads. |
+| `status` | `"going" \| "maybe" \| "not_going"` | The RSVP response. |
+| `createdAt` | `string` | ISO timestamp when the RSVP was first created. |
+| `updatedAt` | `string` | ISO timestamp when the RSVP was last changed. |
+
+## RsvpStatus
+
+The set of valid RSVP values, which also map to the keys of `Event.rsvpCounts`:
+
+| Value | Description |
+|-------|-------------|
+| `"going"` | The user plans to attend. Counts toward `capacity`. |
+| `"maybe"` | The user might attend. Only allowed when the event's `allowMaybe` is `true`. |
+| `"not_going"` | The user has declined. |
+
+## Lifecycle
+
+- **Set / change** — `POST /events/:eventId/rsvp` with a `status`. Creating or switching to `going` is capacity-checked under a row lock.
+- **Withdraw** — `DELETE /events/:eventId/rsvp` deletes the RSVP row and decrements the corresponding count.
+- **Removed on invite revoke** — if a host removes an invitee from an `invite`-only event, that user's RSVP is deleted and the count decremented.
+- **Removed on user deletion** — deleting a user removes all their RSVPs and decrements affected events' counts.
+
+## Related
+
+- [Event data model](/data-models/event)
+- [Set RSVP API](/api-reference/events/set-rsvp)
+- [Withdraw RSVP API](/api-reference/events/withdraw-rsvp)
+- [Fetch Event RSVPs API](/api-reference/events/fetch-event-rsvps)

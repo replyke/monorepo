@@ -1,0 +1,56 @@
+---
+title: "Fetch user by foreign ID"
+description: "Fetch a user's public profile by their foreign ID"
+icon: "plug"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+## Overview
+
+`useFetchUserByForeignId` returns a function that fetches a user's public profile using their `foreignId` — the ID from your own system that was associated with this user during authentication.
+
+Use this when you have your own user ID and need to look up the corresponding Sublay user profile.
+
+<Note>
+  If the profile owner has blocked the signed-in caller, this returns `404` — the
+  same response as a user who does not exist. The reverse is not true: a user
+  *you* have blocked stays visible, so you keep a way to find and unblock them. Requires the `moderation` bundle.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchUserByForeignId } from "@sublay/react-js";
+
+function UserCard({ myUserId }: { myUserId: string }) {
+  const fetchUser = useFetchUserByForeignId();
+
+  const load = async () => {
+    const user = await fetchUser({ foreignId: myUserId });
+    console.log(user);
+  };
+
+  return <button onClick={load}>Load Profile</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="foreignId" type="string" required>
+  The foreign ID to look up. This is the identifier from your own system that was passed when the user was created or verified.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Optional. Pass `"files"` to populate `avatarFile` and `bannerFile` with full `File` objects.
+</ParamField>
+
+<SpaceReputationParams variant="user" field="path" />
+
+## Returns
+
+<ResponseField name="User" type="User">
+  The user's public profile. When `spaceReputation` is requested, it carries an added `spaceReputation` number. See [User data model](/data-models/user) and [Reputation](/data-models/reputation).
+</ResponseField>

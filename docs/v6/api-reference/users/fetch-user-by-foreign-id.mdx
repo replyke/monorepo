@@ -1,0 +1,158 @@
+---
+title: "Fetch User By Foreign Id"
+api: "GET /api/v6/:projectId/users/by-foreign-id"
+description: "Get or create user by their external foreign ID"
+---
+
+Fetches a user by their `foreignId`. If no user exists, creates a new one. Also updates existing users if provided data differs.
+
+## Query Parameters
+
+<ParamField query="foreignId" type="string" required>
+  A unique external user identifier
+</ParamField>
+
+<ParamField query="name" type="string">
+  User's display name
+</ParamField>
+
+<ParamField query="username" type="string">
+  User's handle/username
+</ParamField>
+
+<ParamField query="avatar" type="string">
+  URL to the user's avatar image
+</ParamField>
+
+<ParamField query="bio" type="string">
+  User bio or description
+</ParamField>
+
+<ParamField query="metadata" type="string">
+  JSON string of additional user metadata
+</ParamField>
+
+<ParamField query="secureMetadata" type="string">
+  JSON string of secure metadata (not returned in response)
+</ParamField>
+
+## Response
+
+<ResponseField name="user" type="object">
+  The user object
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      User's unique identifier
+    </ResponseField>
+
+    <ResponseField name="projectId" type="string">
+      ID of the project this user belongs to
+    </ResponseField>
+
+    <ResponseField name="foreignId" type="string">
+      External reference ID
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      User's full name
+    </ResponseField>
+
+    <ResponseField name="username" type="string">
+      User's username
+    </ResponseField>
+
+    <ResponseField name="avatar" type="string">
+      URL to user's avatar image
+    </ResponseField>
+
+    <ResponseField name="bio" type="string">
+      User's biography
+    </ResponseField>
+
+    <ResponseField name="birthdate" type="string | null">
+      User's birthdate
+    </ResponseField>
+
+    <ResponseField name="reputation" type="number">
+      User's reputation score
+    </ResponseField>
+
+    <ResponseField name="location" type="object | null">
+      User's location
+    </ResponseField>
+
+    <ResponseField name="suspension" type="object">
+      Suspension status
+
+      <Expandable title="properties">
+        <ResponseField name="isSuspended" type="boolean">
+          Whether the user is suspended
+        </ResponseField>
+
+        <ResponseField name="reason" type="string | null">
+          Suspension reason if applicable
+        </ResponseField>
+
+        <ResponseField name="startDate" type="string | null">
+          Suspension start date
+        </ResponseField>
+
+        <ResponseField name="endDate" type="string | null">
+          Suspension end date
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      Custom public metadata
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      Account creation timestamp
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string">
+      Last update timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="created" type="boolean">
+  Whether the user was created during this request
+</ResponseField>
+
+<ResponseField name="updated" type="boolean">
+  Whether the user was updated during this request
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing or Invalid Foreign ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing or invalid foreign user ID.",
+      "code": "user/invalid-identifier"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "user/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- This endpoint is useful when managing users from external systems.
+- `secureMetadata` is accepted and used for updates, but never returned.
+- The response includes `created` and `updated` flags to indicate what occurred.

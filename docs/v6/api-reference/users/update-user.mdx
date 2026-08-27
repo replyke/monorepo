@@ -1,0 +1,140 @@
+---
+title: "Update User"
+api: "PATCH /api/v6/:projectId/users/:userId"
+description: "Update details of an existing user"
+auth: "bearer"
+---
+
+Update details of an existing user. Only fields provided in the request will be modified. Triggers webhook validation before updating.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The unique ID of the user to update
+</ParamField>
+
+## Body Parameters
+
+<Info>
+  The body must contain an `update` object with one or more of the following fields
+</Info>
+
+<ParamField body="update.name" type="string">
+  Updated full name
+</ParamField>
+
+<ParamField body="update.username" type="string">
+  Updated username (will be sanitized and lowercased)
+</ParamField>
+
+<ParamField body="update.avatar" type="string">
+  URL to the user's new avatar image
+</ParamField>
+
+<ParamField body="update.bio" type="string">
+  Updated user biography
+</ParamField>
+
+<ParamField body="update.birthdate" type="string">
+  User's birthdate in ISO 8601 format
+</ParamField>
+
+<ParamField body="update.location" type="object">
+  Object with `longitude` and `latitude` properties
+</ParamField>
+
+<ParamField body="update.metadata" type="object">
+  Custom public metadata
+</ParamField>
+
+<ParamField body="update.secureMetadata" type="object">
+  Custom secure metadata (used server-side but never returned in responses)
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  User's unique identifier
+</ResponseField>
+
+<ResponseField name="username" type="string">
+  Updated username
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  User's full name
+</ResponseField>
+
+<ResponseField name="avatar" type="string">
+  URL to user's avatar image
+</ResponseField>
+
+<ResponseField name="bio" type="string">
+  User's biography
+</ResponseField>
+
+<ResponseField name="birthdate" type="string">
+  User's birthdate in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="location" type="object">
+  <Expandable title="properties">
+    <ResponseField name="type" type="string">
+      GeoJSON type (always "Point")
+    </ResponseField>
+
+    <ResponseField name="coordinates" type="number[]">
+      Array of [longitude, latitude]
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom public metadata
+</ResponseField>
+
+<ResponseField name="suspensions" type="array">
+  Array of active suspensions (if any)
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing or Invalid Data - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing required data",
+      "code": "user/missing-data"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="User Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "User not found",
+      "code": "user/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "user/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication.
+- `validateUserUpdated` webhook is called before update.
+- `secureMetadata` is accepted but never returned.
+- `suspensions` are included in the response if active.
+- Location must be an object with `longitude` and `latitude`.

@@ -1,0 +1,44 @@
+---
+title: "Fetch Followers Count"
+api: "GET /api/v6/:projectId/follows/followers-count"
+description: "Get the count of followers for the current user"
+auth: "bearer"
+---
+
+Get the count of followers for the current authenticated user.
+
+## Response
+
+<ResponseField name="count" type="number">
+  Total number of followers for the current user
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized - 401 Unauthorized">
+    ```json
+    {
+      "error": "Authentication required",
+      "code": "auth/unauthorized"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "follow/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Requires authentication
+- Returns the total number of followers for the current user
+- Rate limiting: 100 requests per 5 minutes

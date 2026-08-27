@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-18 25 426 426">
+<style>
+.s-t{fill:#3c3c41}.s-l{fill:#2a2a2e}.s-r{fill:#1f1f23}
+@media (prefers-color-scheme:dark){.s-t{fill:#e3e3e5}.s-l{fill:#bcbcc0}.s-r{fill:#8c8c90}}
+</style>
+<polygon class="s-r" fill="#8c8c90" points="195,211 378,129 378,179 195,261"/>
+<polygon class="s-l" fill="#bcbcc0" points="12,129 195,211 195,261 12,179"/>
+<polygon class="s-t" fill="#e3e3e5" points="195,47 378,129 195,211 12,129"/>
+<polygon fill="#ef4a62" points="12,219 195,301 195,345 12,263"/>
+<polygon fill="#c52340" points="195,301 378,219 378,263 195,345"/>
+<polygon fill="#f15a70" points="12,219 195,301 195,275 12,193"/>
+<polygon fill="#e03a54" points="195,301 378,219 378,193 195,275"/>
+<polygon fill="#ef4a62" points="12,303 195,385 195,429 12,347"/>
+<polygon fill="#c52340" points="195,385 378,303 378,347 195,429"/>
+<polygon fill="#f15a70" points="12,303 195,385 195,359 12,277"/>
+<polygon fill="#e03a54" points="195,385 378,303 378,277 195,359"/>
+</svg>

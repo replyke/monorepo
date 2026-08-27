@@ -1,0 +1,79 @@
+---
+title: "Getting Started"
+description: "Get started with Sublay in React and React Native projects"
+icon: "rocket"
+---
+
+Getting started with Sublay is simple and straightforward. Whether you're working on a React or React Native project, the setup process is designed to get you up and running quickly.
+
+<Steps>
+  <Step title="Install the package">
+    For React projects, install the Sublay package:
+
+    <CodeGroup>
+    ```bash npm
+    npm install @replyke/react-js
+    ```
+
+    ```bash pnpm
+    pnpm add @replyke/react-js
+    ```
+
+    ```bash yarn
+    yarn add @replyke/react-js
+    ```
+    </CodeGroup>
+
+    For React Native projects, install the React Native-specific package:
+
+    <CodeGroup>
+    ```bash npm
+    npm install @replyke/react-native
+    ```
+
+    ```bash pnpm
+    pnpm add @replyke/react-native
+    ```
+
+    ```bash yarn
+    yarn add @replyke/react-native
+    ```
+    </CodeGroup>
+
+    For Expo managed projects, install the Expo-specific package:
+
+    <CodeGroup>
+    ```bash npm
+    npx expo install @replyke/expo
+    ```
+
+    ```bash pnpm
+    pnpm add @replyke/expo
+    ```
+
+    ```bash yarn
+    yarn add @replyke/expo
+    ```
+    </CodeGroup>
+
+    <Note>All instructions throughout the documentation apply equally to React and React Native projects.</Note>
+  </Step>
+
+  <Step title="Create a Project on Sublay's Dashboard">
+    To start working with Sublay, visit the Sublay Dashboard and create a new project. Once your project is set up, you'll receive a `projectId`, which you'll use to initialize Sublay in your app.
+  </Step>
+
+  <Step title="Wrap Your App with the ReplykeProvider">
+    The `ReplykeProvider` component from Sublay should wrap your entire app to provide access to Sublay's features. Place it at the top level of your application, passing the `projectId` as a prop. Here's an example:
+
+    ```javascript
+    import { ReplykeProvider } from "@replyke/react-js";
+
+    <ReplykeProvider projectId={/* Your project ID */}>
+      {/* Rest of your app */}
+    </ReplykeProvider>;
+    ```
+
+    With this setup, your app is now ready to leverage Sublay's powerful features. For further details, explore the specific sections of this documentation tailored to your needs.
+  </Step>
+</Steps>

@@ -1,0 +1,66 @@
+---
+title: "Installing Social Comments"
+description: "Add Instagram-style social comments to your project"
+icon: "download"
+---
+
+# Installing Social Comments
+
+Add Instagram-style social comments with a single command.
+
+---
+
+## Installation
+
+```bash
+npx @replyke/cli add comments-social
+```
+
+---
+
+## What Gets Installed
+
+```
+src/components/comments-social/
+├── index.ts
+├── components/               # ~15 files
+├── hooks/                    # 2 files
+├── utils/
+└── context/
+```
+
+---
+
+## Usage
+
+```tsx
+import { SocialCommentSection } from './components/comments-social';
+
+<SocialCommentSection
+  entityId="post_123"
+/>
+```
+
+---
+
+## Platform Support
+
+| Platform | Status |
+|----------|--------|
+| React (Web) | ✅ Fully supported |
+| React Native | ✅ Fully supported |
+| Expo | ✅ Fully supported |
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Props & API" icon="sliders" href="/components/components/social/props-api">
+    Component props
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/components/customization/overview">
+    Customize the component
+  </Card>
+</CardGroup>

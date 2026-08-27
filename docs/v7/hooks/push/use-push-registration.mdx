@@ -1,0 +1,233 @@
+---
+title: "usePushRegistration"
+description: "Request push permission and register or unregister the current user's device"
+icon: "cube"
+---
+
+## Overview
+
+Explicit, developer-triggered hook for registering and unregistering the current user's device for push notifications. Unlike auth-token restoration, requesting OS or browser push permission is a deliberate action and should happen in response to a user gesture (for example, when they opt in to notifications in your settings screen) — not silently on mount.
+
+Calling it once per device is enough. Mounting the hook (which apps do on any screen holding a notification setting) also installs the SDK's [device-token rotation](#automatic-token-rotation) handling, so bindings stay correct without the app re-registering on every launch.
+
+The hook accepts a **platform adapter** that abstracts the platform-specific permission and token-retrieval steps. Three adapters are available out of the box:
+
+| Adapter | Package | Platform |
+|---------|---------|----------|
+| `expoPushTokenAdapter` | `@sublay/expo` | Expo (iOS + Android) |
+| `reactNativePushTokenAdapter` | `@sublay/react-native` | Bare React Native (iOS + Android) |
+| `webPushTokenAdapter` | `@sublay/react-js` | Browser (Web Push) |
+
+## Usage Example
+
+```tsx
+import { usePushRegistration } from "@sublay/core";
+import { expoPushTokenAdapter } from "@sublay/expo";
+
+function NotificationOptIn() {
+  const { register, unregister, registering } = usePushRegistration(expoPushTokenAdapter);
+
+  return (
+    <Button onPress={register} disabled={registering}>
+      {registering ? "Enabling…" : "Enable push notifications"}
+    </Button>
+  );
+}
+```
+
+```tsx
+// Web (Next.js / React)
+import { usePushRegistration } from "@sublay/core";
+import { webPushTokenAdapter } from "@sublay/react-js";
+
+function NotificationSettings() {
+  const { register, unregister, registering, unregistering } =
+    usePushRegistration(webPushTokenAdapter);
+
+  return (
+    <>
+      <button onClick={register} disabled={registering}>Enable</button>
+      <button onClick={unregister} disabled={unregistering}>Disable</button>
+    </>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="adapter" type="PushTokenAdapter" required>
+  A platform adapter implementing `requestPermission()` and `getDeviceIdentifier()`, and optionally `subscribeToIdentifierChanges()`. Import one of the three built-in adapters or implement your own.
+</ParamField>
+
+## Returns
+
+<ResponseField name="register" type="() => Promise<boolean>">
+  Requests OS or browser permission, retrieves the device token or subscription, and registers it with the server. Returns `true` on success, `false` if permission was denied or the adapter could not produce an identifier (both are expected outcomes, not errors). Throws when the server call fails. It also records this device's identifier and enables push for the stored accounts — see [What `register()` does beyond the API call](#what-register-does-beyond-the-api-call).
+</ResponseField>
+
+<ResponseField name="unregister" type="() => Promise<void>">
+  Unbinds the **active** account from this device and records that as a durable preference — see [`unregister()` is a preference, not a logout step](#unregister-is-a-preference-not-a-logout-step). A no-op if the adapter returns no identifier.
+</ResponseField>
+
+<ResponseField name="registering" type="boolean">
+  `true` while `register()` is in progress.
+</ResponseField>
+
+<ResponseField name="unregistering" type="boolean">
+  `true` while `unregister()` is in progress.
+</ResponseField>
+
+<Note>
+  The hook requires an authenticated user — `register()` and `unregister()` throw immediately if no user session is available.
+</Note>
+
+### What `register()` does beyond the API call
+
+On success it also:
+
+- **stores this device's identifier durably**, so account-management paths that hold no adapter (removal, sign-out, the per-account toggle) can still unbind push;
+- **records push as enabled for the active account**, because "push is on for this account on this device" is a sticky preference rather than a one-shot call;
+- **records it for every other stored account that has never expressed a preference.** Permission is a device-level grant, so `register()` speaks for the accounts that were never asked — but never over one the user deliberately silenced, which keeps its `false`. Turn individual accounts back off with [`useAccountPushToggle`](/hooks/push/use-account-push-toggle);
+- **marks accounts as needing a re-bind**, so each is bound the next time the user switches into it, using the live session that switch establishes. Two things put an account in that state, and they are different sets:
+  - the device identifier this call brought **differs** from the stored one, which makes every opted-in background account's binding stale — all of them are marked;
+  - the identifier is unchanged but this call just flipped some accounts from "never asked" to enabled. Those are reported as push-enabled and have no binding, and only the active account was registered here — so exactly the newly flipped ones are marked, and accounts that were already working are left alone.
+
+  A repeat `register()` on the same identifier that flips nothing marks nothing.
+
+Only the **active** account is bound by this call, and the return value reports on that registration. Binding the others here would mean spending each one's stored refresh token on a one-time-use exchange in the background, which permanently locks an account out if it is interrupted — see [When notifications are paused](/sdk/authentication/multi-account#when-notifications-are-paused).
+
+### `unregister()` is a preference, not a logout step
+
+`unregister()` silences the active account on this device **durably**: the flag is stored in the account map and merged into the entry on every rebuild, so it survives switches and relaunches until `register()` or the per-account toggle turns it back on. It does *not* clear the stored device identifier — that is device state shared with every other account on the device, and clearing it would break their deregistration too. It does record the identifier it fetched, so a device with none stored acquires one here.
+
+<Warning>
+  **Do not call it in a logout flow.** Signing out (`signOut`, `removeAccount`, `signOutAll`) already deregisters the account atomically server-side, so there is nothing to clean up — and because the flag is durable, an `unregister()` at logout permanently silences that account's next session with no visible cause. Wire it to a user-facing notification switch instead.
+</Warning>
+
+## Platform Adapters
+
+### `expoPushTokenAdapter` (`@sublay/expo`)
+
+Uses `expo-notifications` to request permission and retrieve the raw APNs/FCM device token directly (not the Expo relay token — Sublay dispatches to APNs and FCM using the project's own credentials).
+
+```tsx
+import { expoPushTokenAdapter } from "@sublay/expo";
+
+const { register } = usePushRegistration(expoPushTokenAdapter);
+```
+
+Works in Expo managed and bare workflow. Requires `expo-notifications` in your project.
+
+### `reactNativePushTokenAdapter` (`@sublay/react-native`)
+
+Uses `@react-native-firebase/messaging` for both iOS and Android. On iOS, `getAPNSToken()` returns the raw APNs token; on Android, `getToken()` returns the FCM registration token.
+
+```tsx
+import { reactNativePushTokenAdapter } from "@sublay/react-native";
+
+const { register } = usePushRegistration(reactNativePushTokenAdapter);
+```
+
+Requires `@react-native-firebase/messaging` and the native Firebase setup for your platform (GoogleService-Info.plist / google-services.json).
+
+### `webPushTokenAdapter` (`@sublay/react-js`)
+
+Uses the browser's Notification permission API and Push API. Fetches the project's VAPID public key from the server (unauthenticated), then calls `PushManager.subscribe()` to create a Web Push subscription. Requires a service worker registered on your page.
+
+```tsx
+import { webPushTokenAdapter } from "@sublay/react-js";
+
+const { register } = usePushRegistration(webPushTokenAdapter);
+```
+
+Returns `false` (without throwing) in environments where the Notification or Push APIs are unavailable (for example, SSR).
+
+## Custom Adapters
+
+Implement `PushTokenAdapter` from `@sublay/core` to use your own push library:
+
+```typescript
+import type { PushTokenAdapter, PushDeviceIdentifier } from "@sublay/core";
+
+const myAdapter: PushTokenAdapter = {
+  async requestPermission(): Promise<boolean> {
+    // ask the OS or browser for permission
+    return true;
+  },
+  async getDeviceIdentifier(context): Promise<PushDeviceIdentifier | null> {
+    // return { platform: "ios", token: "..." }
+    // return { platform: "android", token: "..." }
+    // return { platform: "web", subscription: { endpoint, keys: { p256dh, auth } } }
+    return null;
+  },
+
+  // OPTIONAL — see "Reading the current identifier on mount" below.
+  // Read the CURRENT permission status; never prompt here.
+  async hasPermission(): Promise<boolean> {
+    return myPushLibrary.permissionStatus() === "granted";
+  },
+
+  // OPTIONAL — set only if getDeviceIdentifier() cannot prompt.
+  canReadIdentifierWithoutPrompting: true,
+
+  // OPTIONAL — see "Automatic token rotation" below.
+  subscribeToIdentifierChanges(context, onChange) {
+    const unsubscribe = myPushLibrary.onTokenChange((token) => {
+      onChange({ platform: "android", token });
+    });
+    return unsubscribe;
+  },
+};
+```
+
+`subscribeToIdentifierChanges` is optional. Omit it and rotation simply falls back to the next `register()` — the pre-existing behaviour. Emitting `null`, or an identifier equal to the stored one, is a no-op.
+
+`canReadIdentifierWithoutPrompting` and `hasPermission` are optional and work as a pair — see [Reading the current identifier on mount](#reading-the-current-identifier-on-mount-native). Set the flag only if `getDeviceIdentifier()` reads a value the platform already holds and can never raise a permission prompt; an adapter that omits `hasPermission` is not gated on one.
+
+## Automatic Token Rotation
+
+Device push tokens rotate on reinstall, on an OS-initiated refresh, and after a backup restore, and every binding on the old token dies with it. The hook covers this itself: whenever it is mounted with an adapter that implements `subscribeToIdentifierChanges`, it subscribes to that signal. On a change it unbinds the old identifier for the active account, records the new one, re-binds the **active** account, and **marks** every other push-enabled account as needing a re-bind — repaired on each account's next activation rather than by spending its stored credential in the background. Silenced accounts are left silenced, and an account that never expressed a preference is neither marked nor bound.
+
+The subscription is gated on the adapter alone, so an app whose adapter omits it subscribes to nothing. Nothing on this path prompts the user — receiving a refreshed token asks for no permission — and nothing on it exchanges a stored credential.
+
+### Reading the current identifier on mount (native)
+
+Both native subscriptions are rotation-only, so a device whose token never rotates would never emit one — and every path that *unbinds* push is gated on having a stored identifier. To cover that, the built-in native adapters declare `canReadIdentifierWithoutPrompting`, and the hook reads the current identifier once on mount and feeds it through the same path a rotation takes. An identifier equal to the stored one changes nothing, which is the common case.
+
+Two conditions gate it, and both matter:
+
+- **The adapter must declare that reading cannot prompt.** `expoPushTokenAdapter` and `reactNativePushTokenAdapter` do; `webPushTokenAdapter` must not, because its `getDeviceIdentifier()` calls `pushManager.subscribe()`, which can raise a permission prompt with no user gesture behind it. Web covers the same ground through its mount-emitting subscription instead.
+- **The device must already hold OS notification permission**, read through the adapter's `hasPermission()` — which reads the current status and never asks. A device token exists on both native platforms whether or not the user was ever asked (that is how silent push works), so "reading cannot prompt" is not on its own a reason to store one. `register()` cannot create a binding without a permission grant, so a device with no grant has no binding to discover *from this release*. An adapter that does not implement `hasPermission()` is not gated.
+
+This does not require a permission *prompt* and never raises one; it reads a grant that already exists. A device whose permission is granted but which never registered for Sublay push simply stores an identifier that matches no binding — sign-out then asks for an unbind that removes nothing.
+
+#### The permission gate is bypassed once per device
+
+A grant proves nothing about the past. Turning notifications off in system settings does not invalidate an APNs or FCM token and does not remove a binding: the provider still accepts the notification and the OS simply does not display it, and the server prunes a token only on an uninstall or dead-token signal from the provider. So a device that registered on an SDK release which stored no identifier, and has since revoked permission, holds a live binding that the gate makes unreachable — no identifier means sign-out, account removal and the per-account toggle all no-op, and re-enabling notifications later delivers that account's notifications to a device nobody is signed into.
+
+To close that, the **first** identifier read on a device ignores `hasPermission()`. The SDK records that it has run and persists the record with the account map, so it happens once per install and every later read is gated normally. Two further conditions narrow it: the device must already have **at least one stored account** (an unbind is scoped to a refresh token's subject, so with none stored there is nothing an identifier could ever unbind) and must have **no identifier stored yet**. A device whose account storage was empty the first time this SDK ran is marked as ineligible outright — it cannot be carrying a binding from an older release. A read that fails does not consume the one turn.
+
+The cost is stated rather than hidden: a device that has accounts, never registered for push, and holds no permission does get an identifier stored by that single read, and its sign-outs then ask for an unbind that matches nothing.
+
+The three built-in adapters are deliberately asymmetric, because the platforms are:
+
+| Adapter | Behaviour |
+|---------|-----------|
+| `expoPushTokenAdapter` | Real OS event (`addPushTokenListener`), emitting exactly the shape the adapter registers. **Rotation-only:** it fires when the OS hands over a new token, never merely because something subscribed. |
+| `reactNativePushTokenAdapter` | Firebase `onTokenRefresh`, also rotation-only. The event carries an **FCM** token while the adapter registers **APNs** on iOS, so the handler ignores the emitted value and re-derives through `getDeviceIdentifier()`. Consequence: iOS APNs rotation is not reported by this event at all. It is caught by the [mount-time read](#reading-the-current-identifier-on-mount-native) on the next launch instead — this adapter declares `canReadIdentifierWithoutPrompting` — or sooner by a `register()` or `unregister()`. A failed re-derivation is reported through the SDK's error handler rather than passed off as "no change". |
+| `webPushTokenAdapter` | **No in-page event exists** — `pushsubscriptionchange` fires inside the service worker *you* register, which the SDK cannot subscribe to. Web is covered by comparison instead: on mount it reads the browser's existing subscription and emits it if it differs from the stored one, which is how a web device with no stored identifier acquires one without calling `register()` again. It calls `getSubscription()` only, never `subscribe()`, so it cannot prompt on page load; it probes for a registration before awaiting `serviceWorker.ready`, which never settles when no service worker is registered; and a failure is reported through the SDK's error handler rather than swallowed. Native reaches the same place differently — see [Reading the current identifier on mount](#reading-the-current-identifier-on-mount-native). |
+
+## Relationship to Other Hooks
+
+| Hook | Scope |
+|------|-------|
+| `usePushRegistration` | Permission + this device's identifier + the **active** account's binding, plus the re-bind markers for the rest |
+| [`useAccountPushToggle`](/hooks/push/use-account-push-toggle) | Any **stored** account's binding on this device, without switching to it |
+| [`useNotificationPreferences`](/hooks/push/use-notification-preferences) | Which **event types** the signed-in user receives — not whether the device is bound at all |
+
+## See Also
+
+- [useAccountPushToggle](/hooks/push/use-account-push-toggle)
+- [Push Notifications overview](/push-notifications)
+- [Register Device endpoint](/api-reference/push-notifications/register-device)
+- [Node SDK — push.send](/node-sdk/push-notifications)

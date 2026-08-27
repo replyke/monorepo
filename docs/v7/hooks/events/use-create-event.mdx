@@ -1,0 +1,70 @@
+---
+title: "useCreateEvent"
+description: "Create an event, optionally with an inline cover image and gallery"
+icon: "plug"
+---
+
+## Overview
+
+`useCreateEvent` returns a callable that creates an event. The logged-in user becomes the creator and is auto-added to `hostIds`. Pass `cover` and/or `gallery` to upload images inline — the hook sends `multipart/form-data` automatically (requires the `files-images` bundle).
+
+## Usage Example
+
+```tsx
+import { useCreateEvent } from "@sublay/react-js";
+
+function CreateEvent() {
+  const createEvent = useCreateEvent();
+
+  const handleCreate = async () => {
+    const event = await createEvent({
+      title: "Launch Party",
+      type: "physical",
+      startTime: "2026-09-01T18:00:00.000Z",
+      endTime: "2026-09-01T22:00:00.000Z",
+      venueName: "The Loft",
+      address: "123 Main St, New York, NY",
+      capacity: 100,
+      visibility: "public",
+    });
+    console.log("Created:", event.id);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="title" type="string" required>Event title. 1–300 characters.</ParamField>
+<ParamField path="startTime" type="string" required>ISO datetime when the event starts.</ParamField>
+<ParamField path="type" type='"online" | "physical" | "hybrid"' required>
+  `online` requires `url`; `physical` requires `address` or `location`; `hybrid` requires both.
+</ParamField>
+<ParamField path="description" type="string">Optional description.</ParamField>
+<ParamField path="endTime" type="string">Optional ISO end datetime.</ParamField>
+<ParamField path="timezone" type="string">Optional IANA timezone.</ParamField>
+<ParamField path="url" type="string">Join/stream URL.</ParamField>
+<ParamField path="venueName" type="string">Venue name.</ParamField>
+<ParamField path="address" type="string">Street address.</ParamField>
+<ParamField path="location" type="{ latitude: number; longitude: number }">Coordinates for proximity search.</ParamField>
+<ParamField path="spaceId" type="string">Scope to a space. Required when `visibility` is `"members"`.</ParamField>
+<ParamField path="visibility" type='"public" | "members" | "invite"'>Defaults to `"public"`.</ParamField>
+<ParamField path="capacity" type="number">Max `going` RSVPs. Omit for unlimited.</ParamField>
+<ParamField path="allowMaybe" type="boolean">Allow `"maybe"` RSVPs. Defaults to `true`.</ParamField>
+<ParamField path="guestListVisible" type="boolean">Expose the named guest list. Defaults to `true`.</ParamField>
+<ParamField path="hostIds" type="string[]">Additional host user IDs (the logged-in user is auto-added).</ParamField>
+<ParamField path="metadata" type="Record<string, any>">Arbitrary key-value data. Up to 1 MB.</ParamField>
+<ParamField path="cover" type="{ file: File | RNFile; options?: UploadImageOptions }">
+  Single cover image to upload. Sends multipart. Requires the `files-images` bundle.
+</ParamField>
+<ParamField path="gallery" type="{ files: (File | RNFile)[]; options?: UploadImageOptions }">
+  Gallery images to upload (up to 10). Sends multipart. Requires the `files-images` bundle.
+</ParamField>
+
+## Returns
+
+Returns a `Promise<Event>` — the created [Event](/data-models/event) with inline `rsvpCounts`.
+
+## See Also
+
+- [Events Overview](/sdk/events/overview)
+- [Create Event API](/api-reference/events/create-event)

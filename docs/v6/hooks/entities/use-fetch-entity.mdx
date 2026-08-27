@@ -1,0 +1,54 @@
+---
+title: "Use Fetch Entity"
+---
+
+# `useFetchEntity`
+
+## Overview
+
+The `useFetchEntity` hook is used to retrieve details of a specific entity by providing its UUID.
+
+## Usage Example
+
+```tsx
+import { useFetchEntity } from "@replyke/react-js";
+
+function EntityDetails({ entityId }: { entityId: string }) {
+  const fetchEntity = useFetchEntity();
+
+  const handleFetchEntity = async () => {
+    try {
+      const entity = await fetchEntity({
+        entityId,
+      });
+
+      console.log("Fetched entity:", entity);
+    } catch (error) {
+      console.error("Failed to fetch entity:", error.message);
+    }
+  };
+
+  return <button onClick={handleFetchEntity}>Fetch Entity Details</button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+
+<ParamField path="entityId" type="string" required>
+  The unique UUID of the entity to fetch.
+</ParamField>
+
+
+### Returns
+
+The function resolves with an object representing the fetched entity:
+
+
+<ResponseField name="Entity" type="object">
+  The details of the retrieved entity.
+</ResponseField>

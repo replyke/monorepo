@@ -1,0 +1,65 @@
+---
+title: "Remove workspace member"
+description: "Remove a member from this workspace node (rank-bounded; sole-owner protected)"
+icon: "plug"
+---
+
+## Overview
+
+`useRemoveWorkspaceMember` returns a callable that removes a direct [member](/data-models/workspace-member) from **this workspace node only**. Fires `workspace.member.removed`.
+
+**Authorization:** capability-gated + rank-bounded. Requires the `remove-member` capability, and you may act only on members ranked strictly below you.
+
+<Note>
+  Owners have no member row, so removal targets member rows only. **Sole-owner protection:** the owner cannot be removed while sole owner — [transfer ownership](/hooks/workspaces/use-transfer-workspace-ownership) first.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useRemoveWorkspaceMember } from "@sublay/react-js";
+
+function RemoveButton({
+  workspaceId,
+  targetUserId,
+}: {
+  workspaceId: string;
+  targetUserId: string;
+}) {
+  const removeWorkspaceMember = useRemoveWorkspaceMember();
+
+  return (
+    <button onClick={() => removeWorkspaceMember({ workspaceId, targetUserId })}>
+      Remove
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="targetUserId" type="string" required>
+  The **target** member to remove — a path param, not an acting user.
+</ParamField>
+
+## Returns
+
+Resolves to `void` (the endpoint returns `204 No Content`).
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/unauthorized` | 403 | You lack the `remove-member` capability. |
+| `workspace/insufficient-rank` | 403 | You may only remove members ranked strictly below you. |
+| `workspace/sole-owner` | 409 | The sole owner must transfer ownership first. |
+
+## Related
+
+- [`useRemoveWorkspaceMemberFromSubtree`](/hooks/workspaces/use-remove-workspace-member-from-subtree) — offboard across descendants too
+- [`useLeaveWorkspace`](/hooks/workspaces/use-leave-workspace) — the self-service equivalent
+- [Remove Member API](/api-reference/workspaces/members/remove-member)

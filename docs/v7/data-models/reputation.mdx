@@ -1,0 +1,128 @@
+---
+title: "Reputation"
+description: "Per-space reputation buckets, the maintained overall total, and the opt-in read contract for space-scoped reputation"
+---
+
+Reputation in Sublay is **space-scoped**. Instead of a single number per user, each user accrues reputation into separate **buckets** — one per space, plus a project-general bucket — and their `reputation` field is the maintained sum of all of them.
+
+Reputation is owned by the optional **`reputation`** bundle. Install it from the **Database** page of your project to turn the feature on. The `reputation` bundle works with or without the `spaces` bundle: without spaces, only the general bucket accrues. See [Bundles](/bundles).
+
+## Buckets
+
+The bundle provisions a per-tenant table of reputation buckets, keyed by `(userId, spaceId)`.
+
+| Bucket | Key | Meaning |
+|--------|-----|---------|
+| Project-general | `spaceId IS NULL` | The user's reputation outside of any space. |
+| Per-space | `spaceId = <spaceId>` | The user's reputation within that specific space. |
+
+A few rules govern buckets:
+
+- **Lazy creation** — a bucket is created the first time a user's reputation changes for that `(user, space)` pair. A bucket that has never been touched reads as `0`.
+- **Negative scores allowed** — there is no floor; a bucket can go below zero.
+- **Buckets are not returned directly** — there is no endpoint that lists raw buckets. You read reputation through the `reputation` total and the opt-in `spaceReputation` field described below.
+
+## Where reputation comes from
+
+Reputation accrues two ways:
+
+- **Earned** — the system credits a user for what they do: creating entities and comments, and receiving votes and reactions on them. These changes are not individually recorded.
+- **Granted** — reputation is deliberately *given*, either by another user (a transfer that debits their bucket) or by your app (a mint that creates it from nothing, or destroys it). Every grant is persisted as a [ReputationGrant](/data-models/reputation-grant) record, so a user's grant history is readable while their earned history is not.
+
+Grants ship with this bundle — every project that has reputation has them, with no separate opt-in. A transfer never moves reputation between the general bucket and a space bucket: it lands in the recipient's bucket for the same space it left. See [ReputationGrant](/data-models/reputation-grant) and the [Reputation Grants SDK overview](/sdk/reputation/overview).
+
+## The maintained total
+
+Every user object still carries a `reputation` field, and default API responses are unchanged. `reputation` is the **maintained overall total** — the sum of all of that user's buckets (general plus every space). It is always present, whether or not a space is in context.
+
+## Reading space-scoped reputation
+
+Every user-returning endpoint accepts an opt-in **`spaceReputation`** object that adds a `spaceReputation` number to each returned user. The `reputation` total is always included regardless; the per-space `spaceReputation` field is purely additive and only appears when you ask for it.
+
+### The `spaceReputation` object (primary form)
+
+Pass a single object. Its two fields express which bucket to read and whether to sum descendants:
+
+```ts
+spaceReputation: {
+  spaceId: string | "none" | "context"; // "context" only on context endpoints
+  includeDescendants?: boolean;
+}
+```
+
+<ParamField path="spaceReputation" type="object">
+  Opt-in. Adds a `spaceReputation` number to each returned user, scoped to a single space.
+
+  <Expandable title="spaceReputation">
+    <ParamField name="spaceId" type='string | "none" | "context"' required>
+      Which bucket to read:
+
+      - a space **`<uuid>`** — that user's reputation in that specific space;
+      - **`"none"`** — the project-general (space-less) bucket;
+      - **`"context"`** — the space derived from the request context. On lists this is **per-row** (each author scored in the space *that row* belongs to); on single-space surfaces — space members/team, a chat conversation — it's that one space. **Only valid on context endpoints** (see below); user-direct endpoints **reject `"context"` with a 400**.
+
+      A bucket that doesn't exist reads as `0`. The empty string and the legacy `general` / `null` aliases are **rejected (400)** — use `"none"` for the space-less bucket.
+    </ParamField>
+    <ParamField name="includeDescendants" type="boolean">
+      Only honored alongside an explicit space `<uuid>`. When `true`, `spaceReputation` is the **subtree sum** — the named space plus all of its descendant spaces (the root space's own bucket is included). Ignored for `"none"`; not allowed with `"context"`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+The object has **two variants** depending on the endpoint class — they differ only in whether `spaceId` accepts `"context"`:
+
+| Variant | `spaceId` accepts | Used by |
+|---------|-------------------|---------|
+| **Context** | `<uuid>` · `"none"` · `"context"` | Entities, comments, reactions, chat, space members/team, moderated reports, content search & ask |
+| **User-direct** | `<uuid>` · `"none"` | Fetch user (by ID / foreign ID / username), user suggestions, followers/following/connections by user ID |
+
+### Deprecated flat props
+
+The object **replaces** two flat props that travelled together. They still work — passing the object **wins** if both forms are supplied — but they are deprecated and will be removed in a later major version. Prefer the object.
+
+<ParamField path="spaceReputationId" type="string" deprecated>
+  **Deprecated** — use `spaceReputation.spaceId`. Same value set as the object's `spaceId` for the matching endpoint variant (`<uuid>` / `"none"`, plus `"context"` on context endpoints only).
+</ParamField>
+
+<ParamField path="spaceReputationDescendants" type="boolean" deprecated>
+  **Deprecated** — use `spaceReputation.includeDescendants`. Only honored alongside an explicit `spaceReputationId` `<uuid>`.
+</ParamField>
+
+The resulting field appears on each user object as:
+
+<ResponseField name="spaceReputation" type="number">
+  The user's reputation in the requested space (or the space-less bucket). Present only when the `spaceReputation` object (or the deprecated `spaceReputationId`) was supplied. Missing buckets read as `0`.
+</ResponseField>
+
+### Where the params apply
+
+The `spaceReputation` object is accepted on **every** user-returning endpoint, but the allowed values for `spaceId` depend on whether the endpoint has a space in context.
+
+**Context endpoints** accept `<uuid>`, `none`, **and** `context`:
+
+- Entity feed and single entity
+- Comment feed and single comment
+- Entity and comment reaction lists
+- Chat — list messages, get message, send message, list members, list reactions
+- Space members and space team
+- Moderated reports
+- Content search and AI ask
+
+**User-direct endpoints** accept `<uuid>` and `none` only — `context` is **rejected (400)** because there is no space context to derive:
+
+- Fetch user (by ID, foreign ID, or username) and user suggestions
+- Followers / following lists (by user ID)
+- Connections list (by user ID)
+
+Project-wide user search (`search-users`) and the self-relative follows/connections lists are **not** enriched and ignore the param.
+
+## Uninstalling is lossy
+
+Removing the `reputation` bundle drops the buckets table and the grants table — destroying all grant history — **and** zeroes the `reputation` column on every user. Reinstalling starts fresh from zero — past scores are not recomputed. Back up anything you need before uninstalling. See [Bundles](/bundles).
+
+## See Also
+
+- [Bundles](/bundles)
+- [ReputationGrant data model](/data-models/reputation-grant)
+- [User data model](/data-models/user)
+- [Space data model](/data-models/space)

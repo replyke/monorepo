@@ -1,0 +1,35 @@
+---
+title: "useFetchInvitees"
+description: "Fetch an event's invited users (host-only)"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchInvitees` returns a callable that fetches the paginated invitee (guest) list for an event. **Host-only** — non-hosts receive `403`. Each item is an [EventInvite](/data-models/event-invite) with the invited `user` populated.
+
+## Usage Example
+
+```tsx
+import { useFetchInvitees } from "@sublay/react-js";
+
+function useInvitees(eventId: string) {
+  const fetchInvitees = useFetchInvitees();
+  return () => fetchInvitees({ eventId, page: 1, limit: 20 });
+}
+```
+
+## Parameters
+
+<ParamField path="eventId" type="string" required>The event ID.</ParamField>
+<ParamField path="page" type="number">Page number (1-indexed). Defaults to `1`.</ParamField>
+<ParamField path="limit" type="number">Results per page. Capped at `100`.</ParamField>
+
+## Returns
+
+Returns a `Promise<PaginatedResponse<EventInvite>>` — `{ data, pagination }`.
+
+## See Also
+
+- [Fetch Invitees API](/api-reference/events/fetch-invitees)
+- [useFetchEventRsvps](/hooks/events/use-fetch-event-rsvps)

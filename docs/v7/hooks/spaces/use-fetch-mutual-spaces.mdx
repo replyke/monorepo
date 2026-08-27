@@ -1,0 +1,55 @@
+---
+title: "Fetch mutual spaces"
+description: "Fetch spaces shared between the current user and another user"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchMutualSpaces` returns a callable function that fetches the spaces both the authenticated user and another user are active members of — their spaces in common. The response is a paginated list of [Space](/data-models/space) objects.
+
+## Usage Example
+
+```tsx
+import { useFetchMutualSpaces } from "@sublay/react-js";
+
+function MutualSpaces({ otherUserId }: { otherUserId: string }) {
+  const fetchMutualSpaces = useFetchMutualSpaces();
+
+  const loadMutual = async () => {
+    const result = await fetchMutualSpaces({ userId: otherUserId, page: 1, limit: 20 });
+    // result.data: Space[]
+    result.data.forEach((space) => {
+      console.log(space.name, space.membersCount);
+    });
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="userId" type="string" required>
+  The other user's ID. Mutual spaces are computed between this user and the authenticated user.
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number. Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Number of results per page. Max `100`.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Optional includes. Pass `"files"` to populate avatar and banner file objects on each space.
+</ParamField>
+
+## Returns
+
+<ResponseField name="data" type="Space[]">
+  The spaces both users share ([Space](/data-models/space)). Computed fields such as `membersCount` and `isMember` reflect the authenticated user.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Standard pagination metadata.
+</ResponseField>

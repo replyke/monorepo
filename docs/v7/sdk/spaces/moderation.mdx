@@ -1,0 +1,105 @@
+---
+title: "Moderation"
+description: "Moderate content and handle reports within a space"
+---
+
+Space moderators and admins can review and act on content in their space. Moderation includes directly approving or removing entities and comments, as well as handling reports submitted by members — on entities, comments, and chat messages in space conversations.
+
+## Direct Moderation
+
+Moderators can act on specific entities or comments without a report being filed:
+
+```tsx
+import { useModerateSpaceEntity, useModerateSpaceComment } from "@sublay/react-js";
+
+const moderateEntity = useModerateSpaceEntity();
+const moderateComment = useModerateSpaceComment();
+
+// Approve or remove an entity
+await moderateEntity({ spaceId, entityId, action: "approve" });
+await moderateEntity({ spaceId, entityId, action: "remove" });
+
+// Approve or remove a comment
+await moderateComment({ spaceId, commentId, action: "approve" });
+await moderateComment({ spaceId, commentId, action: "remove" });
+```
+
+<Note>Both hooks require the caller to be a moderator or admin of the space.</Note>
+
+## Handling Reports
+
+When members report content, moderators receive those reports and can resolve them:
+
+```tsx
+import {
+  useHandleSpaceEntityReport,
+  useHandleSpaceCommentReport,
+  useHandleSpaceChatReport,
+} from "@sublay/react-js";
+
+const handleEntityReport = useHandleSpaceEntityReport();
+const handleCommentReport = useHandleSpaceCommentReport();
+const handleChatReport = useHandleSpaceChatReport();
+
+// `actions` is an array — you can combine a removal with a ban in one call.
+await handleEntityReport({
+  spaceId,
+  reportId,
+  entityId,
+  actions: ["dismiss"],
+  summary: "No violation found",
+});
+
+await handleCommentReport({
+  spaceId,
+  reportId,
+  commentId,
+  actions: ["remove-comment"],
+  summary: "Removed for harassment",
+});
+
+await handleChatReport({
+  spaceId,
+  reportId,
+  messageId,
+  actions: ["remove-message", "ban-user"],
+  userId: offendingUserId, // the ban target
+  summary: "Removed and banned",
+});
+```
+
+Each target type has its own removal action — `remove-entity`, `remove-comment`,
+`remove-message` — alongside the shared `ban-user` and `dismiss`.
+
+<Note>
+  `ban-user` is **space-scoped**: it bans the user from this space only.
+  Project-wide suspension is a dashboard action — a space moderator cannot
+  suspend someone across the whole project.
+</Note>
+
+## Fetching Reports
+
+Use `useFetchModeratedReports` to retrieve pending reports for a space:
+
+```tsx
+import { useFetchModeratedReports } from "@sublay/react-js";
+
+const fetchReports = useFetchModeratedReports();
+const reports = await fetchReports({ spaceId });
+```
+
+<Tip>Reports appear in the list until they are resolved. Filter by `status: "pending"` in your UI to show actionable items.</Tip>
+
+## Chat Moderation
+
+Spaces with integrated chat also support message moderation via the API. See the [Space Chat API](/api-reference/spaces/chat/get-space-conversation) for details on moderating chat messages within a space.
+
+## Hook Reference
+
+| Hook | Description |
+|------|-------------|
+| [`useModerateSpaceEntity`](/hooks/spaces/use-moderate-space-entity) | Approve or remove an entity in a space |
+| [`useModerateSpaceComment`](/hooks/spaces/use-moderate-space-comment) | Approve or remove a comment in a space |
+| [`useFetchModeratedReports`](/hooks/reports/use-fetch-moderated-reports) | Fetch pending content reports |
+| [`useHandleSpaceEntityReport`](/hooks/reports/use-handle-space-entity-report) | Resolve a reported entity |
+| [`useHandleSpaceCommentReport`](/hooks/reports/use-handle-space-comment-report) | Resolve a reported comment |

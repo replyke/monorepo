@@ -1,0 +1,197 @@
+---
+title: "Use Mentions"
+---
+
+# `useMentions`
+
+## Overview
+
+The `useMentions` hook provides comprehensive mention functionality for text inputs. It automatically detects @mentions in text, fetches user suggestions, manages mention state, and handles mention selection. This hook is designed to work with text input components that need full mention support.
+
+## Usage Example
+
+```tsx
+import { useMentions } from "@replyke/react-js";
+import { useState, useRef } from "react";
+
+function CommentInput() {
+  const [content, setContent] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [isSelectionActive, setIsSelectionActive] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const focus = () => {
+    inputRef.current?.focus();
+  };
+
+  const {
+    isMentionActive,
+    loading,
+    mentionSuggestions,
+    handleMentionClick,
+    mentions,
+    addMention,
+    resetMentions,
+  } = useMentions({
+    content,
+    setContent,
+    focus,
+    cursorPosition,
+    isSelectionActive,
+  });
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
+    setCursorPosition(e.target.selectionStart);
+  };
+
+  const handleSelectionChange = () => {
+    if (inputRef.current) {
+      const start = inputRef.current.selectionStart;
+      const end = inputRef.current.selectionEnd;
+      setCursorPosition(start);
+      setIsSelectionActive(start !== end);
+    }
+  };
+
+  return (
+    <div>
+      <textarea
+        ref={inputRef}
+        value={content}
+        onChange={handleTextChange}
+        onSelect={handleSelectionChange}
+        onKeyUp={handleSelectionChange}
+        onMouseUp={handleSelectionChange}
+        placeholder="Type @ to mention someone..."
+      />
+
+      {isMentionActive && (
+        <div className="mention-suggestions">
+          {loading ? (
+            <div>Loading suggestions...</div>
+          ) : (
+            mentionSuggestions.map((user) => (
+              <div
+                key={user.id}
+                onClick={() => handleMentionClick(user)}
+                className="mention-suggestion"
+              >
+                @{user.username} - {user.name}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      <div>
+        <strong>Current mentions:</strong>
+        {mentions.map((mention) => (
+          <span key={mention.id}>@{mention.username} </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Required Props
+
+The hook requires the following props to function:
+
+| Parameter          | Type                        | Required | Description                                           |
+| ------------------ | --------------------------- | -------- | ----------------------------------------------------- |
+| `content`          | `string`                    | Yes      | The current text content being edited                 |
+| `setContent`       | `(value: string) => void`   | Yes      | Function to update the text content                   |
+| `focus`            | `() => void`                | Yes      | Function to focus the text input                      |
+| `cursorPosition`   | `number`                    | Yes      | Current cursor position in the text                   |
+| `isSelectionActive`| `boolean`                   | Yes      | Whether text selection is currently active            |
+
+### Return Values
+
+The hook returns an object with the following properties:
+
+| Property             | Type                                    | Description                                      |
+| -------------------- | --------------------------------------- | ------------------------------------------------ |
+| `isMentionActive`    | `boolean`                               | Whether mention suggestions are currently active  |
+| `loading`            | `boolean`                               | Whether user suggestions are being fetched       |
+| `mentionSuggestions` | `User[]`                                | Array of suggested users for mention             |
+| `handleMentionClick` | `(user: User) => void`                  | Function to handle clicking a mention suggestion |
+| `mentions`           | `Mention[]`                             | Array of current mentions in the text            |
+| `addMention`         | `(user: User) => void`                  | Function to manually add a mention               |
+| `resetMentions`      | `() => void`                            | Function to clear all mentions and reset state   |
+
+### Type Definitions
+
+```typescript
+interface Mention {
+  id: string;
+  username: string;
+}
+```
+
+## Behavior & Features
+
+### Automatic Mention Detection
+- Detects when user types `@` followed by 3+ characters
+- Only activates when there's no active text selection
+- Uses regex pattern `/^@[\w.]+$/` to validate mention triggers
+- Supports usernames with letters, numbers, underscores, and dots
+
+### Debounced Search
+- Implements 1-second debounce to avoid excessive API calls
+- Automatically fetches user suggestions based on typed query
+- Clears suggestions when mention pattern no longer matches
+
+### State Management
+- Tracks all mentions added to the text
+- Prevents duplicate mentions for the same user
+- Maintains mention list independent of text content
+- Provides functions to manually manage mention state
+
+### Text Replacement
+- Automatically replaces mention trigger with selected username
+- Maintains proper spacing after mention insertion
+- Focuses back to input after mention selection
+
+## Integration Requirements
+
+To use this hook effectively, your text input component must:
+
+1. **Track cursor position**: Update `cursorPosition` on text changes and cursor movements
+2. **Track selection state**: Monitor whether text is selected vs just cursor positioned
+3. **Provide focus function**: Allow the hook to refocus the input after mention selection
+4. **Handle content updates**: Use the provided `setContent` function for text updates
+
+## Advanced Usage
+
+### Custom Mention Validation
+```tsx
+// The hook automatically validates mentions, but you can access
+// the current mentions array for additional processing
+const { mentions } = useMentions(props);
+
+// Process mentions for API submission
+const mentionData = mentions.map(mention => ({
+  userId: mention.id,
+  username: mention.username,
+}));
+```
+
+### Manual Mention Management
+```tsx
+const { addMention, resetMentions } = useMentions(props);
+
+// Manually add a mention (e.g., from external user selection)
+const handleAddUser = (user: User) => {
+  addMention(user);
+};
+
+// Clear all mentions (e.g., on form reset)
+const handleClearForm = () => {
+  resetMentions();
+  setContent("");
+};
+```

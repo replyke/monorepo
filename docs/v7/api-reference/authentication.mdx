@@ -1,0 +1,97 @@
+---
+title: "Authentication"
+description: "How to authenticate API requests with Bearer tokens and manage token refresh"
+---
+
+Most Sublay API endpoints require an authenticated user. Authentication uses short-lived JWT access tokens passed as `Bearer` tokens in the `Authorization` header.
+
+## Bearer Token
+
+Include the access token on every protected request:
+
+```http
+GET /v7/:projectId/app-notifications
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+Access tokens expire after **30 minutes**.
+
+## Obtaining Tokens
+
+Tokens are issued by the auth endpoints. Depending on your auth setup:
+
+| Method | Endpoint |
+|--------|----------|
+| Email + password sign-up | [POST `/auth/sign-up`](/api-reference/auth/sign-up) |
+| Email + password sign-in | [POST `/auth/sign-in`](/api-reference/auth/sign-in) |
+| External user (JWT-verified) | [POST `/auth/verify-external-user`](/api-reference/auth/verify-external-user) |
+| OAuth (Google, GitHub, etc.) | [POST `/oauth/authorize`](/api-reference/oauth/authorize) |
+
+All of these return the same token structure:
+
+```json
+{
+  "accessToken": "eyJ...",
+  "refreshToken": "eyJ...",
+  "user": { ... }
+}
+```
+
+## Refreshing Tokens
+
+When an access token expires, use the refresh token to obtain a new access token:
+
+```http
+POST /v7/:projectId/auth/request-new-access-token
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJ..."
+}
+```
+
+The response includes a new `accessToken` and a rotated `refreshToken`. Always store and use the latest refresh token — reusing a revoked one will invalidate the entire session. Each rotated refresh token is valid for another **30 days**, so active users stay signed in indefinitely. Only if a refresh token goes unused for 30 days will it expire and require the user to sign in again.
+
+See [Request New Access Token](/api-reference/auth/request-access-token) for full details.
+
+## SDK Token Management
+
+If you are using the Sublay SDK (`@sublay/react-js`, `@sublay/react-native`, etc.), **you do not need to manage tokens manually**. The SDK stores tokens, attaches them to every request, and automatically refreshes them before they expire.
+
+Token management is only relevant when calling the REST API directly — for example, from a server-side environment using the [Node SDK](/sdk/getting-started) or a custom HTTP client.
+
+## Unauthenticated Requests
+
+Some endpoints are publicly accessible without a token (e.g., fetching public entity data). These endpoints do not require an `Authorization` header.
+
+On endpoints that **require** auth, a missing header and a bad one are answered differently:
+
+| Situation | Status | Body |
+|-----------|--------|------|
+| No `Authorization` header | `401` | `Unauthorized` (plain text) |
+| Header present, token expired or invalid | `403` | `Forbidden` (plain text) |
+
+<Warning>
+  An **expired token returns `403`, not `401`**. If you are calling the REST API
+  directly, this is the case to build your refresh logic around — a client that
+  only refreshes on `401` will never refresh, and will start failing once its
+  first access token passes its 30-minute TTL.
+
+  Both responses are `text/plain` with no JSON body and no `code` field. Every
+  *other* `401`/`403` the API returns comes from a controller and **does** carry
+  a `code` (`space/auth-required`, `project/plan-required`, `user/suspended`, …).
+  Those describe a decision no token refresh can change, so the presence of a
+  `code` is a reliable way to tell "retry after refreshing" apart from "stop and
+  surface this to the user".
+</Warning>
+
+### Public endpoints ignore an unusable token
+
+Endpoints that treat the viewer as optional do **not** reject a token they cannot
+verify — they answer `200` and simply treat the caller as anonymous. A request
+carrying an expired token therefore succeeds, but comes back without any
+viewer-specific data: the caller's own reactions, saved state, and block
+filtering are all absent, with nothing in the response to signal it.
+
+If you are integrating directly, refresh proactively rather than waiting for an
+error on these routes. The official SDKs do this for you.
