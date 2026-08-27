@@ -20,7 +20,8 @@
   "homepage": "https://docs.sublay.io",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sublay/ui-core.git"
+    "url": "https://github.com/sublay-io/monorepo.git",
+    "directory": "packages/ui-core-react-native"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -32,7 +33,7 @@
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build": "rimraf dist && pnpm run build:esm && pnpm run build:cjs",
-    "prepublish": "pnpm run build"
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@giphy/js-fetch-api": "^5.7.0"
