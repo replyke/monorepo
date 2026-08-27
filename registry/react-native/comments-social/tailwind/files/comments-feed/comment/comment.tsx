@@ -1,0 +1,247 @@
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  Pressable,
+  Keyboard,
+} from "react-native";
+import {
+  Comment as CommentType,
+  UserMention,
+  useReactionToggle,
+  useCommentSection,
+  useUser,
+  getUserName,
+} from "@sublay/react-native";
+import {
+  UserAvatar,
+  FromNow,
+  parseContentWithMentions,
+  getImageComponent,
+} from "@sublay/ui-core-react-native";
+import { Replies } from "./replies";
+import HeartButton from "./heart-button";
+import useUIState from "../../../hooks/use-ui-state";
+
+const Comment = React.memo(
+  ({
+    comment: commentFromSection,
+    extraLeftPadding = 0,
+  }: {
+    comment: CommentType;
+    extraLeftPadding?: number;
+  }) => {
+    // Dynamically get the correct Image component and whether it is expo-image.
+    const { ImageComponent, isExpo } = getImageComponent();
+
+    const { user } = useUser();
+    const { handleShallowReply, handleDeepReply, callbacks, highlightedComment } =
+      useCommentSection();
+    const { theme, openCommentOptionsSheet, openCommentOptionsSheetOwner } = useUIState();
+
+    // CUSTOMIZATION: Comment styling defaults
+    const authorAvatarSize = 32;
+    const heartIconSize = 14;
+    const heartIconEmptyColor = theme === 'dark' ? '#9CA3AF' : '#8E8E8E';
+    const heartIconFullColor = theme === 'dark' ? '#F87171' : '#DC2626';
+
+    const [comment] = useState(commentFromSection);
+    const { currentReaction, reactionCounts, toggleReaction } = useReactionToggle({
+      targetType: "comment",
+      targetId: comment.id,
+      initialReaction: comment.userReaction,
+      initialReactionCounts: comment.reactionCounts,
+    });
+
+    const handleUpvoteComment = () => {
+      if (!user) {
+        callbacks?.loginRequiredCallback?.();
+        return;
+      }
+
+      if (!user.username && callbacks?.usernameRequiredCallback) {
+        callbacks.usernameRequiredCallback();
+        return;
+      }
+
+      toggleReaction({ reactionType: "like" });
+    };
+
+    const handleRemoveCommentUpvote = () => {
+      if (!user) {
+        callbacks?.loginRequiredCallback?.();
+        return;
+      }
+
+      toggleReaction({ reactionType: "like" });
+    };
+
+    const userUpvotedComment = currentReaction === "like";
+    const isOwner = comment.userId === user?.id;
+
+    // The API sends aspectRatio as a string (e.g. "1.5"), so coerce before
+    // doing math with it. Falls back to 1 (square) if it's missing or unparsable.
+    const gifAspectRatio = Number(comment.gif?.aspectRatio) || 1;
+
+    const imageStyle = {
+      width: gifAspectRatio > 1 ? 200 : 200 * gifAspectRatio,
+      height: gifAspectRatio < 1 ? 200 : 200 / gifAspectRatio,
+      borderRadius: 4,
+      overflow: "hidden" as const,
+    };
+
+    const imageProps = isExpo
+      ? {
+          source: comment.gif?.gifUrl,
+          contentFit: "cover" as const,
+          transition: 1000,
+          placeholder: comment.gif?.gifPreviewUrl,
+        }
+      : {
+          source: { uri: comment.gif?.gifUrl },
+        };
+
+    const isHighlighted = highlightedComment?.comment.id === comment.id;
+
+    return (
+      <View
+        className={`py-2 ${
+          isHighlighted
+            ? theme === 'dark'
+              ? 'bg-blue-800'
+              : 'bg-blue-100'
+            : 'bg-transparent'
+        }`}
+      >
+        <Pressable
+          onLongPress={() => {
+            Vibration.vibrate(50);
+            if (isOwner) {
+              openCommentOptionsSheetOwner!(comment);
+            } else {
+              openCommentOptionsSheet!(comment);
+            }
+            Keyboard.dismiss();
+          }}
+          className="w-full pr-4"
+          style={{ paddingLeft: 16 + extraLeftPadding }}
+        >
+          <View className="flex-row items-start gap-2">
+            <Pressable
+              onPress={() => {
+                if (comment.user?.id === user?.id) {
+                  callbacks?.currentUserClickCallback?.();
+                } else {
+                  callbacks?.otherUserClickCallback?.(
+                    comment.user?.id ?? "",
+                    comment.user?.foreignId
+                  );
+                }
+              }}
+            >
+              <UserAvatar
+                user={comment.user ?? {}}
+                borderRadius={authorAvatarSize}
+                size={authorAvatarSize}
+              />
+            </Pressable>
+            <View className="flex-1 flex-col gap-1">
+              <View className="flex-row items-baseline gap-1 mt-0.5">
+                <Pressable
+                  onPress={() => {
+                    if (comment.user?.id === user?.id) {
+                      callbacks?.currentUserClickCallback?.();
+                    } else {
+                      callbacks?.otherUserClickCallback?.(
+                        comment.user?.id ?? "",
+                        comment.user?.foreignId
+                      );
+                    }
+                  }}
+                >
+                  <Text
+                    className={`text-[13px] font-bold ${
+                      theme === 'dark' ? 'text-gray-50' : 'text-black'
+                    }`}
+                  >
+                    {getUserName(comment.user ?? {}, "username")}
+                  </Text>
+                </Pressable>
+                <FromNow
+                  time={comment.createdAt}
+                  fontSize={12}
+                  color={theme === 'dark' ? '#9CA3AF' : '#737373'}
+                />
+              </View>
+
+              {comment.content && (
+                <Text
+                  className={`text-[13px] ${
+                    theme === 'dark' ? 'text-gray-50' : 'text-black'
+                  }`}
+                >
+                  {parseContentWithMentions(
+                    comment.content,
+                    comment.mentions
+                      ?.filter((m): m is UserMention => 'username' in m)
+                      .map((m) => ({ id: m.id, foreignId: m.foreignId ?? undefined, username: m.username })),
+                    user?.id,
+                    callbacks?.currentUserClickCallback,
+                    callbacks?.otherUserClickCallback
+                  )}
+                </Text>
+              )}
+              {comment.gif?.gifUrl && (
+                <ImageComponent style={imageStyle} {...imageProps} />
+              )}
+
+              <View className="flex-row items-center gap-3">
+                <TouchableOpacity
+                  onPress={() =>
+                    comment.parentId
+                      ? handleShallowReply!(comment)
+                      : handleDeepReply!(comment)
+                  }
+                >
+                  <Text
+                    className={`text-xs font-semibold ${
+                      theme === 'dark' ? 'text-gray-400' : 'text-neutral-500'
+                    }`}
+                  >
+                    Reply
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View className="flex-col items-center">
+              <HeartButton
+                userUpvoted={userUpvotedComment}
+                handleUpvote={handleUpvoteComment}
+                handleRemoveUpvote={handleRemoveCommentUpvote}
+                iconSize={heartIconSize}
+                emptyColor={heartIconEmptyColor}
+                fullColor={heartIconFullColor}
+                padding={4}
+                paddingBottom={2}
+              />
+              <Text
+                className={`text-[11px] font-semibold ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-neutral-500'
+                }`}
+              >
+                {reactionCounts.like || 0}
+              </Text>
+            </View>
+          </View>
+        </Pressable>
+        {!comment.parentId && <Replies commentId={comment.id} />}
+      </View>
+    );
+  }
+);
+
+Comment.displayName = "Comment";
+
+export default Comment;

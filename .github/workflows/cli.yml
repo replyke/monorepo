@@ -1,0 +1,63 @@
+# cli group (@sublay/cli + the registry it installs from).
+#
+# registry/ is watched alongside packages/cli/ because the two are one
+# product: the CLI's fetchFile() downloads whatever registry/**/registry.json
+# says it should, so a registry-only change can break `sublay add` without
+# the CLI source moving at all. playground/ is deliberately not watched —
+# it is a manual Vite harness with nothing this job would run.
+#
+# See .github/workflows/test.yml for why each group gets its own workflow
+# file instead of a job in a shared one.
+name: Test cli
+
+on:
+  pull_request:
+    paths:
+      - "packages/cli/**"
+      - "registry/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/cli.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/cli/**"
+      - "registry/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/cli.yml"
+
+jobs:
+  cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build cli
+        run: pnpm --filter @sublay/cli run build
+
+      - name: Run cli test suites
+        # No suites exist yet, so this is a no-op today and starts doing
+        # real work the moment one lands. The package's own `typecheck`
+        # script is deliberately not wired in here: it fails on three
+        # untyped @babel/* imports, and did so in cli's previous home too,
+        # so turning it on would make this job red from its first run for
+        # a reason that has nothing to do with the move.
+        run: pnpm --filter @sublay/cli --if-present run test
