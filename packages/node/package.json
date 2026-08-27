@@ -17,7 +17,7 @@
     "directory": "packages/node"
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts --format cjs,esm",
+    "build": "tsup src/index.ts --dts --format cjs,esm --clean",
     "build:types": "tsc --emitDeclarationOnly",
     "prepare": "pnpm build && pnpm build:types",
     "test": "jest",
