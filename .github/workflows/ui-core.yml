@@ -1,0 +1,56 @@
+# ui-core group (@sublay/ui-core-react-js + @sublay/ui-core-react-native).
+#
+# These packages had no CI at all in their previous home; this is their
+# first automated check. There are no test suites for them yet, so the
+# `--if-present` run is a no-op today and starts doing real work the
+# moment either package grows one.
+#
+# See .github/workflows/test.yml for why each group gets its own workflow
+# file instead of a job in a shared one.
+name: Test ui-core
+
+on:
+  pull_request:
+    paths:
+      - "packages/ui-core-react-js/**"
+      - "packages/ui-core-react-native/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/ui-core.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/ui-core-react-js/**"
+      - "packages/ui-core-react-native/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/ui-core.yml"
+
+jobs:
+  ui-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build ui-core packages
+        run: pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build
+
+      - name: Run ui-core test suites
+        run: pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native --if-present run test

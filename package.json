@@ -38,7 +38,15 @@
     "publish-prod:patch": "pnpm version:patch && pnpm publish-prod",
     "publish-prod:minor": "pnpm version:minor && pnpm publish-prod",
     "publish-beta:patch": "pnpm version:patch && pnpm publish-beta",
-    "publish-beta:minor": "pnpm version:minor && pnpm publish-beta"
+    "publish-beta:minor": "pnpm version:minor && pnpm publish-beta",
+    "ui-core:version:patch": "pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native version patch --no-git-tag-version --no-git-checks",
+    "ui-core:version:minor": "pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native version minor --no-git-tag-version --no-git-checks",
+    "ui-core:publish-prod": "pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build && pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native publish --no-git-checks",
+    "ui-core:publish-beta": "pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build && pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native publish --tag beta --no-git-checks",
+    "ui-core:publish-prod:patch": "pnpm ui-core:version:patch && pnpm ui-core:publish-prod",
+    "ui-core:publish-prod:minor": "pnpm ui-core:version:minor && pnpm ui-core:publish-prod",
+    "ui-core:publish-beta:patch": "pnpm ui-core:version:patch && pnpm ui-core:publish-beta",
+    "ui-core:publish-beta:minor": "pnpm ui-core:version:minor && pnpm ui-core:publish-beta"
   },
   "devDependencies": {
     "@types/node": "^20.14.5",
