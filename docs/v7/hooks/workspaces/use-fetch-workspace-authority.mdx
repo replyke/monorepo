@@ -1,0 +1,64 @@
+---
+title: "Fetch workspace authority"
+description: "Resolve the current user's standing on a workspace"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchWorkspaceAuthority` returns a callable that resolves the signed-in user's standing on a workspace: `{ reasons, capabilities, permissions, rank }`. Use it to drive UI (show/hide buttons) — a permission check is a one-line `.includes()` on the result. Sublay never consumes your opaque `permissions`.
+
+<Note>
+  **Not visibility-gated.** [`GET /workspaces/:id/authority/me`](/api-reference/workspaces/fetch-authority) requires a signed-in user and nothing more. It returns `404` only when the workspace does not exist — a signed-in user with no relation to an existing workspace gets `200` with `reasons: []` and empty `capabilities` / `permissions`, which is exactly the answer a UI gate wants. The trade-off is that the route confirms a workspace *exists* to any signed-in caller.
+
+  Its sibling, [`useFetchWorkspaceMemberStanding`](/hooks/workspaces/use-fetch-workspace-member-standing), *is* visibility-gated and `404`s on a workspace the caller cannot see, so it never leaks existence. Do not assume the two behave alike.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchWorkspaceAuthority } from "@sublay/react-js";
+
+function InviteGate({ workspaceId }: { workspaceId: string }) {
+  const fetchWorkspaceAuthority = useFetchWorkspaceAuthority();
+
+  const canInvite = async () => {
+    const authority = await fetchWorkspaceAuthority({ workspaceId });
+    return authority.capabilities.includes("invite");
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Returns
+
+`WorkspaceAuthority`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `reasons` | `WorkspaceAuthorityReasonDetail[]` | Why the user has standing — structured `{ type, viaWorkspaceId? }` entries (`type` is `"owner"`/`"ancestor-owner"`/`"member"`/`"reach-holder"`). |
+| `capabilities` | `string[]` | The resolved capability set (direct + reach + ownership). |
+| `permissions` | `string[]` | Per-node permissions (may be empty). |
+| `rank` | `number \| null` | Direct-membership rank, or `null`. |
+
+`WorkspaceAuthorityReasonDetail`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | `"owner" \| "ancestor-owner" \| "member" \| "reach-holder"` | The kind of standing. |
+| `viaWorkspaceId` | `string?` | The ancestor granting it — present on `ancestor-owner` / `reach-holder` only. A user reaching in from several ancestors carries one entry per ancestor. |
+
+<Note>
+  **`view` is implied by every other capability.** Any user with standing resolves with `view` in `capabilities`, including a member whose stored `capabilities` array is empty. A user with no relation at all resolves to `reasons: []` and an empty capability set — so `capabilities.includes("view")` is a reliable "does this user have any standing here" check.
+</Note>
+
+Unlike the [member-standing read](/hooks/workspaces/use-fetch-workspace-member-standing), this hook is inherently a **self** read, so `capabilities` / `permissions` / `rank` are never fenced here — the fence exists to stop a caller reconstructing *someone else's* rank, and there is nobody else in this payload.
+
+## Related
+
+- [Read Authority API](/api-reference/workspaces/fetch-authority)

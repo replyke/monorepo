@@ -1,0 +1,570 @@
+---
+title: "Entities"
+description: "Create and manage content entities, reactions, drafts, and view counts from your server"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+<Note>
+  **Requires the `entities` bundle.** A project without the entities bundle returns `403 database/tables-not-available` for entity calls. See [Bundles](/bundles).
+</Note>
+
+Entities are the central content objects in Sublay — posts, articles, products, or any item in your application that users interact with. The `entities` module gives you full server-side control over their lifecycle.
+
+---
+
+### createEntity
+
+Creates a new entity.
+
+```typescript
+const entity = await sublay.entities.createEntity({
+  foreignId: "post-42",
+  title: "My First Post",
+  content: "Hello world",
+  keywords: ["intro", "welcome"],
+  userId: "usr_abc123",
+  metadata: { category: "blog" },
+});
+```
+
+<ParamField body="foreignId" type="string">
+  Your application's identifier for this entity. Used for idempotent lookups via `fetchEntityByForeignId`.
+</ParamField>
+
+<ParamField body="sourceId" type="string">
+  An optional secondary identifier for grouping or filtering entities.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  The space this entity belongs to.
+</ParamField>
+
+<ParamField body="title" type="string">
+  Title text for the entity.
+</ParamField>
+
+<ParamField body="content" type="string">
+  Body/content text for the entity.
+</ParamField>
+
+<ParamField body="attachments" type="array">
+  File or media attachments.
+</ParamField>
+
+<ParamField body="keywords" type="string[]">
+  Tags or keywords used for filtering and discovery.
+</ParamField>
+
+<ParamField body="mentions" type="array">
+  User mentions embedded in the entity.
+</ParamField>
+
+<ParamField body="location" type="object">
+  Geographic coordinates `{ latitude: number; longitude: number }`.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary public metadata.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The Sublay user ID to set as the entity's author.
+</ParamField>
+
+<ParamField body="nsfw" type="boolean">
+  The entity's own NSFW flag. Defaults to `false`. Effective NSFW also inherits from the entity's space. See [Entity NSFW flagging](/data-models/entity#nsfw-flagging).
+</ParamField>
+
+<ParamField body="isDraft" type="boolean">
+  When `true`, the entity is created as an unpublished draft. Defaults to `false`.
+</ParamField>
+
+<ParamField body="excludeUserId" type="boolean">
+  When `true`, creates the entity with no author association even if `userId` is provided.
+</ParamField>
+
+<ParamField body="requireUser" type="boolean">
+  When `true`, the request fails unless a valid author user is resolved.
+</ParamField>
+
+<ParamField body="createdAt" type="Date">
+  A `Date` used to backdate the entity's creation time.
+</ParamField>
+
+<ParamField body="updatedAt" type="Date">
+  A `Date` used to backdate the entity's last update time.
+</ParamField>
+
+**Returns** — `Promise<Entity>`
+
+---
+
+### fetchEntity
+
+Fetches a single entity by its Sublay ID.
+
+```typescript
+const entity = await sublay.entities.fetchEntity({ entityId: "ent_xyz789" });
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<Entity>`
+
+---
+
+### fetchEntityByForeignId
+
+Fetches an entity by your application's own identifier. Optionally creates it if not found.
+
+```typescript
+const entity = await sublay.entities.fetchEntityByForeignId({
+  foreignId: "post-42",
+  createIfNotFound: true,
+});
+```
+
+<ParamField body="foreignId" type="string" required>
+  Your application's entity identifier.
+</ParamField>
+
+<ParamField body="createIfNotFound" type="boolean">
+  When `true`, creates a stub entity if no match is found. Defaults to `false`.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+**Returns** — `Promise<Entity>`
+
+---
+
+### fetchEntityByShortId
+
+Fetches an entity by its short, human-readable ID (used in share URLs).
+
+```typescript
+const entity = await sublay.entities.fetchEntityByShortId({ shortId: "abc12" });
+```
+
+<ParamField body="shortId" type="string" required>
+  The entity's short ID.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+**Returns** — `Promise<Entity>`
+
+---
+
+### fetchManyEntities
+
+Fetches a filtered, paginated list of entities. Supports rich filtering by metadata, keywords, location, and more.
+
+```typescript
+const { data, pagination } = await sublay.entities.fetchManyEntities({
+  spaceId: "spc_abc123",
+  sortBy: "hot",
+  page: 1,
+  limit: 20,
+  metadataFilters: { includes: { category: "blog" } },
+});
+```
+
+<ParamField body="sourceId" type="string">
+  Filter by source ID.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Filter to entities within a specific space.
+</ParamField>
+
+<ParamField body="sortBy" type="string">
+  Sort order: `"createdAt"` (chronological — honors `sortDir`), `"hot"` (trending), `"top"` (highest scored), or `"controversial"`. A `"metadata.<prop>"` value is also accepted to sort by a metadata field.
+</ParamField>
+
+<ParamField body="sortDir" type="string">
+  Sort direction: `"asc"` or `"desc"`.
+</ParamField>
+
+<ParamField body="sortType" type="string">
+  How to interpret a metadata sort value: `"auto"`, `"numeric"`, `"text"`, `"boolean"`, or `"timestamp"`.
+</ParamField>
+
+<ParamField body="sortByReaction" type="string">
+  Sort by the count of a specific reaction: `"upvote"`, `"downvote"`, `"like"`, `"love"`, `"wow"`, `"sad"`, `"angry"`, or `"funny"`.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate (e.g. `"user"`).
+</ParamField>
+
+<ParamField body="timeFrame" type="string">
+  Time window to restrict results to: `"hour"`, `"day"`, `"week"`, `"month"`, or `"year"`.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The viewing user, used to resolve `followedOnly`.
+</ParamField>
+
+<ParamField body="followedOnly" type='"true" | "false"'>
+  When `"true"`, returns only entities from users the given `userId` follows.
+</ParamField>
+
+<ParamField body="keywordsFilters" type="object">
+  Filter by keyword tags: `{ includes?: string[]; doesNotInclude?: string[] }`.
+</ParamField>
+
+<ParamField body="metadataFilters" type="object">
+  Filter by metadata fields: `{ includes?, includesAny?, doesNotInclude?, exists?: string[], doesNotExist?: string[] }`.
+</ParamField>
+
+<ParamField body="titleFilters" type="object">
+  Filter by title: `{ hasTitle?: "true" | "false"; includes?: string | string[]; doesNotInclude?: string | string[] }`.
+</ParamField>
+
+<ParamField body="contentFilters" type="object">
+  Filter by content: `{ hasContent?: "true" | "false"; includes?: string | string[]; doesNotInclude?: string | string[] }`.
+</ParamField>
+
+<ParamField body="attachmentsFilters" type="object">
+  Filter by attachments: `{ hasAttachments?: "true" | "false" }`.
+</ParamField>
+
+<ParamField body="locationFilters" type="object">
+  Filter within a geographic radius: `{ latitude: string; longitude: string; radius: string }`.
+</ParamField>
+
+<ParamField body="nsfwFilter" type='"include-all" | "exclude" | "only"'>
+  Filter by effective NSFW (`entity.nsfw OR its space's nsfwEffective`). `"include-all"` (default) adds no predicate; `"exclude"` drops effective-NSFW entities; `"only"` returns only them. See [Entity NSFW flagging](/data-models/entity#nsfw-flagging).
+</ParamField>
+
+<ParamField body="blockedFilter" type='"exclude" | "include-outbound-blocked"'>
+  How to treat entities authored by users the viewer is [block-edged](/sdk/moderation/overview#blocking) with. `"exclude"` (default) hides them; `"include-outbound-blocked"` re-includes only the viewer's own outbound-blocked authors — never content from users who blocked the viewer. No effect without the `moderation` bundle.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<PaginatedResponse<Entity>>`
+
+---
+
+### updateEntity
+
+Updates fields on an existing entity.
+
+```typescript
+const entity = await sublay.entities.updateEntity({
+  entityId: "ent_xyz789",
+  title: "Updated Title",
+  metadata: { featured: true },
+});
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID to update.
+</ParamField>
+
+<ParamField body="title" type="string">
+  New title.
+</ParamField>
+
+<ParamField body="content" type="string">
+  New content body.
+</ParamField>
+
+<ParamField body="attachments" type="array">
+  Updated attachments list.
+</ParamField>
+
+<ParamField body="keywords" type="string[]">
+  Updated keywords list.
+</ParamField>
+
+<ParamField body="location" type="object">
+  Updated coordinates `{ latitude: number; longitude: number }`.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Updated metadata. Merged with existing values.
+</ParamField>
+
+<ParamField body="mentions" type="array">
+  Updated user mentions list.
+</ParamField>
+
+<ParamField body="nsfw" type="boolean">
+  Updated NSFW own-flag (owner / service / master). A space moderator flagging another user's entity uses `spaces.setSpaceEntityNsfw` instead. See [Entity NSFW flagging](/data-models/entity#nsfw-flagging).
+</ParamField>
+
+**Returns** — `Promise<Entity>`
+
+---
+
+### deleteEntity
+
+Permanently deletes an entity and its associated data.
+
+```typescript
+await sublay.entities.deleteEntity({ entityId: "ent_xyz789" });
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID to delete.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### incrementEntityViews
+
+Increments the view counter on an entity. Call this when a user views content to track engagement.
+
+```typescript
+const entity = await sublay.entities.incrementEntityViews({
+  entityId: "ent_xyz789",
+  count: 1,
+});
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID.
+</ParamField>
+
+<ParamField body="count" type="number">
+  Number to add to the view counter. Defaults to `1`.
+</ParamField>
+
+**Returns** — `Promise<Entity>`
+
+---
+
+### fetchDrafts
+
+Fetches a user's unpublished draft entities.
+
+```typescript
+const { data, pagination } = await sublay.entities.fetchDrafts({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose drafts to fetch.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="sourceId" type="string">
+  Filter drafts by source ID.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Filter drafts to a specific space.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Entity>>`
+
+---
+
+### publishDraft
+
+Publishes a draft entity, making it publicly visible.
+
+```typescript
+const entity = await sublay.entities.publishDraft({ entityId: "ent_xyz789" });
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID of the draft to publish.
+</ParamField>
+
+**Returns** — `Promise<Entity>`
+
+---
+
+### fetchTopComment
+
+Fetches the highest-scored (top) comment on an entity. Returns `null` if the entity has no comments.
+
+```typescript
+const topComment = await sublay.entities.fetchTopComment({
+  entityId: "ent_xyz789",
+});
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID.
+</ParamField>
+
+**Returns** — `Promise<TopComment | null>`
+
+---
+
+### addReaction
+
+Adds a reaction from a user to an entity.
+
+```typescript
+const reaction = await sublay.entities.addReaction({
+  entityId: "ent_xyz789",
+  userId: "usr_abc123",
+  reactionType: "like",
+});
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID of the reactor.
+</ParamField>
+
+<ParamField body="reactionType" type="ReactionType" required>
+  One of: `"upvote"`, `"downvote"`, `"like"`, `"love"`, `"wow"`, `"sad"`, `"angry"`, `"funny"`.
+</ParamField>
+
+**Returns** — `Promise<Reaction>`
+
+---
+
+### removeReaction
+
+Removes a user's existing reaction from an entity.
+
+```typescript
+await sublay.entities.removeReaction({
+  entityId: "ent_xyz789",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose reaction to remove.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### fetchReactions
+
+Fetches a paginated list of reactions on an entity, optionally filtered by reaction type.
+
+```typescript
+const { data, pagination } = await sublay.entities.fetchReactions({
+  entityId: "ent_xyz789",
+  reactionType: "like",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID.
+</ParamField>
+
+<ParamField body="reactionType" type="ReactionType">
+  Filter to a specific reaction type.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="sortDir" type="string">
+  Sort direction: `"asc"` or `"desc"`.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<PaginatedResponse<Reaction>>`
+
+---
+
+### getUserReaction
+
+Checks what reaction (if any) a specific user has left on an entity.
+
+```typescript
+const { reactionType } = await sublay.entities.getUserReaction({
+  entityId: "ent_xyz789",
+  userId: "usr_abc123",
+});
+// reactionType is "like" | "upvote" | ... | null
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID to check.
+</ParamField>
+
+**Returns** — `Promise<{ reactionType: ReactionType | null }>`
+
+---
+
+### isEntitySaved
+
+Checks whether a user has saved an entity to any of their collections.
+
+```typescript
+const { isSaved } = await sublay.entities.isEntitySaved({
+  entityId: "ent_xyz789",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID to check.
+</ParamField>
+
+**Returns** — `Promise<{ isSaved: boolean }>`

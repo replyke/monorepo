@@ -1,0 +1,99 @@
+---
+title: "Match users"
+description: "Match people by activity-derived interest facets, passively or by topic"
+icon: "plug"
+---
+
+## Overview
+
+Returns state and a `match` function for ranking users by **activity-derived interest facets**. In `passive` mode it matches against the current user's own facets ("who is like me?"); in `directed` mode it matches against a free-text topic ("who is into biotech?").
+
+For setup and the underlying model, see the [Interest Matching](/v7/interest-matching) guide.
+
+## Usage Example
+
+```tsx
+import { useMatchUsers } from "@sublay/react-js";
+
+function PeopleForYou() {
+  const { results, loading, match } = useMatchUsers();
+
+  return (
+    <div>
+      <button onClick={() => match({ mode: "passive", limit: 10 })}>
+        Find people like me
+      </button>
+      {results.map((r) => (
+        <div key={r.user.id}>
+          {r.user.name} — {r.score.toFixed(2)}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+Call `match` with:
+
+<ParamField path="mode" type="'passive' | 'directed'" required>
+  `"passive"` matches against the current user's facets; `"directed"` matches against `query`.
+</ParamField>
+
+<ParamField path="query" type="string">
+  The free-text topic to match against. Required in `directed` mode; must be non-empty (a blank directed query is a no-op). Not used in `passive` mode.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of matched users (max `50`).
+</ParamField>
+
+<ParamField path="spaceId" type="string">
+  Restrict candidates to users active in this space.
+</ParamField>
+
+<ParamField path="includeChildSpaces" type="boolean">
+  With `spaceId`, also include users active in the space's subtree.
+</ParamField>
+
+<ParamField path="includeSampleContent" type="boolean">
+  Request illustrative sample content per matched facet (only honored when the project has `exposeSampleContent` enabled).
+</ParamField>
+
+<ParamField path="excludeSelf" type="boolean">
+  Exclude the current user from results. Defaults to `true` server-side.
+</ParamField>
+
+## Returns
+
+<ResponseField name="results" type="UserMatchResult[]">
+  Ranked matches (descending by `score`).
+  <Expandable title="UserMatchResult properties">
+    <ResponseField name="user" type="User">
+      The matched user. See [User data model](/data-models/user).
+    </ResponseField>
+    <ResponseField name="score" type="number">
+      Aggregate match score.
+    </ResponseField>
+    <ResponseField name="matchedFacets" type="MatchedFacet[]">
+      Per-facet breakdown: `similarity`, `candidateFacet` ({ `id`, `hotness` }), `askerFacet` (present in passive mode), and `sampleContent` (only when both sample gates are on).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` while a match is in progress.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the last match failed.
+</ResponseField>
+
+<ResponseField name="match" type="(props) => Promise<void>">
+  Executes the match and updates `results`.
+</ResponseField>
+
+<ResponseField name="reset" type="() => void">
+  Clears `results` and `error`.
+</ResponseField>

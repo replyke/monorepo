@@ -1,0 +1,75 @@
+---
+title: "Get Connections"
+api: "GET /v7/:projectId/users/:userId/connections"
+description: "Get a paginated list of a user's accepted connections"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+Returns a paginated list of accepted connections for the specified user. Each entry includes the connected user's public profile. Authentication is optional — the endpoint works without a token. When the caller is signed in, any user with a block between them and the caller, in either direction, is excluded from the results. Block filtering requires the `moderation` bundle.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Sublay user ID (UUID) of the user whose connections to retrieve.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number for pagination. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Number of results per page. Defaults to `20`, maximum `100`.
+</ParamField>
+
+<ParamField query="query" type="string">
+  Optional search term. Filters the list to connections whose connected user's username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField query="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
+### Space-scoped reputation
+
+This endpoint has no space in context, so the opt-in `spaceReputation` object accepts a `spaceId` of a space **`<uuid>`** or **`none`** only — `context` is rejected (400). It adds a `spaceReputation` field to each returned user, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation).
+
+<SpaceReputationParams variant="user" field="query" />
+
+## Response
+
+On success, returns HTTP `200` with a paginated response:
+
+<ResponseField name="data" type="array">
+  Array of connection entries.
+  <Expandable title="item properties">
+    <ResponseField name="id" type="string">
+      Connection record ID.
+    </ResponseField>
+    <ResponseField name="connectedUser" type="object">
+      Public profile of the connected user (the user who is not `:userId`). Sensitive fields are excluded.
+    </ResponseField>
+    <ResponseField name="connectedAt" type="string">
+      ISO timestamp of when the connection was accepted.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="totalCount" type="number">
+  Total number of accepted connections.
+</ResponseField>
+
+<ResponseField name="page" type="number">
+  Current page number.
+</ResponseField>
+
+<ResponseField name="limit" type="number">
+  Page size used for this response.
+</ResponseField>
+
+## See Also
+
+- [`useFetchConnectionsByUserId` hook](/hooks/connections/use-fetch-connections-by-user-id)
+- [Connection data model](/data-models/connection)

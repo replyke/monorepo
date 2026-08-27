@@ -1,0 +1,144 @@
+---
+title: "Node.js SDK"
+description: "Server-side SDK for Sublay — use in backend APIs, server actions, webhooks, and scheduled jobs"
+---
+
+The `@sublay/node` SDK gives you full programmatic access to the Sublay API from any Node.js environment. It is designed for **server-side use only** — backend endpoints, Next.js server actions, webhook handlers, cron jobs, and scripts.
+
+<Note>
+  This SDK requires a **secret API key** and must never be used in client-side
+  code or shipped to the browser.
+</Note>
+
+## Installation
+
+```bash
+npm install @sublay/node
+```
+
+## Initialization
+
+Create a single `SublayClient` instance at startup and reuse it throughout your application.
+
+```typescript
+import { SublayClient } from "@sublay/node";
+
+const sublay = await SublayClient.init({
+  projectId: process.env.SUBLAY_PROJECT_ID!,
+  apiKey: process.env.SUBLAY_API_KEY!,
+});
+```
+
+### Configuration
+
+<ParamField body="projectId" type="string" required>
+  Your Sublay project ID, found in the dashboard under **Settings → General**.
+</ParamField>
+
+<ParamField body="apiKey" type="string" required>
+  Your secret API key from the dashboard. Keep this in an environment variable —
+  never commit it to source control.
+</ParamField>
+
+<ParamField body="isInternal" type="boolean">
+  Set to `true` when making internal/admin requests that bypass standard project
+  authorization. Defaults to `false`.
+</ParamField>
+
+## Modules
+
+Once initialized, all functionality is accessed through module namespaces on the client:
+
+```typescript
+sublay.auth              // Authentication — sign up, sign in, tokens, passwords
+sublay.users             // User profiles, follow/connection actions
+sublay.entities          // Content entities — CRUD, reactions, drafts
+sublay.comments          // Comments — CRUD, reactions
+sublay.collections       // Saved-content collections
+sublay.follows           // Follow graph — followers, following, counts
+sublay.connections       // Mutual connections and requests
+sublay.spaces            // Spaces — management, members, moderation, rules
+sublay.events            // Events — RSVPs, hosts, invites, guest list
+sublay.chat              // Conversations, messages, members, reactions, read state
+sublay.search            // Search and AI Q&A
+sublay.reports           // Content reports and the moderation queue
+sublay.appNotifications  // In-app notification feed
+sublay.storage           // File and image uploads, read, delete
+```
+
+## Acting on behalf of a user
+
+Your service key authenticates as the project, not as any single end user. So functions that operate **on a user's behalf** take an explicit `userId` — the named user the action is performed as (saving to a collection, reading a notification feed, filing a report, listing connections).
+
+A few routes — on the `users` module (following someone, requesting a connection) and on `chat` (`createDirectConversation`, `addMember`, `removeMember`, `changeMemberRole`) — act on one user toward another. There the **target** is `userId` and the **actor** is passed separately as `actingUserId`.
+
+<Note>
+  `oauth` is intentionally not exposed by this SDK (it's a browser redirect flow).
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Auth" icon="lock" href="/v7/node-sdk/auth">
+    Sign up, sign in, token management, password reset
+  </Card>
+  <Card title="Users" icon="user" href="/v7/node-sdk/users">
+    Fetch, update and delete profiles, follow and connection actions
+  </Card>
+  <Card title="Entities" icon="file" href="/v7/node-sdk/entities">
+    Create and manage content, reactions, drafts
+  </Card>
+  <Card title="Comments" icon="comment" href="/v7/node-sdk/comments">
+    Create and manage comments, reactions
+  </Card>
+  <Card title="Collections" icon="folder" href="/v7/node-sdk/collections">
+    Organize a user's saved entities into collections
+  </Card>
+  <Card title="Follows" icon="user-plus" href="/v7/node-sdk/follows">
+    Read a user's follow graph and counts
+  </Card>
+  <Card title="Connections" icon="link" href="/v7/node-sdk/connections">
+    Mutual connections, pending requests, accept/decline
+  </Card>
+  <Card title="Spaces" icon="layer-group" href="/v7/node-sdk/spaces">
+    Space CRUD, navigation, slug management
+  </Card>
+  <Card title="Space Members" icon="users" href="/v7/node-sdk/spaces-members">
+    Membership, roles, approvals, bans
+  </Card>
+  <Card title="Space Moderation" icon="shield" href="/v7/node-sdk/spaces-moderation">
+    Reports, content moderation, rules
+  </Card>
+  <Card title="Chat" icon="message" href="/v7/node-sdk/chat">
+    Conversations, messages, members, reactions, read state
+  </Card>
+  <Card title="Search" icon="magnifying-glass" href="/v7/node-sdk/search">
+    Full-text search and AI-powered Q&A
+  </Card>
+  <Card title="Reports" icon="flag" href="/v7/node-sdk/reports">
+    File content reports and read the moderation queue
+  </Card>
+  <Card title="App Notifications" icon="bell" href="/v7/node-sdk/app-notifications">
+    Read and mark a user's in-app notifications
+  </Card>
+  <Card title="Storage" icon="upload" href="/v7/node-sdk/storage">
+    Upload, fetch, and delete files and images
+  </Card>
+</CardGroup>
+
+## Paginated Responses
+
+Functions that return lists use a shared `PaginatedResponse<T>` shape:
+
+```typescript
+{
+  data: T[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    totalItems: number;
+    hasMore: boolean;
+  };
+}
+```
+
+Pass `page` and `limit` to any list function to control pagination.

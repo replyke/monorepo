@@ -1,0 +1,195 @@
+---
+title: "Search"
+description: "Full-text search across content, users, and spaces, plus AI-powered Q&A"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+The `search` module provides server-side access to Sublay's search and AI capabilities. Use it to build search APIs, power recommendation engines, or answer natural-language questions about your content.
+
+---
+
+### searchContent
+
+Searches entities by full-text query, optionally scoped to a space.
+
+```typescript
+const { data, pagination } = await sublay.search.searchContent({
+  query: "getting started guide",
+  spaceId: "spc_abc123",
+  sourceTypes: ["entity", "comment"],
+  limit: 10,
+});
+```
+
+<ParamField body="query" type="string" required>
+  The search query string.
+</ParamField>
+
+<ParamField body="sourceTypes" type="string[]">
+  Which content types to search: any of `"entity"`, `"comment"`, `"message"`.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Scope the search to a specific space.
+</ParamField>
+
+<ParamField body="includeChildSpaces" type="boolean" default="false">
+  Only applies with `spaceId`. When `true`, the search also covers every space nested under it — the whole subtree at any depth — not just the named space. Ignored without `spaceId`.
+</ParamField>
+
+<ParamField body="conversationId" type="string">
+  Scope the search to a specific conversation.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<PaginatedResponse<Entity>>`
+
+---
+
+### searchUsers
+
+Searches for users by name or username.
+
+```typescript
+const { data, pagination } = await sublay.search.searchUsers({
+  query: "alice",
+  limit: 10,
+});
+```
+
+<ParamField body="query" type="string" required>
+  The search query string.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<User>>`
+
+---
+
+### searchSpaces
+
+Searches for spaces by name or description.
+
+```typescript
+const { data, pagination } = await sublay.search.searchSpaces({
+  query: "photography",
+  limit: 10,
+});
+```
+
+<ParamField body="query" type="string" required>
+  The search query string.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Space>>`
+
+---
+
+### askContent
+
+Asks a natural-language question about your content and returns an AI-generated answer with source references.
+
+<Note>
+  This feature requires semantic search to be enabled for your project. See the [Semantic Search & AI](/v7/semantic-search-ai) guide for setup instructions.
+</Note>
+
+```typescript
+const { answer, sources } = await sublay.search.askContent({
+  query: "What are the best practices for error handling?",
+  spaceId: "spc_abc123",
+});
+
+// answer: "Based on the content in this space, best practices include..."
+// sources: [{ entityId: "ent_xyz", title: "Error Handling Guide" }, ...]
+```
+
+<ParamField body="query" type="string" required>
+  The natural-language question to answer.
+</ParamField>
+
+<ParamField body="sourceTypes" type="string[]">
+  Which content types to draw from: any of `"entity"`, `"comment"`, `"message"`.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Scope the search to content within a specific space.
+</ParamField>
+
+<ParamField body="includeChildSpaces" type="boolean" default="false">
+  Only applies with `spaceId`. When `true`, the context lookup also covers every space nested under it — the whole subtree at any depth — so you can ask across a community and all of its channels at once. Ignored without `spaceId`.
+</ParamField>
+
+<ParamField body="conversationId" type="string">
+  Scope the search to a specific conversation.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of sources to draw from.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<{ answer: string; sources?: Array<{ entityId: string; title: string | null }> }>`
+
+---
+
+### matchUsers
+
+Matches people by **activity-derived interest facets**, in `passive` mode (against a given user's own facets) or `directed` mode (against a free-text topic). See the [Interest Matching](/v7/interest-matching) guide for setup and the model.
+
+<Note>
+  Requires a paid plan, the `ai-search` and `interest-matching` bundles, and `interestMatching.enabled` on the project.
+</Note>
+
+```typescript
+const { results } = await sublay.search.matchUsers({
+  mode: "directed",
+  query: "biotech",
+  limit: 10,
+});
+
+// results: [{ user, score, matchedFacets: [{ similarity, candidateFacet, askerFacet?, sampleContent? }] }]
+```
+
+<ParamField body="mode" type="string" required>
+  `"passive"` or `"directed"`.
+</ParamField>
+
+<ParamField body="query" type="string">
+  The topic to match against. Required in `directed` mode; rejected in `passive` mode.
+</ParamField>
+
+<ParamField body="limit" type="number" default="20">
+  Maximum number of matched users. Maximum `50`.
+</ParamField>
+
+<ParamField body="spaceId" type="string">
+  Restrict candidates to users active in this space.
+</ParamField>
+
+<ParamField body="includeChildSpaces" type="boolean" default="false">
+  With `spaceId`, also include users active in the space's subtree.
+</ParamField>
+
+<ParamField body="includeSampleContent" type="boolean" default="false">
+  Request illustrative sample content per matched facet. Only honored when the project has `interestMatching.exposeSampleContent` on; otherwise returns `403 match/sample-content-disabled`.
+</ParamField>
+
+<ParamField body="excludeSelf" type="boolean" default="true">
+  Exclude the asker from results.
+</ParamField>
+
+**Returns** — `Promise<{ results: UserMatchResult[] }>` (the `{ results }` envelope, ordered by descending `score`).

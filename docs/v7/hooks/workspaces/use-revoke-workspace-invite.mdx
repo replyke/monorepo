@@ -1,0 +1,69 @@
+---
+title: "Revoke workspace invite"
+description: "Revoke a pending workspace invitation"
+icon: "plug"
+---
+
+## Overview
+
+`useRevokeWorkspaceInvite` returns a callable that marks a pending [invitation](/data-models/workspace-invitation) `revoked`. Fires `workspace.invite.revoked`.
+
+**Authorization:** capability-gated. Requires the `invite` capability on the workspace (owners hold it implicitly) — the same gate as creating and listing invites.
+
+<Note>
+  The underlying route is a verb-suffixed **`POST /workspaces/:id/invites/:inviteId/revoke`**, not a `DELETE`. The hook handles this for you; it is worth knowing if you are comparing against the [API reference](/api-reference/workspaces/invitations/revoke-invite).
+</Note>
+
+## Usage Example
+
+```tsx
+import {
+  useFetchWorkspaceInvites,
+  useRevokeWorkspaceInvite,
+} from "@sublay/react-js";
+
+function InviteRow({
+  workspaceId,
+  inviteId,
+}: {
+  workspaceId: string;
+  inviteId: string;
+}) {
+  const revokeWorkspaceInvite = useRevokeWorkspaceInvite();
+  const fetchWorkspaceInvites = useFetchWorkspaceInvites();
+
+  const handleRevoke = async () => {
+    await revokeWorkspaceInvite({ workspaceId, inviteId });
+    await fetchWorkspaceInvites({ workspaceId }); // refresh the outbox
+  };
+
+  return <button onClick={handleRevoke}>Revoke</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="inviteId" type="string" required>
+  The invitation UUID.
+</ParamField>
+
+## Returns
+
+`{ success: boolean }`.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/unauthorized` | 403 | You lack the `invite` capability on this workspace. |
+| `workspace/invite-not-found` | 404 | No such invitation on this workspace. |
+
+## Related
+
+- [`useFetchWorkspaceInvites`](/hooks/workspaces/use-fetch-workspace-invites) — list what there is to revoke
+- [`useResendWorkspaceInvite`](/hooks/workspaces/use-resend-workspace-invite)
+- [Revoke Invite API](/api-reference/workspaces/invitations/revoke-invite)

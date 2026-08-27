@@ -1,0 +1,58 @@
+---
+title: "Fetch blocked users"
+description: "Read the current user's own paginated block list"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that fetches a paginated list of the users the current user has blocked (their **outbound** blocks), each row carrying a public profile summary. This is the private "manage / way back to unblock" surface — it exposes only the current user's own blocks.
+
+## Usage Example
+
+```tsx
+import { useFetchBlockedUsers } from "@sublay/react-js";
+
+function BlockList() {
+  const fetchBlockedUsers = useFetchBlockedUsers();
+
+  useEffect(() => {
+    fetchBlockedUsers({ page: 1, limit: 20 }).then(({ data }) => {
+      data.forEach((row) => console.log(row.blockedUser?.username));
+    });
+  }, []);
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts an optional object:
+
+<ParamField path="page" type="number" default="1">
+  Page number for pagination.
+</ParamField>
+
+<ParamField path="limit" type="number" default="20">
+  Number of results per page. Max `100`.
+</ParamField>
+
+## Returns
+
+A `PaginatedResponse<BlockedUser>`, where each `BlockedUser` is:
+
+<ResponseField name="id" type="string">
+  ID of the block record.
+</ResponseField>
+
+<ResponseField name="blockedUser" type="User | null">
+  Public profile of the blocked user.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO timestamp of when the block was created.
+</ResponseField>
+
+## Related
+
+- [useBlockManager](/hooks/blocks/use-block-manager)
+- [useUnblockUser](/hooks/blocks/use-unblock-user)

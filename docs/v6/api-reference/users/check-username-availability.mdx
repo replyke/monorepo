@@ -1,0 +1,49 @@
+---
+title: "Check Username Availability"
+api: "GET /api/v6/:projectId/users/check-username"
+description: "Check if a username is available for use"
+---
+
+Check if a given username is available for use.
+
+## Query Parameters
+
+<ParamField query="username" type="string" required>
+  The username to check for availability
+</ParamField>
+
+## Response
+
+<ResponseField name="available" type="boolean">
+  `true` if the username is available, `false` if it's already taken
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing or Invalid Username - 400 Bad Request">
+    ```json
+    {
+      "error": "Username is required and must be a string.",
+      "code": "username/invalid-input"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "An error occurred while checking username availability.",
+      "code": "username/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- This endpoint does **not** require authentication.
+- Only exact matches are considered (case-sensitive).

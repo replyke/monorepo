@@ -1,0 +1,147 @@
+---
+title: "Create Reputation Grant"
+api: "POST /v7/:projectId/reputation-grants"
+description: "Transfer reputation from one user's bucket to another user's bucket in the same space"
+---
+
+Transfers reputation between two users. This is a **debited transfer**: the amount leaves the sender's bucket and lands in the recipient's bucket for the same space. Nothing is created — see [Mint Reputation Grant](/api-reference/reputation-grants/mint-reputation-grant) for that.
+
+Requires authentication. A user token sends from the token's own user. A service or master key may name any sender via `actingUserId`, which is how an app performs a **mediated transfer** — enforcing its own economic rules before letting the transfer through. Mediated transfers skip the project-level user-grant switch and ignore block relationships; they are otherwise identical to a user grant, including the balance check.
+
+Requires the `reputation` bundle (both `ReputationBuckets` and `ReputationGrants` must be present in the project's schema).
+
+## Body Parameters
+
+<ParamField body="recipientId" type="string" required>
+  UUID of the user receiving the reputation. Must differ from the sender.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Whole number from `1` to `2147483647` (the signed 32-bit maximum, which is also the width of a reputation balance). A transfer can never be zero, negative, or fractional, and it can never exceed what the sender holds in the source bucket.
+</ParamField>
+
+<ParamField body="spaceId" type="string | null">
+  UUID of the space whose bucket pays. Omitted or `null` means the project-general bucket. The reputation always lands in the recipient's bucket for the same space — reputation never crosses between the general bucket and a space bucket.
+
+  The space is validated before anything moves: an ID that names no space is rejected with `404 reputation-grant/space-not-found`, and naming a space on a project without the `spaces` bundle is rejected with `403 database/tables-not-available`.
+</ParamField>
+
+<ParamField body="note" type="string | null">
+  Free-text note. Trimmed, up to 2000 characters.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary key-value data. Up to 1 MB. Omit the key when unused — `null` is not accepted.
+</ParamField>
+
+<ParamField body="targetType" type="string">
+  What the grant is for: `"entity"`, `"comment"`, or `"chat-message"`. Must be supplied together with `targetId`. The target is an annotation — it never determines which bucket is used, and it does not have to be authored by the recipient.
+</ParamField>
+
+<ParamField body="targetId" type="string">
+  UUID of the rewarded record. Must be supplied together with `targetType`, and must exist at the time of granting.
+</ParamField>
+
+<ParamField body="actingUserId" type="string">
+  Service/master key only. The **sender** — the user reputation is debited from. Spelled `actingUserId` rather than `userId` because this body already names a target user (`recipientId`). A user token may only name itself.
+</ParamField>
+
+## Response
+
+Returns `201` with the created [ReputationGrant](/data-models/reputation-grant), written with `sourceType: "user"`.
+
+Both balances move: the sender's bucket and profile total drop by `amount`, the recipient's rise by the same. The recipient is notified (a `reputation-grant` [app notification](/data-models/app-notification)), and a `chat-message`-targeted grant is broadcast to the conversation as [`message:grant`](/sdk/chat/real-time).
+
+## Gating and blocks
+
+- **Project setting.** The switch is `settings.reputationGrants.allowUserInitiated`, flipped from **Settings → SDK** in the dashboard. Only an explicit `false` closes the endpoint to user tokens — an absent key means grants are allowed — and the stored value survives unrelated settings updates, so it changes only when that key is explicitly sent. When the switch is off a user token is rejected with `403 reputation-grant/user-grants-disabled`; service and master keys still work, so peer transfers remain available when routed through your backend.
+- **Blocks.** If either party has blocked the other, a user grant is rejected in both directions — with the same non-disclosing answer as a missing user. Service and master keys ignore block relationships.
+- **Suspension.** A suspended user cannot send a grant, including on the mediated path — a service key naming a suspended `actingUserId` is rejected too. A master key bypasses the check. A suspended user can always receive a grant.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "amount: Too small: expected number to be >=1", "code": "reputation-grant/invalid-body" }
+    ```
+    Field-level failures are prefixed with the field path, so `error` reads `"<path>: <message>"` — `"amount: Invalid input: expected int, received number"` for a fractional amount, `"recipientId: Invalid UUID format"` for a malformed ID. The one whole-body rule has no path and so no prefix: supplying `targetType` without `targetId` (or the reverse) returns `"targetType and targetId must be supplied together"`.
+  </Accordion>
+  <Accordion title="Self Grant — 400">
+    ```json
+    { "error": "A user cannot grant reputation to themselves.", "code": "reputation-grant/self-grant" }
+    ```
+  </Accordion>
+  <Accordion title="Missing Sender — 400">
+    ```json
+    { "error": "Missing user ID", "code": "reputation-grant/missing-user-id" }
+    ```
+    A service or master key called the endpoint without naming an `actingUserId`.
+  </Accordion>
+  <Accordion title="User Grants Disabled — 403">
+    ```json
+    { "error": "User-initiated reputation grants are disabled for this project.", "code": "reputation-grant/user-grants-disabled" }
+    ```
+  </Accordion>
+  <Accordion title="Unauthorized Sender — 403">
+    ```json
+    { "error": "Unauthorized", "code": "reputation-grant/unauthorized" }
+    ```
+    A user token named an `actingUserId` other than its own.
+  </Accordion>
+  <Accordion title="Suspended — 403">
+    ```json
+    {
+      "error": "This account is suspended and cannot perform this action.",
+      "code": "user/suspended",
+      "reason": "...",
+      "endDate": "..."
+    }
+    ```
+    `reason` and `endDate` are `null` when the suspension carries neither.
+  </Accordion>
+  <Accordion title="Tables Not Available — 403">
+    ```json
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["ReputationBuckets", "ReputationGrants"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
+    ```
+    The `reputation` bundle is missing — the route names both of its tables, so a project without it is told about both — or the target's bundle is missing (e.g. a `chat-message` target without `chat`), or a `spaceId` was supplied on a project without `spaces`. `missingTables` names exactly what is absent.
+  </Accordion>
+  <Accordion title="Space Not Found — 404">
+    ```json
+    { "error": "The space this grant targets does not exist.", "code": "reputation-grant/space-not-found" }
+    ```
+    The `spaceId` names no space in this project. Checked before any balance is touched, so nothing moves.
+  </Accordion>
+  <Accordion title="User Not Found — 404">
+    ```json
+    { "error": "One or both users involved in this grant do not exist.", "code": "reputation-grant/user-not-found" }
+    ```
+    One answer for both parties, deliberately non-disclosing — and the same answer returned when a block edge exists in either direction.
+  </Accordion>
+  <Accordion title="Target Not Found — 404">
+    ```json
+    { "error": "The grant target does not exist.", "code": "reputation-grant/target-not-found" }
+    ```
+    The target record does not exist — or, for a `chat-message` target, the sender is not an active member of that conversation. The two cases are byte-identical so a caller holding a message ID cannot probe whether it exists. Mediated transfers are membership-checked on the named sender exactly as user tokens are.
+  </Accordion>
+  <Accordion title="Insufficient Reputation — 409">
+    ```json
+    { "error": "The sender does not have enough reputation in the source bucket.", "code": "reputation-grant/insufficient-reputation" }
+    ```
+    Nothing moves. Also the answer when the `spaceId` names a real space the sender holds no funded bucket in.
+  </Accordion>
+  <Accordion title="Conflict — 409">
+    ```json
+    { "error": "The grant conflicted with a concurrent write. Retry.", "code": "reputation-grant/conflict" }
+    ```
+    Retryable. Two simultaneous transfers from the same bucket can never both succeed against the same balance.
+  </Accordion>
+</AccordionGroup>
+
+**Rate limit:** 50 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
+
+See also: [useCreateReputationGrant](/hooks/reputation/use-create-reputation-grant) · [node-sdk](/v7/node-sdk/reputation) · [js-sdk](/v7/js-sdk/reputation)

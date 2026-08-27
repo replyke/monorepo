@@ -1,0 +1,81 @@
+---
+title: "Bundles"
+description: "Sublay features are modular. Each project is assembled from bundles — groups of features you install per project and can add or remove at any time."
+icon: "cubes"
+---
+
+Sublay is not one monolithic feature set. It's a collection of **bundles** — self-contained feature modules you turn on per project. A bundle groups everything a feature needs (its database tables and the endpoints and SDK hooks that operate on them), so your project only carries the features you actually use.
+
+Every project gets its own isolated database schema. Installing a bundle provisions that bundle's tables into your project's schema and switches the feature on. Removing a bundle takes it back out.
+
+<Note>
+  Bundles are about **provisioning**, not pricing. Installing a bundle makes the feature available in your project; what each plan allows (quotas, AI access, etc.) is a separate concern. See [Semantic Search & AI](/semantic-search-ai) for an example of a feature that needs both its bundle *and* a paid plan.
+</Note>
+
+## The core bundle
+
+Every project always has the **`core`** bundle. It's installed automatically when the project is created and cannot be removed. Core provides the foundation that every other feature builds on:
+
+- **Users, authentication & identity** — email/password accounts, OAuth identities, and OAuth provider configuration. See [Authentication](/authentication).
+
+Because OAuth identity lives in core, [OAuth sign-in](/sdk/authentication/oauth) works on every project without installing anything extra.
+
+## Available bundles
+
+On top of core, you choose which of these to install. Most are independent — install only what you need — but a few depend on another bundle (see below).
+
+| Bundle | Feature | What it adds |
+|--------|---------|--------------|
+| `entities` | [Entities](/sdk/entities/overview) | The base content unit — posts, articles, listings, anything your users create — with views, drafts, and publishing |
+| `comments` | [Comments](/sdk/comments/overview) | Threaded comments on entities |
+| `reactions` | [Reactions](/sdk/reactions/overview) | Emoji reactions on entities and comments |
+| `files-images` | [Storage](/sdk/storage/overview) | File and image uploads, including user avatars and banners |
+| `follows` | [Follows](/sdk/relationships/overview) | Unidirectional follow relationships |
+| `connections` | [Connections](/sdk/relationships/overview) | Bidirectional connection (friend-style) requests |
+| `spaces` | [Spaces](/sdk/spaces/overview) | Hierarchical community spaces, membership, roles, and rules |
+| `workspaces` | [Workspaces](/sdk/workspaces/overview) | Self-nesting SaaS/team workspaces with invitations and per-member authority |
+| `chat` | [Chat](/sdk/chat/overview) | Real-time 1:1 and group conversations with message reactions |
+| `collections` | [Collections](/sdk/collections/overview) | User-owned bookmarking and folders for saving entities |
+| `moderation` | [Moderation](/sdk/moderation/overview) | Reports, report resolution, and user suspensions |
+| `notifications` | [App Notifications](/sdk/app-notifications/overview) | In-app notification system |
+| `push` | [Push Notifications](/push-notifications) | Native OS push delivery to iOS, Android, and Web |
+| `ai-search` | [Semantic Search & AI](/sdk/search/overview) | Content embeddings, semantic search, and the AI ask endpoint |
+| `reputation` | [Reputation](/data-models/reputation), [ReputationGrant](/data-models/reputation-grant) | Per-space reputation buckets with a maintained overall total on each user, plus reputation grants — reputation deliberately given by a user or minted by your app |
+
+### Bundle dependencies
+
+A couple of bundles build directly on another and can't be installed on their own:
+
+- **`comments` and `collections` require `entities`.** Comments attach to an entity and collections save entities, so both need the `entities` bundle installed first. The dashboard pre-checks `entities` for you when you select either; installing them via the API without `entities` returns `409 database/bundle-prerequisite-missing`. For the same reason, `entities` can't be removed while `comments` or `collections` are still installed — remove those first.
+- **`interest-matching` requires `ai-search`.** Interest matching builds on the content embeddings that `ai-search` provides, so `ai-search` must be installed first and can't be removed while `interest-matching` is present.
+
+## Choosing bundles when you create a project
+
+When you create a project in the [dashboard](https://dash.sublay.io), you pick the bundles you want. `core` is always included — you can't deselect it — and you can start with **core only** and add the rest later. Nothing is locked in at creation time.
+
+## Adding and removing bundles later
+
+Installed bundles are managed from the **Database** page of your project in the dashboard (`https://dash.sublay.io/<projectId>/database`). From there you can install a bundle you skipped, or remove one you no longer need.
+
+Installing a bundle is an asynchronous operation — the dashboard shows it as **provisioning** while the tables are created, then **installed** once it's ready. This usually takes a moment.
+
+<Warning>
+  **Removing a bundle is destructive.** Uninstalling drops the bundle's tables and the data in them, and clears references to that data from other bundles. For example, removing the `spaces` bundle deletes all spaces and clears the `spaceId` on any entities, comments, or conversations that pointed at a space. There is no undo — back up anything you need first.
+
+  Uninstalling the `reputation` bundle is doubly lossy: it drops the reputation buckets table and the grants table — destroying all grant history — **and** zeroes the `reputation` column on every user. Reinstalling starts fresh from zero — past scores are not recomputed. See [Reputation](/data-models/reputation).
+</Warning>
+
+## What happens if a bundle isn't installed
+
+Feature endpoints and SDK hooks only work when their bundle is installed. If your app calls a feature whose bundle is missing, the API responds with a clear error instead of a generic failure:
+
+| Situation | Response | Meaning |
+|-----------|----------|---------|
+| Bundle not installed | `403` · `database/tables-not-available` | The feature isn't enabled for this project. The response includes a `dashboardUrl` pointing at the project's Database page so you can install it. |
+| Bundle currently installing | `503` · `database/tables-provisioning` | The bundle is mid-install. This is transient — retry shortly. |
+
+If you hit one of these while building, the fix is almost always to install the bundle for the feature you're using. Open the **Database** page in the dashboard and add it.
+
+<Note>
+  This is why a feature can be fully documented and supported but still return `database/tables-not-available` on your project — the docs describe the whole platform, while your project only runs the bundles you've installed.
+</Note>

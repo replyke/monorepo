@@ -1,0 +1,149 @@
+---
+title: "Suspensions"
+description: "Platform-wide user suspensions — the enforced timeout for participation"
+---
+
+## Overview
+
+A **suspension** puts a user in a platform-wide timeout. While an active suspension is in place, the user **cannot participate** — every content and participation write is blocked server-side — but they can still **sign in, read everything, and manage their own account**. It's the "you're in timeout" model (Reddit / Discord / StackOverflow), not an eviction.
+
+Suspensions are set by project owners and admins from the [Sublay Dashboard](#dashboard-flow), or automatically by the report-handling flow. They are platform-wide and distinct from [space membership moderation](/sdk/spaces/membership) (space bans), which is scoped to a single space and set by space admins.
+
+<Note>
+  **Requires the `moderation` bundle.** Suspensions are only available when the `moderation` bundle is installed on your project. On projects without it, suspensions are never queried and writes are never blocked on this basis. See [Bundles](/bundles) to add it.
+</Note>
+
+## What a suspension blocks
+
+While a user has an active suspension, **every authenticated participation and content write is blocked** — it's a denylist-by-default. This includes:
+
+- Creating, updating, or deleting comments — including editing or deleting your own
+- Adding or removing reactions — on comments and entities
+- Creating, updating, or deleting entities, and publishing drafts
+- Creating or joining spaces
+- Creating events and RSVP'ing
+- Chat: creating conversations, sending messages, reacting to messages, reporting messages
+- Collections writes (create, add entity, update, delete)
+- Following, requesting a connection, and accepting or declining a connection
+- Standalone file and image uploads
+- Filing reports
+
+## What stays open
+
+Reads, sign-in, and account self-management are **never** blocked by a suspension:
+
+- All reads (GET requests) — public **and** member-only content
+- Sign in, refresh token, sign out, change password, account-deletion request/confirm
+- Editing your own profile and deleting your own account
+- Marking notifications read / mark-all-read
+- Registering/deregistering push tokens and updating notification preferences
+- Linking/unlinking OAuth identities
+- Chat: marking as read and muting conversations
+
+Because a suspended user can still sign in and read, they can see the suspension reason and end date and appeal — which is why sign-in stays open by design.
+
+## The blocked-write response contract
+
+A blocked write returns HTTP **`403`** with this body:
+
+```json
+{
+  "error": "This account is suspended and cannot perform this action.",
+  "code": "user/suspended",
+  "reason": "Repeated spam",
+  "endDate": "2026-08-01T00:00:00.000Z"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `error` | `string` | Human-readable message. |
+| `code` | `"user/suspended"` | Stable discriminator — always this value for a suspension block. |
+| `reason` | `string \| null` | The reason the moderator gave, or `null`. |
+| `endDate` | `string \| null` | ISO end date, or `null` for an **indefinite** suspension. |
+
+The `reason` and `endDate` are taken from the user's **effective** suspension (see below).
+
+## Effective suspension
+
+Multiple active suspensions can coexist on one user (for example, a manual suspension and a report-driven auto-suspension). The **effective** suspension is the **furthest-reaching active row** — an indefinite suspension (`endDate: null`) reaches the furthest and always wins the tie-break. A user is considered suspended while **any** active suspension exists.
+
+"Active" means `startDate ≤ now` and (`endDate ≥ now` or `endDate` is `null`).
+
+## SDK: consuming suspension state
+
+The `@sublay/core` SDK **only consumes** the current user's own suspension state — it does not suspend or lift (that's the [dashboard's](#dashboard-flow) job). There are two surfaces.
+
+### Ambient state — `useUser`
+
+[`useUser`](/hooks/user/use-user) exposes derived `isSuspended` and `activeSuspension` fields, computed from the authenticated user's `suspensions` using the same effective definition as the server. Bind your "you're suspended until X" banner or disabled composer to these.
+
+```tsx
+import { useUser } from "@sublay/react-js";
+
+function Composer() {
+  const { isSuspended, activeSuspension } = useUser();
+
+  if (isSuspended) {
+    return (
+      <SuspendedBanner
+        reason={activeSuspension?.reason}
+        endDate={activeSuspension?.endDate} // null = indefinite
+      />
+    );
+  }
+
+  return <MessageInput />;
+}
+```
+
+`activeSuspension` is `{ reason, startDate, endDate } | null` — the furthest-reaching active suspension, or `null` when the user isn't suspended.
+
+### Reactive error — `SuspendedError`
+
+If a write is attempted anyway (for example, a suspension lands mid-session), the blocked `403 user/suspended` response is surfaced as a typed, catchable `SuspendedError` carrying `reason` and `endDate`. The SDK discriminates this response **before** its generic 403 → token-refresh handling, so a blocked write is **not** silently retried and does **not** trigger a spurious token refresh.
+
+```tsx
+import { useCreateComment } from "@sublay/react-js";
+import { SuspendedError, isSuspendedError } from "@sublay/core";
+
+async function submit() {
+  try {
+    await createComment({ content: "…" });
+  } catch (err) {
+    if (isSuspendedError(err)) {
+      // err.reason, err.endDate (null = indefinite)
+      showSuspendedState(err.reason, err.endDate);
+      return;
+    }
+    throw err;
+  }
+}
+```
+
+Use `isSuspendedError(err)` (or `err instanceof SuspendedError`) to narrow. Both `SuspendedError` and `isSuspendedError` are exported from `@sublay/core`.
+
+## Dashboard flow
+
+Suspending and lifting are done from the **Sublay Dashboard** by project owners and admins — no code integration is required.
+
+- **View.** A user's suspensions are shown on their profile in the Users view — active ones prominently (reason, until-when, who set it), past ones as history. Indefinite suspensions (`endDate: null`) show as active.
+- **Suspend.** Suspend a user with a reason and an optional expiration. Leaving the expiration empty creates an indefinite suspension.
+- **Lift.** Lifting a suspension **expires** it in place (it isn't deleted — the audit trail is preserved). Because multiple active suspensions can coexist, lifting one active row may leave others in place. A **"lift all active"** action fully un-suspends the user by clearing every active row at once.
+
+<Note>
+  Suspension has retroactive bite: enabling it can block users who were suspended before enforcement existed. Lifting is the escape hatch and ships alongside it.
+</Note>
+
+## What suspension deliberately does not do
+
+- **Reads are never blocked** — a suspended user can read everything they could before.
+- **Sign-in is never blocked** — so the user can see the reason/end date and appeal.
+- **There is no per-app or per-severity configuration.** Suspension is a single, fixed behavior: block participation writes, allow reads and account self-management. There is no advisory level, no read-blocking mode, and no `mute` vs `ban` severity.
+
+## Related
+
+- [useUser hook](/hooks/user/use-user) — `isSuspended` / `activeSuspension`
+- [User data model](/data-models/user) — the `Suspension` shape on `AuthUser`
+- [Moderation overview](/sdk/moderation/overview) — reporting and content moderation
+- [Space membership](/sdk/spaces/membership) — space-scoped bans (a separate axis)

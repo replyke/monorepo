@@ -1,0 +1,33 @@
+---
+title: "useWithdrawRsvp"
+description: "Remove the logged-in user's RSVP from an event"
+icon: "plug"
+---
+
+## Overview
+
+`useWithdrawRsvp` returns a callable that removes the logged-in user's RSVP. The RSVP row is deleted and the matching count decremented. It is idempotent — withdrawing with no RSVP succeeds and changes nothing.
+
+## Usage Example
+
+```tsx
+import { useWithdrawRsvp } from "@sublay/react-js";
+
+function WithdrawButton({ eventId }: { eventId: string }) {
+  const withdrawRsvp = useWithdrawRsvp();
+  return <button onClick={() => withdrawRsvp({ eventId })}>Withdraw RSVP</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="eventId" type="string" required>The event ID.</ParamField>
+
+## Returns
+
+Returns a `Promise<Event>` — the [Event](/data-models/event) with refreshed `rsvpCounts`.
+
+## See Also
+
+- [Withdraw RSVP API](/api-reference/events/withdraw-rsvp)
+- [useSetRsvp](/hooks/events/use-set-rsvp)

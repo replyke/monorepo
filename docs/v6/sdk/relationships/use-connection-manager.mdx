@@ -1,0 +1,310 @@
+---
+title: "useConnectionManager"
+---
+
+# `useConnectionManager`
+
+## Overview
+
+The `useConnectionManager` hook provides a comprehensive solution for managing connection relationships between users. Unlike simple follow relationships, connections are bidirectional and require mutual acceptance - similar to LinkedIn or Facebook connections.
+
+This hook manages the complete connection workflow including:
+- Checking connection status
+- Sending connection requests (with optional message)
+- Accepting or declining received requests
+- Withdrawing sent requests
+- Disconnecting from established connections
+- Loading states and optimistic updates
+
+Unlike individual hooks, this manager hook handles the complete connection lifecycle in a single interface, making it ideal for implementing connection buttons and managing connection state throughout your user interface.
+
+## Usage Example
+
+```tsx
+import { useConnectionManager } from "@replyke/react-js";
+
+function ConnectionButton({ userId }: { userId: string }) {
+  const {
+    connectionStatus,
+    isLoading,
+    sendConnectionRequest,
+    acceptConnectionRequest,
+    disconnectUser,
+  } = useConnectionManager({ userId });
+
+  if (isLoading) {
+    return <button disabled>Loading...</button>;
+  }
+
+  switch (connectionStatus) {
+    case "none":
+      return (
+        <button onClick={() => sendConnectionRequest()}>
+          Connect
+        </button>
+      );
+    case "pending-sent":
+      return (
+        <button onClick={withdrawConnectionRequest}>
+          Cancel Request
+        </button>
+      );
+    case "pending-received":
+      return (
+        <div>
+          <button onClick={acceptConnectionRequest}>Accept</button>
+          <button onClick={declineConnectionRequest}>Decline</button>
+        </div>
+      );
+    case "connected":
+      return (
+        <button onClick={disconnectUser}>
+          Disconnect
+        </button>
+      );
+    default:
+      return null;
+  }
+}
+
+// More complex example with message
+function UserProfile({ userId }: { userId: string }) {
+  const {
+    connectionStatus,
+    connectionData,
+    isLoading,
+    sendConnectionRequest,
+    acceptConnectionRequest,
+    declineConnectionRequest,
+    disconnectUser,
+  } = useConnectionManager({ userId });
+
+  const handleSendRequest = async () => {
+    try {
+      await sendConnectionRequest("I'd like to connect with you!");
+    } catch (error) {
+      console.error("Failed to send request:", error);
+    }
+  };
+
+  return (
+    <div>
+      <h2>User Profile</h2>
+      <div>
+        {isLoading ? (
+          <span>Checking connection status...</span>
+        ) : (
+          <>
+            <span>Status: {connectionStatus}</span>
+            {connectionStatus === "connected" && connectionData.connectedAt && (
+              <p>Connected since: {new Date(connectionData.connectedAt).toLocaleDateString()}</p>
+            )}
+            {/* Render appropriate buttons based on status */}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook accepts an object with the following field:
+
+| Parameter | Type     | Required | Description                              |
+|-----------|----------|----------|------------------------------------------|
+| `userId`  | `string` | Yes      | The ID of the user to manage connection status for. |
+
+### Returns
+
+The hook returns an object with the following fields:
+
+| Return Value   | Type                 | Description                                                        |
+|----------------|----------------------|--------------------------------------------------------------------|
+| `connectionStatus` | `ConnectionStatus` | The current connection status (see Connection Status section below). |
+| `connectionId` | `string \| null` | The ID of the connection if one exists, `null` otherwise. |
+| `connectionData` | `ConnectionData` | Additional data about the connection (dates, type). |
+| `isLoading` | `boolean` | Whether the hook is currently loading or performing an operation. |
+| `sendConnectionRequest` | `(message?: string) => Promise<void>` | Function to send a connection request with optional message. |
+| `acceptConnectionRequest` | `() => Promise<void>` | Function to accept a received connection request. |
+| `declineConnectionRequest` | `() => Promise<void>` | Function to decline a received connection request. |
+| `withdrawConnectionRequest` | `() => Promise<void>` | Function to withdraw a sent connection request. |
+| `disconnectUser` | `() => Promise<void>` | Function to disconnect from an established connection. |
+| `removeConnectionSmart` | `() => Promise<void>` | Function to remove connection regardless of current state. |
+| `refreshConnectionStatus` | `() => Promise<void>` | Function to manually refresh the connection status. |
+
+## Connection Status
+
+The `connectionStatus` field can have the following values:
+
+| Status | Description |
+|--------|-------------|
+| `"none"` | No connection exists between users. |
+| `"pending-sent"` | You have sent a connection request that is awaiting response. |
+| `"pending-received"` | You have received a connection request that is awaiting your response. |
+| `"connected"` | Both users are connected. |
+| `"declined-sent"` | Your connection request was declined by the other user. |
+| `"declined-received"` | You declined a connection request from the other user. |
+
+## Connection Data
+
+The `connectionData` object contains additional information about the connection:
+
+```typescript
+interface ConnectionData {
+  connectionId: string | null;
+  connectedAt?: string;      // Date when connection was established
+  requestedAt?: string;       // Date when request was initially sent
+  createdAt?: string;         // Date when connection record was created
+  respondedAt?: string;       // Date when request was responded to
+  type?: "sent" | "received"; // Whether you sent or received the request
+}
+```
+
+## Behavior & Features
+
+### Automatic Status Loading
+- Automatically fetches the current connection status when the hook is initialized
+- Handles loading states during the initial fetch
+- Skips loading if the target user is the same as the authenticated user
+
+### Connection Request with Message
+- Send connection requests with an optional personalized message
+- Message parameter is optional - defaults to no message if not provided
+
+```tsx
+// Send request without message
+await sendConnectionRequest();
+
+// Send request with message
+await sendConnectionRequest("I'd love to connect and collaborate!");
+```
+
+### State Management
+- Prevents multiple simultaneous operations
+- Maintains consistent state throughout the component lifecycle
+- Automatically updates when the target `userId` changes
+- Provides detailed connection metadata (dates, type)
+
+### Smart Operations
+Each operation function is guarded to only work in appropriate states:
+- `sendConnectionRequest`: Only works when status is `"none"` or `"declined-received"`
+- `acceptConnectionRequest`: Only works when status is `"pending-received"`
+- `declineConnectionRequest`: Only works when status is `"pending-received"`
+- `withdrawConnectionRequest`: Only works when status is `"pending-sent"`
+- `disconnectUser`: Only works when status is `"connected"`
+- `removeConnectionSmart`: Works for any status except `"none"` and `"declined-sent"`
+
+### Error Handling
+- Gracefully handles errors during status fetching
+- Defaults to `"none"` status if fetch fails
+- Logs errors to console for debugging purposes
+- Operations throw errors that can be caught by calling code
+
+## Implementation Notes
+
+### Self-Connection Prevention
+The hook automatically prevents users from connecting with themselves:
+- Skips status loading if `userId` matches the authenticated user's ID
+- Prevents all connection operations when targeting the same user
+
+### Loading States
+The hook provides loading indication during:
+- Initial status fetch
+- Connection request operations
+- Accept/decline operations
+- Disconnect operations
+
+### Status Refresh
+After accepting a connection, the hook automatically refreshes to get updated connection data with timestamps.
+
+## Error Scenarios
+
+The hook handles several error scenarios:
+1. **Network errors** during status fetching or operations
+2. **Authentication errors** if the user is not logged in
+3. **Invalid user IDs** that don't exist in the system
+4. **Invalid operations** (e.g., trying to accept when not in pending-received state)
+
+All errors are logged to the console, and operations throw errors that you can catch and handle.
+
+## Best Practices
+
+1. **Handle Loading States**: Always check `isLoading` before allowing user interactions
+2. **Status-Based UI**: Render different UI elements based on `connectionStatus`
+3. **Error Feedback**: Implement user-visible error feedback for failed operations
+4. **Prevent Self-Connect**: The hook handles this automatically, but your UI should also reflect this
+5. **Connection Messages**: Consider prompting users for a message when sending requests
+
+```tsx
+// Good example with proper state handling
+function ConnectionButton({ userId }: { userId: string }) {
+  const {
+    connectionStatus,
+    isLoading,
+    sendConnectionRequest,
+    acceptConnectionRequest,
+    withdrawConnectionRequest,
+    disconnectUser,
+  } = useConnectionManager({ userId });
+
+  const [error, setError] = useState<string | null>(null);
+
+  const handleAction = async (action: () => Promise<void>) => {
+    try {
+      setError(null);
+      await action();
+    } catch (err) {
+      setError("Operation failed. Please try again.");
+    }
+  };
+
+  if (isLoading) {
+    return <button disabled>Loading...</button>;
+  }
+
+  return (
+    <div>
+      {error && <div className="error">{error}</div>}
+      {connectionStatus === "none" && (
+        <button onClick={() => handleAction(sendConnectionRequest)}>
+          Connect
+        </button>
+      )}
+      {connectionStatus === "pending-sent" && (
+        <button onClick={() => handleAction(withdrawConnectionRequest)}>
+          Cancel Request
+        </button>
+      )}
+      {connectionStatus === "pending-received" && (
+        <div>
+          <button onClick={() => handleAction(acceptConnectionRequest)}>
+            Accept
+          </button>
+          <button onClick={() => handleAction(declineConnectionRequest)}>
+            Decline
+          </button>
+        </div>
+      )}
+      {connectionStatus === "connected" && (
+        <button onClick={() => handleAction(disconnectUser)}>
+          Disconnect
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Comparison with useFollowManager
+
+| Feature | useFollowManager | useConnectionManager |
+|---------|------------------|----------------------|
+| Relationship Type | Unidirectional (follow) | Bidirectional (connection) |
+| Requires Acceptance | No | Yes |
+| Status States | 2 (following/not following) | 6 (none, pending-sent, pending-received, connected, declined-sent, declined-received) |
+| Can Include Message | No | Yes (optional) |
+| Use Case | Social media feeds, content curation | Professional networks, mutual relationships |

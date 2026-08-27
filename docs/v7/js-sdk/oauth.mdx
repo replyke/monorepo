@@ -1,0 +1,108 @@
+---
+title: "OAuth"
+description: "OAuth sign-in and account-linking redirect flows, and managing linked identities"
+---
+
+The `oauth` module starts browser **redirect** flows for signing in (or signing up)
+with a third-party provider, and for linking an additional provider to the current
+user — plus reading and removing the user's linked identities.
+
+<Note>
+  `authorize` and `linkIdentity` return only an `authorizationUrl` — **not tokens**.
+  Redirect the browser to that URL; the provider bounces back to Sublay's callback,
+  which establishes the session and then redirects to your `redirectAfterAuth`. This
+  is why OAuth lives in the framework-agnostic SDK but not in the server-side
+  `@sublay/node` SDK.
+</Note>
+
+Supported providers (`OAuthProvider`): `"google"`, `"github"`, `"apple"`, `"facebook"`.
+
+---
+
+### authorize
+
+Begins an **unauthenticated** OAuth sign-in / sign-up flow and returns the
+provider's authorization URL.
+
+```typescript
+const { authorizationUrl } = await sublay.oauth.authorize({
+  provider: "google",
+  redirectAfterAuth: "https://app.example.com/welcome",
+});
+
+window.location.href = authorizationUrl; // hand off to the provider
+```
+
+<ParamField body="provider" type='"google" | "github" | "apple" | "facebook"' required>
+  The OAuth provider to authenticate with.
+</ParamField>
+
+<ParamField body="redirectAfterAuth" type="string" required>
+  Where to send the user after the flow completes. Must be one of the project's
+  allowed redirect URIs.
+</ParamField>
+
+**Returns** — `Promise<{ authorizationUrl: string }>`
+
+---
+
+### linkIdentity
+
+Links a new OAuth provider to the **current authenticated user** and returns the
+provider's authorization URL. The user is taken from the auth token, never the body.
+
+```typescript
+const { authorizationUrl } = await sublay.oauth.linkIdentity({
+  provider: "github",
+  redirectAfterAuth: "https://app.example.com/settings/connections",
+});
+
+window.location.href = authorizationUrl;
+```
+
+<ParamField body="provider" type='"google" | "github" | "apple" | "facebook"' required>
+  The OAuth provider to link.
+</ParamField>
+
+<ParamField body="redirectAfterAuth" type="string" required>
+  Where to send the user after linking completes. Must be one of the project's
+  allowed redirect URIs.
+</ParamField>
+
+**Returns** — `Promise<{ authorizationUrl: string }>`
+
+---
+
+### listIdentities
+
+Lists the current user's linked OAuth identities. Takes no arguments.
+
+```typescript
+const { identities } = await sublay.oauth.listIdentities();
+```
+
+**Returns** — `Promise<{ identities: OAuthIdentity[] }>`, where each `OAuthIdentity`
+is `{ id, provider, providerAccountId, email, name, avatar, isVerified, createdAt }`.
+
+---
+
+### unlinkIdentity
+
+Unlinks one of the current user's OAuth identities by ID.
+
+```typescript
+const { success } = await sublay.oauth.unlinkIdentity({
+  identityId: "oid_abc123",
+});
+```
+
+<ParamField body="identityId" type="string" required>
+  The linked-identity ID to remove.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean }>`
+
+<Note>
+  The server refuses to remove the last remaining identity if the user has no
+  password set — otherwise they would be locked out.
+</Note>

@@ -1,0 +1,113 @@
+---
+title: "Follows"
+description: "Read and manage the logged-in user's own follow graph"
+---
+
+The `follows` module acts on **your own** follow graph — the graph of the logged-in token holder. Use it to list the users you follow, list your followers, count either, and delete one of your follow relationships by its record ID.
+
+<Tip>
+  To read **another** user's followers, or to follow or unfollow someone by their
+  user ID, use the [`users`](/v7/js-sdk/users) module.
+</Tip>
+
+---
+
+### fetchFollowing
+
+Returns a paginated list of users you follow.
+
+```typescript
+const { data, pagination } = await sublay.follows.fetchFollowing({
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="query" type="string">
+  Optional search term. Filters the list to users whose username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField body="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<FollowListItem>>`, where `FollowListItem` is `{ followId, user, followedAt }`.
+
+---
+
+### fetchFollowers
+
+Returns a paginated list of your followers.
+
+```typescript
+const { data, pagination } = await sublay.follows.fetchFollowers({
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="query" type="string">
+  Optional search term. Filters the list to users whose username or name contains this text (case-insensitive). When omitted, no filtering is applied.
+</ParamField>
+
+<ParamField body="searchFields" type="string">
+  Restricts which field `query` matches against — `username` or `name`. When omitted, `query` matches either field.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<FollowListItem>>`
+
+---
+
+### fetchFollowingCount
+
+Returns the number of users you follow.
+
+```typescript
+const { count } = await sublay.follows.fetchFollowingCount();
+```
+
+**Returns** — `Promise<{ count: number }>`
+
+---
+
+### fetchFollowersCount
+
+Returns the number of your followers.
+
+```typescript
+const { count } = await sublay.follows.fetchFollowersCount();
+```
+
+**Returns** — `Promise<{ count: number }>`
+
+---
+
+### deleteFollow
+
+Deletes one of your follow relationships by its follow ID.
+
+```typescript
+await sublay.follows.deleteFollow({ followId: "flw_xyz789" });
+```
+
+<ParamField body="followId" type="string" required>
+  The ID of the follow relationship to delete.
+</ParamField>
+
+**Returns** — `Promise<void>`

@@ -1,0 +1,53 @@
+---
+title: "Leave workspace"
+description: "Self-service departure — remove your own membership on this node"
+icon: "plug"
+---
+
+## Overview
+
+`useLeaveWorkspace` returns a callable that removes the **signed-in user's own** direct membership on **this workspace node only**. Descendant memberships are untouched, and leaving a parent while still owning a child is fine — ownership is independent of membership. Fires `workspace.member.removed`.
+
+**Authorization:** self-service. No capability is required; the actor is always the signed-in user, so this hook cannot remove anyone else (use [`useRemoveWorkspaceMember`](/hooks/workspaces/use-remove-workspace-member) for that).
+
+<Note>
+  An **owner** has no member row and cannot leave this way — an owner exits by [transferring ownership](/hooks/workspaces/use-transfer-workspace-ownership) or [deleting](/hooks/workspaces/use-delete-workspace) the workspace. If you have no direct member row here (you only reach in from an ancestor), leaving is a no-op / `404`.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useLeaveWorkspace } from "@sublay/react-js";
+
+function LeaveButton({ workspaceId }: { workspaceId: string }) {
+  const leaveWorkspace = useLeaveWorkspace();
+
+  return (
+    <button onClick={() => leaveWorkspace({ workspaceId })}>
+      Leave workspace
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Returns
+
+Resolves to `void` (the endpoint returns `204 No Content`).
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/not-found` | 404 | You have no direct membership on this workspace. |
+| `workspace/sole-owner` | 409 | The sole owner must transfer ownership before leaving. |
+
+## Related
+
+- [`useRemoveWorkspaceMember`](/hooks/workspaces/use-remove-workspace-member) — remove someone else
+- [Leave Workspace API](/api-reference/workspaces/members/leave-workspace)

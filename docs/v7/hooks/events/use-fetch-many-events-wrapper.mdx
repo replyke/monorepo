@@ -1,0 +1,74 @@
+---
+title: "useFetchManyEventsWrapper"
+description: "Stateful, paginated events list with sorting and load-more"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchManyEventsWrapper` wraps [`useFetchManyEvents`](/hooks/events/use-fetch-many-events) into a ready-to-render list: it holds the accumulated `events`, tracks `loading`/`hasMore`, manages sort state, and exposes `loadMore` and `refresh`. It mirrors `useFetchManyEntitiesWrapper`. Visibility is enforced server-side, so the list only contains events the current user may see.
+
+Changing any filter prop (or calling `refresh`) resets the list to page 1.
+
+## Usage Example
+
+```tsx
+import { useFetchManyEventsWrapper } from "@sublay/react-js";
+
+function EventsList() {
+  const { events, loading, hasMore, loadMore, sortBy, setSortBy, refresh } =
+    useFetchManyEventsWrapper({
+      timeWindow: "upcoming",
+      limit: 20,
+      include: "userRsvp",
+    });
+
+  return (
+    <>
+      <button onClick={() => setSortBy("going")}>Sort by popularity</button>
+      {events.map((e) => (
+        <article key={e.id}>
+          <h3>{e.title}</h3>
+          <span>{e.rsvpCounts.going} going</span>
+        </article>
+      ))}
+      {hasMore && <button disabled={loading} onClick={loadMore}>Load more</button>}
+    </>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="limit" type="number">Page size. Defaults to `10`.</ParamField>
+<ParamField path="spaceId" type="string | null">Restrict to one space.</ParamField>
+<ParamField path="hostId" type="string | null">Only events this user hosts.</ParamField>
+<ParamField path="type" type='"online" | "physical" | "hybrid" | null'>Filter by type.</ParamField>
+<ParamField path="status" type='"active" | "cancelled" | null'>Filter by status.</ParamField>
+<ParamField path="timeWindow" type='"upcoming" | "ongoing" | "past" | null'>Derived time window.</ParamField>
+<ParamField path="startsAfter" type="string | null">ISO datetime lower bound.</ParamField>
+<ParamField path="startsBefore" type="string | null">ISO datetime upper bound.</ParamField>
+<ParamField path="myRsvp" type="RsvpStatus | RsvpStatus[] | null">Statuses the logged-in user RSVP'd with.</ParamField>
+<ParamField path="locationFilters" type="object | null">Proximity filter.</ParamField>
+<ParamField path="titleFilters" type="object | null">Free-text filter on `title`.</ParamField>
+<ParamField path="descriptionFilters" type="object | null">Free-text filter on `description`.</ParamField>
+<ParamField path="include" type="string | string[]">Associations to expand.</ParamField>
+<ParamField path="defaultSortBy" type='"startTime" | "going"'>Initial sort field. Defaults to `"startTime"`.</ParamField>
+<ParamField path="defaultSortDir" type='"asc" | "desc"'>Initial sort direction. Defaults to `"asc"`.</ParamField>
+
+## Returns
+
+<ResponseField name="events" type="Event[]">The accumulated events.</ResponseField>
+<ResponseField name="loading" type="boolean">`true` while fetching.</ResponseField>
+<ResponseField name="hasMore" type="boolean">Whether more pages remain.</ResponseField>
+<ResponseField name="sortBy" type='"startTime" | "going"'>Current sort field.</ResponseField>
+<ResponseField name="sortDir" type='"asc" | "desc"'>Current sort direction.</ResponseField>
+<ResponseField name="setSortBy" type="(s) => void">Change the sort field (resets to page 1).</ResponseField>
+<ResponseField name="setSortDir" type="(d) => void">Change the sort direction (resets to page 1).</ResponseField>
+<ResponseField name="loadMore" type="() => void">Advance to the next page.</ResponseField>
+<ResponseField name="refresh" type="() => void">Re-run the query from page 1.</ResponseField>
+
+## See Also
+
+- [Events Overview](/sdk/events/overview)
+- [Fetch Many Events API](/api-reference/events/fetch-many-events)

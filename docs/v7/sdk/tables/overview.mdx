@@ -1,0 +1,69 @@
+---
+title: "Overview"
+description: "Read and write your project's custom-table rows from React and React Native with useTable"
+---
+
+Custom tables let your project provision its own database tables alongside Sublay's built-in models — the app-specific data that doesn't fit a built-in feature. In React and React Native, you access a custom table's rows through the **`useTable`** hook. For the full feature overview — the `custom_` naming model, managed columns, soft-delete, and the dashboard editor — see [Custom Tables](/v7/custom-tables).
+
+<Note>
+  `@sublay/core` is hook-only — there is no imperative `client.table(...)` in the
+  React SDK. `useTable` is the custom-table surface. For an imperative, server-
+  side client use [`@sublay/node`](/v7/node-sdk/tables); for browser/vanilla JS,
+  use [`@sublay/js`](/v7/js-sdk/tables).
+</Note>
+
+## The hook
+
+`useTable(name)` returns the table's rows plus loading state, query controls (page, sort, filters, soft-delete visibility), and row CRUD actions. The query knobs are held in the Redux store keyed by table name, so multiple components reading the same table share one view.
+
+```tsx
+import { useTable } from "@sublay/react-js";
+
+interface EventRow {
+  id: string;
+  name: string;
+  capacity: number;
+  createdAt: string;
+}
+
+function EventsTable() {
+  const { rows, loading, setSort, setFilters, createRow } =
+    useTable<EventRow>("Events");
+
+  if (loading) return <Spinner />;
+
+  return (
+    <>
+      <button onClick={() => setSort("capacity", "desc")}>Sort by capacity</button>
+      {rows.map((e) => (
+        <div key={e.id}>{e.name} — {e.capacity}</div>
+      ))}
+      <button onClick={() => createRow({ name: "New event", capacity: 50 })}>
+        Add
+      </button>
+    </>
+  );
+}
+```
+
+The `name` you pass is the **logical** table name — Sublay applies the `custom_` prefix for you. `useTable` is re-exported from both `@sublay/react-js` and `@sublay/react-native`.
+
+## Reads, filters, and soft delete
+
+Rows come back already paginated, sorted, and filtered according to the table's stored view. Adjust the view with `setPage`, `setSort`, `setFilters`, and `setIncludeDeleted`. Filters are `{ column, operator, value }` clauses (AND-combined) using the operators `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `in`, `contains`, `like`, `isNull`.
+
+On a **paranoid** table, soft-deleted rows are hidden by default; call `setIncludeDeleted(true)` to surface them, and `restoreRow(id)` to bring one back. `deleteRow(id)` soft-deletes on a paranoid table (pass `{ force: true }` to hard-delete) and hard-deletes otherwise.
+
+## Hooks
+
+<CardGroup cols={1}>
+  <Card title="useTable" href="/v7/hooks/tables/use-table">
+    Full reference — props, return values, and the CRUD actions.
+  </Card>
+</CardGroup>
+
+<Warning>
+  Row CRUD on the `/db` surface is currently **open** — identity is captured but
+  not enforced. See the [security note](/v7/custom-tables#security-open-row-crud)
+  before storing access-controlled data in custom tables.
+</Warning>

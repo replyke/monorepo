@@ -1,0 +1,57 @@
+---
+title: "Fetch Event RSVPs"
+api: "GET /v7/:projectId/events/:eventId/rsvps"
+description: "List the named guest list (who RSVP'd) for an event"
+---
+
+Returns a paginated list of [EventRsvp](/data-models/event-rsvp) records, each with the `user` populated — the **named** guest list. Results are ordered by `createdAt` descending.
+
+Authentication is optional. The event is first loaded behind the [visibility predicate](/data-models/event#visibility), so a caller without access to the event gets `404`. The named list itself is then gated:
+
+- **Hosts** can always see it.
+- **Any viewer** (including anonymous) can see it when the event's `guestListVisible` is `true`.
+- **Service/master keys** bypass the gate.
+- Otherwise the response is `403`.
+
+Aggregate RSVP **counts** are always public via the event's `rsvpCounts` — this endpoint only governs the per-user list.
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page. Capped at `100`. Defaults to `10`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Comma-separated RSVP statuses to filter by, e.g. `"going,maybe"`. When omitted, all statuses are returned.
+</ParamField>
+
+## Response
+
+Returns a paginated response: `{ data: EventRsvp[], pagination: {...} }`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found / No Access — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Guest List Hidden — 403">
+    ```json
+    { "error": "This event's guest list is not visible.", "code": "event/guest-list-hidden" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchEventRsvps](/hooks/events/use-fetch-event-rsvps)

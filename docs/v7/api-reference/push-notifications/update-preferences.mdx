@@ -1,0 +1,96 @@
+---
+title: "Update Notification Preferences"
+api: "PUT /v7/:projectId/push-notifications/preferences"
+description: "Set the authenticated user's disabled push notification types"
+---
+
+Upserts the acting user's push notification preferences. The request **replaces** the whole disabled-types set — send the complete set you want stored, not a delta. Duplicates are collapsed; only valid event type names are accepted.
+
+Requires authentication. **Acting-user-scoped:** an end-user token (`Authorization: Bearer <accessToken>`) writes its own preferences. A service/master key acts on behalf of a named user via the optional body `userId` — a service key without `userId` is rejected, and an end-user token may not name a different user. Requires the `push` bundle.
+
+## Body Parameters
+
+<ParamField body="disabledTypes" type="string[]" required>
+  The complete set of event types to disable for push. Each value must be one of the server's exact event type names (see the [event palette](/notification-preferences#the-event-palette)) — unknown names are rejected. Pass `[]` to re-enable everything (all-on).
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The acting user whose preferences are written. **Service/master keys only** — a service key must pass it; an end-user token infers it from the auth token and may not name a different user.
+</ParamField>
+
+## Response
+
+Returns `200` with the stored set (deduplicated).
+
+```json
+{ "disabledTypes": ["comment-mention"] }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="No Credential — 401">
+    Plain-text `Unauthorized`, with no JSON body and no `code`. Returned when the
+    request carries no `Authorization` header at all.
+  </Accordion>
+  <Accordion title="Rejected Credential — 403">
+    Plain-text `Forbidden`, with no JSON body and no `code`. Returned when the
+    access token is malformed, has the wrong signature, or has **expired** — the
+    common case, since access tokens live 30 minutes. Refresh the access token
+    and retry.
+  </Accordion>
+  <Accordion title="Acting As Another User — 403">
+    ```json
+    { "error": "Unauthorized", "code": "notification-preferences/unauthorized" }
+    ```
+    Returned when an end-user token names a `userId` other than its own.
+  </Accordion>
+  <Accordion title="Missing User ID — 400">
+    ```json
+    { "error": "Missing user ID", "code": "notification-preferences/missing-user-id" }
+    ```
+    Returned when a service/master key omits the required `userId` (it has no implicit session user).
+  </Accordion>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "...", "code": "notification-preferences/invalid-body" }
+    ```
+    Returned when `disabledTypes` contains a value that is not a recognized event type name.
+  </Accordion>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
+    ```
+    Returned when the `push` bundle is not installed for this project.
+  </Accordion>
+  <Accordion title="Bundle Provisioning — 503">
+    ```json
+    {
+      "code": "database/tables-provisioning",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "bundleId": "push"
+    }
+    ```
+    Returned while the `push` bundle is mid-install. Retry shortly.
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    {
+      "error": "Internal server error.",
+      "code": "notification-preferences/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+**Rate limit:** 50 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
+
+## See Also
+
+- [Get Notification Preferences](/api-reference/push-notifications/get-preferences)
+- [`useNotificationPreferences`](/hooks/push/use-notification-preferences)
+- [Notification Preferences & Mute](/notification-preferences)

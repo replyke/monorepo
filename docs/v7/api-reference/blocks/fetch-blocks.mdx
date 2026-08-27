@@ -1,0 +1,75 @@
+---
+title: "Fetch Blocked Users"
+api: "GET /v7/:projectId/blocks"
+description: "Get the acting user's own paginated list of blocked users"
+---
+
+Returns a paginated list of the users the acting user has blocked (their **outbound** blocks), each row carrying a public summary of the blocked user. This is the private "manage / way back to unblock" surface.
+
+<Warning>
+  A block list is **private** — only the blocker can read their own list. It exposes only the caller's outbound blocks; there is no way to read who has blocked the caller.
+</Warning>
+
+<Note>
+  **Requires the `moderation` bundle.** A project without the moderation bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
+## Query Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number for pagination.
+</ParamField>
+
+<ParamField query="limit" type="number" default="20">
+  Number of results per page. Max `100`.
+</ParamField>
+
+<ParamField query="userId" type="string">
+  The user whose own block list to read (the blocker). Only service/master keys may supply a `userId` other than the caller's own; with a user token the subject is derived from the token.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200` with a paginated response:
+
+<ResponseField name="data" type="array">
+  Array of block entries.
+  <Expandable title="item properties">
+    <ResponseField name="id" type="string">
+      ID of the block record.
+    </ResponseField>
+    <ResponseField name="blockedUser" type="object">
+      Public profile of the blocked user. Sensitive fields (email, hash, salt, secureMetadata, etc.) are excluded. May be `null` if the user is unavailable.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO timestamp of when the block was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata.
+  <Expandable title="properties">
+    <ResponseField name="page" type="number">
+      Current page number.
+    </ResponseField>
+    <ResponseField name="pageSize" type="number">
+      Number of items per page.
+    </ResponseField>
+    <ResponseField name="totalItems" type="number">
+      Total number of blocked users.
+    </ResponseField>
+    <ResponseField name="totalPages" type="number">
+      Total number of pages.
+    </ResponseField>
+    <ResponseField name="hasMore" type="boolean">
+      Whether there are more pages after the current one.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## See Also
+
+- [`useFetchBlockedUsers` hook](/hooks/blocks/use-fetch-blocked-users)
+- [Block User](/api-reference/users/blocks/block-user)
+- [Block data model](/data-models/block)

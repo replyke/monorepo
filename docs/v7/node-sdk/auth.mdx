@@ -1,0 +1,277 @@
+---
+title: "Auth"
+description: "Sign users up, sign them in, manage tokens, and handle password resets from your server"
+---
+
+The `auth` module handles user authentication flows server-side. This is useful for custom onboarding pipelines, admin-initiated account creation, token introspection, and password management.
+
+<Note>
+  All auth functions operate on behalf of your project. The caller is your server, authenticated via API key — not an end user.
+</Note>
+
+---
+
+### signUp
+
+Creates a new user account and returns credentials.
+
+```typescript
+const { user, accessToken, refreshToken } = await sublay.auth.signUp({
+  email: "user@example.com",
+  password: "s3cur3P@ss",
+  name: "Alice",
+  username: "alice",
+});
+```
+
+<ParamField body="email" type="string" required>
+  The user's email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's plain-text password (hashed server-side).
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the user.
+</ParamField>
+
+<ParamField body="username" type="string">
+  Unique username. Must be available — check with `users.checkUsernameAvailability` first.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary key-value data attached to the user at creation time.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### signIn
+
+Authenticates an existing user and returns fresh credentials.
+
+```typescript
+const { user, accessToken, refreshToken } = await sublay.auth.signIn({
+  email: "user@example.com",
+  password: "s3cur3P@ss",
+});
+```
+
+<ParamField body="email" type="string" required>
+  The user's email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's password.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### signOut
+
+Invalidates a refresh token, ending the user's session.
+
+```typescript
+await sublay.auth.signOut({ refreshToken });
+```
+
+<ParamField body="refreshToken" type="string" required>
+  The refresh token to invalidate.
+</ParamField>
+
+<ParamField body="pushDevice" type="PushDeviceIdentifier">
+  Optional. The device the user is signing out on — `{ platform: "ios" | "android", token }`
+  or `{ platform: "web", subscription }`. When supplied (and the project has the
+  `push` bundle), the server deletes that user's push binding for the device in the
+  **same transaction** as the sign-out. Omit it and the sign-out revokes the token
+  family only, leaving any push binding in place.
+</ParamField>
+
+```typescript
+await sublay.auth.signOut({
+  refreshToken,
+  pushDevice: { platform: "ios", token: deviceToken },
+});
+```
+
+<Warning>
+  If the unbind fails, **nothing is committed** — the call rejects with `500` /
+  `auth/device-deregistration-failed` and the session survives so you can retry.
+  Never treat a failed `signOut` as signed out; discarding the credential anyway
+  leaves the user receiving notifications from an account they can no longer reach.
+
+  A `200` carrying `auth/push-unbind-status-unknown` is a success, not a failure:
+  the server signed the user out without attempting an unbind because it could not
+  determine whether the project has push devices. See
+  [`POST /auth/sign-out`](/api-reference/auth/sign-out#response).
+</Warning>
+
+**Returns** — `Promise<void>`
+
+---
+
+### requestNewAccessToken
+
+Exchanges a valid refresh token for a new access token.
+
+```typescript
+const { accessToken } = await sublay.auth.requestNewAccessToken({
+  refreshToken,
+});
+```
+
+<ParamField body="refreshToken" type="string" required>
+  A valid, non-expired refresh token.
+</ParamField>
+
+**Returns** — `Promise<{ accessToken: string }>`
+
+---
+
+### verifyExternalUser
+
+Verifies a signed JWT representing an externally-authenticated user and returns Sublay credentials. Use this when your application manages its own auth and you want to associate users with Sublay.
+
+```typescript
+const { user, accessToken, refreshToken } = await sublay.auth.verifyExternalUser({
+  userJwt: signedJwt,
+});
+```
+
+<ParamField body="userJwt" type="string" required>
+  A JWT signed with your project's signing secret, containing user identity claims.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### requestPasswordReset
+
+Sends a password reset email to the specified address.
+
+```typescript
+await sublay.auth.requestPasswordReset({ email: "user@example.com" });
+```
+
+<ParamField body="email" type="string" required>
+  The email address to send the reset link to.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### resetPassword
+
+Completes a password reset using a token from the reset email.
+
+This revokes **every** session for that user and removes **every** push binding they hold, on every device — a reset is the remedy for a suspected compromise, so nothing is spared and there is no field to spare one with. Contrast [`changePassword`](#changepassword), which keeps the calling session and can keep one device's binding. They sign in again everywhere, and each device re-binds for push on its own once it is next opened. Projects without the `push` bundle skip the binding step and are otherwise unaffected.
+
+```typescript
+await sublay.auth.resetPassword({
+  token: resetToken,
+  newPassword: "newS3cur3P@ss",
+});
+```
+
+<ParamField body="token" type="string" required>
+  The reset token from the password reset email link.
+</ParamField>
+
+<ParamField body="newPassword" type="string" required>
+  The new password to set for the account.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### verifyEmail
+
+Marks a user's email address as verified using a token from the verification email.
+
+```typescript
+await sublay.auth.verifyEmail({ token: verificationToken });
+```
+
+<ParamField body="token" type="string" required>
+  The email verification token.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### sendVerificationEmail
+
+Sends (or re-sends) an email-verification message to a user. Verification can be delivered as a short code or as a clickable link.
+
+```typescript
+const { success } = await sublay.auth.sendVerificationEmail({
+  userId: "usr_abc123",
+  mode: "code",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID to send the verification email to.
+</ParamField>
+
+<ParamField body="mode" type="string">
+  `"code"` emails a short token the user enters; `"link"` emails a verification URL. Defaults to `"code"`.
+</ParamField>
+
+<ParamField body="tokenFormat" type="string">
+  Format of the generated token: `"hex"`, `"numeric"`, `"alpha"`, or `"alphanumeric"`.
+</ParamField>
+
+<ParamField body="tokenLength" type="number">
+  Length of the generated token.
+</ParamField>
+
+<ParamField body="redirectUrl" type="string">
+  For `mode: "link"` — where to send the user after the link is verified.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean }>`
+
+---
+
+### changePassword
+
+Changes a user's password, verifying their current password first. Use this for an authenticated "change password" flow (as opposed to the token-based `resetPassword`).
+
+A password change ends **every session** for that user and deletes every push binding they hold — see [Change Password](/api-reference/auth/change-password). A service key is not a session, so a call made with one has nothing to spare.
+
+```typescript
+const { success, message } = await sublay.auth.changePassword({
+  userId: "usr_abc123",
+  password: "currentP@ss",
+  newPassword: "newS3cur3P@ss",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose password to change.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's current password (verified before the change).
+</ParamField>
+
+<ParamField body="newPassword" type="string" required>
+  The new password to set.
+</ParamField>
+
+<ParamField body="pushDevice" type="object">
+  One device whose push binding should survive the change: `{ platform: "ios" | "android", token }` or `{ platform: "web", subscription }`.
+
+  A server-side caller normally has no device to name and should omit this — every binding for the user then goes, which is the right default when acting on someone's behalf. Supply it only when your own client told you which device it is on and you want that one to keep receiving notifications.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean; message: string }>`

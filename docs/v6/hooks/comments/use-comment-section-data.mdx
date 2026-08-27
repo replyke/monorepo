@@ -1,0 +1,224 @@
+---
+title: "Use Comment Section Data"
+---
+
+# `useCommentSectionData`
+
+## Overview
+
+The `useCommentSectionData` hook provides a comprehensive solution for managing comment sections associated with entities. Unlike individual hooks such as `useFetchComments` or `useCreateComment`, this hook combines functionalities like fetching, creating, updating, deleting, and managing comment states (e.g., sorting, replying). It is ideal for implementing fully-featured comment sections with advanced state management.
+
+
+## Usage Example
+
+```tsx
+import { useCommentSectionData } from "@replyke/react-js";
+
+function CommentSection({ entityId }: { entityId: string }) {
+  const {
+    comments,
+    entityCommentsTree,
+    loading,
+    hasMore,
+    sortBy,
+    setSortBy,
+    loadMore,
+    createComment,
+    updateComment,
+    deleteComment,
+    repliedToComment,
+    setRepliedToComment,
+    showReplyBanner,
+    setShowReplyBanner,
+  } = useCommentSectionData({ entityId, limit: 15 });
+
+  const handleAddComment = async () => {
+    try {
+      await createComment({
+        content: "This is a new comment!",
+        mentions: [],
+      });
+    } catch (error) {
+      console.error("Failed to add comment:", error.message);
+    }
+  };
+
+  return (
+    <div>
+      <select
+        value={sortBy}
+        onChange={(e) => setSortBy(e.target.value as "new" | "top")}
+      >
+        <option value="new">Newest</option>
+        <option value="top">Top</option>
+      </select>
+
+      <ul>
+        {comments.map((comment) => (
+          <li key={comment.id}>{comment.content}</li>
+        ))}
+      </ul>
+
+      {loading && <p>Loading...</p>}
+      {hasMore && !loading && (
+        <button onClick={loadMore}>Load More</button>
+      )}
+
+      {showReplyBanner && <p>Replying to {repliedToComment?.id}</p>}
+      <button onClick={handleAddComment}>Add Comment</button>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook accepts an object with the fields below. At least one of the first 4 fields must be provided (`entityId`/`foreignId`/`shortId`/`entity`):
+
+
+<ParamField path="entityId" type="string \">
+  null`
+</ParamField>
+
+<ParamField path="foreignId" type="string \">
+  null`
+</ParamField>
+
+<ParamField path="shortId" type="string \">
+  null`
+</ParamField>
+
+<ParamField path="entity" type="Entity \">
+  null`
+</ParamField>
+
+<ParamField path="createIfNotFound" type="string \">
+  null`
+</ParamField>
+
+<ParamField path="limit" type="number">
+  The number of comments to fetch per page. Default is `15`.
+</ParamField>
+
+<ParamField path="defaultSortBy" type="CommentsSortByOptions">
+  The default sorting criteria for comments (e.g., `new`, `top`).
+</ParamField>
+
+<ParamField path="callbacks" type="SocialStyleCallbacks">
+  Optional callbacks for handling events like login requirements.
+</ParamField>
+
+<ParamField path="highlightedCommentId" type="string \">
+  No
+</ParamField>
+
+### Returns
+
+The hook returns an object with the following fields:
+
+
+<ResponseField name="entity" type="Entity \">
+  undefined \
+</ResponseField>
+
+<ResponseField name="callbacks" type="Record<string, (...args: any[]) => void> \">
+  undefined`
+</ResponseField>
+
+<ResponseField name="entityCommentsTree" type="EntityCommentsTree">
+  Tree structure representing threaded comments.
+</ResponseField>
+
+<ResponseField name="comments" type="Comment[]">
+  The list of root-level comments currently loaded.
+</ResponseField>
+
+<ResponseField name="newComments" type="Comment[]">
+  Comments that were recently added during the session.
+</ResponseField>
+
+<ResponseField name="highlightedComment" type="{ comment: Comment; parentComment: Comment \">
+  null } \
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  Indicates if comments are currently loading.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  Whether there are more comments available for pagination.
+</ResponseField>
+
+<ResponseField name="submittingComment" type="boolean">
+  Whether a comment is currently being submitted.
+</ResponseField>
+
+<ResponseField name="loadMore" type="() => void">
+  Loads the next page of comments.
+</ResponseField>
+
+<ResponseField name="sortBy" type="CommentsSortByOptions \">
+  null`
+</ResponseField>
+
+<ResponseField name="setSortBy" type="(newSortBy: CommentsSortByOptions) => void">
+  Updates the comment sort order.
+</ResponseField>
+
+<ResponseField name="pushMention" type="UserLean \">
+  null`
+</ResponseField>
+
+<ResponseField name="selectedComment" type="Comment \">
+  null`
+</ResponseField>
+
+<ResponseField name="setSelectedComment" type="(newSelectedComment: Comment \">
+  null) => void`
+</ResponseField>
+
+<ResponseField name="repliedToComment" type="Partial<Comment> \">
+  null`
+</ResponseField>
+
+<ResponseField name="setRepliedToComment" type="(newRepliedToComment: Comment \">
+  null) => void`
+</ResponseField>
+
+<ResponseField name="showReplyBanner" type="boolean">
+  Whether the UI banner indicating a reply is visible.
+</ResponseField>
+
+<ResponseField name="setShowReplyBanner" type="(newState: boolean) => void">
+  Controls the reply banner visibility.
+</ResponseField>
+
+<ResponseField name="addCommentsToTree" type="(newComments: Comment[] \">
+  undefined, newlyAdded?: boolean) => void`
+</ResponseField>
+
+<ResponseField name="removeCommentFromTree" type="(commentId: string) => void">
+  Removes a comment from the tree structure.
+</ResponseField>
+
+<ResponseField name="handleShallowReply" type="(comment: Comment) => void">
+  Handles a shallow reply (mention-only, not nested).
+</ResponseField>
+
+<ResponseField name="handleDeepReply" type="(comment: Comment) => void">
+  Handles a deep reply (visibly nested under the parent comment).
+</ResponseField>
+
+<ResponseField name="createComment" type="(props: { parentId?: string; content?: string; gif?: GifData; mentions: Mention[] }) => Promise<void>">
+  Submits a new comment. Includes temporary rendering and error fallback.
+</ResponseField>
+
+<ResponseField name="updateComment" type="(props: { commentId: string; content: string }) => Promise<void>">
+  Updates an existing comment.
+</ResponseField>
+
+<ResponseField name="deleteComment" type="(props: { commentId: string }) => Promise<void>">
+  Deletes a comment from both the UI and backend.
+</ResponseField>

@@ -1,0 +1,136 @@
+---
+title: "Reputation Grants Overview"
+description: "Give, list, and display reputation grants with the React SDK"
+---
+
+Reputation in Sublay is normally *earned* — posting, commenting, receiving reactions. **Grants** are the other half: reputation deliberately *given*, by one user to another. They are the primitive behind tipping, bounties, best-answer awards, and peer recognition.
+
+The React SDK exposes the user-facing half of that surface: sending a grant as the logged-in user, and reading grants back. Hooks authenticate as the **logged-in user** — the server derives the sender from the token, so you never pass an actor `userId`.
+
+Minting (creating reputation from nothing, or destroying it) is service-key-only and lives in [`@sublay/node`](/v7/node-sdk/reputation).
+
+All hooks are importable from `@sublay/react-js`, `@sublay/react-native`, and `@sublay/expo`.
+
+Requires the `reputation` bundle on the project. See [Bundles](/bundles) and the [Reputation](/data-models/reputation) model.
+
+## Hooks at a glance
+
+| Hook | Purpose |
+|------|---------|
+| [`useCreateReputationGrant`](/hooks/reputation/use-create-reputation-grant) | Transfer reputation from the logged-in user to another user. |
+| [`useFetchManyReputationGrants`](/hooks/reputation/use-fetch-many-reputation-grants) | One-shot list query (low-level). |
+| [`useFetchManyReputationGrantsWrapper`](/hooks/reputation/use-fetch-many-reputation-grants-wrapper) | Stateful, paginated list with `loadMore` and `refresh`. |
+
+There is **no Redux store and no provider** for grants. Lists are local state held by the wrapper hook, and per-item totals ride along on the items themselves.
+
+## Sending a grant
+
+`useCreateReputationGrant` returns a callable. The sender's bucket is debited and the recipient's bucket for the same space is credited; the recipient is notified.
+
+```tsx
+import { useCreateReputationGrant } from "@sublay/react-js";
+
+function RewardButton({ answer }) {
+  const createReputationGrant = useCreateReputationGrant();
+
+  const handleReward = async () => {
+    await createReputationGrant({
+      recipientId: answer.userId,
+      amount: 50,
+      spaceId: answer.spaceId,          // omit for the project-general bucket
+      note: "Best answer",
+      targetType: "comment",
+      targetId: answer.id,
+    });
+  };
+
+  return <button onClick={handleReward}>Reward 50</button>;
+}
+```
+
+Two rules are worth internalizing before you build a UI around this:
+
+- **The sender chooses which of their buckets pays, never where it lands.** The reputation always arrives in the recipient's bucket for the same space. Reputation never crosses between the project-general bucket and a space bucket.
+- **The target is an annotation.** It says what the grant was *for*, not who gets paid or from which bucket. It doesn't even have to be authored by the recipient.
+
+If the sender's chosen bucket is short, the request rejects with `409 reputation-grant/insufficient-reputation` and nothing moves. A `spaceId` naming no space rejects earlier still, with `404 reputation-grant/space-not-found`. Grant creation is **not idempotent** — guard your button against double-submits, because a retry moves the points twice.
+
+## Showing totals on an item
+
+Ask for the grants summary inline rather than fetching a list you then have to sum. Entities and comments take a `grants` token in `include`; chat messages take an `includeGrants` boolean:
+
+```tsx
+const { entities } = useFetchManyEntitiesWrapper({ include: ["user", "grants"] });
+
+entities.map((e) => (
+  <span key={e.id}>
+    {e.grants?.total} points from {e.grants?.count} people
+    {e.grants?.viewerTotal ? ` · you gave ${e.grants.viewerTotal}` : ""}
+  </span>
+));
+```
+
+`viewerTotal` is an **amount, not a flag** — a user may grant the same item more than once. The server returns a zero-filled summary rather than omitting the key on a project with no grants, so `grants` being `undefined` always means "nobody asked for it".
+
+## Listing grants
+
+Use the wrapper for a ready-made paginated list. Exactly one filter shape per query — by recipient, by sender, or by target:
+
+```tsx
+import { useFetchManyReputationGrantsWrapper } from "@sublay/react-js";
+
+function WhoRewardedThis({ commentId }) {
+  const { grants, summary, loading, hasMore, loadMore } =
+    useFetchManyReputationGrantsWrapper({
+      targetType: "comment",
+      targetId: commentId,
+      include: ["user"],
+      limit: 20,
+    });
+
+  return (
+    <>
+      <h4>{summary?.total ?? 0} points from {summary?.count ?? 0} people</h4>
+      {grants.map((g) => (
+        <div key={g.id}>
+          {g.sender?.name ?? "Someone"} gave {g.amount}
+          {g.note ? ` — "${g.note}"` : ""}
+        </div>
+      ))}
+      {hasMore && <button disabled={loading} onClick={loadMore}>Load more</button>}
+    </>
+  );
+}
+```
+
+`summary` is only returned on the target shape — it is exactly the block a standalone "who rewarded this" view needs, so you don't have to fetch the parent item just to print the totals.
+
+<Warning>
+  **Grants on chat messages are private to their conversation.** Every shape asks the same question — can the logged-in user see the message? With `targetType: "chat-message"` the list is populated only for a member of that conversation, and having left it still counts; everyone else gets an empty list and a zero summary rather than an error. The `recipientId` / `senderId` shapes run that same test per row, so a user's own "reputation I received" feed *does* carry the grants made on messages in their own conversations, while a caller outside the conversation loses those rows from the list and from `pagination.totalItems` together. On either shape, the grants on a message moderation has removed are hidden — from members of the conversation too.
+</Warning>
+
+<Note>
+  **Only positive grants come back, and lists are never block-filtered.** Negative grants (your app's moderation deductions) are invisible on every SDK read surface. And unlike entity or comment feeds, grant lists apply no block exclusion — so the amounts you render always add up to the total you render beside them.
+</Note>
+
+## Grants in chat
+
+A grant landing on a chat message is broadcast live to everyone in the conversation, the same way message reactions are. `ChatProvider` handles the [`message:grant`](/sdk/chat/real-time) event for you: the message's `grants` summary updates in the store and your components re-render.
+
+Load messages with `includeGrants: true` so each message carries a baseline summary — without it, `viewerTotal` starts at `0` and only reflects grants seen live in that session.
+
+```tsx
+const { messages } = useLiveChatMessages({ conversationId, includeGrants: true });
+```
+
+## When users can't grant directly
+
+A project can switch **user-initiated grants off** from **Settings → SDK** in the dashboard. The switch is the project setting `settings.reputationGrants.allowUserInitiated`: only an explicit `false` closes the endpoint to user tokens, an absent key means grants are allowed, and the stored value survives unrelated settings updates so it changes only when that key is explicitly sent. When it's off, `useCreateReputationGrant` rejects with `403 reputation-grant/user-grants-disabled`, and grants must be routed through your backend with a service key instead — a *mediated transfer*, which behaves identically to a user grant (same bucket routing, same balance check) but lets you enforce your own rules first: caps, cooldowns, daily limits, eligibility. Sublay imposes none of those itself.
+
+## See Also
+
+- [ReputationGrant data model](/data-models/reputation-grant)
+- [Reputation data model](/data-models/reputation)
+- [Create Reputation Grant API](/api-reference/reputation-grants/create-reputation-grant)
+- [Node SDK reputation module](/v7/node-sdk/reputation)
+- [JS SDK reputation module](/v7/js-sdk/reputation)

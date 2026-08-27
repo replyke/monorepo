@@ -1,0 +1,95 @@
+---
+title: "Fetch Member Standing"
+api: "GET /v7/:projectId/workspaces/:id/members/:userId"
+description: "A user's full resolved standing on a workspace, addressed by userId"
+---
+
+Returns a single user's full standing on a workspace, addressed by **`userId`** (not a membership-row id, so it works for users with no direct row). Returns the same unified shape as one roster row, computed on demand for **any** relation — direct `member`, this workspace's `owner`, an `ancestor-owner`, or a `reach-holder`. Returns empty/none **only** if the user has no relation at all.
+
+Requires **roster visibility** — any relation to the workspace (owner, ancestor-owner, member, or reach-holder).
+
+`reasons` is an array of **structured entries** — `{ type, viaWorkspaceId? }` — the same object shape a [roster](/api-reference/workspaces/members/list-members) entry's `reasons` carries. `viaWorkspaceId` names the granting ancestor and appears on `ancestor-owner` / `reach-holder` only.
+
+<Warning>
+  **The authority-bearing fields are fenced, and the gate is scoped to THIS workspace.** `capabilities`, `permissions`, `rank` and `relativeRank` are **omitted from the response** (absent — not `null`) unless the caller:
+
+  - holds one of the four people-operating capabilities on this workspace — `invite`, `remove-member`, `edit-member-access`, `edit-member-profile`; **or**
+  - is this workspace's `owner` or an `ancestor-owner`; **or**
+  - is asking about **themselves** (a caller always sees their own access); **or**
+  - is a service/master key acting as **itself** (naming no `actingUserId`). A key that **does** name one is fenced exactly as that user is — see [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+
+  The gate is a **per-node** verdict, not a global one: clearing it here says nothing about any other node, and clearing it elsewhere says nothing about here. "On this workspace" means your **resolved** standing on it — including capabilities [reaching](/data-models/workspace#reach-and-the-wall-door-rule) in from an ancestor through an unbroken open inherit chain, and ownership from any ancestor — but not authority that stops at a **sealed** boundary. The [roster read](/api-reference/workspaces/members/list-members) takes the same verdict independently for each `descendant-member` row it returns, so the two reads agree node for node.
+
+  Everything else — `user`, `reasons`, `title`, `metadata` — is visible to any relation. Treat these four fields as optional in your types.
+
+  `relativeRank` is fenced **with** `rank`, not beside it: it is `rank` minus the caller's own anchor, a number the caller already knows, so returning it to a fenced caller would reconstruct the fenced `rank` exactly.
+</Warning>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  The target user whose standing to read.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="actingUserId" type="string">
+  Service/master keys only — the user to act as. Enforced: roster visibility **and** the authority-field fence above both evaluate against the named user, so a key acting as a plain member receives the fenced standing (and the full one when asking about that user themselves). Omit it to read as the app itself (unfenced). See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
+## Response
+
+Caller who may see authority fields (a people-operator, an owner, or the user themselves):
+
+```json
+{
+  "user": { "id": "u_pat" },
+  "reasons": [
+    { "type": "member" },
+    { "type": "ancestor-owner", "viaWorkspaceId": "ws_root" }
+  ],
+  "capabilities": ["view", "invite", "remove-member"],
+  "permissions": ["deploy"],
+  "rank": 5,
+  "relativeRank": 2,
+  "title": "Frontend Lead",
+  "metadata": {}
+}
+```
+
+Caller with a plain relation, reading **someone else's** standing — the four authority fields are simply absent:
+
+```json
+{
+  "user": { "id": "u_pat" },
+  "reasons": [
+    { "type": "member" },
+    { "type": "ancestor-owner", "viaWorkspaceId": "ws_root" }
+  ],
+  "title": "Frontend Lead",
+  "metadata": {}
+}
+```
+
+- `reasons` is always present; `viaWorkspaceId` appears on `ancestor-owner` / `reach-holder` entries only.
+- `capabilities` is the **resolved** set (direct + reach + ownership). **`view` is implied by every other capability** — anyone with standing resolves with `view`, including a member whose stored `capabilities` array is empty. A user with no relation at all returns `reasons: []` and an empty capability set.
+- `permissions` is **per-node** (the direct membership on this workspace only; may be empty).
+- `rank` is the direct-membership rank, or `null` for owners / ancestor-owners / reach-only holders (they sit outside the numbered ladder).
+- `relativeRank` is that same position expressed as an **offset from the caller** — `2` above means the target sits two rungs below you; a negative value means they are *senior* to you, and `0` means they are your peer. `null` exactly when `rank` is `null`. The caller's own anchor is their member row on this workspace if they hold one, and apex (one step above rank 0) otherwise — so an owner reads a rank-0 member back as `1`. See [rank semantics](/data-models/workspace-member#two-coordinates-rank-and-relativerank).
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchWorkspaceMemberStanding](/hooks/workspaces/use-fetch-workspace-member-standing) · [List Members](/api-reference/workspaces/members/list-members) · [Read Authority](/api-reference/workspaces/fetch-authority)

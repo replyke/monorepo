@@ -1,0 +1,77 @@
+---
+title: "App Notifications"
+description: "Read and mark the authenticated user's in-app notifications"
+---
+
+The `appNotifications` module exposes the in-app notification feed for the authenticated user — read notifications, count unread ones, and mark them as read.
+
+---
+
+### fetchNotifications
+
+Fetches a paginated list of the user's notifications.
+
+```typescript
+const { data, pagination } = await sublay.appNotifications.fetchNotifications({
+  page: 1,
+  limit: 20,
+});
+```
+
+The whole argument is optional.
+
+<ParamField body="page" type="number">
+  The page of results to fetch.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  The number of notifications to return per page.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<UnifiedAppNotification>>`
+
+<Note>
+  A notification is a discriminated union on a `type` field, spanning system, entity/comment comments and replies, mentions, upvotes, reactions, reaction milestones, new-follow, connection-request, connection-accepted, and space-membership-approved. Each notification has `id`, `type`, `isRead`, `metadata`, and `createdAt`.
+</Note>
+
+---
+
+### countUnreadNotifications
+
+Returns the number of unread notifications.
+
+```typescript
+const count = await sublay.appNotifications.countUnreadNotifications();
+```
+
+**Returns** — `Promise<number>`
+
+---
+
+### markNotificationAsRead
+
+Marks a single notification as read.
+
+```typescript
+await sublay.appNotifications.markNotificationAsRead({
+  notificationId: "ntf_abc123",
+});
+```
+
+<ParamField body="notificationId" type="string" required>
+  The ID of the notification to mark as read.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### markAllNotificationsAsRead
+
+Marks all the user's notifications as read.
+
+```typescript
+const { markedAsRead } = await sublay.appNotifications.markAllNotificationsAsRead();
+```
+
+**Returns** — `Promise<{ markedAsRead: number }>`

@@ -1,0 +1,89 @@
+---
+title: "List Messages"
+api: "GET /v7/:projectId/chat/conversations/:conversationId/messages"
+description: "Fetch messages in a conversation or thread"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+Returns a cursor-paginated list of [ChatMessage](/data-models/chat-message) objects. By default returns the main conversation stream (excludes thread replies). Pass `parentId` to fetch replies for a specific thread.
+
+The caller must be a member. Former members (who left) can only read messages up to when they left.
+
+## Path Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="parentId" type="string">
+  If provided, returns thread replies to this message instead of the main stream.
+</ParamField>
+
+<ParamField query="before" type="string">
+  ISO 8601 timestamp. Returns messages created before this time. Used for loading older messages. Mutually exclusive with `after`.
+</ParamField>
+
+<ParamField query="after" type="string">
+  ISO 8601 timestamp. Returns messages created after this time. Used for loading newer messages. Mutually exclusive with `before`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Number of messages to return. Defaults to 50.
+</ParamField>
+
+<ParamField query="sort" type="string">
+  Sort order: `asc` or `desc`. Defaults to `desc` for the main stream, `asc` for threads.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated list of extra fields to include: `files` (attachments) and `grants` (the [reputation-grant summary](/data-models/reputation-grant#grantsummary)). Combine them as `include=files,grants`.
+</ParamField>
+
+<ParamField query="filters" type="object">
+  Optional filters object, serialized as bracket-notation query params (e.g. `filters[hasReplies]=true`).
+
+  - `hasReplies` (boolean) — When `true`, returns only messages that have thread replies (`threadReplyCount > 0`). When `false`, returns only messages with no thread replies. This filters by **thread replies**, not quotings (`quotedMessageId`).
+
+  <Note>Threads are one level deep — a reply can never have its own replies. So `filters[hasReplies]=true` combined with `parentId` always returns an empty list; the response includes a `notice` field explaining why.</Note>
+</ParamField>
+
+### Space-scoped reputation
+
+This endpoint has a space in context, so it accepts the opt-in reputation params. They add a `spaceReputation` field to each message sender's `user`, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation) for the full contract.
+
+<SpaceReputationParams variant="context" field="query" />
+
+## Response
+
+<ResponseField name="messages" type="ChatMessage[]">
+  Array of message objects. Each includes `reactionCounts`, `userReactions`, `user`, and `quotedMessage` fields. File attachments are included only when `include=files` is specified.
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  Whether more messages exist in the requested direction.
+</ResponseField>
+
+<ResponseField name="oldestCreatedAt" type="string | null">
+  ISO timestamp of the oldest message in this page. `null` if no messages were returned.
+</ResponseField>
+
+<ResponseField name="newestCreatedAt" type="string | null">
+  ISO timestamp of the newest message in this page. `null` if no messages were returned.
+</ResponseField>
+
+<ResponseField name="notice" type="string">
+  Present only when a filter combination can't return results — e.g. `hasReplies: true` together with `parentId`. Explains why the list is empty.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Forbidden — 403">
+    ```json
+    { "error": "You are not a member of this conversation.", "code": "chat/not-a-member" }
+    ```
+  </Accordion>
+</AccordionGroup>

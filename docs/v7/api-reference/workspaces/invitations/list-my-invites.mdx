@@ -1,0 +1,46 @@
+---
+title: "List My Invites"
+api: "GET /v7/:projectId/me/workspace-invites"
+description: "The authenticated user's live pending invites"
+---
+
+Returns the authenticated user's **live** pending invites (`status = 'pending' AND expiresAt > now`), matched by **`userId`** (no email-string matching at query time — invitations bind to `userId` at invite time or via the signup-attach step).
+
+<Note>
+  **Surfacing is NOT verification-gated** — a user sees pending invites right after signup (which nudges them to verify). The verified-email check applies when the user **acts** on an invite — [accept](/api-reference/workspaces/invitations/accept-invite) *and* [decline](/api-reference/workspaces/invitations/decline-invite).
+</Note>
+
+## Query Parameters
+
+<ParamField query="actingUserId" type="string" required>
+  Service/master keys only — the user to act as, whose invites are read. **Required for a key:** this is an *inbox* read, so it has no unbounded path — a key that names nobody is refused with `400 workspace/missing-user-id`.
+
+  A plain user token omits it — the actor is the token's own user. The field is **not** ignored for such a token: sending your *own* user id is a harmless no-op, but sending **anyone else's** is a `403 workspace/unauthorized`. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
+## Response
+
+```json
+{ "data": [ /* WorkspaceInvitation[] */ ] }
+```
+
+Each item is a [WorkspaceInvitation](/data-models/workspace-invitation) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing Acting User — 400">
+    ```json
+    { "error": "Missing user ID", "code": "workspace/missing-user-id" }
+    ```
+    A service/master key called this route without naming an `actingUserId`. An inbox belongs to a person; there is no app-level inbox to return.
+  </Accordion>
+  <Accordion title="Acted as Another User — 403">
+    ```json
+    { "error": "Unauthorized", "code": "workspace/unauthorized" }
+    ```
+    A plain user token sent an `actingUserId` naming a **different** user. Only a service/master key may act as someone else.
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchMyWorkspaceInvites](/hooks/workspaces/use-fetch-my-workspace-invites)

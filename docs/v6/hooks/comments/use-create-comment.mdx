@@ -1,0 +1,81 @@
+---
+title: "Use Create Comment"
+---
+
+# `useCreateComment`
+
+## Overview
+
+The `useCreateComment` hook allows users to add a new comment to an entity or reply to an existing comment. It supports optional mentions within the comment content, enabling tagging other users.
+
+## Usage Example
+
+```tsx
+import { useCreateComment } from "@replyke/react-js";
+
+function AddComment({ entityId }: { entityId: string }) {
+  const createComment = useCreateComment();
+
+  const handleAddComment = async () => {
+    try {
+      const newComment = await createComment({
+        entityId,
+        content: "This is a new comment!",
+        mentions: [{ userId: "123", username: "JohnDoe" }],
+      });
+
+      console.log("Comment added successfully:", newComment);
+    } catch (error) {
+      console.error("Failed to add comment:", error.message);
+    }
+  };
+
+  return <button onClick={handleAddComment}>Add Comment</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+<ParamField path="entityId" type="string" required>
+  The ID of the entity to which the comment is added
+</ParamField>
+
+<ParamField path="foreignId" type="string">
+  If the comment is imported from an external dataset, use this to pass its ID
+</ParamField>
+
+<ParamField path="parentCommentId" type="string | null">
+  The ID of the parent comment (for threaded replies)
+</ParamField>
+
+<ParamField path="content" type="string">
+  The text content of the comment
+</ParamField>
+
+<ParamField path="gif" type="GifData">
+  Object containing information about the GIF
+</ParamField>
+
+<ParamField path="mentions" type="Mention[]">
+  An array of mentions to include in the comment
+</ParamField>
+
+<ParamField path="referencedCommentId" type="string">
+  ID of a referenced comment (different from `parentCommentId` which is for threaded replies)
+</ParamField>
+
+<ParamField path="attachments" type="Record<string, any>[]">
+  Data about any attachments included with the comment
+</ParamField>
+
+<ParamField path="metadata" type="Record<string, any>">
+  Extra free-form metadata
+</ParamField>
+
+## Returns
+
+<ResponseField name="response" type="Comment">
+  The newly created comment object with all its properties
+</ResponseField>

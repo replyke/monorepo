@@ -1,0 +1,26 @@
+---
+title: "Rule"
+description: "The Rule interface shape for space community rules"
+---
+
+A rule represents a single community guideline for a space. Rules are ordered and displayed to members. They are managed by space admins and moderators.
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique rule identifier (UUID). |
+| `projectId` | `string` | The project this rule belongs to. |
+| `spaceId` | `string` | The space this rule belongs to. |
+| `title` | `string` | The rule's short title (e.g. "Be respectful"). |
+| `description` | `string \| null` | Optional longer explanation of the rule. |
+| `order` | `number` | Display order among the space's rules. Lower values appear first. |
+| `lastApprovedBy` | `string \| null` | ID of the user who last reviewed or approved this rule. |
+| `createdAt` | `Date` | When the rule was created. |
+| `updatedAt` | `Date` | When the rule was last updated. |
+
+## See Also
+
+- [List Rules](/api-reference/spaces/rules/list-rules)
+- [Create Rule](/api-reference/spaces/rules/create-rule)
+- [useFetchManyRules hook](/hooks/spaces/rules/use-fetch-many-rules)

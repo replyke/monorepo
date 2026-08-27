@@ -1,0 +1,67 @@
+---
+title: "Delete User"
+api: "DELETE /v7/:projectId/users/:userId"
+description: "Permanently delete a user and cascade cleanup across all of their related data"
+---
+
+Permanently deletes the specified user and cascades cleanup across all of their related records. Reactions, files, follows, connections, notifications, collections, reports, and mentions are removed, and the user's entities and comments are stripped of their authored content. This is the same full-cascade delete performed from the dashboard.
+
+<Warning>
+  This is a hard, irreversible delete. It cannot be undone.
+</Warning>
+
+## Authentication
+
+Requires a **service or master key**. User auth tokens are rejected with a `403`.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Sublay user ID (UUID) to delete.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `204 No Content` with an empty body.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Elevated Auth Required — 403">
+    ```json
+    {
+      "error": "Service or master key required.",
+      "code": "auth/elevated-auth-required"
+    }
+    ```
+  </Accordion>
+  <Accordion title="User Not Found — 404">
+    ```json
+    {
+      "error": "User not found.",
+      "code": "user/not-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Params — 400">
+    ```json
+    {
+      "error": "...",
+      "code": "user/invalid-params"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    {
+      "error": "Failed to delete the user.",
+      "code": "user/server-error"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Node SDK: `deleteUser`](/v7/node-sdk/users#deleteuser)
+- [User data model](/data-models/user)

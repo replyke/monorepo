@@ -1,0 +1,54 @@
+---
+title: "Use block manager"
+description: "Manage block state between the current user and another user in a single hook"
+icon: "cube"
+---
+
+## Overview
+
+Combines block-status fetching and toggle actions into a single hook. On mount, loads whether the current user blocks `userId`, then provides a `toggleBlock` function to block or unblock in one call. This is the hook to wire to a block/unblock button.
+
+Blocking is part of the trust & safety (moderation) bundle. See [Moderation — Blocking](/sdk/moderation/overview#blocking) for what a block prevents and hides.
+
+## Usage Example
+
+```tsx
+import { useBlockManager } from "@sublay/react-js";
+
+function BlockButton({ userId }: { userId: string }) {
+  const { isBlocked, isLoading, toggleBlock } = useBlockManager({ userId });
+
+  return (
+    <button onClick={toggleBlock} disabled={isLoading || isBlocked === null}>
+      {isBlocked ? "Unblock" : "Block"}
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="userId" type="string" required>
+  The ID of the target user.
+</ParamField>
+
+## Returns
+
+<ResponseField name="isBlocked" type="boolean | null">
+  `true` if the current user blocks the target, `false` if not, `null` while the initial status is loading.
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  `true` while the initial status check is in progress.
+</ResponseField>
+
+<ResponseField name="toggleBlock" type="() => Promise<void>">
+  Blocks the target user if not currently blocked; unblocks if currently blocked. No-ops while loading or if `userId` is the current user's own ID.
+</ResponseField>
+
+## Related
+
+- [useBlockUser](/hooks/blocks/use-block-user)
+- [useUnblockUser](/hooks/blocks/use-unblock-user)
+- [useFetchBlockStatus](/hooks/blocks/use-fetch-block-status)
+- [useFetchBlockedUsers](/hooks/blocks/use-fetch-blocked-users)

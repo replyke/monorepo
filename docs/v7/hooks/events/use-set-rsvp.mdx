@@ -1,0 +1,34 @@
+---
+title: "useSetRsvp"
+description: "Set or change the logged-in user's RSVP to an event"
+icon: "plug"
+---
+
+## Overview
+
+`useSetRsvp` returns a callable that sets or changes the logged-in user's RSVP. The event's `rsvpCounts` update atomically. A transition into `going` is capacity-checked. RSVPs close at `startTime`, are rejected on cancelled events, and `"maybe"` is rejected when `allowMaybe` is `false`.
+
+## Usage Example
+
+```tsx
+import { useSetRsvp } from "@sublay/react-js";
+
+function GoingButton({ eventId }: { eventId: string }) {
+  const setRsvp = useSetRsvp();
+  return <button onClick={() => setRsvp({ eventId, status: "going" })}>Going</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="eventId" type="string" required>The event ID.</ParamField>
+<ParamField path="status" type='"going" | "maybe" | "not_going"' required>The RSVP response.</ParamField>
+
+## Returns
+
+Returns a `Promise<Event>` — the [Event](/data-models/event) with refreshed `rsvpCounts` and `userRsvp`.
+
+## See Also
+
+- [Set RSVP API](/api-reference/events/set-rsvp)
+- [useWithdrawRsvp](/hooks/events/use-withdraw-rsvp)

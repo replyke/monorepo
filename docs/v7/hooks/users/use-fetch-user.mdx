@@ -1,0 +1,56 @@
+---
+title: "Fetch user"
+description: "Fetch a user's public profile by their Sublay user ID"
+icon: "plug"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+## Overview
+
+`useFetchUser` returns a function that fetches a user's public profile by their Sublay user ID. Use this when you have the user's `id` and need to load their profile on demand.
+
+<Note>
+  If the profile owner has blocked the signed-in caller, this returns `404` — the
+  same response as a user who does not exist. The reverse is not true: a user
+  *you* have blocked stays visible, so you keep a way to find and unblock them. Requires the `moderation` bundle.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchUser } from "@sublay/react-js";
+import { useState } from "react";
+
+function UserCard({ userId }: { userId: string }) {
+  const fetchUser = useFetchUser();
+  const [user, setUser] = useState(null);
+
+  const load = async () => {
+    const result = await fetchUser({ userId });
+    setUser(result);
+  };
+
+  return <button onClick={load}>Load Profile</button>;
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The Sublay user ID to fetch.
+</ParamField>
+
+<ParamField path="include" type="string | string[]">
+  Optional. Pass `"files"` to populate `avatarFile` and `bannerFile` with full `File` objects.
+</ParamField>
+
+<SpaceReputationParams variant="user" field="path" />
+
+## Returns
+
+<ResponseField name="User" type="User">
+  The user's public profile. When `spaceReputation` is requested, it carries an added `spaceReputation` number. See [User data model](/data-models/user) and [Reputation](/data-models/reputation).
+</ResponseField>

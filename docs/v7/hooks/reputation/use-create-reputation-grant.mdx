@@ -1,0 +1,94 @@
+---
+title: "useCreateReputationGrant"
+description: "Transfer reputation from the logged-in user to another user"
+icon: "plug"
+---
+
+## Overview
+
+`useCreateReputationGrant` returns a callable that transfers reputation from the logged-in user to another user. The amount leaves the sender's bucket and lands in the recipient's bucket **for the same space** — nothing is created, and reputation never crosses between the project-general bucket and a space bucket.
+
+There is no actor argument: the sender is always the user the token belongs to. Naming a different sender requires a service key, which the React SDK never holds — see [`@sublay/node`](/v7/node-sdk/reputation).
+
+Requires the `reputation` bundle.
+
+## Usage Example
+
+```tsx
+import { useCreateReputationGrant } from "@sublay/react-js";
+
+function RewardAnswer({ answer }) {
+  const createReputationGrant = useCreateReputationGrant();
+
+  const handleReward = async () => {
+    const grant = await createReputationGrant({
+      recipientId: answer.userId,
+      amount: 50,
+      spaceId: answer.spaceId,
+      note: "Best answer",
+      targetType: "comment",
+      targetId: answer.id,
+    });
+    console.log("Granted:", grant.id);
+  };
+
+  return <button onClick={handleReward}>Reward 50</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="recipientId" type="string" required>
+  The user receiving the reputation. Cannot be the logged-in user.
+</ParamField>
+<ParamField path="amount" type="number" required>
+  Whole number from `1` to `2147483647` (the signed 32-bit maximum, which is also the width of a reputation balance). A transfer can never be zero, negative, or fractional, and it can never exceed what the sender holds in the source bucket.
+</ParamField>
+<ParamField path="spaceId" type="string | null">
+  The bucket both legs move in. Omitted or `null` = the project-general bucket. The space is validated before anything moves: an ID naming no space rejects with `404 reputation-grant/space-not-found`, and naming one at all on a project without the `spaces` bundle rejects with `403 database/tables-not-available`.
+</ParamField>
+<ParamField path="note" type="string | null">
+  Free-text note. Trimmed, up to 2000 characters.
+</ParamField>
+<ParamField path="metadata" type="Record<string, any>">
+  Arbitrary key-value data. Up to 1 MB. Omit when unused.
+</ParamField>
+<ParamField path="targetType" type='"entity" | "comment" | "chat-message"'>
+  What the grant is for. Must be supplied together with `targetId`. The target is an annotation — it never determines which bucket is used, and it need not be authored by the recipient.
+</ParamField>
+<ParamField path="targetId" type="string">
+  The rewarded record's ID. Must be supplied together with `targetType`, and must exist.
+</ParamField>
+
+## Returns
+
+Returns a `Promise<ReputationGrant>` — the created [ReputationGrant](/data-models/reputation-grant), with `sourceType: "user"`.
+
+## Failure Modes
+
+The hook validates locally before the round trip and throws for a missing `projectId`, a missing `recipientId` or `amount`, or a half-filled target (`targetType` without `targetId`, or vice versa).
+
+Server rejections surface as the axios error, most usefully:
+
+| Status | Code | Meaning |
+|--------|------|---------|
+| `400` | `reputation-grant/invalid-body` | The body failed schema validation. `error` is the field path followed by the message, e.g. `"amount: Too small: expected number to be >=1"`. |
+| `400` | `reputation-grant/self-grant` | The recipient is the logged-in user. |
+| `403` | `reputation-grant/user-grants-disabled` | The project has `settings.reputationGrants.allowUserInitiated` set to `false` (**Settings → SDK** in the dashboard). Route the grant through your backend with a service key instead. |
+| `403` | `database/tables-not-available` | The project lacks a table the grant needs — `spaces` for a `spaceId`, or the target's bundle for a `targetType`. `missingTables` names them. |
+| `403` | `user/suspended` | A suspended user cannot send grants (they can still receive them). |
+| `404` | `reputation-grant/user-not-found` | The recipient doesn't exist — or one of the two parties has blocked the other. The two answers are identical on purpose. |
+| `404` | `reputation-grant/space-not-found` | The `spaceId` names no space in this project. Checked before any balance is touched. |
+| `404` | `reputation-grant/target-not-found` | The target doesn't exist, or it is a chat message in a conversation the sender isn't an active member of. The two answers are identical on purpose. |
+| `409` | `reputation-grant/insufficient-reputation` | The chosen bucket is short. Nothing moved. |
+| `409` | `reputation-grant/conflict` | Concurrent write. Retryable. |
+
+<Warning>
+  **Grant creation is not idempotent.** A retried request creates a second grant and moves the points a second time. Disable your button while the promise is in flight.
+</Warning>
+
+## See Also
+
+- [Reputation Grants Overview](/sdk/reputation/overview)
+- [Create Reputation Grant API](/api-reference/reputation-grants/create-reputation-grant)
+- [ReputationGrant data model](/data-models/reputation-grant)

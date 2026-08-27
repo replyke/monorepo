@@ -1,0 +1,83 @@
+---
+title: "Sign out all"
+description: "Sign out of all linked accounts at once"
+icon: "plug"
+---
+
+## Overview
+
+`useSignOutAll` signs out every stored account simultaneously. It sends a sign-out request for each account's refresh token — and, once this device has a stored push identifier, unbinds each account's push notifications in the same transaction — then clears local auth state.
+
+<Warning>
+  **A partial failure keeps the accounts it could not sign out.** When the requests carry this device's push identifier, accounts whose request **succeeded** are removed and accounts whose unbind the server **refused** are kept with their credentials intact; the call then **rejects** with how many failed, so the user can retry. Its signature is `() => Promise<void>`, so nothing warns you at compile time: `await signOutAll()` needs a `catch`. The live session ends either way — an access token is transient state, not the credential the guarantee is about.
+
+  As with [`useRemoveAccount`](/hooks/auth/use-remove-account), only a **server refusal of the unbind** blocks — `auth/device-deregistration-failed` or `auth/sign-out-failed`. Those are the two codes the server returns when it attempted the unbind inside its transaction and rolled the whole thing back. Everything else resolves: a transport failure carries no response, a throttled or migrating project is refused before the unbind is reached, and a device with **no stored push identifier** sends nothing to unbind in the first place. A user can always sign out.
+
+  A third code, `auth/push-unbind-status-unknown`, arrives on a **success** and never blocks: the server signed the account out without attempting an unbind because it could not determine whether the project has push devices. The SDK completes the sign-out and warns; that device may still be bound to the account until it registers again.
+</Warning>
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useSignOutAll } from "@sublay/react-js";
+
+function SignOutAllButton() {
+  const { signOutAll } = useSignOutAll();
+
+  const handleClick = async () => {
+    try {
+      await signOutAll();
+    } catch (err) {
+      console.error("Sign out failed:", err);
+    }
+  };
+
+  return <button onClick={handleClick}>Sign Out All Accounts</button>;
+}
+```
+
+```tsx React Native
+import { useSignOutAll } from "@sublay/react-native";
+
+function SignOutAllButton() {
+  const { signOutAll } = useSignOutAll();
+
+  const handlePress = async () => {
+    try {
+      await signOutAll();
+    } catch (err) {
+      // Some accounts were kept — surface the reason and let the user retry.
+      showError(err);
+    }
+  };
+
+  return <Button title="Sign Out All" onPress={handlePress} />;
+}
+```
+</CodeGroup>
+
+## Returns
+
+<ResponseField name="signOutAll" type="function">
+  Async function that signs out all accounts. Sends a server-side sign-out
+  request for each stored refresh token, then resets auth state, resets the API
+  cache, and returns every account-scoped feature slice (chat, notifications,
+  entity/space lists, collections, table views) to its initial state. The live
+  session ends either way.
+
+  The accounts map is cleared entirely when every request came back clean. When
+  the server refused an unbind for one or more accounts, those accounts keep
+  their entries and credentials, every other account is still removed, and the
+  promise **rejects** — see the warning above.
+</ResponseField>
+
+<Note>
+  Afterwards the app is in the **durable signed-out state**: `activeAccount` is
+  `null`, `signedOut` from [`useAccounts`](/hooks/auth/use-accounts) is `true`,
+  and no account is auto-selected at the next launch.
+</Note>
+
+## Integration Guide
+
+For multi-account integration guidance, see [Multi-Account](/sdk/authentication/multi-account).

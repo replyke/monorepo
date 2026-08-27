@@ -1,0 +1,88 @@
+---
+title: "Update Event"
+api: "PATCH /v7/:projectId/events/:eventId"
+description: "Edit an event's mutable fields and curate its images (host-only)"
+---
+
+Updates an event. **Host-only** — the caller must be in `hostIds` (service/master keys bypass this). Every provided field is updated; omitted fields are left untouched. Type-conditional location validation is re-applied when `type` is present.
+
+`hostIds`, `status`, and `spaceId` are **not** editable here — manage hosts via the [host endpoints](/api-reference/events/add-host), cancel via [Cancel Event](/api-reference/events/cancel-event); the space is immutable.
+
+Images can be curated in one request: a new `cover` **replaces** the existing cover, `gallery` files are **appended**, and `removeImageIds` deletes existing event images by File ID. Any image operation requires the `files-images` bundle.
+
+When a time field (`startTime`/`endTime`/`timezone`) or a location field (`location`/`url`/`venueName`/`address`) actually changes, an `event-updated` notification is fanned out to all `going`/`maybe` RSVPs (best-effort, requires the `notifications` bundle).
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event to update.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="title" type="string">Event title. 1–300 characters.</ParamField>
+<ParamField body="description" type="string">New description.</ParamField>
+<ParamField body="startTime" type="string">New ISO start datetime.</ParamField>
+<ParamField body="endTime" type="string">New ISO end datetime.</ParamField>
+<ParamField body="timezone" type="string">New IANA timezone.</ParamField>
+<ParamField body="type" type="string">`"online"`, `"physical"`, or `"hybrid"`. Re-triggers location validation.</ParamField>
+<ParamField body="url" type="string">Join/stream URL.</ParamField>
+<ParamField body="venueName" type="string">Venue name.</ParamField>
+<ParamField body="address" type="string">Street address.</ParamField>
+<ParamField body="location" type="{ latitude: number; longitude: number }">New coordinates. On multipart requests, send as a JSON string.</ParamField>
+<ParamField body="visibility" type="string">`"public"`, `"members"`, or `"invite"`.</ParamField>
+<ParamField body="capacity" type="number">New capacity (positive integer).</ParamField>
+<ParamField body="allowMaybe" type="boolean">Whether `"maybe"` RSVPs are allowed.</ParamField>
+<ParamField body="guestListVisible" type="boolean">Whether non-hosts can view the guest list.</ParamField>
+<ParamField body="metadata" type="object">Arbitrary key-value data. Up to 1 MB.</ParamField>
+
+<ParamField body="removeImageIds" type="string[]">
+  File IDs of existing event images to remove (gallery photos and/or the current cover). Each must belong to this event. On multipart requests, send as a JSON string.
+</ParamField>
+
+<ParamField body="cover" type="file">
+  New cover image (replaces the current cover). Multipart file field. Requires `cover.options`.
+</ParamField>
+
+<ParamField body="cover.options" type="string">
+  JSON-stringified image-processing options for the new cover.
+</ParamField>
+
+<ParamField body="gallery" type="file[]">
+  Gallery images to append (up to 10). Multipart file field. Requires `gallery.options`.
+</ParamField>
+
+<ParamField body="gallery.options" type="string">
+  JSON-stringified image-processing options for the appended gallery images.
+</ParamField>
+
+## Response
+
+Returns the updated [Event](/data-models/event) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (not a host) — 403">
+    ```json
+    { "error": "Only a host of this event may update it.", "code": "event/forbidden" }
+    ```
+  </Accordion>
+  <Accordion title="files-images Bundle Required — 403">
+    ```json
+    { "error": "Event cover/gallery images require the files-images bundle. Enable it for this project.", "code": "event/files-images-bundle-required" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid removeImageIds — 400">
+    ```json
+    { "error": "Some removeImageIds do not belong to this event.", "code": "event/invalid-remove-image-ids" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useUpdateEvent](/hooks/events/use-update-event)

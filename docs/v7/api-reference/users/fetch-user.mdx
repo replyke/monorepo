@@ -1,0 +1,116 @@
+---
+title: "Fetch User"
+api: "GET /v7/:projectId/users/:userId"
+description: "Get a user's public profile by ID"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+Returns a user's public profile by their Sublay user ID. Optionally includes associated file records for the avatar and banner.
+
+<Note>
+  If the profile owner has blocked the signed-in caller, this returns `404` — the
+  same response as a user who does not exist. The reverse is not true: a user
+  *you* have blocked stays visible, so you keep a way to find and unblock them. Requires the `moderation` bundle.
+</Note>
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Sublay user ID (UUID).
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include. Pass `"files"` to include
+  the processed `avatarFile` and `bannerFile` objects.
+</ParamField>
+
+### Space-scoped reputation
+
+This endpoint has no space in context, so the opt-in `spaceReputation` object accepts a `spaceId` of a space **`<uuid>`** or **`none`** only — `context` is rejected (400). It adds a `spaceReputation` field to each returned user, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation).
+
+<SpaceReputationParams variant="user" field="query" />
+
+## Response
+
+On success, returns HTTP `200` with the user object:
+
+<ResponseField name="id" type="string">
+  Unique user ID (UUID).
+</ResponseField>
+
+<ResponseField name="foreignId" type="string | null">
+  External identifier linking this user to your system.
+</ResponseField>
+
+<ResponseField name="projectId" type="string">
+  Project this user belongs to.
+</ResponseField>
+
+<ResponseField name="name" type="string | null">
+  Display name.
+</ResponseField>
+
+<ResponseField name="username" type="string | null">
+  Unique username within the project.
+</ResponseField>
+
+<ResponseField name="avatar" type="string | null">
+  Avatar image URL.
+</ResponseField>
+
+<ResponseField name="bio" type="string | null">
+  Short bio text.
+</ResponseField>
+
+<ResponseField name="metadata" type="object | null">
+  Public custom key-value data.
+</ResponseField>
+
+<ResponseField name="reputation" type="number">
+  The user's overall reputation total (the sum of all their reputation buckets).
+  This is a global lookup with no space in context, so it returns the total only —
+  see [Reputation](/data-models/reputation) for space-scoped reads.
+</ResponseField>
+
+<ResponseField name="avatarFile" type="object | null">
+  Processed avatar image with variants. Only present when `include=files` is
+  requested.
+</ResponseField>
+
+<ResponseField name="bannerFile" type="object | null">
+  Processed banner image with variants. Only present when `include=files` is
+  requested.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO timestamp of account creation.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="User Not Found — 404">
+    ```json
+    {
+      "error": "User not found",
+      "code": "user/not-found"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Params — 400">
+    ```json
+    {
+      "error": "...",
+      "code": "user/invalid-params"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useFetchUser` hook](/hooks/users/use-fetch-user)
+- [User data model](/data-models/user)

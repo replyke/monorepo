@@ -1,0 +1,432 @@
+---
+title: "Configuration"
+description: "Understanding the replyke.json configuration file"
+icon: "file-code"
+---
+
+# Configuration File
+
+The `replyke.json` file is created in your project root during initialization. It stores your preferences and is used by the CLI when adding components.
+
+---
+
+## File Location
+
+```
+your-project/
+├── package.json
+├── replyke.json          ← Configuration file
+├── src/
+│   └── components/
+└── ...
+```
+
+---
+
+## Configuration Schema
+
+```json
+{
+  "platform": "react" | "react-native" | "expo",
+  "style": "tailwind" | "styled",
+  "typescript": true | false,
+  "paths": {
+    "components": "src/components"
+  },
+  "aliases": {
+    "@/components": "./src/components"
+  }
+}
+```
+
+---
+
+## Configuration Options
+
+### `platform`
+
+**Type:** `"react"` | `"react-native"` | `"expo"`
+
+**Description:** Specifies your application platform. This determines:
+- Which component variants are available
+- Which peer dependencies are required
+- Platform-specific imports and syntax
+
+**Examples:**
+
+```json
+{
+  "platform": "react"
+}
+```
+
+For React web applications.
+
+```json
+{
+  "platform": "react-native"
+}
+```
+
+For React Native mobile applications.
+
+```json
+{
+  "platform": "expo"
+}
+```
+
+For Expo-managed projects.
+
+---
+
+### `style`
+
+**Type:** `"tailwind"` | `"styled"`
+
+**Description:** Determines which styling approach to use for components.
+
+**Options:**
+
+<Tabs>
+  <Tab title="tailwind">
+    Components use Tailwind CSS utility classes.
+
+    ```json
+    {
+      "style": "tailwind"
+    }
+    ```
+
+    **Requires:** Tailwind CSS installed in your project
+
+    **Example component code:**
+    ```tsx
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+      <span className="text-blue-600 font-bold">Username</span>
+    </div>
+    ```
+
+    **Best for:**
+    - Projects already using Tailwind CSS
+    - Design systems based on Tailwind
+    - Developers who prefer utility-first CSS
+  </Tab>
+
+  <Tab title="styled (Inline Styles)">
+    Components use inline `style={{}}` objects.
+
+    ```json
+    {
+      "style": "styled"
+    }
+    ```
+
+    **Requires:** Nothing additional
+
+    **Example component code:**
+    ```tsx
+    <div style={{
+      backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+      padding: '16px',
+      borderRadius: '8px'
+    }}>
+      <span style={{ color: '#2563EB', fontWeight: 'bold' }}>Username</span>
+    </div>
+    ```
+
+    **Best for:**
+    - Projects without Tailwind CSS
+    - Explicit, self-contained styling
+    - Developers who prefer inline styles
+  </Tab>
+</Tabs>
+
+<Warning>
+Once you've added components with a specific style variant, switching requires re-installing the components. You can change `style` in `replyke.json` and then delete and re-add components.
+</Warning>
+
+---
+
+### `typescript`
+
+**Type:** `boolean`
+
+**Default:** `true` (detected automatically)
+
+**Description:** Indicates whether your project uses TypeScript. This is automatically detected based on your project setup.
+
+**Examples:**
+
+```json
+{
+  "typescript": true
+}
+```
+
+For TypeScript projects (`.tsx` files).
+
+```json
+{
+  "typescript": false
+}
+```
+
+For JavaScript projects (`.jsx` files).
+
+<Info>
+The CLI auto-detects this from your `tsconfig.json` or file extensions. You rarely need to change this manually.
+</Info>
+
+---
+
+### `paths`
+
+**Type:** `object`
+
+**Description:** Configures where different types of files should be installed.
+
+**Properties:**
+
+- `components` - The directory where CLI components will be installed
+
+**Examples:**
+
+```json
+{
+  "paths": {
+    "components": "src/components"
+  }
+}
+```
+
+Components will be installed at:
+- `src/components/comments-threaded/`
+- `src/components/comments-social/`
+
+```json
+{
+  "paths": {
+    "components": "app/ui/components"
+  }
+}
+```
+
+Components will be installed at:
+- `app/ui/components/comments-threaded/`
+- `app/ui/components/comments-social/`
+
+<Note>
+Use a path relative to your project root. The CLI will create the directory if it doesn't exist.
+</Note>
+
+---
+
+### `aliases`
+
+**Type:** `object`
+
+**Description:** Path aliases used in component imports. These match your project's path resolution configuration (tsconfig.json paths or webpack aliases).
+
+**Examples:**
+
+```json
+{
+  "aliases": {
+    "@/components": "./src/components"
+  }
+}
+```
+
+Components will use imports like:
+```tsx
+import { SomeUtil } from '@/components/utils';
+```
+
+```json
+{
+  "aliases": {
+    "~/components": "./app/components"
+  }
+}
+```
+
+Components will use imports like:
+```tsx
+import { SomeUtil } from '~/components/utils';
+```
+
+<Warning>
+Make sure these aliases match your `tsconfig.json` or bundler configuration. Mismatched aliases will cause import errors.
+</Warning>
+
+---
+
+## Complete Example
+
+Here's a typical `replyke.json` for a React web app using Tailwind CSS:
+
+```json
+{
+  "platform": "react",
+  "style": "tailwind",
+  "typescript": true,
+  "paths": {
+    "components": "src/components"
+  },
+  "aliases": {
+    "@/components": "./src/components"
+  }
+}
+```
+
+---
+
+## Changing Configuration
+
+### Option 1: Edit Manually
+
+You can edit `replyke.json` directly:
+
+```json
+{
+  "platform": "react",
+  "style": "styled",  // Changed from "tailwind" to "styled"
+  "typescript": true,
+  "paths": {
+    "components": "src/components"
+  },
+  "aliases": {
+    "@/components": "./src/components"
+  }
+}
+```
+
+Then re-run `add` commands to install components with the new configuration.
+
+<Warning>
+If you've already added components, you'll need to delete them first:
+
+```bash
+rm -rf src/components/comments-threaded
+rm -rf src/components/comments-social
+
+npx @replyke/cli add comments-threaded
+```
+</Warning>
+
+### Option 2: Re-initialize
+
+Delete `replyke.json` and run `init` again:
+
+```bash
+rm replyke.json
+npx @replyke/cli init
+```
+
+---
+
+## Platform-Specific Notes
+
+### React (Web)
+
+**Platform value:** `"react"`
+
+**Required dependencies:**
+```json
+{
+  "dependencies": {
+    "@replyke/react-js": "^6.0.0",
+  }
+}
+```
+
+**Available components:**
+- ✅ Threaded comments
+- ✅ Social comments
+
+---
+
+### React Native
+
+**Platform value:** `"react-native"`
+
+**Required dependencies:**
+```json
+{
+  "dependencies": {
+    "@replyke/react-native": "^6.0.0",
+  }
+}
+```
+
+**Available components:**
+- ⚠️ Threaded comments (in progress)
+- ✅ Social comments
+
+**Styling:** Currently only `"styled"` (inline styles) is supported. Tailwind support coming soon.
+
+---
+
+### Expo
+
+**Platform value:** `"expo"`
+
+**Required dependencies:**
+```json
+{
+  "dependencies": {
+    "@replyke/expo": "^6.0.0",
+  }
+}
+```
+
+**Available components:**
+- ⚠️ Threaded comments (in progress)
+- ✅ Social comments
+
+**Styling:** Currently only `"styled"` (inline styles) is supported.
+
+---
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Can I use both styling variants in the same project?" icon="question">
+    No, the configuration applies to all components. Pick one approach and stick with it for consistency.
+  </Accordion>
+
+  <Accordion title="What if I delete replyke.json?" icon="trash">
+    The CLI will error when you try to `add` components. Simply run `npx @replyke/cli init` again to recreate it.
+  </Accordion>
+
+  <Accordion title="Can I customize the configuration schema?" icon="code">
+    No, the CLI expects this specific schema. However, you can request new options by opening an issue on GitHub.
+  </Accordion>
+
+  <Accordion title="Does this file affect my application at runtime?" icon="play">
+    No, `replyke.json` is only used by the CLI during component installation. Your application doesn't read or use this file.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start Guide" icon="rocket" href="/components/installation/quick-start">
+    Add your first component
+  </Card>
+
+  <Card title="Add Threaded Comments" icon="comments" href="/components/components/threaded/installation">
+    Install Reddit-style threaded comments
+  </Card>
+
+  <Card title="Add Social Comments" icon="heart" href="/components/components/social/installation">
+    Install Instagram-style social comments
+  </Card>
+
+  <Card title="Customization Guide" icon="paintbrush" href="/components/customization/overview">
+    Learn how to customize components
+  </Card>
+</CardGroup>

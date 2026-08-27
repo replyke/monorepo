@@ -1,0 +1,56 @@
+---
+title: "Accept workspace invite"
+description: "Accept a workspace invitation — identity-matched + verified-email"
+icon: "plug"
+---
+
+## Overview
+
+`useAcceptWorkspaceInvite` returns a callable that accepts an [invitation](/data-models/workspace-invitation). The `inviteId` is non-secret. Idempotent when already a member/owner.
+
+**Authorization:** self-service. The invite must be addressed to the signed-in user (identity-matched), and a **verified email is required**.
+
+## Usage Example
+
+```tsx
+import { useAcceptWorkspaceInvite } from "@sublay/react-js";
+
+function AcceptButton({ inviteId }: { inviteId: string }) {
+  const acceptWorkspaceInvite = useAcceptWorkspaceInvite();
+
+  const handleAccept = async () => {
+    const { workspaceId } = await acceptWorkspaceInvite({ inviteId });
+    console.log("Joined workspace:", workspaceId);
+  };
+
+  return <button onClick={handleAccept}>Accept</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="inviteId" type="string" required>
+  The (non-secret) invitation UUID.
+</ParamField>
+
+## Returns
+
+`{ success: boolean; workspaceId: string }`.
+
+<Note>
+  An unverified accept fails with `workspace/email-not-verified` — prompt the user to verify their email, then retry.
+</Note>
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/email-not-verified` | 403 | The accepting user's email is not verified. |
+| `workspace/invite-not-found` | 404 | No such invitation, or it is not addressed to you. |
+| `workspace/invite-expired` | 409 | The invitation lapsed — ask for a [resend](/hooks/workspaces/use-resend-workspace-invite). |
+| `workspace/invite-terminal` | 409 | Already accepted / declined / revoked. |
+
+## Related
+
+- [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) — list the invites addressed to you
+- [Accept Invite API](/api-reference/workspaces/invitations/accept-invite)

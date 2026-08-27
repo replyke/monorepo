@@ -1,0 +1,24 @@
+---
+title: "Follow"
+description: "The Follow interface shape representing a user following another user"
+---
+
+A follow record represents a directional relationship where one user follows another. Follows are one-way — unlike connections, following someone does not require the other person to accept.
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique follow identifier (UUID). |
+| `projectId` | `string` | The project this follow relationship belongs to. |
+| `followerId` | `string` | The ID of the user who is doing the following. |
+| `followedId` | `string` | The ID of the user being followed. |
+| `createdAt` | `Date` | When the follow was created. |
+
+## See Also
+
+- [useFollowManager hook](/hooks/follows/use-follow-manager)
+- [useFollowUser hook](/hooks/follows/use-follow-user)
+- [Fetch Follow Status](/api-reference/users/follows/get-follow-status)
+- [Fetch Followers](/api-reference/users/follows/get-followers)
+- [Fetch Following](/api-reference/users/follows/get-following)

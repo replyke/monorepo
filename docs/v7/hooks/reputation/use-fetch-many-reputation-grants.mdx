@@ -1,0 +1,85 @@
+---
+title: "useFetchManyReputationGrants"
+description: "One-shot query for a page of reputation grants"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchManyReputationGrants` returns a callable that fetches one page of reputation grants. It is the low-level fetcher — for a ready-to-render list with accumulated state, `loadMore`, and `refresh`, use [`useFetchManyReputationGrantsWrapper`](/hooks/reputation/use-fetch-many-reputation-grants-wrapper).
+
+Exactly one filter shape per call — by recipient, by sender, or by target. The shapes are mutually exclusive and are not AND-ed.
+
+Only **positive** grants are ever returned. Negative grants are your app's private moderation deductions and are unreadable from every SDK surface.
+
+Grants pointing at a **chat message** are private to their conversation — see [Chat-message targets](#chat-message-targets) below.
+
+Requires the `reputation` bundle.
+
+## Usage Example
+
+```tsx
+import { useFetchManyReputationGrants } from "@sublay/react-js";
+
+function useRecentRewards(userId: string) {
+  const fetchManyReputationGrants = useFetchManyReputationGrants();
+
+  return async () => {
+    const { data, pagination } = await fetchManyReputationGrants({
+      recipientId: userId,
+      include: ["user"],
+      limit: 25,
+    });
+
+    console.log(data.length, "of", pagination.totalItems);
+    return data;
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="recipientId" type="string">What this user received.</ParamField>
+<ParamField path="senderId" type="string">What this user sent.</ParamField>
+<ParamField path="targetType" type='"entity" | "comment" | "chat-message"'>
+  Who rewarded this item. Supplied together with `targetId`.
+</ParamField>
+<ParamField path="targetId" type="string">The rewarded record's ID. Supplied together with `targetType`.</ParamField>
+<ParamField path="page" type="number">Page number (1-indexed). Defaults to `1`.</ParamField>
+<ParamField path="limit" type="number">Page size. Defaults to `20`; the maximum is `100`. A larger value is rejected by the server with `400 reputation-grant/invalid-query` rather than clamped.</ParamField>
+<ParamField path="include" type="string | string[]">
+  Associations to expand. Only `"user"` is supported — it hydrates **both** the sender and the recipient on every row.
+</ParamField>
+<ParamField path="spaceReputation" type="object">
+  Opt-in per-user space reputation on the hydrated users. This is a context surface, so `spaceReputation: { spaceId: "context" }` scores each user against *that grant's own* space. See [Reputation](/data-models/reputation#reading-space-scoped-reputation).
+</ParamField>
+
+## Returns
+
+Returns a `Promise` resolving to the paginated envelope:
+
+<ResponseField name="data" type="ReputationGrant[]">The page of [grants](/data-models/reputation-grant), newest first.</ResponseField>
+<ResponseField name="pagination" type="{ page, pageSize, totalPages, totalItems, hasMore }">Page metadata.</ResponseField>
+<ResponseField name="summary" type="GrantSummary | undefined">
+  `{ total, count, viewerTotal }` for the target — returned **only** on the target filter shape, so a standalone "who rewarded this" view doesn't have to fetch the parent item to know the totals.
+</ResponseField>
+
+## Chat-message targets
+
+A grant on a chat message is as private as the message, so it surfaces differently depending on the shape you query:
+
+- `targetType: "chat-message"` returns rows only when the logged-in user is a **member** of that message's conversation — the same test the message read itself applies, so a user who has left the conversation still counts. Anyone else — a user who was never a member, or any user on a project without the `chat` bundle — gets a successful, empty result: `data` is `[]`, `pagination.totalItems` is `0`, and `summary` is `{ total: 0, count: 0, viewerTotal: 0 }`. It never throws, because an error would confirm the message exists.
+- `recipientId` and `senderId` run the same test per row. A chat-message-targeted grant stays in the feed of someone who can see the message and drops out for someone who cannot — out of `data` and `pagination.totalItems` together, so a filtered page and a filtered total never disagree. A user's own "reputation I received" feed therefore includes the grants made on messages in their own conversations.
+- Either shape hides the grants on a message moderation has removed, a member of the conversation included.
+
+For the running totals on a message, ask the message read itself with `includeGrants: true` rather than paging this list.
+
+## Failure Modes
+
+The hook mirrors the server's filter rules locally, so a malformed query throws before the round trip rather than returning a `400`: it throws when there is no `projectId`, when no filter is supplied, when two shapes are combined, and when only one half of `targetType` / `targetId` is present.
+
+## See Also
+
+- [useFetchManyReputationGrantsWrapper](/hooks/reputation/use-fetch-many-reputation-grants-wrapper)
+- [Reputation Grants Overview](/sdk/reputation/overview)
+- [Fetch Many Reputation Grants API](/api-reference/reputation-grants/fetch-many-reputation-grants)

@@ -1,0 +1,44 @@
+---
+title: "Fetch Invitees"
+api: "GET /v7/:projectId/events/:eventId/invites"
+description: "List an event's invited users (host-only)"
+---
+
+Returns a paginated list of [EventInvite](/data-models/event-invite) records, each with the invited `user` populated. **Host-only** — a non-host receives `403`, and a non-existent event receives `404` (service/master keys bypass the host check). Results are ordered by `invitedAt` descending.
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page. Capped at `100`. Defaults to `10`.
+</ParamField>
+
+## Response
+
+Returns a paginated response: `{ data: EventInvite[], pagination: {...} }`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Forbidden (not a host) — 403">
+    ```json
+    { "error": "Only a host of this event may view its invite list.", "code": "event/forbidden" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchInvitees](/hooks/events/use-fetch-invitees)

@@ -1,0 +1,406 @@
+---
+title: "Spaces"
+description: "Create and manage spaces, navigate hierarchies, and look up spaces by slug or short ID"
+---
+
+The `spaces` module covers core space lifecycle management: creating spaces, fetching them by various identifiers, updating settings, navigating parent-child hierarchies, and checking slug availability.
+
+For membership management see [Space Members](/v7/node-sdk/spaces-members), and for moderation and rules see [Space Moderation](/v7/node-sdk/spaces-moderation).
+
+---
+
+### createSpace
+
+Creates a new space.
+
+```typescript
+const space = await sublay.spaces.createSpace({
+  userId: "usr_abc123",
+  name: "Photography",
+  slug: "photography",
+  description: "A community for photographers",
+  postingPermission: "members",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID of the space creator, who becomes the initial admin.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Display name for the space.
+</ParamField>
+
+<ParamField body="slug" type="string">
+  URL-friendly identifier. Must be unique within the project. Generated from `name` if omitted.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Short description of the space.
+</ParamField>
+
+<ParamField body="readingPermission" type="string">
+  Who can read content: `"anyone"` (default) or `"members"`.
+</ParamField>
+
+<ParamField body="postingPermission" type="string">
+  Who can post content: `"anyone"`, `"members"` (default), or `"admins"`.
+</ParamField>
+
+<ParamField body="visibility" type="string">
+  Listing/discoverability: `"public"` (default), `"unlisted"`, or `"private"`. Independent of `readingPermission` (which governs content). `"unlisted"` hides the space from discovery and search but keeps it reachable by direct link; `"private"` currently behaves like `"unlisted"`.
+</ParamField>
+
+<ParamField body="requireJoinApproval" type="boolean">
+  When `true`, join requests must be manually approved. Defaults to `false`.
+</ParamField>
+
+<ParamField body="nsfw" type="boolean">
+  The space's own NSFW flag. Defaults to `false`. A space created under an NSFW parent is effectively NSFW regardless of this value. See [Space NSFW flagging](/data-models/space#nsfw-flagging).
+</ParamField>
+
+<ParamField body="parentSpaceId" type="string">
+  Makes this space a child of the specified parent space.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary metadata attached to the space.
+</ParamField>
+
+**Returns** — `Promise<Space>`
+
+---
+
+### fetchSpace
+
+Fetches a space by its Sublay ID, including member counts and permission details.
+
+```typescript
+const space = await sublay.spaces.fetchSpace({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+**Returns** — `Promise<SpaceDetailed>`
+
+---
+
+### fetchManySpaces
+
+Fetches a paginated list of top-level spaces, with optional text search.
+
+```typescript
+const { data, pagination } = await sublay.spaces.fetchManySpaces({
+  page: 1,
+  limit: 20,
+  searchName: "photo",
+  sortBy: "members",
+});
+```
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="sortBy" type="string">
+  Sort order: `"alphabetical"`, `"newest"`, or `"members"`.
+</ParamField>
+
+<ParamField body="searchName" type="string">
+  Filter spaces whose name matches the query.
+</ParamField>
+
+<ParamField body="searchSlug" type="string">
+  Filter spaces whose slug matches the query.
+</ParamField>
+
+<ParamField body="searchDescription" type="string">
+  Filter spaces whose description matches the query.
+</ParamField>
+
+<ParamField body="searchAny" type="string">
+  Filter spaces matching the query across name, slug, or description.
+</ParamField>
+
+<ParamField body="memberOf" type='"true"'>
+  When `"true"`, returns only spaces the requesting context is a member of.
+</ParamField>
+
+<ParamField body="parentSpaceId" type='string | "null"'>
+  Filter to children of a specific space, or pass `"null"` for top-level spaces only.
+</ParamField>
+
+<ParamField body="nsfwFilter" type='"include-all" | "exclude" | "only"'>
+  Filter by each space's `nsfwEffective` (own flag OR any ancestor). `"include-all"` (default) adds no predicate; `"exclude"` drops effective-NSFW spaces; `"only"` returns only them. `"only"` may return an NSFW child whose safe parent is omitted. See [Space NSFW flagging](/data-models/space#nsfw-flagging).
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Space>>`
+
+---
+
+### fetchSpaceBySlug
+
+Fetches a space by its unique slug.
+
+```typescript
+const space = await sublay.spaces.fetchSpaceBySlug({ slug: "photography" });
+```
+
+<ParamField body="slug" type="string" required>
+  The space's URL slug.
+</ParamField>
+
+**Returns** — `Promise<SpaceDetailed>`
+
+---
+
+### fetchSpaceByShortId
+
+Fetches a space by its short, human-readable ID (used in share URLs).
+
+```typescript
+const space = await sublay.spaces.fetchSpaceByShortId({ shortId: "ph3x9" });
+```
+
+<ParamField body="shortId" type="string" required>
+  The space's short ID.
+</ParamField>
+
+**Returns** — `Promise<SpaceDetailed>`
+
+---
+
+### fetchUserSpaces
+
+Fetches the spaces a specific user is a member of.
+
+```typescript
+const result = await sublay.spaces.fetchUserSpaces({
+  userId: "usr_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="sortBy" type="string">
+  Sort order: `"alphabetical"`, `"newest"`, or `"members"`.
+</ParamField>
+
+<ParamField body="role" type="string">
+  Filter by the user's role in the space. A single role or comma-separated list, e.g. `"admin,moderator"`.
+</ParamField>
+
+<ParamField body="status" type="string">
+  Membership status to list: `"active"` (default), `"pending"`, or `"banned"`. Use `"pending"` to find join requests still awaiting approval.
+</ParamField>
+
+<ParamField body="all" type='"true" | "false"'>
+  When `"true"`, returns the full set of spaces rather than only the paginated page.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+**Returns** — `Promise<UserSpacesResponse>`
+
+---
+
+### fetchMutualSpaces
+
+Fetches the spaces shared between two users — the spaces both are active members of.
+
+```typescript
+const result = await sublay.spaces.fetchMutualSpaces({
+  userId: "usr_other",       // the other user
+  actingUserId: "usr_self",  // the user to act as (service key required)
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The other user's Sublay ID. Mutual spaces are computed between this user and `actingUserId`.
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  The user to act as. Because the SDK authenticates with a service key, you must name the acting user explicitly.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Max `100`. Defaults to `20`.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate (e.g. `"files"`).
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Space>>`
+
+---
+
+### updateSpace
+
+Updates settings on an existing space.
+
+```typescript
+const space = await sublay.spaces.updateSpace({
+  spaceId: "spc_abc123",
+  name: "Photography Community",
+  postingPermission: "admins",
+  requireJoinApproval: true,
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID to update.
+</ParamField>
+
+<ParamField body="name" type="string">
+  New display name.
+</ParamField>
+
+<ParamField body="slug" type="string">
+  New slug. Must be unique.
+</ParamField>
+
+<ParamField body="description" type="string">
+  New description.
+</ParamField>
+
+<ParamField body="readingPermission" type="string">
+  Updated reading permission: `"anyone"` or `"members"`.
+</ParamField>
+
+<ParamField body="postingPermission" type="string">
+  Updated posting permission: `"anyone"`, `"members"`, or `"admins"`.
+</ParamField>
+
+<ParamField body="visibility" type="string">
+  Updated visibility: `"public"`, `"unlisted"`, or `"private"`. Controls listing/discoverability, independent of `readingPermission`.
+</ParamField>
+
+<ParamField body="nsfw" type="boolean">
+  Updated NSFW own-flag. Toggling it recomputes this space's effective NSFW and cascades it top-down to every descendant space (and, live, to their entities). See [Space NSFW flagging](/data-models/space#nsfw-flagging).
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Updated metadata. Merged with existing values.
+</ParamField>
+
+**Returns** — `Promise<Space>`
+
+---
+
+### deleteSpace
+
+Permanently deletes a space and all its content.
+
+```typescript
+const result = await sublay.spaces.deleteSpace({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID to delete.
+</ParamField>
+
+**Returns** — `Promise<DeleteSpaceResponse>`
+
+---
+
+### checkSlugAvailability
+
+Checks whether a slug is available for use.
+
+```typescript
+const { available } = await sublay.spaces.checkSlugAvailability({
+  slug: "photography",
+});
+```
+
+<ParamField body="slug" type="string" required>
+  The slug to check.
+</ParamField>
+
+**Returns** — `Promise<{ available: boolean }>`
+
+---
+
+### fetchChildSpaces
+
+Fetches the direct child spaces of a given parent space.
+
+```typescript
+const { data, pagination } = await sublay.spaces.fetchChildSpaces({
+  spaceId: "spc_abc123",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The parent Sublay space ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="sortBy" type="string">
+  Sort order: `"alphabetical"`, `"newest"`, or `"members"`.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Space>>`
+
+---
+
+### fetchSpaceBreadcrumb
+
+Returns the full ancestor chain from the root down to the specified space. Useful for rendering breadcrumb navigation.
+
+```typescript
+const breadcrumb = await sublay.spaces.fetchSpaceBreadcrumb({
+  spaceId: "spc_abc123",
+});
+// [{ id: "root", name: "Root" }, { id: "spc_parent", name: "Parent" }, { id: "spc_abc123", name: "Photography" }]
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID to get the breadcrumb for.
+</ParamField>
+
+**Returns** — `Promise<SpaceBreadcrumb>`

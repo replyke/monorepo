@@ -1,0 +1,64 @@
+---
+title: "Set space entity NSFW"
+description: "Flag or unflag an entity's NSFW status as a space moderator"
+icon: "plug"
+---
+
+## Overview
+
+`useSetSpaceEntityNsfw` returns a callable function that sets the `nsfw` own-flag on an entity within a space — including **other users'** entities. It is the moderator counterpart to the owner-only `nsfw` field on [useUpdateEntity](/hooks/entities/use-update-entity). The caller must be an admin or moderator of the space; other callers receive a `403`.
+
+This writes the entity's own `nsfw` flag only. Its effective NSFW status (`nsfwEffective`) is still computed live from that flag OR the space chain. NSFW is a separate axis from moderation (`approve`/`remove`) — flagging **labels** content, it does not hide it. See [Entity NSFW flagging](/data-models/entity#nsfw-flagging).
+
+## Usage Example
+
+```tsx
+import { useSetSpaceEntityNsfw } from "@sublay/react-js";
+
+function EntityNsfwToggle({ spaceId, entityId }: { spaceId: string; entityId: string }) {
+  const setSpaceEntityNsfw = useSetSpaceEntityNsfw();
+
+  return (
+    <div>
+      <button onClick={() => setSpaceEntityNsfw({ spaceId, entityId, nsfw: true })}>
+        Mark NSFW
+      </button>
+      <button onClick={() => setSpaceEntityNsfw({ spaceId, entityId, nsfw: false })}>
+        Clear NSFW
+      </button>
+    </div>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space containing the entity.
+</ParamField>
+
+<ParamField path="entityId" type="string" required>
+  UUID of the entity to flag or unflag.
+</ParamField>
+
+<ParamField path="nsfw" type="boolean" required>
+  The NSFW own-flag to set on the entity.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="nsfw" type="boolean">
+  The NSFW flag that was applied.
+</ResponseField>
+
+Calls `PATCH /v7/:projectId/spaces/:spaceId/entities/:entityId/nsfw` with body `{ nsfw }`, behind `requireUserAuth` + `requireSpaceModerator`.
+
+## See Also
+
+- [Moderate space entity](/hooks/spaces/use-moderate-space-entity)
+- [Update entity](/hooks/entities/use-update-entity)
+- [Entity data model](/data-models/entity#nsfw-flagging)

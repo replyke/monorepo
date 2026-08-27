@@ -1,0 +1,143 @@
+---
+title: "Request New Access Token"
+api: "POST /api/v6/:projectId/auth/request-new-access-token"
+description: "Obtain a new access token using a valid refresh token"
+---
+
+Request a new access token using a valid refresh token. The refresh token can be sent in the request body or as an HttpOnly cookie.
+
+## Headers
+
+<ParamField header="Cookie" type="string">
+  Can include `replyke-refresh-jwt` cookie with the refresh token
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="refreshToken" type="string">
+  JWT refresh token (optional if provided via cookie). Cookie takes precedence if both are provided.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates whether the token refresh was successful
+</ResponseField>
+
+<ResponseField name="accessToken" type="string">
+  New JWT access token (null if no refresh token provided)
+</ResponseField>
+
+<ResponseField name="user" type="User Object">
+  Current user object (null if no refresh token provided)
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      Unique user identifier
+    </ResponseField>
+
+    <ResponseField name="email" type="string">
+      User's email address
+    </ResponseField>
+
+    <ResponseField name="username" type="string">
+      User's username
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      User's full name
+    </ResponseField>
+
+    <ResponseField name="avatar" type="string">
+      URL to user's avatar image
+    </ResponseField>
+
+    <ResponseField name="bio" type="string">
+      User's biography
+    </ResponseField>
+
+    <ResponseField name="location" type="object">
+      <Expandable title="properties">
+        <ResponseField name="type" type="string">
+          GeoJSON type (always "Point")
+        </ResponseField>
+
+        <ResponseField name="coordinates" type="number[]">
+          Array of [longitude, latitude]
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+
+    <ResponseField name="birthdate" type="string">
+      User's birthdate in ISO 8601 format
+    </ResponseField>
+
+    <ResponseField name="metadata" type="object">
+      Custom public metadata
+    </ResponseField>
+
+    <ResponseField name="suspensions" type="array">
+      Array of active suspensions
+    </ResponseField>
+
+    <ResponseField name="reputation" type="number">
+      User's reputation score
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      Account creation timestamp
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string">
+      Last update timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Refresh Token Structure - 403 Forbidden">
+    ```json
+    {
+      "error": "Invalid refresh token.",
+      "code": "auth/invalid-refresh-token"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Token Not Recognized - 403 Forbidden">
+    ```json
+    {
+      "error": "Refresh token not recognized.",
+      "code": "auth/refresh-token-mismatch"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="User Not Found - 403 Forbidden">
+    ```json
+    {
+      "error": "User not found.",
+      "code": "auth/no-user-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid or Expired Token - 403 Forbidden">
+    ```json
+    {
+      "error": "Invalid or expired refresh token.",
+      "code": "auth/refresh-token-invalid",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- The `replyke-refresh-jwt` cookie takes precedence if both are provided.
+- Returns null tokens and user object if no token is supplied.

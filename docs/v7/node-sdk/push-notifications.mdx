@@ -1,0 +1,204 @@
+---
+title: "Push Notifications"
+description: "Send push notifications to your users' registered devices from your backend"
+---
+
+The `push` module lets your backend fan a notification out to every registered device belonging to one or more users — across iOS (APNs), Android (FCM), and Web Push — in a single call.
+
+<Note>
+  Requires the `push` bundle and configured provider credentials (APNs, FCM, or Web Push) in the project dashboard. See [Push Notifications](/push-notifications) for the full setup guide.
+</Note>
+
+---
+
+### send
+
+Sends a push notification to all registered devices for the given user IDs. Dispatches to APNs, FCM, and Web Push in parallel.
+
+```typescript
+const result = await sublay.push.send({
+  userIds: ["usr_abc123", "usr_def456"],
+  title: "New message",
+  body: "You have a new message from Alice.",
+  data: { conversationId: "conv_xyz789" },
+  sound: "notification.wav",
+  channelId: "messages",
+  badge: 3,
+  tag: "conv_xyz789",
+});
+```
+
+<ParamField body="userIds" type="string[]" required>
+  Sublay user IDs to notify. Maximum 100 per call.
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  Notification title shown on the device.
+</ParamField>
+
+<ParamField body="body" type="string" required>
+  Notification body text.
+</ParamField>
+
+<ParamField body="data" type="Record<string, any>">
+  Optional key-value payload forwarded to the app alongside the notification. Use for deep links, entity IDs, or any context your app needs when the user taps.
+
+  **`recipientUserId` is reserved.** Sublay stamps every dispatched copy with the id of the account it is for, so a device signed into several accounts can tell which one a notification belongs to. A value you set under that key is overwritten — an account-routing key has to be trustworthy.
+</ParamField>
+
+<Note>
+  **One notification per account, not per device.** A physical device can be bound to several accounts at once. If two of the `userIds` are signed in on the same device, that device receives two notifications — one per account, each carrying its own `recipientUserId`.
+</Note>
+
+#### Rich payload fields
+
+All optional. Each maps to whichever platform(s) support it and is silently ignored elsewhere (e.g. `subtitle`/`threadId` are iOS-only, `channelId` is Android-only). See [Rich notification payloads](/push-notifications#rich-notification-payloads) for the platform setup each one needs.
+
+<ParamField body="sound" type="string">
+  Sound file to play. **iOS:** APNs `sound`. **Android:** on 8+ the sound is owned by the notification channel — pair this with `channelId` and create that channel client-side with the sound set. **Web:** forwarded to your service worker.
+</ParamField>
+
+<ParamField body="badge" type="number">
+  iOS app-icon badge count (APNs `badge`). No Android equivalent. Your backend supplies the number — Sublay does not track per-user unread counts.
+</ParamField>
+
+<ParamField body="channelId" type="string">
+  Android notification channel id (FCM). The channel must be created client-side; on Android 8+ it governs sound, importance, and vibration.
+</ParamField>
+
+<ParamField body="priority" type='"high" | "normal"'>
+  Delivery priority. `high` (the default when omitted) wakes the device for time-sensitive pushes; `normal` is power-considerate. Maps to APNs `apns-priority` and FCM `android.priority`.
+</ParamField>
+
+<ParamField body="subtitle" type="string">
+  iOS subtitle line shown under the title (APNs `alert.subtitle`).
+</ParamField>
+
+<ParamField body="imageUrl" type="string">
+  Rich/big-picture image URL. Works out of the box on **Android** (FCM) and **Web**. On **iOS** it additionally requires a [Notification Service Extension](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension) in your app; the URL is forwarded in the payload and `mutable-content` is set automatically.
+</ParamField>
+
+<ParamField body="tag" type="string">
+  Display-replace key so notifications collapse in the UI instead of stacking (FCM `android.notification.tag`, Web `tag`). Use a per-conversation value to keep one entry per thread. Scoped per recipient, like `collapseId` below.
+</ParamField>
+
+<ParamField body="collapseId" type="string">
+  Transport-level collapse identifier (APNs `apns-collapse-id`, FCM `collapse_key`) — a newer push supersedes an undelivered one with the same id **for the same account**.
+
+  Both keys are scoped to the recipient before they reach the provider: two accounts signed in on one physical device share a single transport destination, so the server appends a short digest of the recipient's id and each account collapses only against itself. That means the device receives a different string than you sent — client code reading the delivered `tag` must match on a prefix rather than on equality, or carry its own key in `data`, which is passed through untouched. An over-length `collapseId` is folded into a fixed-width digest rather than refused by APNs — see [the endpoint reference](/api-reference/push-notifications/send).
+</ParamField>
+
+<ParamField body="threadId" type="string">
+  iOS notification grouping (APNs `thread-id`).
+</ParamField>
+
+<ParamField body="ttl" type="number">
+  Time-to-live in **seconds** for offline devices (APNs `apns-expiration`, FCM `android.ttl`). After this window the provider stops retrying.
+</ParamField>
+
+<ParamField body="mutableContent" type="boolean">
+  iOS `mutable-content` flag, letting your Notification Service Extension modify the payload (e.g. attach `imageUrl`). Set implicitly when `imageUrl` is provided.
+</ParamField>
+
+**Returns** — `Promise<SendPushResult>`
+
+```typescript
+interface SendPushResult {
+  results: Record<string, PushDeviceResult[]>;
+}
+
+interface PushDeviceResult {
+  platform: string;   // "ios" | "android" | "web"
+  success: boolean;
+  reason?: string;    // present when success is false
+}
+```
+
+Every requested `userId` is present in `results` — users with no registered devices get an empty array. Device tokens permanently rejected by the upstream provider are automatically removed; you don't need a separate cleanup step. A dead token is dead for the whole device, so removal unbinds **every** account registered on it, including accounts outside this call.
+
+**Example response:**
+
+```json
+{
+  "results": {
+    "usr_abc123": [
+      { "platform": "ios", "success": true },
+      { "platform": "web", "success": true }
+    ],
+    "usr_def456": [],
+    "usr_ghi789": [
+      { "platform": "android", "success": false, "reason": "credentials_not_configured" }
+    ]
+  }
+}
+```
+
+Common `reason` values when `success` is `false`:
+
+| Reason | Meaning |
+|--------|---------|
+| `credentials_not_configured` | No provider credentials are configured (or enabled) for this platform |
+| Provider error codes | APNs, FCM, or Web Push returned a delivery error |
+
+---
+
+## Notification preferences
+
+Read and update a user's per-type push preferences — the set of event types they've disabled for push. See [Notification Preferences & Mute](/notification-preferences) for the model and the full event palette.
+
+<Note>
+  These endpoints are **per-user**. The Node SDK authenticates with a service key, so — exactly like the other per-user operations — you name the user with an explicit `userId` and the SDK acts on that user's behalf. (End-user-token clients, such as the React hooks and the browser JS SDK, act on the signed-in user and omit `userId`.)
+</Note>
+
+### getNotificationPreferences
+
+Reads a user's disabled push types. Returns an empty array (all-on) when no preferences are set.
+
+```typescript
+const { disabledTypes } = await sublay.push.getNotificationPreferences({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The user whose preferences to read.
+</ParamField>
+
+**Returns** — `Promise<NotificationPreferences>`
+
+```typescript
+interface NotificationPreferences {
+  disabledTypes: PushEventType[]; // e.g. ["new-follow", "message"]
+}
+```
+
+---
+
+### updateNotificationPreferences
+
+Replaces a user's disabled-types set (upsert). Send the **complete** set you want stored, not a delta; only valid event type names are accepted.
+
+```typescript
+import { PUSH_EVENT_TYPES } from "@sublay/node";
+
+await sublay.push.updateNotificationPreferences({
+  disabledTypes: ["comment-mention", "message"],
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="disabledTypes" type="PushEventType[]" required>
+  The complete set of event types to disable for push. Values must be from `PUSH_EVENT_TYPES` (see the [event palette](/notification-preferences#the-event-palette)); unknown names are rejected. Pass `[]` to re-enable everything.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The user whose preferences to write.
+</ParamField>
+
+**Returns** — `Promise<NotificationPreferences>` (the stored, deduplicated set).
+
+---
+
+## Conversation mute
+
+Setting or clearing a conversation mute lives on the **`chat`** module (it's a `/chat/...` route): [`chat.muteConversation`](/node-sdk/chat#muteconversation). Like the preference endpoints it is per-user — name the acting user with `userId` — and takes a duration **choice**, never a timestamp.

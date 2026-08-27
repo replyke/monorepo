@@ -1,0 +1,85 @@
+---
+title: "Connection"
+description: "Connection interface shapes for bidirectional user relationships"
+---
+
+A connection is a bidirectional relationship between two users that requires mutual acceptance. The connection lifecycle goes through request → accept/decline. Multiple response shapes exist depending on the context in which connections are retrieved.
+
+## EstablishedConnection
+
+Returned in lists of confirmed connections.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique connection identifier. |
+| `connectedUser` | `User` | The other user in this connection. |
+| `connectedAt` | `string` | ISO timestamp when the connection was accepted. |
+
+## PendingConnection
+
+Returned for requests that have not yet been accepted or declined.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique connection identifier. |
+| `user` | `User` | The other user involved in this pending request. |
+| `type` | `"received" \| "sent"` | Whether the current user received or sent this request. |
+| `message` | `string` | Optional message included with the request. |
+| `createdAt` | `string` | ISO timestamp when the request was sent. |
+
+## ConnectionStatusResponse
+
+Returned by the connection status endpoint. The shape varies by status:
+
+### Status: none
+
+```ts
+{ status: "none" }
+```
+
+### Status: pending
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `status` | `"pending"` | |
+| `type` | `"sent" \| "received"` | Whether the current user sent or received the request. |
+| `connectionId` | `string` | The connection record's ID. |
+| `createdAt` | `string` | When the request was sent. |
+
+### Status: connected
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `status` | `"connected"` | |
+| `connectionId` | `string` | The connection record's ID. |
+| `connectedAt` | `string` | When the connection was accepted. |
+| `requestedAt` | `string` | When the request was originally sent. |
+
+### Status: declined
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `status` | `"declined"` | |
+| `type` | `"sent" \| "received"` | Whether the current user sent or received the declined request. |
+| `connectionId` | `string` | The connection record's ID. |
+| `respondedAt` | `string` | When the decline occurred. |
+
+## Pagination
+
+Connection list responses include a `pagination` object:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `currentPage` | `number` | The current page number. |
+| `totalPages` | `number` | Total number of pages. |
+| `totalCount` | `number` | Total number of connections. |
+| `hasNextPage` | `boolean` | Whether more pages exist after this one. |
+| `hasPreviousPage` | `boolean` | Whether pages exist before this one. |
+| `limit` | `number` | The page size used for this response. |
+
+## See Also
+
+- [useConnectionManager hook](/hooks/connections/use-connection-manager)
+- [useRequestConnection hook](/hooks/connections/use-request-connection)
+- [Fetch Connections](/api-reference/connections/fetch-connections)
+- [Fetch Connection Status](/api-reference/users/connections/get-connection-status)

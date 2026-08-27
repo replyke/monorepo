@@ -1,0 +1,114 @@
+---
+title: "Fetch User"
+api: "GET /api/v6/:projectId/users/:userId"
+description: "Retrieve details of a specific user by their ID"
+---
+
+Fetch details of a specific user by their ID. This endpoint returns public profile information.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The unique ID of the user to fetch
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique user identifier
+</ResponseField>
+
+<ResponseField name="projectId" type="string">
+  ID of the project this user belongs to
+</ResponseField>
+
+<ResponseField name="foreignId" type="string">
+  External reference ID if user was imported from another system
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  User's full name
+</ResponseField>
+
+<ResponseField name="username" type="string">
+  User's unique username
+</ResponseField>
+
+<ResponseField name="avatar" type="string">
+  URL to user's avatar image
+</ResponseField>
+
+<ResponseField name="bio" type="string">
+  User's biography
+</ResponseField>
+
+<ResponseField name="birthdate" type="string">
+  User's birthdate in ISO 8601 format
+</ResponseField>
+
+<ResponseField name="reputation" type="number">
+  User's reputation score
+</ResponseField>
+
+<ResponseField name="location" type="object">
+  <Expandable title="properties">
+    <ResponseField name="type" type="string">
+      GeoJSON type (always "Point")
+    </ResponseField>
+
+    <ResponseField name="coordinates" type="number[]">
+      Array of [latitude, longitude]
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Custom public metadata
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  Account creation timestamp
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  Last update timestamp
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing or Invalid User ID - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing or invalid userId in request parameters",
+      "code": "user/invalid-user-id"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="User Not Found - 404 Not Found">
+    ```json
+    {
+      "error": "User not found",
+      "code": "user/not-found"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "user/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- This endpoint excludes sensitive fields such as email, password hash, and secure metadata.
+- Useful for displaying public profile information of a user.

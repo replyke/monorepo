@@ -1,0 +1,60 @@
+---
+title: "Fetch Comment"
+api: "GET /v7/:projectId/comments/:commentId"
+description: "Get a single comment by ID"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+Returns a single comment by its Sublay UUID.
+
+<Note>
+  If the comment author is block-edged with the signed-in caller, in either
+  direction, this returns `404` with `comment/not-found` — identical to a
+  comment that does not exist. An embedded `parentComment` is nulled under the
+  same rule. Requires the `moderation` bundle.
+</Note>
+
+## Path Parameters
+
+<ParamField path="commentId" type="string" required>
+  The UUID of the comment to fetch.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include. Valid values: `user`, `entity`, `space`, `parent`, `grants` (the [reputation-grant summary](/data-models/reputation-grant#grantsummary)).
+</ParamField>
+
+### Space-scoped reputation
+
+This endpoint has a space in context, so it accepts the opt-in reputation params. They add a `spaceReputation` field to the populated author `user`, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation) for the full contract.
+
+<SpaceReputationParams variant="context" field="query" />
+
+## Response
+
+Returns a `200 OK` with the following shape:
+
+```json
+{
+  "comment": { ...Comment }
+}
+```
+
+The `comment` field is a [Comment](/data-models/comment) object. If the comment has been removed (user-deleted or moderation-removed) and the viewer is not the author, identifying fields (`userId`, `user`, `content`, `gif`, `mentions`, `attachments`) are nulled out as a Reddit-style placeholder.
+
+<Note>
+  This endpoint **nests the record under a `comment` key**, unlike every other read surface, which returns the record bare. So a requested grants summary lives at `comment.grants` — see [GrantSummary](/data-models/reputation-grant#grantsummary).
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Comment not found", "code": "comment/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

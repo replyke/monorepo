@@ -1,0 +1,59 @@
+---
+title: "Create workspace"
+description: "Create a root or child workspace; the caller becomes the owner"
+icon: "plug"
+---
+
+## Overview
+
+`useCreateWorkspace` returns a callable that creates a [workspace](/data-models/workspace). The signed-in caller becomes the owner. Omit `parentWorkspaceId` for a root workspace (requires a **verified email**); pass it for a child (requires the `create-sub-workspace` capability on the parent).
+
+<Note>
+  The verified-email gate on root creation is **absolute** — there is no server-side escape hatch. A service or master key acting as a named user via the [node SDK](/node-sdk/workspaces) is held to the same rule, exactly as accepting an invite and receiving an ownership transfer are. Prompt the user through email verification before showing a "Create workspace" flow.
+</Note>
+
+## Usage Example
+
+```tsx
+import { useCreateWorkspace } from "@sublay/react-js";
+
+function CreateTeam() {
+  const createWorkspace = useCreateWorkspace();
+
+  const handleCreate = async () => {
+    const workspace = await createWorkspace({ name: "Acme Inc" });
+    console.log("Created:", workspace.id, "owner:", workspace.ownerId);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="name" type="string" required>
+  Display name. 1–100 characters.
+</ParamField>
+
+<ParamField path="metadata" type="Record<string, any>">
+  Optional opaque developer data.
+</ParamField>
+
+<ParamField path="parentWorkspaceId" type="string | null">
+  Optional parent for child creation. Absent/`null` → root.
+</ParamField>
+
+## Returns
+
+Returns the created [Workspace](/data-models/workspace) object.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/email-not-verified` | 403 | Root creation, and the caller's email is not verified. |
+| `workspace/unauthorized` | 403 | Child creation, and you lack `create-sub-workspace` on the parent. |
+| `workspace/not-found` | 404 | The `parentWorkspaceId` does not exist in this project. |
+| `workspace/max-depth-exceeded` | 400 | The child would sit deeper than the 10-level nesting cap. |
+
+## Related
+
+- [Create Workspace API](/api-reference/workspaces/create-workspace)

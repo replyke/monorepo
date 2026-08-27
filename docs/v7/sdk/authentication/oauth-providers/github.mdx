@@ -1,0 +1,97 @@
+---
+title: "GitHub"
+description: "Create a GitHub OAuth App and paste the client ID and secret into Sublay"
+---
+
+GitHub is the simplest of the four providers: you register an **OAuth App**, GitHub hands you a **Client ID** and a **Client Secret**, and you paste both into the Sublay dashboard. There's no key file or token signing to deal with — unlike Apple.
+
+<Note>
+  New to the overall flow? Read [Configuring OAuth
+  Providers](/sdk/authentication/oauth-providers/overview) first — it explains
+  the redirect chain and the Sublay callback URL that every step below refers to.
+</Note>
+
+By the end you'll have two values to paste into the Sublay dashboard:
+
+| Sublay field | Comes from |
+| --- | --- |
+| **Client ID** | Shown on your OAuth App's page after you register it |
+| **Client Secret** | Generated on the same page (shown only once) |
+
+Everything happens in [github.com](https://github.com) under **Settings → Developer settings**. Any GitHub account works — no paid plan required.
+
+## Step 1 — Create a GitHub OAuth App
+
+<Steps>
+  <Step title="Open the OAuth Apps page">
+    Go to **Settings → Developer settings → OAuth Apps**, then click **New OAuth App** (or **Register a new application** if it's your first one).
+
+    <Warning>
+      Make sure you're creating an **OAuth App**, not a **GitHub App** — they're
+      two different things listed side by side in Developer settings, and only the
+      OAuth App gives you the simple Client ID / Client Secret pair Sublay expects.
+    </Warning>
+  </Step>
+  <Step title="Fill in the application details">
+    Complete the form:
+
+    | Field | Value |
+    | --- | --- |
+    | **Application name** | Anything your users will recognize (e.g. `MyApp`) — it's shown on GitHub's consent screen |
+    | **Homepage URL** | Your app or site (e.g. `https://yourapp.com`) |
+    | **Authorization callback URL** | `https://api.sublay.io/v7/oauth/callback` |
+
+    <Warning>
+      The **Authorization callback URL** is Sublay's endpoint, **not** your app's.
+      GitHub sends the user back to Sublay first, and Sublay then redirects to your
+      app. Enter `https://api.sublay.io/v7/oauth/callback` exactly.
+    </Warning>
+  </Step>
+  <Step title="Register the application">
+    Click **Register application**. GitHub creates the app and takes you to its settings page, where the **Client ID** is displayed. Copy it down.
+  </Step>
+</Steps>
+
+## Step 2 — Generate a client secret
+
+On the OAuth App's settings page, click **Generate a new client secret**.
+
+<Warning>
+  GitHub shows the client secret **only once**, immediately after generating it.
+  Copy it right away — if you navigate away without saving it, you'll have to
+  generate a new one and update Sublay with the new value.
+</Warning>
+
+You now have both values you need: the **Client ID** and the **Client Secret**.
+
+## Step 3 — Fill in the Sublay dashboard
+
+In your project dashboard, open **Settings → OAuth Providers → Add Provider → GitHub**, and complete the modal:
+
+| Field | Value |
+| --- | --- |
+| **Client ID** | The Client ID from Step 1 |
+| **Client Secret** | The client secret you generated in Step 2 |
+| **Allowed Redirect URIs** | Your app's return URL(s) — the `redirectAfterAuth` you pass in code (e.g. `https://yourapp.com/auth/callback` for web, or `myapp://auth/callback` for Expo/native) |
+| **Scopes** | Leave the default (`user:email`) |
+
+Click **Add Provider** to save and enable it.
+
+<Note>
+  The default `user:email` scope is what lets Sublay read the signed-in user's
+  email address — GitHub won't return a user's email if it's marked private
+  unless this scope is requested. Leave it as-is for a standard setup.
+</Note>
+
+## Common pitfalls
+
+- **Two different redirect URLs** — the **Authorization callback URL** on GitHub is Sublay's `https://api.sublay.io/v7/oauth/callback`, while the **Allowed Redirect URIs** in the Sublay dashboard are your *own* app's return URLs. Don't put your app URL on GitHub or the Sublay URL in the Allowed Redirect URIs.
+- **OAuth App vs. GitHub App** — you want an **OAuth App**. A GitHub App is a different product and won't work here.
+- **The secret is shown once** — if you lose it, generate a new client secret and update the value in Sublay; the old one stops working.
+- **Redirect URI mismatch** — the value in your code, in Allowed Redirect URIs, must match exactly (a trailing-slash difference will fail).
+- **Org-owned apps may need approval** — you can create the OAuth App under your personal account or under an organization. If you create it under an org (or it's later transferred to one), an org owner may need to approve it before sign-in works for that org's members.
+
+## See Also
+
+- [Configuring OAuth Providers](/sdk/authentication/oauth-providers/overview) — the shared setup overview
+- [OAuth](/sdk/authentication/oauth) — the runtime sign-in code

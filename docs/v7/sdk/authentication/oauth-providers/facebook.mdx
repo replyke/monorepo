@@ -1,0 +1,131 @@
+---
+title: "Facebook"
+description: "Create a Meta app with Facebook Login and paste the App ID and secret into Sublay"
+---
+
+Facebook is one of the simpler providers: you create an app in the Meta developer console, add the **Facebook Login** product, register Sublay's callback URL, and copy two values — the **App ID** and **App Secret** — into the Sublay dashboard. The only real gotcha is Meta's **Development vs. Live** mode, which controls whether anyone other than you can actually sign in.
+
+<Note>
+  New to the overall flow? Read [Configuring OAuth
+  Providers](/sdk/authentication/oauth-providers/overview) first — it explains
+  the redirect chain and the Sublay callback URL that every step below refers to.
+</Note>
+
+By the end you'll have two values to paste into the Sublay dashboard:
+
+| Sublay field | Comes from |
+| --- | --- |
+| **Client ID** | Your app's **App ID** |
+| **Client Secret** | Your app's **App Secret** |
+
+<Warning>
+  In Meta's console these are called **App ID** and **App Secret**, but in the
+  Sublay modal they go in the **Client ID** and **Client Secret** fields
+  respectively. Sublay uses the generic OAuth names for every provider.
+</Warning>
+
+Everything on the provider side happens at [developers.facebook.com](https://developers.facebook.com). You need a Facebook account with developer access (accept the developer terms if prompted).
+
+## Step 1 — Create a Facebook app
+
+<Steps>
+  <Step title="Start the create-app wizard">
+    Go to **My Apps → Create App**. Meta's wizard is **use-case based**, so it asks what you want your app to do rather than for an app "type".
+  </Step>
+  <Step title="Choose a use case that enables Facebook Login">
+    Pick the use case for **authenticating and requesting data from users** — the option that includes **Facebook Login**. (Meta relabels these periodically; choose whichever one lists Facebook Login as an included product.) Give the app a name and continue through to create it.
+  </Step>
+</Steps>
+
+## Step 2 — Add the Facebook Login product
+
+If the wizard didn't already attach it, add **Facebook Login** to your app from the products list in the left-hand sidebar (**Add Product → Facebook Login → Set up**). You do **not** need the iOS/Android/Web platform quickstarts — the web OAuth redirect flow is all Sublay uses.
+
+## Step 3 — Register the Sublay callback URL
+
+This is the single most important step, and the same value for every provider.
+
+<Steps>
+  <Step title="Open Facebook Login settings">
+    In the sidebar, go to **Facebook Login → Settings**.
+  </Step>
+  <Step title="Add the Sublay redirect URI">
+    In **Valid OAuth Redirect URIs**, add this exact string:
+
+    ```
+    https://api.sublay.io/v7/oauth/callback
+    ```
+
+    This is **Sublay's** endpoint, not your app's — the provider hands the user back to Sublay, and Sublay forwards them to your app afterward.
+  </Step>
+  <Step title="Confirm OAuth login is enabled">
+    On the same page, make sure **Client OAuth Login** and **Web OAuth Login** are toggled **on**. Then **Save Changes**.
+  </Step>
+</Steps>
+
+<Warning>
+  Do **not** put your own app's return URL here. Your app's return URL
+  (`redirectAfterAuth`) belongs in the **Allowed Redirect URIs** field of the
+  Sublay dashboard, covered in Step 5 — not in Meta's console.
+</Warning>
+
+## Step 4 — Get your App ID and App Secret
+
+<Steps>
+  <Step title="Open Basic settings">
+    Go to **App settings → Basic**.
+  </Step>
+  <Step title="Copy the App ID">
+    The **App ID** is shown at the top. This becomes your Sublay **Client ID**.
+  </Step>
+  <Step title="Reveal and copy the App Secret">
+    Click **Show** next to **App Secret** (you may be asked to re-enter your password). This becomes your Sublay **Client Secret**. Treat it like a password — never commit it or expose it in client-side code.
+  </Step>
+</Steps>
+
+## Step 5 — Fill in the Sublay dashboard
+
+In your project dashboard, open **Settings → OAuth Providers → Add Provider → Facebook**, and complete the modal:
+
+| Field | Value |
+| --- | --- |
+| **Client ID** | Your Facebook **App ID** from Step 4 |
+| **Client Secret** | Your Facebook **App Secret** from Step 4 |
+| **Allowed Redirect URIs** | Your app's return URL(s) — the `redirectAfterAuth` you pass in code (e.g. `https://yourapp.com/auth/callback` for web, or `myapp://auth/callback` for Expo/native) |
+| **Scopes** | Leave the defaults (`email`, `public_profile`) |
+
+Click **Add Provider** to save and enable it.
+
+<Note>
+  `email` and `public_profile` are Facebook's standard permissions and are
+  granted without App Review. Leave the scopes untouched for a standard setup —
+  the defaults are exactly what Sublay needs to create a user.
+</Note>
+
+## Step 6 — Switch the app to Live mode
+
+A brand-new Facebook app starts in **Development mode**. In that state, **only** people with a role on the app — admins, developers, and testers — can sign in. Everyone else gets an error.
+
+To let the public sign in, flip the app to **Live** using the toggle at the top of the dashboard. Meta gates this behind a few requirements:
+
+- A **Privacy Policy URL** set under **App settings → Basic**.
+- **Business verification** for your account, in some cases.
+- Meta's standard checks may prompt for additional details before the toggle activates.
+
+<Note>
+  You can test the whole flow end to end while the app is still in
+  **Development** mode — just sign in with an account that has a role on the app.
+  Switch to **Live** only when you're ready for real users.
+</Note>
+
+## Common pitfalls
+
+- **App ID / App Secret vs. Client ID / Client Secret** — the names differ between Meta and Sublay. App ID → Client ID, App Secret → Client Secret.
+- **Wrong redirect URI** — `https://api.sublay.io/v7/oauth/callback` goes in Meta's **Valid OAuth Redirect URIs**; your app's return URL goes in Sublay's **Allowed Redirect URIs**. Swapping them is the most common failure.
+- **Only I can sign in** — the app is still in **Development** mode. Add the person as a tester, or switch the app to **Live**.
+- **Redirect URI mismatch** — the value in your code, in Sublay's Allowed Redirect URIs, and (on Meta's side) the Valid OAuth Redirect URIs must all agree exactly.
+
+## See Also
+
+- [Configuring OAuth Providers](/sdk/authentication/oauth-providers/overview) — the shared setup overview
+- [OAuth](/sdk/authentication/oauth) — the runtime sign-in code
