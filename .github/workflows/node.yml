@@ -2,10 +2,11 @@
 #
 # Replaces the standalone test.yml that node-sdk ran in its own repo. The
 # suite is jest via ts-jest, which compiles src/ and __tests__/ in-process
-# against tsconfig.jest.json, so there is deliberately no build step here:
-# nothing in the run reads dist/. (`pnpm install` does build the package
-# anyway via its own `prepare` hook — that is incidental, not a
-# dependency of this job.)
+# against tsconfig.jest.json, and every test imports through a relative
+# ../src/ path — nothing in the run reads dist/, and the package has no
+# workspace dependencies whose dist it could need either. So there is
+# deliberately no build step: verified by running the suite with no dist/
+# present anywhere in the workspace (445 tests, all passing).
 #
 # See .github/workflows/test.yml for why each group gets its own workflow
 # file instead of a job in a shared one.
@@ -18,6 +19,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "playground/package.json"
       - "tsconfig.json"
       - ".github/workflows/node.yml"
   push:
@@ -28,6 +30,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "playground/package.json"
       - "tsconfig.json"
       - ".github/workflows/node.yml"
 
@@ -45,7 +48,11 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        # --ignore-scripts so this job doesn't build the other five
+        # workspace packages that declare a `prepare` script, and doesn't
+        # build this one either — see the note above on why nothing here
+        # reads dist/. Full reasoning in .github/workflows/test.yml.
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Run node test suite
         run: pnpm --filter @sublay/node run test

@@ -17,6 +17,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "playground/package.json"
       - "tsconfig.json"
       - ".github/workflows/ui-core.yml"
   push:
@@ -28,6 +29,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "playground/package.json"
       - "tsconfig.json"
       - ".github/workflows/ui-core.yml"
 
@@ -45,9 +47,17 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        # --ignore-scripts so this job doesn't build the six workspace
+        # packages that declare a `prepare` script (none of them are in this
+        # group). See .github/workflows/test.yml for the full reasoning and
+        # for why it is safe for esbuild/@swc/core.
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build ui-core packages
+        # These two use `prepublishOnly`, not `prepare`, so install never
+        # built them even before --ignore-scripts. With no test suite yet,
+        # this compile is the entire check: without it the job would install
+        # dependencies and assert nothing.
         run: pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build
 
       - name: Run ui-core test suites

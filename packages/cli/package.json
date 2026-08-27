@@ -30,7 +30,8 @@
     "sublay": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "NOTICE"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",

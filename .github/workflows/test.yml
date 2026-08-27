@@ -8,7 +8,14 @@
 #
 # The shared-root paths (root manifests, lockfile, tsconfig, this file)
 # are listed deliberately: a change to any of them can break this group
-# even though no package directory was touched.
+# even though no package directory was touched. playground/package.json is
+# in that list for the same reason and is the one workspace member no
+# group owns: it feeds the single shared lockfile, so editing it without
+# regenerating pnpm-lock.yaml would otherwise fail the NEXT unrelated PR's
+# `--frozen-lockfile` install instead of its own.
+#
+# Every group's install runs with --ignore-scripts, and every group builds
+# what it needs explicitly. See the install step below for why.
 name: Test
 
 on:
@@ -21,6 +28,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "playground/package.json"
       - "tsconfig.json"
       - ".github/workflows/test.yml"
   push:
@@ -34,6 +42,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "playground/package.json"
       - "tsconfig.json"
       - ".github/workflows/test.yml"
 
@@ -51,13 +60,35 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        # --ignore-scripts is what makes this workflow's isolation real.
+        # Six workspace packages (core, react-js, react-native, expo, node,
+        # js) declare a `prepare` script, and pnpm runs `prepare` for every
+        # workspace project on any install, no matter which package the run
+        # is about. Without this flag, `pnpm install` here builds all six —
+        # so a broken build in, say, packages/js would fail the install step
+        # of a PR that only touched packages/cli, as an unrelated red check.
+        # Each workflow instead builds exactly what it needs, below.
+        #
+        # pnpm has no way to skip only workspace `prepare` scripts, so this
+        # also skips dependencies' install/postinstall scripts — including
+        # the esbuild and @swc/core entries that pnpm-workspace.yaml's
+        # allowBuilds approves. Verified safe: both ship their native
+        # binaries as optional platform packages (@esbuild/<platform>,
+        # @swc/core-<platform>), which pnpm still installs, so every
+        # tsup/vite/vitest build in this repo works without them. If a
+        # future dependency genuinely needs its install script, add an
+        # explicit `pnpm rebuild` after this step rather than dropping the
+        # flag.
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build packages
         # react-js/react-native/expo's tests import @sublay/core for real
         # (mocked at the module level, but Vite still resolves the package
-        # entry first) — core has no `prepare` script, so its dist won't
-        # exist after a plain install without this.
+        # entry first), and that entry points into core's dist/. Nothing
+        # builds dist automatically any more — core does have a `prepare`
+        # script, but the install above skips it deliberately — so this step
+        # is the only thing standing between those suites and "Failed to
+        # resolve entry for package @sublay/core".
         run: pnpm react:build-all
 
       - name: Run package test suites

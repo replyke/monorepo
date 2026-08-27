@@ -6,9 +6,15 @@
 # the CLI source moving at all — and because the registry is served straight
 # off this branch, it breaks for every user the moment it merges. Building the
 # CLI can't see that, so the integrity step below checks the registry metadata
-# itself: every registryUrl points at its own directory, and every files[].path
-# exists on disk. playground/ is deliberately not watched — it is a manual Vite
-# harness with nothing this job would run.
+# itself: every registryUrl points at its own directory, every files[].path
+# exists on disk, and exports.mainFile names one of them. .github/scripts/** is
+# watched too, since that check is the only consumer of those scripts and a
+# PR editing one of them would otherwise run no CI at all.
+#
+# playground/ is otherwise not watched — it is a manual Vite harness with
+# nothing this job would run — but playground/package.json is, along with the
+# other shared paths: it is a workspace member, so it feeds the single shared
+# pnpm-lock.yaml that every workflow installs from.
 #
 # See .github/workflows/test.yml for why each group gets its own workflow
 # file instead of a job in a shared one.
@@ -22,7 +28,9 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "playground/package.json"
       - "tsconfig.json"
+      - ".github/scripts/**"
       - ".github/workflows/cli.yml"
   push:
     branches:
@@ -33,7 +41,9 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "playground/package.json"
       - "tsconfig.json"
+      - ".github/scripts/**"
       - ".github/workflows/cli.yml"
 
 jobs:
@@ -56,9 +66,18 @@ jobs:
         run: node .github/scripts/check-registry-integrity.mjs
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        # --ignore-scripts so this job doesn't build the six workspace
+        # packages that declare a `prepare` script — none of which is
+        # @sublay/cli, and a break in any of them used to fail this install
+        # step on a cli-only PR. See .github/workflows/test.yml for the full
+        # reasoning and for why it is safe for esbuild/@swc/core (which
+        # tsup, below, depends on).
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build cli
+        # The cli uses `prepublishOnly`, not `prepare`, so install never
+        # built it. This step is the only thing that compiles it, and with
+        # no test suite yet it is the only thing that checks it at all.
         run: pnpm --filter @sublay/cli run build
 
       - name: Run cli test suites

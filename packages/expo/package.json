@@ -39,7 +39,8 @@
     "access": "public"
   },
   "files": [
-    "dist"
+    "dist",
+    "NOTICE"
   ],
   "bugs": {
     "url": "https://discord.gg/A94q4kC6"
