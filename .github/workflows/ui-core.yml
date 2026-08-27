@@ -9,6 +9,13 @@
 # file instead of a job in a shared one.
 name: Test ui-core
 
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
 on:
   pull_request:
     paths:

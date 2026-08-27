@@ -639,7 +639,7 @@ registry/
     },
     // ... all 25 files listed
   ],
-  "registryUrl": "https://raw.githubusercontent.com/sublay/cli/main/registry/react/comments-threaded/styled",
+  "registryUrl": "https://raw.githubusercontent.com/sublay-io/monorepo/main/registry/react/comments-threaded/styled",
   "exports": {
     "mainComponent": "ThreadedCommentSection",
     "mainFile": "threaded-comment-section",
@@ -657,7 +657,7 @@ registry/
 **In Production (npx usage):**
 - GitHub repository: `https://github.com/sublay-io/monorepo/tree/main/packages/cli`
 - CLI fetches from GitHub raw URLs
-- Example: `https://raw.githubusercontent.com/sublay/cli/main/registry/react/comments-threaded/styled/registry.json`
+- Example: `https://raw.githubusercontent.com/sublay-io/monorepo/main/registry/react/comments-threaded/styled/registry.json`
 
 Users don't need to know this - CLI handles it automatically.
 

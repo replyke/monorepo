@@ -4,13 +4,28 @@
 # shape as the node job: jest via ts-jest compiles src/ and __tests__/
 # in-process against tsconfig.jest.json, every test imports through a
 # relative ../src/ path, and the package has no workspace dependencies —
-# so nothing in the run reads dist/ and no build step is needed. Verified
-# by running the suite with no dist/ present anywhere in the workspace
-# (553 tests, all passing).
+# so the *tests* need no dist/. Verified by running the suite with no
+# dist/ present anywhere in the workspace (553 tests, all passing).
+#
+# The build still runs below, because "the tests don't read dist/" is not
+# the same as "the build needs no coverage". `tsup --dts` type-checks the
+# whole public surface on the way to emitting declarations, which reaches
+# code jest never touches and catches declaration-emit failures jest
+# cannot see. Before every install started passing --ignore-scripts, the
+# package's `prepare` hook built it as an incidental side effect of
+# `pnpm install` — that was this package's only build coverage, and this
+# explicit step is what replaces it.
 #
 # See .github/workflows/test.yml for why each group gets its own workflow
 # file instead of a job in a shared one.
 name: Test js
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
 
 on:
   pull_request:
@@ -49,10 +64,17 @@ jobs:
 
       - name: Install dependencies
         # --ignore-scripts so this job doesn't build the other five
-        # workspace packages that declare a `prepare` script, and doesn't
-        # build this one either — see the note above on why nothing here
-        # reads dist/. Full reasoning in .github/workflows/test.yml.
+        # workspace packages that declare a `prepare` script. This package
+        # is built explicitly in the next step instead. Full reasoning in
+        # .github/workflows/test.yml.
         run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build js
+        # Not needed by the test step (see the note at the top of this
+        # file), but the build is a real check in its own right: it is the
+        # only thing that type-checks the declaration emit and the source
+        # files the suite never imports.
+        run: pnpm --filter @sublay/js run build
 
       - name: Run js test suite
         run: pnpm --filter @sublay/js run test

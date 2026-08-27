@@ -10,10 +10,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Each package builds to ESM and CJS formats using TypeScript
 
 ### Publishing
-Scripts are grouped by publish group, and every group carries a `{group}:` prefix — no group is the unprefixed default.
-- `pnpm run react:publish-prod` / `react:publish-beta` - Publishes the react-family packages
-- `pnpm run ui-core:publish-prod` / `ui-core:publish-beta` - Publishes the ui-core packages
-- Add `:patch` or `:minor` to version first, e.g. `pnpm run react:publish-beta:patch`
+Scripts are grouped by publish group, and every group carries a `{group}:` prefix — no group is the unprefixed default. There are five groups: `react`, `ui-core`, `cli`, `node`, `js`.
+
+**Always use the `:patch` / `:minor` form.** The bare `{group}:publish-prod` / `{group}:publish-beta` scripts build (and, for `react`/`node`/`js`, run tests) and then publish — but they never bump the version, and `pnpm publish` silently skips any package whose current version is already on the registry, exiting 0. So running a bare form without having bumped the version separately first *looks* like a successful release and ships nothing. The `:patch` / `:minor` variants are just `{group}:version:{patch,minor} && {group}:publish-{prod,beta}` — the bump and the publish in one command — and are the normal way to release. Reach for a bare form only when you have deliberately bumped the version by hand (or via `{group}:version:patch`) as a separate step.
+
+| Group | Packages | Publish |
+|---|---|---|
+| `react` | `@sublay/core`, `@sublay/react-js`, `@sublay/react-native`, `@sublay/expo` | `pnpm run react:publish-prod:patch` / `react:publish-prod:minor` (or `react:publish-beta:patch` / `:minor`) |
+| `ui-core` | `@sublay/ui-core-react-js`, `@sublay/ui-core-react-native` | `pnpm run ui-core:publish-prod:patch` / `:minor` (or `ui-core:publish-beta:patch` / `:minor`) |
+| `cli` | `@sublay/cli` | `pnpm run cli:publish-prod:patch` / `:minor` (or `cli:publish-beta:patch` / `:minor`) |
+| `node` | `@sublay/node` | `pnpm run node:publish-prod:patch` / `:minor` (or `node:publish-beta:patch` / `:minor`) |
+| `js` | `@sublay/js` | `pnpm run js:publish-prod:patch` / `:minor` (or `js:publish-beta:patch` / `:minor`) |
+
+Every group also exposes `{group}:version:patch` and `{group}:version:minor` for bumping without publishing.
 
 ## Architecture Overview
 

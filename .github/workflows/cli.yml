@@ -11,14 +11,33 @@
 # watched too, since that check is the only consumer of those scripts and a
 # PR editing one of them would otherwise run no CI at all.
 #
-# playground/ is otherwise not watched — it is a manual Vite harness with
-# nothing this job would run — but playground/package.json is, along with the
-# other shared paths: it is a workspace member, so it feeds the single shared
-# pnpm-lock.yaml that every workflow installs from.
+# playground/ is watched and built here too: it is the cli group's dev
+# harness, and since it now resolves @sublay/react-js and
+# @sublay/ui-core-react-js through workspace:* links rather than from npm,
+# a breaking change in either compiles straight into it. `playground build`
+# runs `tsc && vite build`, so that break surfaces here instead of the next
+# time a human opens the harness by hand. (playground/package.json is also
+# watched by every other workflow, for a different reason: it is a
+# workspace member feeding the single shared pnpm-lock.yaml.)
+#
+# registry/ gets no equivalent typecheck, and that is a known, accepted
+# limitation rather than an oversight: registry/tsconfig.json maps @/* to
+# ./*, but the component templates import @/lib/utils — a path alias that
+# only resolves inside a real consumer project, never in the registry's own
+# dev context. `tsc --noEmit` there is red by design and cannot be made
+# green without changing how the templates are authored. The integrity
+# check below is what guards registry/ instead.
 #
 # See .github/workflows/test.yml for why each group gets its own workflow
 # file instead of a job in a shared one.
 name: Test cli
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
 
 on:
   pull_request:
@@ -28,7 +47,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - "playground/package.json"
+      - "playground/**"
       - "tsconfig.json"
       - ".github/scripts/**"
       - ".github/workflows/cli.yml"
@@ -41,7 +60,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - "playground/package.json"
+      - "playground/**"
       - "tsconfig.json"
       - ".github/scripts/**"
       - ".github/workflows/cli.yml"
@@ -79,6 +98,21 @@ jobs:
         # built it. This step is the only thing that compiles it, and with
         # no test suite yet it is the only thing that checks it at all.
         run: pnpm --filter @sublay/cli run build
+
+      - name: Build playground
+        # playground is this group's dev harness and resolves
+        # @sublay/react-js + @sublay/ui-core-react-js through workspace:*
+        # links, so its `tsc && vite build` is a real compile against local
+        # source — the only thing in CI that checks the harness still
+        # builds. Those two (and core, which react-js's types reach into)
+        # have to be built first: --ignore-scripts skipped their `prepare`
+        # hooks, and playground's tsc reads their dist/ type entries. That
+        # does mean a genuinely broken react-js/ui-core build can redden
+        # this job; it is a narrow, deliberate exception to the per-group
+        # isolation, because playground really does consume both.
+        run: |
+          pnpm --filter @sublay/core --filter @sublay/react-js --filter @sublay/ui-core-react-js run build
+          pnpm --filter @sublay/playground run build
 
       - name: Run cli test suites
         # No suites exist yet, so this is a no-op today and starts doing

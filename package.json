@@ -28,6 +28,9 @@
     "url": "https://github.com/sublay-io/monorepo.git"
   },
   "private": true,
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "pnpm -r --if-present run test",
@@ -74,7 +77,7 @@
     "js:publish-beta:minor": "pnpm js:version:minor && pnpm js:publish-beta"
   },
   "devDependencies": {
-    "@types/node": "^20.14.5",
+    "@types/node": "^25.6.0",
     "@types/react": "^18.0.0",
     "react": "^18.0.0",
     "react-native": "^0.79.2",
