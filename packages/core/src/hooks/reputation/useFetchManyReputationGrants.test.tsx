@@ -187,6 +187,40 @@ describe("useFetchManyReputationGrants", () => {
     expect(axiosPrivate.calls("get")).toHaveLength(0);
   });
 
+  it("rejects an explicit null target at compile time — the empty branch is undefined, not null", async () => {
+    // COMPILE-TIME assertion, matching the SDK write props: the server's
+    // `targetType`/`targetId` are `.optional()` with NO `.nullable()`, so this
+    // leaf hook — the one that actually shapes the query — uses the strict
+    // `ReputationGrantTargetFilter` whose empty branch is `?: undefined`. The
+    // directives go unused, failing the build, if anyone widens it to
+    // `?: null`. The stateful WRAPPER around this hook is the deliberate
+    // exception (React props, not a wire body) and has its own positive test.
+    //
+    // Nothing throws at runtime: both halves are falsy, so the both-or-neither
+    // guard sees "neither", the recipient filter stands alone, and the target
+    // keys are simply never added to the params. The type is the only thing
+    // that catches the mistake, which is why it is pinned.
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useFetchManyReputationGrants()
+    );
+
+    axiosPrivate.mockResponse("get", makePage([makeReputationGrant()]));
+    await act(async () => {
+      await result.current({
+        recipientId: "user-2",
+        // @ts-expect-error the target pair is not nullable — omit both keys.
+        targetType: null,
+        // @ts-expect-error the target pair is not nullable — omit both keys.
+        targetId: null,
+      });
+    });
+
+    expect(axiosPrivate.calls("get")).toHaveLength(1);
+    expect(axiosPrivate.calls("get")[0].config?.params).toEqual({
+      recipientId: "user-2",
+    });
+  });
+
   it("rejects when the server returns an error response", async () => {
     const { result, axiosPrivate } = renderHookWithAxios(() =>
       useFetchManyReputationGrants()

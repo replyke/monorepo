@@ -197,7 +197,7 @@ describe("useFetchManyReputationGrantsWrapper", () => {
     // `handleError` swallows it — a silently empty list instead of an idle one.
     //
     // Each `@ts-expect-error` doubles as the type-level assertion: none of
-    // these four shapes compiles, and the directive fails the build if that
+    // these five shapes compiles, and the directive fails the build if that
     // ever stops being true. Only a plain-JS caller can reach the runtime gate.
     const idle = async (
       render: () => {
@@ -244,6 +244,54 @@ describe("useFetchManyReputationGrantsWrapper", () => {
         })
       )
     );
+    await idle(() =>
+      renderHookWithAxios(() =>
+        // The wrapper tolerates null for "neither", never for "one" — a null
+        // half is still a half-filled target.
+        useFetchManyReputationGrantsWrapper({
+          targetType: "entity",
+          // @ts-expect-error targetType licenses a string targetId, not null.
+          targetId: null,
+        })
+      )
+    );
+  });
+
+  it("accepts an all-null target pair — the null-tolerant branch these props exist for", async () => {
+    // The POSITIVE half of the contract, and the one place the wrapper
+    // deliberately diverges from the SDK write props: these are React props,
+    // not a wire body, so `targetId={selected?.id ?? null}` — the idiomatic
+    // spelling for "nothing is selected yet" — has to compile. There is NO
+    // `@ts-expect-error` here on purpose; the empty branch of
+    // `NullableReputationGrantTargetFilter` is `?: null`, and this call fails
+    // the build if anyone "harmonizes" it with the strict
+    // `ReputationGrantTargetFilter` the leaf hook and the SDKs use.
+    //
+    // Both nulls are normalized away before the wire: the request below still
+    // carries recipientId alone, with no target keys at all.
+    const { result, axiosPrivate } = renderHookWithAxios(
+      () =>
+        useFetchManyReputationGrantsWrapper({
+          recipientId: "user-2",
+          targetType: null,
+          targetId: null,
+        }),
+      {
+        beforeRender: ({ axiosPrivate }) =>
+          axiosPrivate.mockResponse(
+            "get",
+            makePage([makeReputationGrant()], false)
+          ),
+      }
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(axiosPrivate.calls("get")).toHaveLength(1);
+    expect(axiosPrivate.calls("get")[0].config?.params).toEqual({
+      page: 1,
+      limit: 10,
+      recipientId: "user-2",
+    });
   });
 
   it("starts fetching once the missing half of the target arrives", async () => {

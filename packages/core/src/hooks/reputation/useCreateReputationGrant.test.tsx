@@ -146,6 +146,42 @@ describe("useCreateReputationGrant", () => {
     expect(axiosPrivate.calls("post")).toHaveLength(0);
   });
 
+  it("rejects an explicit null target at compile time — the empty branch is undefined, not null", async () => {
+    // COMPILE-TIME assertions, same shape as the `metadata: null` case above
+    // and for the same reason: the server's `targetType`/`targetId` are
+    // `.optional()` with NO `.nullable()`, so a body carrying `targetType:
+    // null` is answered with 400 reputation-grant/invalid-body rather than
+    // read as "no target" — and this hook forwards the pair verbatim, so the
+    // null would reach the wire. Omit both keys instead.
+    //
+    // These are the SDK write props, so they use the strict
+    // `ReputationGrantTargetFilter` whose empty branch is `?: undefined`; the
+    // directives go unused — failing the build — if anyone widens it to
+    // `?: null`. The wrapper hook is the deliberate exception, and has its own
+    // positive test.
+    //
+    // Nothing throws at runtime: both halves are falsy, so the both-or-neither
+    // guard sees "neither" and the request goes out. The type is the only line
+    // of defense here, which is exactly why it is pinned.
+    const { result, axiosPrivate } = renderHookWithAxios(() =>
+      useCreateReputationGrant()
+    );
+
+    axiosPrivate.mockResponse("post", makeReputationGrant(), 201);
+    await act(async () => {
+      await result.current({
+        recipientId: "user-2",
+        amount: 5,
+        // @ts-expect-error the target pair is not nullable — omit both keys.
+        targetType: null,
+        // @ts-expect-error the target pair is not nullable — omit both keys.
+        targetId: null,
+      });
+    });
+
+    expect(axiosPrivate.calls("post")).toHaveLength(1);
+  });
+
   it("accepts a complete target pair and a targetless grant", async () => {
     const { result, axiosPrivate } = renderHookWithAxios(() =>
       useCreateReputationGrant()
