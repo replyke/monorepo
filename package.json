@@ -1,6 +1,7 @@
 {
   "name": "@sublay/monorepo",
   "version": "7.13.0",
+  "packageManager": "pnpm@10.34.5",
   "license": "Apache-2.0",
   "author": "Sublay, maintained by Yanay Tsabary",
   "description": "Sublay: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
@@ -33,8 +34,8 @@
     "react:version:patch": "pnpm --filter @sublay/monorepo --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native version patch --no-git-tag-version --no-git-checks",
     "react:version:minor": "pnpm --filter @sublay/monorepo --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native version minor --no-git-tag-version --no-git-checks",
     "react:build-all": "pnpm --filter @sublay/core run build && pnpm --filter @sublay/react-js run build && pnpm --filter @sublay/react-native run build && pnpm --filter @sublay/expo run build",
-    "react:publish-prod": "pnpm react:build-all && pnpm test && pnpm --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native publish --no-git-checks",
-    "react:publish-beta": "pnpm react:build-all && pnpm test && pnpm --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native publish --tag beta --no-git-checks",
+    "react:publish-prod": "pnpm react:build-all && pnpm --filter @sublay/core --filter @sublay/react-js --filter @sublay/react-native --filter @sublay/expo run test && pnpm --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native publish --no-git-checks",
+    "react:publish-beta": "pnpm react:build-all && pnpm --filter @sublay/core --filter @sublay/react-js --filter @sublay/react-native --filter @sublay/expo run test && pnpm --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native publish --tag beta --no-git-checks",
     "react:publish-prod:patch": "pnpm react:version:patch && pnpm react:publish-prod",
     "react:publish-prod:minor": "pnpm react:version:minor && pnpm react:publish-prod",
     "react:publish-beta:patch": "pnpm react:version:patch && pnpm react:publish-beta",

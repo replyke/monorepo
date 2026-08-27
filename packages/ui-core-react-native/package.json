@@ -54,5 +54,8 @@
     "react-native": ">=0.83.0",
     "react-native-gesture-handler": "^2",
     "react-native-svg": "^15"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

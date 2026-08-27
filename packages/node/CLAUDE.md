@@ -22,11 +22,8 @@ pnpm build:types
 # Build both (runs before publishing)
 pnpm prepare
 
-# Publish to npm with beta tag
-pnpm publish-beta
-
-# Publish to npm production
-pnpm publish-prod
+# Publishing is done from the monorepo root, not this package directory
+# (run from /monorepo): pnpm node:publish-beta / pnpm node:publish-prod
 ```
 
 ## Core Architecture
@@ -329,12 +326,10 @@ dist/
 ```
 
 ### Publishing to npm
+Run from the monorepo root, not this directory:
 ```bash
-# Beta release
-pnpm publish-beta
-
-# Production release
-pnpm publish-prod
+pnpm node:publish-beta   # beta release
+pnpm node:publish-prod   # production release
 ```
 
 **Package Exports**:

@@ -78,5 +78,10 @@
     "@reduxjs/toolkit": "^2.0.0",
     "react": "^18.0.0 || ^19.0.0",
     "react-redux": "^9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sublay-io/monorepo.git",
+    "directory": "packages/core"
   }
 }

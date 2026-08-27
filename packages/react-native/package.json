@@ -63,5 +63,10 @@
     "react-native": "*",
     "react-native-keychain": "^9",
     "react-redux": "^9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sublay-io/monorepo.git",
+    "directory": "packages/react-native"
   }
 }

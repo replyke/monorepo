@@ -25,9 +25,14 @@ minimumReleaseAgeExclude:
   # pnpm's install-delay guard would otherwise refuse @sublay releases that
   # are younger than the configured minimum age, which blocks the registry
   # and playground from consuming a package we just published ourselves.
+  # No `minimumReleaseAge` is actually configured today (this list is inert
+  # until one is), but the pins below must still track whatever's currently
+  # installed - the wrong version here defeats the guard's own purpose
+  # instead of just doing nothing (found stale in a red-team pass, updated
+  # to match the resolved versions in pnpm-lock.yaml as of this commit).
   - '@sublay/ui-core-react-js@7.1.0'
   - '@sublay/ui-core-react-native@7.1.0'
-  - '@sublay/core@7.6.1'
-  - '@sublay/expo@7.6.1'
-  - '@sublay/react-js@7.6.1'
-  - '@sublay/react-native@7.6.1'
+  - '@sublay/core@7.13.0'
+  - '@sublay/expo@7.13.0'
+  - '@sublay/react-js@7.13.0'
+  - '@sublay/react-native@7.13.0'

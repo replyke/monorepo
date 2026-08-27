@@ -655,7 +655,7 @@ registry/
 - CLI reads from local files
 
 **In Production (npx usage):**
-- GitHub repository: `https://github.com/sublay-io/cli`
+- GitHub repository: `https://github.com/sublay-io/monorepo/tree/main/packages/cli`
 - CLI fetches from GitHub raw URLs
 - Example: `https://raw.githubusercontent.com/sublay/cli/main/registry/react/comments-threaded/styled/registry.json`
 

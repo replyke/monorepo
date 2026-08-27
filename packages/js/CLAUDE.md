@@ -20,9 +20,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm build          # tsup → dist/ (CJS + ESM + .d.ts)
 pnpm build:types    # tsc --emitDeclarationOnly (type-check + emit declarations)
 pnpm prepare        # build + build:types (runs before publish)
-pnpm publish-beta   # publish with the beta tag
-pnpm publish-prod   # publish to latest
 ```
+
+Publishing runs from the monorepo root, not this directory: `pnpm js:publish-beta` / `pnpm js:publish-prod`.
 
 When verifying changes during development, prefer `npx tsc --noEmit` (read-only) over `pnpm build`, which overwrites `dist/`.
 
