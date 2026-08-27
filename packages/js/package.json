@@ -1,0 +1,56 @@
+{
+  "name": "@sublay/js",
+  "version": "7.9.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "description": "Official JavaScript SDK for Sublay",
+  "bugs": {
+    "url": "https://discord.com/invite/REKxnCJzPz"
+  },
+  "homepage": "https://docs.sublay.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sublay-io/monorepo.git",
+    "directory": "packages/js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format cjs,esm --clean",
+    "build:types": "tsc --emitDeclarationOnly",
+    "prepare": "pnpm build && pnpm build:types",
+    "test": "jest",
+    "version:patch": "pnpm version patch --no-git-tag-version --no-git-checks",
+    "version:minor": "pnpm version minor --no-git-tag-version --no-git-checks",
+    "publish-beta": "pnpm test && pnpm publish --tag beta --no-git-checks",
+    "publish-prod": "pnpm test && pnpm publish --no-git-checks",
+    "publish-beta:patch": "pnpm version:patch && pnpm publish-beta",
+    "publish-beta:minor": "pnpm version:minor && pnpm publish-beta",
+    "publish-prod:patch": "pnpm version:patch && pnpm publish-prod",
+    "publish-prod:minor": "pnpm version:minor && pnpm publish-prod"
+  },
+  "author": "Sublay team",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "axios": "^1.15.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^25.9.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
+  }
+}

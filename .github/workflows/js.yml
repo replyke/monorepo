@@ -1,0 +1,52 @@
+# js group (@sublay/js — the framework-agnostic, user-token SDK).
+#
+# Replaces the standalone test.yml that js-sdk ran in its own repo. Same
+# shape as the node job: jest via ts-jest compiles src/ and __tests__/
+# in-process against tsconfig.jest.json, so no build step is needed —
+# nothing in the run reads dist/. (`pnpm install` builds the package
+# anyway via its own `prepare` hook; that is incidental.)
+#
+# See .github/workflows/test.yml for why each group gets its own workflow
+# file instead of a job in a shared one.
+name: Test js
+
+on:
+  pull_request:
+    paths:
+      - "packages/js/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/js.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/js/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/js.yml"
+
+jobs:
+  js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run js test suite
+        run: pnpm --filter @sublay/js run test
