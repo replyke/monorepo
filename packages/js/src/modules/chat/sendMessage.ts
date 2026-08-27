@@ -1,0 +1,71 @@
+import { SublayHttpClient } from "../../core/client";
+import { ChatMessage } from "../../interfaces/ChatMessage";
+import { GifData } from "../../interfaces/Comment";
+import { Mention } from "../../interfaces/Mention";
+import { appendFields, appendFile } from "../../core/multipart";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../core/spaceReputationParams";
+
+export interface SendMessageProps extends SpaceReputationContextParams {
+  conversationId: string;
+  content?: string;
+  gif?: GifData | null;
+  mentions?: Mention[];
+  parentMessageId?: string;
+  quotedMessageId?: string;
+  metadata?: Record<string, any>;
+  /** Client-generated id echoed back on the created message (not stored). */
+  localId?: string;
+  /**
+   * Optional file attachments (browser `File`/`Blob`), up to 10. When present
+   * the request is sent as `multipart/form-data`; otherwise it's a JSON body.
+   */
+  files?: (Blob | File)[];
+}
+
+export async function sendMessage(
+  client: SublayHttpClient,
+  data: SendMessageProps
+): Promise<ChatMessage> {
+  const {
+    conversationId,
+    files,
+    // The server reads these from `req.query`, not the body, so they are
+    // forwarded as query params (in both the JSON and multipart branches),
+    // flattened via the helper so the `spaceReputation` object never reaches
+    // the serializer.
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+    ...body
+  } = data;
+  const path = `/chat/conversations/${conversationId}/messages`;
+  const params = buildSpaceReputationParams({
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+  });
+
+  if (files && files.length > 0) {
+    const formData = new FormData();
+    // The server's multer config reads attachments from the `files` field.
+    for (const file of files) {
+      appendFile(formData, "files", file, { fallback: "attachment" });
+    }
+    // Multer delivers non-file fields as strings; the server's
+    // parseChatMessageFields middleware JSON-parses gif/mentions/metadata back,
+    // so object/array fields must be stringified here.
+    appendFields(formData, body);
+    const response = await client.projectInstance.post<ChatMessage>(
+      path,
+      formData,
+      { params }
+    );
+    return response.data;
+  }
+
+  const response = await client.projectInstance.post<ChatMessage>(path, body, {
+    params,
+  });
+  return response.data;
+}
