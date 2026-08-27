@@ -1,3 +1,4 @@
+import { GrantSummary } from "./ReputationGrant";
 import { Entity } from "./Entity";
 import { Mention } from "./Mention";
 import { User } from "./User";
@@ -31,6 +32,13 @@ export interface Comment {
   reactionCounts: ReactionCounts;
   userReaction?: ReactionType | null; // Present when authenticated
   repliesCount: number;
+  /**
+   * Reputation-grant summary. Opt-in — present exactly when the read requested
+   * `include=grants`. Once requested the server always returns the object,
+   * zero-filled rather than omitted, on projects with no grants and on projects
+   * without the reputation bundle alike.
+   */
+  grants?: GrantSummary;
   metadata: Record<string, any>;
   createdAt: string;
   updatedAt: string;

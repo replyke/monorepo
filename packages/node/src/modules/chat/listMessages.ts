@@ -24,7 +24,11 @@ export interface ListMessagesProps extends SpaceReputationContextParams {
   after?: string;
   limit?: number;
   sort?: "asc" | "desc";
-  /** Comma-separated associations to populate, e.g. "files". */
+  /**
+   * Comma-separated associations to populate: `"files"` (message
+   * attachments) and `"grants"` (the reputation-grant summary). Combine
+   * them as `"files,grants"` — the server splits and trims this itself.
+   */
   include?: string;
   /** Optional filters, e.g. `{ hasReplies: true }`. */
   filters?: MessageFilters;

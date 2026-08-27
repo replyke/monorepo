@@ -11,6 +11,7 @@ import * as Follows from "./modules/follows";
 import * as HostedApps from "./modules/hosted-apps";
 import * as Push from "./modules/push";
 import * as Reports from "./modules/reports";
+import * as Reputation from "./modules/reputation";
 import * as Search from "./modules/search";
 import * as Spaces from "./modules/spaces";
 import * as Storage from "./modules/storage";
@@ -43,6 +44,7 @@ export class SublayClient {
   public hostedApps: BoundModule<typeof HostedApps>;
   public push: BoundModule<typeof Push>;
   public reports: BoundModule<typeof Reports>;
+  public reputation: BoundModule<typeof Reputation>;
   public search: BoundModule<typeof Search>;
   public spaces: BoundModule<typeof Spaces>;
   public storage: BoundModule<typeof Storage>;
@@ -65,6 +67,7 @@ export class SublayClient {
     this.hostedApps = bindModule(HostedApps, this.http);
     this.push = bindModule(Push, this.http);
     this.reports = bindModule(Reports, this.http);
+    this.reputation = bindModule(Reputation, this.http);
     this.search = bindModule(Search, this.http);
     this.spaces = bindModule(Spaces, this.http);
     this.storage = bindModule(Storage, this.http);
@@ -190,6 +193,20 @@ export type {
   MuteConversationResult,
 } from "./modules/chat/muteConversation";
 export type { Report, CreateReportResponse } from "./interfaces/Report";
+export type {
+  ReputationGrant,
+  ReputationGrantSourceType,
+  ReputationGrantTargetType,
+  ReputationGrantTargetFilter,
+  GrantWriteCommonProps,
+  GrantSummary,
+} from "./interfaces/ReputationGrant";
+export type { CreateGrantProps } from "./modules/reputation/createGrant";
+export type { MintGrantProps } from "./modules/reputation/mintGrant";
+export type {
+  ListGrantsProps,
+  ListGrantsResponse,
+} from "./modules/reputation/listGrants";
 export type { File, FileImage, FileImageVariant } from "./interfaces/File";
 export type {
   ImageOptions,
