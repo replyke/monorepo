@@ -1,7 +1,30 @@
 {
   "name": "@sublay/cli",
   "version": "7.0.0",
+  "private": false,
+  "license": "Apache-2.0",
+  "author": "Sublay, maintained by Yanay Tsabary",
   "description": "CLI for installing Sublay UI components",
+  "keywords": [
+    "sublay",
+    "cli",
+    "components",
+    "comments",
+    "social",
+    "react",
+    "react-native",
+    "expo",
+    "typescript"
+  ],
+  "bugs": {
+    "url": "https://discord.com/invite/REKxnCJzPz"
+  },
+  "homepage": "https://docs.sublay.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sublay-io/monorepo.git",
+    "directory": "packages/cli"
+  },
   "type": "module",
   "bin": {
     "sublay": "dist/index.js"
@@ -12,7 +35,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
     "dev": "tsup src/index.ts --format esm --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "commander": "^14.0.3",
