@@ -1,0 +1,53 @@
+# node group (@sublay/node — the server-side, service-key SDK).
+#
+# Replaces the standalone test.yml that node-sdk ran in its own repo. The
+# suite is jest via ts-jest, which compiles src/ and __tests__/ in-process
+# against tsconfig.jest.json, so there is deliberately no build step here:
+# nothing in the run reads dist/. (`pnpm install` does build the package
+# anyway via its own `prepare` hook — that is incidental, not a
+# dependency of this job.)
+#
+# See .github/workflows/test.yml for why each group gets its own workflow
+# file instead of a job in a shared one.
+name: Test node
+
+on:
+  pull_request:
+    paths:
+      - "packages/node/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/node.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/node/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/node.yml"
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run node test suite
+        run: pnpm --filter @sublay/node run test
