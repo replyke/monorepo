@@ -30,15 +30,23 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "pnpm -r --if-present run test",
-    "version:patch": "pnpm --filter @sublay/monorepo --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native version patch --no-git-tag-version --no-git-checks",
-    "version:minor": "pnpm --filter @sublay/monorepo --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native version minor --no-git-tag-version --no-git-checks",
-    "build-all": "pnpm --filter @sublay/core run build && pnpm --filter @sublay/react-js run build && pnpm --filter @sublay/react-native run build && pnpm --filter @sublay/expo run build",
-    "publish-prod": "pnpm build-all && pnpm test && pnpm --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native publish --no-git-checks",
-    "publish-beta": "pnpm build-all && pnpm test && pnpm --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native publish --tag beta --no-git-checks",
-    "publish-prod:patch": "pnpm version:patch && pnpm publish-prod",
-    "publish-prod:minor": "pnpm version:minor && pnpm publish-prod",
-    "publish-beta:patch": "pnpm version:patch && pnpm publish-beta",
-    "publish-beta:minor": "pnpm version:minor && pnpm publish-beta"
+    "react:version:patch": "pnpm --filter @sublay/monorepo --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native version patch --no-git-tag-version --no-git-checks",
+    "react:version:minor": "pnpm --filter @sublay/monorepo --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native version minor --no-git-tag-version --no-git-checks",
+    "react:build-all": "pnpm --filter @sublay/core run build && pnpm --filter @sublay/react-js run build && pnpm --filter @sublay/react-native run build && pnpm --filter @sublay/expo run build",
+    "react:publish-prod": "pnpm react:build-all && pnpm test && pnpm --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native publish --no-git-checks",
+    "react:publish-beta": "pnpm react:build-all && pnpm test && pnpm --filter @sublay/core --filter @sublay/expo --filter @sublay/react-js --filter @sublay/react-native publish --tag beta --no-git-checks",
+    "react:publish-prod:patch": "pnpm react:version:patch && pnpm react:publish-prod",
+    "react:publish-prod:minor": "pnpm react:version:minor && pnpm react:publish-prod",
+    "react:publish-beta:patch": "pnpm react:version:patch && pnpm react:publish-beta",
+    "react:publish-beta:minor": "pnpm react:version:minor && pnpm react:publish-beta",
+    "ui-core:version:patch": "pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native version patch --no-git-tag-version --no-git-checks",
+    "ui-core:version:minor": "pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native version minor --no-git-tag-version --no-git-checks",
+    "ui-core:publish-prod": "pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build && pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native publish --no-git-checks",
+    "ui-core:publish-beta": "pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build && pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native publish --tag beta --no-git-checks",
+    "ui-core:publish-prod:patch": "pnpm ui-core:version:patch && pnpm ui-core:publish-prod",
+    "ui-core:publish-prod:minor": "pnpm ui-core:version:minor && pnpm ui-core:publish-prod",
+    "ui-core:publish-beta:patch": "pnpm ui-core:version:patch && pnpm ui-core:publish-beta",
+    "ui-core:publish-beta:minor": "pnpm ui-core:version:minor && pnpm ui-core:publish-beta"
   },
   "devDependencies": {
     "@types/node": "^20.14.5",
@@ -46,6 +54,6 @@
     "react": "^18.0.0",
     "react-native": "^0.79.2",
     "rimraf": "^6.0.1",
-    "typescript": "^5.7.3"
+    "typescript": "^6.0.3"
   }
 }

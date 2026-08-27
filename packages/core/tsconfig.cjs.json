@@ -4,7 +4,7 @@
     "outDir": "./dist/cjs",
     "module": "commonjs",
     "moduleResolution": "node",
-    "ignoreDeprecations": "5.0"
+    "ignoreDeprecations": "6.0"
   },
   "exclude": ["recycle_bin", "**/*.test.ts", "**/*.test.tsx", "src/test-utils/**"]
 }

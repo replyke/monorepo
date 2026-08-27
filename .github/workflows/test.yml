@@ -1,10 +1,41 @@
+# React-family group (core + react-js + react-native + expo).
+#
+# GitHub Actions only supports `paths:` at the workflow trigger, not per
+# job, so each publish group gets its own workflow file rather than a
+# shared one with a paths-filter action bolted on. `pnpm test` at the root
+# is `-r --if-present`, so this job would otherwise run every other
+# group's suite on a change that cannot affect it.
+#
+# The shared-root paths (root manifests, lockfile, tsconfig, this file)
+# are listed deliberately: a change to any of them can break this group
+# even though no package directory was touched.
 name: Test
 
 on:
   pull_request:
+    paths:
+      - "packages/core/**"
+      - "packages/react-js/**"
+      - "packages/react-native/**"
+      - "packages/expo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/test.yml"
   push:
     branches:
       - main
+    paths:
+      - "packages/core/**"
+      - "packages/react-js/**"
+      - "packages/react-native/**"
+      - "packages/expo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/test.yml"
 
 jobs:
   test:
@@ -14,7 +45,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - uses: actions/setup-node@v4
         with:
@@ -29,7 +60,7 @@ jobs:
         # (mocked at the module level, but Vite still resolves the package
         # entry first) — core has no `prepare` script, so its dist won't
         # exist after a plain install without this.
-        run: pnpm build-all
+        run: pnpm react:build-all
 
       - name: Run package test suites
         run: pnpm test
