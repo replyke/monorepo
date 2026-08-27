@@ -139,7 +139,7 @@
       "description": "Context for UI state (bottom sheets and theme)"
     }
   ],
-  "registryUrl": "https://raw.githubusercontent.com/sublay-io/cli/main/registry/react-native/comments-threaded/tailwind",
+  "registryUrl": "https://raw.githubusercontent.com/sublay-io/monorepo/main/registry/react-native/comments-threaded/tailwind",
   "exports": {
     "mainComponent": "ThreadedCommentSection",
     "mainFile": "threaded-comment-section",

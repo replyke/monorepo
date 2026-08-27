@@ -142,7 +142,7 @@
       "description": "Context for UI state (modals and theme)"
     }
   ],
-  "registryUrl": "https://raw.githubusercontent.com/sublay-io/cli/main/registry/react/comments-threaded/tailwind",
+  "registryUrl": "https://raw.githubusercontent.com/sublay-io/monorepo/main/registry/react/comments-threaded/tailwind",
   "exports": {
     "mainComponent": "ThreadedCommentSection",
     "mainFile": "threaded-comment-section",

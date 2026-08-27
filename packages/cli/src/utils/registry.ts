@@ -32,6 +32,16 @@ const __dirname = path.dirname(__filename);
 // From dist/ (built) or src/utils/ (source), go up to cli root, then to registry
 const LOCAL_REGISTRY_PATH = path.resolve(__dirname, '..', '..', '..', 'registry');
 
+// Production/npx fallback: the registry is served straight off the default
+// branch of the monorepo that also holds this package. This is only half of
+// the remote path — fetchRegistry() uses it to look a component's metadata
+// up, but fetchFile() downloads the component's actual contents from the
+// registryUrl baked into that metadata (registry/**/registry.json). Both
+// have to name the same repo, so if this constant ever moves, those files
+// move with it.
+const REMOTE_REGISTRY_BASE =
+  'https://raw.githubusercontent.com/sublay-io/monorepo/main/registry';
+
 export async function fetchRegistry(
   componentName: string,
   config: SublayConfig
@@ -57,7 +67,7 @@ export async function fetchRegistry(
     }
 
     // Fetch from GitHub (for production/npx usage)
-    const url = `https://raw.githubusercontent.com/sublay-io/cli/main/registry/${registryPlatform}/${componentName}/${config.style}/registry.json`;
+    const url = `${REMOTE_REGISTRY_BASE}/${registryPlatform}/${componentName}/${config.style}/registry.json`;
 
     try {
       const response = await fetch(url);

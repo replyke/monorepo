@@ -38,7 +38,7 @@
       "description": "Utility functions for time formatting and text truncation"
     }
   ],
-  "registryUrl": "https://raw.githubusercontent.com/sublay-io/cli/main/registry/react/notifications-control/styled",
+  "registryUrl": "https://raw.githubusercontent.com/sublay-io/monorepo/main/registry/react/notifications-control/styled",
   "exports": {
     "mainComponent": "NotificationControl",
     "mainFile": "notification-control",
