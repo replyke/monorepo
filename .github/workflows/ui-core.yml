@@ -1,9 +1,8 @@
 # ui-core group (@sublay/ui-core-react-js + @sublay/ui-core-react-native).
 #
 # These packages had no CI at all in their previous home; this is their
-# first automated check. There are no test suites for them yet, so the
-# `--if-present` run is a no-op today and starts doing real work the
-# moment either package grows one.
+# first automated check. Both now carry a (small) vitest suite, so the
+# `--if-present` run below is real work rather than a placeholder.
 #
 # See .github/workflows/test.yml for why each group gets its own workflow
 # file instead of a job in a shared one.
@@ -69,9 +68,9 @@ jobs:
         # These two declare `prepare` (alongside `prepublishOnly`), which
         # would fire on a plain install — but the install step above passes
         # --ignore-scripts, which blocks it exactly as it blocks every other
-        # package's `prepare`, so this explicit build is still required. With
-        # no test suite yet, this compile is the entire check: without it the
-        # job would install dependencies and assert nothing.
+        # package's `prepare`, so this explicit build is still required. The
+        # test suites cover one helper each, so this compile is still what
+        # checks the other ~99% of both packages.
         run: pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build
 
       - name: Run ui-core test suites
@@ -83,8 +82,8 @@ jobs:
         # performs the real publish minus the upload: pnpm runs each
         # package's `prepublishOnly` hook in a publish context and packs the
         # tarball `files` describes, failing on anything npm rejects along
-        # the way. With no test suite in this group, it is also the only
-        # step here that asserts anything beyond "the compiler exited 0".
+        # the way. It is also the only step here that checks the release
+        # itself rather than the code inside it.
         #
         # Scope it honestly — it is a packaging check, not a link check.
         # Verified: a `main`/`bin` naming a path the tarball does not

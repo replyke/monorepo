@@ -91,6 +91,60 @@ describe("sublay add", () => {
     // The 15s cap is the vitest testTimeout in vitest.config.ts: an
     // unanswerable prompt would block forever and fail there.
   }, 15000);
+
+  // sublay.json is a plain file on disk — hand-edited, half-written by
+  // non-interactive scaffolding, or copied between projects. Each of these used
+  // to escape as a raw stack trace (`TypeError: Cannot read properties of
+  // undefined`, `SyntaxError: ... in JSON`) rather than actionable guidance.
+  const malformedConfigs: Array<{ label: string; contents: string }> = [
+    {
+      label: "missing aliases",
+      contents: JSON.stringify({
+        platform: "react",
+        style: "styled",
+        typescript: true,
+        paths: { components: "src/components" },
+      }),
+    },
+    {
+      label: "missing paths",
+      contents: JSON.stringify({
+        platform: "react",
+        style: "styled",
+        typescript: true,
+        aliases: { "@/components": "./src/components" },
+      }),
+    },
+    {
+      label: "invalid JSON",
+      // A trailing comma — valid to a human, fatal to JSON.parse.
+      contents:
+        '{"platform":"react","style":"styled","typescript":true,' +
+        '"paths":{"components":"src/components"},' +
+        '"aliases":{"@/components":"./src/components"},}',
+    },
+  ];
+
+  for (const { label, contents } of malformedConfigs) {
+    it(`exits cleanly with actionable guidance when sublay.json has ${label}`, async () => {
+      await fs.writeJson(path.join(workDir, "package.json"), {
+        name: "consumer",
+        dependencies: { react: "^19.0.0", "react-dom": "^19.0.0" },
+      });
+      await fs.writeFile(path.join(workDir, "sublay.json"), contents, "utf-8");
+
+      const result = await runCli(["add", "comments-social"], workDir);
+      const output = result.stdout + result.stderr;
+
+      expect(result.code).toBe(1);
+      expect(output).toContain("sublay.json is missing or malformed");
+      expect(output).toContain("npx @sublay/cli init");
+      // No internal exception should reach the user.
+      expect(output).not.toMatch(/TypeError|SyntaxError|\bat .*\.js:\d+/);
+      // And nothing should have been written to the project.
+      expect(await fs.pathExists(path.join(workDir, "src"))).toBe(false);
+    }, 15000);
+  }
 });
 
 describe("sublay init", () => {

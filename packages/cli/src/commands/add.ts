@@ -21,7 +21,29 @@ export async function add(componentName: string) {
       process.exit(1);
     }
 
-    const config: SublayConfig = await fs.readJson(configPath);
+    // sublay.json is written by `init`, but it is just a file on disk: it gets
+    // hand-edited, half-written by non-interactive scaffolding, or copied
+    // between projects. Anything missing surfaces much later as an internal
+    // TypeError inside path.join()/transformImports(), so validate up front.
+    let rawConfig: unknown;
+    try {
+      rawConfig = await fs.readJson(configPath);
+    } catch {
+      // Invalid JSON — treated exactly like an invalid shape below.
+      rawConfig = null;
+    }
+
+    if (!isValidConfig(rawConfig)) {
+      spinner.fail("sublay.json is malformed");
+      console.error(
+        chalk.red(
+          "\n❌ sublay.json is missing or malformed — delete it and run `npx @sublay/cli init` again."
+        )
+      );
+      process.exit(1);
+    }
+
+    const config: SublayConfig = rawConfig;
 
     // Warn (but never block) when an existing install is about to be overwritten.
     const componentDir = path.join(
@@ -160,6 +182,54 @@ export async function add(componentName: string) {
     console.error(chalk.red("\n❌ Error:"), error);
     process.exit(1);
   }
+}
+
+/**
+ * Structural check for a config loaded off disk. `fs.readJson` returns `any`,
+ * so the `SublayConfig` annotation at the call site is an assertion, not a
+ * guarantee — this is the only thing standing between a truncated or
+ * hand-edited sublay.json and a raw stack trace.
+ */
+function isValidConfig(value: unknown): value is SublayConfig {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const config = value as Record<string, unknown>;
+
+  if (
+    config.platform !== "react" &&
+    config.platform !== "react-native" &&
+    config.platform !== "expo"
+  ) {
+    return false;
+  }
+
+  if (config.style !== "styled" && config.style !== "tailwind") {
+    return false;
+  }
+
+  if (typeof config.typescript !== "boolean") {
+    return false;
+  }
+
+  const paths = config.paths;
+  if (typeof paths !== "object" || paths === null) {
+    return false;
+  }
+  if (typeof (paths as Record<string, unknown>).components !== "string") {
+    return false;
+  }
+
+  const aliases = config.aliases;
+  if (typeof aliases !== "object" || aliases === null) {
+    return false;
+  }
+  if (typeof (aliases as Record<string, unknown>)["@/components"] !== "string") {
+    return false;
+  }
+
+  return true;
 }
 
 /**

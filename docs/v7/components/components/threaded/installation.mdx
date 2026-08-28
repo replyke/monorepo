@@ -177,10 +177,18 @@ This replaces your component files. Back up any customizations first.
   </Accordion>
 
   <Accordion title="Component already exists" icon="copy">
-    The CLI won't overwrite existing files. Delete and re-add:
+    Re-running `add` overwrites the existing installation. The CLI prints a
+    warning first, then proceeds:
+
+    ```
+    ⚠️  Overwriting existing component: comments-threaded
+    ```
+
+    Because these files are yours to edit, any customizations you made are
+    replaced. Commit (or back up) your changes before re-adding a component:
 
     ```bash
-    rm -rf src/components/comments-threaded
+    git status src/components/comments-threaded
     npx @sublay/cli add comments-threaded
     ```
   </Accordion>

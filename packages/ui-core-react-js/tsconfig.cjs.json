@@ -11,5 +11,8 @@
     // `declaration` (TS5069).
     "declaration": false,
     "declarationMap": false
-  }
+  },
+  // Test files live beside the source they cover; keep them out of the
+  // published build (they would otherwise be emitted into dist/).
+  "exclude": ["node_modules", "dist", "recycle_bin", "**/*.test.ts", "**/*.test.tsx"]
 }

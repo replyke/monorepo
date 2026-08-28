@@ -82,6 +82,18 @@ export default function GiphyContainer({
   const isFetchingRef = useRef(false);
   const gifsLengthRef = useRef(0);
 
+  // An in-flight fetch's closure is pinned to the query and visibility it
+  // started with. These mirror the current values so it can tell, on resolve,
+  // whether the world moved on underneath it.
+  const latestQueryRef = useRef(debouncedQuery);
+  const visibleRef = useRef(visible);
+
+  // Points at the newest fetchGifs, for the same reason: a stale closure can
+  // only ever re-fetch the query it was created for.
+  const fetchGifsRef = useRef<((offset?: number) => Promise<void>) | null>(
+    null
+  );
+
   // Debounce effect (like in the web version)
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -94,6 +106,11 @@ export default function GiphyContainer({
   useEffect(() => {
     gifsLengthRef.current = gifs.length;
   }, [gifs]);
+
+  useEffect(() => {
+    latestQueryRef.current = debouncedQuery;
+    visibleRef.current = visible;
+  }, [debouncedQuery, visible]);
 
   // Fetch function that decides between trending or search
   const fetchGifs = useCallback(
@@ -160,10 +177,24 @@ export default function GiphyContainer({
           setLoadingMore(false);
         }
         isFetchingRef.current = false;
+
+        // A newer debounced query landed while this request was in flight.
+        // Its effect already ran and was turned away by the in-flight guard
+        // at the top of this function, and nothing re-runs that effect — so
+        // without this the picker stays stuck on the previous query's
+        // results. Not a request queue: just "did the query move while I was
+        // busy", re-checked once per completed fetch.
+        if (visibleRef.current && latestQueryRef.current !== debouncedQuery) {
+          fetchGifsRef.current?.(0);
+        }
       }
     },
     [debouncedQuery, giphyApiKey]
   );
+
+  useEffect(() => {
+    fetchGifsRef.current = fetchGifs;
+  }, [fetchGifs]);
 
   // Fetch more GIFs when reaching the end
   const fetchMoreGifs = useCallback(() => {

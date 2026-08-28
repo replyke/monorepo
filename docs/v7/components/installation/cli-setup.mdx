@@ -13,10 +13,10 @@ The Sublay CLI copies fully customizable comment components directly into your p
 ## Prerequisites
 
 <Steps>
-  <Step title="Node.js 18+">
+  <Step title="Node.js 20.5+">
     ```bash
     node --version
-    # Should output v18.x.x or higher
+    # Should output v20.5.0 or higher
     ```
   </Step>
 
@@ -162,15 +162,18 @@ These packages are **required**. Components use them for data fetching, authenti
 ## Troubleshooting
 
 <AccordionGroup>
-  <Accordion title="Error: Node version too old" icon="triangle-exclamation">
+  <Accordion title="Warning: No package.json found" icon="folder-xmark">
     ```
-    Error: The Sublay CLI requires Node.js 18 or higher
+    ⚠️  No package.json found
     ```
-    Upgrade Node.js to v18 or higher.
-  </Accordion>
+    After installing a component's files, `add` reads your `package.json` to
+    check which of the component's dependencies you already have. If there is
+    no `package.json` in the current directory it prints this warning and skips
+    that check — the component itself is still installed, and the command still
+    succeeds.
 
-  <Accordion title="Error: No package.json found" icon="folder-xmark">
-    Run the command from your project root directory where `package.json` is located.
+    Run `add` from your project root (where `package.json` lives) to get the
+    dependency check.
   </Accordion>
 
   <Accordion title="CLI hangs or doesn't respond" icon="hourglass">

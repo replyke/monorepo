@@ -1,11 +1,41 @@
-import { View, StyleSheet, Animated } from "react-native";
+import { useEffect, useRef } from "react";
+import { View, StyleSheet, Animated, Easing } from "react-native";
 
 function Skeleton({ style }: { style?: any }) {
-  return (
-    <Animated.View
-      style={[styles.skeleton, style, { opacity: new Animated.Value(0.6) }]}
-    />
-  );
+  // Mirrors the react-js sibling's CSS `pulse 1.5s ease-in-out infinite`
+  // (opacity 1 -> 0.3 -> 1). A bare `new Animated.Value(...)` in the style
+  // prop is inert — nothing drives it — so the "pulse" used to be a static
+  // opacity that also allocated a fresh Animated.Value on every render.
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.3,
+          duration: 750,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 750,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    animation.start();
+
+    return () => {
+      // Without this the loop keeps running against an unmounted view.
+      animation.stop();
+      opacity.setValue(1);
+    };
+  }, [opacity]);
+
+  return <Animated.View style={[styles.skeleton, style, { opacity }]} />;
 }
 
 function CommentSkeleton() {
