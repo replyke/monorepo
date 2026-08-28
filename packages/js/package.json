@@ -19,7 +19,7 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --dts --format cjs,esm --clean",
-    "build:types": "tsc --emitDeclarationOnly",
+    "build:types": "tsc --noEmit",
     "prepare": "pnpm build && pnpm build:types",
     "test": "jest"
   },
