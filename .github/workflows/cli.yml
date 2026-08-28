@@ -31,6 +31,28 @@
 # template files compile. No registry.json lists that file, so `sublay add`
 # never copies it and it changes nothing about what users install.
 #
+# Read that gate for what it is, though: registry/ links @sublay/core,
+# react-js, react-native, expo and both ui-core packages through
+# `workspace:*`, so the templates compile against this branch's LOCAL,
+# unreleased source — not against the published npm versions a real
+# consumer resolves when `sublay add` drops these files into their project.
+# A green registry typecheck therefore means "these templates compile
+# against current local source", not "these templates are verified against
+# what ships to users". The two diverge for as long as any SDK change sits
+# unreleased, and nothing in CI closes that gap today.
+#
+# packages/cli's own `typecheck` runs here too. It used to be exempt on the
+# same shape of false premise as registry/: the claim was that three
+# untyped @babel/* imports in src/utils/strip-types.ts made it impossible.
+# They were three real TS7016 errors in live, shipped code —
+# src/index.ts -> commands/add.ts -> utils/strip-types.ts, bundled straight
+# into dist/index.js — not dead weight, and `tsup --dts` exits 0 on them
+# because it does not fully type-check. Fixed by adding the
+# @types/babel__core devDependency plus ambient `declare module` shims for
+# @babel/preset-typescript and @babel/plugin-syntax-jsx (neither has an
+# @types package) in src/types/babel-shims.d.ts. The script now exits 0
+# with zero errors, so it is a real gate.
+#
 # Both the registry typecheck and the playground build compile against
 # locally-built dist/, not npm — which is why packages/core/**,
 # packages/react-js/**, packages/react-native/**, packages/expo/**,
@@ -158,11 +180,46 @@ jobs:
         # builds.
         run: pnpm --filter @sublay/playground run build
 
+      - name: Typecheck cli
+        # `tsc --noEmit` over packages/cli/src. This is not redundant with
+        # the build above: `tsup --dts` exits 0 on code tsc rejects — it
+        # only type-checks as far as the declaration emit needs, and the
+        # three untyped @babel/* imports in src/utils/strip-types.ts sat in
+        # the shipped dist/index.js bundle for exactly that reason. See
+        # this file's header for why this was previously (wrongly) believed
+        # to be impossible.
+        run: pnpm --filter @sublay/cli run typecheck
+
       - name: Run cli test suites
         # No suites exist yet, so this is a no-op today and starts doing
-        # real work the moment one lands. The package's own `typecheck`
-        # script is deliberately not wired in here: it fails on three
-        # untyped @babel/* imports, and did so in cli's previous home too,
-        # so turning it on would make this job red from its first run for
-        # a reason that has nothing to do with the move.
+        # real work the moment one lands.
         run: pnpm --filter @sublay/cli --if-present run test
+
+      - name: Dry-run publish
+        # Only @sublay/cli — `registry` and `playground` are private
+        # workspace members and are never published.
+        #
+        # Nothing else in CI exercises the publish path; until now the only
+        # thing that ever had was a human running this by hand. The step
+        # performs the real publish minus the upload: pnpm runs the
+        # package's `prepublishOnly` hook in a publish context, rewrites any
+        # `workspace:*` dependency to a concrete version, and packs the
+        # tarball `files` describes, failing on anything npm rejects along
+        # the way.
+        #
+        # Scope it honestly — it is a packaging check, not a link check.
+        # Verified: a `bin` naming a path the tarball does not contain still
+        # dry-runs green, so this will NOT catch a broken entry-point path.
+        # What it catches is a release that cannot be produced at all: a
+        # publish-only lifecycle hook that fails, an unresolvable
+        # `workspace:*`, a package.json npm refuses, a `files` set that
+        # packs nothing.
+        #
+        # --force is load-bearing, not belt-and-braces: without it `pnpm
+        # publish` skips any package whose version is already on npm and
+        # exits 0 having packed nothing (verified). These workflows trigger
+        # on file changes, not version bumps, so the un-forced form would be
+        # an inert step on almost every run. --force only bypasses that skip;
+        # --dry-run still stops before anything is uploaded, and needs no
+        # registry credentials (verified with an empty npm config).
+        run: pnpm --filter @sublay/cli publish --dry-run --no-git-checks --force

@@ -6,7 +6,7 @@
 // `sublay add` user the moment it merges. Building @sublay/cli proves nothing
 // about it: the CLI reads this metadata at runtime.
 //
-// Five invariants are enforced here, all of which fail at runtime rather than
+// Six invariants are enforced here, all of which fail at runtime rather than
 // build time and are therefore invisible to every other step in the job:
 //
 //   1. registryUrl points at the component's own directory under
@@ -30,8 +30,17 @@
 //      and invariants 1-4 are all self-consistent under a wrong repo — an org
 //      rename that updates one and not the other passes every other check
 //      here while every `sublay add` 404s.
+//   6. REMOTE_REGISTRY_BASE's ref segment is literally `main`. Invariant 5
+//      only compares org/repo and throws the ref away, so a rewrite of `main`
+//      to any other branch name — applied consistently across registry.ts and
+//      all nine registry.json files, which is exactly what a careless
+//      find-and-replace produces — stays internally consistent and passes
+//      every check above. It would also break the served URL for every user:
+//      the registry is fetched off the default branch with no version gate,
+//      so a base pointing at a feature branch either 404s or silently serves
+//      unreviewed component source to everyone running `sublay add`.
 //
-// A sixth check runs only on a push to main in CI: it actually fetches one
+// A seventh check runs only on a push to main in CI: it actually fetches one
 // real registry.json over the network and requires a 200. Everything above is
 // internal consistency; only main is actually served to users, and only there
 // is a live URL meaningful (on this branch, before merge, the raw URL 404s by
@@ -212,6 +221,63 @@ function assertRegistryBaseMatchesCliRepository() {
 }
 
 const REPO_SLUG = assertRegistryBaseMatchesCliRepository();
+
+// The branch the registry is served from. Not configurable on purpose: the
+// CLI has no version gate and no ref option, so whatever ref this URL names
+// is what every `sublay add` on every published CLI version downloads. That
+// has to be the repo's default branch.
+const EXPECTED_REGISTRY_REF = 'main';
+
+/**
+ * Invariant 6: REMOTE_REGISTRY_BASE must be served off `main`.
+ *
+ * Invariant 5 compares only "<org>/<repo>" and discards everything after it,
+ * so it is blind to the ref. A consistent rename of `main` across
+ * registry.ts and every registry.json keeps invariants 1-5 all green while
+ * pointing the whole registry at a branch users' CLIs will never be able to
+ * read from (or, worse, one that resolves and serves unreviewed source).
+ */
+function assertRegistryBaseUsesDefaultBranch() {
+  const match = REMOTE_REGISTRY_BASE.match(
+    /^https?:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/([^/]+)(?:\/|$)/
+  );
+
+  if (!match) {
+    console.error(
+      'Registry integrity check FAILED: could not read a ref segment out of ' +
+        `REMOTE_REGISTRY_BASE (${JSON.stringify(REMOTE_REGISTRY_BASE)}) in ` +
+        `${path.relative(repoRoot, registrySourceFile)}. It is expected to ` +
+        'look like https://raw.githubusercontent.com/<org>/<repo>/' +
+        `${EXPECTED_REGISTRY_REF}/<path...>.`
+    );
+    process.exit(1);
+  }
+
+  const ref = match[1];
+  if (ref !== EXPECTED_REGISTRY_REF) {
+    console.error(
+      'Registry integrity check FAILED: the registry base points at a ref ' +
+        'other than the default branch.\n\n' +
+        `  REMOTE_REGISTRY_BASE (${path.relative(
+          repoRoot,
+          registrySourceFile
+        )}): ${REMOTE_REGISTRY_BASE}\n` +
+        `  ref segment: ${ref}\n` +
+        `  expected:    ${EXPECTED_REGISTRY_REF}\n\n` +
+        'The CLI fetches the registry off the default branch with no version ' +
+        'gate and no way to override the ref, so every published CLI version ' +
+        'reads whatever this names. Every registry.json is self-consistent ' +
+        'with a wrong ref — the org/repo cross-check above discards the ref ' +
+        'entirely — so nothing else here catches it, and `sublay add` breaks ' +
+        'for every user.'
+    );
+    process.exit(1);
+  }
+
+  return ref;
+}
+
+const REGISTRY_REF = assertRegistryBaseUsesDefaultBranch();
 
 /** Recursively collect every registry.json under registry/, skipping node_modules. */
 function findRegistryFiles(dir) {
@@ -402,7 +468,8 @@ console.log(
   `Registry integrity check passed: ${registryFiles.length} registry.json ` +
     `file(s), ${checkedFileEntries} file entr(ies), ${checkedMainFiles} ` +
     `main file(s) verified against REMOTE_REGISTRY_BASE ${REMOTE_REGISTRY_BASE} ` +
-    `(repo ${REPO_SLUG}, cross-checked against packages/cli/package.json).`
+    `(repo ${REPO_SLUG}, cross-checked against packages/cli/package.json; ` +
+    `ref ${REGISTRY_REF}).`
 );
 
 // ---------------------------------------------------------------------------

@@ -94,3 +94,28 @@ jobs:
 
       - name: Run node test suite
         run: pnpm --filter @sublay/node run test
+
+      - name: Dry-run publish
+        # Nothing else in CI exercises the publish path; until now the only
+        # thing that ever had was a human running this by hand. The step
+        # performs the real publish minus the upload: pnpm runs the
+        # package's `prepare` hook in a publish context and packs the
+        # tarball `files` describes, failing on anything npm rejects along
+        # the way.
+        #
+        # Scope it honestly — it is a packaging check, not a link check.
+        # Verified: a `main`/`bin` naming a path the tarball does not
+        # contain still dry-runs green, so this will NOT catch a broken
+        # entry-point path, and it does not resolve the `exports` map's
+        # targets either. What it catches is a release that cannot be
+        # produced at all: a publish-only lifecycle hook that fails, a
+        # package.json npm refuses, a `files` set that packs nothing.
+        #
+        # --force is load-bearing, not belt-and-braces: without it `pnpm
+        # publish` skips any package whose version is already on npm and
+        # exits 0 having packed nothing (verified). These workflows trigger
+        # on file changes, not version bumps, so the un-forced form would be
+        # an inert step on almost every run. --force only bypasses that skip;
+        # --dry-run still stops before anything is uploaded, and needs no
+        # registry credentials (verified with an empty npm config).
+        run: pnpm --filter @sublay/node publish --dry-run --no-git-checks --force
