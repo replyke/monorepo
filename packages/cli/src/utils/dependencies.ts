@@ -40,6 +40,27 @@ async function detectPackageManager(): Promise<'npm' | 'yarn' | 'pnpm'> {
 }
 
 /**
+ * Extract the bare package name from a registry dependency spec.
+ * Handles scoped and unscoped packages, with or without a version suffix:
+ *   "@sublay/react-js@^7.0.0" -> "@sublay/react-js"
+ *   "@sublay/react-js"        -> "@sublay/react-js"
+ *   "lucide-react@^1.0.0"     -> "lucide-react"
+ *   "lucide-react"            -> "lucide-react"
+ */
+export function parseDependencyName(dep: string): string {
+  const parts = dep.split('@').filter(Boolean);
+
+  // Scoped package: @scope/name[@version] — the leading '@' is stripped by the
+  // filter above, so put it back on the first remaining segment.
+  if (dep.startsWith('@')) {
+    return `@${parts[0]}`;
+  }
+
+  // Regular package: name[@version]
+  return parts[0];
+}
+
+/**
  * Check and optionally install component-specific dependencies
  * @param dependencies Array of dependencies in format "package@version"
  */
@@ -59,17 +80,7 @@ export async function checkComponentDependencies(dependencies: string[]) {
     };
 
     // Parse dependencies (format: "package@version" -> extract package name)
-    const requiredDeps = dependencies.map((dep) => {
-      // Handle scoped packages like @sublay/react-js@^6.0.0
-      const parts = dep.split('@').filter(Boolean);
-      if (dep.startsWith('@')) {
-        // Scoped package: @scope/name@version
-        return `@${parts[0]}`;
-      } else {
-        // Regular package: name@version
-        return parts[0];
-      }
-    });
+    const requiredDeps = dependencies.map(parseDependencyName);
 
     const missingDeps = requiredDeps.filter((dep) => !allDeps[dep]);
 
@@ -81,11 +92,9 @@ export async function checkComponentDependencies(dependencies: string[]) {
     console.log(chalk.yellow('\n⚠️  Missing required dependencies:'));
 
     // Show dependencies with their versions
-    const missingDepsWithVersions = dependencies.filter((dep) => {
-      const parts = dep.split('@').filter(Boolean);
-      const pkgName = dep.startsWith('@') ? `@${parts[0]}` : parts[0];
-      return missingDeps.includes(pkgName);
-    });
+    const missingDepsWithVersions = dependencies.filter((dep) =>
+      missingDeps.includes(parseDependencyName(dep))
+    );
 
     missingDepsWithVersions.forEach((dep) => console.log(chalk.dim(`  - ${dep}`)));
 

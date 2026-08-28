@@ -175,8 +175,10 @@ jobs:
 
       - name: Build cli
         # The cli uses `prepublishOnly`, not `prepare`, so install never
-        # built it. This step is the only thing that compiles it, and with
-        # no test suite yet it is the only thing that checks it at all.
+        # built it. This step compiles it — and it is no longer the only
+        # thing checking it: "Typecheck cli" and "Run cli test suites" below
+        # both gate it now. Kept as its own step so a plain compile failure
+        # reports here, distinctly from a type error or a failing test.
         run: pnpm --filter @sublay/cli run build
 
       - name: Build packages registry and playground consume
@@ -235,8 +237,20 @@ jobs:
         run: pnpm --filter @sublay/cli run typecheck
 
       - name: Run cli test suites
-        # No suites exist yet, so this is a no-op today and starts doing
-        # real work the moment one lands.
+        # Real suites now: vitest over packages/cli/src/**/*.test.ts. Three
+        # unit files (transform / detect / dependencies) plus
+        # cli-integration.test.ts, which spawns the built dist/index.js in
+        # temp directories — that last one is the only thing in CI that
+        # exercises the CLI's process-level behaviour (stdin/TTY handling and
+        # exit codes), which no amount of typechecking can see.
+        #
+        # The package's own `test` script runs `pnpm run build && vitest run`,
+        # so it rebuilds dist rather than depending on the "Build cli" step
+        # above having run. That is deliberate: it keeps a bare
+        # `pnpm --filter @sublay/cli run test` working locally and under the
+        # root `pnpm -r run test`, neither of which builds first (the cli uses
+        # `prepublishOnly`, not `prepare`, so a plain install never builds it).
+        # tsup takes ~50ms, so the duplicate build costs nothing.
         run: pnpm --filter @sublay/cli --if-present run test
 
       - name: Dry-run publish

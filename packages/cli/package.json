@@ -37,6 +37,7 @@
     "build": "tsup src/index.ts --format esm --dts --clean",
     "dev": "tsup src/index.ts --format esm --watch",
     "typecheck": "tsc --noEmit",
+    "test": "pnpm run build && vitest run",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
@@ -57,7 +58,8 @@
     "@types/prompts": "^2.4.9",
     "@types/fs-extra": "^11.0.4",
     "tsup": "^8.5.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^1.6.1"
   },
   "engines": {
     "node": ">=20.5.0"

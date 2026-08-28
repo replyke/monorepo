@@ -70,7 +70,16 @@ export async function init() {
     },
   ]);
 
-  if (!answers.platform) {
+  // Cancelling (Ctrl+C) stops prompts() partway through and resolves with only
+  // the answers given so far, so checking `platform` alone only catches a cancel
+  // on the FIRST question. Every field the array above asks for has to be
+  // present, or a mid-flow cancel falls through and writes a defaulted config
+  // while reporting success.
+  if (
+    !answers.platform ||
+    answers.style === undefined ||
+    answers.componentsPath === undefined
+  ) {
     console.log(chalk.yellow('\n⚠️  Setup cancelled'));
     process.exit(0);
   }
@@ -90,8 +99,15 @@ export async function init() {
     },
   };
 
-  // Write configuration file
+  // Write configuration file. Warn (but never block) when an existing config —
+  // the one file every future `add` reads — is about to be replaced, matching
+  // the non-blocking overwrite warning `add` prints for components.
   const configPath = path.join(process.cwd(), 'sublay.json');
+
+  if (await fs.pathExists(configPath)) {
+    console.log(chalk.yellow('\n⚠️  Overwriting existing configuration: sublay.json'));
+  }
+
   await fs.writeJson(configPath, config, { spaces: 2 });
 
   console.log(chalk.green('\n✅ Configuration saved to sublay.json'));

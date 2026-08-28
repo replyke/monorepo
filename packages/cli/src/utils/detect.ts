@@ -54,7 +54,12 @@ export async function detectTypeScript(): Promise<boolean> {
         ...packageJson.devDependencies,
       };
 
-      if (deps['typescript'] || deps['@types/react']) {
+      // Only the `typescript` package itself counts (alongside the
+      // tsconfig.json check above). `@types/react` is deliberately NOT a
+      // signal: plain-JS React projects commonly keep it around purely for
+      // editor IntelliSense, and treating it as proof of TypeScript makes
+      // `add` install unstripped .ts/.tsx into a project with no compiler.
+      if (deps['typescript']) {
         return true;
       }
     }
