@@ -20,13 +20,28 @@
 # watched by every other workflow, for a different reason: it is a
 # workspace member feeding the single shared pnpm-lock.yaml.)
 #
-# registry/ gets no equivalent typecheck, and that is a known, accepted
-# limitation rather than an oversight: registry/tsconfig.json maps @/* to
-# ./*, but the component templates import @/lib/utils — a path alias that
-# only resolves inside a real consumer project, never in the registry's own
-# dev context. `tsc --noEmit` there is red by design and cannot be made
-# green without changing how the templates are authored. The integrity
-# check below is what guards registry/ instead.
+# registry/ is typechecked too. It used to be exempt, on the stated grounds
+# that the tailwind templates import `cn` from @/lib/utils — an alias said
+# to resolve only inside a real consumer project. That was wrong: every one
+# of the 13 errors was the same TS2307 for that single module, and
+# registry/tsconfig.json's `@/*` -> `./*` mapping already pointed at a
+# resolvable location. registry/lib/utils.ts now provides the same `cn`
+# a consumer project's own lib/utils.ts does (built from clsx +
+# tailwind-merge, both already registry devDependencies), so all 182
+# template files compile. No registry.json lists that file, so `sublay add`
+# never copies it and it changes nothing about what users install.
+#
+# Both the registry typecheck and the playground build compile against
+# locally-built dist/, not npm — which is why packages/core/**,
+# packages/react-js/**, packages/react-native/**, packages/expo/**,
+# packages/ui-core-react-js/** and packages/ui-core-react-native/** are all
+# in the path filters below. registry/ imports all six through workspace:*
+# links and playground imports three of them, so a PR touching only one of
+# those packages can break this group's compile; without those filters this
+# workflow would never run for exactly the changes those two steps exist to
+# catch. That is a deliberate, documented widening of per-group isolation:
+# registry/ and playground/ genuinely consume the react-family and ui-core
+# packages, so their CI has to react to them.
 #
 # See .github/workflows/test.yml for why each group gets its own workflow
 # file instead of a job in a shared one.
@@ -43,6 +58,12 @@ on:
   pull_request:
     paths:
       - "packages/cli/**"
+      - "packages/core/**"
+      - "packages/react-js/**"
+      - "packages/react-native/**"
+      - "packages/expo/**"
+      - "packages/ui-core-react-js/**"
+      - "packages/ui-core-react-native/**"
       - "registry/**"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -56,6 +77,12 @@ on:
       - main
     paths:
       - "packages/cli/**"
+      - "packages/core/**"
+      - "packages/react-js/**"
+      - "packages/react-native/**"
+      - "packages/expo/**"
+      - "packages/ui-core-react-js/**"
+      - "packages/ui-core-react-native/**"
       - "registry/**"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -99,20 +126,37 @@ jobs:
         # no test suite yet it is the only thing that checks it at all.
         run: pnpm --filter @sublay/cli run build
 
+      - name: Build packages registry and playground consume
+        # --ignore-scripts skipped these packages' `prepare` hooks, but both
+        # registry/ and playground/ link them through workspace:* and read
+        # their dist/ type entries (every one declares
+        # "types": "dist/esm/index.d.ts"), so the next two steps cannot
+        # compile without them. registry/ imports all six; playground imports
+        # core, react-js and ui-core-react-js. core builds first because the
+        # other five reach into its types. This does mean a genuinely broken
+        # react-family or ui-core build can redden this job — a narrow,
+        # deliberate exception to per-group isolation, matching the path
+        # filters above.
+        run: |
+          pnpm --filter @sublay/core run build
+          pnpm --filter @sublay/react-js --filter @sublay/react-native --filter @sublay/expo --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build
+
+      - name: Typecheck registry
+        # `tsc --noEmit` over all 182 component templates. The templates are
+        # authored source that is copied verbatim into user projects by
+        # `sublay add` and never compiled anywhere else in this repo, so
+        # without this step a template that does not typecheck ships to
+        # every user and only fails in their build. See this file's header
+        # for why this was previously (wrongly) believed to be impossible.
+        run: pnpm --filter @sublay/registry run typecheck
+
       - name: Build playground
         # playground is this group's dev harness and resolves
         # @sublay/react-js + @sublay/ui-core-react-js through workspace:*
         # links, so its `tsc && vite build` is a real compile against local
         # source — the only thing in CI that checks the harness still
-        # builds. Those two (and core, which react-js's types reach into)
-        # have to be built first: --ignore-scripts skipped their `prepare`
-        # hooks, and playground's tsc reads their dist/ type entries. That
-        # does mean a genuinely broken react-js/ui-core build can redden
-        # this job; it is a narrow, deliberate exception to the per-group
-        # isolation, because playground really does consume both.
-        run: |
-          pnpm --filter @sublay/core --filter @sublay/react-js --filter @sublay/ui-core-react-js run build
-          pnpm --filter @sublay/playground run build
+        # builds.
+        run: pnpm --filter @sublay/playground run build
 
       - name: Run cli test suites
         # No suites exist yet, so this is a no-op today and starts doing

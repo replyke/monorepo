@@ -50,7 +50,7 @@
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "expo-image": "^2",
+    "expo-image": ">=55.0.0",
     "moment": "^2",
     "react-native": ">=0.83.0",
     "react-native-gesture-handler": "^2",

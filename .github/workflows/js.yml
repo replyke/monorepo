@@ -7,14 +7,23 @@
 # so the *tests* need no dist/. Verified by running the suite with no
 # dist/ present anywhere in the workspace (553 tests, all passing).
 #
-# The build still runs below, because "the tests don't read dist/" is not
-# the same as "the build needs no coverage". `tsup --dts` type-checks the
-# whole public surface on the way to emitting declarations, which reaches
-# code jest never touches and catches declaration-emit failures jest
-# cannot see. Before every install started passing --ignore-scripts, the
-# package's `prepare` hook built it as an incidental side effect of
-# `pnpm install` — that was this package's only build coverage, and this
-# explicit step is what replaces it.
+# Both of the package's compile steps run below, because "the tests don't
+# read dist/" is not the same as "the build needs no coverage". Before
+# every install started passing --ignore-scripts, the package's `prepare`
+# hook (`pnpm build && pnpm build:types`) ran both as an incidental side
+# effect of `pnpm install` — that was this package's only compile coverage
+# in CI, so replacing it takes both halves, not one:
+#
+#   * `build` (tsup --dts) type-checks the public surface on the way to
+#     emitting declarations — but only the module graph reachable from
+#     src/index.ts.
+#   * `build:types` (tsc --emitDeclarationOnly) compiles the whole `src`
+#     program. That is the only thing covering source files the barrel
+#     never reaches: two of them today (src/interfaces/Project.ts and
+#     src/interfaces/HostedApp.ts). Verified by putting a type error in
+#     src/interfaces/Project.ts — `build` succeeds and all 553 tests pass,
+#     while `build:types` fails with TS2322. A `build`-only step would let
+#     that ship.
 #
 # See .github/workflows/test.yml for why each group gets its own workflow
 # file instead of a job in a shared one.
@@ -71,10 +80,16 @@ jobs:
 
       - name: Build js
         # Not needed by the test step (see the note at the top of this
-        # file), but the build is a real check in its own right: it is the
-        # only thing that type-checks the declaration emit and the source
-        # files the suite never imports.
+        # file), but the build is a real check in its own right: it
+        # type-checks the declaration emit for the public surface.
         run: pnpm --filter @sublay/js run build
+
+      - name: Typecheck js declaration emit
+        # The other half of what `prepare` used to run. `build` above only
+        # sees what src/index.ts reaches; this compiles the whole src
+        # program, and is the only coverage for the two source files
+        # outside that graph. See the note at the top of this file.
+        run: pnpm --filter @sublay/js run build:types
 
       - name: Run js test suite
         run: pnpm --filter @sublay/js run test

@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Component registry for Sublay CLI - development dependencies only",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "devDependencies": {
     "@gorhom/bottom-sheet": "^5.2.9",
     "@sublay/expo": "workspace:*",

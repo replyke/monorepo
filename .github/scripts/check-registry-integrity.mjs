@@ -6,7 +6,7 @@
 // `sublay add` user the moment it merges. Building @sublay/cli proves nothing
 // about it: the CLI reads this metadata at runtime.
 //
-// Four invariants are enforced here, all of which fail at runtime rather than
+// Five invariants are enforced here, all of which fail at runtime rather than
 // build time and are therefore invisible to every other step in the job:
 //
 //   1. registryUrl points at the component's own directory under
@@ -23,6 +23,20 @@
 //      'files/<mainFile>.<ext>' there (add.ts strips the 'files/' prefix and
 //      re-roots the rest under 'components/'). A typo here ships a barrel
 //      that cannot resolve, to every user of that component.
+//   5. REMOTE_REGISTRY_BASE names the same org/repo as @sublay/cli's own
+//      package.json `repository.url`. Those are the only two places in the
+//      repo that hardcode where this code lives, they are edited by different
+//      people for different reasons (a URL constant vs. npm page metadata),
+//      and invariants 1-4 are all self-consistent under a wrong repo — an org
+//      rename that updates one and not the other passes every other check
+//      here while every `sublay add` 404s.
+//
+// A sixth check runs only on a push to main in CI: it actually fetches one
+// real registry.json over the network and requires a 200. Everything above is
+// internal consistency; only main is actually served to users, and only there
+// is a live URL meaningful (on this branch, before merge, the raw URL 404s by
+// definition because registry/ does not exist on main yet). It is skipped
+// entirely for local and pull_request runs so it can never fail spuriously.
 //
 // Node built-ins only, so it can run before (or without) an install.
 
@@ -41,6 +55,7 @@ const registrySourceFile = path.join(
   'utils',
   'registry.ts'
 );
+const cliPackageFile = path.join(repoRoot, 'packages', 'cli', 'package.json');
 
 // Extensions a mainFile may resolve through. Mirrors what the registry
 // actually ships and what a bundler would resolve for an extension-less
@@ -95,6 +110,109 @@ function readRemoteRegistryBase() {
 
 const REMOTE_REGISTRY_BASE = readRemoteRegistryBase();
 
+/**
+ * Pull "<org>/<repo>" out of any GitHub URL we care about.
+ *
+ * Handles both shapes in play here:
+ *   https://raw.githubusercontent.com/<org>/<repo>/<ref>/<path...>
+ *   https://github.com/<org>/<repo>.git   (also git+https://, git://, ssh)
+ *
+ * Returns null rather than guessing if it does not look like GitHub at all —
+ * the caller turns that into a hard failure, because a non-GitHub value in
+ * either place means the assumption this whole check rests on (the registry
+ * is served off raw.githubusercontent.com from the repo that ships the CLI)
+ * has stopped holding.
+ */
+function parseGitHubSlug(url) {
+  if (typeof url !== 'string') return null;
+
+  const normalized = url
+    .replace(/^git\+/, '')
+    .replace(/^git:\/\//, 'https://')
+    .replace(/^ssh:\/\/git@/, 'https://')
+    .replace(/^git@([^:]+):/, 'https://$1/');
+
+  const match = normalized.match(
+    /^https?:\/\/(?:raw\.githubusercontent\.com|github\.com)\/([^/]+)\/([^/]+?)(?:\.git)?(?:\/|$)/
+  );
+  if (!match) return null;
+
+  // GitHub org and repo names are case-insensitive; compare them that way so
+  // a capitalisation difference is not reported as drift.
+  return `${match[1].toLowerCase()}/${match[2].toLowerCase()}`;
+}
+
+/**
+ * Invariant 5: the CLI's registry URL and the CLI's own published
+ * `repository.url` must name the same GitHub repo.
+ */
+function assertRegistryBaseMatchesCliRepository() {
+  let cliPackage;
+  try {
+    cliPackage = JSON.parse(fs.readFileSync(cliPackageFile, 'utf8'));
+  } catch (err) {
+    console.error(
+      `Registry integrity check: cannot read ${path.relative(
+        repoRoot,
+        cliPackageFile
+      )} (${err.message}). This script cross-checks REMOTE_REGISTRY_BASE ` +
+        'against that file\'s repository.url.'
+    );
+    process.exit(1);
+  }
+
+  const repositoryUrl =
+    cliPackage.repository && typeof cliPackage.repository === 'object'
+      ? cliPackage.repository.url
+      : cliPackage.repository;
+
+  const packageSlug = parseGitHubSlug(repositoryUrl);
+  const registrySlug = parseGitHubSlug(REMOTE_REGISTRY_BASE);
+
+  if (packageSlug === null) {
+    console.error(
+      'Registry integrity check: could not read a GitHub "<org>/<repo>" out ' +
+        `of ${path.relative(repoRoot, cliPackageFile)}'s repository.url ` +
+        `(${JSON.stringify(repositoryUrl)}).`
+    );
+    process.exit(1);
+  }
+
+  if (registrySlug === null) {
+    console.error(
+      'Registry integrity check: could not read a GitHub "<org>/<repo>" out ' +
+        `of REMOTE_REGISTRY_BASE (${JSON.stringify(REMOTE_REGISTRY_BASE)}) in ` +
+        `${path.relative(repoRoot, registrySourceFile)}. The registry is ` +
+        'expected to be served from raw.githubusercontent.com.'
+    );
+    process.exit(1);
+  }
+
+  if (packageSlug !== registrySlug) {
+    console.error(
+      'Registry integrity check FAILED: the CLI downloads the registry from ' +
+        'one repo but publishes itself as living in another.\n\n' +
+        `  REMOTE_REGISTRY_BASE (${path.relative(
+          repoRoot,
+          registrySourceFile
+        )}): ${registrySlug}\n` +
+        `  repository.url (${path.relative(
+          repoRoot,
+          cliPackageFile
+        )}):        ${packageSlug}\n\n` +
+        'These are the only two places that hardcode where this code lives. ' +
+        'If the repo moved, both have to move — every registry.json is ' +
+        'self-consistent with a wrong base, so nothing else here catches it, ' +
+        'and `sublay add` 404s for every user.'
+    );
+    process.exit(1);
+  }
+
+  return packageSlug;
+}
+
+const REPO_SLUG = assertRegistryBaseMatchesCliRepository();
+
 /** Recursively collect every registry.json under registry/, skipping node_modules. */
 function findRegistryFiles(dir) {
   const found = [];
@@ -135,6 +253,8 @@ if (registryFiles.length === 0) {
 
 let checkedFileEntries = 0;
 let checkedMainFiles = 0;
+/** @type {{registryUrl: string, mainFilePath: string}[]} */
+const remoteProbes = [];
 
 for (const registryFile of registryFiles) {
   const dir = path.dirname(registryFile);
@@ -248,6 +368,13 @@ for (const registryFile of registryFiles) {
         );
       } else {
         checkedMainFiles += 1;
+        // Remembered for the on-main network check below, which needs a real
+        // files[] path to prove the registryUrl + path join actually
+        // downloads — not just that the metadata is reachable.
+        remoteProbes.push({
+          registryUrl: manifest.registryUrl,
+          mainFilePath: matched,
+        });
       }
     }
   }
@@ -274,5 +401,118 @@ if (errors.length > 0) {
 console.log(
   `Registry integrity check passed: ${registryFiles.length} registry.json ` +
     `file(s), ${checkedFileEntries} file entr(ies), ${checkedMainFiles} ` +
-    `main file(s) verified against REMOTE_REGISTRY_BASE ${REMOTE_REGISTRY_BASE}.`
+    `main file(s) verified against REMOTE_REGISTRY_BASE ${REMOTE_REGISTRY_BASE} ` +
+    `(repo ${REPO_SLUG}, cross-checked against packages/cli/package.json).`
 );
+
+// ---------------------------------------------------------------------------
+// Live reachability — only on a push to main in CI.
+//
+// Everything above is internal consistency: it proves the metadata agrees with
+// the files on disk and with the CLI source. It cannot prove the URLs actually
+// serve anything, because REMOTE_REGISTRY_BASE points at main and only main is
+// ever served. Running this anywhere else would fail for reasons that are not
+// defects: on a feature branch the registry may not exist on main yet (it does
+// not, until the consolidation branch merges), a PR's changes are by
+// definition not on main, and local runs may have no network at all.
+//
+// So: skipped unless GitHub Actions says this is a push build of main. Those
+// three variables are standard GitHub Actions defaults, set on every run.
+// ---------------------------------------------------------------------------
+
+const isCI = process.env.GITHUB_ACTIONS === 'true';
+const isPushToMain =
+  process.env.GITHUB_EVENT_NAME === 'push' &&
+  process.env.GITHUB_REF === 'refs/heads/main';
+
+if (!isCI || !isPushToMain) {
+  console.log(
+    'Skipping live registry reachability check (runs only on a GitHub Actions ' +
+      'push build of main; the registry is served from main, so the URLs are ' +
+      'not expected to resolve from anywhere else).'
+  );
+} else {
+  // One metadata URL and one component-file URL. The first proves
+  // fetchRegistry() can find a component; the second proves fetchFile()'s
+  // registryUrl + files[].path join resolves to a real download. Checking one
+  // of each is the point — a base URL that serves registry.json but not the
+  // files beside it is the failure shape a single probe would miss.
+  const probe = remoteProbes[0];
+  const targets = [
+    { label: 'registry metadata', url: `${probe.registryUrl}/registry.json` },
+    {
+      label: 'component file',
+      url: `${probe.registryUrl}/${probe.mainFilePath}`,
+    },
+  ];
+
+  // Retried, because this job's most common trigger is the push that just
+  // merged the change — and raw.githubusercontent.com is CDN-fronted, so it
+  // can briefly still serve the pre-merge state (a 404 for a newly added
+  // path). Without a retry this check's whole purpose would make it flaky on
+  // exactly the runs it exists for. Three attempts over ~30s is well past
+  // that window; a genuinely wrong URL stays wrong through all of them.
+  const ATTEMPTS = 3;
+  const RETRY_DELAY_MS = 15_000;
+  const failures = [];
+
+  for (const target of targets) {
+    let lastProblem;
+
+    for (let attempt = 1; attempt <= ATTEMPTS; attempt += 1) {
+      if (attempt > 1) {
+        console.log(
+          `  retrying in ${RETRY_DELAY_MS / 1000}s (attempt ${attempt}/${ATTEMPTS}): ${target.url}`
+        );
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      }
+
+      let response;
+      try {
+        response = await fetch(target.url, {
+          method: 'GET',
+          redirect: 'follow',
+          cache: 'no-store',
+          signal: AbortSignal.timeout(20_000),
+        });
+      } catch (err) {
+        lastProblem = `request failed: ${err.message}`;
+        continue;
+      }
+
+      if (!response.ok) {
+        lastProblem = `HTTP ${response.status} ${response.statusText}`;
+        continue;
+      }
+
+      // Drain the body so the socket closes cleanly rather than leaving the
+      // process holding an unconsumed stream.
+      await response.arrayBuffer();
+      console.log(`  reachable (${response.status}): ${target.url}`);
+      lastProblem = undefined;
+      break;
+    }
+
+    if (lastProblem !== undefined) {
+      failures.push(
+        `${target.label} ${target.url} — ${lastProblem} (after ${ATTEMPTS} attempts)`
+      );
+    }
+  }
+
+  if (failures.length > 0) {
+    console.error(
+      `\nLive registry reachability check FAILED with ${failures.length} problem(s):\n`
+    );
+    for (const failure of failures) {
+      console.error(`  - ${failure}`);
+    }
+    console.error(
+      '\nThese URLs are what `sublay add` fetches at runtime. main is now\n' +
+        'serving a registry that a published CLI cannot download from.'
+    );
+    process.exit(1);
+  }
+
+  console.log('Live registry reachability check passed.');
+}
