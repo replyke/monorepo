@@ -3,6 +3,11 @@
   "compilerOptions": {
     "outDir": "./dist/cjs",
     "module": "commonjs",
+    // Nothing resolves the CJS declarations: this package has no `exports`
+    // map and `types` points only at dist/esm/index.d.ts, so every .d.ts
+    // the CJS build emitted was a byte-identical duplicate of the ESM one
+    // that shipped in the tarball and was never read.
+    "declaration": false,
     "moduleResolution": "node",
     "ignoreDeprecations": "6.0"
   },

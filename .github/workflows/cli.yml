@@ -165,7 +165,7 @@ jobs:
         run: node .github/scripts/check-registry-integrity.mjs
 
       - name: Install dependencies
-        # --ignore-scripts so this job doesn't build the six workspace
+        # --ignore-scripts so this job doesn't build the eight workspace
         # packages that declare a `prepare` script — none of which is
         # @sublay/cli, and a break in any of them used to fail this install
         # step on a cli-only PR. See .github/workflows/test.yml for the full
@@ -180,10 +180,13 @@ jobs:
         run: pnpm --filter @sublay/cli run build
 
       - name: Build packages registry and playground consume
-        # Nothing built these during install: core/react-js/react-native
-        # declare a `prepare` hook that --ignore-scripts skipped, and the two
-        # ui-core packages use `prepublishOnly`, which install never runs at
-        # all. registry/ and playground/ link them through workspace:* and
+        # Nothing built these during install: core/react-js/react-native and
+        # both ui-core packages all declare a `prepare` hook, which would
+        # fire on a plain install, but --ignore-scripts above skipped every
+        # one of them alike (the ui-core pair also declares `prepublishOnly`,
+        # which install never runs at all, but their `prepare` is what
+        # --ignore-scripts is blocking here).
+        # registry/ and playground/ link them through workspace:* and
         # read their dist/ type entries (every one declares
         # "types": "dist/esm/index.d.ts"), so the next two steps cannot
         # compile without them.

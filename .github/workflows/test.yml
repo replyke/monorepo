@@ -90,10 +90,12 @@ jobs:
 
       - name: Install dependencies
         # --ignore-scripts is what makes this workflow's isolation real.
-        # Six workspace packages (core, react-js, react-native, expo, node,
-        # js) declare a `prepare` script, and pnpm runs `prepare` for every
-        # workspace project on any install, no matter which package the run
-        # is about. Without this flag, `pnpm install` here builds all six —
+        # Eight workspace packages (core, react-js, react-native, expo, node,
+        # js, ui-core-react-js, ui-core-react-native) declare a `prepare`
+        # script, and pnpm runs `prepare` for every workspace project on any
+        # install, no matter which package the run is about. Only @sublay/cli
+        # has none (it uses `prepublishOnly`).
+        # Without this flag, `pnpm install` here builds all eight —
         # so a broken build in, say, packages/js would fail the install step
         # of a PR that only touched packages/cli, as an unrelated red check.
         # Each workflow instead builds exactly what it needs, below.

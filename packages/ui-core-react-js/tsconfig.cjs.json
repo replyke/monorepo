@@ -2,6 +2,14 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist/cjs",
-    "module": "commonjs"
+    "module": "commonjs",
+    // Nothing resolves the CJS declarations: this package has no `exports`
+    // map and `types` points only at dist/esm/index.d.ts, so every .d.ts
+    // the CJS build emitted was a byte-identical duplicate of the ESM one
+    // that shipped in the tarball and was never read. declarationMap must
+    // go with it — the base tsconfig sets it, and tsc rejects it without
+    // `declaration` (TS5069).
+    "declaration": false,
+    "declarationMap": false
   }
 }

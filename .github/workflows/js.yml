@@ -75,7 +75,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        # --ignore-scripts so this job doesn't build the other five
+        # --ignore-scripts so this job doesn't build the other seven
         # workspace packages that declare a `prepare` script. This package
         # is built explicitly in the next step instead. Full reasoning in
         # .github/workflows/test.yml.
