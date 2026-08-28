@@ -8,11 +8,18 @@
 #
 # The shared-root paths (root manifests, lockfile, this file) are listed
 # deliberately: a change to any of them can break this group even though
-# no package directory was touched. playground/package.json is in that
-# list for the same reason and is the one workspace member no group owns:
-# it feeds the single shared lockfile, so editing it without regenerating
-# pnpm-lock.yaml would otherwise fail the NEXT unrelated PR's
-# `--frozen-lockfile` install instead of its own.
+# no package directory was touched.
+#
+# playground/package.json used to be listed here too — and in node.yml,
+# js.yml and ui-core.yml — on the grounds that playground was the one
+# workspace member no group owned, so nothing else would react to a
+# manifest edit that desynced the single shared pnpm-lock.yaml. That
+# stopped being true once cli.yml took ownership of `playground/**` and
+# started building it: a playground manifest edit now reddens cli.yml on
+# its own PR, and listing it in the other four workflows only added four
+# irrelevant checks to every such change. registry/package.json is the
+# identical case and was only ever watched by cli.yml; playground now
+# matches it.
 #
 # tsconfig.json is the exception: it is watched defensively, for
 # completeness, not because it currently affects this job. Every package
@@ -25,6 +32,23 @@
 # what it needs explicitly. See the install step below for why.
 name: Test
 
+# This file carried neither block for a while, exempted as "predating the
+# migration". It no longer predates anything: the migration has rewritten it
+# four separate times (test filtering, --ignore-scripts, Node 22, the
+# dry-run publish step), so it gets the same hardening as the four newer
+# workflows.
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  # Pull requests only. A push build of main must never be cancelled by a
+  # later push: the registry integrity script's live reachability check runs
+  # only on a push build of main, and that run is the documented go-signal
+  # for `cli:publish-prod:patch`. A cancelled run reports grey, not red, so
+  # an unconditional cancel-in-progress could quietly retire the go-signal.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 on:
   pull_request:
     paths:
@@ -35,7 +59,6 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - "playground/package.json"
       - "tsconfig.json"
       - ".github/workflows/test.yml"
   push:
@@ -49,7 +72,6 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - "playground/package.json"
       - "tsconfig.json"
       - ".github/workflows/test.yml"
 

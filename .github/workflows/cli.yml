@@ -12,13 +12,20 @@
 # PR editing one of them would otherwise run no CI at all.
 #
 # playground/ is watched and built here too: it is the cli group's dev
-# harness, and since it now resolves @sublay/react-js and
-# @sublay/ui-core-react-js through workspace:* links rather than from npm,
-# a breaking change in either compiles straight into it. `playground build`
-# runs `tsc && vite build`, so that break surfaces here instead of the next
-# time a human opens the harness by hand. (playground/package.json is also
-# watched by every other workflow, for a different reason: it is a
-# workspace member feeding the single shared pnpm-lock.yaml.)
+# harness, and since it now declares @sublay/react-js and
+# @sublay/ui-core-react-js as workspace:* dependencies rather than
+# resolving them from npm, a breaking change in either compiles straight
+# into it. `playground build` runs `tsc && vite build`, so that break
+# surfaces here instead of the next time a human opens the harness by hand.
+#
+# This workflow owns playground/ outright: it is the only one that watches
+# it. The other four used to list playground/package.json in their own
+# filters, from before this group took ownership, on the grounds that
+# playground was an ownerless workspace member feeding the single shared
+# pnpm-lock.yaml. Since `playground/**` here already covers that manifest,
+# those four entries were removed — they only added four irrelevant red
+# checks to any playground manifest edit. registry/package.json is the
+# identical case and was only ever watched here.
 #
 # registry/ is typechecked too. It used to be exempt, on the stated grounds
 # that the tailwind templates import `cn` from @/lib/utils — an alias said
@@ -31,9 +38,9 @@
 # template files compile. No registry.json lists that file, so `sublay add`
 # never copies it and it changes nothing about what users install.
 #
-# Read that gate for what it is, though: registry/ links @sublay/core,
-# react-js, react-native, expo and both ui-core packages through
-# `workspace:*`, so the templates compile against this branch's LOCAL,
+# Read that gate for what it is, though: registry/ links @sublay/react-js,
+# @sublay/react-native and both ui-core packages through `workspace:*` and
+# imports all four, so the templates compile against this branch's LOCAL,
 # unreleased source — not against the published npm versions a real
 # consumer resolves when `sublay add` drops these files into their project.
 # A green registry typecheck therefore means "these templates compile
@@ -55,15 +62,36 @@
 #
 # Both the registry typecheck and the playground build compile against
 # locally-built dist/, not npm — which is why packages/core/**,
-# packages/react-js/**, packages/react-native/**, packages/expo/**,
-# packages/ui-core-react-js/** and packages/ui-core-react-native/** are all
-# in the path filters below. registry/ imports all six through workspace:*
-# links and playground imports three of them, so a PR touching only one of
-# those packages can break this group's compile; without those filters this
-# workflow would never run for exactly the changes those two steps exist to
-# catch. That is a deliberate, documented widening of per-group isolation:
-# registry/ and playground/ genuinely consume the react-family and ui-core
-# packages, so their CI has to react to them.
+# packages/react-js/**, packages/react-native/**,
+# packages/ui-core-react-js/** and packages/ui-core-react-native/** are in
+# the path filters below. Exact counts, since they have drifted before:
+# registry/package.json declares five @sublay/* devDependencies and its
+# source imports four of them — @sublay/react-js, @sublay/react-native,
+# @sublay/ui-core-react-js, @sublay/ui-core-react-native (@sublay/core is
+# named only in doc comments, never imported). playground/package.json
+# declares two and its source imports one, @sublay/react-js.
+# packages/core/** is watched despite nobody importing it directly because
+# react-js/react-native's emitted types reach into core's dist, so it has
+# to be built first. A PR touching any of those five can break this
+# group's compile; without those filters this workflow would never run for
+# exactly the changes those two steps exist to catch. That is a
+# deliberate, documented widening of per-group isolation.
+#
+# packages/expo/** is deliberately NOT here. registry/package.json declares
+# @sublay/expo as a devDependency, but nothing in registry/ or playground/
+# imports it (grep for `from "@sublay/expo"`: zero hits), so watching and
+# building it bought no coverage — it only meant an expo-only PR ran this
+# whole job for nothing, and a genuinely broken expo build reddened the cli
+# group's CI. That is the exact cross-group coupling --ignore-scripts was
+# added to remove.
+#
+# Doing that leaves a real, separate gap, which nothing covers today:
+# packages/cli/src/utils/transform.ts rewrites @sublay/react-native imports
+# to @sublay/expo at `sublay add` time for the expo platform, so the
+# expo-transformed variant of every react-native template is never
+# type-checked anywhere. Closing it means running the transform and
+# typechecking its output, not just adding expo back to the build list —
+# tracked as a known limitation, not fixed here.
 #
 # See .github/workflows/test.yml for why each group gets its own workflow
 # file instead of a job in a shared one.
@@ -74,7 +102,12 @@ permissions:
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
-  cancel-in-progress: true
+  # Pull requests only. A push build of main must never be cancelled by a
+  # later push: the registry integrity script's live reachability check runs
+  # only on a push build of main, and that run is the documented go-signal
+  # for `cli:publish-prod:patch`. A cancelled run reports grey, not red, so
+  # an unconditional cancel-in-progress could quietly retire the go-signal.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 on:
   pull_request:
@@ -83,7 +116,6 @@ on:
       - "packages/core/**"
       - "packages/react-js/**"
       - "packages/react-native/**"
-      - "packages/expo/**"
       - "packages/ui-core-react-js/**"
       - "packages/ui-core-react-native/**"
       - "registry/**"
@@ -102,7 +134,6 @@ on:
       - "packages/core/**"
       - "packages/react-js/**"
       - "packages/react-native/**"
-      - "packages/expo/**"
       - "packages/ui-core-react-js/**"
       - "packages/ui-core-react-native/**"
       - "registry/**"
@@ -149,19 +180,29 @@ jobs:
         run: pnpm --filter @sublay/cli run build
 
       - name: Build packages registry and playground consume
-        # --ignore-scripts skipped these packages' `prepare` hooks, but both
-        # registry/ and playground/ link them through workspace:* and read
-        # their dist/ type entries (every one declares
+        # Nothing built these during install: core/react-js/react-native
+        # declare a `prepare` hook that --ignore-scripts skipped, and the two
+        # ui-core packages use `prepublishOnly`, which install never runs at
+        # all. registry/ and playground/ link them through workspace:* and
+        # read their dist/ type entries (every one declares
         # "types": "dist/esm/index.d.ts"), so the next two steps cannot
-        # compile without them. registry/ imports all six; playground imports
-        # core, react-js and ui-core-react-js. core builds first because the
-        # other five reach into its types. This does mean a genuinely broken
-        # react-family or ui-core build can redden this job — a narrow,
-        # deliberate exception to per-group isolation, matching the path
-        # filters above.
+        # compile without them.
+        #
+        # Exactly what is built and why: registry/ imports @sublay/react-js,
+        # @sublay/react-native and both ui-core packages; playground imports
+        # @sublay/react-js. @sublay/core is built first — not because either
+        # imports it, but because react-js and react-native's emitted types
+        # reach into its dist. @sublay/expo is NOT built here: registry/
+        # declares it as a devDependency but nothing imports it, so building
+        # it added nothing but a way for an expo break to redden this job.
+        # See this file's header.
+        #
+        # This does mean a genuinely broken react-js/react-native/ui-core
+        # build can still redden this job — a narrow, deliberate exception to
+        # per-group isolation, matching the path filters above.
         run: |
           pnpm --filter @sublay/core run build
-          pnpm --filter @sublay/react-js --filter @sublay/react-native --filter @sublay/expo --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build
+          pnpm --filter @sublay/react-js --filter @sublay/react-native --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build
 
       - name: Typecheck registry
         # `tsc --noEmit` over all 182 component templates. The templates are

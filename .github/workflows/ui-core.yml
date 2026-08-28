@@ -14,7 +14,12 @@ permissions:
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
-  cancel-in-progress: true
+  # Pull requests only. A push build of main must never be cancelled by a
+  # later push: the registry integrity script's live reachability check runs
+  # only on a push build of main, and that run is the documented go-signal
+  # for `cli:publish-prod:patch`. A cancelled run reports grey, not red, so
+  # an unconditional cancel-in-progress could quietly retire the go-signal.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 on:
   pull_request:
@@ -24,7 +29,6 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - "playground/package.json"
       - "tsconfig.json"
       - ".github/workflows/ui-core.yml"
   push:
@@ -36,7 +40,6 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - "playground/package.json"
       - "tsconfig.json"
       - ".github/workflows/ui-core.yml"
 
