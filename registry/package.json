@@ -14,8 +14,6 @@
     "@sublay/ui-core-react-js": "workspace:*",
     "@sublay/ui-core-react-native": "workspace:*",
     "@types/react": "^19.2.14",
-    "@types/react-native": "^0.73.0",
-    "@types/styled-components": "^5.1.36",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.8.0",

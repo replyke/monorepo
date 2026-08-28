@@ -435,9 +435,6 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.0
         version: 19.2.5(@types/react@19.2.14)
-      '@types/styled-components':
-        specifier: ^5.1.36
-        version: 5.1.36
       '@vitejs/plugin-react':
         specifier: ^4.0.0
         version: 4.7.0(vite@5.4.21(@types/node@25.9.5)(lightningcss@1.30.2)(terser@5.44.1))
@@ -467,7 +464,7 @@ importers:
     devDependencies:
       '@gorhom/bottom-sheet':
         specifier: ^5.2.9
-        version: 5.2.14(@types/react-native@0.73.0(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(@types/react@19.2.14)(react-native-gesture-handler@2.32.0(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)
+        version: 5.2.14(@types/react@19.2.14)(react-native-gesture-handler@2.32.0(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)
       '@sublay/expo':
         specifier: workspace:*
         version: link:../packages/expo
@@ -486,12 +483,6 @@ importers:
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
-      '@types/react-native':
-        specifier: ^0.73.0
-        version: 0.73.0(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5)
-      '@types/styled-components':
-        specifier: ^5.1.36
-        version: 5.1.36
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -2639,11 +2630,6 @@ packages:
   '@types/hammerjs@2.0.46':
     resolution: {integrity: sha512-ynRvcq6wvqexJ9brDMS4BnBLzmr0e14d6ZJTEShTBWKymQiHwlAyGu0ZPEFI2Fh1U53F7tN9ufClWM5KvqkKOw==}
 
-  '@types/hoist-non-react-statics@3.3.7':
-    resolution: {integrity: sha512-PQTyIulDkIDro8P+IHbKCsw7U2xxBYflVzW/FgWdCAePD9xGSidgA76/GeJ6lBKoblyhf9pBY763gbrN+1dI8g==}
-    peerDependencies:
-      '@types/react': '*'
-
   '@types/istanbul-lib-coverage@2.0.6':
     resolution: {integrity: sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==}
 
@@ -2682,10 +2668,6 @@ packages:
     peerDependencies:
       '@types/react': ^19.2.0
 
-  '@types/react-native@0.73.0':
-    resolution: {integrity: sha512-6ZRPQrYM72qYKGWidEttRe6M5DZBEV5F+MHMHqd4TTYx0tfkcdrUFGdef6CCxY0jXU7wldvd/zA/b0A/kTeJmA==}
-    deprecated: This is a stub types definition. react-native provides its own type definitions, so you do not need this installed.
-
   '@types/react-test-renderer@19.1.0':
     resolution: {integrity: sha512-XD0WZrHqjNrxA/MaR9O22w/RNidWR9YZmBdRGI7wcnWGrv/3dA8wKCJ8m63Sn+tLJhcjmuhOi629N66W6kgWzQ==}
 
@@ -2697,9 +2679,6 @@ packages:
 
   '@types/stack-utils@2.0.3':
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
-
-  '@types/styled-components@5.1.36':
-    resolution: {integrity: sha512-pGMRNY5G2rNDKEv2DOiFYa7Ft1r0jrhmgBwHhOMzPTgCjO76bCot0/4uEfqj7K0Jf1KdQmDtAuaDk9EAs9foSw==}
 
   '@types/use-sync-external-store@0.0.6':
     resolution: {integrity: sha512-zFDAD+tlpf2r4asuHEj0XH6pY6i0g5NeAHPn+15wk3BV6JA69eERFXC1gyGThDkVa1zCyKr5jox1+2LbV/AMLg==}
@@ -8595,7 +8574,7 @@ snapshots:
     transitivePeerDependencies:
       - react-dom
 
-  '@gorhom/bottom-sheet@5.2.14(@types/react-native@0.73.0(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(@types/react@19.2.14)(react-native-gesture-handler@2.32.0(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)':
+  '@gorhom/bottom-sheet@5.2.14(@types/react@19.2.14)(react-native-gesture-handler@2.32.0(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)':
     dependencies:
       '@gorhom/portal': 1.0.14(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)
       invariant: 2.2.4
@@ -8604,7 +8583,6 @@ snapshots:
       react-native-gesture-handler: 2.32.0(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)
     optionalDependencies:
       '@types/react': 19.2.14
-      '@types/react-native': 0.73.0(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5)
 
   '@gorhom/portal@1.0.14(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5))(react@19.2.5)':
     dependencies:
@@ -9475,11 +9453,6 @@ snapshots:
 
   '@types/hammerjs@2.0.46': {}
 
-  '@types/hoist-non-react-statics@3.3.7(@types/react@19.2.14)':
-    dependencies:
-      '@types/react': 19.2.14
-      hoist-non-react-statics: 3.3.2
-
   '@types/istanbul-lib-coverage@2.0.6': {}
 
   '@types/istanbul-lib-report@3.0.3':
@@ -9520,18 +9493,6 @@ snapshots:
     dependencies:
       '@types/react': 19.2.14
 
-  '@types/react-native@0.73.0(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5)':
-    dependencies:
-      react-native: 0.79.7(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.5)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@react-native-community/cli'
-      - '@types/react'
-      - bufferutil
-      - react
-      - supports-color
-      - utf-8-validate
-
   '@types/react-test-renderer@19.1.0':
     dependencies:
       '@types/react': 19.2.14
@@ -9543,12 +9504,6 @@ snapshots:
   '@types/semver@7.7.1': {}
 
   '@types/stack-utils@2.0.3': {}
-
-  '@types/styled-components@5.1.36':
-    dependencies:
-      '@types/hoist-non-react-statics': 3.3.7(@types/react@19.2.14)
-      '@types/react': 19.2.14
-      csstype: 3.2.3
 
   '@types/use-sync-external-store@0.0.6': {}
 

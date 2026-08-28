@@ -55,3 +55,73 @@ minimumReleaseAgeExclude:
   # added to the list. One glob covers all nine and every future package,
   # with nothing to keep in sync.
   - '@sublay/*'
+peerDependencyRules:
+  allowedVersions:
+    # Silences one spurious `unmet peer react` warning:
+    #
+    #   ✕ unmet peer react
+    #     Installed: 18.3.1
+    #     Wanted: ^19.2.3: react-native@0.85.3
+    #
+    # Traced with `pnpm why react`. The react@18.3.1 subtree is
+    # @sublay/ui-core-react-js's, which deliberately pins react 18 (a
+    # round-5 decision: it is a web-only package tested against React 18).
+    # react-native@0.85.3 gets pulled into that subtree not because
+    # ui-core-react-js wants react-native, but through
+    # @giphy/react-components@10.1.2 -> styled-components@6.5.3, whose
+    # OPTIONAL react-native peer pnpm resolves anyway; pnpm's peer-set
+    # deduplication then reuses that same styled-components peer-context
+    # inside the react-18 subtree:
+    #
+    #   react@18.3.1
+    #   └─ @react-native/virtualized-lists@0.85.3
+    #      └─ react-native@0.85.3
+    #         └─ styled-components@6.5.3
+    #            └─ @giphy/react-components@10.1.2
+    #               └─ @sublay/ui-core-react-js (dependencies)
+    #
+    # So react-native@0.85.3 (which wants react ^19.2.3) ends up sitting in
+    # a subtree that only offers react 18. Nothing here ever executes: the
+    # ui-core-react-js build and its consumers are web-only and never
+    # import react-native, and styled-components only reaches for its
+    # react-native entrypoint via styled-components/native, which nothing
+    # in this workspace imports. The want is an artifact of peer-context
+    # sharing, not a real functional requirement.
+    #
+    # Scoped deliberately to `react-native>react` rather than a bare
+    # `react` key, so it only forgives react-native's own want of react
+    # (and only when what it finds is a v18); every other package's react
+    # peer is still checked normally. Verified pure noise-suppression:
+    # `pnpm why react` output is byte-identical before and after, so the
+    # resolved graph is unchanged.
+    react-native>react: "18"
+  ignoreMissing:
+    # Silences the remaining `pnpm peers check` warning:
+    #
+    #   ✕ conflicting peer react-native-reanimated
+    #     Wanted:
+    #       ">=3.16.0 || >=4.0.0-": @gorhom/bottom-sheet@5.2.14
+    #       ">=3.6.2": react-native-css-interop@0.2.6
+    #
+    # Both wants come from registry's own devDependencies (bottom-sheet,
+    # nativewind -> react-native-css-interop) - nothing outside registry
+    # is involved. Unlike react-native>react above, this one cannot be
+    # satisfied by installing anything: bottom-sheet@5.2.14's own peer
+    # range, ">=3.16.0 || >=4.0.0-", is not valid semver - the second
+    # branch is a bare trailing hyphen with no prerelease identifier.
+    # Verified against semver 6.3.1/7.5.4/7.7.3: `validRange()` returns
+    # null and `satisfies()` returns false for every real
+    # react-native-reanimated release, including 5.2.14's own `latest`
+    # dist-tag (no newer 5.x exists). Installing react-native-reanimated
+    # for real was tried (both ^3.19.5 and ^4.6.0) and neither cleared
+    # the warning; ^4.6.0 made it worse by cascading a second, unrelated
+    # unmet peer via react-native-worklets -> @react-native/metro-config.
+    # registry is a typecheck-only dev harness that never runs, and no
+    # template source file imports react-native-reanimated directly (only
+    # bottom-sheet's own internals do) - so this is pure upstream-range
+    # noise with nothing to actually fix on this side. The real product
+    # gap this warning was pointing at - the three react-native
+    # registry.json templates using bottom-sheet without declaring
+    # react-native-reanimated/react-native-gesture-handler as end-user
+    # dependencies - is fixed separately in those registry.json files.
+    - react-native-reanimated

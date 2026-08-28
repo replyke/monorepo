@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is the **@sublay/node** package - the official Node.js SDK for Sublay. It's designed for server-side Node.js environments where React is not available or needed, such as server actions, backend APIs, scheduled jobs, webhooks, and CLI tools.
 
 **Package Name**: @sublay/node
-**Version**: 7.0.0
+**Version**: 7.12.0
 **Type**: Node.js SDK library (published to npm)
 
 ## Development Commands

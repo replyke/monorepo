@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **@sublay/js** is the official framework-agnostic JavaScript SDK for Sublay. It targets browser apps and JS runtimes that don't use React (or don't want the React provider tree). It mirrors the Sublay **v7** server API, authenticated as an **end user** via a bearer token — no React, no Redux, no state management.
 
 - **Package**: `@sublay/js`
-- **Version**: 7.0.0 (tracks the v7 server API)
+- **Version**: 7.9.0 (tracks the v7 server API)
 - **Type**: published npm library (CJS + ESM)
 - **Only runtime dependency**: `axios`
 - **Base URL**: `https://api.sublay.io/v7/{projectId}`
