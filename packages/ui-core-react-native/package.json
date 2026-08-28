@@ -34,6 +34,7 @@
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build": "rimraf dist && pnpm run build:esm && pnpm run build:cjs",
+    "prepare": "pnpm run build",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
