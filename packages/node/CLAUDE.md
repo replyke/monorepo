@@ -16,7 +16,9 @@ This is the **@sublay/node** package - the official Node.js SDK for Sublay. It's
 # Build the package
 pnpm build
 
-# Generate TypeScript declaration files
+# Whole-project type-check (tsc --noEmit) - catches errors in source files
+# tsup's entry-graph-only build never reaches; emits nothing itself, so it
+# can't clobber build's declaration output
 pnpm build:types
 
 # Build both (runs before publishing)

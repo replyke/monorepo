@@ -18,7 +18,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm build          # tsup → dist/ (CJS + ESM + .d.ts)
-pnpm build:types    # tsc --emitDeclarationOnly (type-check + emit declarations)
+pnpm build:types    # tsc --noEmit (whole-project type-check; catches errors in
+                    # source files tsup's entry-graph-only build never reaches)
 pnpm prepare        # build + build:types (runs before publish)
 ```
 

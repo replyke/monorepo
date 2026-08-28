@@ -17,7 +17,7 @@
 #   * `build` (tsup --dts) type-checks the public surface on the way to
 #     emitting declarations — but only the module graph reachable from
 #     src/index.ts.
-#   * `build:types` (tsc --emitDeclarationOnly) compiles the whole `src`
+#   * `build:types` (tsc --noEmit) compiles the whole `src`
 #     program. That is the only thing covering source files the barrel
 #     never reaches: two of them today (src/interfaces/Project.ts and
 #     src/interfaces/HostedApp.ts). Verified by putting a type error in
