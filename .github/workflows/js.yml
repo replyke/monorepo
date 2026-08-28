@@ -34,11 +34,12 @@ permissions:
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
-  # Pull requests only. A push build of main must never be cancelled by a
-  # later push: the registry integrity script's live reachability check runs
-  # only on a push build of main, and that run is the documented go-signal
-  # for `cli:publish-prod:patch`. A cancelled run reports grey, not red, so
-  # an unconditional cancel-in-progress could quietly retire the go-signal.
+  # Pull requests only. A push build of main should always run to
+  # completion and report a real pass/fail, not get silently cancelled
+  # (grey, not red) by a later push. Unlike cli.yml, this workflow doesn't
+  # gate any publish step - the reasoning here is just "don't want a
+  # push-to-main run's result quietly disappearing," not a specific
+  # go-signal being retired.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 on:
