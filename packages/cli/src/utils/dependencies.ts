@@ -4,56 +4,6 @@ import chalk from 'chalk';
 import prompts from 'prompts';
 import { execa } from 'execa';
 
-const REQUIRED_DEPS = {
-  react: ['@sublay/react-js', '@sublay/ui-core-react-js'],
-  'react-native': ['@sublay/react-native', '@sublay/ui-core-react-native'],
-  expo: ['@sublay/expo', '@sublay/ui-core-react-native'],
-};
-
-export async function checkDependencies(platform: 'react' | 'react-native' | 'expo') {
-  try {
-    const packageJsonPath = path.join(process.cwd(), 'package.json');
-
-    if (!(await fs.pathExists(packageJsonPath))) {
-      console.log(chalk.yellow('\n⚠️  No package.json found'));
-      return;
-    }
-
-    const packageJson = await fs.readJson(packageJsonPath);
-    const allDeps = {
-      ...packageJson.dependencies,
-      ...packageJson.devDependencies,
-    };
-
-    const requiredDeps = REQUIRED_DEPS[platform];
-    const missingDeps = requiredDeps.filter((dep) => !allDeps[dep]);
-
-    if (missingDeps.length === 0) {
-      console.log(chalk.green('\n✅ All required dependencies are installed'));
-      return;
-    }
-
-    console.log(chalk.yellow('\n⚠️  Missing required dependencies:'));
-    missingDeps.forEach((dep) => console.log(chalk.dim(`  - ${dep}`)));
-
-    const { install } = await prompts({
-      type: 'confirm',
-      name: 'install',
-      message: 'Would you like to install them now?',
-      initial: true,
-    });
-
-    if (install) {
-      await installDependencies(missingDeps);
-    } else {
-      console.log(chalk.dim('\nYou can install them later with:'));
-      console.log(chalk.dim(`  npm install ${missingDeps.join(' ')}\n`));
-    }
-  } catch (error) {
-    console.error(chalk.red('\n❌ Error checking dependencies:'), error);
-  }
-}
-
 async function installDependencies(deps: string[]) {
   try {
     console.log(chalk.blue(`\n📦 Installing ${deps.join(', ')}...\n`));

@@ -127,12 +127,14 @@ export async function add(componentName: string) {
         `  import { ${componentInfo.mainComponent} } from './${relativeImportPath}';`
       )
     );
-    console.log(chalk.dim(`  // With types:`));
-    console.log(
-      chalk.dim(
-        `  import { ${componentInfo.mainComponent}, type ${componentInfo.typeExport} } from './${relativeImportPath}';`
-      )
-    );
+    if (componentInfo.typeExport) {
+      console.log(chalk.dim(`  // With types:`));
+      console.log(
+        chalk.dim(
+          `  import { ${componentInfo.mainComponent}, type ${componentInfo.typeExport} } from './${relativeImportPath}';`
+        )
+      );
+    }
     console.log();
   } catch (error) {
     spinner.fail("Failed to add component");
