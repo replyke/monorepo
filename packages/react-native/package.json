@@ -53,6 +53,8 @@
     "@react-native-firebase/app": "^24.1.1",
     "@react-native-firebase/messaging": "^24.1.1",
     "@types/react": "^19.2.14",
+    "react": "^19.2.3",
+    "react-native": "^0.79.7",
     "react-native-keychain": "^9.2.2",
     "vitest": "^1.6.1"
   },
