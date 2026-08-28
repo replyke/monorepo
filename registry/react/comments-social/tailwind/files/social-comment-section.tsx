@@ -7,11 +7,11 @@
  * Installation: npx @sublay/cli add comments-social
  *
  * Required dependencies:
- * - @sublay/react-js ^6.0.0
- * - @sublay/ui-core-react-js ^6.0.0
+ * - @sublay/react-js ^7.0.0
+ * - @sublay/ui-core-react-js ^7.0.0
  * - Tailwind CSS configured with dark mode support
  *
- * @see https://docs.sublay.com/components/comments-social
+ * @see https://docs.sublay.io/components/comments-social
  *
  * ========================
  * TAILWIND CONFIGURATION

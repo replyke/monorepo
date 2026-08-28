@@ -6,10 +6,10 @@
  * Installation: npx @sublay/cli add comments-threaded
  *
  * Required dependencies:
- * - @sublay/react-js ^6.0.0
- * - @sublay/ui-core-react-js ^6.0.0
+ * - @sublay/react-js ^7.0.0
+ * - @sublay/ui-core-react-js ^7.0.0
  *
- * @see https://docs.sublay.com/components/comments-threaded
+ * @see https://docs.sublay.io/components/comments-threaded
  *
  * ====================
  * THEME COLOR PALETTE

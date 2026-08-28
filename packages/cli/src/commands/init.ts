@@ -23,6 +23,22 @@ export async function init() {
   const projectType = await detectProjectType();
   const hasTypeScript = await detectTypeScript();
 
+  // Without a TTY there is nobody to answer the prompts below; prompts() would
+  // resolve to an empty object and we'd write nothing while exiting 0. Fail loudly.
+  if (!process.stdin.isTTY) {
+    console.error(
+      chalk.red(
+        '\n❌ sublay init requires an interactive terminal — no TTY detected.'
+      )
+    );
+    console.error(
+      chalk.dim(
+        '   Run it directly in a terminal, not through a script or pipe.\n'
+      )
+    );
+    process.exit(1);
+  }
+
   // Prompt user for configuration
   const answers = await prompts([
     {
@@ -34,7 +50,8 @@ export async function init() {
         { title: 'React Native', value: 'react-native' },
         { title: 'Expo', value: 'expo' },
       ],
-      initial: projectType === 'react-native' ? 1 : 0,
+      initial:
+        projectType === 'expo' ? 2 : projectType === 'react-native' ? 1 : 0,
     },
     {
       type: 'select',
@@ -59,15 +76,17 @@ export async function init() {
   }
 
   // Create configuration
+  const componentsPath = answers.componentsPath || 'src/components';
+
   const config: SublayConfig = {
     platform: answers.platform,
     style: answers.style || 'styled',
     typescript: hasTypeScript,
     paths: {
-      components: answers.componentsPath || 'src/components',
+      components: componentsPath,
     },
     aliases: {
-      '@/components': `./src/components`,
+      '@/components': `./${componentsPath}`,
     },
   };
 

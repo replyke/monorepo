@@ -23,6 +23,21 @@ export async function add(componentName: string) {
 
     const config: SublayConfig = await fs.readJson(configPath);
 
+    // Warn (but never block) when an existing install is about to be overwritten.
+    const componentDir = path.join(
+      process.cwd(),
+      config.paths.components,
+      componentName
+    );
+
+    if (await fs.pathExists(componentDir)) {
+      spinner.stop();
+      console.log(
+        chalk.yellow(`⚠️  Overwriting existing component: ${componentName}`)
+      );
+      spinner.start(`Fetching ${componentName}...`);
+    }
+
     spinner.text = `Fetching ${componentName}...`;
 
     // Fetch registry metadata
@@ -135,12 +150,59 @@ export async function add(componentName: string) {
         )
       );
     }
+
+    // Some dependencies need app-level wiring the installer cannot do for you.
+    printAppSetupNotes(registry.dependencies);
+
     console.log();
   } catch (error) {
     spinner.fail("Failed to add component");
     console.error(chalk.red("\n❌ Error:"), error);
     process.exit(1);
   }
+}
+
+/**
+ * Print notes for dependencies that require app-level setup the CLI can't perform.
+ */
+function printAppSetupNotes(dependencies: string[]): void {
+  const deps = dependencies.map((dep) => dep.toLowerCase());
+  const usesNativeWind = deps.some((dep) => dep.includes('nativewind'));
+  const usesBottomSheet = deps.some((dep) => dep.includes('@gorhom/bottom-sheet'));
+
+  if (!usesNativeWind && !usesBottomSheet) {
+    return;
+  }
+
+  console.log(chalk.bold('\n🔧 App-level setup required:'));
+
+  if (usesNativeWind) {
+    console.log(
+      chalk.yellow('  • NativeWind: these files use `className` props.')
+    );
+    console.log(
+      chalk.dim(
+        '    Wire up babel.config.js, metro.config.js, and add this component'
+      )
+    );
+    console.log(
+      chalk.dim("    directory to your Tailwind config's `content` globs.")
+    );
+  }
+
+  if (usesBottomSheet) {
+    console.log(
+      chalk.yellow('  • Bottom sheets need a gesture-handler root.')
+    );
+    console.log(
+      chalk.dim(
+        '    Wrap your app root in <GestureHandlerRootView style={{ flex: 1 }}>'
+      )
+    );
+    console.log(chalk.dim("    from 'react-native-gesture-handler'."));
+  }
+
+  console.log(chalk.dim('\n  Setup guides: https://docs.sublay.io'));
 }
 
 function getTargetPath(

@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 
-export async function detectProjectType(): Promise<'react' | 'react-native' | 'unknown'> {
+export async function detectProjectType(): Promise<'react' | 'react-native' | 'expo' | 'unknown'> {
   try {
     const packageJsonPath = path.join(process.cwd(), 'package.json');
 
@@ -15,8 +15,14 @@ export async function detectProjectType(): Promise<'react' | 'react-native' | 'u
       ...packageJson.devDependencies,
     };
 
+    // Check for Expo first — an Expo app also declares react-native,
+    // so this branch must come before the generic React Native check.
+    if (deps['expo']) {
+      return 'expo';
+    }
+
     // Check for React Native
-    if (deps['react-native'] || deps['expo']) {
+    if (deps['react-native']) {
       return 'react-native';
     }
 

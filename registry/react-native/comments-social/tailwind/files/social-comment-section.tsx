@@ -7,12 +7,12 @@
  * Installation: npx @sublay/cli add comments-social
  *
  * Required dependencies:
- * - @sublay/core ^6.0.0
- * - @sublay/ui-core-react-native ^6.0.0
+ * - @sublay/core ^7.0.0
+ * - @sublay/ui-core-react-native ^7.0.0
  * - @gorhom/bottom-sheet
  * - nativewind ^4.0.0
  *
- * @see https://docs.sublay.com/components/comments-social
+ * @see https://docs.sublay.io/components/comments-social
  *
  * ====================
  * THEME COLOR PALETTE

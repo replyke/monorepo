@@ -89,12 +89,18 @@ export async function checkComponentDependencies(dependencies: string[]) {
 
     missingDepsWithVersions.forEach((dep) => console.log(chalk.dim(`  - ${dep}`)));
 
-    const { install } = await prompts({
-      type: 'confirm',
-      name: 'install',
-      message: 'Would you like to install them now?',
-      initial: true,
-    });
+    // Without a TTY (scripts, CI, agents) there is nobody to answer the prompt.
+    // Skip it and take the same branch as an explicit "no" so we never block.
+    let install = false;
+    if (process.stdin.isTTY) {
+      const answer = await prompts({
+        type: 'confirm',
+        name: 'install',
+        message: 'Would you like to install them now?',
+        initial: true,
+      });
+      install = Boolean(answer.install);
+    }
 
     if (install) {
       await installDependencies(missingDepsWithVersions);
