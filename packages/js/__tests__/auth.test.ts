@@ -564,12 +564,16 @@ describe("js-sdk auth — request shaping", () => {
     expect(body).not.toHaveProperty("userId");
   });
 
-  it("sendVerificationEmail posts an empty body when called with no args", async () => {
+  it("sendVerificationEmail posts mode/tokenFormat/tokenLength for a numeric code", async () => {
     const { client, projectInstance } = makeClient();
-    await sendVerificationEmail(client);
+    await sendVerificationEmail(client, {
+      mode: "code",
+      tokenFormat: "numeric",
+      tokenLength: 6,
+    });
     expect(projectInstance.post).toHaveBeenCalledWith(
       "/auth/send-verification-email",
-      {}
+      { mode: "code", tokenFormat: "numeric", tokenLength: 6 }
     );
   });
 
@@ -731,7 +735,9 @@ describe("js-sdk auth — response mapping", () => {
     const { client, projectInstance } = makeClient();
     const result = { success: true };
     projectInstance.post.mockResolvedValueOnce({ data: result });
-    await expect(sendVerificationEmail(client)).resolves.toEqual(result);
+    await expect(
+      sendVerificationEmail(client, { mode: "link" })
+    ).resolves.toEqual(result);
   });
 
   it("requestAccountDeletion returns response.data", async () => {

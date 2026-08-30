@@ -8,20 +8,20 @@ afterEach(() => {
 });
 
 describe("useSendVerificationEmail", () => {
-  it("sends a verification email with default (empty) options", async () => {
+  it("sends a verification email with minimal required options", async () => {
     const { result, axiosPrivate } = renderHookWithAxios(() =>
       useSendVerificationEmail(),
     );
 
     axiosPrivate.mockResponse("post", { success: true });
 
-    const returned = await result.current();
+    const returned = await result.current({ mode: "link" });
 
     expect(returned).toEqual({ success: true });
 
     const [call] = axiosPrivate.calls("post");
     expect(call.url).toBe("/test-project/auth/send-verification-email");
-    expect(call.body).toEqual({});
+    expect(call.body).toEqual({ mode: "link" });
   });
 
   it("passes mode/tokenFormat/tokenLength/redirectUrl through", async () => {
@@ -54,7 +54,7 @@ describe("useSendVerificationEmail", () => {
 
     axiosPrivate.mockError("post", 500, { message: "Internal error" });
 
-    await expect(result.current()).rejects.toMatchObject({
+    await expect(result.current({ mode: "link" })).rejects.toMatchObject({
       response: { status: 500 },
     });
   });
@@ -65,7 +65,9 @@ describe("useSendVerificationEmail", () => {
       { projectId: "" },
     );
 
-    await expect(result.current()).rejects.toThrow("No projectId available.");
+    await expect(result.current({ mode: "link" })).rejects.toThrow(
+      "No projectId available.",
+    );
     expect(axiosPrivate.calls("post")).toHaveLength(0);
   });
 });

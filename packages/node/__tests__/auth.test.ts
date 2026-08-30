@@ -226,7 +226,7 @@ describe("node-sdk auth — response mapping", () => {
     const result = { success: true };
     projectInstance.post.mockResolvedValueOnce({ data: result });
     await expect(
-      sendVerificationEmail(client, { userId: "u1" }),
+      sendVerificationEmail(client, { userId: "u1", mode: "link" }),
     ).resolves.toEqual(result);
   });
 });
