@@ -215,23 +215,32 @@ Sends (or re-sends) an email-verification message to a user. Verification can be
 const { success } = await sublay.auth.sendVerificationEmail({
   userId: "usr_abc123",
   mode: "code",
+  tokenFormat: "numeric",
+  tokenLength: 6,
 });
 ```
+
+`mode` is always required, and it determines what else is required — enforced by TypeScript as a discriminated union, not just documented:
 
 <ParamField body="userId" type="string" required>
   The Sublay user ID to send the verification email to.
 </ParamField>
 
-<ParamField body="mode" type="string">
-  `"code"` emails a short token the user enters; `"link"` emails a verification URL. Defaults to `"code"`.
+<ParamField body="mode" type='"code" | "link"' required>
+  `"code"` emails a short token the user enters; `"link"` emails a verification URL.
 </ParamField>
 
-<ParamField body="tokenFormat" type="string">
-  Format of the generated token: `"hex"`, `"numeric"`, `"alpha"`, or `"alphanumeric"`.
+<ParamField body="tokenFormat" type='"hex" | "numeric" | "alpha" | "alphanumeric"'>
+  Format of the generated token.
+  - Required when `mode: "code"` — there's no default, since `"hex"` produces a 64-character token no one would want to type.
+  - Optional when `mode: "link"` (defaults to `"hex"`) — the token sits in a URL, never read by a human, so format doesn't matter.
 </ParamField>
 
 <ParamField body="tokenLength" type="number">
-  Length of the generated token.
+  Length of the generated token (4–12).
+  - Required when `mode: "code"` and `tokenFormat` isn't `"hex"`.
+  - Not allowed when `tokenFormat` is `"hex"` — hex ignores length and always produces a fixed 64-character token.
+  - Optional when `mode: "link"` (defaults to `6`).
 </ParamField>
 
 <ParamField body="redirectUrl" type="string">

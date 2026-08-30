@@ -237,6 +237,8 @@ After sign-up, you can prompt users to verify their email address. Sublay sends 
 
 ### Send a verification email
 
+`mode` is always required, and it determines what else you need to pass:
+
 ```tsx
 import { useSendVerificationEmail } from "@sublay/react-js";
 
@@ -244,32 +246,45 @@ function VerifyEmailPrompt() {
   const sendVerificationEmail = useSendVerificationEmail();
 
   return (
-    <button onClick={() => sendVerificationEmail()}>
+    <button
+      onClick={() =>
+        sendVerificationEmail({
+          mode: "code",
+          tokenFormat: "numeric",
+          tokenLength: 6,
+        })
+      }
+    >
       Send verification email
     </button>
   );
 }
 ```
 
-By default this sends a hex token. You can customise the token format and delivery mode:
-
 ```tsx
 // 6-digit numeric code — easy for users to type
-await sendVerificationEmail({ tokenFormat: "numeric", tokenLength: 6 });
+await sendVerificationEmail({ mode: "code", tokenFormat: "numeric", tokenLength: 6 });
 
-// Clickable link — verifies automatically when opened
+// A code using the full hex charset — tokenLength isn't allowed here, since
+// hex ignores it and always produces a fixed 64-character token
+await sendVerificationEmail({ mode: "code", tokenFormat: "hex" });
+
+// Clickable link — verifies automatically when opened. tokenFormat/tokenLength
+// are optional for links, since the token is never read by a human
 await sendVerificationEmail({
   mode: "link",
   redirectUrl: "https://yourapp.com/email-verified",
 });
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `mode` | `"code" \| "link"` | `"code"` | Whether to send a code to enter, or a link to click |
-| `tokenFormat` | `"hex" \| "numeric" \| "alpha" \| "alphanumeric"` | `"hex"` | Character set for the token |
-| `tokenLength` | `number` (4–12) | `6` | Length of the token (ignored for `"hex"`) |
-| `redirectUrl` | `string` | — | Where to redirect after link verification (only used with `mode: "link"`) |
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `mode` | `"code" \| "link"` | always | Whether to send a code to enter, or a link to click |
+| `tokenFormat` | `"hex" \| "numeric" \| "alpha" \| "alphanumeric"` | when `mode: "code"` (optional, defaults to `"hex"`, for `mode: "link"`) | Character set for the token |
+| `tokenLength` | `number` (4–12) | when `mode: "code"` and `tokenFormat` isn't `"hex"` (not allowed when it is `"hex"`; optional for `mode: "link"`, defaults to `6`) | Length of the token |
+| `redirectUrl` | `string` | never | Where to redirect after link verification (only valid with `mode: "link"`) |
+
+TypeScript enforces this combination at compile time — `sendVerificationEmail({ mode: "code" })` or `sendVerificationEmail({ mode: "code", tokenFormat: "numeric" })` (missing `tokenLength`) won't type-check.
 
 ### Verify with a code
 
