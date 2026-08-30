@@ -1,21 +1,30 @@
-# Sublay SDKs for React, React Native, and Expo
+# Sublay
 
 [![npm @sublay/core](https://img.shields.io/npm/v/@sublay/core.svg?label=%40sublay%2Fcore)](https://www.npmjs.com/package/@sublay/core)
 [![npm @sublay/react-js](https://img.shields.io/npm/v/@sublay/react-js.svg?label=%40sublay%2Freact-js)](https://www.npmjs.com/package/@sublay/react-js)
 [![npm @sublay/react-native](https://img.shields.io/npm/v/@sublay/react-native.svg?label=%40sublay%2Freact-native)](https://www.npmjs.com/package/@sublay/react-native)
 [![npm @sublay/expo](https://img.shields.io/npm/v/@sublay/expo.svg?label=%40sublay%2Fexpo)](https://www.npmjs.com/package/@sublay/expo)
+[![npm @sublay/node](https://img.shields.io/npm/v/@sublay/node.svg?label=%40sublay%2Fnode)](https://www.npmjs.com/package/@sublay/node)
+[![npm @sublay/js](https://img.shields.io/npm/v/@sublay/js.svg?label=%40sublay%2Fjs)](https://www.npmjs.com/package/@sublay/js)
+[![npm @sublay/cli](https://img.shields.io/npm/v/@sublay/cli.svg?label=%40sublay%2Fcli)](https://www.npmjs.com/package/@sublay/cli)
+[![npm @sublay/ui-core-react-js](https://img.shields.io/npm/v/@sublay/ui-core-react-js.svg?label=%40sublay%2Fui-core-react-js)](https://www.npmjs.com/package/@sublay/ui-core-react-js)
+[![npm @sublay/ui-core-react-native](https://img.shields.io/npm/v/@sublay/ui-core-react-native.svg?label=%40sublay%2Fui-core-react-native)](https://www.npmjs.com/package/@sublay/ui-core-react-native)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-> **Backend infrastructure for user-powered products.** Pre-modeled bundles for the layers every app ends up rebuilding — comments, notifications, files, search, chat, and more. Install what you need, call through one SDK. Build the part that's actually yours.
+> **Infrastructure for user-powered products.** Pre-modeled bundles for the layers every app ends up rebuilding — comments, notifications, files, search, chat, and more. Install what you need, call through one SDK. Build the part that's actually yours.
 
-This repository publishes the React-family Sublay SDK packages:
+This repository is the whole Sublay platform's SDK/tooling/docs surface, as one pnpm workspace — 9 published npm packages across 5 independently-versioned groups, the CLI + component registry, and the docs site:
 
 - [`@sublay/core`](packages/core) — platform-agnostic hooks, context providers, and utilities
 - [`@sublay/react-js`](packages/react-js) — React (web)
 - [`@sublay/react-native`](packages/react-native) — React Native
 - [`@sublay/expo`](packages/expo) — Expo with SecureStore-backed token storage
+- [`@sublay/node`](packages/node) — server-side Node.js (backends, server actions, webhooks)
+- [`@sublay/js`](packages/js) — framework-agnostic JavaScript (no React required)
+- [`@sublay/ui-core-react-js`](packages/ui-core-react-js) / [`@sublay/ui-core-react-native`](packages/ui-core-react-native) — open-source presentational UI primitives
+- [`@sublay/cli`](packages/cli) — shadcn-style component installer, backed by [`registry/`](registry)
 
-Each framework package re-exports from `@sublay/core` and adds the platform-specific bits (token storage, etc.).
+Each framework SDK (`react-js`, `react-native`, `expo`) re-exports from `@sublay/core` and adds the platform-specific bits (token storage, etc.). Full API reference and SDK guides live at [`docs/`](docs) in this same repo, served at [docs.sublay.io](https://docs.sublay.io).
 
 ---
 
@@ -43,8 +52,8 @@ Every bundle attaches to the same model. No mismatches, no extra databases. One 
 ## How it works
 
 1. Create a project at [dash.sublay.io](https://dash.sublay.io) and install the bundles you need.
-2. Install a Sublay SDK in your app — this one, or one of its siblings (see below).
-3. Optionally drop in the open-source [`@sublay/ui-core-*`](https://github.com/sublay/ui-core) primitives, or install full components via the Sublay CLI registry.
+2. Install a Sublay SDK in your app — see the full family below.
+3. Optionally drop in the open-source [`@sublay/ui-core-*`](packages) primitives, or install full components via `npx @sublay/cli add` (see [`packages/cli`](packages/cli)).
 
 ## The Sublay dashboard
 
@@ -67,6 +76,7 @@ The dashboard at [dash.sublay.io](https://dash.sublay.io) is a database/backend 
 - [`@sublay/node`](https://www.npmjs.com/package/@sublay/node) — server-side Node.js (backends, server actions, webhook handlers)
 - [`@sublay/js`](https://www.npmjs.com/package/@sublay/js) — framework-agnostic JavaScript (browser apps without React)
 - [`@sublay/ui-core-react-js`](https://www.npmjs.com/package/@sublay/ui-core-react-js) / [`@sublay/ui-core-react-native`](https://www.npmjs.com/package/@sublay/ui-core-react-native) — open-source UI primitives
+- [`@sublay/cli`](https://www.npmjs.com/package/@sublay/cli) — installs full, editable components (shadcn-style) built on the above
 
 ## Documentation
 

@@ -53,7 +53,7 @@ Every bundle attaches to the same model. No mismatches, no extra databases. One 
 
 1. Create a project at [dash.sublay.io](https://dash.sublay.io) and install the bundles you need.
 2. Install a Sublay SDK in your app — this one, or one of its siblings (see below).
-3. Optionally drop in the open-source [`@sublay/ui-core-*`](https://github.com/sublay/ui-core) primitives, or install full components via the Sublay CLI registry.
+3. Optionally drop in the open-source [`@sublay/ui-core-*`](https://github.com/sublay-io/monorepo/tree/main/packages) primitives, or install full components via the Sublay CLI registry.
 
 ## The Sublay dashboard
 

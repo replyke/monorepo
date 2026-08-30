@@ -26,21 +26,11 @@ Every group also exposes `{group}:version:patch` and `{group}:version:minor` for
 
 **Always publish with `pnpm` from the workspace root (the `{group}:publish-*` scripts) — never `npm publish` from inside a package directory.** `@sublay/react-js`, `@sublay/react-native`, and `@sublay/expo` each declare `"@sublay/core": "workspace:*"` in real `dependencies`; `pnpm publish` rewrites that to the concrete version at pack time, while `npm pack`/`npm publish` ship the literal `"workspace:*"` string, producing a tarball no consumer can install.
 
-### ⚠️ `cli:publish-prod:patch` has a hard precondition: this branch must be merged to `main` first
-
-`@sublay/cli` fetches every component from `https://raw.githubusercontent.com/sublay-io/monorepo/main/registry/...` — hardcoded to `main` (`packages/cli/src/utils/registry.ts`). But `registry/` currently exists **only** on `feat/consolidate-repos-into-monorepo`: `git ls-tree origin/main --name-only` lists no `registry/` entry, and that raw URL 404s today (verified 2026-08-28). Publishing the CLI before the merge would ship a build whose registry 404s for every user on every `sublay add`.
-
-So, before running `cli:publish-prod:patch`:
-
-1. Merge `feat/consolidate-repos-into-monorepo` into `main` and push.
-2. Confirm `https://raw.githubusercontent.com/sublay-io/monorepo/main/registry/react/comments-social/styled/registry.json` (or any other real `registry.json` path) returns **200**.
-3. Only then publish.
-
-`.github/scripts/check-registry-integrity.mjs` automates step 2 — but deliberately only on a GitHub Actions `push` build of `main`, so it stays silent on branches and PRs where the URL cannot resolve yet. The first green post-merge run of `cli.yml` is the go-signal.
+`@sublay/cli` fetches every component from `https://raw.githubusercontent.com/sublay-io/monorepo/main/registry/...` (hardcoded to `main` in `packages/cli/src/utils/registry.ts`), so `registry/` has to exist on `main` for a real `sublay add` to work. `.github/scripts/check-registry-integrity.mjs` verifies this URL actually resolves — but only on a GitHub Actions `push` build of `main` (silent elsewhere, since the URL can't resolve on a branch that isn't `main`).
 
 ## Architecture Overview
 
-This is a **monorepo** for Sublay, an open-source social features framework. The project uses pnpm workspaces and follows a layered architecture:
+This is the **monorepo** for Sublay — pre-modeled backend infrastructure for user-powered products (comments, votes, notifications, feeds, chat, and more). It holds every published SDK, the CLI + component registry, and the docs site as one pnpm workspace. The project follows a layered architecture:
 
 ### Core Architecture Layers
 
@@ -50,12 +40,16 @@ This is a **monorepo** for Sublay, an open-source social features framework. The
 
 ### Package Structure
 
-The monorepo is organized into these main packages:
+The monorepo is organized into 9 published packages across 5 groups, plus `registry/`, `playground/`, and `docs/` as non-publishable workspace members:
 
 - **`@sublay/core`** - Core hooks, context providers, and utilities for both React and React Native
 - **`@sublay/react-js`** - React-specific implementations and re-exports from core
 - **`@sublay/react-native`** - React Native-specific implementations with token management
 - **`@sublay/expo`** - Expo-specific implementations with secure token storage
+- **`@sublay/ui-core-react-js`** / **`@sublay/ui-core-react-native`** - presentational UI components (see below)
+- **`@sublay/node`** - server-side SDK (see below)
+- **`@sublay/js`** - framework-agnostic browser SDK (see below)
+- **`@sublay/cli`** - component installer (see below)
 
 ### Key Context Providers
 
@@ -83,3 +77,38 @@ The framework uses React Context for state management:
 4. Components automatically handle API calls, state management, and real-time updates
 
 All social features (comments, votes, follows, lists, notifications) follow this same provider + hooks + components pattern.
+
+## `@sublay/ui-core-react-js` / `@sublay/ui-core-react-native`
+
+Presentational components the CLI registry imports: `GiphyContainer` (Giphy picker), `UserAvatar`, `Modal`, `FromNow` (relative time), `EmojiSuggestions`, `InfiniteScrollTrigger`, `Skeleton`. Both packages compile via the same dual ESM+CJS `tsc` pattern as the react family above (`tsconfig.esm.json` / `tsconfig.cjs.json`).
+
+- `ui-core-react-js` depends on `@giphy/js-fetch-api` + `@giphy/react-components`; `ui-core-react-native` depends on `@giphy/js-fetch-api` + `expo-image` + `react-native-gesture-handler` + `react-native-svg`.
+- Both peer on `@sublay/core` and `moment`. `ui-core-react-native` also peers on `react-native` (`>=0.83.0`, which forces React 19 in every stable release — its own `react` peer is narrowed to `^19.0.0` to match, not `^18||^19`).
+- Unlike the react family, these are **not** linked to `@sublay/core` via `workspace:*` in `peerDependencies` (a peer can't use `workspace:*`) — only their own `devDependencies` use it for local building/testing.
+- **Key Directories**: `packages/ui-core-react-js/src/components/`, `packages/ui-core-react-native/src/components/`
+
+## `@sublay/node` and `@sublay/js`
+
+Server-side (`node`, service-key auth) and framework-agnostic browser (`js`, user-token auth) SDKs. Each has its own detailed `CLAUDE.md` — [`packages/node/CLAUDE.md`](packages/node/CLAUDE.md) and [`packages/js/CLAUDE.md`](packages/js/CLAUDE.md) — covering their full module list, the `bindModule` pattern, and (for `js`) the two auth modes and refresh-token rotation. Read those directly rather than duplicating here; the short version:
+
+- **`node`**: `SublayClient.init({ projectId, apiKey })`, 15 bound modules (entities, comments, users, spaces, chat, etc.), acts on behalf of any user via an explicit `userId`/`actingUserId` param since a service key has no implicit session user.
+- **`js`**: `SublayClient.init({ projectId, initialTokens? | getToken? })`, 14 bound modules, authenticates as an end user via a bearer token — no explicit actor param, the server derives it from the token.
+- Both build via `tsup` (CJS+ESM) plus a separate `build:types` (`tsc --noEmit`) whole-project type-check step — `build:types` emits nothing, it exists purely to catch errors in source files `tsup`'s entry-graph-only build never reaches.
+
+## `@sublay/cli` and `registry/`
+
+Shadcn-style component installer: copies full, working UI components into a user's own source tree as editable files, rather than an npm package they'd `import` from.
+
+- **Commands**: `init` (detects platform/TypeScript, prompts for platform/style/install-path, writes `sublay.json`) and `add <component>` (reads `sublay.json`, fetches the matching `registry.json`, downloads and transforms the component's files, writes a barrel `index.ts`).
+- **Entry**: `packages/cli/src/index.ts` (Commander.js). **Commands**: `src/commands/{init,add}.ts`. **Utilities**: `src/utils/registry.ts` (fetch — local `registry/` first for development, GitHub raw URLs in production), `transform.ts` (rewrites `../files/` → `../components/`, and `@sublay/react-native` → `@sublay/expo` on the expo platform), `detect.ts` (platform/TypeScript detection), `dependencies.ts` (peer-dependency check + optional auto-install).
+- **Registry structure**: `registry/{platform}/{component}/{style}/` (platform: `react` | `react-native`; style: `styled` | `tailwind`), each holding a `registry.json` manifest (dependencies, file list, `exports.mainComponent`) plus `files/`, `hooks/`, `utils/`, `context/` subdirectories. `registryUrl` in every manifest points at `raw.githubusercontent.com/sublay-io/monorepo/main/registry/...` — this only resolves once content is on `main` (see the registry-integrity note above).
+- **Local vs. production registry**: `registry.ts` tries the local `registry/` directory first (so changes are testable before publishing), falling back to the GitHub raw URL for real `npx` usage — this dual path is why `registry/` and `playground/` link `@sublay/*` packages via `workspace:*` rather than npm versions, so local edits are typechecked immediately.
+- **`packages/cli`'s own test suite** (`src/*.test.ts`, vitest) covers the pure-logic modules (`transform`, `detect`, dependency-name parsing) plus spawned-binary integration tests for process-level behavior (TTY handling, `--version`) — the only thing in CI that exercises the CLI's actual runtime behavior, not just its types.
+- **Key Directories**: `packages/cli/src/`, `registry/`, `playground/` (manual Vite harness for eyeballing registry components against real built packages)
+
+## `docs/`
+
+Mintlify documentation site (MDX + a `docs.json` nav config). **Only `docs/v7/` is actively maintained** — `docs/` root files and non-v7 subdirectories are legacy/read-only reference, do not touch unless explicitly instructed. Full details in [`docs/CLAUDE.md`](docs/CLAUDE.md) (local dev server via `mint dev`, requires Node.js 19+ — note this is Mintlify's own CLI requirement, unrelated to this workspace's `>=22.13` engines floor).
+
+- **Key Directories**: `docs/v7/{api-reference,sdk,hooks,components,data-models}/`
+- Mintlify's dashboard is configured to build from this repo directly (`main` branch, `/docs` as the subdirectory path) — no separate deploy step needed beyond pushing to `main`.
