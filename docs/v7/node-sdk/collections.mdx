@@ -1,0 +1,234 @@
+---
+title: "Collections"
+description: "Organize a user's saved entities into a tree of collections from your server"
+---
+
+The `collections` module manages a user's saved-content collections. Every user has a single **root collection**, under which they can nest sub-collections and into which they can save entities.
+
+<Note>
+  Collections are always scoped to a specific user. Pass that user's Sublay ID as
+  `userId` on every call — your service key performs the operation on behalf of
+  that named user.
+</Note>
+
+---
+
+### fetchRootCollection
+
+Fetches a user's root collection, creating it on first access if it does not yet exist.
+
+```typescript
+const root = await sublay.collections.fetchRootCollection({
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID whose root collection to fetch.
+</ParamField>
+
+**Returns** — `Promise<Collection>`
+
+---
+
+### fetchSubCollections
+
+Fetches the direct child collections nested under a given collection.
+
+```typescript
+const subCollections = await sublay.collections.fetchSubCollections({
+  collectionId: "col_root123",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The parent collection ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID who owns the collection.
+</ParamField>
+
+**Returns** — `Promise<Collection[]>`
+
+---
+
+### createNewCollection
+
+Creates a new sub-collection under an existing parent collection.
+
+```typescript
+const collection = await sublay.collections.createNewCollection({
+  collectionId: "col_root123",
+  collectionName: "Recipes",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The parent collection under which to create the sub-collection.
+</ParamField>
+
+<ParamField body="collectionName" type="string" required>
+  The name of the new collection.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID who will own the collection.
+</ParamField>
+
+**Returns** — `Promise<Collection>`
+
+---
+
+### fetchCollectionEntities
+
+Fetches a paginated list of entities saved in a collection.
+
+```typescript
+const { data, pagination } = await sublay.collections.fetchCollectionEntities({
+  collectionId: "col_xyz789",
+  userId: "usr_abc123",
+  sortBy: "added",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The collection ID.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID who owns the collection.
+</ParamField>
+
+<ParamField body="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Results per page. Defaults to `20`.
+</ParamField>
+
+<ParamField body="sortBy" type="string">
+  Sort order: `"new"`, `"added"` (when saved), `"top"`, or `"hot"`.
+</ParamField>
+
+<ParamField body="sortDir" type="string">
+  Sort direction: `"asc"` or `"desc"`.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated list of associations to populate (e.g. `"user"`).
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Entity>>`
+
+---
+
+### addEntityToCollection
+
+Saves an entity into a collection.
+
+```typescript
+const collection = await sublay.collections.addEntityToCollection({
+  collectionId: "col_xyz789",
+  entityId: "ent_xyz789",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The collection to add the entity to.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID to save.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID who owns the collection.
+</ParamField>
+
+**Returns** — `Promise<Collection>`
+
+---
+
+### removeEntityFromCollection
+
+Removes an entity from a collection.
+
+```typescript
+await sublay.collections.removeEntityFromCollection({
+  collectionId: "col_xyz789",
+  entityId: "ent_xyz789",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The collection to remove the entity from.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID to remove.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID who owns the collection.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### updateCollection
+
+Renames a collection.
+
+```typescript
+const collection = await sublay.collections.updateCollection({
+  collectionId: "col_xyz789",
+  userId: "usr_abc123",
+  name: "Favorite Recipes",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The collection ID to update.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID who owns the collection.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  The new collection name. Must be a non-empty string.
+</ParamField>
+
+**Returns** — `Promise<Collection>`
+
+---
+
+### deleteCollection
+
+Deletes a collection.
+
+```typescript
+await sublay.collections.deleteCollection({
+  collectionId: "col_xyz789",
+  userId: "usr_abc123",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The collection ID to delete.
+</ParamField>
+
+<ParamField body="userId" type="string" required>
+  The Sublay user ID who owns the collection.
+</ParamField>
+
+**Returns** — `Promise<void>`

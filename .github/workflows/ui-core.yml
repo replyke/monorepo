@@ -1,0 +1,102 @@
+# ui-core group (@sublay/ui-core-react-js + @sublay/ui-core-react-native).
+#
+# These packages had no CI at all in their previous home; this is their
+# first automated check. Both now carry a (small) vitest suite, so the
+# `--if-present` run below is real work rather than a placeholder.
+#
+# See .github/workflows/test.yml for why each group gets its own workflow
+# file instead of a job in a shared one.
+name: Test ui-core
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  # Pull requests only. A push build of main should always run to
+  # completion and report a real pass/fail, not get silently cancelled
+  # (grey, not red) by a later push. Unlike cli.yml, this workflow doesn't
+  # gate any publish step - the reasoning here is just "don't want a
+  # push-to-main run's result quietly disappearing," not a specific
+  # go-signal being retired.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+on:
+  pull_request:
+    paths:
+      - "packages/ui-core-react-js/**"
+      - "packages/ui-core-react-native/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/ui-core.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/ui-core-react-js/**"
+      - "packages/ui-core-react-native/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/ui-core.yml"
+
+jobs:
+  ui-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        # --ignore-scripts so this job doesn't build the eight workspace
+        # packages that declare a `prepare` script — including this group's
+        # own two, which are built explicitly in the next step instead. See
+        # .github/workflows/test.yml for the full reasoning and for why it is
+        # safe for esbuild/@swc/core.
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build ui-core packages
+        # These two declare `prepare` (alongside `prepublishOnly`), which
+        # would fire on a plain install — but the install step above passes
+        # --ignore-scripts, which blocks it exactly as it blocks every other
+        # package's `prepare`, so this explicit build is still required. The
+        # test suites cover one helper each, so this compile is still what
+        # checks the other ~99% of both packages.
+        run: pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build
+
+      - name: Run ui-core test suites
+        run: pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native --if-present run test
+
+      - name: Dry-run publish
+        # Nothing else in CI exercises the publish path; until now the only
+        # thing that ever had was a human running this by hand. The step
+        # performs the real publish minus the upload: pnpm runs each
+        # package's `prepublishOnly` hook in a publish context and packs the
+        # tarball `files` describes, failing on anything npm rejects along
+        # the way. It is also the only step here that checks the release
+        # itself rather than the code inside it.
+        #
+        # Scope it honestly — it is a packaging check, not a link check.
+        # Verified: a `main`/`bin` naming a path the tarball does not
+        # contain still dry-runs green, so this will NOT catch a broken
+        # entry-point path. What it catches is a release that cannot be
+        # produced at all: a publish-only lifecycle hook that fails, a
+        # package.json npm refuses, a `files` set that packs nothing.
+        #
+        # --force is load-bearing, not belt-and-braces: without it `pnpm
+        # publish` skips any package whose version is already on npm and
+        # exits 0 having packed nothing (verified). These workflows trigger
+        # on file changes, not version bumps, so the un-forced form would be
+        # an inert step on almost every run. --force only bypasses that skip;
+        # --dry-run still stops before anything is uploaded, and needs no
+        # registry credentials (verified with an empty npm config).
+        run: pnpm --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native publish --dry-run --no-git-checks --force

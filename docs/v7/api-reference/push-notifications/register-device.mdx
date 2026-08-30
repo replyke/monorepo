@@ -1,0 +1,121 @@
+---
+title: "Register Device"
+api: "POST /v7/:projectId/push-notifications/devices"
+description: "Register a device to receive push notifications for the authenticated user"
+---
+
+Registers a push device for the currently authenticated user. Re-registering the same physical device for the same user updates the existing record instead of creating a duplicate.
+
+A device can serve several accounts at once. Registrations are unique per `(device, user)` pair, so registering a device that is already registered by a different user (e.g. a shared device, or a second account signed in on the same phone) **adds a second binding** — it does not reassign or replace the first user's registration. Each bound account then receives its own notifications on that device.
+
+Requires end-user authentication (`Authorization: Bearer <accessToken>`). Service and master keys are explicitly rejected — this endpoint has no impersonation path by design (see [Security note](#security-note)).
+
+Requires the `push` bundle.
+
+## Body Parameters
+
+<ParamField body="platform" type="string" required>
+  The device platform. One of `"ios"`, `"android"`, or `"web"`.
+</ParamField>
+
+<ParamField body="token" type="string">
+  The APNs or FCM device token. Required when `platform` is `"ios"` or `"android"`.
+</ParamField>
+
+<ParamField body="subscription" type="object">
+  The Web Push subscription object. Required when `platform` is `"web"`.
+  <Expandable title="subscription fields">
+    <ParamField body="endpoint" type="string" required>
+      The push subscription endpoint URL provided by the browser's `PushManager`.
+    </ParamField>
+    <ParamField body="keys.p256dh" type="string" required>
+      The P-256 Diffie-Hellman public key, Base64-encoded.
+    </ParamField>
+    <ParamField body="keys.auth" type="string" required>
+      The authentication secret, Base64-encoded.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+Returns `200` with the stored device record on success.
+
+```json
+{
+  "id": "b6f2…",
+  "userId": "a41c…",
+  "platform": "ios",
+  "payload": "apns-device-token",
+  "deviceKey": "apns-device-token",
+  "createdAt": "2026-08-19T10:12:04.881Z",
+  "updatedAt": "2026-08-19T10:12:04.881Z"
+}
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="No Credential — 401">
+    Plain-text `Unauthorized`, with no JSON body and no `code`. Returned when the
+    request carries no `Authorization` header at all.
+  </Accordion>
+  <Accordion title="Rejected Credential — 403">
+    Plain-text `Forbidden`, with no JSON body and no `code`. Returned when the
+    access token is malformed, has the wrong signature, or has **expired** — the
+    common case, since access tokens live 30 minutes. Refresh the access token
+    and retry; do not treat this as a permanent refusal.
+  </Accordion>
+  <Accordion title="Service Key Rejected — 401">
+    ```json
+    { "error": "Unauthorized", "code": "push-device/unauthorized" }
+    ```
+    Returned when a service or master key is used. This endpoint has no
+    impersonation path by design (see [Security note](#security-note)).
+  </Accordion>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "...", "code": "push-device/invalid-body" }
+    ```
+    Returned when `platform` is unrecognized, or when the required `token` / `subscription` field is missing for the given platform.
+  </Accordion>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
+    ```
+    Returned when the `push` bundle is not installed for this project.
+  </Accordion>
+  <Accordion title="Bundle Provisioning — 503">
+    ```json
+    {
+      "code": "database/tables-provisioning",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "bundleId": "push"
+    }
+    ```
+    Returned while the `push` bundle is mid-install. Retry shortly.
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Internal server error.", "code": "push-device/server-error" }
+    ```
+    The registration could not be written. No diagnostic detail is returned;
+    retry.
+  </Accordion>
+</AccordionGroup>
+
+**Rate limit:** 50 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
+
+## Security note
+
+Unlike most other write endpoints, this endpoint does not accept a `userId` body parameter and cannot be called with a service key. Allowing a backend to register an arbitrary token for an arbitrary user would let it redirect that user's push notifications to an attacker-controlled device. Registration must always come from the end user's own session.
+
+## See Also
+
+- [Delete Device](/api-reference/push-notifications/deregister-device)
+- [`usePushRegistration`](/hooks/push/use-push-registration)
+- [Push Notifications overview](/push-notifications)

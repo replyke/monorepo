@@ -1,0 +1,190 @@
+---
+title: "Push Notifications"
+description: "Register the current user's device for native push from your client app"
+---
+
+This page covers **registering devices from your client SDK**. For the full feature overview — dashboard setup, server-side sending, and device lifecycle — see [Push Notifications](/push-notifications).
+
+<Note>
+  **Requires the `push` bundle** and configured provider credentials (APNs, FCM, or Web Push) in the dashboard. See the [feature overview](/push-notifications#dashboard-setup) for setup.
+</Note>
+
+## Registering Devices
+
+Use `usePushRegistration` with the adapter for your platform. Call `register()` in response to a deliberate user action — not on mount — because requesting OS push permission is a one-shot prompt that users cannot undo.
+
+You only need to call it **once per device**, not on every launch. The SDK stores the device identifier and keeps the bindings in step on its own: wherever `usePushRegistration` is mounted, it watches for OS token rotations, re-binds the active account onto the new token and marks the other push-enabled accounts for repair on their next activation. See [Automatic token rotation](#automatic-token-rotation).
+
+```tsx
+// Expo
+import { usePushRegistration } from "@sublay/core";
+import { expoPushTokenAdapter } from "@sublay/expo";
+
+function SettingsScreen() {
+  const { register, registering } = usePushRegistration(expoPushTokenAdapter);
+  return <Button onPress={register} loading={registering} title="Enable notifications" />;
+}
+```
+
+```tsx
+// Bare React Native
+import { usePushRegistration } from "@sublay/core";
+import { reactNativePushTokenAdapter } from "@sublay/react-native";
+
+const { register } = usePushRegistration(reactNativePushTokenAdapter);
+```
+
+```tsx
+// Web (browser)
+import { usePushRegistration } from "@sublay/core";
+import { webPushTokenAdapter } from "@sublay/react-js";
+
+const { register, unregister } = usePushRegistration(webPushTokenAdapter);
+```
+
+The web adapter requires a service worker. Register one before calling `register()`. The public VAPID key your service worker needs is available from the unauthenticated [`GET /vapid-public-key`](/api-reference/push-notifications/get-vapid-public-key) endpoint.
+
+## The Notification `data` Payload
+
+Every push Sublay delivers carries a flat `data` object of string values. Your tap handler reads it to decide where to navigate — the full key list for automatic notifications is on the [feature overview](/push-notifications#tap-routing-data).
+
+One key matters specifically to multi-account apps:
+
+| Key | Value |
+|-----|-------|
+| `recipientUserId` | The id of the account this copy of the notification is for. |
+
+A single physical device can be signed into several accounts at once, and each signed-in account is bound to the device separately. When a notification is sent to more than one of them, the device receives **one notification per account**, each stamped with its own `recipientUserId`. Read it before routing, so a tap on a notification for a background account switches to that account rather than opening the wrong session's screen:
+
+```tsx
+import { AccountTransitionError } from "@sublay/react-js";
+
+async function handleNotificationTap(data: Record<string, string>) {
+  if (data.recipientUserId && data.recipientUserId !== user?.id) {
+    // Bring the account this notification belongs to into focus first.
+    try {
+      await switchAccount({ userId: data.recipientUserId });
+    } catch (err) {
+      // The switch rejected, so you are still in the previous account and
+      // navigating now would open the wrong session's screen. Stay put and
+      // tell the user what to do about it.
+      if (err instanceof AccountTransitionError && err.credentialRejected) {
+        promptSignIn(data.recipientUserId);
+      } else {
+        showRetry();
+      }
+      return;
+    }
+  }
+  navigateTo(data);
+}
+```
+
+`switchAccount` **rejects** when the target account's stored credential cannot be exchanged, and
+it changes nothing when it does — you stay signed in where you were. Without the `catch` the
+rejection is unhandled and the deep link is silently dropped, which reads to the user as a
+notification that does nothing. See [Telling a dead account from a dead
+network](/sdk/authentication/multi-account#telling-a-dead-account-from-a-dead-network).
+
+<Note>
+  **`recipientUserId` is reserved and server-stamped.** It is added per device at dispatch time, on both the automatic notification paths and server-side `push.send()` calls. If your backend puts a value under the same key in `data`, the server's value **wins** — an account-routing key has to be trustworthy. Dashboard test sends carry no `recipientUserId`, because they target a pasted token rather than a registered account.
+</Note>
+
+## Turning Push Off
+
+`unregister()` unbinds the **currently active account** from this device and records that as a **durable preference** for that account. The account stays silenced across switches and relaunches until something turns it back on.
+
+```tsx
+const { unregister } = usePushRegistration(webPushTokenAdapter);
+
+// A "push notifications" switch in your settings screen.
+async function handleDisablePush() {
+  await unregister();
+}
+```
+
+<Warning>
+  **Do not call `unregister()` in your logout flow.** It is a user-facing preference, not a cleanup step, and using it as one is harmful in two ways:
+
+  1. **Signing out already deregisters.** Once this device has a stored push identifier, `signOut()`, `removeAccount()` and `signOutAll()` send it with the sign-out request, and the server deletes the push binding in the *same transaction* as the session teardown — atomically, or not at all, with a failure reported rather than swallowed. There is nothing left for `unregister()` to clean up.
+  2. **It permanently silences the account.** Because the flag is durable, an `unregister()` at logout means the next time that user signs in they get **no notifications at all**, with no obvious cause and nothing in your UI that turned it off.
+
+  Wire `unregister()` to a notification switch the user controls, and nothing else.
+</Warning>
+
+Other accounts bound to the same device are unaffected, and the device identifier itself is kept — it is device state shared by every stored account, not account state.
+
+## Per-Account Push Control
+
+One physical device can hold several signed-in accounts, and **each account controls its push on this device independently**. `useAccountPushToggle` sets that preference for *any* stored account, including ones the user is not currently signed into:
+
+```tsx
+import { useAccounts, useAccountPushToggle } from "@sublay/react-js";
+
+function PerAccountPushSettings() {
+  const { accounts } = useAccounts();
+  const { setAccountPushEnabled, isAccountPushEnabled, isUpdating } =
+    useAccountPushToggle();
+
+  return accounts.map((account) => (
+    <Switch
+      key={account.id}
+      checked={isAccountPushEnabled(account.id)}
+      disabled={isUpdating}
+      onChange={(enabled) =>
+        setAccountPushEnabled({ userId: account.id, enabled }).catch(() => {
+          // Rejects when the binding change fails; the stored preference is
+          // left as it was and `error` from the hook carries the reason.
+        })
+      }
+    />
+  ));
+}
+```
+
+Silencing a background account unbinds it server-side without switching to it. See [`useAccountPushToggle`](/hooks/push/use-account-push-toggle) for the full reference.
+
+<Note>
+  **This is not the same thing as [notification preferences](/notification-preferences).** The per-account toggle decides *whether an account is bound to this device at all*; [`useNotificationPreferences`](/hooks/push/use-notification-preferences) decides *which event types* the signed-in user receives. An account silenced here receives nothing on this device regardless of its per-event-type settings, and its preferences are untouched — they apply again the moment it is turned back on.
+</Note>
+
+<Warning>
+  **`register()` turns push on for every stored account that has never expressed a preference.** Permission is a device-level grant, so a device already holding four other signed-in accounts enables all of them, not just the one the user was looking at when they tapped the button. An account that was deliberately silenced stays silenced. Turn individual accounts back off with the toggle above.
+
+  The account `register()` was called from is bound immediately; the others are marked for a re-bind and bound the next time the user switches into each. An account that has *not* expressed a preference is never bound — signing in on a device that already holds a push identifier creates no binding on its own.
+</Warning>
+
+## Automatic Token Rotation
+
+Device push tokens rotate — on reinstall, on an OS-initiated refresh, after a backup restore. When that happens every binding on the old token is dead.
+
+The SDK handles this without the app doing anything. `usePushRegistration` subscribes to the platform's token-change signal — mounted whenever the adapter offers one, so an app whose adapter omits it subscribes to nothing — and on a change it records the new identifier, re-binds the **active** account on the spot, and **marks** every other push-enabled account as needing a re-bind. Each marked account is repaired the next time the user switches into it, from the live session that switch establishes. Silenced accounts stay silenced.
+
+Marking rather than re-binding is what keeps a background account safe: re-binding one would mean spending its stored refresh token on a one-time-use exchange while nobody is looking at it, and an interruption mid-exchange locks that account out for good. The marker is durable and readable as `needsPushRebind` — see [When notifications are paused](/sdk/authentication/multi-account#when-notifications-are-paused).
+
+| Platform | How rotation is detected |
+|----------|--------------------------|
+| Expo | `expo-notifications`' token listener. Rotation-only: it fires when the OS hands over a new token, never merely because something subscribed |
+| React Native | Firebase `onTokenRefresh`, also rotation-only. Android is covered. On iOS the event carries an FCM token while the adapter registers APNs, so APNs rotation is not reported by it at all; the mount-time read below picks it up on the next launch, or a `register()` / `unregister()` sooner |
+| Web | No in-page event exists (`pushsubscriptionchange` fires inside *your* service worker), so the SDK compares the browser's existing subscription against the stored one on mount. It never re-subscribes and never prompts |
+
+On the two native platforms the SDK additionally reads the device's current push identifier **once on mount**, so a device whose token never rotates is not left with a server-side binding it has no local identifier to unbind. It does this only when the device already holds OS notification permission — with one exception: the very first such read on a device ignores permission, because revoking notifications never removes an existing binding and a device upgrading from a release that stored no identifier would otherwise be unable to unbind one. Reading the permission status never prompts, and neither does the read itself. Web needs no equivalent: its mount-time comparison already covers it. See [Reading the current identifier on mount](/hooks/push/use-push-registration#reading-the-current-identifier-on-mount-native).
+
+Nothing here asks the user for anything — receiving a refreshed token is not a permission prompt, and neither is reading a permission the device already granted.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Feature Overview" icon="bell" href="/push-notifications">
+    Dashboard setup, sending, and device lifecycle
+  </Card>
+  <Card title="usePushRegistration" icon="cube" href="/hooks/push/use-push-registration">
+    The full hook API and platform adapters
+  </Card>
+  <Card title="useAccountPushToggle" icon="toggle-on" href="/hooks/push/use-account-push-toggle">
+    Per-account push control on a shared device
+  </Card>
+  <Card title="Multi-Account" icon="users" href="/sdk/authentication/multi-account">
+    How push interacts with several signed-in accounts
+  </Card>
+</CardGroup>

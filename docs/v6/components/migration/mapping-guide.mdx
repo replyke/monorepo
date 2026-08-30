@@ -1,0 +1,94 @@
+---
+title: "Callback Mapping Guide"
+description: "Map styleCallbacks to source file locations"
+icon: "map"
+---
+
+# styleCallbacks Mapping Guide
+
+This guide helps you find where to apply your old `styleCallbacks` customizations in the new CLI component files.
+
+---
+
+## Threaded Comments
+
+| Old Callback | New Location |
+|--------------|--------------|
+| `commentContainer` | `single-comment/single-comment.tsx` - main div style |
+| `authorName` | `single-comment/single-comment.tsx` - author span |
+| `authorAvatar` | `single-comment/single-comment.tsx` - avatar img |
+| `commentBody` | `single-comment/single-comment.tsx` - body div |
+| `commentBodyText` | `single-comment/single-comment.tsx` - text paragraph |
+| `voteButton` | `single-comment/vote-buttons.tsx` - button styles |
+| `voteButtonUpvote` | `single-comment/vote-buttons.tsx` - upvote button |
+| `voteButtonDownvote` | `single-comment/vote-buttons.tsx` - downvote button |
+| `voteScore` | `single-comment/vote-buttons.tsx` - score display |
+| `replyButton` | `single-comment/reply-button-and-info.tsx` - button style |
+| `threadingLine` | `single-comment/indentation-threading-lines.tsx` - line divs |
+| `indentation` | `single-comment/indentation-threading-lines.tsx` - spacing |
+| `newCommentForm` | `new-comment-form.tsx` - form container |
+| `newCommentTextarea` | `new-comment-form.tsx` - textarea element |
+| `newCommentButton` | `new-comment-form.tsx` - submit button |
+| `modal` | `modals/comment-menu-modal/comment-menu-modal.tsx` |
+| `modalBackground` | `modals/comment-menu-modal/modal-background.tsx` |
+
+---
+
+## Social Comments
+
+| Old Callback | New Location |
+|--------------|--------------|
+| `commentContainer` | `comments-feed/single-comment.tsx` - main div |
+| `authorName` | `comments-feed/single-comment.tsx` - author span |
+| `commentBody` | `comments-feed/single-comment.tsx` - body div |
+| `heartButton` | `comments-feed/heart-button.tsx` - button |
+| `heartButtonFilled` | `comments-feed/heart-button.tsx` - filled state |
+| `likeCount` | `comments-feed/heart-button.tsx` - count display |
+| `replyButton` | `comments-feed/reply-button.tsx` - button style |
+| `newCommentForm` | `new-comment-form.tsx` - form container |
+| `sortButton` | `sort-by-button.tsx` - sort button styles |
+
+---
+
+## Example: Applying Old Customization
+
+### Before (npm package with styleCallbacks)
+
+```tsx
+styleCallbacks={{
+  authorName: (theme) => ({
+    color: '#9333EA',
+    fontSize: '16px',
+    fontWeight: 'bold'
+  })
+}}
+```
+
+### After (CLI component - edit source file)
+
+Open `src/components/comments-threaded/components/single-comment/single-comment.tsx`:
+
+```tsx
+// Find the author name element
+<span style={{
+  color: '#9333EA',      // Your custom color
+  fontSize: '16px',      // Your custom size
+  fontWeight: 'bold'     // Your custom weight
+}}>
+  {author.name}
+</span>
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Migration Guide" icon="arrow-right-arrow-left" href="/components/migration/npm-to-cli">
+    Full migration walkthrough
+  </Card>
+
+  <Card title="Customization" icon="paintbrush" href="/components/customization/overview">
+    Learn about customization
+  </Card>
+</CardGroup>

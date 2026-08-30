@@ -1,0 +1,68 @@
+---
+title: "Use Comment Votes"
+---
+
+# `useCommentVotes`
+
+## Overview
+
+The `useCommentVotes` hook provides functionality to manage upvotes and downvotes for a specific comment. It supports real-time updates to the comment state while ensuring that changes can be reverted in case of an error. This hook is ideal for implementing voting systems in comment sections.
+
+
+## Usage Example
+
+```tsx
+import { useCommentVotes, Comment } from "@replyke/react-js";
+
+function CommentVotes({ comment, setComment }: { comment: Comment; setComment: React.Dispatch<React.SetStateAction<Comment>> }) {
+  const { upvoteComment, removeCommentUpvote, downvoteComment, removeCommentDownvote } = useCommentVotes({ comment, setComment });
+
+  return (
+    <div>
+      <button onClick={upvoteComment}>Upvote</button>
+      <button onClick={removeCommentUpvote}>Remove Upvote</button>
+      <button onClick={downvoteComment}>Downvote</button>
+      <button onClick={removeCommentDownvote}>Remove Downvote</button>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook accepts an object with the following fields:
+
+
+<ParamField path="comment" type="Comment" required>
+  The comment object to manage votes for.
+</ParamField>
+
+<ParamField path="setComment" type="React.Dispatch<React.SetStateAction<Comment>>" required>
+  A state setter function for the comment.
+</ParamField>
+
+### Returns
+
+The hook returns an object with the following functions:
+
+
+<ResponseField name="upvoteComment" type="function">
+  Adds an upvote to the comment.
+</ResponseField>
+
+<ResponseField name="removeCommentUpvote" type="function">
+  Removes the current user's upvote from the comment.
+</ResponseField>
+
+<ResponseField name="downvoteComment" type="function">
+  Adds a downvote to the comment.
+</ResponseField>
+
+<ResponseField name="removeCommentDownvote" type="function">
+  Removes the current user's downvote from the comment.
+</ResponseField>
+
+
+

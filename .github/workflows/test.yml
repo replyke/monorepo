@@ -1,10 +1,80 @@
+# React-family group (core + react-js + react-native + expo).
+#
+# GitHub Actions only supports `paths:` at the workflow trigger, not per
+# job, so each publish group gets its own workflow file rather than a
+# shared one with a paths-filter action bolted on. `pnpm test` at the root
+# is `-r --if-present`, so this job would otherwise run every other
+# group's suite on a change that cannot affect it.
+#
+# The shared-root paths (root manifests, lockfile, this file) are listed
+# deliberately: a change to any of them can break this group even though
+# no package directory was touched.
+#
+# playground/package.json used to be listed here too — and in node.yml,
+# js.yml and ui-core.yml — on the grounds that playground was the one
+# workspace member no group owned, so nothing else would react to a
+# manifest edit that desynced the single shared pnpm-lock.yaml. That
+# stopped being true once cli.yml took ownership of `playground/**` and
+# started building it: a playground manifest edit now reddens cli.yml on
+# its own PR, and listing it in the other four workflows only added four
+# irrelevant checks to every such change. registry/package.json is the
+# identical case and was only ever watched by cli.yml; playground now
+# matches it.
+#
+# tsconfig.json is the exception: it is watched defensively, for
+# completeness, not because it currently affects this job. Every package
+# has its own tsconfig.json and none of them `extends` the root one, and
+# no workflow runs the root `pnpm typecheck` — so a root tsconfig change
+# cannot redden any build today. It stays in the filters so that if
+# something ever does start consuming it, the coverage is already there.
+#
+# Every group's install runs with --ignore-scripts, and every group builds
+# what it needs explicitly. See the install step below for why.
 name: Test
+
+# This file carried neither block for a while, exempted as "predating the
+# migration". It no longer predates anything: the migration has rewritten it
+# four separate times (test filtering, --ignore-scripts, Node 22, the
+# dry-run publish step), so it gets the same hardening as the four newer
+# workflows.
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  # Pull requests only. A push build of main should always run to
+  # completion and report a real pass/fail, not get silently cancelled
+  # (grey, not red) by a later push. Unlike cli.yml, this workflow doesn't
+  # gate any publish step - the reasoning here is just "don't want a
+  # push-to-main run's result quietly disappearing," not a specific
+  # go-signal being retired.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 on:
   pull_request:
+    paths:
+      - "packages/core/**"
+      - "packages/react-js/**"
+      - "packages/react-native/**"
+      - "packages/expo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/test.yml"
   push:
     branches:
       - main
+    paths:
+      - "packages/core/**"
+      - "packages/react-js/**"
+      - "packages/react-native/**"
+      - "packages/expo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/test.yml"
 
 jobs:
   test:
@@ -13,23 +83,77 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        # --ignore-scripts is what makes this workflow's isolation real.
+        # Eight workspace packages (core, react-js, react-native, expo, node,
+        # js, ui-core-react-js, ui-core-react-native) declare a `prepare`
+        # script, and pnpm runs `prepare` for every workspace project on any
+        # install, no matter which package the run is about. Only @sublay/cli
+        # has none (it uses `prepublishOnly`).
+        # Without this flag, `pnpm install` here builds all eight —
+        # so a broken build in, say, packages/js would fail the install step
+        # of a PR that only touched packages/cli, as an unrelated red check.
+        # Each workflow instead builds exactly what it needs, below.
+        #
+        # pnpm has no way to skip only workspace `prepare` scripts, so this
+        # also skips dependencies' install/postinstall scripts — including
+        # the esbuild and @swc/core entries that pnpm-workspace.yaml's
+        # allowBuilds approves. Verified safe: both ship their native
+        # binaries as optional platform packages (@esbuild/<platform>,
+        # @swc/core-<platform>), which pnpm still installs, so every
+        # tsup/vite/vitest build in this repo works without them. If a
+        # future dependency genuinely needs its install script, add an
+        # explicit `pnpm rebuild` after this step rather than dropping the
+        # flag.
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build packages
         # react-js/react-native/expo's tests import @sublay/core for real
         # (mocked at the module level, but Vite still resolves the package
-        # entry first) — core has no `prepare` script, so its dist won't
-        # exist after a plain install without this.
-        run: pnpm build-all
+        # entry first), and that entry points into core's dist/. Nothing
+        # builds dist automatically any more — core does have a `prepare`
+        # script, but the install above skips it deliberately — so this step
+        # is the only thing standing between those suites and "Failed to
+        # resolve entry for package @sublay/core".
+        run: pnpm react:build-all
 
       - name: Run package test suites
-        run: pnpm test
+        run: pnpm --filter @sublay/core --filter @sublay/react-js --filter @sublay/react-native --filter @sublay/expo run test
+
+      - name: Dry-run publish
+        # Nothing else in CI exercises the publish path; until now the only
+        # thing that ever had was a human running this by hand. The step
+        # performs the real publish minus the upload: pnpm runs each
+        # package's `prepare` hook in a publish context, rewrites
+        # `workspace:*` dependencies to concrete versions, and packs the
+        # tarball `files` describes, failing on anything npm rejects along
+        # the way.
+        #
+        # It matters most for this group. react-js, react-native and expo
+        # each carry `"@sublay/core": "workspace:*"` in real `dependencies`,
+        # and only the pack step rewrites that — verified: `pnpm pack` emits
+        # `"@sublay/core": "7.13.0"` where `npm pack` emits the literal
+        # `"workspace:*"`, which installs for nobody.
+        #
+        # Scope it honestly — it is a packaging check, not a link check.
+        # Verified: a `main`/`bin` naming a path the tarball does not
+        # contain still dry-runs green, so this will NOT catch a broken
+        # entry-point path. What it catches is a release that cannot be
+        # produced at all: a publish-only lifecycle hook that fails, an
+        # unresolvable `workspace:*`, a package.json npm refuses, a `files`
+        # set that packs nothing.
+        #
+        # --force is load-bearing, not belt-and-braces: without it `pnpm
+        # publish` skips any package whose version is already on npm and
+        # exits 0 having packed nothing (verified). These workflows trigger
+        # on file changes, not version bumps, so the un-forced form would be
+        # an inert step on almost every run. --force only bypasses that skip;
+        # --dry-run still stops before anything is uploaded, and needs no
+        # registry credentials (verified with an empty npm config).
+        run: pnpm --filter @sublay/core --filter @sublay/react-js --filter @sublay/react-native --filter @sublay/expo publish --dry-run --no-git-checks --force

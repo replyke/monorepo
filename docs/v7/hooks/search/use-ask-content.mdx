@@ -1,0 +1,109 @@
+---
+title: "Ask content"
+description: "Ask a natural language question and stream a generated answer from project content"
+icon: "plug"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+## Overview
+
+Streams an AI-generated answer to a natural language question, grounded in your project's content. Uses SSE (Server-Sent Events) to deliver tokens incrementally. Returns source citations once the stream completes.
+
+For integration guidance, see [Ask Content](/sdk/search/ask).
+
+## Usage Example
+
+```tsx
+import { useAskContent } from "@sublay/react-js";
+
+function AskUI() {
+  const { answer, sources, streaming, loading, error, ask, reset } = useAskContent();
+
+  return (
+    <div>
+      <button onClick={() => ask({ query: "How do I reset my password?" })} disabled={loading || streaming}>
+        Ask
+      </button>
+      {answer && <p>{answer}{streaming && " ▋"}</p>}
+      {sources.map((s) => <div key={s.record.id}>[{s.sourceType}] {s.record.id}</div>)}
+    </div>
+  );
+}
+```
+
+## Parameters
+
+Call `ask` with:
+
+<ParamField path="query" type="string" required>
+  The natural language question.
+</ParamField>
+
+<ParamField path="sourceTypes" type='("entity" | "comment" | "message")[]'>
+  Limit the content types searched for context.
+</ParamField>
+
+<ParamField path="spaceId" type="string">
+  Scope context lookup to a specific space.
+</ParamField>
+
+<ParamField path="includeChildSpaces" type="boolean" default="false">
+  Only applies with `spaceId`. When `true`, the context lookup also covers every space nested under it — children, grandchildren, the whole subtree at any depth — so you can ask across a community and all of its channels at once. Ignored without `spaceId`.
+</ParamField>
+
+<ParamField path="conversationId" type="string">
+  Scope context lookup to a specific conversation.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of source records to use as context.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="path" />
+
+## Returns
+
+<ResponseField name="answer" type="string">
+  The AI-generated answer. Grows token by token while `streaming` is `true`.
+</ResponseField>
+
+<ResponseField name="sources" type="ContentSearchResult[]">
+  Source records used as context. Populated after streaming ends. When `spaceReputation` is requested, each record's embedded author carries an added `spaceReputation` number. See [Reputation](/data-models/reputation).
+</ResponseField>
+
+<ResponseField name="streaming" type="boolean">
+  `true` while the SSE stream is open and tokens are arriving.
+</ResponseField>
+
+<ResponseField name="loading" type="boolean">
+  `true` from `ask()` call until the first token arrives.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the request failed.
+</ResponseField>
+
+<ResponseField name="ask" type="(props) => void">
+  Starts a new question. Aborts any in-flight stream first.
+</ResponseField>
+
+<ResponseField name="reset" type="() => void">
+  Aborts in-flight stream and clears all state.
+</ResponseField>
+
+<Note>
+  In React Native, SSE streaming requires polyfills for `fetch`, `ReadableStream`, and `TextDecoder`. Install `react-native-fetch-api`, `web-streams-polyfill@^3`, `react-native-polyfill-globals`, and `text-encoding`, then call the targeted sub-polyfills once at app startup, before using this hook:
+
+  ```ts
+  import { polyfill as polyfillEncoding } from "react-native-polyfill-globals/src/encoding";
+  import { polyfill as polyfillReadableStream } from "react-native-polyfill-globals/src/readable-stream";
+  import { polyfill as polyfillFetch } from "react-native-polyfill-globals/src/fetch";
+
+  polyfillEncoding();
+  polyfillReadableStream();
+  polyfillFetch(); // last, so it wins over the built-in fetch
+  ```
+
+  Prefer these targeted polyfills over the all-in-one `polyfillGlobals()`: that helper also pulls in `react-native-get-random-values`, a native module that forces a development-client rebuild. The three above are pure JavaScript, so a Metro reload is enough. Pin `web-streams-polyfill` to v3 — v4 removed the `ponyfill/es6` subpath that `react-native-polyfill-globals` requires.
+</Note>

@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/esm",
+    "module": "esnext"
+  },
+  // Test files live beside the source they cover; keep them out of the
+  // published build (they would otherwise be emitted into dist/).
+  "exclude": ["node_modules", "dist", "recycle_bin", "**/*.test.ts", "**/*.test.tsx"]
+}

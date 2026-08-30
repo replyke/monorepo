@@ -1,0 +1,43 @@
+---
+title: "Fetch Mutual Spaces"
+api: "GET /v7/:projectId/spaces/mutual/:userId"
+description: "Get spaces shared between the authenticated user and another user"
+---
+
+Returns a paginated list of spaces that both the authenticated user and another user are active members of — i.e. their spaces in common. Requires an authenticated user.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The other user's Sublay ID. Mutual spaces are computed between this user and the authenticated user.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="actingUserId" type="string">
+  The authenticated user to act as. Only accepted with a **service or master key** — a user token always acts as itself and may not name a different user. Ignored (the token's user is used) for end-user requests.
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number. Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page. Max `100`. Defaults to `20`.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Optional comma-separated includes. Pass `"files"` to include avatar and banner file objects on each space.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="Space[]">
+  The spaces both users are active members of. Computed fields such as `membersCount` and `isMember` are populated from the authenticated user's perspective.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Standard pagination metadata (`page`, `pageSize`, `totalPages`, `totalItems`, `hasMore`).
+</ResponseField>
+
+See also: [useFetchMutualSpaces](/hooks/spaces/use-fetch-mutual-spaces)

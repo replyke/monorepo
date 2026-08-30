@@ -1,0 +1,211 @@
+---
+title: "Use accounts"
+description: "List all accounts linked in the current app instance"
+icon: "cube"
+---
+
+## Overview
+
+`useAccounts` returns the list of all stored accounts and the currently active account. Use it to render an account switcher or display the signed-in user's identity.
+
+## Usage Example
+
+<CodeGroup>
+```tsx React
+import { useAccounts } from "@sublay/react-js";
+
+function AccountSummaryBar() {
+  const { accounts, activeAccount, accountCount } = useAccounts();
+
+  return (
+    <div>
+      <p>Signed in as: {activeAccount?.name ?? activeAccount?.email ?? "Guest"}</p>
+      <p>Total accounts: {accountCount}</p>
+      <ul>
+        {accounts.map((account) => (
+          <li key={account.id}>{account.name ?? account.email}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+```tsx React Native
+import { useAccounts } from "@sublay/react-native";
+
+function ActiveAccountLabel() {
+  const { activeAccount } = useAccounts();
+  return <Text>{activeAccount?.name ?? "Not signed in"}</Text>;
+}
+```
+</CodeGroup>
+
+## Returns
+
+<ResponseField name="accounts" type="StoredAccount[]">
+  Array of all stored accounts, derived from the accounts map in Redux state.
+  Each one carries the profile summary, the two credential markers below, and
+  the `needsPushRebind` notification marker.
+</ResponseField>
+
+<ResponseField name="activeAccount" type="StoredAccount | null">
+  The account currently **selected**, or `null` when nothing is selected.
+
+  Selection and session are not the same thing, and the gap between them is a
+  state your UI has to render. An account can be selected with no live session
+  behind it — during an [`addAccount()`](/hooks/auth/use-add-account) flow, or
+  after a sign-in was refused at the account limit. Read `accessToken` from
+  [`useAuth`](/hooks/auth/use-auth) for whether a session exists; read this for
+  whose account the app is pointed at.
+</ResponseField>
+
+<ResponseField name="accountCount" type="number">
+  Total number of stored accounts.
+</ResponseField>
+
+<ResponseField name="signedOut" type="boolean">
+  `true` when there is no active account **because the user deliberately signed
+  out** — or removed the active account, deleted it, or had a stored credential
+  refused at launch — as opposed to "nothing has ever been selected". Both look like `activeAccount === null`; this is what
+  tells them apart, and it is persisted, so it survives a relaunch.
+
+  A launch that could not *reach* the server does not set it: the stored account
+  stays selected and its session is restored later. Only a refusal counts.
+
+  While it is `true`, the SDK will not auto-select a stored account at launch.
+  It clears as soon as any account is successfully activated.
+</ResponseField>
+
+<ResponseField name="accountLimitReached" type="boolean">
+  `true` when an account was actually refused admission because the map was
+  already at the 5-account limit. Clears on the next successful admission and
+  on any removal. See [`useAddAccount`](/hooks/auth/use-add-account) for how it
+  differs from `canAddAccount`.
+</ResponseField>
+
+## StoredAccount Type
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | User ID |
+| `name` | `string \| null` | Display name |
+| `username` | `string \| null \| undefined` | Username. `undefined` on entries stored by an SDK version before this field existed — absent means *unknown*, not "no username" |
+| `email` | `string \| null` | Email address |
+| `avatar` | `string \| null` | Avatar URL |
+| `tokenExpiresAt` | `number` | When this account's stored refresh token expires, as an epoch in **milliseconds**. `0` means unknown |
+| `needsReauth` | `boolean` | `true` once a transition into this account has actually been refused — the credential is dead |
+| `needsPushRebind` | `boolean` | `true` when this account's notifications are paused until it is next opened |
+
+`StoredAccount` is a superset of the `AccountSummary` shape stored in the
+account map, so code that only reads `id`/`name`/`username`/`email`/`avatar` is
+unaffected.
+
+## Telling a Live Account From a Dead One
+
+A stored account can stop working while it is sitting in the switcher. Two
+fields let you show that **before** the user taps it, and you need both —
+neither is sufficient on its own:
+
+<ResponseField name="tokenExpiresAt" type="number">
+  **Proactive.** Read from the stored refresh token's own `exp` claim when the
+  entry is written (a decode, never a verification and never a network call).
+
+  `0` means *unknown* — the token carried no readable numeric `exp`, so the SDK
+  recorded nothing rather than guessing. It sorts as already-expired
+  deliberately: treating a credential the SDK cannot read as fresh is the worse
+  failure.
+</ResponseField>
+
+<ResponseField name="needsReauth" type="boolean">
+  **Reactive.** Set when a transition into this account is refused — by a switch,
+  or by the automatic restore at app launch, which is the most common way a
+  revoked credential is discovered. Cleared the moment the account is
+  successfully activated again, whether by a switch that works or by signing
+  into it afresh.
+
+  This catches every death `tokenExpiresAt` cannot see: reuse detection, a
+  password change, a remote sign-out-all, an admin revocation. All of those
+  destroy the token family while `exp` is still comfortably in the future. It is
+  also set without any network call when the stored entry carries no usable
+  credential at all, which is the same conclusion reached sooner.
+
+  A failed switch that could not reach the server does **not** set it — a flaky
+  network is not a dead account. `AccountTransitionError.credentialRejected` is
+  the same distinction, reported to the caller at the moment of failure; see
+  [`useSwitchAccount`](/hooks/auth/use-switch-account#telling-a-dead-account-from-a-dead-network).
+</ResponseField>
+
+```tsx
+const { accounts } = useAccounts();
+
+const needsSignIn = (account: StoredAccount) =>
+  account.needsReauth || account.tokenExpiresAt <= Date.now();
+
+accounts.map((account) => (
+  <AccountRow
+    key={account.id}
+    account={account}
+    badge={needsSignIn(account) ? "Sign in again" : undefined}
+  />
+));
+```
+
+### Notifications paused: `needsPushRebind`
+
+<ResponseField name="needsPushRebind" type="boolean">
+  `true` when this account's push binding points at a device token this device no
+  longer holds, because the token rotated while the account was in the
+  background.
+
+  Its credential is fine and its data is fine — only the notification routing is
+  stale. Switching into the account re-creates the binding and clears this, so
+  the useful thing to render is an invitation to open it rather than a sign-in
+  prompt: *"Notifications paused — open to resume."*
+
+  Only ever raised for accounts that explicitly enabled push on this device. An
+  account that never asked for notifications has none to pause.
+</ResponseField>
+
+**Do not conflate it with `needsReauth`.** They mean opposite things about the
+account's health, and saying the wrong one is wrong in both directions: telling
+a user to sign in again when their notifications are merely stale asks for a
+password they do not need, and treating a paused account as fine hides the one
+thing a tap would fix.
+
+Neither credential marker is a promise: `needsReauth: false` with a future
+`tokenExpiresAt` means *nothing has gone wrong that the SDK knows of*, not that
+the next switch is guaranteed to succeed. A switch can still fail, and when it
+does the current session is left untouched — see
+[When a transition fails](/sdk/authentication/multi-account#when-a-transition-fails).
+
+On Expo, `avatar` and then `email` may be dropped from a stored entry if it
+would otherwise exceed SecureStore's per-value limit. `id`, `name`, `username`,
+the credential and the markers are never dropped. See
+[Where accounts are stored](/sdk/authentication/multi-account#where-accounts-are-stored).
+
+## Rendering the Signed-Out State
+
+No account is auto-selected after a sign-out, removal or deletion, so `activeAccount` can be `null` while `accounts` is non-empty. That is the account-picker state:
+
+```tsx
+import { useAccounts, useAuth } from "@sublay/react-js";
+
+const { initialized, accessToken } = useAuth();
+const { accounts, signedOut } = useAccounts();
+
+if (!initialized) return <Splash />;
+if (accessToken) return <App />;
+if (signedOut && accounts.length > 0) return <AccountPicker accounts={accounts} />;
+return <SignIn />;
+```
+
+Branch on `accessToken`, not on `activeAccount`. A selection is not a session:
+`addAccount()` leaves the previous account selected while it clears the session,
+so a selection-based gate would render your app for an account that has no
+tokens behind it. `signedOut` then separates the picker state from a device
+where nobody has ever signed in.
+
+## Integration Guide
+
+For multi-account integration guidance, see [Multi-Account](/sdk/authentication/multi-account).

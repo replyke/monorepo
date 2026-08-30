@@ -1,0 +1,89 @@
+---
+title: "Styling Variants"
+description: "Inline styles vs Tailwind CSS"
+icon: "wand-magic-sparkles"
+---
+
+# Styling Variants
+
+Understanding inline styles vs Tailwind CSS variants.
+
+---
+
+## Comparison
+
+| Aspect | Inline Styles | Tailwind CSS |
+|--------|---------------|--------------|
+| **Dependencies** | None | Requires Tailwind CSS |
+| **File Size** | Larger (verbose) | Smaller (concise) |
+| **Dark Mode** | `theme` prop | `dark:` prefix |
+| **Customization** | Change hex codes | Change classes or config |
+| **Learning Curve** | Easier (plain CSS) | Tailwind knowledge needed |
+
+---
+
+## Inline Styles
+
+```tsx
+<div style={{
+  backgroundColor: theme === 'dark' ? '#1F2937' : '#FFFFFF',
+  padding: '16px',
+  borderRadius: '8px'
+}}>
+```
+
+**Pros:**
+- No dependencies
+- Works everywhere
+- Easy to understand
+- Direct control
+
+**Cons:**
+- Verbose
+- Repetitive code
+- Manual dark mode logic
+
+---
+
+## Tailwind CSS
+
+```tsx
+<div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+```
+
+**Pros:**
+- Concise code
+- Automatic dark mode
+- Design system integration
+- Smaller bundle (with purging)
+
+**Cons:**
+- Requires Tailwind
+- Learning curve
+- Less explicit
+
+---
+
+## Switching Variants
+
+Delete components, update `replyke.json`, re-install:
+
+```bash
+rm -rf src/components/comments-threaded
+# Edit replyke.json: change "style"
+npx @replyke/cli add comments-threaded
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Colors & Theming" icon="palette" href="/components/customization/colors-theming">
+    Customize colors
+  </Card>
+
+  <Card title="Layout & Structure" icon="table-columns" href="/components/customization/layout-structure">
+    Modify layout
+  </Card>
+</CardGroup>

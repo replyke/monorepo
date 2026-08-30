@@ -39,10 +39,11 @@
     "access": "public"
   },
   "files": [
-    "dist"
+    "dist",
+    "NOTICE"
   ],
   "bugs": {
-    "url": "https://discord.gg/A94q4kC6"
+    "url": "https://discord.com/invite/REKxnCJzPz"
   },
   "homepage": "https://docs.sublay.io",
   "dependencies": {
@@ -51,7 +52,11 @@
   "devDependencies": {
     "@react-native-firebase/app": "^24.1.1",
     "@react-native-firebase/messaging": "^24.1.1",
+    "@types/react": "^19.2.14",
+    "react": "^19.2.3",
+    "react-native": "^0.79.7",
     "react-native-keychain": "^9.2.2",
+    "typescript": "^6.0.3",
     "vitest": "^1.6.1"
   },
   "peerDependencies": {
@@ -63,5 +68,10 @@
     "react-native": "*",
     "react-native-keychain": "^9",
     "react-redux": "^9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sublay-io/monorepo.git",
+    "directory": "packages/react-native"
   }
 }

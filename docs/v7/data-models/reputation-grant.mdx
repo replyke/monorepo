@@ -1,0 +1,120 @@
+---
+title: "ReputationGrant"
+description: "The record of a single deliberate reputation movement — a user transfer or an app mint"
+---
+
+A `ReputationGrant` records one deliberate movement of reputation. Where ordinary reputation is *earned* (posting, commenting, receiving reactions), a grant is *given* — by one user to another, or by your app to a user.
+
+Grants are the primitive behind tipping, bounties, contest payouts, staff picks, "best answer" awards, and peer recognition. Sublay stays unopinionated about *why* a grant happens: the reason, the amounts, the eligibility rules, and the UI framing are all your app's logic. Sublay moves the points correctly, keeps the per-space economies honest, records what happened, and notifies the recipient.
+
+Grants belong to the **`reputation`** bundle — every project with reputation has them, with no separate opt-in. See [Reputation](/data-models/reputation) and [Bundles](/bundles).
+
+## The two kinds of grant
+
+| `sourceType` | What it is | Who can issue it | Debits a sender |
+|--------------|-----------|------------------|-----------------|
+| `"user"` | A **transfer** — reputation leaves one user's bucket and lands in another's. | The sender (user token), or your backend acting on their behalf with a service key. | Yes |
+| `"app"` | A **mint** — reputation created from nothing, or (with a negative amount) destroyed. | Service or master key only. | No |
+
+`sourceType` is persisted rather than inferred from `senderId`, because `senderId` is also `null` on a transfer whose sender was later deleted.
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique grant identifier (UUID). |
+| `sourceType` | `"user" \| "app"` | `"user"` for a debited transfer, `"app"` for a mint. |
+| `senderId` | `string \| null` | The user the reputation was debited from. Always `null` for a mint, and set to `null` if the sender is later deleted. |
+| `sender` | `User \| null` | Populated when the list is read with `include=user`. |
+| `recipientId` | `string` | The user credited. |
+| `recipient` | `User \| null` | Populated when the list is read with `include=user`. |
+| `amount` | `number` | Non-zero integer. Negative only when `sourceType` is `"app"`. |
+| `spaceId` | `string \| null` | The bucket both legs moved in. `null` = the project-general bucket. |
+| `targetType` | `"entity" \| "comment" \| "chat-message" \| null` | What the grant was *for*, if anything. |
+| `targetId` | `string \| null` | The rewarded record's ID. Both target fields are null, or both are set. |
+| `note` | `string \| null` | Free-text note. Trimmed, up to 2000 characters. |
+| `metadata` | `Record<string, any> \| null` | Your own key-value data. Up to 1 MB. |
+| `createdAt` | `string` | ISO timestamp when the grant was issued. |
+| `updatedAt` | `string` | ISO timestamp. Grants are never updated; this exists for model parity. |
+
+## Which bucket moves
+
+A user's reputation lives in [buckets](/data-models/reputation) — one per space, plus a project-general bucket. A grant always concerns exactly one bucket on each side, and the sender chooses which of *their* buckets pays:
+
+- The reputation lands in the recipient's bucket **for the same space it came from**. Senders never choose where it lands.
+- The general bucket is its own lane. Reputation cannot move between the general bucket and a space bucket in either direction.
+- Consequently, the total reputation held within a given space is unchanged by a transfer — it only changes hands.
+
+The named space must exist. Both write paths check it before touching a balance — an unknown `spaceId` is rejected with `404 reputation-grant/space-not-found`, and naming a space on a project without the `spaces` bundle with `403 database/tables-not-available`. Without that check a grant could fund a bucket for a space that does not exist: its score would still count toward its owner's profile total while being invisible in every space-scoped view.
+
+A transfer is rejected unless the source bucket holds at least the amount, evaluated at the moment of the transfer. A mint has no source, so it may drive a bucket below zero (buckets have no floor — downvotes can already take one negative).
+
+## The target is an annotation
+
+A grant may point at one entity, comment, or chat message, so your app can render it in place — "this answer earned 120 points from 4 people".
+
+- The target must exist when the grant is issued; a grant naming a missing record is rejected.
+- The target does **not** have to be authored by the recipient.
+- The target never determines which bucket is used. An app can reward a message living in one space using reputation from a different bucket.
+- A target kind is only usable when the project has that capability. A `chat-message` target needs the `chat` bundle; `entity` and `comment` targets need their tables. Grants with no target are always available.
+- Deleting the target does **not** reverse the grant. The points stay with the recipient; the attachment simply stops rendering.
+
+## GrantSummary
+
+Reading entities, comments, or chat messages with the `grants` include attaches a per-item summary rather than a full list:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `total` | `number` | Sum of positive grant amounts on the item. |
+| `count` | `number` | Number of positive grants on the item. |
+| `viewerTotal` | `number` | The calling user's own summed positive grants on the item. A user may grant the same item more than once, so this is an amount, not a yes/no. |
+
+The summary covers **positive grants only**. When the token is requested on a project whose schema has no grants table, the server returns a zero-filled summary (`{ total: 0, count: 0, viewerTotal: 0 }`) rather than omitting the key — so `grants` being `undefined` always means "nobody asked", never "this project has no grants".
+
+<Warning>
+  **One surface nests the record.** `GET /comments/:id` and `GET /comments/by-foreign-id` return the comment under a `comment` key, so the summary is at **`comment.grants`**. Every other read surface — entity reads, the comment feed, chat messages — returns the record bare, with the summary at `grants`.
+</Warning>
+
+The full per-item list of individual grants comes from [Fetch Many Reputation Grants](/api-reference/reputation-grants/fetch-many-reputation-grants), not from the summary.
+
+## Grants on chat messages are private
+
+A grant row carries its `targetType`, `targetId` and the granter's free-text `note`, and a list read can hydrate both parties. On a `chat-message` target those facts describe a private conversation — who is talking to whom, and what one of them said about it — so such a grant is exactly as private as the message it points at:
+
+- **The target shape is gated on membership.** Listing grants by `targetType: "chat-message"` + `targetId` returns rows only to a **member** of that message's conversation. The test is the one [Fetch Message](/api-reference/chat/messages/fetch-message) itself applies — any membership row counts, so a member who has since left the conversation still sees the grants on a message chat still hands them. Everyone else — a user who was never a member, any user on a project without the `chat` bundle — gets a successful empty page with the zero summary, never a `403`, so the response cannot be used to prove the message exists. Service and master keys pass the gate unconditionally: they are the app's own backend, which holds no membership.
+- **The user-keyed shapes carry the same test into the query.** Listing by `recipientId` or `senderId` returns a chat-message-targeted grant to a caller who can see the underlying message and withholds it from one who cannot. So a user's own "reputation I received" feed does include the grants made on messages in their own conversations, and reconciles with the reputation on their profile; a caller outside the conversation loses those rows from the page **and** from `totalItems` together, leaving nothing to infer arithmetically. Service and master keys are filtered on neither shape and read every row.
+- **A removed message takes its grants with it.** Once moderation removes a message it is invisible on every chat surface, so its grants are invisible on both of these shapes too — to a member of the conversation as much as to a stranger, and to the grant's own sender and recipient. Only service and master keys still read them.
+
+Grants targeting an entity or a comment are unaffected — those items are public — and so are grants with no target at all. The inline summary on the chat reads needs no special rule: those endpoints already refuse a non-member with `403 chat/not-a-member` before they read a message.
+
+## Negative grants are private
+
+A mint may be negative — a moderation clawback, a decay sweep, or a correction. Negative grants are deliberately invisible:
+
+- They never notify the recipient.
+- They are never broadcast over the chat socket.
+- They are excluded from the public list endpoint **for every caller**, including service and master keys.
+- They are excluded from every `GrantSummary`.
+
+The only way to read them is the dashboard history route, [Fetch User Grant History](/api-reference/reputation-grants/fetch-user-grant-history), and the user detail view in the [dashboard](https://dash.sublay.io).
+
+## Immutability
+
+Grant rows are append-only. There is no undo, revoke, cancel window, or editing of the note or metadata. To reverse a grant, issue a compensating negative mint — both records stand.
+
+Grant creation is **not idempotent**. A retried request creates a second grant and moves the points a second time, so clients are responsible for not double-submitting.
+
+## Lifecycle
+
+- **Sender deleted** — the grant record survives with `senderId` set to `null`, so a target's displayed total does not silently shrink.
+- **Recipient deleted** — their grants are removed along with their reputation buckets, consistent with how reputation already behaves on user deletion.
+- **Target deleted** — the grant stands; only the attachment stops rendering.
+- **`reputation` bundle uninstalled** — grant history is destroyed along with the buckets.
+
+## See Also
+
+- [Reputation](/data-models/reputation)
+- [Reputation Grants SDK overview](/sdk/reputation/overview)
+- [Create Reputation Grant API](/api-reference/reputation-grants/create-reputation-grant)
+- [Mint Reputation Grant API](/api-reference/reputation-grants/mint-reputation-grant)
+- [Fetch Many Reputation Grants API](/api-reference/reputation-grants/fetch-many-reputation-grants)

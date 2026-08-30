@@ -1,0 +1,49 @@
+---
+title: "Ban member"
+description: "Ban a member from a space"
+icon: "plug"
+---
+
+## Overview
+
+`useBanMember` returns a callable function for banning a member from a space by setting their status to `"banned"`. Requires the caller to be a moderator or admin. Moderators can only ban regular members — banning an admin requires being the space creator, and the last remaining admin cannot be banned.
+
+A ban is a standing bar: the member stays out until someone calls [`useUnbanMember`](/hooks/spaces/use-unban-member). It also cascades to the space's child spaces and removes the member from the space chat.
+
+## Usage Example
+
+```tsx
+import { useBanMember } from "@sublay/react-js";
+
+function MemberActions({ spaceId, memberId }: { spaceId: string; memberId: string }) {
+  const banMember = useBanMember();
+
+  return (
+    <button onClick={() => banMember({ spaceId, memberId })}>
+      Ban Member
+    </button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+<ParamField path="memberId" type="string" required>
+  UUID of the membership record to ban.
+</ParamField>
+
+## Returns
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="membership" type="SpaceMember">
+  The updated membership record, with `status` set to `"banned"`.
+</ResponseField>
+
+See also: [`useUnbanMember`](/hooks/spaces/use-unban-member) to reverse a ban, and [`useLeaveSpace`](/hooks/spaces/use-leave-space) for a member leaving voluntarily.

@@ -1,7 +1,88 @@
 packages:
   - "packages/**/*"
+  # registry and playground live at the repo root, not under packages/, so
+  # they need listing explicitly — the glob above will never reach them.
+  # Both are private dev-only members of the cli group: registry holds the
+  # component sources `sublay add` installs, playground is a manual Vite
+  # harness for eyeballing them.
+  - "registry"
+  - "playground"
 allowBuilds:
   '@firebase/util': true
   protobufjs: true
-ignoredBuiltDependencies:
-  - esbuild
+  # cli's own workspace opted esbuild in because it genuinely needs the
+  # build (tsup for @sublay/cli, vite for playground). The monorepo had it
+  # under ignoredBuiltDependencies instead, but only to stop pnpm failing
+  # on an unapproved build script it had no consumer for — allowing it is
+  # the union of the two intents, not a reversal of either.
+  esbuild: true
+  # Same reasoning as esbuild above: cli's toolchain (tsup/vite) needs its
+  # build script to run. This entry is load-bearing, not defensive: pnpm 11
+  # (the version pinned in package.json's packageManager field) hard-fails a
+  # clean install with ERR_PNPM_IGNORED_BUILDS on an unapproved build script,
+  # where pnpm 10 only warned. Removing it breaks `pnpm install` outright.
+  '@swc/core': true
+minimumReleaseAgeExclude:
+  # pnpm's install-delay guard would otherwise refuse @sublay releases that
+  # are younger than the configured minimum age — i.e. refuse a package we
+  # just published ourselves. This is doubly inert today: no
+  # `minimumReleaseAge` is configured at all, and every @sublay dependency
+  # in this workspace (registry's and playground's) now resolves through
+  # `workspace:*` to local source rather than from npm, so nothing here is
+  # subject to the guard in the first place. It stays as the standing rule
+  # for the moment either of those changes.
+  #
+  # Note the exemption covers matched packages only, not their transitive
+  # third-party deps: if a young @sublay release exactly pins a young
+  # non-@sublay package, that install fails with
+  # ERR_PNPM_NO_MATURE_MATCHING_VERSION rather than silently downgrading.
+  #
+  # A bare NAME GLOB on purpose, covering the whole scope. pnpm parses each
+  # entry as either a name (or name glob), which exempts every version of
+  # it, or `name@<exact versions>` — and it really does mean exact:
+  # `@sublay/core@*` is not a wildcard, it is rejected outright with
+  # ERR_PNPM_INVALID_MINIMUM_RELEASE_AGE_EXCLUDE ("Use exact versions
+  # only"). A pinned version would also have to track whatever
+  # pnpm-lock.yaml currently resolves — which is the published version, NOT
+  # the workspace source version in each package.json, a distinction that
+  # already went wrong here once: these were pinned to 7.13.0 (the
+  # workspace version) while the lockfile resolved 7.12.0, so the entries
+  # matched nothing and excluded nothing, silently.
+  #
+  # The scope glob replaces what used to be six enumerated names, which had
+  # gone stale in the other direction: the consolidation added @sublay/cli,
+  # @sublay/node and @sublay/js to this repo and none of them was ever
+  # added to the list. One glob covers all nine and every future package,
+  # with nothing to keep in sync.
+  - '@sublay/*'
+peerDependencyRules:
+  ignoreMissing:
+    # Silences the remaining `pnpm peers check` warning:
+    #
+    #   ✕ conflicting peer react-native-reanimated
+    #     Wanted:
+    #       ">=3.16.0 || >=4.0.0-": @gorhom/bottom-sheet@5.2.14
+    #       ">=3.6.2": react-native-css-interop@0.2.6
+    #
+    # Both wants come from registry's own devDependencies (bottom-sheet,
+    # nativewind -> react-native-css-interop) - nothing outside registry
+    # is involved. This one cannot be satisfied by installing anything:
+    # bottom-sheet@5.2.14's own peer
+    # range, ">=3.16.0 || >=4.0.0-", is not valid semver - the second
+    # branch is a bare trailing hyphen with no prerelease identifier.
+    # Verified against semver 6.3.1/7.5.4/7.7.3: `validRange()` returns
+    # null and `satisfies()` returns false for every real
+    # react-native-reanimated release, including 5.2.14's own `latest`
+    # dist-tag (no newer 5.x exists). Installing react-native-reanimated
+    # for real was tried (both ^3.19.5 and ^4.6.0) and neither cleared
+    # the warning; ^4.6.0 made it worse by cascading a second, unrelated
+    # unmet peer via react-native-worklets -> @react-native/metro-config.
+    # registry is a typecheck-only dev harness that never runs, and no
+    # template source file imports react-native-reanimated directly (only
+    # bottom-sheet's own internals do) - so this is pure upstream-range
+    # noise with nothing to actually fix on this side. The real product
+    # gap this warning was pointing at - the three react-native
+    # registry.json templates using bottom-sheet without declaring
+    # react-native-reanimated/react-native-gesture-handler as end-user
+    # dependencies - is fixed separately in those registry.json files.
+    - react-native-reanimated

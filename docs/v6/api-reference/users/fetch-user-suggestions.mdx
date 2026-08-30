@@ -1,0 +1,66 @@
+---
+title: "Fetch User Suggestions"
+api: "GET /api/v6/:projectId/users/suggestions"
+description: "Get user suggestions for mentions and user pickers"
+---
+
+Fetch a list of up to 5 suggested users based on a query string. Useful for mention systems or user pickers.
+
+## Query Parameters
+
+<ParamField query="query" type="string" required>
+  The input string used to search usernames. Usernames starting with this query are ranked higher.
+</ParamField>
+
+## Response
+
+<Info>
+Returns an array of user objects (maximum 5 results)
+</Info>
+
+<ResponseField name="[].id" type="string">
+  User's unique identifier
+</ResponseField>
+
+<ResponseField name="[].username" type="string">
+  User's username
+</ResponseField>
+
+<ResponseField name="[].name" type="string">
+  User's full name
+</ResponseField>
+
+<ResponseField name="[].avatar" type="string">
+  URL to user's avatar image
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Missing or Invalid Query Parameter - 400 Bad Request">
+    ```json
+    {
+      "error": "Missing or invalid query parameter",
+      "code": "user/invalid-query"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Server Error - 500 Internal Server Error">
+    ```json
+    {
+      "error": "Internal server error",
+      "code": "user/server-error",
+      "details": "<Error message>"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Notes
+
+- Maximum of 5 results are returned.
+- Usernames starting with the query are ranked higher.
+- Returned user objects exclude sensitive fields (email, hash, etc.).

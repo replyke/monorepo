@@ -1,0 +1,48 @@
+---
+title: "Decline workspace invite"
+description: "Decline a workspace invitation — identity-matched and verification-gated"
+icon: "plug"
+---
+
+## Overview
+
+`useDeclineWorkspaceInvite` returns a callable that declines an [invitation](/data-models/workspace-invitation).
+
+**Authorization:** self-service. The invite must be addressed to the signed-in user (identity-matched), and a **verified email is required** — the same gate as [accept](/hooks/workspaces/use-accept-workspace-invite). Otherwise a squatter who signed up with someone else's address could burn that person's invite by declining it.
+
+## Usage Example
+
+```tsx
+import { useDeclineWorkspaceInvite } from "@sublay/react-js";
+
+function DeclineButton({ inviteId }: { inviteId: string }) {
+  const declineWorkspaceInvite = useDeclineWorkspaceInvite();
+
+  return (
+    <button onClick={() => declineWorkspaceInvite({ inviteId })}>Decline</button>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="inviteId" type="string" required>
+  The invitation UUID.
+</ParamField>
+
+## Returns
+
+`{ success: boolean }`.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/email-not-verified` | 403 | The declining user's email is not verified. |
+| `workspace/invite-not-found` | 404 | No such invitation, or it is not addressed to you. |
+| `workspace/invite-terminal` | 409 | Already accepted / declined / revoked. |
+
+## Related
+
+- [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) — list the invites addressed to you
+- [Decline Invite API](/api-reference/workspaces/invitations/decline-invite)

@@ -1,0 +1,100 @@
+---
+title: "Adding Features"
+description: "Add custom functionality to components"
+icon: "plus"
+---
+
+# Adding Features
+
+Modify behavior and add custom functionality.
+
+---
+
+## Add Confirmation Dialog Before Delete
+
+```tsx
+// File: comment-menu-modal-owner.tsx
+
+const handleDelete = () => {
+  if (window.confirm('Are you sure you want to delete this comment?')) {
+    // existing delete logic
+  }
+};
+```
+
+---
+
+## Auto-Collapse Old Threads
+
+```tsx
+// File: comment-thread.tsx
+
+const [isCollapsed, setIsCollapsed] = useState(
+  new Date(comment.createdAt) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  // Auto-collapse if older than 7 days
+);
+```
+
+---
+
+## Add Analytics Tracking
+
+```tsx
+// File: vote-buttons.tsx
+
+const handleUpvote = () => {
+  analytics.track('Comment Upvoted', { commentId: comment.id });
+  // existing upvote logic
+};
+```
+
+---
+
+## Add Character Counter
+
+```tsx
+// File: new-comment-form.tsx
+
+const [text, setText] = useState('');
+const MAX_LENGTH = 500;
+
+return (
+  <div>
+    <textarea
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      maxLength={MAX_LENGTH}
+    />
+    <span>{text.length} / {MAX_LENGTH}</span>
+  </div>
+);
+```
+
+---
+
+## Add Custom Badges
+
+```tsx
+// File: single-comment.tsx
+
+<div>
+  <span>{author.name}</span>
+  {author.isPro && (
+    <span className="ml-2 px-2 py-1 bg-gold-500 text-xs rounded">PRO</span>
+  )}
+</div>
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Advanced" icon="star" href="/components/customization/advanced">
+    Advanced customization techniques
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/components/components/threaded/file-structure">
+    Understand file organization
+  </Card>
+</CardGroup>

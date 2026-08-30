@@ -1,0 +1,231 @@
+---
+title: "JavaScript SDK"
+description: "Framework-agnostic, user-authenticated SDK for Sublay — use in any browser app or JS runtime"
+---
+
+The `@sublay/js` SDK gives you full access to the Sublay v7 API from any JavaScript environment, with **no React, Redux, or state-management dependencies**. Its only runtime dependency is `axios`. Use it in vanilla JS apps, Vue/Svelte/Solid apps, web workers, or anywhere you want the Sublay API without the React provider tree.
+
+<Note>
+  This SDK authenticates as an **end user** via a bearer token. The server derives
+  who is acting from that token, so — unlike the server-side
+  [`@sublay/node`](/v7/node-sdk/overview) SDK — you never pass an actor `userId`.
+  For server-side, service-key access (acting on behalf of any user), use
+  `@sublay/node` instead.
+</Note>
+
+## Installation
+
+```bash
+npm install @sublay/js
+```
+
+## Initialization
+
+`SublayClient.init` builds a client whose module namespaces are pre-bound to your project. It is async, so `await` it.
+
+```typescript
+import { SublayClient } from "@sublay/js";
+
+const sublay = await SublayClient.init({
+  projectId: "your-project-id",
+});
+```
+
+### Configuration
+
+<ParamField body="projectId" type="string" required>
+  Your Sublay project ID, found in the dashboard under **Settings → General**.
+</ParamField>
+
+<ParamField body="initialTokens" type="{ accessToken: string; refreshToken: string }">
+  Tokens to hydrate the SDK on init (SDK-managed mode) — e.g. tokens your app
+  persisted from a previous session, so a reload restores the session.
+</ParamField>
+
+<ParamField body="getToken" type="() => string | null | undefined | Promise<string | null | undefined>">
+  An async hook returning the current access token. **Providing it switches the
+  SDK to host-managed mode** (see below): the SDK never stores or refreshes
+  tokens — it reads the current one from `getToken()` on every request.
+</ParamField>
+
+<ParamField body="onAuthChange" type="(tokens: { accessToken: string; refreshToken: string } | null) => void">
+  Called whenever the SDK sets, rotates, or clears tokens (SDK-managed mode only).
+  Receives `null` on sign-out. Use it to persist tokens so a session survives a
+  reload.
+</ParamField>
+
+## Authentication
+
+The SDK runs in one of two auth modes, chosen by whether you pass `getToken`.
+
+### SDK-managed (default)
+
+The SDK keeps the `accessToken` / `refreshToken` pair in memory, attaches
+`Authorization: Bearer <token>` on every request, and **auto-refreshes** on a
+`403` (with a single-flight mutex so concurrent failures trigger only one
+refresh). No storage is baked in — the SDK runs in any JS runtime — so persistence
+is your job: listen to `onAuthChange` to save tokens, and pass them back via
+`initialTokens` on the next load.
+
+```typescript
+const sublay = await SublayClient.init({
+  projectId: "your-project-id",
+  initialTokens: loadTokensFromStorage() ?? undefined,
+  onAuthChange: (tokens) => {
+    if (tokens) saveTokensToStorage(tokens);
+    else clearTokensFromStorage();
+  },
+});
+
+// Sign-in stores the tokens for you and fires onAuthChange.
+await sublay.auth.signIn({ email, password });
+```
+
+The `auth` module's `signIn`, `signUp`, and `verifyExternalUser` store the
+returned tokens automatically; `signOut` clears them. You can also set or clear
+them imperatively:
+
+```typescript
+sublay.setTokens({ accessToken, refreshToken });
+sublay.clearTokens();
+```
+
+<Warning>
+  **Refresh-token rotation.** The v7 server rotates the refresh token on every
+  refresh and runs reuse detection — re-sending a spent refresh token destroys the
+  whole session family. In SDK-managed mode the SDK handles this for you (it
+  persists the new pair through `onAuthChange`). If you call
+  `auth.requestNewAccessToken` yourself, persist the **new** `refreshToken` from
+  the response.
+</Warning>
+
+### Host-managed
+
+If your app already owns the access token and its refresh lifecycle, pass a
+`getToken` hook. The SDK then never stores or refreshes tokens — it reads the
+current token from `getToken()` on each request, and on a `403` re-reads it once.
+In this mode `setTokens`, `clearTokens`, and the `onAuthChange` callback are
+no-ops.
+
+```typescript
+const sublay = await SublayClient.init({
+  projectId: "your-project-id",
+  getToken: async () => myAuthStore.getAccessToken(),
+});
+```
+
+An explicit `Authorization` header set on an individual request always wins over
+both modes.
+
+## Modules
+
+Once initialized, all functionality is accessed through module namespaces on the client:
+
+```typescript
+sublay.auth              // Authentication — sign up, sign in, tokens, passwords
+sublay.users             // User profiles, and the per-user follow/connection graph
+sublay.entities          // Content entities — CRUD, reactions, drafts
+sublay.comments          // Comments — CRUD, reactions
+sublay.collections       // Saved-content collections
+sublay.follows           // The logged-in user's own follow graph
+sublay.connections       // The logged-in user's own connections and requests
+sublay.spaces            // Spaces — CRUD, members, moderation, rules
+sublay.events            // Events — RSVPs, hosts, invites, guest list
+sublay.chat              // Conversations, messages, members, reactions, read state
+sublay.search            // Semantic search and streaming AI Q&A
+sublay.reports           // File content reports and read the moderation queue
+sublay.appNotifications  // In-app notification feed
+sublay.storage           // File and image uploads, read, delete
+sublay.oauth             // OAuth sign-in/link redirect flows and linked identities
+```
+
+## How this differs from `@sublay/node`
+
+If you're coming from the server SDK, three things are different here:
+
+- **No actor `userId`.** Functions act as the user behind the token. Params that
+  named the acting user server-side are gone. A `userId` you _do_ see here is
+  always a real **target** or **filter** — the user you're following, a ban
+  target, the author whose entities you're listing — never "who is acting".
+- **Streaming AI Q&A.** [`search.askContent`](/v7/js-sdk/search#askcontent) is an
+  **async generator** over Server-Sent Events — `for await` over it to stream
+  tokens — not a single awaited response.
+- **Browser file uploads.** [`storage`](/v7/js-sdk/storage),
+  [`chat.sendMessage`](/v7/js-sdk/chat#sendmessage), and
+  [`users.updateUser`](/v7/js-sdk/users#updateuser) accept browser `File` / `Blob`
+  objects and send `multipart/form-data` — there's no `Uint8Array` + `mimeType`
+  path.
+
+## Paginated responses
+
+Most list functions return a shared `PaginatedResponse<T>` shape:
+
+```typescript
+{
+  data: T[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    totalItems: number;
+    hasMore: boolean;
+  };
+}
+```
+
+Pass `page` and `limit` to control pagination. A few endpoints use different
+shapes — notably `chat.listConversations` / `chat.listMessages` use **cursor**
+pagination, the `search.search*` functions return **raw arrays**, and a handful
+of reaction-list endpoints return a `{ data, pagination: { page, limit, total,
+hasMore } }` shape. Each is called out on its module page.
+
+<CardGroup cols={2}>
+  <Card title="Auth" icon="lock" href="/v7/js-sdk/auth">
+    Sign up, sign in, token management, password reset, email verification
+  </Card>
+  <Card title="Users" icon="user" href="/v7/js-sdk/users">
+    Fetch and update profiles, and the per-user follow/connection graph
+  </Card>
+  <Card title="Entities" icon="file" href="/v7/js-sdk/entities">
+    Create and manage content, reactions, drafts
+  </Card>
+  <Card title="Comments" icon="comment" href="/v7/js-sdk/comments">
+    Create and manage comments, reactions
+  </Card>
+  <Card title="Collections" icon="folder" href="/v7/js-sdk/collections">
+    Organize the user's saved entities into collections
+  </Card>
+  <Card title="Follows" icon="user-plus" href="/v7/js-sdk/follows">
+    The logged-in user's own follow graph and counts
+  </Card>
+  <Card title="Connections" icon="link" href="/v7/js-sdk/connections">
+    Mutual connections, pending requests, accept/decline
+  </Card>
+  <Card title="Spaces" icon="layer-group" href="/v7/js-sdk/spaces">
+    Space CRUD, navigation, slug management
+  </Card>
+  <Card title="Space Members" icon="users" href="/v7/js-sdk/spaces-members">
+    Membership, roles, approvals, bans
+  </Card>
+  <Card title="Space Moderation" icon="shield" href="/v7/js-sdk/spaces-moderation">
+    Reports, content moderation, rules
+  </Card>
+  <Card title="Chat" icon="message" href="/v7/js-sdk/chat">
+    Conversations, messages, members, reactions, read state
+  </Card>
+  <Card title="Search" icon="magnifying-glass" href="/v7/js-sdk/search">
+    Semantic search and streaming AI Q&A
+  </Card>
+  <Card title="Reports" icon="flag" href="/v7/js-sdk/reports">
+    File content reports and read the moderation queue
+  </Card>
+  <Card title="App Notifications" icon="bell" href="/v7/js-sdk/app-notifications">
+    Read and mark the user's in-app notifications
+  </Card>
+  <Card title="Storage" icon="upload" href="/v7/js-sdk/storage">
+    Upload, fetch, and delete files and images
+  </Card>
+  <Card title="OAuth" icon="key" href="/v7/js-sdk/oauth">
+    OAuth sign-in/link redirect flows and linked identities
+  </Card>
+</CardGroup>

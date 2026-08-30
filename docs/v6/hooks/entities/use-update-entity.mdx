@@ -1,0 +1,94 @@
+---
+title: "Use Update Entity"
+---
+
+# `useUpdateEntity`
+
+## Overview
+
+The `useUpdateEntity` hook is used to update the details of an existing entity. It allows for partial updates, meaning only the provided fields will be modified while other fields remain unchanged.
+
+
+## Usage Example
+
+```tsx
+import { useUpdateEntity } from "@replyke/react-js";
+
+function UpdateEntityForm({ entityId }: { entityId: string }) {
+  const updateEntity = useUpdateEntity();
+
+  const handleUpdateEntity = async () => {
+    try {
+      const updatedEntity = await updateEntity({
+        entityId,
+        update: {
+          title: "Updated Title",
+          content: "Updated content of the entity.",
+          keywords: ["updated", "entity"],
+          location: { latitude: 40.7128, longitude: -74.0060 },
+          metadata: { category: "updated category" },
+        },
+      });
+
+      console.log("Entity updated successfully:", updatedEntity);
+    } catch (error) {
+      console.error("Failed to update entity:", error.message);
+    }
+  };
+
+  return <button onClick={handleUpdateEntity}>Update Entity</button>;
+}
+```
+
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following fields:
+
+
+<ParamField path="entityId" type="string" required>
+  The ID of the entity to be updated.
+</ParamField>
+
+<ParamField path="update" type="object" required>
+  An object containing the fields to update.
+</ParamField>
+
+<ParamField path="update.title" type="string \">
+  No
+</ParamField>
+
+<ParamField path="update.content" type="string \">
+  No
+</ParamField>
+
+<ParamField path="update.attachments" type="Record<string, any>[]">
+  The updated attachments items for the entity.
+</ParamField>
+
+<ParamField path="update.keywords" type="string[]">
+  The updated keywords for the entity.
+</ParamField>
+
+<ParamField path="update.location" type="object">
+  The new geographic location for the entity.
+</ParamField>
+
+<ParamField path="update.metadata" type="Record<string, any>">
+  Additional metadata to update for the entity.
+</ParamField>
+
+<ParamField path="update.mentions" type="Mention[]">
+  Array of mentioned users
+</ParamField>
+
+### Returns
+
+The function resolves with an object representing the updated entity:
+
+
+<ResponseField name="Entity" type="object">
+  The details of the updated entity.
+</ResponseField>

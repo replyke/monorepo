@@ -1,0 +1,453 @@
+---
+title: "Push Notifications"
+description: "Deliver native OS push notifications to your users on iOS, Android, and Web — from a single server-side call."
+icon: "bell"
+---
+
+Push Notifications lets your app deliver native OS push notifications to users on iOS (via APNs), Android (via FCM), and the browser (via Web Push) — all from a single server-side call. Sublay stores each user's registered devices, fans a message out to every platform, and prunes dead tokens automatically — across every account bound to the device, since a token the provider rejects is dead for all of them.
+
+<Note>
+  **Requires the `push` bundle.** Install it from your project's **Database** page in the [dashboard](https://dash.sublay.io) before using any push feature. See [Bundles](/bundles) for details.
+</Note>
+
+## How It Works
+
+1. **Configure credentials** in the dashboard — paste your APNs `.p8` key, FCM service account JSON, or enable Web Push (keypair generated server-side).
+2. **Register devices** — your client app calls `register()` from `usePushRegistration` at a moment that makes sense for your UX (settings screen, first-run prompt, etc.). The SDK handles permission, token retrieval, and server registration.
+3. **Send notifications** — your backend calls `sublay.push.send({ userIds, title, body, data })`. Sublay fans the message out to every registered device for those users across all platforms.
+
+## Dashboard Setup
+
+### Installing the bundle
+
+Open **Database → Bundles** in the [dashboard](https://dash.sublay.io) and install `push`. Once provisioning completes, the **Push Notifications** settings page becomes active.
+
+### Configuring providers
+
+Go to **Settings → Push Notifications** in the dashboard. Configure each platform you want to support:
+
+**APNs (iOS)**
+
+| Field | Description |
+|-------|-------------|
+| Key ID | The 10-character key identifier from your Apple Developer account |
+| Team ID | Your Apple Developer team ID |
+| Bundle ID | Your app's bundle identifier (e.g. `com.example.myapp`) |
+| .p8 key | Contents of the `.p8` private key file downloaded from Apple |
+| Production | Toggle for sandbox vs. production APNs gateway (defaults to production) |
+
+**FCM (Android)**
+
+Upload or paste your Firebase service account JSON. This is the file downloaded from the Firebase console under **Project Settings → Service Accounts → Generate new private key**.
+
+**Web Push**
+
+No credentials to paste — click **Enable**. Sublay generates a VAPID EC keypair server-side and stores the private key encrypted. Only the public key is returned and displayed; it is also available via the unauthenticated [`GET /vapid-public-key`](/api-reference/push-notifications/get-vapid-public-key) endpoint for use in your service worker.
+
+### Automatic push settings
+
+Sublay can fan a push out **automatically** whenever an in-app notification is created (a new comment, reply, mention, reaction, follow, connection, RSVP-event change, space-membership approval) or a chat message is sent — no `push.send()` call required. The **Settings → Push Notifications** page lets you tune what those automatic pushes look like per event type:
+
+| Setting | Scope | Description |
+|---------|-------|-------------|
+| **Body template** | Per event type | The notification body, with a `{variable}` palette specific to each event. Ships with sensible defaults. |
+| **Title template** | Per event type | An optional title line, interpolated against the **same** `{variable}` palette as the body. **Ships empty** — an unset title renders as an empty string, so titles are opt-in. |
+| **Default delivery** | Project-wide | A default `{ sound, channelId, priority }` applied to every automatic push. |
+| **Delivery override** | Per event type | Overrides the project default per field for a single event type. A present field wins; an absent one inherits the default. |
+
+These settings affect only the **automatic** path. The manual [`push.send()`](#server-sdk--sending-notifications) call already accepts `title`, `sound`, `channelId`, `priority`, and everything else directly.
+
+See [Automatic Pushes](#automatic-pushes) below for the full delivery-config, title-template, and tap-routing contract.
+
+### Test-send UI
+
+The **Push Notifications** settings page includes a **Send Test Push** panel for firing a one-off notification at a single device — the fastest way to verify a provider's credentials before wiring up the SDK. Pick a platform, paste a device token (iOS/Android) or a web push subscription, set a title and body, and click **Send Test Push**.
+
+The catch is getting the token/subscription to paste in. It isn't shown anywhere in the dashboard — it's produced on the receiving device. Here's how to obtain each.
+
+<Warning>
+  **"Test push sent successfully" verifies *credentials*, not *delivery*.** A success result means the provider (APNs / FCM / Web Push) *accepted* the message — your keys are valid. It does **not** mean a notification appeared on screen. Rendering is a separate step that depends on the receiving device (a web service worker's `push` handler, and the OS notification settings). If the send is green but nothing shows, see [Troubleshooting](#troubleshooting-a-test-push) below — the problem is almost never the credentials at that point.
+</Warning>
+
+#### Web: generating a Subscription JSON
+
+The **Subscription JSON** is created by a browser subscribing to the Push API. You generate it from the DevTools console of a page that (a) is served over HTTPS or `localhost` and (b) has a **service worker registered** (`await navigator.serviceWorker.ready` hangs forever otherwise).
+
+<Steps>
+  <Step title="Copy the VAPID public key">
+    In the dashboard, go to **Settings → Push Notifications → Push Providers**. The **Web Push** row shows your project's VAPID public key with a copy button. (It's also available programmatically from the unauthenticated [`GET /vapid-public-key`](/api-reference/push-notifications/get-vapid-public-key) endpoint.) The subscription **must** be created with this exact key, or the send fails.
+  </Step>
+  <Step title="Run the subscribe snippet">
+    Open DevTools → Console on your service-worker-enabled page and run:
+
+    ```js
+    // Paste the EXACT public key from Settings → Push Notifications → Push Providers
+    const VAPID_PUBLIC_KEY = 'PASTE_YOUR_VAPID_PUBLIC_KEY';
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const raw = atob(base64);
+      return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+    }
+
+    const reg = await navigator.serviceWorker.ready;
+
+    // Drop any stale subscription bound to a previous key first
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) await existing.unsubscribe();
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+
+    console.log(JSON.stringify(sub.toJSON(), null, 2));
+    ```
+
+    The browser prompts for notification permission — click **Allow**. The snippet prints an object like:
+
+    ```json
+    {
+      "endpoint": "https://fcm.googleapis.com/fcm/send/...",
+      "keys": { "p256dh": "...", "auth": "..." }
+    }
+    ```
+  </Step>
+  <Step title="Paste it into the panel">
+    Copy the printed object into **Subscription JSON**, set Platform to **Web (Web Push)**, and send. (`expirationTime` is harmless if included; only `endpoint` and `keys` are read.)
+  </Step>
+</Steps>
+
+<Note>
+  This manual console flow is a **debugging convenience** for the test panel. In a real app you never do this by hand — the SDK's [`usePushRegistration`](/hooks/push/use-push-registration) creates and registers the subscription for you. See the [Web section of the SDK reference](/sdk/push-notifications/overview) for service-worker setup.
+</Note>
+
+#### iOS / Android: obtaining a device token
+
+Native device tokens come from the OS (APNs / FCM), surfaced by the SDK's push-token adapter. To capture one for a test, wrap the built-in adapter so it logs the identifier it produces, then register as usual:
+
+```tsx
+import { usePushRegistration } from "@sublay/core";
+import type { PushTokenAdapter } from "@sublay/core";
+import { expoPushTokenAdapter } from "@sublay/expo"; // or reactNativePushTokenAdapter
+
+// Wraps the built-in adapter to log the token it retrieves
+const debugAdapter: PushTokenAdapter = {
+  requestPermission: expoPushTokenAdapter.requestPermission,
+  async getDeviceIdentifier(context) {
+    const id = await expoPushTokenAdapter.getDeviceIdentifier(context);
+    console.log("Push device identifier:", id); // { platform: "ios", token: "..." }
+    return id;
+  },
+};
+
+function DebugRegister() {
+  const { register } = usePushRegistration(debugAdapter);
+  return <Button title="Register (debug)" onPress={register} />;
+}
+```
+
+Run the app on a **real device** (simulators/emulators don't receive push on iOS), trigger registration, copy the `token` from the logs, then paste it into the panel with Platform set to **iOS** or **Android**.
+
+<Warning>
+  **APNs sandbox vs. production.** A development/debug iOS build talks to the APNs **sandbox** gateway; a TestFlight/App Store build talks to **production**. The **Production** toggle on your APNs provider config must match the build the token came from, or the send is rejected. This is the most common iOS test-push failure.
+</Warning>
+
+#### Troubleshooting a test push
+
+<AccordionGroup>
+  <Accordion title="Send is green but no notification appears (Web)">
+    "Sent successfully" only means Web Push accepted the message. Rendering happens in **your service worker's `push` handler** — Sublay ships no service worker. Check, in order:
+
+    1. **Does your SW render pushes?** Its `push` handler must call `registration.showNotification(...)`. Isolate the rendering step by running this in the page console — it calls `showNotification` directly, bypassing the network:
+       ```js
+       const reg = await navigator.serviceWorker.ready;
+       await reg.showNotification("Direct test", { body: "does the OS show this?" });
+       ```
+       If **this** shows nothing, the problem is OS-level (next point), not your code. If it shows but real pushes don't, your `push` handler is missing or not calling `showNotification`.
+    2. **OS notification settings.** Even with `Notification.permission === "granted"`, the OS can suppress everything. On macOS: **System Settings → Notifications → [your browser]** must be allowed (alert style not "None"), and **Focus / Do Not Disturb** must be off. This silently swallows notifications and is the single most common cause of "green but nothing."
+    3. **DevTools "Push" button throws a JSON error.** The DevTools Application → Service Workers "Push" tool sends *plain text*; a handler that calls `event.data.json()` will throw on it. That's a test-tool artifact — real Sublay pushes are JSON. Test with a real send instead.
+  </Accordion>
+  <Accordion title="permanently_invalid / the subscription is rejected (Web)">
+    The push service returned HTTP 410 (Gone). Usual causes:
+
+    - **VAPID key mismatch** — the subscription was created with a different public key than the project's. Re-copy the key from Settings → Push Providers and re-subscribe. Chrome caches the old subscription, so `unsubscribe()` first (the snippet above already does).
+    - **Truncated endpoint** — make sure you pasted the *full* `endpoint`, not an abbreviated `https://.../...` copy.
+    - **Stale subscription** — regenerate a fresh one if it was minted a while ago.
+  </Accordion>
+  <Accordion title="Nothing arrives on iOS/Android">
+    - Test on a **real device**, not a simulator/emulator.
+    - Confirm the **APNs Production toggle matches the build** (sandbox for dev builds, production for TestFlight/App Store).
+    - Verify the provider credentials: APNs `bundleId` must match the app exactly; FCM service account must belong to the same Firebase project as the app's `google-services.json` / config.
+    - Re-copy the token — device tokens rotate and can go stale.
+  </Accordion>
+</AccordionGroup>
+
+## Client SDK — Registering Devices
+
+Use `usePushRegistration` with the adapter for your platform. Call `register()` in response to a deliberate user action — not on mount — because requesting OS push permission is a one-shot prompt that users cannot undo.
+
+Once per device is enough. The SDK persists the device identifier and, wherever `usePushRegistration` is mounted, handles an OS token rotation itself, so there is no "call it again on every launch to be safe" step — see [Device Lifecycle](#device-lifecycle).
+
+```tsx
+// Expo
+import { usePushRegistration } from "@sublay/core";
+import { expoPushTokenAdapter } from "@sublay/expo";
+
+function SettingsScreen() {
+  const { register, registering } = usePushRegistration(expoPushTokenAdapter);
+  return <Button onPress={register} loading={registering} title="Enable notifications" />;
+}
+```
+
+```tsx
+// Bare React Native
+import { usePushRegistration } from "@sublay/core";
+import { reactNativePushTokenAdapter } from "@sublay/react-native";
+
+const { register } = usePushRegistration(reactNativePushTokenAdapter);
+```
+
+```tsx
+// Web (browser)
+import { usePushRegistration } from "@sublay/core";
+import { webPushTokenAdapter } from "@sublay/react-js";
+
+const { register, unregister } = usePushRegistration(webPushTokenAdapter);
+```
+
+The web adapter requires a service worker. Register one before calling `register()`. See [SDK Reference → Push Notifications](/sdk/push-notifications/overview) for per-platform setup and [`usePushRegistration`](/hooks/push/use-push-registration) for the full hook API.
+
+## Server SDK — Sending Notifications
+
+Call `client.push.send()` from your backend whenever you want to notify users:
+
+```typescript
+import { SublayClient } from "@sublay/node";
+
+const sublay = await SublayClient.init({
+  projectId: process.env.SUBLAY_PROJECT_ID!,
+  apiKey: process.env.SUBLAY_SERVICE_KEY!,
+});
+
+const result = await sublay.push.send({
+  userIds: ["usr_abc123", "usr_def456"],
+  title: "You have a new match!",
+  body: "Tap to see who liked your post.",
+  data: { screen: "matches" },
+});
+
+for (const [userId, devices] of Object.entries(result.results)) {
+  if (devices.length === 0) {
+    console.log(`${userId} has no registered devices`);
+  } else {
+    console.log(`${userId}:`, devices);
+  }
+}
+```
+
+A single call fans the notification out to all platforms. Capped at **100 user IDs per request**. See [Node SDK — Push Notifications](/node-sdk/push-notifications) for the full module reference.
+
+<Tip>
+  A common pattern is to bridge Sublay's in-app notifications to push: subscribe to the `notification.created` webhook and call `push.send()` when it fires. See [Webhooks → Push Notification Bridge](/webhooks#push-notification-bridge).
+</Tip>
+
+## Rich Notification Payloads
+
+Beyond `title`, `body`, and `data`, `push.send()` accepts optional fields for sound, badges, images, grouping, priority, and lifetime. Each maps to the native APNs / FCM / Web Push capability and is **silently ignored on platforms that don't support it** — so you can set `subtitle` (iOS-only) and `channelId` (Android-only) in the same call without branching.
+
+```typescript
+await sublay.push.send({
+  userIds: ["usr_abc123"],
+  title: "New message",
+  body: "Alice sent you a message",
+  data: { conversationId: "conv_xyz789" },
+  sound: "notification.wav",   // custom sound
+  channelId: "messages",       // Android channel (see below)
+  badge: 3,                    // iOS app-icon badge
+  tag: "conv_xyz789",          // one entry per conversation, per account
+  priority: "high",
+});
+```
+
+| Field | Platforms | Notes |
+|-------|-----------|-------|
+| `sound` | iOS, Android, Web | Filename of a bundled sound. On Android 8+ the **channel** owns the sound — see below. |
+| `badge` | iOS | App-icon badge count. Your backend supplies the number; Sublay tracks no unread state. |
+| `channelId` | Android | Notification channel id. Created client-side. |
+| `priority` | iOS, Android | `"high"` (default) wakes the device; `"normal"` is power-considerate. |
+| `subtitle` | iOS | Line under the title. |
+| `imageUrl` | iOS, Android, Web | Big-picture image. iOS needs a Notification Service Extension — see below. |
+| `tag` | Android, Web | Display-replace key so notifications collapse instead of stacking. Scoped per recipient, so the string the device receives is the one you sent plus a short digest — don't compare it to what you sent. |
+| `collapseId` | iOS, Android | Transport-level collapse — a newer push supersedes an undelivered one **for the same account**. Scoped per recipient, and folded to a digest when an over-length key would exceed the APNs 64-byte cap. |
+| `threadId` | iOS | Notification grouping. |
+| `ttl` | iOS, Android | Time-to-live in **seconds** for offline devices. |
+| `mutableContent` | iOS | Enables your Notification Service Extension. Set automatically when `imageUrl` is present. |
+
+### Client-side requirements
+
+Three of these need setup in **your app** — Sublay forwards the field but cannot do this part for you:
+
+<AccordionGroup>
+  <Accordion title="Android sound → notification channels">
+    On Android 8+ the **notification channel** owns the sound, importance, and vibration — the payload can't override it. Create the channel once in your app (with the bundled sound) and pass its id as `channelId`:
+
+    ```ts
+    import * as Notifications from "expo-notifications";
+
+    await Notifications.setNotificationChannelAsync("messages", {
+      name: "Messages",
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: "notification.wav", // bundled in the app
+    });
+    ```
+
+    Then `push.send({ ..., channelId: "messages", sound: "notification.wav" })`. The `sound` field alone is only a pre-Android-8 fallback. Sublay does **not** create channels for you.
+  </Accordion>
+  <Accordion title="iOS images → Notification Service Extension">
+    iOS does not download remote images from the payload on its own. To show `imageUrl` on iOS, add a [Notification Service Extension](https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension) to your app that reads the URL from the notification payload, downloads it, and attaches it. Sublay sets `mutable-content` automatically whenever `imageUrl` is present so the extension is allowed to run. Android and Web render `imageUrl` with no extra work.
+  </Accordion>
+  <Accordion title="Web rendering → your service worker">
+    Sublay ships no service worker — your app's own SW renders web notifications. The server forwards the web-renderable fields (`sound`, `image`, `tag`) in the push JSON; your `push` event handler decides how to display them via `registration.showNotification(...)`.
+  </Accordion>
+</AccordionGroup>
+
+## Automatic Pushes
+
+Whenever Sublay writes an in-app notification (a new comment, reply, mention, reaction, milestone, follow, connection request/accept, RSVP-event invite/update/cancel, or space-membership approval) or a chat message is sent, it can fan a native push out to the recipient's registered devices **automatically** — you don't call `push.send()` for these. What each automatic push looks like is configured per project on the **Settings → Push Notifications** page.
+
+<Note>
+  Everything in this section applies to the **automatic** path only. The manual [`push.send()`](#server-sdk--sending-notifications) call takes `title`, `body`, `data`, `sound`, `channelId`, `priority`, and the [rich fields](#rich-notification-payloads) directly and is unchanged.
+</Note>
+
+### Title & body templates
+
+Each event type has a **body template** (shipped with sensible defaults) and an optional **title template**. Both are interpolated against the same per-event `{variable}` palette shown next to each row in the dashboard.
+
+The title template **ships empty** for every event type — an unset title renders as an empty string, which is the historical behavior. Set a title only for the events where you want one; leaving it blank is a no-op.
+
+```
+# Example (dashboard, entity-comment)
+Title:  New comment
+Body:   {initiatorUsername} commented on your post
+```
+
+### Delivery: sound, channel & priority
+
+You can set a project-wide **default delivery** block and, optionally, a **per-event override**:
+
+- **Default** — a single `{ sound, channelId, priority }` applied to every automatic push.
+- **Override** — a per-event-type `{ sound, channelId, priority }`. Any field you set on the override wins for that event; any field you leave unset inherits the project default. Precedence is **per-event override → project default → none**.
+
+| Field | Platforms | Notes |
+|-------|-----------|-------|
+| `sound` | iOS, Android, Web | Filename of a bundled sound. On Android 8+ the notification **channel** owns the sound — see [Android sound → notification channels](#client-side-requirements). |
+| `channelId` | Android | Notification channel id. Created client-side; omitted from the web/iOS payloads. |
+| `priority` | iOS, Android | `"high"` wakes the device; `"normal"` is power-considerate. |
+
+These are the same three fields `push.send()` accepts, wired to the automatic path. The other rich fields (`badge`, `imageUrl`, `tag`, etc.) are configurable on the manual path only.
+
+### Tap-routing `data`
+
+Every automatic push carries a flat `data` object of string identifiers so your app's tap handler can deep-link to the right screen. All `data` values are **flat top-level strings** (FCM coerces `data` values with `String()`, so nested objects are not used).
+
+Three keys are on every automatic push:
+
+| Key | Value |
+|-----|-------|
+| `type` | The event type, e.g. `entity-comment`, `new-follow`, `event-invite`, `message`. |
+| `action` | A canonical routing hint — one of `open-comment`, `open-entity`, `open-profile`, `open-space`, `open-event`, `open-chat-message`, `open-conversation` (message path), or `do-nothing`. |
+| `recipientUserId` | The id of the account this copy of the notification is for. Stamped per device at dispatch time — see below. |
+
+Beyond those three keys, each push forwards **every identifier form** for each object the notification references, so you can route on whichever id your app uses (UUID, short id, foreign id, slug, or username). Per referenced object:
+
+| Object | Keys forwarded |
+|--------|----------------|
+| Entity | `entityId`, `entityShortId`, `entityForeignId` |
+| Comment | `commentId`, `commentForeignId` (comments have no short id) |
+| Space | `spaceId`, `spaceShortId`, `spaceSlug` |
+| RSVP event | `eventId`, `eventShortId` |
+| Initiator (the acting user) | `initiatorId`, `initiatorUsername`, `initiatorForeignId` (users have no short id) |
+| Chat message | `messageId`, `conversationId` (both are needed to place a message) |
+| Granter (the user who gave reputation) | `granterId`, `granterUsername`, `granterForeignId` |
+| Connection | `connectionId` |
+
+Which of those apply depends on the event type:
+
+| Event type(s) | `action` | `data` identifiers (beyond `type`/`action`) |
+|---------------|----------|---------------------------------------------|
+| `entity-comment`, `comment-reply`, `comment-mention`, `comment-reaction`, `comment-reaction-milestone-specific`, `comment-reaction-milestone-total` | `open-comment` | Entity + Comment + Space keys (+ Initiator, except on milestones) |
+| `entity-mention`, `entity-reaction`, `entity-reaction-milestone-specific`, `entity-reaction-milestone-total` | `open-entity` | Entity + Space keys (+ Initiator, except on milestones) |
+| `new-follow` | `open-profile` | Initiator keys |
+| `connection-request`, `connection-accepted` | `open-profile` | `connectionId` + Initiator keys |
+| `space-membership-approved` | `open-space` | Space keys |
+| `event-invite`, `event-updated`, `event-cancelled` | `open-event` | RSVP-event + parent-Space keys + Initiator keys |
+| `reputation-grant` | `open-entity` / `open-comment` / `open-chat-message` / `open-profile` / `do-nothing` | Granter keys + whichever target's keys apply (Entity, Comment, or Chat message) + Space keys |
+| `message` (chat) | `open-conversation` | `conversationId`, `messageId` |
+
+<Note>
+  **Content and RSVP-event notifications also carry the parent space.** A notification *about* an Entity or Comment (a "content notification") or an RSVP-event notification additionally forwards the parent **Space** id set (`spaceId`, `spaceShortId`, `spaceSlug`) when the subject lives in a space, so you can route within a space. Don't confuse the `message` **event type** or an RSVP **Event** (the data model) with the generic idea of a "notification event."
+</Note>
+
+<Note>
+  **These `data` keys are additive and non-breaking.** Existing tap handlers that ignore unknown keys are unaffected — nothing that was present before was removed or renamed. A key whose underlying value is absent (e.g. a user with no `foreignId`, a space with no `slug`) is simply omitted rather than sent empty.
+</Note>
+
+#### `recipientUserId` is a reserved key
+
+One physical device can be signed into several accounts at once, so a single send can deliver the same notification to the same device more than once — once per recipient account. `recipientUserId` names the account each copy belongs to, which is what lets a tap handler switch to the right account before deep-linking.
+
+- **It is stamped per device by the server**, on both the automatic paths and `push.send()`. A value you supply yourself under the same key is **overwritten**: a client routing accounts on it has to be able to trust it absolutely.
+- **A device signed into two accounts shows two notifications** for a message both accounts receive — one per account, each naming its own recipient. This is intentional; suppressing the non-foregrounded account's copy is app-side work.
+- **Dashboard test sends omit it.** A test send from the dashboard targets a token you paste, not a registered account, so there is no recipient to name.
+
+The chat-message path builds its `data` from the send context rather than notification metadata, so beyond the per-device `recipientUserId` it carries exactly `{ type: "message", action: "open-conversation", conversationId, messageId }`.
+
+## Device Lifecycle
+
+- **Re-registration:** registering the same physical device again (same token or endpoint) **as the same user** updates the existing record instead of duplicating it.
+- **Multiple accounts per device:** registering the same device as a *different* user adds a second binding rather than reassigning the first. A device signed into several accounts receives notifications for all of them, each copy carrying its own `recipientUserId`.
+- **Stale token cleanup:** a token or subscription permanently rejected by APNs, FCM, or Web Push during a send is automatically deleted — and because a dead token is dead for the whole device, **every** account bound to that token is unbound, not just the one that was being sent to. No separate cleanup pass is needed.
+- **Token rotation:** device tokens rotate (reinstall, OS refresh, backup restore), which kills every binding on the old token. The SDK detects this wherever `usePushRegistration` is mounted with an adapter that reports rotations: it records the new identifier, re-binds the **active** account immediately, and marks every other push-enabled account as needing a re-bind, repairing each on its next activation rather than spending its stored credential in the background. Rotation is reported live on Expo and on Android, and on the next page load on Web (which has no in-page rotation event). iOS APNs rotation under bare React Native is not reported by the OS event at all; it is picked up on the next launch instead, because on native the hook also reads the device's current identifier on mount whenever notification permission is already granted. See [Automatic token rotation](/sdk/push-notifications/overview#automatic-token-rotation).
+- **Signing out unbinds automatically:** once this device has a stored push identifier, `signOut()`, `removeAccount()` and `signOutAll()` pass its identifier with the sign-out request, and the server deletes that account's push binding in the **same transaction** as the session teardown. If the server refuses the unbind nothing commits — the sign-out fails and the account keeps its credential so the user can retry, rather than being left receiving notifications from an account it can no longer reach. A device with no stored identifier sends none, has no unbind to protect, and signs out best-effort. Other accounts on the device are unaffected.
+- **Per-account control:** `unregister()` silences the **active** account on this device as a durable preference, and [`useAccountPushToggle`](/hooks/push/use-account-push-toggle) does the same for any stored account without switching to it. Neither is a logout step — see the [warning on the SDK page](/sdk/push-notifications/overview#turning-push-off).
+
+## References
+
+Everything related to push notifications across the docs:
+
+<CardGroup cols={2}>
+  <Card title="SDK Reference — Push Notifications" icon="mobile-screen-button" href="/sdk/push-notifications/overview">
+    Per-platform client setup for Expo, React Native, and Web
+  </Card>
+  <Card title="usePushRegistration" icon="cube" href="/hooks/push/use-push-registration">
+    Request permission, register, and unregister the current user's device
+  </Card>
+  <Card title="useAccountPushToggle" icon="toggle-on" href="/hooks/push/use-account-push-toggle">
+    Per-account push control on a device holding several accounts
+  </Card>
+  <Card title="Node SDK — Push Notifications" icon="node-js" href="/node-sdk/push-notifications">
+    The `push.send()` server module reference
+  </Card>
+  <Card title="Webhooks — Push Bridge" icon="webhook" href="/webhooks#push-notification-bridge">
+    Forward `notification.created` events to push
+  </Card>
+</CardGroup>
+
+### API Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Register Device" href="/api-reference/push-notifications/register-device">
+    `POST /push-notifications/devices`
+  </Card>
+  <Card title="Deregister Device" href="/api-reference/push-notifications/deregister-device">
+    `DELETE /push-notifications/devices`
+  </Card>
+  <Card title="Send Push" href="/api-reference/push-notifications/send">
+    `POST /push-notifications/send`
+  </Card>
+  <Card title="Get VAPID Public Key" href="/api-reference/push-notifications/get-vapid-public-key">
+    `GET /push-notifications/vapid-public-key`
+  </Card>
+</CardGroup>

@@ -1,0 +1,50 @@
+---
+title: "Fetch Comment by Foreign ID"
+api: "GET /v7/:projectId/comments/by-foreign-id"
+description: "Get a comment by its foreign ID"
+---
+
+Returns a single comment matching the given `foreignId` within the project. Useful for looking up comments using your own application's identifiers.
+
+<Note>
+  If the comment author is block-edged with the signed-in caller, in either
+  direction, this returns `404` with `comment/not-found` — identical to a
+  comment that does not exist. An embedded `parentComment` is nulled under the
+  same rule. Requires the `moderation` bundle.
+</Note>
+
+## Query Parameters
+
+<ParamField query="foreignId" type="string" required>
+  The foreign ID to look up.
+</ParamField>
+
+<ParamField query="include" type="string">
+  Comma-separated list of associations to include. Valid values: `user`, `entity`, `space`, `parent`, `grants` (the [reputation-grant summary](/data-models/reputation-grant#grantsummary)).
+</ParamField>
+
+## Response
+
+Returns a `200 OK` with the following shape:
+
+```json
+{
+  "comment": { ...Comment }
+}
+```
+
+The `comment` field is a [Comment](/data-models/comment) object. If the comment has been removed (user-deleted or moderation-removed) and the viewer is not the author, identifying fields (`userId`, `user`, `content`, `gif`, `mentions`, `attachments`) are nulled out as a Reddit-style placeholder.
+
+<Note>
+  This endpoint **nests the record under a `comment` key**, unlike every other read surface, which returns the record bare. So a requested grants summary lives at `comment.grants` — see [GrantSummary](/data-models/reputation-grant#grantsummary).
+</Note>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found — 404">
+    ```json
+    { "error": "Comment not found", "code": "comment/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>

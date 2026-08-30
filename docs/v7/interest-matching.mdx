@@ -1,0 +1,102 @@
+---
+title: "Interest Matching"
+description: "Match people by what they actually engage with — activity-derived interest facets, decayed over time, matched passively or by topic."
+icon: "users-viewfinder"
+---
+
+Interest matching connects people by their **activity-derived interests**. As users create and engage with content, Sublay folds that activity into a small set of **interest facets** per user — clusters of related topics, each with a recency-weighted "hotness". The [`POST /match/users`](/v7/api-reference/match/match-users) endpoint then ranks other users against an asker, either passively ("who is like me?") or by an explicit topic ("who is into biotech?").
+
+Unlike a static interests list, facets are built from behavior and **decay over time**, so a match reflects what someone is engaged with *now*, not what they once filled into a profile field.
+
+<Note>
+  Interest matching requires a **paid plan**. Free-tier projects cannot use embedding-based features.
+</Note>
+
+---
+
+## Prerequisites
+
+Interest matching builds on the semantic-search embedding pipeline, so it has an ordered set of prerequisites:
+
+1. **Paid plan** — embeddings are a paid feature.
+2. **`ai-search` bundle** — provides `ContentEmbeddings`, the source of facet building. Interest matching reads and annotates this table (it adds a `facetProcessedAt` marker column), so `ai-search` must be installed **first**. Installing `interest-matching` without it fails fast with `database/bundle-prerequisite-missing`.
+3. **`interest-matching` bundle** — provisions the `UserInterestFacets` table (with its vector + btree indexes). Install it from the dashboard Database section, or via the bundle install API.
+4. **`interestMatching.enabled`** — the project setting that turns folding and matching on.
+
+---
+
+## How Facets Are Built
+
+Facet building runs inside the existing embedding cron (every few minutes), so there is nothing extra to schedule:
+
+- **Fold-in.** Each newly-embedded, source-clean record is folded as **one unit of mass** into the author's nearest facet (or spawns a new facet if it is far from all existing ones). Multi-chunk content still counts once — long posts do not get extra weight.
+- **Decay.** A facet's mass decays with a long half-life (interests move slowly), so recent activity dominates. The current, decayed mass is a facet's **hotness**.
+- **Low-signal skip.** Trivial content ("lol", "same") is skipped so it never pollutes a facet.
+- **Pruning.** Facets that never reach a significance threshold are garbage-collected after a grace window; a facet that *was* significant is kept even when it later goes cold.
+
+Building is **moderation-, soft-delete-, and DM-safe**: an embedding row surviving admin removal is not treated as live content, and private-DM content never feeds a facet.
+
+---
+
+## Project Settings
+
+Configure the feature through the `interestMatching` block on the project settings (dashboard Settings → project settings update). Every field is optional and paid-plan-guarded; the tuning knobs fall back to sensible platform defaults when unset.
+
+<ParamField body="interestMatching.enabled" type="boolean" default="false">
+  Master switch. Turns on both cron fold-in and the `/match/users` endpoint.
+</ParamField>
+
+<ParamField body="interestMatching.exposeSampleContent" type="boolean" default="false">
+  **Gate 1** of the two-gate sample exposure. When on, callers *may* request raw sample content per matched facet by also passing `includeSampleContent: true` (Gate 2) on the request. Both gates must be on for samples to be returned. When off, requesting samples returns `403 match/sample-content-disabled`. Changing this setting invalidates the project cache so the gate takes effect immediately.
+</ParamField>
+
+<ParamField body="interestMatching.halfLifeHours" type="number">
+  Half-life (hours) for facet mass/hotness decay. This is a **distinct** knob from the entity `scoring.halfLifeHours` — interests move far more slowly than trending content, so the default here is much longer (~60 days).
+</ParamField>
+
+<ParamField body="interestMatching.distanceThreshold" type="number">
+  Cosine distance under which a new record folds into an existing facet instead of spawning a new one. Larger values produce fewer, broader facets.
+</ParamField>
+
+<ParamField body="interestMatching.significanceThreshold" type="number">
+  A facet whose lifetime-peak hotness never reaches this value is treated as never-significant and eligible for pruning.
+</ParamField>
+
+<ParamField body="interestMatching.pruneGraceHours" type="number">
+  Grace window (hours) after a facet is created during which it is never pruned, so a fresh facet has time to accumulate before garbage collection.
+</ParamField>
+
+<ParamField body="interestMatching.lowSignalThreshold" type="number">
+  Threshold for the low-signal filter — content below it is skipped from folding (but still marked, so it never re-drains).
+</ParamField>
+
+### Two-gate sample exposure
+
+Sample content — the raw text that illustrates why two people overlap — is exposed only when **both** gates are satisfied:
+
+| Gate 1 (`exposeSampleContent`) | Gate 2 (`includeSampleContent`) | Result |
+| --- | --- | --- |
+| off | off | No samples |
+| off | on | `403 match/sample-content-disabled` |
+| on | off | No samples |
+| on | on | Samples attached (minus removed / soft-deleted / DM content) |
+
+Gate 1 is a project-owner-level consent; Gate 2 is a per-request opt-in. The always-returned match breakdown (scores, facet ids, hotness) never carries readable content on its own.
+
+---
+
+## Accepted Limitations
+
+Interest matching is a lossy, eventually-consistent primitive. Know these v1 tradeoffs:
+
+- **Gradual backfill latency.** Facets are built by the periodic cron, not synchronously on write. A brand-new project (or a burst of new content) takes several cron ticks to reflect fully in match results. Newly-created content is not blended into a live query at match time.
+- **Cold-start asymmetry.** A cold user can *ask* (via the bio-vector fallback) but, in v1, is not surfaced as a *candidate* until they have real facets. A rare niche expert with little activity may therefore be hard to find until they accrue facets.
+- **Deletion / edits do not retract mass.** Facet mass is additive and decays with time; deleting or editing content does **not** subtract the contribution it already made. Removed/soft-deleted/DM content is excluded from *building new* facets and from *samples*, but past mass stays until it decays. Facets do not carry stable identity across cron runs.
+
+---
+
+## SDKs
+
+- **Node SDK** — [`search.matchUsers`](/v7/node-sdk/search)
+- **JavaScript SDK** — [`search.matchUsers`](/v7/js-sdk/search)
+- **React / React Native** — the [`useMatchUsers`](/v7/hooks/search/use-match-users) hook

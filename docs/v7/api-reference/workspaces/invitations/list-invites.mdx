@@ -1,0 +1,42 @@
+---
+title: "List Workspace Invites"
+api: "GET /v7/:projectId/workspaces/:id/invites"
+description: "List a workspace's live pending invites"
+---
+
+Returns the workspace's **live** pending invites (`status = 'pending' AND expiresAt > now` — effectively-expired rows are excluded). Requires the `invite` capability (or owner).
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="actingUserId" type="string">
+  Service/master keys only — the user to act as. Enforced: the `invite` capability (or ownership) is required *of the named user*. Omit it to read as the app itself (unbounded). See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
+## Response
+
+```json
+{ "data": [ /* WorkspaceInvitation[] */ ] }
+```
+
+Each item is a [WorkspaceInvitation](/data-models/workspace-invitation) object.
+
+This is a workspace's **outbox**. For the invites addressed **to** a user, see [List My Invites](/api-reference/workspaces/invitations/list-my-invites).
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
+  </Accordion>
+</AccordionGroup>
+
+See also: [useFetchWorkspaceInvites](/hooks/workspaces/use-fetch-workspace-invites)

@@ -1,0 +1,354 @@
+---
+title: "Space Moderation"
+description: "Handle reports, moderate content, and manage community rules"
+---
+
+This page covers the moderation and administrative functions on the `spaces` module: report handling, content moderation actions, and community rules management.
+
+---
+
+## Reports
+
+### handleEntityReport
+
+Resolves a report filed against an entity in a space by applying one or more moderation actions.
+
+```typescript
+const result = await sublay.spaces.handleEntityReport({
+  spaceId: "spc_abc123",
+  reportId: "rpt_xyz789",
+  entityId: "ent_xyz789",
+  actions: ["remove-entity", "ban-user"],
+  reason: "Repeated spam",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID where the report was filed.
+</ParamField>
+
+<ParamField body="reportId" type="string" required>
+  The Sublay report ID.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID the report targets.
+</ParamField>
+
+<ParamField body="actions" type="string[]" required>
+  One or more actions to apply: `"remove-entity"`, `"ban-user"`, and/or `"dismiss"`.
+</ParamField>
+
+<ParamField body="summary" type="string">
+  Optional moderator summary of the resolution.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason, stored for audit purposes.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The Sublay user ID of the moderator performing the action.
+</ParamField>
+
+**Returns** — `Promise<HandleReportResponse>`
+
+---
+
+### handleCommentReport
+
+Resolves a report filed against a comment in a space by applying one or more moderation actions.
+
+```typescript
+const result = await sublay.spaces.handleCommentReport({
+  spaceId: "spc_abc123",
+  reportId: "rpt_abc456",
+  commentId: "cmt_abc123",
+  actions: ["dismiss"],
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID where the report was filed.
+</ParamField>
+
+<ParamField body="reportId" type="string" required>
+  The Sublay report ID.
+</ParamField>
+
+<ParamField body="commentId" type="string" required>
+  The Sublay comment ID the report targets.
+</ParamField>
+
+<ParamField body="actions" type="string[]" required>
+  One or more actions to apply: `"remove-comment"`, `"ban-user"`, and/or `"dismiss"`.
+</ParamField>
+
+<ParamField body="summary" type="string">
+  Optional moderator summary of the resolution.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason, stored for audit purposes.
+</ParamField>
+
+<ParamField body="userId" type="string">
+  The Sublay user ID of the moderator performing the action.
+</ParamField>
+
+**Returns** — `Promise<HandleReportResponse>`
+
+---
+
+<Note>
+  Chat message reports are handled by **`spaces.handleSpaceChatReport`**, which
+  is documented with the other space-conversation functions in
+  [Chat → Space conversations](/node-sdk/chat#space-conversations). Reports on
+  DM and group conversations are project-level and are resolved in the Sublay
+  dashboard, not through this SDK.
+</Note>
+
+---
+
+## Content Moderation
+
+### moderateSpaceEntity
+
+Approves or removes an entity within a space.
+
+```typescript
+const result = await sublay.spaces.moderateSpaceEntity({
+  spaceId: "spc_abc123",
+  entityId: "ent_xyz789",
+  action: "remove",
+  reason: "Violates community guidelines",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID to moderate.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  `"approve"` — makes the entity visible, or `"remove"` — hides/removes it from the space.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason for the moderation action, stored for audit purposes.
+</ParamField>
+
+**Returns** — `Promise<ModerationResponse>`
+
+---
+
+### setSpaceEntityNsfw
+
+Sets the NSFW own-flag on an entity within a space — including other users' entities. This is a separate axis from `moderateSpaceEntity`: it **labels** the entity (`nsfw`), it does not approve/remove it. Requires the acting user to be an admin or moderator of the space.
+
+```typescript
+const result = await sublay.spaces.setSpaceEntityNsfw({
+  spaceId: "spc_abc123",
+  entityId: "ent_xyz789",
+  nsfw: true,
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID containing the entity.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The Sublay entity ID to flag or unflag.
+</ParamField>
+
+<ParamField body="nsfw" type="boolean" required>
+  The NSFW own-flag to set on the entity.
+</ParamField>
+
+**Returns** — `Promise<{ message: string; nsfw: boolean }>`
+
+---
+
+### moderateSpaceComment
+
+Approves or removes a comment within a space.
+
+```typescript
+const result = await sublay.spaces.moderateSpaceComment({
+  spaceId: "spc_abc123",
+  commentId: "cmt_abc123",
+  action: "approve",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="commentId" type="string" required>
+  The Sublay comment ID to moderate.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  `"approve"` or `"remove"`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason for the moderation action.
+</ParamField>
+
+**Returns** — `Promise<ModerationResponse>`
+
+---
+
+## Rules
+
+Rules are community guidelines displayed to members. They are ordered and each consists of a title and optional description.
+
+### fetchManyRules
+
+Fetches all rules for a space.
+
+```typescript
+const result = await sublay.spaces.fetchManyRules({ spaceId: "spc_abc123" });
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+**Returns** — `Promise<FetchManyRulesResponse>`
+
+---
+
+### fetchRule
+
+Fetches a single rule by its ID.
+
+```typescript
+const rule = await sublay.spaces.fetchRule({
+  spaceId: "spc_abc123",
+  ruleId: "rul_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="ruleId" type="string" required>
+  The Sublay rule ID.
+</ParamField>
+
+**Returns** — `Promise<Rule>`
+
+---
+
+### createRule
+
+Creates a new rule for a space.
+
+```typescript
+const rule = await sublay.spaces.createRule({
+  spaceId: "spc_abc123",
+  title: "Be respectful",
+  description: "Treat all members with respect and courtesy.",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  Short title for the rule.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Extended explanation of the rule.
+</ParamField>
+
+**Returns** — `Promise<Rule>`
+
+---
+
+### updateRule
+
+Updates an existing rule's title or description.
+
+```typescript
+const rule = await sublay.spaces.updateRule({
+  spaceId: "spc_abc123",
+  ruleId: "rul_xyz789",
+  title: "Be respectful and kind",
+  description: "Updated description.",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="ruleId" type="string" required>
+  The Sublay rule ID to update.
+</ParamField>
+
+<ParamField body="title" type="string">
+  New title.
+</ParamField>
+
+<ParamField body="description" type="string">
+  New description.
+</ParamField>
+
+**Returns** — `Promise<Rule>`
+
+---
+
+### deleteRule
+
+Deletes a rule from a space.
+
+```typescript
+const result = await sublay.spaces.deleteRule({
+  spaceId: "spc_abc123",
+  ruleId: "rul_xyz789",
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="ruleId" type="string" required>
+  The Sublay rule ID to delete.
+</ParamField>
+
+**Returns** — `Promise<DeleteRuleResponse>`
+
+---
+
+### reorderRules
+
+Sets the display order of all rules for a space by providing an ordered array of rule IDs.
+
+```typescript
+const rules = await sublay.spaces.reorderRules({
+  spaceId: "spc_abc123",
+  ruleIds: ["rul_first", "rul_second", "rul_third"],
+});
+```
+
+<ParamField body="spaceId" type="string" required>
+  The Sublay space ID.
+</ParamField>
+
+<ParamField body="ruleIds" type="string[]" required>
+  Complete ordered array of all rule IDs for the space.
+</ParamField>
+
+**Returns** — `Promise<Rule[]>` — the full list of rules in their new order.

@@ -1,0 +1,403 @@
+---
+title: "Use Fetch Connections"
+---
+
+# `useFetchConnections`
+
+## Overview
+
+The `useFetchConnections` hook fetches the list of established connections for the current logged-in user. It returns paginated results with detailed connection information for users you are mutually connected with.
+
+## Usage Example
+
+```tsx
+import { useFetchConnections } from "@replyke/react-js";
+
+function MyConnectionsList() {
+  const fetchConnections = useFetchConnections();
+
+  const loadConnections = async () => {
+    try {
+      const result = await fetchConnections({ page: 1, limit: 10 });
+
+      console.log(`Found ${result.pagination.totalCount} connections`);
+      result.connections.forEach(connection => {
+        console.log(`Connected to ${connection.user.username} since ${connection.connectedAt}`);
+      });
+    } catch (error) {
+      console.error("Failed to fetch connections:", error.message);
+    }
+  };
+
+  return <button onClick={loadConnections}>Load My Connections</button>;
+}
+```
+
+## Advanced Usage with Pagination
+
+```tsx
+import { useFetchConnections, ConnectionsResponse } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+function ConnectionsManager() {
+  const fetchConnections = useFetchConnections();
+  const [connectionsData, setConnectionsData] = useState<ConnectionsResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const loadConnections = async (page: number) => {
+    setLoading(true);
+    try {
+      const result = await fetchConnections({ page, limit: 15 });
+      setConnectionsData(result);
+    } catch (error) {
+      console.error("Failed to load connections:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadConnections(currentPage);
+  }, [currentPage]);
+
+  if (loading && !connectionsData) {
+    return <div>Loading connections...</div>;
+  }
+
+  return (
+    <div className="connections-manager">
+      <h2>My Connections ({connectionsData?.pagination.totalCount || 0})</h2>
+
+      <div className="connections-grid">
+        {connectionsData?.connections.map(connection => (
+          <div key={connection.id} className="connection-card">
+            <div className="user-info">
+              <h4>{connection.user.displayName || connection.user.username}</h4>
+              <p>@{connection.user.username}</p>
+            </div>
+
+            <div className="connection-meta">
+              <small>
+                Connected: {new Date(connection.connectedAt).toLocaleDateString()}
+              </small>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {connectionsData && connectionsData.pagination.totalPages > 1 && (
+        <div className="pagination">
+          <button
+            disabled={!connectionsData.pagination.hasPreviousPage || loading}
+            onClick={() => setCurrentPage(prev => prev - 1)}
+          >
+            Previous
+          </button>
+
+          <span>
+            Page {connectionsData.pagination.currentPage} of {connectionsData.pagination.totalPages}
+          </span>
+
+          <button
+            disabled={!connectionsData.pagination.hasNextPage || loading}
+            onClick={() => setCurrentPage(prev => prev + 1)}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Usage with Search and Filter
+
+```tsx
+import { useFetchConnections } from "@replyke/react-js";
+import { useState, useMemo } from "react";
+
+function SearchableConnectionsList() {
+  const fetchConnections = useFetchConnections();
+  const [allConnections, setAllConnections] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Load all connections (you might want to implement server-side search instead)
+  const loadAllConnections = async () => {
+    setLoading(true);
+    try {
+      let allConnections: any[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const result = await fetchConnections({ page: currentPage, limit: 50 });
+        allConnections = [...allConnections, ...result.connections];
+        hasMore = result.pagination.hasNextPage;
+        currentPage++;
+      }
+
+      setAllConnections(allConnections);
+    } catch (error) {
+      console.error("Failed to load connections:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter connections based on search term
+  const filteredConnections = useMemo(() => {
+    if (!searchTerm.trim()) return allConnections;
+
+    return allConnections.filter(connection =>
+      connection.user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      connection.user.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [allConnections, searchTerm]);
+
+  const handleLoadConnections = async () => {
+    await loadAllConnections();
+  };
+
+  return (
+    <div className="searchable-connections">
+      <div className="connections-header">
+        <button onClick={handleLoadConnections} disabled={loading}>
+          {loading ? "Loading..." : "Load Connections"}
+        </button>
+
+        {allConnections.length > 0 && (
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="Search connections..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="connections-results">
+        <p>{filteredConnections.length} connections found</p>
+
+        <div className="connections-list">
+          {filteredConnections.map(connection => (
+            <div key={connection.id} className="connection-item">
+              <div className="user-details">
+                <h4>{connection.user.displayName || connection.user.username}</h4>
+                <p>@{connection.user.username}</p>
+                <small>
+                  Connected {new Date(connection.connectedAt).toLocaleDateString()}
+                </small>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredConnections.length === 0 && allConnections.length > 0 && (
+          <div className="no-results">
+            No connections found matching "{searchTerm}"
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+## Usage in Network Visualization
+
+```tsx
+import { useFetchConnections } from "@replyke/react-js";
+import { useState, useEffect } from "react";
+
+interface NetworkNode {
+  id: string;
+  username: string;
+  displayName?: string;
+  connectedAt: string;
+}
+
+function ConnectionsNetwork() {
+  const fetchConnections = useFetchConnections();
+  const [networkNodes, setNetworkNodes] = useState<NetworkNode[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState({
+    totalConnections: 0,
+    recentConnections: 0,
+    averageConnectionsPerMonth: 0
+  });
+
+  const loadNetworkData = async () => {
+    setLoading(true);
+    try {
+      // Load all connections for network visualization
+      let allConnections: any[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const result = await fetchConnections({ page: currentPage, limit: 100 });
+        allConnections = [...allConnections, ...result.connections];
+        hasMore = result.pagination.hasNextPage;
+        currentPage++;
+      }
+
+      // Transform to network nodes
+      const nodes: NetworkNode[] = allConnections.map(connection => ({
+        id: connection.user.id,
+        username: connection.user.username,
+        displayName: connection.user.displayName,
+        connectedAt: connection.connectedAt
+      }));
+
+      setNetworkNodes(nodes);
+
+      // Calculate stats
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+      const recentConnections = nodes.filter(node =>
+        new Date(node.connectedAt) >= thirtyDaysAgo
+      ).length;
+
+      const oldestConnection = nodes.reduce((oldest, node) =>
+        new Date(node.connectedAt) < new Date(oldest.connectedAt) ? node : oldest
+      , nodes[0]);
+
+      let averageConnectionsPerMonth = 0;
+      if (oldestConnection) {
+        const monthsDiff = (now.getTime() - new Date(oldestConnection.connectedAt).getTime())
+          / (1000 * 60 * 60 * 24 * 30);
+        averageConnectionsPerMonth = nodes.length / monthsDiff;
+      }
+
+      setStats({
+        totalConnections: nodes.length,
+        recentConnections,
+        averageConnectionsPerMonth: Math.round(averageConnectionsPerMonth * 100) / 100
+      });
+
+    } catch (error) {
+      console.error("Failed to load network data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadNetworkData();
+  }, []);
+
+  return (
+    <div className="connections-network">
+      <div className="network-stats">
+        <h3>Your Network Overview</h3>
+        <div className="stats-grid">
+          <div className="stat-item">
+            <span className="stat-number">{stats.totalConnections}</span>
+            <span className="stat-label">Total Connections</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-number">{stats.recentConnections}</span>
+            <span className="stat-label">New This Month</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-number">{stats.averageConnectionsPerMonth}</span>
+            <span className="stat-label">Avg/Month</span>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div>Loading network data...</div>
+      ) : (
+        <div className="network-visualization">
+          <h4>Your Connections</h4>
+          <div className="nodes-grid">
+            {networkNodes.map(node => (
+              <div key={node.id} className="network-node">
+                <strong>{node.displayName || node.username}</strong>
+                <small>@{node.username}</small>
+                <small>{new Date(node.connectedAt).toLocaleDateString()}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an optional object with the following fields:
+
+
+<ParamField path="page" type="number">
+  1
+</ParamField>
+
+<ParamField path="limit" type="number">
+  20
+</ParamField>
+
+### Returns
+
+The function returns a Promise that resolves to a `ConnectionsResponse` object containing:
+
+#### `ConnectionsResponse`
+
+<ResponseField name="connections" type="Connection[]">
+  Array of connection information
+</ResponseField>
+
+<ResponseField name="pagination" type="PaginationInfo">
+  Pagination metadata
+</ResponseField>
+
+#### `Connection`
+| Field           | Type     | Description                                      |
+|-----------------|----------|--------------------------------------------------|
+| `id`            | `string` | Unique ID of the connection relationship        |
+| `user`          | `User`   | User object containing connected user information |
+| `connectedAt`   | `string` | ISO date string of when the connection was established |
+| `requestedAt`   | `string` | ISO date string of when the connection was initially requested |
+
+#### `PaginationInfo`
+| Field             | Type      | Description                                      |
+|-------------------|-----------|--------------------------------------------------|
+| `currentPage`     | `number`  | Current page number                              |
+| `totalPages`      | `number`  | Total number of pages available                  |
+| `totalCount`      | `number`  | Total number of connections                      |
+| `hasNextPage`     | `boolean` | Whether there are more pages after current page |
+| `hasPreviousPage` | `boolean` | Whether there are pages before current page     |
+| `limit`           | `number`  | Number of items per page used in this request   |
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user is logged in
+- Network connection issues
+
+### Use Cases
+
+This hook is commonly used in:
+- User dashboard connection management
+- Network visualization features
+- Connection directory/listing pages
+- Professional networking interfaces
+- Social platform connection overviews
+
+### Related Hooks
+
+- `useFetchConnectionsCount` - Get total connection count only
+- `useFetchConnectionStatus` - Check connection status with specific user
+- `useConnectionManager` - Comprehensive connection state management
+- `useFetchConnectionsByUserId` - Get connections for any user (public)

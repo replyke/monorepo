@@ -1,0 +1,222 @@
+---
+title: "Tables"
+description: "Read and write custom-table rows from any browser or JS runtime with the client.table(name) accessor"
+---
+
+Custom tables let your project provision its own database tables alongside Sublay's built-in models. The `client.table(name)` accessor gives you row-level access to a custom table from any JavaScript environment. For an overview of the feature — the `custom_` naming model, managed columns, and soft-delete — see [Custom Tables](/v7/custom-tables).
+
+<Note>
+  The JS SDK is **row-only**. Creating tables and columns (DDL) is service-key
+  work, and the browser SDK holds no service key — so there is no
+  table-management surface here. Manage schema from the
+  [`@sublay/node`](/v7/node-sdk/tables-management) SDK or the
+  [dashboard](/v7/custom-tables#the-dashboard-data-editor).
+</Note>
+
+`client.table(name)` is a **callable accessor** — it closes over the table name and returns the row-operation object. Type the rows with a generic:
+
+```typescript
+interface EventRow {
+  id: string;
+  name: string;
+  capacity: number;
+  createdAt: string;
+}
+
+const events = sublay.table<EventRow>("Events");
+const { data } = await events.find({ limit: 20 });
+```
+
+The `name` you pass is the **logical** table name — Sublay applies the `custom_` prefix for you. As with the rest of the JS SDK, these operations act as the **user behind the token** — you never pass an actor `userId`.
+
+---
+
+### find
+
+Fetches a filtered, sorted, paginated page of rows. Returns the shared `{ data, pagination }` envelope.
+
+```typescript
+const { data, pagination } = await sublay.table<EventRow>("Events").find({
+  page: 1,
+  limit: 20,
+  sortBy: "createdAt",
+  sortDir: "desc",
+  filters: [{ column: "capacity", operator: "gte", value: 100 }],
+});
+```
+
+<ParamField body="page" type="number">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Rows per page.
+</ParamField>
+
+<ParamField body="sortBy" type="string">
+  Column to sort by. Defaults to `createdAt` (descending) on a table with
+  timestamps, otherwise `id`.
+</ParamField>
+
+<ParamField body="sortDir" type='"asc" | "desc"'>
+  Sort direction.
+</ParamField>
+
+<ParamField body="filters" type="DbFilter[]">
+  An array of `{ column, operator, value }` clauses, **AND-combined**. Operators:
+  `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `in`, `contains`, `like`, `isNull`.
+</ParamField>
+
+<ParamField body="includeDeleted" type="boolean">
+  On a paranoid table, set `true` to include soft-deleted rows. Defaults to
+  `false`.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<T>>`
+
+---
+
+### findOne
+
+Fetches a single row by its `id`. Throws (axios `404`) if the row doesn't exist or has been soft-deleted.
+
+```typescript
+const event = await sublay.table<EventRow>("Events").findOne("a1b2c3d4-...");
+```
+
+<ParamField body="rowId" type="string" required>
+  The row's `id` (UUID).
+</ParamField>
+
+**Returns** — `Promise<T>`
+
+---
+
+### create
+
+Inserts a single row. Managed columns (`id`, `createdAt`, `updatedAt`, `deletedAt`) are rejected from the body.
+
+```typescript
+const event = await sublay.table<EventRow>("Events").create({
+  name: "Launch Summit",
+  capacity: 250,
+});
+```
+
+<ParamField body="data" type="Partial<T>" required>
+  The column values for the new row.
+</ParamField>
+
+**Returns** — `Promise<T>`
+
+---
+
+### bulkCreate
+
+Inserts many rows in one call. Capped at **100 rows** per request.
+
+```typescript
+const rows = await sublay.table<EventRow>("Events").bulkCreate([
+  { name: "Workshop A", capacity: 40 },
+  { name: "Workshop B", capacity: 40 },
+]);
+```
+
+<ParamField body="rows" type="Partial<T>[]" required>
+  The rows to insert (max 100).
+</ParamField>
+
+**Returns** — `Promise<T[]>`
+
+---
+
+### update
+
+Updates a row by `id`. On a table with timestamps, `updatedAt` is bumped automatically. Managed columns are rejected from the body.
+
+```typescript
+const event = await sublay.table<EventRow>("Events").update("a1b2c3d4-...", {
+  capacity: 300,
+});
+```
+
+<ParamField body="rowId" type="string" required>
+  The row's `id`.
+</ParamField>
+
+<ParamField body="data" type="Partial<T>" required>
+  The column values to change.
+</ParamField>
+
+**Returns** — `Promise<T>`
+
+---
+
+### delete
+
+Deletes a row by `id`. On a **paranoid** table this is a soft delete; pass `force: true` to hard-delete. On a non-paranoid table it is always a hard delete.
+
+```typescript
+await sublay.table("Events").delete("a1b2c3d4-...");
+await sublay.table("Events").delete("a1b2c3d4-...", { force: true });
+```
+
+<ParamField body="rowId" type="string" required>
+  The row's `id`.
+</ParamField>
+
+<ParamField body="opts.force" type="boolean">
+  When `true`, hard-deletes a paranoid row instead of soft-deleting it.
+</ParamField>
+
+**Returns** — `Promise<{ deleted: boolean; soft: boolean }>`
+
+---
+
+### bulkDelete
+
+Deletes many rows by an id list and/or a `filters` predicate (at least one required). Paranoid-aware and capped.
+
+```typescript
+await sublay.table("Events").bulkDelete({
+  filters: [{ column: "capacity", operator: "lt", value: 10 }],
+});
+```
+
+<ParamField body="rowIds" type="string[]">
+  Rows to delete by `id`.
+</ParamField>
+
+<ParamField body="filters" type="DbFilter[]">
+  A predicate selecting rows to delete.
+</ParamField>
+
+<ParamField body="force" type="boolean">
+  When `true`, hard-deletes matched paranoid rows.
+</ParamField>
+
+**Returns** — `Promise<{ deletedCount: number; soft: boolean }>`
+
+---
+
+### restore
+
+Clears `deletedAt` on a soft-deleted row. Only valid on a **paranoid** table.
+
+```typescript
+const event = await sublay.table<EventRow>("Events").restore("a1b2c3d4-...");
+```
+
+<ParamField body="rowId" type="string" required>
+  The soft-deleted row's `id`.
+</ParamField>
+
+**Returns** — `Promise<T>`
+
+---
+
+<Warning>
+  Row CRUD on the `/db` surface is currently **open** — identity is captured but
+  not enforced. See the [security note](/v7/custom-tables#security-open-row-crud)
+  on the overview page before storing access-controlled data in custom tables.
+</Warning>

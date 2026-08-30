@@ -1,0 +1,60 @@
+---
+title: "Workspace"
+description: "The shape of a Workspace object returned by the Workspaces API and SDK"
+---
+
+A **Workspace** is a self-nesting grouping primitive — an account/team/org that people are invited into and given authority over. Unlike a [Space](/data-models/space) (a community/subreddit shape with join-requests, posting, and moderation), a Workspace is the **B2B/SaaS collaboration shape**: invite-only, with a granular per-member authority model and an owner apex.
+
+A workspace can optionally contain copies of itself:
+
+- **Don't nest** → a flat team (one level).
+- **Nest one level** → the classic SaaS shape: a workspace containing "projects."
+- **Nest deeper** → agency-style org → client → project.
+
+<Note>
+  **Requires the `workspaces` bundle.** Workspaces are only available when the `workspaces` bundle is installed on your project. See [Bundles](/bundles) to add it. The bundle is purely additive — it touches no other bundle's data.
+</Note>
+
+## Workspace
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique workspace identifier (UUID). |
+| `name` | `string` | Display name (1–100 characters). |
+| `metadata` | `Record<string, any>` | Arbitrary developer-defined data (opaque JSON, size-capped). |
+| `ownerId` | `string` | The apex user id — the workspace's owner. The creator of a workspace becomes its owner. See [Ownership](#ownership). |
+| `parentWorkspaceId` | `string \| null` | The parent workspace id, or `null` for a root workspace. **Immutable** — set at creation; there is no re-parenting in v1. |
+| `depth` | `number` | Denormalized nesting depth (0 for a root workspace, `parent.depth + 1` for a child). Maximum depth is 10. |
+| `inheritsFromParent` | `boolean` | Whether capabilities held on an ancestor **reach** into this node. **Off by default (strict).** Server-set at creation from the project default; owner-only to flip afterwards. See [Reach & the wall/door rule](#reach-and-the-wall-door-rule). |
+| `createdAt` | `string` | ISO timestamp when the workspace was created. |
+| `updatedAt` | `string` | ISO timestamp when the workspace was last updated. |
+| `memberCount` | `number \| undefined` | The workspace's **direct** member count — descendants and reach-holders excluded. Present only when `include=memberCount` is requested, on the single-workspace read or the list alike; absent otherwise, not `null` or `0`. |
+
+## Ownership
+
+`ownerId` is a per-workspace **super-user apex**, stored on the workspace itself (mirroring how a [Space](/data-models/space) stores its owner) — not a role and not a capability.
+
+- The owner implicitly holds **all** authority over the workspace **and its entire subtree**, and this can never be revoked.
+- The owner **never has a `WorkspaceMember` row** — owner and member rows are **disjoint** for a given user + workspace. On becoming owner (creation or transfer), any existing member row for that user is removed.
+- The owner still appears in the roster and **counts as a seat**, synthesized from `ownerId` with reason `owner`.
+- Ownership **stacks down the tree**: an ancestor's owner is an owner over all descendants (the "god path"). So the account owner at the root is god over everything, while day-to-day authority is distributed to whoever runs each sub-workspace.
+
+**Owner-only actions (never capabilities):** deleting a workspace, transferring ownership, and flipping the inherit flag — doable by the workspace's own owner **or any ancestor owner**, never via a capability or reach.
+
+## Reach and the wall-door rule
+
+Authority is **strict per-node by default**: a capability applies only to the workspace it is held on. Downward "reach" is opt-in via the child-owned `inheritsFromParent` flag.
+
+- **Default (strict):** holding `invite` on workspace A lets you invite into A — not into A's children.
+- **Opt-in reach — the flag:** each workspace carries `inheritsFromParent` (default **off**), meaning *"I accept authority reaching into me from my parent."* It is **child-owned**, so a confidential sub-workspace can seal itself even under an open parent.
+- **The unbroken-chain rule (wall / door):** a capability held at an ancestor A reaches a descendant T **only if every node from A's child down to T has the flag on.** A single **off** is a *wall* sealing that node and its whole subtree from authority above; a deeper "on" cannot punch back through a sealed ancestor.
+- **Ownership is the god path and ignores the flag:** the owner — and every ancestor owner — reaches the entire subtree regardless of any flag. **Capabilities respect the seal; ownership overrides it.**
+
+Because a sealed node is capability-unreachable, only an owner can un-seal it — which is why flipping the flag is owner-only in both directions. The ownership god-path is also the recovery guarantee: a misconfigured/sealed node is never permanently locked out.
+
+## Related
+
+- [Workspace Member data model](/data-models/workspace-member)
+- [Workspace Invitation data model](/data-models/workspace-invitation)
+- [Create Workspace API](/api-reference/workspaces/create-workspace)
+- [Authority read API](/api-reference/workspaces/fetch-authority)

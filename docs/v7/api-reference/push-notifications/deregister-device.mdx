@@ -1,0 +1,107 @@
+---
+title: "Deregister Device"
+api: "DELETE /v7/:projectId/push-notifications/devices"
+description: "Remove a device registration so the authenticated user stops receiving push notifications on it"
+---
+
+Removes the calling user's push device registration. The device is identified the same way it was registered — by its token (iOS/Android) or subscription endpoint (Web).
+
+**Deregistration is idempotent.** The endpoint returns `200` whether or not a matching registration existed — the contract is "this binding is gone", and it is equally gone if an earlier call removed it or it never existed. There is no not-found error.
+
+Only the calling user's own binding is removed. A device can be registered by several accounts at once, so deregistering unbinds the caller's account from that device and leaves every other account's binding on the same device intact — callers cannot deregister devices they don't own.
+
+Requires end-user authentication. Service and master keys are rejected for the same reason as [Register Device](/api-reference/push-notifications/register-device#security-note).
+
+Requires the `push` bundle.
+
+## Body Parameters
+
+<ParamField body="platform" type="string" required>
+  The device platform. One of `"ios"`, `"android"`, or `"web"`.
+</ParamField>
+
+<ParamField body="token" type="string">
+  The APNs or FCM device token. Required when `platform` is `"ios"` or `"android"`.
+</ParamField>
+
+<ParamField body="subscription" type="object">
+  The Web Push subscription object. Required when `platform` is `"web"`. The server uses only the `endpoint` field to identify the registration.
+  <Expandable title="subscription fields">
+    <ParamField body="endpoint" type="string" required>
+      The push subscription endpoint URL.
+    </ParamField>
+    <ParamField body="keys.p256dh" type="string" required>
+      P-256 key (Base64). Must match the original registration.
+    </ParamField>
+    <ParamField body="keys.auth" type="string" required>
+      Auth secret (Base64). Must match the original registration.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+Returns `200` on success, including when no matching registration existed.
+
+```json
+{ "success": true }
+```
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="No Credential — 401">
+    Plain-text `Unauthorized`, with no JSON body and no `code`. Returned when the
+    request carries no `Authorization` header at all.
+  </Accordion>
+  <Accordion title="Rejected Credential — 403">
+    Plain-text `Forbidden`, with no JSON body and no `code`. Returned when the
+    access token is malformed, has the wrong signature, or has **expired** — the
+    common case, since access tokens live 30 minutes. Refresh the access token
+    and retry; do not treat this as a permanent refusal.
+  </Accordion>
+  <Accordion title="Service Key Rejected — 401">
+    ```json
+    { "error": "Unauthorized", "code": "push-device/unauthorized" }
+    ```
+    Returned when a service or master key is used. This endpoint has no
+    impersonation path by design (see [Security note](/api-reference/push-notifications/register-device#security-note)).
+  </Accordion>
+  <Accordion title="Invalid Body — 400">
+    ```json
+    { "error": "...", "code": "push-device/invalid-body" }
+    ```
+  </Accordion>
+  <Accordion title="Bundle Not Installed — 403">
+    ```json
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
+    ```
+  </Accordion>
+  <Accordion title="Bundle Provisioning — 503">
+    ```json
+    {
+      "code": "database/tables-provisioning",
+      "missingTables": ["PushProviderConfigs", "PushDevices", "NotificationPreferences"],
+      "bundleId": "push"
+    }
+    ```
+    Returned while the `push` bundle is mid-install. Retry shortly.
+  </Accordion>
+  <Accordion title="Server Error — 500">
+    ```json
+    { "error": "Internal server error.", "code": "push-device/server-error" }
+    ```
+    The deletion could not be performed. No diagnostic detail is returned; retry.
+  </Accordion>
+</AccordionGroup>
+
+**Rate limit:** 50 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
+
+## See Also
+
+- [Register Device](/api-reference/push-notifications/register-device)
+- [`usePushRegistration`](/hooks/push/use-push-registration)

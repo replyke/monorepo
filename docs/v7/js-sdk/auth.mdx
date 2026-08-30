@@ -1,0 +1,404 @@
+---
+title: "Auth"
+description: "Sign up, sign in, manage tokens, and handle password and email-verification flows for the end user"
+---
+
+The `auth` module handles authentication for the current end user. Use it to register and log in users, rotate tokens, and run password and email-verification flows.
+
+<Note>
+  These functions run as the end user — there is no API key and no actor user ID. `signIn`, `signUp`, and `verifyExternalUser` automatically store the returned tokens, and `signOut` clears them (see the auth section of the SDK overview).
+</Note>
+
+---
+
+### signUp
+
+Registers a new user and stores the returned tokens.
+
+```typescript
+const { user, accessToken, refreshToken } = await sublay.auth.signUp({
+  email: "user@example.com",
+  password: "s3cur3P@ss",
+  name: "Alice",
+  username: "alice",
+});
+```
+
+<ParamField body="email" type="string" required>
+  The user's email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's plain-text password (hashed server-side).
+</ParamField>
+
+<ParamField body="name" type="string">
+  Display name for the user.
+</ParamField>
+
+<ParamField body="username" type="string">
+  Unique username for the user.
+</ParamField>
+
+<ParamField body="avatar" type="string">
+  URL of the user's avatar image.
+</ParamField>
+
+<ParamField body="bio" type="string">
+  Short biography for the user.
+</ParamField>
+
+<ParamField body="location" type="{ latitude: number; longitude: number }">
+  The user's geographic location.
+</ParamField>
+
+<ParamField body="birthdate" type="string">
+  The user's birthdate as an ISO 8601 string.
+</ParamField>
+
+<ParamField body="metadata" type="Record<string, any>">
+  Arbitrary key-value data attached to the user at creation time.
+</ParamField>
+
+<ParamField body="secureMetadata" type="Record<string, any>">
+  Sensitive key-value data attached to the user, not exposed to clients.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### signIn
+
+Authenticates with email/password and stores the returned tokens.
+
+```typescript
+const { user, accessToken, refreshToken } = await sublay.auth.signIn({
+  email: "user@example.com",
+  password: "s3cur3P@ss",
+});
+```
+
+<ParamField body="email" type="string" required>
+  The user's email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's password.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### signOut
+
+Signs the user out (revokes the refresh token) and clears stored tokens.
+
+```typescript
+await sublay.auth.signOut();
+```
+
+The whole argument is optional.
+
+<ParamField body="refreshToken" type="string">
+  The refresh token to revoke. Defaults to the SDK's stored refresh token.
+</ParamField>
+
+<ParamField body="pushDevice" type="PushDeviceIdentifier">
+  Optional. The device the user is signing out on — `{ platform: "ios" | "android", token }`
+  or `{ platform: "web", subscription }`. When supplied (and the project has the
+  `push` bundle), the server deletes that user's push binding for the device in the
+  **same transaction** as the sign-out.
+
+  **The unbind needs a refresh token — the sign-out does not.** The unbind is
+  scoped to the refresh token's subject — that is what stops one account removing
+  another's binding on a shared device — so with no token to resolve, the server
+  returns `204` without ever reading `pushDevice`. Rather than report a success
+  that unbound nothing, the call **drops the field**, issues a request byte-identical
+  to the same sign-out with no `pushDevice`, clears the local tokens, warns, and
+  resolves with `pushUnbindSkipped: true`. Signing out always completes locally;
+  what you lose is the unbind, and the result tells you so.
+
+  That is the case to watch in **host-managed mode**: a client built with
+  `getToken` and no `initialTokens` has an inert `setTokens`, so it never holds a
+  refresh token. Pass `refreshToken` alongside `pushDevice` there — otherwise the
+  device keeps receiving that account's notifications until something else removes
+  the binding. A sign-out that asks for no unbind is unaffected and still works
+  with no credential at all.
+</ParamField>
+
+```typescript
+await sublay.auth.signOut({
+  pushDevice: { platform: "web", subscription },
+});
+```
+
+<Warning>
+  **A failed unbind is the only failure that keeps you signed in.** If the unbind
+  fails, nothing is committed — the call rejects with `500` /
+  `auth/device-deregistration-failed` (or `auth/sign-out-failed`), the session
+  survives, and the SDK's stored tokens are left in place so you can retry. Never
+  treat *that* rejection as signed out.
+
+  Every other failure — a `429` from the rate limiter or a quota gate, a `423`, a
+  `503`, a `400` on the body, a dropped connection — never touched a push binding,
+  so `signOut` clears the local tokens and **resolves**: a user must always be able
+  to sign out. The server-side session can outlive that teardown; it ends when the
+  refresh token expires, or on the next successful `signOut` from a client that
+  still holds one.
+
+  If you do get the unbind rejection and decide to abandon the session locally
+  anyway, `sublay.clearTokens()` drops the SDK's stored tokens (SDK-managed mode;
+  it is a no-op when the host owns the token). That gives up the credential a retry
+  would need, so the binding then clears only when that account next registers on
+  this device, or when the server prunes the token as undeliverable.
+</Warning>
+
+**Returns** — `Promise<{ pushUnbindSkipped: boolean; pushUnbindSkipReason?: "no-refresh-token" | "push-unbind-status-unknown" }>`
+
+`pushUnbindSkipped` is `true` whenever a `pushDevice` was supplied and the unbind did
+not happen, so this device's binding for that account may still be live. The sign-out
+itself completes either way. There are two ways to get it, and they are recovered
+differently — `pushUnbindSkipReason` says which:
+
+- **`"no-refresh-token"`** — the SDK never asked, because no refresh token could be
+  resolved (see `pushDevice` above). Nothing was destroyed either: with no token the
+  server has no session to end, so the account, its credential and its binding are all
+  still there. **Retryable** — re-issue the sign-out with an explicit `refreshToken`,
+  or remove the binding from a client that holds one.
+- **`"push-unbind-status-unknown"`** — the server was asked and could not answer: it
+  could not determine whether the project has push devices, so it attempted no unbind
+  and said so in a `200` body (see
+  [`POST /auth/sign-out`](/api-reference/auth/sign-out#response)). The sign-out itself
+  committed, so there is no credential left to retry with. The binding clears when
+  that account next registers on this device, or when the server prunes the token as
+  undeliverable.
+
+`false` means **no skip was reported** — not by this SDK, and not by the server. It is
+not a promise that no skip happened. The server declines the unbind for several reasons
+it answers with a plain `204`, and every one of them reads `false` here: a refresh token
+that is authentic but expired beyond the server's 90-day unbind window (reachable by
+passing an old `refreshToken` explicitly), a malformed or wrong-signature token, a
+project without the `push` bundle, and an unbind that ran and matched no row. The server
+records each of those in its own logs. Only the case where it could not determine
+whether a binding exists is reported back, because that is the one where the binding may
+still be live and nobody looked.
+
+Both reported skips also log a warning, so a caller that ignores the result still hears
+about it.
+
+---
+
+### verifyExternalUser
+
+Exchanges a host-issued user JWT for Sublay tokens and stores them. Use this when your app manages its own auth.
+
+```typescript
+const { user, accessToken, refreshToken } = await sublay.auth.verifyExternalUser({
+  userJwt: signedJwt,
+});
+```
+
+<ParamField body="userJwt" type="string" required>
+  A JWT issued by your application, containing user identity claims.
+</ParamField>
+
+**Returns** — `Promise<{ user: AuthUser; accessToken: string; refreshToken: string }>`
+
+---
+
+### requestNewAccessToken
+
+Manually rotates the access token using a refresh token. Normally this is handled automatically on a `403` in SDK-managed mode.
+
+```typescript
+const { accessToken, refreshToken } = await sublay.auth.requestNewAccessToken();
+```
+
+The whole argument is optional.
+
+<ParamField body="refreshToken" type="string">
+  The refresh token to exchange. Defaults to the SDK's stored refresh token.
+</ParamField>
+
+<Note>
+  Persist the new `refreshToken` if one is present (token rotation), or use SDK-managed mode, which does this for you.
+</Note>
+
+**Returns** — `Promise<{ accessToken: string; refreshToken?: string }>`
+
+---
+
+### requestPasswordReset
+
+Sends a password-reset email.
+
+```typescript
+await sublay.auth.requestPasswordReset({ email: "user@example.com" });
+```
+
+<ParamField body="email" type="string" required>
+  The email address to send the reset link to.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### resetPassword
+
+Completes a password reset using a token from the email.
+
+This revokes **every** session for that user and removes **every** push binding they hold, on every device — a reset is the remedy for a suspected compromise, so nothing is spared and there is no field to spare one with. They sign in again everywhere, and each device re-binds for push on its own once it is next opened. Projects without the `push` bundle skip the binding step and are otherwise unaffected.
+
+```typescript
+await sublay.auth.resetPassword({
+  token: resetToken,
+  newPassword: "newS3cur3P@ss",
+});
+```
+
+<ParamField body="token" type="string" required>
+  The reset token from the password reset email.
+</ParamField>
+
+<ParamField body="newPassword" type="string" required>
+  The new password to set for the account.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### changePassword
+
+Changes the authenticated user's password after verifying the current one. Use this for an authenticated "change password" flow, as opposed to the token-based `resetPassword`.
+
+A password change ends **every other session** for that user and deletes every push binding they hold — see [Change Password](/api-reference/auth/change-password). The session making the call survives: the server reads which session is asking off the access token the request is already authenticated with, so nothing about it has to be sent.
+
+```typescript
+const { success, message } = await sublay.auth.changePassword({
+  password: "currentP@ss",
+  newPassword: "newS3cur3P@ss",
+});
+```
+
+<ParamField body="password" type="string" required>
+  The user's current password (verified before the change).
+</ParamField>
+
+<ParamField body="newPassword" type="string" required>
+  The new password to set.
+</ParamField>
+
+<ParamField body="pushDevice" type="object">
+  This device, so its push binding survives the change. Same value `auth.signOut` takes and the same one [Register Device](/api-reference/push-notifications/register-device) was called with: `{ platform: "ios" | "android", token }` or `{ platform: "web", subscription }`. (`@sublay/js`'s own `push` module covers preferences only — device registration is the REST endpoint, or `usePushRegistration` in the React packages.)
+
+  Omit it and every push binding for the user is deleted, this device's included — and nothing re-binds it until the app cold-starts, switches accounts or rotates its token, so it stops notifying until then.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean; message: string }>`
+
+---
+
+### setPassword
+
+Sets an **initial** password for an OAuth-only user who has no password yet. Unlike `changePassword`, there is no current password to verify. Use this to let an OAuth-only user add a password (for example, so they can sign in with email/password, or unlink their last OAuth identity). If the user already has a password, this fails with `auth/already-password-authenticated` — use `changePassword` instead.
+
+```typescript
+const { success, message } = await sublay.auth.setPassword({
+  newPassword: "newS3cur3P@ss",
+});
+```
+
+<ParamField body="newPassword" type="string" required>
+  The password to set for the account.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean; message: string }>`
+
+---
+
+### sendVerificationEmail
+
+Sends (or re-sends) an email-verification message to the authenticated user, delivered as a code or a link.
+
+```typescript
+const { success } = await sublay.auth.sendVerificationEmail({
+  mode: "code",
+});
+```
+
+The whole argument is optional.
+
+<ParamField body="mode" type='"code" | "link"'>
+  `"code"` emails a short token the user enters; `"link"` emails a verification URL. Defaults to `"code"`.
+</ParamField>
+
+<ParamField body="tokenFormat" type='"hex" | "numeric" | "alpha" | "alphanumeric"'>
+  Format of the generated token.
+</ParamField>
+
+<ParamField body="tokenLength" type="number">
+  Length of the generated token.
+</ParamField>
+
+<ParamField body="redirectUrl" type="string">
+  For `mode: "link"` — where to send the user after the link is verified.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean }>`
+
+---
+
+### verifyEmail
+
+Verifies a user's email using a verification token.
+
+```typescript
+await sublay.auth.verifyEmail({ token: verificationToken });
+```
+
+<ParamField body="token" type="string" required>
+  The email verification token.
+</ParamField>
+
+**Returns** — `Promise<void>`
+
+---
+
+### requestAccountDeletion
+
+Starts self-service deletion of the authenticated user's account by emailing them a one-time confirmation code (valid for 10 minutes). This does not delete anything on its own — pass the code to [`confirmAccountDeletion`](#confirmaccountdeletion) to finish.
+
+```typescript
+const { success } = await sublay.auth.requestAccountDeletion();
+```
+
+Only works for accounts with an email on file. Accounts without one (e.g. anonymous or foreign-id users) must be deleted server-side with a service key via [`@sublay/node`](/node-sdk/users). The request fails with `auth/no-email-on-file` otherwise.
+
+Takes no arguments.
+
+**Returns** — `Promise<{ success: boolean }>`
+
+---
+
+### confirmAccountDeletion
+
+Verifies the emailed code and **permanently deletes** the authenticated user's account. The cascade matches the service-key delete — entities and comments are kept as hollow shells; everything else owned by the user is removed.
+
+```typescript
+await sublay.auth.confirmAccountDeletion({ code: "048291" });
+```
+
+<Warning>
+  Deletion is immediate and irreversible. The user and their session tokens no
+  longer exist after this resolves.
+</Warning>
+
+<ParamField body="code" type="string" required>
+  The one-time confirmation code from the deletion email.
+</ParamField>
+
+**Returns** — `Promise<void>`

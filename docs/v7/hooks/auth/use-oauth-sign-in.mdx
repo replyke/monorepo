@@ -1,0 +1,143 @@
+---
+title: "Use OAuth sign-in"
+description: "Initiate OAuth sign-in, link OAuth providers, and handle the callback — web only"
+icon: "cube"
+---
+
+## Overview
+
+`useOAuthSignIn` handles the full redirect-based OAuth flow for web apps. It provides three functions:
+
+- **`initiateOAuth`** — redirect an unauthenticated user to the provider's authorization page to sign in or sign up.
+- **`linkOAuthProvider`** — redirect an already-authenticated user to link an additional OAuth provider to their account.
+- **`handleOAuthCallback`** — call this on the OAuth callback page to extract tokens from the URL fragment and set the authenticated session.
+
+<Note>
+  This page documents the `@sublay/react-js` hook, which uses `window.location` for the redirect-based web flow. For Expo apps, `@sublay/expo` exports a
+  `useOAuthSignIn` hook with the **same API** that opens the system browser and returns via a deep link — see [OAuth Authentication → Expo Integration](/sdk/authentication/oauth#expo-integration).
+</Note>
+
+## Usage Example
+
+**Initiating sign-in:**
+
+```tsx
+import { useOAuthSignIn } from "@sublay/react-js";
+
+function SignInPage() {
+  const { initiateOAuth, isLoading, error } = useOAuthSignIn();
+
+  return (
+    <>
+      <button
+        onClick={() =>
+          initiateOAuth({
+            provider: "google",
+            redirectAfterAuth: "https://myapp.com/auth/callback",
+          })
+        }
+        disabled={isLoading}
+      >
+        Sign in with Google
+      </button>
+      {error && <p>{error}</p>}
+    </>
+  );
+}
+```
+
+**Handling the callback:**
+
+```tsx
+import { useEffect } from "react";
+import { useOAuthSignIn } from "@sublay/react-js";
+
+function OAuthCallbackPage() {
+  const { handleOAuthCallback } = useOAuthSignIn();
+
+  useEffect(() => {
+    handleOAuthCallback();
+  }, []);
+
+  return <p>Signing you in...</p>;
+}
+```
+
+**Linking an additional provider:**
+
+```tsx
+import { useOAuthSignIn } from "@sublay/react-js";
+
+function LinkGitHub() {
+  const { linkOAuthProvider } = useOAuthSignIn();
+
+  return (
+    <button
+      onClick={() =>
+        linkOAuthProvider({
+          provider: "github",
+          redirectAfterAuth: "https://myapp.com/settings",
+        })
+      }
+    >
+      Connect GitHub
+    </button>
+  );
+}
+```
+
+## Returns
+
+<ResponseField name="initiateOAuth" type="function">
+  Starts the OAuth sign-in / sign-up flow for unauthenticated users. Redirects
+  the browser to the provider's authorization page.
+
+  **Parameters:**
+  - `provider` (required) — OAuth provider identifier (e.g. `"google"`, `"github"`).
+  - `redirectAfterAuth` (optional) — URL to redirect to after authentication. Defaults to the current page URL.
+</ResponseField>
+
+<ResponseField name="linkOAuthProvider" type="function">
+  Links an additional OAuth provider to the currently authenticated user. The
+  user must already be signed in. Redirects the browser to the provider's
+  authorization page.
+
+  **Parameters:**
+  - `provider` (required) — OAuth provider identifier (e.g. `"google"`, `"github"`).
+  - `redirectAfterAuth` (optional) — URL to redirect to after linking. Defaults to the current page URL.
+</ResponseField>
+
+<ResponseField name="handleOAuthCallback" type="() => boolean">
+  Reads tokens from the URL fragment (`#accessToken=...&refreshToken=...`) after
+  the provider redirects back to your app. On success, stores the tokens and
+  initializes the session. Returns `true` if tokens were found and set, `false`
+  otherwise.
+
+  Call this inside a `useEffect` on your callback page.
+
+  It is **synchronous and returns before the user's identity is known**, so a
+  `true` return means "tokens were found", not "this account was admitted". If
+  the device already stores 5 accounts and this is a sixth, the session is
+  signed back out and `accountLimitReached` is raised a moment later.
+</ResponseField>
+
+<ResponseField name="isLoading" type="boolean">
+  `true` while the authorization request is in progress. Stays `true` after the
+  redirect is triggered (since the page navigates away).
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the OAuth flow fails, or `null` when there is no error.
+
+  **The account limit does not appear here.** Reaching the 5-account limit is
+  discovered after the provider returns, and this hook has no call left to
+  reject — read `accountLimitReached` from
+  [`useAccounts`](/hooks/auth/use-accounts) or
+  [`useAddAccount`](/hooks/auth/use-add-account) instead. This is the one place
+  OAuth differs from email sign-in and external auth, which do throw. See
+  [OAuth → The account limit](/sdk/authentication/oauth#the-account-limit).
+</ResponseField>
+
+## Integration Guide
+
+For full OAuth setup instructions, see [OAuth Authentication](/sdk/authentication/oauth).

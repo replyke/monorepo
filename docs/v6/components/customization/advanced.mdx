@@ -1,0 +1,76 @@
+---
+title: "Advanced Customization"
+description: "Advanced techniques for customization"
+icon: "star"
+---
+
+# Advanced Customization
+
+Deeper customizations involving hooks, context, and utilities.
+
+---
+
+## Modify Hooks
+
+Components use hooks from the `/hooks/` directory. You can customize these for advanced behavior changes.
+
+### Example: Change Default Sorting
+
+```tsx
+// File: hooks/use-threaded-comments.tsx
+
+const [sortBy, setSortBy] = useState('top');  // Change from 'best' to 'top'
+```
+
+---
+
+## Customize Context
+
+Modify context providers for app-wide state changes.
+
+```tsx
+// File: context/ui-state-context.tsx
+
+// Add custom state
+const [customState, setCustomState] = useState(initialValue);
+```
+
+---
+
+## Add Custom Utilities
+
+Create new utility files in the `/utils/` directory for shared logic.
+
+```tsx
+// File: utils/analytics.ts
+
+export const trackCommentEvent = (event: string, data: any) => {
+  // Your analytics implementation
+};
+```
+
+---
+
+## Integrate with Your Systems
+
+Wire components to your existing systems:
+
+- Authentication
+- User profiles
+- Analytics
+- Error tracking
+- Custom APIs
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Migration Guide" icon="arrow-right-arrow-left" href="/components/migration/npm-to-cli">
+    Migrate from npm packages
+  </Card>
+
+  <Card title="File Structure" icon="folder-tree" href="/components/components/threaded/file-structure">
+    Component organization
+  </Card>
+</CardGroup>

@@ -1,0 +1,124 @@
+# js group (@sublay/js — the framework-agnostic, user-token SDK).
+#
+# Replaces the standalone test.yml that js-sdk ran in its own repo. Same
+# shape as the node job: jest via ts-jest compiles src/ and __tests__/
+# in-process against tsconfig.jest.json, every test imports through a
+# relative ../src/ path, and the package has no workspace dependencies —
+# so the *tests* need no dist/. Verified by running the suite with no
+# dist/ present anywhere in the workspace (553 tests, all passing).
+#
+# Both of the package's compile steps run below, because "the tests don't
+# read dist/" is not the same as "the build needs no coverage". Before
+# every install started passing --ignore-scripts, the package's `prepare`
+# hook (`pnpm build && pnpm build:types`) ran both as an incidental side
+# effect of `pnpm install` — that was this package's only compile coverage
+# in CI, so replacing it takes both halves, not one:
+#
+#   * `build` (tsup --dts) type-checks the public surface on the way to
+#     emitting declarations — but only the module graph reachable from
+#     src/index.ts.
+#   * `build:types` (tsc --noEmit) compiles the whole `src`
+#     program. That is the only thing covering source files the barrel
+#     never reaches: two of them today (src/interfaces/Project.ts and
+#     src/interfaces/HostedApp.ts). Verified by putting a type error in
+#     src/interfaces/Project.ts — `build` succeeds and all 553 tests pass,
+#     while `build:types` fails with TS2322. A `build`-only step would let
+#     that ship.
+#
+# See .github/workflows/test.yml for why each group gets its own workflow
+# file instead of a job in a shared one.
+name: Test js
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  # Pull requests only. A push build of main should always run to
+  # completion and report a real pass/fail, not get silently cancelled
+  # (grey, not red) by a later push. Unlike cli.yml, this workflow doesn't
+  # gate any publish step - the reasoning here is just "don't want a
+  # push-to-main run's result quietly disappearing," not a specific
+  # go-signal being retired.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+on:
+  pull_request:
+    paths:
+      - "packages/js/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/js.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/js/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig.json"
+      - ".github/workflows/js.yml"
+
+jobs:
+  js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        # --ignore-scripts so this job doesn't build the other seven
+        # workspace packages that declare a `prepare` script. This package
+        # is built explicitly in the next step instead. Full reasoning in
+        # .github/workflows/test.yml.
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build js
+        # Not needed by the test step (see the note at the top of this
+        # file), but the build is a real check in its own right: it
+        # type-checks the declaration emit for the public surface.
+        run: pnpm --filter @sublay/js run build
+
+      - name: Typecheck js declaration emit
+        # The other half of what `prepare` used to run. `build` above only
+        # sees what src/index.ts reaches; this compiles the whole src
+        # program, and is the only coverage for the two source files
+        # outside that graph. See the note at the top of this file.
+        run: pnpm --filter @sublay/js run build:types
+
+      - name: Run js test suite
+        run: pnpm --filter @sublay/js run test
+
+      - name: Dry-run publish
+        # Nothing else in CI exercises the publish path; until now the only
+        # thing that ever had was a human running this by hand. The step
+        # performs the real publish minus the upload: pnpm runs the
+        # package's `prepare` hook in a publish context and packs the
+        # tarball `files` describes, failing on anything npm rejects along
+        # the way.
+        #
+        # Scope it honestly — it is a packaging check, not a link check.
+        # Verified: a `main`/`bin` naming a path the tarball does not
+        # contain still dry-runs green, so this will NOT catch a broken
+        # entry-point path, and it does not resolve the `exports` map's
+        # targets either. What it catches is a release that cannot be
+        # produced at all: a publish-only lifecycle hook that fails, a
+        # package.json npm refuses, a `files` set that packs nothing.
+        #
+        # --force is load-bearing, not belt-and-braces: without it `pnpm
+        # publish` skips any package whose version is already on npm and
+        # exits 0 having packed nothing (verified). These workflows trigger
+        # on file changes, not version bumps, so the un-forced form would be
+        # an inert step on almost every run. --force only bypasses that skip;
+        # --dry-run still stops before anything is uploaded, and needs no
+        # registry credentials (verified with an empty npm config).
+        run: pnpm --filter @sublay/js publish --dry-run --no-git-checks --force

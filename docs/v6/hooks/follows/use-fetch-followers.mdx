@@ -1,0 +1,132 @@
+---
+title: "Use Fetch Followers"
+---
+
+# `useFetchFollowers`
+
+## Overview
+
+The `useFetchFollowers` hook fetches the list of users who are following the current logged-in user. It returns paginated results with detailed follow information including when each follow occurred.
+
+## Usage Example
+
+```tsx
+import { useFetchFollowers } from "@replyke/react-js";
+
+function MyFollowersList() {
+  const fetchFollowers = useFetchFollowers();
+
+  const loadFollowers = async () => {
+    try {
+      const result = await fetchFollowers({ page: 1, limit: 10 });
+
+      console.log(`Found ${result.pagination.totalCount} total followers`);
+      result.followers.forEach(follower => {
+        console.log(`${follower.user.username} followed on ${follower.followedAt}`);
+      });
+    } catch (error) {
+      console.error("Failed to fetch followers:", error.message);
+    }
+  };
+
+  return <button onClick={loadFollowers}>Load My Followers</button>;
+}
+```
+
+## Advanced Usage with Pagination
+
+```tsx
+import { useFetchFollowers, FollowersResponse } from "@replyke/react-js";
+import { useState } from "react";
+
+function PaginatedFollowersList() {
+  const fetchFollowers = useFetchFollowers();
+  const [followers, setFollowers] = useState<FollowersResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const loadPage = async (page: number) => {
+    setLoading(true);
+    try {
+      const result = await fetchFollowers({ page, limit: 20 });
+      setFollowers(result);
+    } catch (error) {
+      console.error("Failed to load followers:", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      {followers?.followers.map(follower => (
+        <div key={follower.followId}>
+          {follower.user.username} - Followed: {new Date(follower.followedAt).toLocaleDateString()}
+        </div>
+      ))}
+
+      {followers && (
+        <div>
+          Page {followers.pagination.currentPage} of {followers.pagination.totalPages}
+          {followers.pagination.hasNextPage && (
+            <button onClick={() => loadPage(followers.pagination.currentPage + 1)}>
+              Next Page
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an optional object with the following fields:
+
+
+<ParamField path="page" type="number">
+  1
+</ParamField>
+
+<ParamField path="limit" type="number">
+  20
+</ParamField>
+
+### Returns
+
+The function returns a Promise that resolves to a `FollowersResponse` object containing:
+
+#### `FollowersResponse`
+
+<ResponseField name="followers" type="FollowerWithFollowInfo[]">
+  Array of follower information
+</ResponseField>
+
+<ResponseField name="pagination" type="PaginationInfo">
+  Pagination metadata
+</ResponseField>
+
+#### `FollowerWithFollowInfo`
+| Field        | Type     | Description                                  |
+|--------------|----------|----------------------------------------------|
+| `followId`   | `string` | Unique ID of the follow relationship        |
+| `user`       | `User`   | User object containing follower information |
+| `followedAt` | `string` | ISO date string of when the follow occurred |
+
+#### `PaginationInfo`
+| Field             | Type      | Description                                      |
+|-------------------|-----------|--------------------------------------------------|
+| `currentPage`     | `number`  | Current page number                              |
+| `totalPages`      | `number`  | Total number of pages available                  |
+| `totalCount`      | `number`  | Total number of followers                        |
+| `hasNextPage`     | `boolean` | Whether there are more pages after current page |
+| `hasPreviousPage` | `boolean` | Whether there are pages before current page     |
+| `limit`           | `number`  | Number of items per page used in this request   |
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user is logged in

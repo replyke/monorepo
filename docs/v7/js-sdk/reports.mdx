@@ -1,0 +1,98 @@
+---
+title: "Reports"
+description: "File content reports against entities and comments, and read the moderation queue"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+The `reports` module lets end users file reports against entities and comments, and lets moderators read the moderated reports queue.
+
+---
+
+### createReport
+
+Files a report against an entity, comment, or chat message. Repeat reports of the same target are deduplicated.
+
+```typescript
+const { message, code } = await sublay.reports.createReport({
+  targetType: "comment",
+  targetId: "cmt_abc123",
+  reason: "spam",
+  details: "Posting the same link repeatedly.",
+});
+```
+
+<ParamField body="targetType" type='"entity" | "comment" | "message"' required>
+  The kind of content being reported.
+</ParamField>
+
+<ParamField body="targetId" type="string" required>
+  The ID of the entity, comment, or chat message being reported.
+</ParamField>
+
+<ParamField body="reason" type="ReportReason" required>
+  One of `spam`, `inappropriateContent`, `harassment`, `misinformation`,
+  `hateSpeech`, `violence`, `illegalActivity`, `selfHarm`, `other`. The API
+  rejects anything else — use `other` plus `details` for the rest.
+</ParamField>
+
+<ParamField body="details" type="string">
+  Additional context about the report.
+</ParamField>
+
+
+<Note>
+  Reporting a chat message uses `targetType: "message"` with the **message id**
+  as `targetId` — the conversation is resolved server-side. Reports on space
+  conversations reach space moderators; reports on DMs and group chats are
+  project-level and appear only in the Sublay dashboard.
+</Note>
+
+**Returns** — `Promise<{ message: string; code: "report/created" | "report/updated" | "report/already-reported" }>`
+
+---
+
+### fetchModeratedReports
+
+Fetches a paginated list of moderated reports, with optional filters.
+
+```typescript
+const { data, pagination } = await sublay.reports.fetchModeratedReports({
+  status: "pending",
+  sortBy: "new",
+  page: 1,
+  limit: 20,
+});
+```
+
+<ParamField body="spaceId" type="string">
+  Restrict results to reports within a specific space.
+</ParamField>
+
+<ParamField body="targetType" type='"entity" | "comment" | "message"'>
+  Restrict results to reports of a specific target type. Message reports appear
+  in this queue only for space conversations — DM and group reports are
+  project-level and surface in the dashboard.
+</ParamField>
+
+<ParamField body="status" type='"pending" | "on-hold" | "escalated" | "dismissed" | "actioned"'>
+  Restrict results to reports with a specific moderation status.
+</ParamField>
+
+<ParamField body="sortBy" type='"new" | "old"'>
+  Sort order for the returned reports.
+</ParamField>
+
+<ParamField body="page" type="number">
+  The page of results to fetch.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  The number of reports to return per page.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="body" />
+
+**Returns** — `Promise<PaginatedResponse<Report>>`
+
+Each `Report` carries `id`, `spaceId`, `targetId`, `targetType`, `status`, `reporterCount`, timestamps, and optional `userReports`, `target`, and `space` associations.

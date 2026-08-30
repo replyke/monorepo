@@ -1,0 +1,118 @@
+---
+title: "EventProvider & useEvent"
+description: "Load a single event into React context with bound RSVP and management actions"
+---
+
+`EventProvider` loads one event and exposes it — plus bound actions — to descendants via `useEvent`. It's the simplest way to build an event detail page: the provider fetches the event (or accepts a pre-fetched one), and `useEvent` gives you the event state and callbacks that keep it in sync.
+
+There is no Redux store behind this — state is local to the provider. For lists, use [`useFetchManyEventsWrapper`](/hooks/events/use-fetch-many-events-wrapper) instead.
+
+## EventProvider
+
+Identify the event by `eventId`, or pass a pre-fetched `event` object to skip the initial fetch.
+
+```tsx
+import { EventProvider } from "@sublay/react-js";
+
+// By ID (fetches the event)
+<EventProvider eventId="evt_abc123" include="user,files,userRsvp">
+  <EventDetail />
+</EventProvider>
+
+// Pre-fetched object (no fetch — useful for SSR or when already loaded)
+<EventProvider event={myEvent}>
+  <EventDetail />
+</EventProvider>
+```
+
+### Props
+
+<ParamField body="eventId" type="string">
+  UUID of the event to load. Use this or `event`.
+</ParamField>
+
+<ParamField body="event" type="Event">
+  A pre-fetched event object. Skips the initial fetch. Use this or `eventId`.
+</ParamField>
+
+<ParamField body="include" type="string | string[]">
+  Associations to expand on the fetch, e.g. `"user,files,userRsvp"`. Only used with `eventId`.
+</ParamField>
+
+<Note>`EventProvider` renders `null` if neither `eventId` nor a valid `event` is provided.</Note>
+
+## useEvent
+
+Call `useEvent` inside a descendant of `EventProvider`.
+
+```tsx
+import { useEvent } from "@sublay/react-js";
+
+function EventDetail() {
+  const {
+    event,
+    setEvent,
+    updateEvent,
+    deleteEvent,
+    cancelEvent,
+    setRsvp,
+    withdrawRsvp,
+  } = useEvent();
+
+  if (event === undefined) return <p>Loading…</p>;
+  if (event === null) return <p>Event not found.</p>;
+
+  return (
+    <div>
+      <h1>{event.title}</h1>
+      <p>{event.rsvpCounts.going} going · your RSVP: {event.userRsvp ?? "none"}</p>
+      <button onClick={() => setRsvp("going")}>Going</button>
+      <button onClick={() => withdrawRsvp()}>Withdraw</button>
+      <button onClick={() => cancelEvent()}>Cancel event</button>
+    </div>
+  );
+}
+```
+
+## Return Values
+
+<ResponseField name="event" type="Event | null | undefined">
+  The loaded event. `undefined` while loading, `null` if not found or inaccessible.
+</ResponseField>
+
+<ResponseField name="setEvent" type="React.Dispatch<SetStateAction<Event | null | undefined>>">
+  Directly set the event state. Useful for optimistic local updates.
+</ResponseField>
+
+<ResponseField name="updateEvent" type="(props: { update }) => Promise<Event | undefined>">
+  Update the event's mutable fields. Host-only. Updates local state on success.
+</ResponseField>
+
+<ResponseField name="deleteEvent" type="() => Promise<void>">
+  Delete the event. Host-only. Clears local state on success.
+</ResponseField>
+
+<ResponseField name="cancelEvent" type="() => Promise<Event | undefined>">
+  Cancel the event (`status: "cancelled"`). Host-only.
+</ResponseField>
+
+<ResponseField name="setRsvp" type="(status: RsvpStatus) => Promise<Event | undefined>">
+  Set/change the caller's RSVP (`"going" | "maybe" | "not_going"`). Capacity-checked for `going`.
+</ResponseField>
+
+<ResponseField name="withdrawRsvp" type="() => Promise<Event | undefined>">
+  Withdraw the caller's RSVP.
+</ResponseField>
+
+<Note>
+  These bound actions wrap the standalone hooks and handle errors internally
+  (logging and returning `undefined`). For host/invite management
+  (`useAddHost`, `useAddInvite`, …) and guest-list reads, use the standalone
+  hooks alongside the provider.
+</Note>
+
+## See Also
+
+- [Events Overview](/sdk/events/overview)
+- [Event data model](/data-models/event)
+- [useEvent hook reference](/hooks/events/use-event)

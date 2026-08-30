@@ -1,0 +1,31 @@
+---
+title: "List Space Team"
+api: "GET /v7/:projectId/spaces/:spaceId/team"
+description: "Get all admins and moderators of a space"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+Returns all admins and moderators of a space in a single non-paginated response.
+
+## Path Parameters
+
+<ParamField path="spaceId" type="string" required>
+  UUID of the space.
+</ParamField>
+
+## Query Parameters
+
+### Space-scoped reputation
+
+This endpoint has a space in context, so it accepts the opt-in reputation params. They add a `spaceReputation` field to each returned member's `user`, alongside the always-present `reputation` total. Requires the `reputation` bundle. See the [Reputation data model](/data-models/reputation) for the full contract.
+
+<SpaceReputationParams variant="context" field="query" />
+
+## Response
+
+<ResponseField name="data" type="SpaceMemberWithUser[]">
+  Array of [SpaceMemberWithUser](/data-models/space-member) objects with `role` of `"admin"` or `"moderator"` and `status` of `"active"`.
+</ResponseField>
+
+See also: [useFetchSpaceTeam](/hooks/spaces/use-fetch-space-team)

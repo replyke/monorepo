@@ -1,0 +1,104 @@
+---
+title: "Fetch User Grant History"
+api: "GET /dashboard/users/:userId/reputation-grants"
+description: "A single user's full grant history, negative grants included — the only surface that exposes them"
+---
+
+Returns one user's complete reputation-grant history, received and sent, **including negative grants**. This is the only route on which negatives are readable: the public [list endpoint](/api-reference/reputation-grants/fetch-many-reputation-grants) bakes `amount > 0` into its query for every caller, so a service key sees no more there than an ordinary user does.
+
+This is a dashboard route, not a `/v7/:projectId` route — it powers the grant-history dialog on a user's detail view in the [dashboard](https://dash.sublay.io) — but it is callable with a service or master key, which is how a backend reads its own moderation deductions back.
+
+The route cannot issue grants. It is read-only.
+
+## Authentication and headers
+
+<ParamField header="x-sublay-project-id" type="string">
+  The project UUID. **Required when you authenticate with a service key** — that header is how the server finds the project whose key you are presenting, and without it a raw project key is parsed as a dashboard session token and rejected with `403`. Master keys and dashboard sessions only need the project named somewhere on the request, and may send it as a `?projectId=` query parameter instead; supplying both is fine as long as they match.
+</ParamField>
+
+<ParamField header="x-sublay-internal" type="string">
+  Set to `true` when authenticating with a **master key**. Master keys are only recognized on requests carrying this header.
+</ParamField>
+
+A service key is presented as the bearer credential alongside `x-sublay-project-id`. Dashboard sessions authenticate with their client JWT as usual, naming the project in the header or the query string.
+
+Requires the `reputation` bundle.
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  UUID of the user whose history to read.
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="direction" type="string">
+  `"received"` (grants credited to this user), `"sent"` (grants they issued), or `"all"` (either side). Defaults to `"all"`.
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number (1-indexed). Defaults to `1`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Results per page. Defaults to `20`; the maximum is `100`. A larger value is rejected with `400 user/invalid-query`, not silently clamped.
+</ParamField>
+
+## Response
+
+Returns `200` with the dashboard list shape. `grants` is always an array, never `undefined`, and is ordered newest first.
+
+```json
+{
+  "grants": [
+    {
+      "id": "…",
+      "sourceType": "app",
+      "senderId": null,
+      "recipientId": "…",
+      "amount": -50,
+      "spaceId": null,
+      "targetType": "comment",
+      "targetId": "…",
+      "note": "Clawback: duplicate payout",
+      "metadata": null,
+      "sender": null,
+      "recipient": { "id": "…", "name": "…", "username": "…", "avatar": "…" },
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "totalCount": 1
+}
+```
+
+Both counterparties are hydrated with a display-only projection — `id`, `name`, `username`, `avatar`. No sensitive user columns are returned. See [ReputationGrant](/data-models/reputation-grant) for the row shape.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Invalid Params — 400">
+    ```json
+    { "error": "userId: Invalid UUID format", "code": "user/invalid-params" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Query — 400">
+    ```json
+    { "error": "limit: Too big: expected number to be <=100", "code": "user/invalid-query" }
+    ```
+    A `limit` above `100`, a non-positive `page`, or a `direction` outside `received` / `sent` / `all`. The field path prefixes the message, so `error` reads `"<path>: <message>"`.
+  </Accordion>
+  <Accordion title="Tables Not Available — 403">
+    ```json
+    {
+      "code": "database/tables-not-available",
+      "missingTables": ["ReputationGrants"],
+      "dashboardUrl": "https://…/<projectId>/database"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+**Rate limit:** 25 requests per 5 minutes per IP. Exceeding it returns `429` with a plain-text message and no `code`.
+
+See also: [ReputationGrant](/data-models/reputation-grant) · [Fetch Many Reputation Grants](/api-reference/reputation-grants/fetch-many-reputation-grants)

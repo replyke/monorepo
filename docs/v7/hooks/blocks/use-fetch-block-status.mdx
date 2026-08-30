@@ -1,0 +1,51 @@
+---
+title: "Fetch block status"
+description: "Check whether the current user blocks a specific user"
+icon: "plug"
+---
+
+## Overview
+
+Returns a function that checks whether the current authenticated user blocks a given `userId`. The result reports the current user's **outbound** state only — whether *I* block this user. It never reveals whether the other user has blocked the current user (the inbound direction is deliberately hidden for non-disclosure).
+
+## Usage Example
+
+```tsx
+import { useFetchBlockStatus } from "@sublay/react-js";
+
+function ProfilePage({ userId }: { userId: string }) {
+  const fetchBlockStatus = useFetchBlockStatus();
+
+  useEffect(() => {
+    fetchBlockStatus({ userId }).then((status) => {
+      console.log(status.blocked, status.blockId);
+    });
+  }, [userId]);
+}
+```
+
+## Parameters
+
+The hook returns a function. That function accepts:
+
+<ParamField path="userId" type="string" required>
+  The ID of the user to check. Cannot be the current user's own ID.
+</ParamField>
+
+## Returns
+
+<ResponseField name="blocked" type="boolean">
+  Whether the current user blocks the target user.
+</ResponseField>
+
+<ResponseField name="blockId" type="string | undefined">
+  The ID of the block record. Present when `blocked` is `true`.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string | undefined">
+  ISO timestamp of when the block was created. Present when `blocked` is `true`.
+</ResponseField>
+
+## Related
+
+- [useBlockManager](/hooks/blocks/use-block-manager) — loads this status automatically on mount

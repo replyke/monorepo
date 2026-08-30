@@ -1,0 +1,103 @@
+---
+title: "Transfer Ownership"
+api: "POST /v7/:projectId/workspaces/:id/transfer-ownership"
+description: "Owner-only ownership transfer, keeping ownerId and member rows disjoint"
+---
+
+Reassigns a workspace's `ownerId`. Doable by the workspace's **own owner OR any ancestor owner** (owners only — never a capability or reach). Runs in one transaction with a row lock to serialize concurrent transfers.
+
+- The new owner must be a **verified** user (any verified user in the tenant — need not already be a member).
+- The new owner's existing member row (if any) is **removed** to keep `ownerId` and member rows disjoint (fires `workspace.member.removed`).
+- The previous owner is either **demoted** into a fresh member row (fires `workspace.member.added`) or **removed**. It **defaults to `remove`** whenever the field is omitted — on a voluntary self-transfer as much as on an ancestor-owner reassign. Send `previousOwnerDisposition: "demote"` to keep the outgoing owner on the roster. On demote, rank defaults to **one rung below the acting user** — rank `0` for the usual apex actor, but one below their own row when the acting ancestor owner also sits in this workspace's ladder.
+
+<Note>
+  Ancestor-owner transfer is what makes offboarding resolvable — a manager can reassign a fired member's owned sub-workspace without that member's access.
+</Note>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The workspace UUID.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="newOwnerId" type="string" required>
+  The new owner — any **verified** user in the tenant.
+</ParamField>
+
+<ParamField body="previousOwnerDisposition" type="string">
+  `"demote"` or `"remove"`. Defaults to `"remove"` when omitted, on every path — including a voluntary self-transfer.
+</ParamField>
+
+<ParamField body="previousOwnerRank" type="number">
+  On demote, the ex-owner's rank. **Absolute only** — there is no relative form here.
+
+  Defaults to **one rung below the acting user's own anchor**: rank `0` when the actor is apex (an owner or ancestor owner with no member row on this workspace, which is the usual case), and `actorRank + 1` when the acting ancestor owner *does* hold a row here — so the default never seats the outgoing owner above the person doing the transfer. An explicit value is honored verbatim and is deliberately unbounded, matching the other ownership carve-outs.
+</ParamField>
+
+<ParamField body="previousOwnerCapabilities" type="string[]">
+  On demote, the ex-owner's capabilities.
+</ParamField>
+
+<ParamField body="actingUserId" type="string">
+  Service/master keys only — the user to act as. **Enforced:** the owner-only guard runs against the named user, so a key naming a non-owner is refused exactly as that user would be. Omitting it alongside `newOwnerId` is a supported unbounded call — `newOwnerId` is a declared field of this endpoint, so it is accepted on its own terms. Omit it to act as the app itself (unbounded) — but on a call that hands the workspace to a new owner, prefer naming the current owner so the request carries a user id. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+
+  The [node SDK](/node-sdk/workspaces) is stricter than this endpoint: it types `actingUserId` as **required** here, so omitting it is only possible by calling the REST route directly.
+
+  Several shapes are refused rather than ignored on this path. `actingUserId: ""` or `null` is a `400` — it reads as an *attempt* to name someone, not as "nobody". So is **every top-level field this endpoint does not declare**, in the body and in the query string alike, for every caller: `onBehalfOf`, `acting_user_id` and `impersonate` all come back as `Unrecognized key: "…"` rather than being quietly dropped. A key that differs from `actingUserId` only in capitalization — `actingUserID`, `actinguserid` — is refused too, but with a "did you mean `actingUserId`?" message instead of the generic one. And when the request names nobody, so is any body whose `Content-Type` is not `application/json` — an unparsed body discards the `actingUserId` inside it just as surely as a misspelling would. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+</ParamField>
+
+## Response
+
+Returns the updated [Workspace](/data-models/workspace) object with the new `ownerId`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    { "error": "Owner access required", "code": "workspace/unauthorized" }
+    ```
+  </Accordion>
+  <Accordion title="New Owner Not Verified — 403">
+    ```json
+    { "error": "The new owner must have a verified email.", "code": "workspace/email-not-verified" }
+    ```
+  </Accordion>
+  <Accordion title="Invalid Target — 404">
+    ```json
+    { "error": "Target user not found.", "code": "workspace/invalid-target" }
+    ```
+  </Accordion>
+  <Accordion title="Relative Rank Not Accepted — 400">
+    ```json
+    {
+      "error": "previousOwnerRelativeRank: transfer-ownership does not accept a relative rank. Use previousOwnerRank (absolute), or omit it — the default already seats the previous owner one rung below you.",
+      "code": "workspace/invalid-body"
+    }
+    ```
+    `previousOwnerRelativeRank` is declared purely so it can be refused with an *explanation*. An undeclared field is already refused, but generically (`Unrecognized key: "…"`); declaring this one buys the message that names what to send instead — and the default this route already applies *is* one rung below the actor.
+  </Accordion>
+  <Accordion title="Invalid Path Parameter — 400">
+    ```json
+    { "error": "Invalid workspace id: expected a UUID.", "code": "workspace/invalid-params" }
+    ```
+    Every path id on the workspaces bundle is checked for UUID shape before the route runs, so a malformed one is a plain `400` rather than a `500` from the database.
+  </Accordion>
+  <Accordion title="Undeclared Field — 400">
+    ```json
+    { "error": "Unrecognized key: \"onBehalfOf\"", "code": "workspace/invalid-body" }
+    ```
+    Every workspaces endpoint declares its fields exactly, and a top-level field it does not declare is refused rather than ignored — in the request body and in the query string alike, for every caller. Two or more at once are named together: `Unrecognized keys: "onBehalfOf", "impersonate"`. An offender in the query string carries `workspace/invalid-query` instead. Send only the fields documented above, plus `actingUserId` and `projectId`, which every workspaces route accepts. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+  </Accordion>
+  <Accordion title="Unparsed Body — 400">
+    ```json
+    {
+      "error": "This request carries a body with content-type \"text/plain;charset=UTF-8\", which no parser reads, so any `actingUserId` inside it was discarded and this request names no acting user. Send the body as application/json.",
+      "code": "workspace/invalid-body"
+    }
+    ```
+    Returned when a service/master key sends a body with a `Content-Type` other than `application/json` **and** no `actingUserId` was read. Sublay parses only `application/json`, so the actor inside such a body is discarded and the request would fall through to the unbounded path. `fetch()` sends `text/plain;charset=UTF-8` when you pass a stringified body and set no headers — set the header. An empty JSON body and a bodiless request both pass. See [Shapes the server rejects](/sdk/workspaces/overview#shapes-the-server-rejects).
+  </Accordion>
+</AccordionGroup>

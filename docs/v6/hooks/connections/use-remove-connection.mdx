@@ -1,0 +1,418 @@
+---
+title: "Use Remove Connection"
+---
+
+# `useRemoveConnection`
+
+## Overview
+
+The `useRemoveConnection` hook allows the current logged-in user to remove a connection or withdraw a connection request using the connection ID. This can be used to disconnect from someone you're already connected to, or to withdraw a connection request you previously sent.
+
+## Usage Example
+
+```tsx
+import { useRemoveConnection } from "@replyke/react-js";
+
+function RemoveConnectionButton({ connectionId }: { connectionId: string }) {
+  const removeConnection = useRemoveConnection();
+
+  const handleRemove = async () => {
+    try {
+      const result = await removeConnection({ connectionId });
+      console.log(`Connection removed successfully:`, result);
+    } catch (error) {
+      console.error("Failed to remove connection:", error.message);
+    }
+  };
+
+  return <button onClick={handleRemove}>Remove Connection</button>;
+}
+```
+
+## Advanced Usage for Withdrawing Requests
+
+```tsx
+import { useRemoveConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+function WithdrawRequestButton({
+  connectionId,
+  recipientName,
+  onWithdraw
+}: {
+  connectionId: string;
+  recipientName: string;
+  onWithdraw?: (connectionId: string) => void;
+}) {
+  const removeConnection = useRemoveConnection();
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+
+  const handleWithdraw = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to withdraw your connection request to ${recipientName}?`
+    );
+
+    if (!confirmed) return;
+
+    setIsWithdrawing(true);
+    try {
+      const result = await removeConnection({ connectionId });
+      console.log(`Withdrew connection request to ${recipientName}:`, result);
+      onWithdraw?.(connectionId);
+      alert(`Connection request to ${recipientName} has been withdrawn.`);
+    } catch (error) {
+      console.error(`Failed to withdraw request to ${recipientName}:`, error);
+      alert("Failed to withdraw connection request. Please try again.");
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleWithdraw}
+      disabled={isWithdrawing}
+      className="withdraw-btn"
+    >
+      {isWithdrawing ? "Withdrawing..." : "Withdraw Request"}
+    </button>
+  );
+}
+```
+
+## Usage for Disconnecting from Users
+
+```tsx
+import { useRemoveConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+function DisconnectButton({
+  connectionId,
+  connectedUserName,
+  onDisconnect
+}: {
+  connectionId: string;
+  connectedUserName: string;
+  onDisconnect?: (connectionId: string) => void;
+}) {
+  const removeConnection = useRemoveConnection();
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+
+  const handleDisconnectClick = () => {
+    setShowConfirmation(true);
+  };
+
+  const confirmDisconnect = async () => {
+    setIsDisconnecting(true);
+    try {
+      const result = await removeConnection({ connectionId });
+      console.log(`Disconnected from ${connectedUserName}:`, result);
+      onDisconnect?.(connectionId);
+      setShowConfirmation(false);
+      alert(`You have disconnected from ${connectedUserName}.`);
+    } catch (error) {
+      console.error(`Failed to disconnect from ${connectedUserName}:`, error);
+      alert("Failed to disconnect. Please try again.");
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
+  const cancelDisconnect = () => {
+    setShowConfirmation(false);
+  };
+
+  if (showConfirmation) {
+    return (
+      <div className="disconnect-confirmation">
+        <div className="confirmation-message">
+          <h4>Disconnect from {connectedUserName}?</h4>
+          <p>This will remove the connection between you and {connectedUserName}. You can send a new connection request later if needed.</p>
+        </div>
+        <div className="confirmation-actions">
+          <button
+            onClick={confirmDisconnect}
+            disabled={isDisconnecting}
+            className="disconnect-btn confirm"
+          >
+            {isDisconnecting ? "Disconnecting..." : "Yes, Disconnect"}
+          </button>
+          <button
+            onClick={cancelDisconnect}
+            disabled={isDisconnecting}
+            className="cancel-btn"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={handleDisconnectClick} className="disconnect-btn">
+      Disconnect
+    </button>
+  );
+}
+```
+
+## Usage in Connection Management Interface
+
+```tsx
+import { useRemoveConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+interface Connection {
+  id: string;
+  connectionId: string;
+  user: {
+    username: string;
+    displayName?: string;
+    avatar?: string;
+  };
+  status: 'connected' | 'pending-sent' | 'pending-received';
+  connectedAt?: string;
+  createdAt: string;
+}
+
+function ConnectionItem({
+  connection,
+  onConnectionRemoved
+}: {
+  connection: Connection;
+  onConnectionRemoved: (connectionId: string) => void;
+}) {
+  const removeConnection = useRemoveConnection();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const getActionText = () => {
+    switch (connection.status) {
+      case 'connected':
+        return 'Disconnect';
+      case 'pending-sent':
+        return 'Withdraw Request';
+      case 'pending-received':
+        return 'Remove Request';
+      default:
+        return 'Remove';
+    }
+  };
+
+  const getConfirmationMessage = () => {
+    const userName = connection.user.displayName || connection.user.username;
+
+    switch (connection.status) {
+      case 'connected':
+        return `Are you sure you want to disconnect from ${userName}?`;
+      case 'pending-sent':
+        return `Are you sure you want to withdraw your connection request to ${userName}?`;
+      case 'pending-received':
+        return `Are you sure you want to remove the connection request from ${userName}?`;
+      default:
+        return `Are you sure you want to remove this connection with ${userName}?`;
+    }
+  };
+
+  const handleRemove = async () => {
+    const confirmed = window.confirm(getConfirmationMessage());
+    if (!confirmed) return;
+
+    setIsProcessing(true);
+    try {
+      await removeConnection({ connectionId: connection.connectionId });
+      onConnectionRemoved(connection.connectionId);
+    } catch (error) {
+      console.error("Failed to remove connection:", error);
+      alert("Failed to remove connection. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="connection-item">
+      <div className="user-info">
+        {connection.user.avatar && (
+          <img
+            src={connection.user.avatar}
+            alt={`${connection.user.username} avatar`}
+            className="avatar"
+          />
+        )}
+        <div className="user-details">
+          <h4>{connection.user.displayName || connection.user.username}</h4>
+          <p>@{connection.user.username}</p>
+          <small>
+            {connection.status === 'connected' && connection.connectedAt
+              ? `Connected ${new Date(connection.connectedAt).toLocaleDateString()}`
+              : `${connection.status.replace('-', ' ')} since ${new Date(connection.createdAt).toLocaleDateString()}`
+            }
+          </small>
+        </div>
+      </div>
+
+      <div className="connection-actions">
+        <button
+          onClick={handleRemove}
+          disabled={isProcessing}
+          className={`remove-btn ${connection.status}`}
+        >
+          {isProcessing ? "Processing..." : getActionText()}
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+## Bulk Remove Connections
+
+```tsx
+import { useRemoveConnection } from "@replyke/react-js";
+import { useState } from "react";
+
+interface BulkConnection {
+  connectionId: string;
+  userName: string;
+  status: 'connected' | 'pending-sent';
+}
+
+function BulkRemoveManager({
+  connections,
+  onComplete
+}: {
+  connections: BulkConnection[];
+  onComplete: (removedIds: string[]) => void;
+}) {
+  const removeConnection = useRemoveConnection();
+  const [removedConnections, setRemovedConnections] = useState<Set<string>>(new Set());
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentlyProcessing, setCurrentlyProcessing] = useState<string | null>(null);
+
+  const handleBulkRemove = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to remove ${connections.length} connections? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setIsProcessing(true);
+    const removed = new Set<string>();
+
+    for (const connection of connections) {
+      if (removed.has(connection.connectionId)) continue;
+
+      try {
+        setCurrentlyProcessing(connection.userName);
+        await removeConnection({ connectionId: connection.connectionId });
+        removed.add(connection.connectionId);
+        setRemovedConnections(new Set(removed));
+
+        // Brief delay between operations
+        if (removed.size < connections.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (error) {
+        console.error(`Failed to remove connection with ${connection.userName}:`, error);
+      }
+    }
+
+    setIsProcessing(false);
+    setCurrentlyProcessing(null);
+    onComplete(Array.from(removed));
+  };
+
+  return (
+    <div className="bulk-remove-manager">
+      <h3>Remove Multiple Connections</h3>
+      <p>Remove {connections.length} connections</p>
+
+      {isProcessing && (
+        <div className="processing-status">
+          <p>Currently removing connection with: <strong>{currentlyProcessing}</strong></p>
+          <div className="progress">
+            {removedConnections.size} of {connections.length} removed
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={handleBulkRemove}
+        disabled={isProcessing}
+        className="bulk-remove-btn"
+      >
+        {isProcessing
+          ? `Removing... (${removedConnections.size}/${connections.length})`
+          : "Remove All Connections"
+        }
+      </button>
+
+      <div className="connection-list">
+        {connections.map(connection => (
+          <div key={connection.connectionId} className="connection-item">
+            <span>{connection.userName}</span>
+            <span className="status">{connection.status}</span>
+            {removedConnections.has(connection.connectionId) && (
+              <span className="status removed">✓ Removed</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+
+The hook returns a function that accepts an object with the following field:
+
+
+<ParamField path="connectionId" type="string" required>
+  The ID of the connection to remove
+</ParamField>
+
+### Returns
+
+The function returns a Promise that resolves to a `ConnectionWithdrawResponse` object containing connection removal details.
+
+### Error Handling
+
+The hook will throw errors in the following cases:
+- No project is specified
+- No user is logged in
+- No connection ID is provided
+- Connection doesn't exist or is already removed
+- Network connection issues
+- Insufficient permissions
+
+### Use Cases
+
+This hook is commonly used for:
+
+**Connection Management:**
+- Removing established connections between users
+- Cleaning up connection lists
+
+**Request Management:**
+- Withdrawing sent connection requests
+- Removing received requests (alternative to declining)
+
+**Bulk Operations:**
+- Mass connection cleanup
+- Account deactivation workflows
+
+**Privacy Control:**
+- Disconnecting from unwanted connections
+- Managing professional network boundaries
+
+### Related Hooks
+
+- `useRequestConnection` - Send new connection requests
+- `useAcceptConnection` - Accept connection requests
+- `useDeclineConnection` - Decline connection requests
+- `useRemoveConnectionByUserId` - Remove connection by user ID
+- `useConnectionManager` - Comprehensive connection state management

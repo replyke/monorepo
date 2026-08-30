@@ -1,0 +1,283 @@
+# cli group (@sublay/cli + the registry it installs from).
+#
+# registry/ is watched alongside packages/cli/ because the two are one
+# product: the CLI's fetchFile() downloads whatever registry/**/registry.json
+# says it should, so a registry-only change can break `sublay add` without
+# the CLI source moving at all — and because the registry is served straight
+# off this branch, it breaks for every user the moment it merges. Building the
+# CLI can't see that, so the integrity step below checks the registry metadata
+# itself: every registryUrl points at its own directory, every files[].path
+# exists on disk, and exports.mainFile names one of them. .github/scripts/** is
+# watched too, since that check is the only consumer of those scripts and a
+# PR editing one of them would otherwise run no CI at all.
+#
+# playground/ is watched and built here too: it is the cli group's dev
+# harness, and since it now declares @sublay/react-js and
+# @sublay/ui-core-react-js as workspace:* dependencies rather than
+# resolving them from npm, a breaking change in either compiles straight
+# into it. `playground build` runs `tsc && vite build`, so that break
+# surfaces here instead of the next time a human opens the harness by hand.
+#
+# This workflow owns playground/ outright: it is the only one that watches
+# it. The other four used to list playground/package.json in their own
+# filters, from before this group took ownership, on the grounds that
+# playground was an ownerless workspace member feeding the single shared
+# pnpm-lock.yaml. Since `playground/**` here already covers that manifest,
+# those four entries were removed — they only added four irrelevant red
+# checks to any playground manifest edit. registry/package.json is the
+# identical case and was only ever watched here.
+#
+# registry/ is typechecked too. It used to be exempt, on the stated grounds
+# that the tailwind templates import `cn` from @/lib/utils — an alias said
+# to resolve only inside a real consumer project. That was wrong: every one
+# of the 13 errors was the same TS2307 for that single module, and
+# registry/tsconfig.json's `@/*` -> `./*` mapping already pointed at a
+# resolvable location. registry/lib/utils.ts now provides the same `cn`
+# a consumer project's own lib/utils.ts does (built from clsx +
+# tailwind-merge, both already registry devDependencies), so all 182
+# template files compile. No registry.json lists that file, so `sublay add`
+# never copies it and it changes nothing about what users install.
+#
+# Read that gate for what it is, though: registry/ links @sublay/react-js,
+# @sublay/react-native and both ui-core packages through `workspace:*` and
+# imports all four, so the templates compile against this branch's LOCAL,
+# unreleased source — not against the published npm versions a real
+# consumer resolves when `sublay add` drops these files into their project.
+# A green registry typecheck therefore means "these templates compile
+# against current local source", not "these templates are verified against
+# what ships to users". The two diverge for as long as any SDK change sits
+# unreleased, and nothing in CI closes that gap today.
+#
+# packages/cli's own `typecheck` runs here too. It used to be exempt on the
+# same shape of false premise as registry/: the claim was that three
+# untyped @babel/* imports in src/utils/strip-types.ts made it impossible.
+# They were three real TS7016 errors in live, shipped code —
+# src/index.ts -> commands/add.ts -> utils/strip-types.ts, bundled straight
+# into dist/index.js — not dead weight, and `tsup --dts` exits 0 on them
+# because it does not fully type-check. Fixed by adding the
+# @types/babel__core devDependency plus ambient `declare module` shims for
+# @babel/preset-typescript and @babel/plugin-syntax-jsx (neither has an
+# @types package) in src/types/babel-shims.d.ts. The script now exits 0
+# with zero errors, so it is a real gate.
+#
+# Both the registry typecheck and the playground build compile against
+# locally-built dist/, not npm — which is why packages/core/**,
+# packages/react-js/**, packages/react-native/**,
+# packages/ui-core-react-js/** and packages/ui-core-react-native/** are in
+# the path filters below. Exact counts, since they have drifted before:
+# registry/package.json declares five @sublay/* devDependencies and its
+# source imports four of them — @sublay/react-js, @sublay/react-native,
+# @sublay/ui-core-react-js, @sublay/ui-core-react-native (@sublay/core is
+# named only in doc comments, never imported). playground/package.json
+# declares two and its source imports one, @sublay/react-js.
+# packages/core/** is watched despite nobody importing it directly because
+# react-js/react-native's emitted types reach into core's dist, so it has
+# to be built first. A PR touching any of those five can break this
+# group's compile; without those filters this workflow would never run for
+# exactly the changes those two steps exist to catch. That is a
+# deliberate, documented widening of per-group isolation.
+#
+# packages/expo/** is deliberately NOT here. registry/package.json declares
+# @sublay/expo as a devDependency, but nothing in registry/ or playground/
+# imports it (grep for `from "@sublay/expo"`: zero hits), so watching and
+# building it bought no coverage — it only meant an expo-only PR ran this
+# whole job for nothing, and a genuinely broken expo build reddened the cli
+# group's CI. That is the exact cross-group coupling --ignore-scripts was
+# added to remove.
+#
+# Doing that leaves a real, separate gap, which nothing covers today:
+# packages/cli/src/utils/transform.ts rewrites @sublay/react-native imports
+# to @sublay/expo at `sublay add` time for the expo platform, so the
+# expo-transformed variant of every react-native template is never
+# type-checked anywhere. Closing it means running the transform and
+# typechecking its output, not just adding expo back to the build list —
+# tracked as a known limitation, not fixed here.
+#
+# See .github/workflows/test.yml for why each group gets its own workflow
+# file instead of a job in a shared one.
+name: Test cli
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  # Pull requests only. A push build of main must never be cancelled by a
+  # later push: the registry integrity script's live reachability check runs
+  # only on a push build of main, and that run is the documented go-signal
+  # for `cli:publish-prod:patch`. A cancelled run reports grey, not red, so
+  # an unconditional cancel-in-progress could quietly retire the go-signal.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+on:
+  pull_request:
+    paths:
+      - "packages/cli/**"
+      - "packages/core/**"
+      - "packages/react-js/**"
+      - "packages/react-native/**"
+      - "packages/ui-core-react-js/**"
+      - "packages/ui-core-react-native/**"
+      - "registry/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "playground/**"
+      - "tsconfig.json"
+      - ".github/scripts/**"
+      - ".github/workflows/cli.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/cli/**"
+      - "packages/core/**"
+      - "packages/react-js/**"
+      - "packages/react-native/**"
+      - "packages/ui-core-react-js/**"
+      - "packages/ui-core-react-native/**"
+      - "registry/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "playground/**"
+      - "tsconfig.json"
+      - ".github/scripts/**"
+      - ".github/workflows/cli.yml"
+
+jobs:
+  cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Runs before install/build on purpose: it is a pure JSON + filesystem
+      # check on Node built-ins, it needs no dependencies and no build output,
+      # and a broken registry is the failure mode this job exists to catch.
+      - name: Check registry integrity
+        run: node .github/scripts/check-registry-integrity.mjs
+
+      - name: Install dependencies
+        # --ignore-scripts so this job doesn't build the eight workspace
+        # packages that declare a `prepare` script — none of which is
+        # @sublay/cli, and a break in any of them used to fail this install
+        # step on a cli-only PR. See .github/workflows/test.yml for the full
+        # reasoning and for why it is safe for esbuild/@swc/core (which
+        # tsup, below, depends on).
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build cli
+        # The cli uses `prepublishOnly`, not `prepare`, so install never
+        # built it. This step compiles it — and it is no longer the only
+        # thing checking it: "Typecheck cli" and "Run cli test suites" below
+        # both gate it now. Kept as its own step so a plain compile failure
+        # reports here, distinctly from a type error or a failing test.
+        run: pnpm --filter @sublay/cli run build
+
+      - name: Build packages registry and playground consume
+        # Nothing built these during install: core/react-js/react-native and
+        # both ui-core packages all declare a `prepare` hook, which would
+        # fire on a plain install, but --ignore-scripts above skipped every
+        # one of them alike (the ui-core pair also declares `prepublishOnly`,
+        # which install never runs at all, but their `prepare` is what
+        # --ignore-scripts is blocking here).
+        # registry/ and playground/ link them through workspace:* and
+        # read their dist/ type entries (every one declares
+        # "types": "dist/esm/index.d.ts"), so the next two steps cannot
+        # compile without them.
+        #
+        # Exactly what is built and why: registry/ imports @sublay/react-js,
+        # @sublay/react-native and both ui-core packages; playground imports
+        # @sublay/react-js. @sublay/core is built first — not because either
+        # imports it, but because react-js and react-native's emitted types
+        # reach into its dist. @sublay/expo is NOT built here: registry/
+        # declares it as a devDependency but nothing imports it, so building
+        # it added nothing but a way for an expo break to redden this job.
+        # See this file's header.
+        #
+        # This does mean a genuinely broken react-js/react-native/ui-core
+        # build can still redden this job — a narrow, deliberate exception to
+        # per-group isolation, matching the path filters above.
+        run: |
+          pnpm --filter @sublay/core run build
+          pnpm --filter @sublay/react-js --filter @sublay/react-native --filter @sublay/ui-core-react-js --filter @sublay/ui-core-react-native run build
+
+      - name: Typecheck registry
+        # `tsc --noEmit` over all 182 component templates. The templates are
+        # authored source that is copied verbatim into user projects by
+        # `sublay add` and never compiled anywhere else in this repo, so
+        # without this step a template that does not typecheck ships to
+        # every user and only fails in their build. See this file's header
+        # for why this was previously (wrongly) believed to be impossible.
+        run: pnpm --filter @sublay/registry run typecheck
+
+      - name: Build playground
+        # playground is this group's dev harness and resolves
+        # @sublay/react-js + @sublay/ui-core-react-js through workspace:*
+        # links, so its `tsc && vite build` is a real compile against local
+        # source — the only thing in CI that checks the harness still
+        # builds.
+        run: pnpm --filter @sublay/playground run build
+
+      - name: Typecheck cli
+        # `tsc --noEmit` over packages/cli/src. This is not redundant with
+        # the build above: `tsup --dts` exits 0 on code tsc rejects — it
+        # only type-checks as far as the declaration emit needs, and the
+        # three untyped @babel/* imports in src/utils/strip-types.ts sat in
+        # the shipped dist/index.js bundle for exactly that reason. See
+        # this file's header for why this was previously (wrongly) believed
+        # to be impossible.
+        run: pnpm --filter @sublay/cli run typecheck
+
+      - name: Run cli test suites
+        # Real suites now: vitest over packages/cli/src/**/*.test.ts. Three
+        # unit files (transform / detect / dependencies) plus
+        # cli-integration.test.ts, which spawns the built dist/index.js in
+        # temp directories — that last one is the only thing in CI that
+        # exercises the CLI's process-level behaviour (stdin/TTY handling and
+        # exit codes), which no amount of typechecking can see.
+        #
+        # The package's own `test` script runs `pnpm run build && vitest run`,
+        # so it rebuilds dist rather than depending on the "Build cli" step
+        # above having run. That is deliberate: it keeps a bare
+        # `pnpm --filter @sublay/cli run test` working locally and under the
+        # root `pnpm -r run test`, neither of which builds first (the cli uses
+        # `prepublishOnly`, not `prepare`, so a plain install never builds it).
+        # tsup takes ~50ms, so the duplicate build costs nothing.
+        run: pnpm --filter @sublay/cli --if-present run test
+
+      - name: Dry-run publish
+        # Only @sublay/cli — `registry` and `playground` are private
+        # workspace members and are never published.
+        #
+        # Nothing else in CI exercises the publish path; until now the only
+        # thing that ever had was a human running this by hand. The step
+        # performs the real publish minus the upload: pnpm runs the
+        # package's `prepublishOnly` hook in a publish context, rewrites any
+        # `workspace:*` dependency to a concrete version, and packs the
+        # tarball `files` describes, failing on anything npm rejects along
+        # the way.
+        #
+        # Scope it honestly — it is a packaging check, not a link check.
+        # Verified: a `bin` naming a path the tarball does not contain still
+        # dry-runs green, so this will NOT catch a broken entry-point path.
+        # What it catches is a release that cannot be produced at all: a
+        # publish-only lifecycle hook that fails, an unresolvable
+        # `workspace:*`, a package.json npm refuses, a `files` set that
+        # packs nothing.
+        #
+        # --force is load-bearing, not belt-and-braces: without it `pnpm
+        # publish` skips any package whose version is already on npm and
+        # exits 0 having packed nothing (verified). These workflows trigger
+        # on file changes, not version bumps, so the un-forced form would be
+        # an inert step on almost every run. --force only bypasses that skip;
+        # --dry-run still stops before anything is uploaded, and needs no
+        # registry credentials (verified with an empty npm config).
+        run: pnpm --filter @sublay/cli publish --dry-run --no-git-checks --force

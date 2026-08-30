@@ -1,0 +1,62 @@
+---
+title: "Fetch workspace invites"
+description: "A workspace's outbox — the live pending invitations it has issued"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchWorkspaceInvites` returns a callable that lists the **live** pending invitations **one workspace has issued** (`status = 'pending' AND expiresAt > now` — effectively-expired rows are excluded). This is the read that powers the "Pending invitations" section of a members panel: who this team has invited and not yet heard back from.
+
+**Authorization:** capability-gated. Requires the `invite` capability on the workspace (owners hold it implicitly).
+
+The list is **always returned in full** — it is deliberately unpaginated, so there is no `page`/`limit` and no `*Wrapper` hook.
+
+<Warning>
+  **Outbox, not inbox.** `useFetchWorkspaceInvites` (`GET /workspaces/:id/invites`) lists the invites **this workspace sent out** — it is scoped to one workspace and needs the `invite` capability there.
+
+  [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) (`GET /me/workspace-invites`) lists the invites **addressed to the signed-in user** — it is scoped to the caller, spans every workspace, and needs no capability.
+
+  These are the two most confusable hooks in the bundle. If you are building an admin/members screen you want **this** hook; if you are building a "You've been invited" screen you want the other one.
+</Warning>
+
+## Usage Example
+
+```tsx
+import { useFetchWorkspaceInvites } from "@sublay/react-js";
+
+function PendingInvitations({ workspaceId }: { workspaceId: string }) {
+  const fetchWorkspaceInvites = useFetchWorkspaceInvites();
+
+  const load = async () => {
+    const { data } = await fetchWorkspaceInvites({ workspaceId });
+    // data: WorkspaceInvitation[] — everyone this workspace has invited
+    return data;
+  };
+}
+```
+
+Paired with [`useRevokeWorkspaceInvite`](/hooks/workspaces/use-revoke-workspace-invite) and [`useResendWorkspaceInvite`](/hooks/workspaces/use-resend-workspace-invite), this completes a members panel entirely on the client — no server-side code and no hand-rolled `fetch`.
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>
+  The workspace UUID whose issued invitations to list.
+</ParamField>
+
+## Returns
+
+`{ data: WorkspaceInvitation[] }` — each item a [WorkspaceInvitation](/data-models/workspace-invitation) object. Never paginated.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/unauthorized` | 403 | You lack the `invite` capability on this workspace. |
+| `workspace/not-found` | 404 | No such workspace in this project. |
+
+## Related
+
+- [`useFetchMyWorkspaceInvites`](/hooks/workspaces/use-fetch-my-workspace-invites) — the **inbox** counterpart
+- [`useCreateWorkspaceInvite`](/hooks/workspaces/use-create-workspace-invite) · [`useRevokeWorkspaceInvite`](/hooks/workspaces/use-revoke-workspace-invite) · [`useResendWorkspaceInvite`](/hooks/workspaces/use-resend-workspace-invite)
+- [List Workspace Invites API](/api-reference/workspaces/invitations/list-invites)

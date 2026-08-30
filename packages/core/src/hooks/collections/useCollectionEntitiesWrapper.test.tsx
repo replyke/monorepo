@@ -115,7 +115,8 @@ describe("useCollectionEntitiesWrapper", () => {
     act(() => result.current.setSortBy("top"));
     await waitFor(() => expect(result.current.entities.map((e) => e.id)).toEqual(["top-1"]));
 
-    const call = fetchHandle.calls().at(-1);
+    const calls = fetchHandle.calls();
+    const call = calls[calls.length - 1];
     expect(new URL(call!.url).searchParams.get("sortBy")).toBe("top");
   });
 

@@ -1,0 +1,92 @@
+---
+title: "Use Create Entity"
+---
+
+# `useCreateEntity`
+
+## Overview
+The `useCreateEntity` hook is used to create a new entity within the project. It handles all required parameters for the creation process and associates the entity with the currently logged-in user.
+
+
+## Usage Example
+
+```tsx
+import { useCreateEntity } from "@replyke/react-js";
+
+function CreateEntityForm() {
+  const createEntity = useCreateEntity();
+
+  const handleCreateEntity = async () => {
+    try {
+      const result = await createEntity({
+        title: "My New Entity",
+        content: "This is the content of the entity.",
+        media: ["https://example.com/image.jpg"],
+        keywords: ["example", "entity"],
+        location: { latitude: 40.7128, longitude: -74.0060 },
+        metadata: { category: "blog" },
+      });
+
+      console.log("Entity created successfully:", result);
+    } catch (error) {
+      console.error("Failed to create entity:", error.message);
+    }
+  };
+
+  return <button onClick={handleCreateEntity}>Create Entity</button>;
+}
+```
+
+## Parameters & Returns
+
+### Parameters
+The hook returns a function that accepts an object with the following fields:
+
+
+<ParamField path="foreignId" type="string">
+  An optional foreign ID to associate with the entity.
+</ParamField>
+
+<ParamField path="sourceId" type="string">
+  An optional free-form source ID to group entities into separate entity "pools".
+</ParamField>
+
+<ParamField path="title" type="string">
+  The title of the entity.
+</ParamField>
+
+<ParamField path="content" type="string">
+  The main content of the entity.
+</ParamField>
+
+<ParamField path="attachments" type="Record<string, any>[]">
+  An array of objects representing attachments (e.g., images, videos, files) associated with the entity, with data about those attachments.
+</ParamField>
+
+<ParamField path="keywords" type="string[]">
+  An array of keywords to tag the entity.
+</ParamField>
+
+<ParamField path="mentions" type="Mention[]">
+  An array of user mentions in the entity.
+</ParamField>
+
+<ParamField path="location" type="object">
+  The geographic location (latitude, longitude) associated with the entity.
+</ParamField>
+
+<ParamField path="metadata" type="Record<string, any>">
+  Additional metadata to store with the entity.
+</ParamField>
+
+<ParamField path="excludeUserId" type="boolean">
+  By default, when this function is called, the ID of the logged in user is attached as the author, but it could be omitted by passing this flag as 'false'.
+</ParamField>
+
+### Returns
+The function resolves with an object representing the newly created entity:
+
+
+<ResponseField name="Entity" type="object">
+  The details of the created entity, including its ID, title, and other attributes.
+</ResponseField>

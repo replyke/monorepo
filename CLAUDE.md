@@ -5,13 +5,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Building
-- `pnpm run build-all` - Builds all packages in the monorepo in dependency order
+- `pnpm run react:build-all` - Builds the react-family packages (core, react-js, react-native, expo) in dependency order
 - Individual package builds: `pnpm --filter @sublay/[package-name] run build`
 - Each package builds to ESM and CJS formats using TypeScript
 
 ### Publishing
-- `pnpm run publish-prod` - Publishes all packages to production
-- `pnpm run publish-beta` - Publishes all packages with beta tag
+Scripts are grouped by publish group, and every group carries a `{group}:` prefix — no group is the unprefixed default. There are five groups: `react`, `ui-core`, `cli`, `node`, `js`.
+
+**Always use the `:patch` / `:minor` form.** The bare `{group}:publish-prod` / `{group}:publish-beta` scripts build (and, for `react`/`node`/`js`, run tests) and then publish — but they never bump the version, and `pnpm publish` silently skips any package whose current version is already on the registry, exiting 0. So running a bare form without having bumped the version separately first *looks* like a successful release and ships nothing. The `:patch` / `:minor` variants are just `{group}:version:{patch,minor} && {group}:publish-{prod,beta}` — the bump and the publish in one command — and are the normal way to release. Reach for a bare form only when you have deliberately bumped the version by hand (or via `{group}:version:patch`) as a separate step.
+
+| Group | Packages | Publish |
+|---|---|---|
+| `react` | `@sublay/core`, `@sublay/react-js`, `@sublay/react-native`, `@sublay/expo` | `pnpm run react:publish-prod:patch` / `react:publish-prod:minor` (or `react:publish-beta:patch` / `:minor`) |
+| `ui-core` | `@sublay/ui-core-react-js`, `@sublay/ui-core-react-native` | `pnpm run ui-core:publish-prod:patch` / `:minor` (or `ui-core:publish-beta:patch` / `:minor`) |
+| `cli` | `@sublay/cli` | `pnpm run cli:publish-prod:patch` / `:minor` (or `cli:publish-beta:patch` / `:minor`) |
+| `node` | `@sublay/node` | `pnpm run node:publish-prod:patch` / `:minor` (or `node:publish-beta:patch` / `:minor`) |
+| `js` | `@sublay/js` | `pnpm run js:publish-prod:patch` / `:minor` (or `js:publish-beta:patch` / `:minor`) |
+
+Every group also exposes `{group}:version:patch` and `{group}:version:minor` for bumping without publishing.
+
+**Always publish with `pnpm` from the workspace root (the `{group}:publish-*` scripts) — never `npm publish` from inside a package directory.** `@sublay/react-js`, `@sublay/react-native`, and `@sublay/expo` each declare `"@sublay/core": "workspace:*"` in real `dependencies`; `pnpm publish` rewrites that to the concrete version at pack time, while `npm pack`/`npm publish` ship the literal `"workspace:*"` string, producing a tarball no consumer can install.
+
+### ⚠️ `cli:publish-prod:patch` has a hard precondition: this branch must be merged to `main` first
+
+`@sublay/cli` fetches every component from `https://raw.githubusercontent.com/sublay-io/monorepo/main/registry/...` — hardcoded to `main` (`packages/cli/src/utils/registry.ts`). But `registry/` currently exists **only** on `feat/consolidate-repos-into-monorepo`: `git ls-tree origin/main --name-only` lists no `registry/` entry, and that raw URL 404s today (verified 2026-08-28). Publishing the CLI before the merge would ship a build whose registry 404s for every user on every `sublay add`.
+
+So, before running `cli:publish-prod:patch`:
+
+1. Merge `feat/consolidate-repos-into-monorepo` into `main` and push.
+2. Confirm `https://raw.githubusercontent.com/sublay-io/monorepo/main/registry/react/comments-social/styled/registry.json` (or any other real `registry.json` path) returns **200**.
+3. Only then publish.
+
+`.github/scripts/check-registry-integrity.mjs` automates step 2 — but deliberately only on a GitHub Actions `push` build of `main`, so it stays silent on branches and PRs where the URL cannot resolve yet. The first green post-merge run of `cli.yml` is the go-signal.
 
 ## Architecture Overview
 

@@ -1,0 +1,78 @@
+---
+title: "Create Workspace"
+api: "POST /v7/:projectId/workspaces"
+description: "Create a root or child workspace"
+---
+
+Creates a workspace. The authenticated caller becomes the `ownerId`. Omit `parentWorkspaceId` to create a **root** workspace; pass it to create a **child**.
+
+- **Root creation** requires the creator to have a **verified email** (else `403 workspace/email-not-verified`). This is **not** a key-bypass gate: a service or master key acting as a named `actingUserId` still requires *that* user to be verified. On a purely external-auth project this makes root creation unavailable — see [the external-auth limitation](/data-models/workspace-invitation#v1-external-auth-limitation).
+- **Child creation** requires the `create-sub-workspace` capability on the parent (held directly or via reach). The creator becomes the **child's** owner. No separate verified-email gate (the capability-holder is already a verified member up-tree).
+
+<Note>
+  `inheritsFromParent` is **never** accepted from client input — it is server-set from the project default at creation, and cannot be overridden when the project's default is enforced. `depth` is likewise server-computed.
+</Note>
+
+## Body Parameters
+
+<ParamField body="name" type="string" required>
+  Display name for the workspace. 1–100 characters.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional arbitrary developer-defined data (opaque JSON). Defaults to `{}`.
+</ParamField>
+
+<ParamField body="parentWorkspaceId" type="string">
+  Optional UUID of a parent workspace. Absent → root workspace. Requires the `create-sub-workspace` capability on the parent.
+</ParamField>
+
+<ParamField body="actingUserId" type="string" required>
+  Service/master keys only — the user to act as (the created workspace's owner). **Required for a key:** this route has no unbounded path, so a key that names nobody is refused with `400 workspace/missing-user-id`. The named user must satisfy the same gates a self-driven call would: for a **root** workspace they must have a **verified email**.
+
+  A plain user token omits it — the actor is the token's own user. The field is **not** ignored for such a token: sending your *own* user id is a harmless no-op, but sending **anyone else's** is a `403 workspace/unauthorized`. See [Acting on behalf of a user](/sdk/workspaces/overview#acting-on-behalf-of-a-user).
+</ParamField>
+
+## Response
+
+Returns the created [Workspace](/data-models/workspace) object.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Email Not Verified — 403">
+    ```json
+    { "error": "A verified email is required to create a root workspace.", "code": "workspace/email-not-verified" }
+    ```
+    Also returned when a **service or master key** creates a root workspace on behalf of an unverified `actingUserId` — keys do not bypass this gate. Ownership has exactly three doors (create, accept an invite, receive a transfer) and all three enforce it identically, which is what guarantees every workspace participant has a confirmed email.
+  </Accordion>
+  <Accordion title="Unauthorized — 403">
+    ```json
+    { "error": "The 'create-sub-workspace' capability on the parent is required.", "code": "workspace/unauthorized" }
+    ```
+  </Accordion>
+  <Accordion title="Parent Not Found — 404">
+    ```json
+    { "error": "Parent workspace not found.", "code": "workspace/not-found" }
+    ```
+  </Accordion>
+  <Accordion title="Max Depth Exceeded — 400">
+    ```json
+    { "error": "Maximum nesting depth (10) exceeded.", "code": "workspace/max-depth-exceeded" }
+    ```
+  </Accordion>
+  <Accordion title="Missing Acting User — 400">
+    ```json
+    { "error": "Missing user ID", "code": "workspace/missing-user-id" }
+    ```
+    A service/master key called this route without naming an `actingUserId`. There is no unbounded path here — a workspace has to be created *by* somebody, so the key must name that user.
+  </Accordion>
+  <Accordion title="Acted as Another User — 403">
+    ```json
+    { "error": "Unauthorized", "code": "workspace/unauthorized" }
+    ```
+    A plain user token sent an `actingUserId` naming a **different** user. Only a service/master key may act as someone else.
+  </Accordion>
+</AccordionGroup>
+
+See also: [useCreateWorkspace](/hooks/workspaces/use-create-workspace) · [createWorkspace (node-sdk)](/node-sdk/workspaces)

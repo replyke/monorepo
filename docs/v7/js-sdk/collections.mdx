@@ -1,0 +1,184 @@
+---
+title: "Collections"
+description: "Organize the logged-in user's saved entities into a tree of collections"
+---
+
+The `collections` module organizes the logged-in user's saved content. Every user has a single **root collection**, under which they can nest sub-collections and into which they can save entities.
+
+---
+
+### fetchRootCollection
+
+Fetches the logged-in user's root collection.
+
+```typescript
+const root = await sublay.collections.fetchRootCollection();
+```
+
+**Returns** — `Promise<Collection>`
+
+---
+
+### fetchSubCollections
+
+Fetches the immediate sub-collections of a collection.
+
+```typescript
+const subCollections = await sublay.collections.fetchSubCollections({
+  collectionId: "col_root123",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The parent collection ID.
+</ParamField>
+
+**Returns** — `Promise<Collection[]>`
+
+---
+
+### createNewCollection
+
+Creates a sub-collection under a parent collection.
+
+```typescript
+const collection = await sublay.collections.createNewCollection({
+  collectionId: "col_root123",
+  collectionName: "Recipes",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The parent collection under which to create the sub-collection.
+</ParamField>
+
+<ParamField body="collectionName" type="string" required>
+  The name of the new collection.
+</ParamField>
+
+**Returns** — `Promise<Collection>`
+
+---
+
+### fetchCollectionEntities
+
+Fetches the entities within a collection, paginated.
+
+```typescript
+const { data, pagination } = await sublay.collections.fetchCollectionEntities({
+  collectionId: "col_abc123",
+  sortBy: "added",
+  sortDir: "desc",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The collection ID.
+</ParamField>
+
+<ParamField body="page" type="number">
+  The page number to fetch.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  The number of entities to return per page.
+</ParamField>
+
+<ParamField body="sortBy" type='"new" | "added" | "top" | "hot"'>
+  Sort order.
+</ParamField>
+
+<ParamField body="sortDir" type='"asc" | "desc"'>
+  Sort direction.
+</ParamField>
+
+<ParamField body="include" type="string">
+  Comma-separated related resources to include in the response.
+</ParamField>
+
+**Returns** — `Promise<PaginatedResponse<Entity>>`
+
+---
+
+### addEntityToCollection
+
+Adds an entity to a collection.
+
+```typescript
+const result = await sublay.collections.addEntityToCollection({
+  collectionId: "col_abc123",
+  entityId: "ent_222",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The collection ID.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The ID of the entity to add.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean; collection: { id: string; entityCount: number } }>`
+
+---
+
+### removeEntityFromCollection
+
+Removes an entity from a collection.
+
+```typescript
+const result = await sublay.collections.removeEntityFromCollection({
+  collectionId: "col_abc123",
+  entityId: "ent_222",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The collection ID.
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The ID of the entity to remove.
+</ParamField>
+
+**Returns** — `Promise<{ success: boolean; collection: { id: string; entityCount: number } }>`
+
+---
+
+### updateCollection
+
+Renames a collection.
+
+```typescript
+const collection = await sublay.collections.updateCollection({
+  collectionId: "col_abc123",
+  name: "Favorite Recipes",
+});
+```
+
+<ParamField body="collectionId" type="string" required>
+  The collection ID.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  The new collection name. Must be a non-empty string.
+</ParamField>
+
+**Returns** — `Promise<Collection>`
+
+---
+
+### deleteCollection
+
+Deletes a collection.
+
+```typescript
+await sublay.collections.deleteCollection({ collectionId: "col_abc123" });
+```
+
+<ParamField body="collectionId" type="string" required>
+  The collection ID.
+</ParamField>
+
+**Returns** — `Promise<void>`

@@ -1,0 +1,139 @@
+---
+title: "Tables — Management"
+description: "Create and drop custom tables and columns from your server with the client.tables module"
+---
+
+The `tables` module manages the **schema** of your custom tables — creating and dropping tables, and adding and dropping columns. For reading and writing rows, see [Tables — Rows](/v7/node-sdk/tables). For the feature overview, see [Custom Tables](/v7/custom-tables).
+
+<Note>
+  Table management is **service-key only**, so it lives in the server-side
+  `@sublay/node` SDK only — the browser [`@sublay/js`](/v7/js-sdk/overview) SDK
+  and the React `useTable` hook are row-only. The same operations are also
+  available in the [dashboard data editor](/v7/custom-tables#the-dashboard-data-editor).
+</Note>
+
+All names you pass are **logical** — Sublay applies the `custom_` prefix for you.
+
+---
+
+### createTable
+
+Creates a custom table with the given columns and managed-column flags.
+
+```typescript
+await sublay.tables.createTable({
+  tableName: "Events",
+  timestamps: true,
+  paranoid: true,
+  columns: [
+    { columnName: "name", dataType: "text", nullable: false },
+    { columnName: "capacity", dataType: "integer", nullable: true, defaultValue: "0" },
+    { columnName: "startsAt", dataType: "timestamp", nullable: true },
+    { columnName: "metadata", dataType: "json", nullable: true },
+  ],
+});
+```
+
+<ParamField body="tableName" type="string" required>
+  The logical table name (max 56 characters — 63 minus the `custom_` prefix).
+  Sublay stores it as `custom_<tableName>`.
+</ParamField>
+
+<ParamField body="columns" type="CustomColumnDefinition[]" required>
+  The developer columns to create. Each is `{ columnName, dataType, nullable, defaultValue? }`.
+  `dataType` is one of `text`, `integer`, `float`, `decimal`, `boolean`, `date`,
+  `timestamp`, `uuid`, `json`. A column may not be named `id`, `createdAt`,
+  `updatedAt`, or `deletedAt` (reserved managed columns).
+</ParamField>
+
+<ParamField body="timestamps" type="boolean">
+  Emit `createdAt` / `updatedAt`. Defaults to `true`.
+</ParamField>
+
+<ParamField body="paranoid" type="boolean">
+  Emit `deletedAt` and enable soft delete. **Requires `timestamps`.** Defaults to
+  `false`.
+</ParamField>
+
+**Returns** — `Promise<{ table: string }>` — the physical (`custom_*`) table name.
+
+<Info>
+  Errors are returned with a `database/*` code: `database/reserved-column` (a
+  column shadows a managed name), `database/name-too-long` (over 56 chars),
+  `database/table-limit-reached` (100 tables), `database/column-limit-reached`
+  (100 columns).
+</Info>
+
+---
+
+### addColumn
+
+Adds a column to an existing custom table.
+
+```typescript
+await sublay.tables.addColumn({
+  tableName: "Events",
+  columnName: "venue",
+  dataType: "text",
+  nullable: true,
+});
+```
+
+<ParamField body="tableName" type="string" required>
+  The logical table name.
+</ParamField>
+
+<ParamField body="columnName" type="string" required>
+  The new column's name (may not be a reserved managed name).
+</ParamField>
+
+<ParamField body="dataType" type="CustomColumnType" required>
+  One of `text`, `integer`, `float`, `decimal`, `boolean`, `date`, `timestamp`,
+  `uuid`, `json`.
+</ParamField>
+
+<ParamField body="nullable" type="boolean" required>
+  Whether the column accepts `null`.
+</ParamField>
+
+<ParamField body="defaultValue" type="string | null">
+  Optional default literal, validated against `dataType`.
+</ParamField>
+
+**Returns** — `Promise<{ added: string }>`
+
+---
+
+### dropColumn
+
+Drops a column from a custom table. Managed columns (`id`, `createdAt`, `updatedAt`, `deletedAt`) cannot be dropped.
+
+```typescript
+await sublay.tables.dropColumn({ tableName: "Events", columnName: "venue" });
+```
+
+<ParamField body="tableName" type="string" required>
+  The logical table name.
+</ParamField>
+
+<ParamField body="columnName" type="string" required>
+  The column to drop.
+</ParamField>
+
+**Returns** — `Promise<{ dropped: string }>`
+
+---
+
+### dropTable
+
+Drops a custom table and all of its rows. This is irreversible.
+
+```typescript
+await sublay.tables.dropTable({ tableName: "Events" });
+```
+
+<ParamField body="tableName" type="string" required>
+  The logical table name.
+</ParamField>
+
+**Returns** — `Promise<{ dropped: string }>`

@@ -1,0 +1,79 @@
+---
+title: "Create workspace invite"
+description: "Create a workspace invitation by email, userId, or username"
+icon: "plug"
+---
+
+## Overview
+
+`useCreateWorkspaceInvite` returns a callable that creates an [invitation](/data-models/workspace-invitation). Address the invitee by **exactly one** of `email`, `userId`, or `username` (here `userId`/`username` is the invite **target**, not the actor — the inviter is the signed-in user).
+
+**Authorization:** capability-gated + rank-bounded. Requires the `invite` capability (or ownership). The invited `capabilities`/`permissions` are subject to [no-escalation](/data-models/workspace-member#no-privilege-escalation), and if the inviter holds a direct member row the invited rank must be strictly larger (less senior) than their own.
+
+**Rank comes in either coordinate.** Pass `relativeRank` (an offset from the inviter — `1` = one rung below me) or `rank` (absolute), never both. Pass **neither** and the server applies `relativeRank: 1`, which is well defined for every inviter and can never fail the rank floor. See [choosing a rank](/sdk/workspaces/overview#choosing-a-rank).
+
+<Warning>
+  **Your project must have `workspaces.inviteAcceptUrl` set before this hook can succeed.** The invitation email deep-links to that URL, and it has **no default** — so a freshly added `workspaces` bundle has none and every call fails with `409 workspace/missing-invite-accept-url` until you configure it. This holds **even when the invitee already has an account**. See [Project settings](/sdk/workspaces/overview#project-settings).
+</Warning>
+
+## Usage Example
+
+```tsx
+import { useCreateWorkspaceInvite } from "@sublay/react-js";
+
+function InviteForm({ workspaceId }: { workspaceId: string }) {
+  const createWorkspaceInvite = useCreateWorkspaceInvite();
+
+  const handleInvite = async (email: string) => {
+    const invite = await createWorkspaceInvite({
+      workspaceId,
+      email,
+      capabilities: ["view"],
+      permissions: ["deploy"],
+      // One rung below me — the happy path. Omitting both rank fields
+      // entirely means exactly this.
+      relativeRank: 1,
+    });
+    console.log("Invited:", invite.id);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="workspaceId" type="string" required>The workspace UUID.</ParamField>
+<ParamField path="email" type="string">Invitee email. One of `email`/`userId`/`username`. Trimmed + lowercased server-side, and matched **case-insensitively** against existing accounts — so an account stored as `Jane@Example.com` still gets its `userId` bound when invited as `jane@example.com`.</ParamField>
+<ParamField path="userId" type="string">Invitee user id (existing users only) — the invite **target**.</ParamField>
+<ParamField path="username" type="string">Invitee username (existing users only).</ParamField>
+<ParamField path="capabilities" type="WorkspaceCapability[]">Capabilities to apply on accept. Subject to no-escalation.</ParamField>
+<ParamField path="permissions" type="string[]">Opaque permissions to apply on accept.</ParamField>
+<ParamField path="rank" type="number">Initial **absolute** rank. For a direct-member inviter it must be strictly larger (less senior) than their own; a reach-holder inviter (no direct row) may set any rank. **No longer required** — mutually exclusive with `relativeRank`, and omitting both applies the default below.</ParamField>
+<ParamField path="relativeRank" type="number" default="1">Initial rank as an **offset from the inviter**: `1` = one rung below me. Must be `>= 1`. Anchored on the inviter's own rank if they hold a member row on this workspace, apex (one step above rank 0) otherwise. A **snapshot** — resolved to an absolute number at invite time and frozen; it does not track the inviter's later rank changes.</ParamField>
+<ParamField path="title" type="string | null">Optional cosmetic title.</ParamField>
+
+## Returns
+
+Returns the created [WorkspaceInvitation](/data-models/workspace-invitation) object.
+
+## Error codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `workspace/already-member` | 409 | The target is already a member — edit their grant instead. |
+| `workspace/no-escalation` | 403 | You tried to grant a capability/permission you do not hold. |
+| `workspace/insufficient-rank` | 403 | The invited rank is not strictly below your own. Checked on the resolved absolute value, so `relativeRank` clears it by construction. |
+| `workspace/unauthorized` | 403 | You lack the `invite` capability. |
+| `workspace/missing-invite-accept-url` | 409 | The **project** has no [`workspaces.inviteAcceptUrl`](/sdk/workspaces/overview#project-settings) configured, so the invite email would have nowhere to link. Nothing is persisted. A misconfiguration to fix in project settings, not something the end user can act on — surface it to yourself, not to them. |
+
+<Warning>
+  **Omitting the rank field is the easiest way to mint rank 0.** The default is "one rung below me", and a signed-in user with **no member row on this workspace** — the workspace's `owner`, an ancestor owner, or a reach holder — anchors at apex, so their default lands on **rank 0**, the most senior rung. That is correct (one below apex *is* the top rung), but it is the opposite of what "I left the field off" usually implies. If a caller with no row here should be inviting people to the *bottom* of the ladder, name a coordinate instead.
+
+  **For an in-ladder inviter it collapses into a flat layer.** A rank-0 lead inviting six people with no rank field gets six rank-1 members — and equals cannot act on equals, so none of them can manage each other; only the lead can. Fine for a flat team, worth deciding deliberately if your product has tiers.
+</Warning>
+
+## Related
+
+- [`useFetchWorkspaceInvites`](/hooks/workspaces/use-fetch-workspace-invites) — the invites this workspace has issued
+- [`useRevokeWorkspaceInvite`](/hooks/workspaces/use-revoke-workspace-invite) · [`useResendWorkspaceInvite`](/hooks/workspaces/use-resend-workspace-invite)
+- [Project settings](/sdk/workspaces/overview#project-settings) — the required `workspaces.inviteAcceptUrl`
+- [Create Invite API](/api-reference/workspaces/invitations/create-invite)

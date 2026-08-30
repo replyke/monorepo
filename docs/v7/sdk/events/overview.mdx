@@ -1,0 +1,125 @@
+---
+title: "Events Overview"
+description: "Create, list, and manage events with the React SDK"
+---
+
+The Events SDK exposes the full events surface as React hooks: creating and editing events (with inline cover/gallery upload), listing them with a paginated wrapper, the RSVP lifecycle, and host/invite management. Hooks authenticate as the **logged-in user** — the server derives who is acting from the token, so you never pass an actor `userId` (the only `userId` arguments are targets, on the host/invite hooks).
+
+All hooks are importable from `@sublay/react-js`, `@sublay/react-native`, and `@sublay/expo`.
+
+<Note>
+  Unlike entities, **events have no Redux store**. State is local: load a single
+  event with [`EventProvider` / `useEvent`](/sdk/events/provider-and-hook), and
+  paginate lists with [`useFetchManyEventsWrapper`](/hooks/events/use-fetch-many-events-wrapper).
+</Note>
+
+Requires the `events` bundle on the project. Space-scoping needs `spaces`, images need `files-images`, and notifications need `notifications`.
+
+## Hooks at a glance
+
+| Hook | Purpose |
+|------|---------|
+| [`useCreateEvent`](/hooks/events/use-create-event) | Create an event (with optional inline cover/gallery). |
+| [`useFetchEvent`](/hooks/events/use-fetch-event) | Fetch a single event by ID. |
+| [`useFetchManyEvents`](/hooks/events/use-fetch-many-events) | One-shot list query (low-level). |
+| [`useFetchManyEventsWrapper`](/hooks/events/use-fetch-many-events-wrapper) | Stateful, paginated list with sort + load-more. |
+| [`useUpdateEvent`](/hooks/events/use-update-event) | Edit an event; replace cover, append/remove gallery images. |
+| [`useDeleteEvent`](/hooks/events/use-delete-event) | Delete an event. |
+| [`useCancelEvent`](/hooks/events/use-cancel-event) | Cancel an event. |
+| [`useSetRsvp`](/hooks/events/use-set-rsvp) | Set/change an RSVP. |
+| [`useWithdrawRsvp`](/hooks/events/use-withdraw-rsvp) | Withdraw an RSVP. |
+| [`useAddHost`](/hooks/events/use-add-host) / [`useRemoveHost`](/hooks/events/use-remove-host) | Manage hosts. |
+| [`useAddInvite`](/hooks/events/use-add-invite) / [`useRemoveInvite`](/hooks/events/use-remove-invite) | Manage invites. |
+| [`useFetchInvitees`](/hooks/events/use-fetch-invitees) | Host-only invitee list. |
+| [`useFetchEventRsvps`](/hooks/events/use-fetch-event-rsvps) | Named guest list. |
+| [`EventProvider` / `useEvent`](/sdk/events/provider-and-hook) | Load one event into context with bound actions. |
+
+## Creating an event
+
+`useCreateEvent` returns a callable. Cover and gallery uploads are inline — pass a `cover` and/or `gallery` and the hook sends `multipart/form-data` automatically. The logged-in user is auto-added as a host.
+
+```tsx
+import { useCreateEvent } from "@sublay/react-js";
+
+function NewEventButton() {
+  const createEvent = useCreateEvent();
+
+  const handleCreate = async (coverFile: File) => {
+    const event = await createEvent({
+      title: "Launch Party",
+      type: "physical",
+      startTime: "2026-09-01T18:00:00.000Z",
+      venueName: "The Loft",
+      address: "123 Main St, New York, NY",
+      capacity: 100,
+      cover: {
+        file: coverFile,
+        options: { mode: "original-aspect", sizes: { full: 1600 }, format: "webp" },
+      },
+    });
+    console.log("Created:", event.id);
+  };
+}
+```
+
+The required location fields follow `type`: `online` needs `url`; `physical` needs `address` or `location`; `hybrid` needs both. See [`useCreateEvent`](/hooks/events/use-create-event) for the full parameter list.
+
+## Listing events
+
+Use `useFetchManyEventsWrapper` for a ready-made paginated list with sort state and `loadMore`. Visibility is enforced server-side, so the list only contains events the current user may see.
+
+```tsx
+import { useFetchManyEventsWrapper } from "@sublay/react-js";
+
+function UpcomingEvents() {
+  const { events, loading, hasMore, loadMore, sortBy, setSortBy } =
+    useFetchManyEventsWrapper({
+      timeWindow: "upcoming",
+      limit: 20,
+      include: "userRsvp",
+    });
+
+  return (
+    <div>
+      <button onClick={() => setSortBy(sortBy === "startTime" ? "going" : "startTime")}>
+        Sort: {sortBy}
+      </button>
+      {events.map((e) => (
+        <article key={e.id}>
+          <h3>{e.title}</h3>
+          <p>{e.rsvpCounts.going} going · your RSVP: {e.userRsvp ?? "none"}</p>
+        </article>
+      ))}
+      {hasMore && <button disabled={loading} onClick={loadMore}>Load more</button>}
+    </div>
+  );
+}
+```
+
+## RSVPing
+
+```tsx
+import { useSetRsvp, useWithdrawRsvp } from "@sublay/react-js";
+
+function RsvpButtons({ eventId }: { eventId: string }) {
+  const setRsvp = useSetRsvp();
+  const withdrawRsvp = useWithdrawRsvp();
+
+  return (
+    <div>
+      <button onClick={() => setRsvp({ eventId, status: "going" })}>Going</button>
+      <button onClick={() => setRsvp({ eventId, status: "maybe" })}>Maybe</button>
+      <button onClick={() => withdrawRsvp({ eventId })}>Withdraw</button>
+    </div>
+  );
+}
+```
+
+Both return the updated [Event](/data-models/event) with refreshed `rsvpCounts` and the caller's `userRsvp`. RSVPs close at `startTime`, are rejected on cancelled events, reject `maybe` when `allowMaybe` is `false`, and reject `going` at capacity.
+
+## See Also
+
+- [EventProvider & useEvent](/sdk/events/provider-and-hook)
+- [Event data model](/data-models/event)
+- [Events Hooks reference](/hooks/events/use-create-event)
+- [Events API reference](/api-reference/events/create-event)

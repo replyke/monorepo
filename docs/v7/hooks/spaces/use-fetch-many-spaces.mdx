@@ -1,0 +1,86 @@
+---
+title: "Fetch many spaces"
+description: "Fetch a paginated list of spaces with filtering and sorting"
+icon: "plug"
+---
+
+## Overview
+
+`useFetchManySpaces` returns a callable function for fetching multiple spaces. It supports searching by name, slug, description, or a combined query; filtering by membership or parent space; and sorting.
+
+For paginated, stateful lists with load-more support, use [`useSpaceList`](/hooks/space-lists/use-space-list) instead.
+
+<Note>
+  This is a discovery surface: only `public` spaces are listed. `unlisted` and `private` spaces are excluded for non-members (they stay reachable by direct link/slug). The `memberOf=true` filter is the exception — it returns the caller's own spaces regardless of visibility. See [Space visibility](/data-models/space#visibility).
+</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchManySpaces } from "@sublay/react-js";
+
+function SpaceSearch() {
+  const fetchSpaces = useFetchManySpaces();
+
+  const handleSearch = async (query: string) => {
+    const result = await fetchSpaces({ searchAny: query, sortBy: "newest" });
+    console.log(result.data, result.pagination);
+  };
+}
+```
+
+## Parameters
+
+<ParamField path="page" type="number">
+  Page number to fetch. Defaults to `1`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Number of results per page.
+</ParamField>
+
+<ParamField path="sortBy" type="string">
+  Sort order: `"newest"`, `"members"` (most members first), or `"alphabetical"`. Defaults to `"members"`.
+</ParamField>
+
+<ParamField path="searchSlug" type="string | null">
+  Filter spaces whose slug contains this value.
+</ParamField>
+
+<ParamField path="searchName" type="string | null">
+  Filter spaces whose name contains this value.
+</ParamField>
+
+<ParamField path="searchDescription" type="string | null">
+  Filter spaces whose description contains this value.
+</ParamField>
+
+<ParamField path="searchAny" type="string | null">
+  Search across name, slug, and description simultaneously.
+</ParamField>
+
+<ParamField path="memberOf" type="boolean">
+  When `true`, returns only spaces where the current user is an active member.
+</ParamField>
+
+<ParamField path="parentSpaceId" type="string | null">
+  Filter to child spaces of a specific parent. Pass `null` for root-level spaces only.
+</ParamField>
+
+<ParamField path="nsfwFilter" type='"include-all" | "exclude" | "only"'>
+  Filter by each space's `nsfwEffective` (own flag OR any ancestor). `"include-all"` (default) adds no predicate; `"exclude"` drops effective-NSFW spaces; `"only"` returns only them. Because the filter keys off effective status, `"only"` may return an NSFW child whose safe parent is omitted — results are not guaranteed to form a contiguous tree. See [Space NSFW flagging](/data-models/space#nsfw-flagging).
+</ParamField>
+
+<ParamField path="include" type='"files" | string[]'>
+  Optional. Pass `"files"` to include avatar file objects in each result.
+</ParamField>
+
+## Returns
+
+<ResponseField name="data" type="Space[]">
+  Array of [Space](/data-models/space) objects.
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  Pagination metadata including `page`, `limit`, `total`, and `hasMore`.
+</ResponseField>

@@ -1,0 +1,62 @@
+---
+title: "Get Block Status"
+api: "GET /v7/:projectId/users/:userId/block"
+description: "Check whether the acting user blocks a specific user"
+---
+
+Returns **only the acting user's outbound block state** — whether *I* block `:userId`. This powers a block/unblock toggle in your app's UI.
+
+<Warning>
+  This endpoint is **outbound-only by design**. It never reveals the inbound direction (whether `:userId` has blocked the caller). Exposing the inbound state would let a blocked user poll this endpoint to discover a block — the exact disclosure the feature exists to prevent.
+</Warning>
+
+<Note>
+  **Requires the `moderation` bundle.** A project without the moderation bundle returns `403 database/tables-not-available`. See [Bundles](/bundles).
+</Note>
+
+## Path Parameters
+
+<ParamField path="userId" type="string" required>
+  The Sublay user ID (UUID) of the user to check block status against (the target).
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="actingUserId" type="string">
+  The user whose outbound state is being checked (the blocker). Only service/master keys may supply an `actingUserId` other than the caller's own; with a user token the blocker is derived from the token.
+</ParamField>
+
+## Response
+
+On success, returns HTTP `200`.
+
+<ResponseField name="blocked" type="boolean">
+  `true` if the acting user blocks the target user; otherwise `false`.
+</ResponseField>
+
+<ResponseField name="blockId" type="string">
+  ID of the block record. Present only when `blocked` is `true`.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO timestamp of when the block was created. Present only when `blocked` is `true`.
+</ResponseField>
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Self-Check — 400">
+    ```json
+    {
+      "error": "Cannot check block status with yourself.",
+      "code": "block/self-check"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [`useFetchBlockStatus` hook](/hooks/blocks/use-fetch-block-status)
+- [Block User](/api-reference/users/blocks/block-user)
+- [Block data model](/data-models/block)

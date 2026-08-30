@@ -1,0 +1,137 @@
+---
+title: "Custom Tables"
+description: "Provision your own database tables for the remaining 20% of your data model — with SDK row access, table management, and a full dashboard data editor"
+icon: "table"
+---
+
+Sublay ships pre-modeled tables for the features you'd otherwise have to build — users, entities, comments, spaces, reactions, and more. **Custom tables** cover the rest: the app-specific data that doesn't fit any built-in model. You define the table, Sublay provisions it inside your project's isolated schema, and you read and write its rows from the SDKs or the dashboard.
+
+<Note>
+  Custom tables live in the same per-project schema as your built-in data, so
+  they share your project's isolation and connection. They are addressed through
+  a dedicated `/db` surface that **only ever touches custom tables** — built-in
+  and bundle tables are never reachable through it.
+</Note>
+
+## The `custom_` invisibility model
+
+Every custom table is stored with a `custom_` prefix on its physical name, but you never type that prefix. You work with **logical** names everywhere:
+
+- You create a table called `Events` → Sublay stores it physically as `custom_Events`.
+- You read and write rows by calling `client.table("Events")` → Sublay resolves it to `custom_Events`.
+- The dashboard displays it as `Events`.
+
+The prefix is what guarantees the `/db` surface can never reach a built-in table. A request for a built-in name like `Comments` resolves to `custom_Comments`, which doesn't exist, so it `404`s — the built-in `Comments` table stays unreachable.
+
+<Warning>
+  The prefix is applied **exactly once, unconditionally** — it is never skipped
+  if your name already starts with `custom_`. If you name a logical table
+  `custom_x`, it is physically stored as `custom_custom_x` and you continue to
+  address it as `custom_x`. There is no double-prefix surprise and no name
+  collision with the prefix mechanism.
+</Warning>
+
+## Managed columns
+
+Every custom table is created with a set of **server-managed columns** that you never write to directly:
+
+| Column      | Type          | When present            | Purpose                                          |
+| ----------- | ------------- | ----------------------- | ------------------------------------------------ |
+| `id`        | `uuid`        | Always                  | Primary key, defaulted to `gen_random_uuid()`.   |
+| `createdAt` | `timestamptz` | When `timestamps: true` | Set on insert.                                   |
+| `updatedAt` | `timestamptz` | When `timestamps: true` | Bumped automatically on every update.            |
+| `deletedAt` | `timestamptz` | When `paranoid: true`   | Soft-delete marker. `null` for live rows.        |
+
+These columns are reserved at create time and at add-column time — you cannot define a column with any of these names. They are rejected from insert/update bodies (a write that includes `id`, `createdAt`, `updatedAt`, or `deletedAt` is refused). `deletedAt` is **read-visible** — you can filter and sort by it and surface it with `includeDeleted` — but never writable.
+
+### Timestamps and soft-delete
+
+Two flags, set when you create the table, control the managed columns:
+
+- **`timestamps`** (default `true`) — emits `createdAt` / `updatedAt`. With timestamps on, the default sort for reads is `createdAt desc`; with timestamps off, the default sort is `id`.
+- **`paranoid`** (default `false`, **requires `timestamps`**) — emits `deletedAt` and turns deletes into **soft deletes**. A delete sets `deletedAt` instead of removing the row; soft-deleted rows are excluded from reads by default and resurface only with `includeDeleted`. A [`restore`](/v7/node-sdk/tables#restore) clears `deletedAt`. Pass `force: true` to a delete to hard-delete a paranoid row.
+
+A non-paranoid table has no `deletedAt` column, so every delete is a hard delete.
+
+## Column types
+
+A custom column is one of nine logical types:
+
+| Logical type | Physical SQL type | Notes                                  |
+| ------------ | ----------------- | -------------------------------------- |
+| `text`       | `TEXT`            |                                        |
+| `integer`    | `BIGINT`          | 64-bit integer.                        |
+| `float`      | `DOUBLE PRECISION`|                                        |
+| `decimal`    | `NUMERIC`         | Arbitrary-precision number.            |
+| `boolean`    | `BOOLEAN`         |                                        |
+| `date`       | `DATE`            | Calendar date, no time.                |
+| `timestamp`  | `TIMESTAMPTZ`     | Timestamp with time zone.              |
+| `uuid`       | `UUID`            |                                        |
+| `json`       | `JSONB`           |                                        |
+
+Each column carries a `nullable` flag and an optional `defaultValue` (validated against the column's type).
+
+## Surfaces
+
+Custom tables are reachable from every Sublay SDK and from the dashboard:
+
+<CardGroup cols={2}>
+  <Card title="Node SDK — rows" icon="table" href="/v7/node-sdk/tables">
+    `client.table(name)` — find, create, update, delete, bulk, restore.
+  </Card>
+  <Card title="Node SDK — management" icon="wrench" href="/v7/node-sdk/tables-management">
+    `client.tables` — create/drop tables and add/drop columns (service-key only).
+  </Card>
+  <Card title="JS SDK — rows" icon="table" href="/v7/js-sdk/tables">
+    `client.table(name)` row operations from any browser or JS runtime.
+  </Card>
+  <Card title="React hook" icon="react" href="/v7/sdk/tables/overview">
+    `useTable(name)` for React and React Native.
+  </Card>
+</CardGroup>
+
+Table **management** (DDL — creating tables, adding columns) is available in two places only: the **Node SDK** (service-key) and the **dashboard**. The JS SDK and the React hook are row-only, because they authenticate as an end user and hold no service key.
+
+## The dashboard data editor
+
+The dashboard ships a full data editor for custom tables, under the project's **Database** view:
+
+- **Schema management** — create a table (with the full type set, per-column nullable/default, and the `timestamps` / `paranoid` toggles), add a column to an existing table, and drop tables or columns. Drop actions open a confirmation dialog that previews what will be lost (e.g. the affected row count) and gate the action behind typing the table/column name.
+- **Row editing** — insert and edit rows through type-aware inputs. Managed columns are not editable. (Row editing is offered for custom tables only — built-in tables stay read-only in the editor.)
+- **Soft delete & restore** — on a paranoid table, the grid offers a **Show deleted** toggle; soft-deleted rows render dimmed with a **Restore** action.
+- **Filter, sort, paginate** — browse rows with the same filter/sort/pagination contract the SDKs use.
+
+Custom table names display with the `custom_` prefix stripped (`Events`, not `custom_Events`).
+
+<Info>
+  **Permissions.** Schema changes (create/drop table, add/drop column) require an
+  **owner or admin** role. Row writes (insert, edit, restore) require **owner or
+  editor** — the same gate as deleting a row.
+</Info>
+
+## Limits
+
+To keep a runaway script from exhausting your schema, custom tables are bounded:
+
+- **100 tables** per project.
+- **100 columns** per table.
+- **100 rows** per bulk create or bulk delete call.
+
+These ceilings are generous for legitimate data models and far below Postgres's own limits.
+
+## Security: open row CRUD
+
+<Warning>
+  **Row CRUD on the `/db` surface is currently open.** The row endpoints capture
+  the caller's identity (user token, service key) but **do not enforce any
+  authorization** — any caller who can reach your project can read and write
+  custom-table rows. There are no row-, field-, or table-level policies yet.
+
+  This is a deliberate, pre-release state. A hard authorization gate is planned
+  before general availability, and the captured identity context is the
+  integration point that policy layer will build on. **Do not store data in
+  custom tables that requires per-row or per-user access control until that gate
+  ships.**
+</Warning>
+
+Table **management** (DDL) is not open — it requires a service key (SDK) or an owner/admin role (dashboard).

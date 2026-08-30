@@ -1,0 +1,104 @@
+---
+title: "Fetch many chat messages"
+description: "Stateless fetcher for conversation messages — no Redux, no socket"
+icon: "plug"
+---
+
+import { SpaceReputationParams } from "/snippets/space-reputation-params.mdx";
+
+## Overview
+
+`useFetchManyChatMessages` returns a function that fetches a single page of conversation messages and resolves to the raw response. It stores nothing — no Redux, no socket subscription — so you own the resulting state.
+
+This is the low-level fetcher shared by [`useLiveChatMessages`](/hooks/chat/messages/use-live-chat-messages) (the live store-backed view) and [`useFetchManyChatMessagesWrapper`](/hooks/chat/messages/use-fetch-many-chat-messages-wrapper) (a batteries-included paginated list). Use it directly when you need full control; most apps will prefer the wrapper.
+
+<Note>Because results never enter the live store, this is the right tool for **filtered** or read-only queries (e.g. only messages that have replies) that should not be polluted by live socket traffic. It is a point-in-time query — call it again to refresh.</Note>
+
+## Usage Example
+
+```tsx
+import { useFetchManyChatMessages } from "@sublay/react-js";
+import { useState, useEffect } from "react";
+
+function MessagesWithReplies({ conversationId }: { conversationId: string }) {
+  const fetchMessages = useFetchManyChatMessages();
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    fetchMessages({ conversationId, filters: { hasReplies: true } }).then((res) =>
+      setMessages(res.messages)
+    );
+  }, [conversationId]);
+
+  return (
+    <ul>
+      {messages.map((m) => <li key={m.id}>{m.content}</li>)}
+    </ul>
+  );
+}
+```
+
+## Parameters
+
+<ParamField path="conversationId" type="string" required>
+  The ID of the conversation to query.
+</ParamField>
+
+<ParamField path="parentId" type="string | null">
+  Restrict to thread replies of this message.
+</ParamField>
+
+<ParamField path="before" type="string | null">
+  Keyset cursor (ISO timestamp): messages created before this. Mutually exclusive with `after`.
+</ParamField>
+
+<ParamField path="after" type="string | null">
+  Keyset cursor (ISO timestamp): messages created after this. Mutually exclusive with `before`.
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Page size (1–100). Defaults to `50`.
+</ParamField>
+
+<ParamField path="sort" type='"asc" | "desc"'>
+  Sort by creation time.
+</ParamField>
+
+<ParamField path="includeFiles" type="boolean">
+  When `true`, the server populates the `files` field on each message.
+</ParamField>
+<ParamField path="includeGrants" type="boolean">
+  When `true`, each message carries its [reputation-grant summary](/data-models/reputation-grant#grantsummary) at `message.grants` — `{ total, count, viewerTotal }` over positive grants. Populated by the `reputation` bundle; on a project without it the summary comes back zero-filled rather than missing.
+</ParamField>
+
+<SpaceReputationParams variant="context" field="path" />
+
+<ParamField path="filters" type="MessageFilters">
+  Optional filters. `filters.hasReplies` (boolean): when `true`, returns only messages that have thread replies (`threadReplyCount > 0`); when `false`, only messages with none. Filters by thread replies, not quotings.
+
+  <Note>Threads are one level deep, so `hasReplies: true` together with `parentId` always returns an empty list — the response's `notice` field explains why.</Note>
+</ParamField>
+
+## Returns
+
+A `Promise` resolving to:
+
+<ResponseField name="messages" type="ChatMessage[]">
+  Messages for the requested page. When `spaceReputation` is requested, each embedded sender carries an added `spaceReputation` number. See [ChatMessage](/data-models/chat-message) and [Reputation](/data-models/reputation).
+</ResponseField>
+
+<ResponseField name="hasMore" type="boolean">
+  Whether more messages exist in the requested direction.
+</ResponseField>
+
+<ResponseField name="oldestCreatedAt" type="string | null">
+  ISO timestamp of the oldest message in this page; `null` if empty.
+</ResponseField>
+
+<ResponseField name="newestCreatedAt" type="string | null">
+  ISO timestamp of the newest message in this page; `null` if empty.
+</ResponseField>
+
+<ResponseField name="notice" type="string">
+  Present only when a filter combination can't return results — e.g. `hasReplies: true` together with `parentId`. Explains why the list is empty.
+</ResponseField>

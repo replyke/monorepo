@@ -1,0 +1,24 @@
+---
+title: "Fetch Followers Count"
+api: "GET /v7/:projectId/follows/followers-count"
+description: "Get the number of followers the authenticated user has"
+---
+
+Returns the total number of users following the authenticated user.
+
+<Note>
+  Users with a block between them and you, in either direction, are excluded
+  from the count. Requires the `moderation` bundle.
+</Note>
+
+## Response
+
+On success, returns HTTP `200`:
+
+<ResponseField name="count" type="number">
+  Total number of users following the authenticated user.
+</ResponseField>
+
+## See Also
+
+- [`useFetchFollowersCount` hook](/hooks/follows/use-fetch-followers-count)

@@ -1,0 +1,37 @@
+---
+title: "Withdraw RSVP"
+api: "DELETE /v7/:projectId/events/:eventId/rsvp"
+description: "Remove the caller's RSVP from an event"
+---
+
+Removes the caller's RSVP. The RSVP row is deleted and the matching `rsvpCounts` entry is decremented. Requires authentication, and the caller must be able to [see the event](/data-models/event#visibility) (otherwise `404`).
+
+Withdrawing is idempotent — withdrawing when there is no RSVP succeeds and changes nothing.
+
+## Path Parameters
+
+<ParamField path="eventId" type="string" required>
+  UUID of the event.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="userId" type="string">
+  Service/master key only. Withdraw on behalf of this user.
+</ParamField>
+
+## Response
+
+Returns the [Event](/data-models/event) with refreshed `rsvpCounts`.
+
+## Error Responses
+
+<AccordionGroup>
+  <Accordion title="Not Found / No Access — 404">
+    ```json
+    { "error": "Event not found", "code": "event/not-found" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+See also: [useWithdrawRsvp](/hooks/events/use-withdraw-rsvp)

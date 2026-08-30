@@ -1,0 +1,32 @@
+---
+title: "useDeleteEvent"
+description: "Delete an event and clean up its RSVPs and invites (host-only)"
+icon: "plug"
+---
+
+## Overview
+
+`useDeleteEvent` returns a callable that deletes an event. **Host-only.** The event's RSVPs and invites are cleaned up; whether the event is soft- or hard-deleted (and whether its files are preserved) follows the project's `eventDeletion` settings.
+
+## Usage Example
+
+```tsx
+import { useDeleteEvent } from "@sublay/react-js";
+
+function DeleteButton({ eventId }: { eventId: string }) {
+  const deleteEvent = useDeleteEvent();
+  return <button onClick={() => deleteEvent({ eventId })}>Delete</button>;
+}
+```
+
+## Parameters
+
+<ParamField path="eventId" type="string" required>The event to delete.</ParamField>
+
+## Returns
+
+Returns a `Promise<void>`.
+
+## See Also
+
+- [Delete Event API](/api-reference/events/delete-event)
