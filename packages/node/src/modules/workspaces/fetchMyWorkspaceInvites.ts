@@ -1,5 +1,5 @@
 import { SublayHttpClient } from "../../core/client";
-import { WorkspaceInvitation } from "../../interfaces/Workspace";
+import { MyWorkspaceInvitation } from "../../interfaces/Workspace";
 
 export interface FetchMyWorkspaceInvitesProps {
   // The acting user whose live pending invites to read (invites are matched
@@ -8,7 +8,7 @@ export interface FetchMyWorkspaceInvitesProps {
 }
 
 export interface FetchMyWorkspaceInvitesResponse {
-  data: WorkspaceInvitation[];
+  data: MyWorkspaceInvitation[];
 }
 
 /**

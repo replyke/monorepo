@@ -6,7 +6,7 @@ icon: "plug"
 
 ## Overview
 
-`useFetchMyWorkspaceInvites` returns a callable for the signed-in user's **live** pending invites (`status='pending' AND expiresAt > now`), matched by `userId` from the token, across **every** workspace. This is the read that powers a "You've been invited" screen.
+`useFetchMyWorkspaceInvites` returns a callable for the signed-in user's **live** pending invites (`status='pending' AND expiresAt > now`), matched by `userId` from the token, across **every** workspace. This is the read that powers a "You've been invited" screen — and unlike every other workspace-invite read, each item embeds `workspace: { id, name }` and a populated `invitedBy` (instead of a bare id), since the invitee otherwise has no reach on either (a direct workspace read 404s for a non-member).
 
 **Authorization:** self-service. No capability and no workspace scope — the caller is derived from the token. **Surfacing is not verification-gated**: a user sees invites right after signup; the verified check applies when they act on one — [accept](/hooks/workspaces/use-accept-workspace-invite) *and* [decline](/hooks/workspaces/use-decline-workspace-invite).
 
@@ -28,7 +28,7 @@ function PendingInvites() {
 
   const load = async () => {
     const { data } = await fetchMyWorkspaceInvites();
-    return data; // WorkspaceInvitation[] — invites addressed to me
+    return data; // MyWorkspaceInvitation[] — invites addressed to me
   };
 }
 ```
@@ -39,7 +39,7 @@ None — the user is derived from the token.
 
 ## Returns
 
-`{ data: WorkspaceInvitation[] }` — each item a [WorkspaceInvitation](/data-models/workspace-invitation) object. Never paginated.
+`{ data: MyWorkspaceInvitation[] }` — each item a `MyWorkspaceInvitation`: a [WorkspaceInvitation](/data-models/workspace-invitation) with `workspace` and `invitedBy` embedded (see the note on that page). Never paginated.
 
 ## Related
 

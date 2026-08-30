@@ -1,10 +1,10 @@
 import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
-import { WorkspaceInvitation } from "../../interfaces/models/Workspace";
+import { MyWorkspaceInvitation } from "../../interfaces/models/Workspace";
 
 export interface FetchMyWorkspaceInvitesResponse {
-  data: WorkspaceInvitation[];
+  data: MyWorkspaceInvitation[];
 }
 
 /**

@@ -87,6 +87,12 @@ Presentational components the CLI registry imports: `GiphyContainer` (Giphy pick
 - Unlike the react family, these are **not** linked to `@sublay/core` via `workspace:*` in `peerDependencies` (a peer can't use `workspace:*`) — only their own `devDependencies` use it for local building/testing.
 - **Key Directories**: `packages/ui-core-react-js/src/components/`, `packages/ui-core-react-native/src/components/`
 
+## Known duplication: response/model interfaces across packages
+
+`core`, `node`, and `js` each keep their own hand-copied TypeScript interfaces for server response shapes (e.g. `WorkspaceInvitation` lives separately in `packages/core/src/interfaces/models/Workspace.ts`, `packages/node/src/interfaces/Workspace.ts`, and `packages/js/src/interfaces/Workspace.ts` — not a shared file). This is a known, accepted tradeoff, not an oversight — the three packages target different runtimes/auth models and are published independently, so a shared interfaces package would add a coordination dependency between them for comparatively little payoff. It does mean a server response-shape change has to be hand-applied to every package that types it, and can drift if one copy is missed (as happened with `WorkspaceInvitation.invitedBy` before it was caught and fixed 2026-08-30).
+
+**When fixing a stale type in one of these packages, check the other two for the same interface and fix them too — don't ask each time, just do it.** A future dedup (shared `@sublay/*-interfaces` package or similar) is a reasonable idea but out of scope for a routine bug fix; raise it separately if it's worth pursuing.
+
 ## `@sublay/node` and `@sublay/js`
 
 Server-side (`node`, service-key auth) and framework-agnostic browser (`js`, user-token auth) SDKs. Each has its own detailed `CLAUDE.md` — [`packages/node/CLAUDE.md`](packages/node/CLAUDE.md) and [`packages/js/CLAUDE.md`](packages/js/CLAUDE.md) — covering their full module list, the `bindModule` pattern, and (for `js`) the two auth modes and refresh-token rotation. Read those directly rather than duplicating here; the short version:
