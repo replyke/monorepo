@@ -281,7 +281,7 @@ await sendVerificationEmail({
 |--------|------|----------|-------------|
 | `mode` | `"code" \| "link"` | always | Whether to send a code to enter, or a link to click |
 | `tokenFormat` | `"hex" \| "numeric" \| "alpha" \| "alphanumeric"` | when `mode: "code"` (optional, defaults to `"hex"`, for `mode: "link"`) | Character set for the token |
-| `tokenLength` | `number` (4–12) | when `mode: "code"` and `tokenFormat` isn't `"hex"` (not allowed when it is `"hex"`) | Length of the token |
+| `tokenLength` | `number` (4–12) | when `mode: "code"` and `tokenFormat` isn't `"hex"` (not allowed when it is `"hex"`; optional for `mode: "link"`, defaults to `6`) | Length of the token |
 | `redirectUrl` | `string` | never | Where to redirect after link verification (only valid with `mode: "link"`) |
 
 TypeScript enforces this combination at compile time — `sendVerificationEmail({ mode: "code" })` or `sendVerificationEmail({ mode: "code", tokenFormat: "numeric" })` (missing `tokenLength`) won't type-check.

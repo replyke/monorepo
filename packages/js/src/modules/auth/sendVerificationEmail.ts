@@ -2,11 +2,14 @@ import { SublayHttpClient } from "../../core/client";
 
 // mode: "code" + tokenFormat: "hex" — hex always produces a fixed 64-character
 // string and ignores tokenLength entirely, so pairing it with a human-typed
-// code produces something nobody can type. tokenLength is deliberately absent
-// here; passing it would silently do nothing.
+// code produces something nobody can type. tokenLength is `?: never`, not just
+// omitted — passing props through a variable (rather than an inline object
+// literal) skips TypeScript's excess-property check, so plain omission alone
+// doesn't stop `tokenLength` from sneaking through.
 export interface SendCodeVerificationEmailHexProps {
   mode: "code";
   tokenFormat: "hex";
+  tokenLength?: never;
 }
 
 // mode: "code" + a short format — tokenLength is required so the caller makes

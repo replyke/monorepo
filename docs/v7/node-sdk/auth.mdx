@@ -226,12 +226,12 @@ const { success } = await sublay.auth.sendVerificationEmail({
   The Sublay user ID to send the verification email to.
 </ParamField>
 
-<ParamField body="mode" type="string" required>
+<ParamField body="mode" type='"code" | "link"' required>
   `"code"` emails a short token the user enters; `"link"` emails a verification URL.
 </ParamField>
 
-<ParamField body="tokenFormat" type="string">
-  Format of the generated token: `"hex"`, `"numeric"`, `"alpha"`, or `"alphanumeric"`.
+<ParamField body="tokenFormat" type='"hex" | "numeric" | "alpha" | "alphanumeric"'>
+  Format of the generated token.
   - Required when `mode: "code"` — there's no default, since `"hex"` produces a 64-character token no one would want to type.
   - Optional when `mode: "link"` (defaults to `"hex"`) — the token sits in a URL, never read by a human, so format doesn't matter.
 </ParamField>
