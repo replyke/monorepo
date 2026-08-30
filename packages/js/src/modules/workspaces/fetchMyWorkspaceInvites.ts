@@ -1,8 +1,8 @@
 import { SublayHttpClient } from "../../core/client";
-import { WorkspaceInvitation } from "../../interfaces/Workspace";
+import { MyWorkspaceInvitation } from "../../interfaces/Workspace";
 
 export interface FetchMyWorkspaceInvitesResponse {
-  data: WorkspaceInvitation[];
+  data: MyWorkspaceInvitation[];
 }
 
 /**

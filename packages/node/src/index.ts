@@ -155,6 +155,8 @@ export type {
   Workspace,
   WorkspaceMember,
   WorkspaceInvitation,
+  MyWorkspaceInvitation,
+  WorkspaceInvitationInviter,
   WorkspaceCapability,
   WorkspaceInvitationStatus,
   WorkspaceAuthorityReason,

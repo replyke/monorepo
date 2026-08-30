@@ -824,6 +824,8 @@ export type {
 export type {
   Workspace,
   WorkspaceInvitation,
+  MyWorkspaceInvitation,
+  WorkspaceInvitationInviter,
   WorkspaceCapability,
   WorkspaceInvitationStatus,
   WorkspaceAuthorityReason,

@@ -105,6 +105,25 @@ export interface WorkspaceInvitation {
   updatedAt: string;
 }
 
+export interface WorkspaceInvitationInviter {
+  id: string;
+  name: string | null;
+  username: string | null;
+  avatar: string | null;
+  reputation: number;
+}
+
+// The shape returned specifically by `GET /me/workspace-invites` — unlike
+// every other workspace-invite read, the invitee has no other reach on the
+// workspace (a direct workspace read 404s for a non-member) or the inviter,
+// so both are embedded directly on the row instead of requiring a follow-up
+// read per invitation.
+export interface MyWorkspaceInvitation
+  extends Omit<WorkspaceInvitation, "invitedBy"> {
+  workspace: { id: string; name: string };
+  invitedBy: WorkspaceInvitationInviter;
+}
+
 // One entry in the unified roster read. One entry per distinct user, carrying a
 // `reasons` array (a user may appear via several relations at once).
 export interface WorkspaceRosterReason {
