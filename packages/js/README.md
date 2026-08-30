@@ -64,18 +64,27 @@ Sublay ships these layers as **pre-modeled bundles** that attach to one shared e
 
 ## Bundles you can install
 
-- **Comments & Threads** — threaded discussions with mentions, replies, sorting
-- **Reactions & Votes** — upvotes, downvotes, multi-emoji reactions
-- **Spaces & Communities** — groups, sub-forums, membership
-- **Notifications** — in-app notification fan-out with optional webhook delivery
-- **Feeds & Discovery** — hot / top / new / controversial, filtered by tag, geography, timeframe, or follow graph
-- **Real-Time Chat** — direct messages and group threads
-- **Follows & Connections** — one-way follows, mutual connections
-- **Files & Storage** — file blob storage with managed upload URLs
-- **AI-Powered Search** — semantic search across your entity tree
-- **Moderation** — report queues and content-removal workflows
+Every project always includes the **`core`** bundle — users, authentication, and OAuth identity — installed automatically and it can't be removed. On top of that, install only what your product needs:
 
-Every bundle attaches to the same model. No mismatches, no extra databases. One schema for everything.
+- **Entities** (`entities`) — the base content unit for anything your users create (posts, articles, listings), with views, drafts, and publishing
+- **Comments** (`comments`) — threaded comments on entities · requires `entities`
+- **Reactions** (`reactions`) — emoji reactions on entities and comments
+- **Storage** (`files-images`) — file and image uploads, including user avatars and banners
+- **Follows** (`follows`) — one-way follow relationships
+- **Connections** (`connections`) — bidirectional, friend-style connection requests
+- **Spaces** (`spaces`) — hierarchical community spaces with membership, roles, and rules
+- **Workspaces** (`workspaces`) — self-nesting SaaS/team workspaces with invitations and per-member authority
+- **Chat** (`chat`) — real-time 1:1 and group conversations with message reactions
+- **Collections** (`collections`) — user-owned bookmarking and folders for saving entities · requires `entities`
+- **Events** (`events`) — online, physical, or hybrid events with RSVP tracking, capacity limits, hosts, and invites
+- **Moderation** (`moderation`) — reports, report resolution, user blocking, and account suspensions
+- **App Notifications** (`notifications`) — in-app notification fan-out
+- **Push Notifications** (`push`) — native push delivery to iOS, Android, and Web
+- **Reputation** (`reputation`) — per-space reputation buckets, a maintained overall total per user, and reputation grants
+- **Semantic Search & AI** (`ai-search`) — content embeddings, semantic search, and an AI-answer endpoint
+- **Interest Matching** (`interest-matching`) — activity-derived interest facets for matching users by what they engage with · requires `ai-search`
+
+Every bundle attaches to the same project schema — no mismatches, no extra databases. Install, remove, or add bundles at any time from the dashboard's Database page; removing a bundle drops its tables (and clears references to it from other bundles) for good.
 
 ## How it works
 
@@ -97,7 +106,7 @@ The dashboard at [dash.sublay.io](https://dash.sublay.io) is a database/backend 
 
 ## The Sublay SDK family
 
-- [`@sublay/core`](https://www.npmjs.com/package/@sublay/core) — platform-agnostic hooks and utilities
+- [`@sublay/core`](https://www.npmjs.com/package/@sublay/core) — hooks and utilities shared across the React, React Native, and Expo SDKs (not used by this package)
 - [`@sublay/react-js`](https://www.npmjs.com/package/@sublay/react-js) — React (web)
 - [`@sublay/react-native`](https://www.npmjs.com/package/@sublay/react-native) — React Native
 - [`@sublay/expo`](https://www.npmjs.com/package/@sublay/expo) — Expo with SecureStore token storage
