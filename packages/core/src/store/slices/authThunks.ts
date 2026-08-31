@@ -295,8 +295,9 @@ const authService = {
 // rather than unwinding them afterwards, which is why they need no local
 // teardown: the previous account's session is never touched. The OAuth path
 // cannot — `handleOAuthRedirect` writes the tokens synchronously, before any
-// identity exists — so it is the one path that unwinds, and its unwind restores
-// SELECTION ONLY (see `unwindLocalSession` below).
+// identity exists — so it is the one path that unwinds, and its unwind tears
+// the SESSION down without ever writing `activeAccountId` (see
+// `unwindLocalSession` below).
 
 /**
  * The dispatch shape the cap helper needs.
@@ -336,10 +337,26 @@ export const ACCOUNT_LIMIT_MESSAGE = `This device already remembers ${MAX_ACCOUN
  *     binding this SDK created on this device anyway.
  *
  *  2. **Unwind local session state, but only where the caller already wrote
- *     it.** Selection is restored; the session is not re-established (the same
- *     honesty as the transition core's rollback — by this point the previous
- *     account's access token is gone and recovering it would mean spending its
- *     refresh token on another call that can fail in turn).
+ *     it.** The session is not re-established (the same honesty as the
+ *     transition core's rollback — by this point the previous account's access
+ *     token is gone and recovering it would mean spending its refresh token on
+ *     another call that can fail in turn).
+ *
+ *     **`activeAccountId` is deliberately NOT written here.** A refusal never
+ *     reaches the step that activates an account (`useAccountSync` Phase B
+ *     refuses to activate an id the map did not admit), so whatever selection
+ *     the map already holds is still the correct one and the only safe move is
+ *     to leave it alone. This used to dispatch
+ *     `setActiveAccount(previousActiveAccountId ?? null)` with a value the
+ *     OAuth thunk had captured synchronously before its first `await` — on web,
+ *     OAuth completion is a full page reload, so that read happens in the same
+ *     mount flush as Phase A's hydration and is deterministically `null`, while
+ *     the hydration lands the CORRECT id during the refresh round trip. The
+ *     "restore" therefore overwrote a correct value with `null` (without
+ *     `signedOut`), and the next launch's first-account fallback stranded the
+ *     user on their oldest remembered account. Same failure and same fix as the
+ *     `addAccount()` abandonment path, which stopped writing selection for
+ *     exactly this reason.
  *
  *  3. **Set the limit flag**, which is the ONLY channel the OAuth paths have:
  *     `handleOAuthRedirect` is synchronous and shared by web and Expo, so
@@ -350,7 +367,6 @@ async function refuseAtAccountLimit({
   projectId,
   refreshToken,
   unwindLocalSession = false,
-  previousActiveAccountId = null,
 }: {
   dispatch: CapGateDispatch;
   projectId: string;
@@ -358,7 +374,6 @@ async function refuseAtAccountLimit({
   refreshToken: string | null | undefined;
   /** True only for callers that already wrote tokens/user into Redux. */
   unwindLocalSession?: boolean;
-  previousActiveAccountId?: string | null;
 }): Promise<void> {
   if (refreshToken) {
     try {
@@ -381,11 +396,13 @@ async function refuseAtAccountLimit({
     dispatch(clearUserInUserSlice());
     dispatch(baseApi.util.resetApiState());
     dispatch(resetAccountScopedState());
-    // Selection only. `setActiveAccount(null)` deliberately does NOT set
-    // `signedOut`: the user did not sign out, they failed to ADD an account, so
-    // the next launch should behave exactly as it would have before the attempt
-    // (Phase A's first-account fallback) rather than parking them at the picker.
-    dispatch(setActiveAccount(previousActiveAccountId ?? null));
+    // NOTHING touches `activeAccountId` — see obligation 2 above. The session
+    // is torn down; the selection is left exactly as the map has it, which is
+    // the value Phase A hydrated (or `null` if the attempt came from
+    // `addAccount()`, where there was no selection to begin with). `signedOut`
+    // is likewise left alone: the user did not sign out, they failed to ADD an
+    // account, so the next launch should behave exactly as it would have before
+    // the attempt rather than parking them at the picker.
   }
 
   dispatch(setAccountLimitReached(true));
@@ -823,9 +840,6 @@ export const verifyExternalUserThunk = createAsyncThunk(
 export const completeOAuthSignInThunk = createAsyncThunk(
   "auth/completeOAuthSignIn",
   async (data: { projectId: string }, { dispatch, getState }) => {
-    const previousActiveAccountId = (getState() as RootState).sublay.accounts
-      .activeAccountId;
-
     const result = await dispatch(
       requestNewAccessTokenThunk({ projectId: data.projectId })
     );
@@ -856,7 +870,6 @@ export const completeOAuthSignInThunk = createAsyncThunk(
       projectId: data.projectId,
       refreshToken: mintedRefreshToken,
       unwindLocalSession: true,
-      previousActiveAccountId,
     });
   }
 );
