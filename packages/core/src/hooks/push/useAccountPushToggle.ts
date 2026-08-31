@@ -74,7 +74,7 @@ export default function useAccountPushToggle(): UseAccountPushToggleValues {
         // Server first. With no device identifier stored this is a clean no-op
         // — the device has never registered, so there is nothing bound and the
         // flag is pure intent for the next `register()` to honour.
-        await applyAccountPushBinding(
+        const bindingApplied = await applyAccountPushBinding(
           { dispatch, getState, projectId },
           userId,
           enabled
@@ -89,7 +89,16 @@ export default function useAccountPushToggle(): UseAccountPushToggleValues {
         // paused on an account the user just deliberately silenced, with no
         // route to clear it: the marker is cleared by the activation-time
         // reconcile, which for a silenced account has nothing left to do.
-        dispatch(setAccountNeedsPushRebind({ userId, needsRebind: false }));
+        //
+        // ONLY WHEN SOMETHING ACTUALLY WENT OUT. The no-op branch above — no
+        // device identifier — resolves without a request, and clearing the
+        // marker off that would say "repaired" about a binding nothing touched.
+        // The flag above is still written either way: it is durable INTENT, and
+        // with nothing bound there is nothing to misreport. The marker is the
+        // opposite; it is a claim about server state.
+        if (bindingApplied) {
+          dispatch(setAccountNeedsPushRebind({ userId, needsRebind: false }));
+        }
 
         // Awaited: the whole point of the flag is that it is DURABLE intent,
         // and reconciliation on the next launch reads it from storage.

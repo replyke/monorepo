@@ -243,8 +243,16 @@ try {
 
 ### Telling a dead account from a dead network
 
-Both failures reject, and they call for opposite responses: one needs the user to sign in again,
-the other needs a retry when they have signal. `AccountTransitionError` carries the discriminator.
+`AccountTransitionError` is the typed error an account-transition failure rejects with — from
+`switchAccount`, `removeAccount` and `activateStoredAccount` alike. It extends `Error`, so
+`message` and `instanceof Error` work as usual, and it carries **two independent boolean
+discriminants**, because the three failures it covers call for three different responses.
+
+Check with `instanceof` before reading those flags, because not every rejection is one:
+`removeAccount` rejects with the **underlying error, unchanged**, when the server refuses to unbind
+the account's push notifications — that is the atomic-removal refusal described under
+[Removing an Account](#removing-an-account), and it is reported as the server sent it.
+`switchAccount` and `removeAccount` also throw a plain `Error` when no `projectId` is configured.
 
 <ResponseField name="AccountTransitionError.credentialRejected" type="boolean">
   `true` when the **server refused** the stored credential — expired, revoked, reuse-detected,
@@ -255,11 +263,37 @@ the other needs a retry when they have signal. `AccountTransitionError` carries 
   Nothing is marked, and the same account may well work on the next attempt.
 </ResponseField>
 
-`AccountTransitionError.message` carries the server's reason when it gave one, otherwise
-`ACCOUNT_TRANSITION_FAILED_MESSAGE`. Both the class and that constant are exported.
+<ResponseField name="AccountTransitionError.accountNotFound" type="boolean">
+  `true` when the operation named an **account that is not in the stored map at all** — a stale id,
+  typically from a switcher rendered off a snapshot the map has since moved past.
 
-Prompting a re-auth on every rejection is the mistake this discriminator exists to prevent: it
+  Nothing was attempted and nothing was marked: no network call went out, no session was touched,
+  and re-authenticating would not help, because there is no entry to authenticate. Refresh your
+  account list from `useAccounts()` rather than prompting a sign-in.
+
+  The two flags are never both `true` — an account that is not stored has no credential to have
+  been refused — and both are `false` for a transport failure.
+</ResponseField>
+
+<ResponseField name="AccountTransitionError.message" type="string">
+  The server's reason when it gave one, otherwise `ACCOUNT_TRANSITION_FAILED_MESSAGE`. Both the
+  class and that constant are exported, so you never have to match on a string you do not own.
+</ResponseField>
+
+Prompting a re-auth on every rejection is the mistake these discriminators exist to prevent: it
 tells a user on a train that their account is dead, and it does so every time they lose signal.
+
+```tsx
+try {
+  await switchAccount({ userId });
+} catch (err) {
+  if (err instanceof AccountTransitionError) {
+    if (err.accountNotFound) refreshAccountList();  // stale id — nothing happened
+    else if (err.credentialRejected) promptSignIn(userId);  // the credential is dead
+    else showRetry();                               // the request never got an answer
+  }
+}
+```
 
 <Note>
   A switch still costs exactly **one** token exchange. The refresh endpoint
@@ -331,7 +365,9 @@ Do **not** call `usePushRegistration().unregister()` in a logout flow. It is a d
 
 ### When notifications are paused
 
-When the OS rotates the device's push token, every binding on the old token is dead. Wherever `usePushRegistration` is mounted with an adapter that reports rotations, the SDK notices and records the new identifier. The **active** account is re-bound on the spot. Every other push-enabled account is **marked** as needing a re-bind and repaired the next time the user switches into it, using the live session that switch establishes.
+When the OS rotates the device's push token, every binding on the old token is dead. As long as `usePushRegistration` is mounted with an adapter that reports rotations, the SDK notices and records the new identifier. The **active** account is re-bound on the spot.
+
+Mount that hook **at your app root**, not on the settings screen that calls `register()`: rotation handling lives exactly as long as the hook is mounted, so a screen-scoped mount only covers the seconds that screen is open and a rotation anywhere else in the app is missed. See [`usePushRegistration`](/hooks/push/use-push-registration). Every other push-enabled account is **marked** as needing a re-bind and repaired the next time the user switches into it, using the live session that switch establishes.
 
 The marking is deliberate rather than a shortcut. Re-binding a background account would mean spending its stored refresh token on a one-time-use exchange, in the background, for an account the user is not looking at — and an interruption in the middle of that exchange locks the account out permanently. The cost is that a push-enabled account nobody opens goes quiet after a rotation until it is next opened, which is what the marker is for:
 
@@ -405,18 +441,60 @@ What changes locally depends on the path:
 - **Sign-up, email sign-in and external verification** are refused *before* the SDK touches your session, so whatever account was active stays signed in.
 - **OAuth** cannot be: the redirect hands over tokens before identity is known, so the previous session is already gone by the time the limit is discovered. The previous account is re-*selected*, but its session is **not** re-established — the app renders signed-out with that account selected, and the user signs in again from the picker. This holds whether or not the flow was started from `addAccount()`: that call leaves the selection alone, so there is always a previous account to restore unless there genuinely was none.
 
-### `canAddAccount` vs `accountLimitReached`
+### Three signals for the account cap
 
-`useAddAccount` exposes two related but distinct values:
+Three related but distinct values answer three different questions. None replaces another:
 
-| Value | Kind | Meaning |
-|-------|------|---------|
-| `canAddAccount` | Predicate | Is there room right now? Derived from the map size on every render. Use it to enable or disable an "Add account" button. |
-| `accountLimitReached` | Event | Was an account actually *refused* because the map was full? Latched until the next successful admission or any removal. Use it to render the error after the fact. |
+| Value | Where from | Kind | Question it answers |
+|-------|-----------|------|---------------------|
+| `canAddAccount` | `useAddAccount()` | Predicate | **Is there room right now?** Derived from the map size on every render, and it knows no user id. Use it to enable or disable an "Add account" button. |
+| `wouldExceedAccountLimit(accounts, userId?)` | Bare function export | Predicate | **Would admitting *this id* be a sixth account?** The exact rule the SDK's own refusal gates use, over a raw accounts map. |
+| `accountLimitReached` | `useAccounts()` / `useAddAccount()` | Event | **Did an admission just get refused?** Latched until the next successful admission or any removal. Use it to render the error after the fact. |
 
-`accountLimitReached` is also available from `useAccounts()`.
+Use `canAddAccount` to keep the user from starting a sign-in that cannot succeed, and `accountLimitReached` to cover the sign-ins that start anyway — a direct sign-in that never went through `addAccount()`, an OAuth return, or a map that filled in another tab while the request was in flight.
 
-Use both: `canAddAccount` keeps the user from starting a sign-in that cannot succeed, and `accountLimitReached` covers the sign-ins that start anyway — a direct sign-in that never went through `addAccount()`, an OAuth return, or a map that filled in another tab while the request was in flight.
+<ResponseField name="wouldExceedAccountLimit" type="(accounts: Record<string, AccountEntry>, userId?: string | null) => boolean">
+  `true` when admitting `userId` into `accounts` would exceed the 5-account
+  limit. Pure and read-only — it takes the raw map (from `selectAccounts`, or
+  from your own store in [integration mode](/sdk/redux-integration)) and
+  computes; it dispatches nothing.
+
+  **An id already in the map is never an admission**, so this returns `false`
+  for it even at the cap. That is the whole reason it exists alongside
+  `canAddAccount`: re-authenticating an account this device already stores has
+  to work at the limit, or a user with five accounts could never sign back into
+  any of them. `canAddAccount` cannot express that — it knows no id.
+
+  Omit `userId` for the sign-up case, where the answer is unconditional: a
+  sign-up creates a person who by definition is not in the map.
+
+  ```tsx
+  import { useSublaySelector, selectAccounts, wouldExceedAccountLimit } from "@sublay/react-js";
+
+  const accounts = useSublaySelector(selectAccounts);
+
+  // A "sign back in" row in your own picker, for an account you already store:
+  const blocked = wouldExceedAccountLimit(accounts, account.id); // false — always allowed
+  ```
+</ResponseField>
+
+### When `accountLimitReached` clears
+
+It clears on the next successful admission and on any removal — but **not synchronously**. The clear rides the effect that records a successful admission into the account map, so it lands **one render after** the call that triggered it resolves.
+
+That makes it correct to *render* and wrong to *sample*:
+
+```tsx
+// ⛔ Reads the value from before the effect flushed — possibly a `true` left
+//    over from an earlier, unrelated refusal.
+await signInWithEmailAndPassword({ email, password });
+if (accountLimitReached) showCapError();
+
+// ✅ The next render has the settled value.
+if (accountLimitReached) return <CapError />;
+```
+
+Signing back into an account the device already stores never trips the cap check at all, so nothing sets the flag on that path — but a stale `true` from an earlier refusal survives until that re-auth's admission lands, one render later. Reading the flag eagerly right after a successful re-auth is the single reliable way to observe a wrong value.
 
 ## Controlling SDK Error Logging
 
@@ -440,8 +518,9 @@ If the built-in hooks do not fit, the transition primitives are exported directl
 | `resetAccountScopedState` | Redux action that returns every account-scoped feature slice to its initial state. Subscribe your own slices to it. |
 | `resetAuth` / `clearUser` | The auth and user teardown actions. |
 | `selectAccounts`, `selectActiveAccountId`, `selectSignedOut`, `selectAccountLimitReached`, `selectDeviceIdentifier` | Selectors over the accounts slice. |
+| `wouldExceedAccountLimit` | The cap predicate for a *specific* user id, over a raw accounts map — `false` for an id already stored, because signing back in is not an admission. See [Three signals for the account cap](#three-signals-for-the-account-cap). |
 | `setSignedOut` | Records that ending the session was deliberate. The three actions above clear the *session*; none of them touches the accounts slice, so a hand-rolled teardown that omits `setSignedOut(true)` leaves `signedOut: false` with an account still selected — and the next launch reads that as "nothing has ever been picked", restores the account and signs the app back in. `setActiveAccount` clears it again on the next activation, so nothing has to unset it by hand. |
-| `AccountTransitionError`, `ACCOUNT_TRANSITION_FAILED_MESSAGE` | What a failed transition rejects with, and its default message. `credentialRejected` separates a dead account from a failed request — see [Telling a dead account from a dead network](#telling-a-dead-account-from-a-dead-network). |
+| `AccountTransitionError`, `ACCOUNT_TRANSITION_FAILED_MESSAGE` | What a failed transition rejects with, and its default message. `credentialRejected` separates a dead account from a failed request, and `accountNotFound` separates both from a stale id that names no stored account — see [Telling a dead account from a dead network](#telling-a-dead-account-from-a-dead-network). |
 
 The raw `setActiveAccount`, `upsertAccount` and `removeAccount` reducers are deliberately **not** exported. They only mutate local state: dispatching `setActiveAccount` can point the active id at an account that is not in the map, and dispatching `removeAccount` drops an account without signing it out server-side. Use `activateStoredAccount` and the `useRemoveAccount` hook instead — they perform the whole flow.
 

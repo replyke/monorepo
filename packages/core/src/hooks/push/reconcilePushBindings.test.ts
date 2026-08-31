@@ -482,6 +482,48 @@ describe("the re-bind marker's lifecycle", () => {
     ).toBe(true);
   });
 
+  it("SURVIVES a resolved no-op, because a pass that made no request repaired nothing", async () => {
+    // The third outcome, and the one that used to clear the marker: with NO
+    // device identifier `applyAccountPushBinding` resolves WITHOUT a request,
+    // so nothing was bound or unbound. Gating the clear on "did the marker
+    // exist" rather than "did a binding change" reported a repair that never
+    // happened — and took away the account's only route back, since this path
+    // and the toggle are the two clearing points and both are no-ops until an
+    // identifier exists.
+    //
+    // Seeded through `setAccountMap`, like the sibling case in
+    // `useAccountPushToggle.test.ts`: the public API cannot currently produce
+    // this pair (every writer of the marker is gated on an identifier being
+    // present, and nothing nulls one back out), but hydration writes a
+    // persisted identifier verbatim with no cross-check against the markers.
+    store = makeSublayStore();
+    store.dispatch(
+      setAccountMap({
+        activeAccountId: "user-1",
+        accounts: {
+          ...makeAccounts(),
+          "user-1": { ...makeAccounts()["user-1"], needsPushRebind: true },
+        },
+        // No identifier: this device has never registered.
+        deviceIdentifier: null,
+      }),
+    );
+    store.dispatch(
+      setTokens({ accessToken: "access-1", refreshToken: "refresh-1" }),
+    );
+    const axiosPublic = mockAxiosPublic();
+
+    await reconcileAccountPushBinding(ctx(), "user-1");
+
+    // Nothing went out — not the device call, not a mint.
+    expect(axiosPublic.calls("post")).toHaveLength(0);
+    expect(axiosPublic.calls("delete")).toHaveLength(0);
+    // ...so the claim the marker makes about server state is still true.
+    expect(
+      store.getState().sublay.accounts.accounts["user-1"].needsPushRebind,
+    ).toBe(true);
+  });
+
   it("clears when a silenced account is activated and its binding removed", async () => {
     store.dispatch(
       setAccountNeedsPushRebind({ userId: "user-3", needsRebind: true }),

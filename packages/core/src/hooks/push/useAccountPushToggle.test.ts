@@ -258,6 +258,56 @@ describe("useAccountPushToggle", () => {
     expect(entry.needsPushRebind).toBeUndefined();
   });
 
+  it("leaves the marker standing when there was no binding call to make", async () => {
+    // The other half of the rule above, and the one that used to be wrong: with
+    // NO device identifier `applyAccountPushBinding` returns without a request,
+    // so nothing has been bound or unbound — and clearing the marker off that
+    // would report a repair that never happened, silently, with no route back.
+    //
+    // Seeded directly, because the public API cannot currently produce this
+    // pair: every writer of `needsPushRebind: true` is gated on an identifier
+    // being present, and nothing ever nulls one back out. `setAccountMap` is
+    // the seam — it writes a persisted identifier verbatim at hydration with no
+    // cross-check against the markers, so a cross-version or hand-edited
+    // payload can arrive in exactly this shape.
+    const { result, store, axiosPublic } = render();
+    act(() => {
+      store.dispatch(
+        setAccountMap({
+          activeAccountId: "user-1",
+          accounts: {
+            ...makeAccounts(),
+            "user-2": {
+              ...makeAccounts()["user-2"],
+              pushEnabled: true,
+              needsPushRebind: true,
+            },
+          },
+          // No identifier: this device has never registered.
+          deviceIdentifier: null,
+        }),
+      );
+    });
+
+    await act(async () => {
+      await result.current.setAccountPushEnabled({
+        userId: "user-2",
+        enabled: false,
+      });
+    });
+
+    // Nothing went out — not even the mint a non-active account would need.
+    expect(axiosPublic.calls("delete")).toHaveLength(0);
+    expect(axiosPublic.calls("post")).toHaveLength(0);
+
+    const entry = store.getState().sublay.accounts.accounts["user-2"];
+    // The FLAG is written: it is durable intent for the next `register()`, and
+    // with nothing bound there is no server state to misreport.
+    expect(entry.pushEnabled).toBe(false);
+    // The MARKER is not: it is a claim about a binding, and no binding changed.
+    expect(entry.needsPushRebind).toBe(true);
+  });
+
   it("throws for an unknown account", async () => {
     const { result } = render();
     await expect(

@@ -7,7 +7,10 @@ import {
   selectActiveAccountId,
 } from "../../store/slices/accountsSlice";
 import useProject from "../projects/useProject";
-import { activateStoredAccount } from "./accountTransition";
+import {
+  activateStoredAccount,
+  AccountTransitionError,
+} from "./accountTransition";
 
 export interface UseSwitchAccountReturn {
   switchAccount: ({ userId }: { userId: string }) => Promise<void>;
@@ -30,7 +33,17 @@ export default function useSwitchAccount(): UseSwitchAccountReturn {
   const switchAccount = useCallback(
     async ({ userId }: { userId: string }) => {
       if (!projectId) throw new Error("No projectId available");
-      if (!accounts[userId]) throw new Error(`Account ${userId} not found`);
+      // Typed, like every other failure this hook can produce: a stale id from
+      // a switcher rendered off an older snapshot is a different problem from a
+      // dead credential, and a caller should not have to string-match to tell
+      // them apart. `accountNotFound` is the discriminant.
+      if (!accounts[userId]) {
+        throw new AccountTransitionError(
+          `Account ${userId} not found`,
+          false,
+          true
+        );
+      }
 
       // ALREADY THERE — but only if there is a session to be there in.
       //

@@ -137,6 +137,17 @@ export { requestNewAccessTokenThunk } from "./store/slices/authThunks";
 // their caller (their entry point is synchronous and shared by both platforms)
 // and raise `accountLimitReached` instead — see `useAccounts`/`useAddAccount`.
 export { ACCOUNT_LIMIT_MESSAGE } from "./store/slices/authThunks";
+// The predicate behind that refusal, exported so an app can ask the same
+// question the SDK asks — "would admitting THIS id be a sixth account?" — over a
+// raw accounts map, without re-deriving the rule or its one exception. Pure and
+// read-only, with none of the corruption risk that keeps `upsertAccount`
+// unexported.
+//
+// It answers `false` for an id already in the map: re-authenticating an account
+// this device already stores is not an admission, and must work at the cap.
+// That is what makes it different from `useAddAccount().canAddAccount`, which
+// knows no id and can only ask whether there is a free slot at all.
+export { wouldExceedAccountLimit } from "./store/slices/accountsSlice";
 
 // -- account storage
 export type { AccountStorage } from "./interfaces/AccountStorage";

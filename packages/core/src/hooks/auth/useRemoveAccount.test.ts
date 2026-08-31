@@ -3,6 +3,7 @@ import { act, waitFor } from "@testing-library/react";
 
 import { renderHookWithAxios, resetAxiosMocks } from "../../test-utils";
 import useRemoveAccount from "./useRemoveAccount";
+import { AccountTransitionError } from "./accountTransition";
 import { setAccountMap } from "../../store/slices/accountsSlice";
 import type { AccountEntry } from "../../store/slices/accountsSlice";
 
@@ -358,6 +359,27 @@ describe("useRemoveAccount", () => {
     await expect(result.current.removeAccount({ userId: "user-missing" })).rejects.toThrow(
       "Account user-missing not found",
     );
+  });
+
+  it("types the unknown-id failure as AccountTransitionError with accountNotFound", async () => {
+    // Same discriminant `useSwitchAccount` throws, for the same reason: a stale
+    // id is a caller problem, not a credential one, and a caller should be able
+    // to tell them apart without matching on message text it does not own.
+    const { result, store } = renderHookWithAxios(() => useRemoveAccount());
+    act(() => {
+      store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }));
+    });
+
+    const error = await result.current
+      .removeAccount({ userId: "user-missing" })
+      .then(
+        () => null,
+        (err: unknown) => err,
+      );
+
+    expect(error).toBeInstanceOf(AccountTransitionError);
+    expect((error as AccountTransitionError).accountNotFound).toBe(true);
+    expect((error as AccountTransitionError).credentialRejected).toBe(false);
   });
 
   it("throws before doing anything when there is no project", async () => {

@@ -81,12 +81,13 @@ The hook returns a `switchAccount` function that accepts:
 ## Returns
 
 <ResponseField name="switchAccount" type="function">
-  Async function that switches the active session. Throws synchronously if the
-  account is not found or no `projectId` is available, and **rejects** if the
-  session for the target account could not be established — see below. Its
-  signature is `({ userId }) => Promise<void>`, so nothing warns you at compile
-  time: `await switchAccount(...)` without a `catch` becomes an unhandled
-  rejection.
+  Async function that switches the active session. It **rejects** without doing
+  anything when the id is not in the accounts map — with an
+  `AccountTransitionError` carrying `accountNotFound: true` — or when no
+  `projectId` is available, and it rejects if the session for the target account
+  could not be established. See below. Its signature is
+  `({ userId }) => Promise<void>`, so nothing warns you at compile time:
+  `await switchAccount(...)` without a `catch` becomes an unhandled rejection.
 
   Calling it with the ID of the already-active account is a no-op **only while
   that account has a live session**. When the selection names an account with no
@@ -141,8 +142,11 @@ async function onPick(userId: string) {
 
 ### Telling a dead account from a dead network
 
-The rejection is an `AccountTransitionError`, and its `credentialRejected` boolean is the only way
-to tell the two failures apart:
+A transition failure rejects with an `AccountTransitionError`, and its two boolean discriminants
+are the only way to tell those failures apart — so check with `instanceof` first, as the example
+above does, rather than assuming the type. (The hook also throws a plain `Error` when no
+`projectId` is configured, and [`removeAccount`](/hooks/auth/use-remove-account) rejects with the
+server's own error, unchanged, when it refuses to unbind that account's push notifications.)
 
 <ResponseField name="credentialRejected" type="boolean">
   `true` when the server **refused** the stored credential — expired, revoked, reuse-detected,
@@ -151,6 +155,16 @@ to tell the two failures apart:
 
   `false` when the exchange never got an answer, or the rotated successor could not be persisted.
   Nothing is marked and the same account may work on the next attempt.
+</ResponseField>
+
+<ResponseField name="accountNotFound" type="boolean">
+  `true` when the `userId` is **not in the accounts map at all** — a stale id, typically from a
+  switcher rendered off a snapshot the map has since moved past. No network call went out, nothing
+  was marked, and no session was touched. Re-read the list from
+  [`useAccounts`](/hooks/auth/use-accounts) rather than prompting a sign-in for an account that is
+  not there.
+
+  Never `true` at the same time as `credentialRejected`; both are `false` for a transport failure.
 </ResponseField>
 
 Prompting a re-auth on every rejection tells a user with no signal that their account is dead, and

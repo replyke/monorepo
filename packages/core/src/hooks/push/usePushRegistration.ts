@@ -333,6 +333,14 @@ function usePushRegistration(
    * the session that least needs it and never again. Mounting here means any
    * app that has EVER registered gets rotation coverage on every launch.
    *
+   * ⚠ THAT GUARANTEE IS CONDITIONAL ON A ROOT MOUNT, and the condition is on
+   * the app, not on this file: the subscription lives exactly as long as the
+   * hook is mounted, so an app that mounts it only on its notification-settings
+   * screen gets coverage only while that screen is open. "Every launch" is true
+   * of a hook mounted at the app root and of nothing else. Said the same way in
+   * `docs/v7/hooks/push/use-push-registration.mdx`, which used to recommend the
+   * screen-scoped mount that breaks it.
+   *
    * Gated on the ADAPTER supporting subscription, and on nothing else.
    *
    * It used to be gated on an identifier already being persisted, which was a

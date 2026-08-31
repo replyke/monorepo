@@ -3,6 +3,7 @@ import { act, waitFor } from "@testing-library/react";
 
 import { renderHookWithAxios, resetAxiosMocks, makeAuthUser } from "../../test-utils";
 import useSwitchAccount from "./useSwitchAccount";
+import { AccountTransitionError } from "./accountTransition";
 import { setAccountMap } from "../../store/slices/accountsSlice";
 import type { AccountEntry } from "../../store/slices/accountsSlice";
 import { setUnreadSummary } from "../../store/slices/chatSlice";
@@ -124,6 +125,29 @@ describe("useSwitchAccount", () => {
     await expect(
       result.current.switchAccount({ userId: "user-missing" }),
     ).rejects.toThrow("Account user-missing not found");
+  });
+
+  it("types the unknown-id failure as AccountTransitionError with accountNotFound", async () => {
+    // TYPED, not a bare `Error`. Every other failure on this path rejects with
+    // `AccountTransitionError`, so a caller that switches on `instanceof` used
+    // to fall through to its generic branch for the one failure it can actually
+    // fix — a stale id. `accountNotFound` separates it from a dead credential:
+    // nothing was attempted, nothing was marked, and a re-auth would not help.
+    const { result, store } = renderHookWithAxios(() => useSwitchAccount());
+    act(() => {
+      store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }));
+    });
+
+    const error = await result.current
+      .switchAccount({ userId: "user-missing" })
+      .then(
+        () => null,
+        (err: unknown) => err,
+      );
+
+    expect(error).toBeInstanceOf(AccountTransitionError);
+    expect((error as AccountTransitionError).accountNotFound).toBe(true);
+    expect((error as AccountTransitionError).credentialRejected).toBe(false);
   });
 
   // INVERTED TWICE. It began as "does not throw when requesting the new access

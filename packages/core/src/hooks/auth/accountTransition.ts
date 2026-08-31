@@ -83,27 +83,49 @@ export const ACCOUNT_TRANSITION_FAILED_MESSAGE =
   "Could not restore the session for this account. Please sign in again.";
 
 /**
- * Thrown when the incoming account's stored refresh token could not be
- * exchanged for a live session. Carries the underlying reason as `message` when
- * the server gave one.
+ * Thrown when an account operation could not proceed — either because the
+ * incoming account's stored refresh token could not be exchanged for a live
+ * session, or because the account named is not in the map at all. Carries the
+ * underlying reason as `message` when the server gave one.
  *
- * `credentialRejected` distinguishes "the server refused this credential" —
- * expired, revoked, reuse-detected, invalidated by a password change or a
- * remote sign-out-all — from "we could not reach the server" or "the rotation
- * could not be persisted". Only the first means the account needs a re-auth;
- * treating a flaky network as a dead account would tell users to sign in again
- * every time they lost signal.
+ * Two independent discriminants, because the three outcomes call for three
+ * different responses and collapsing any two of them misleads the caller:
+ *
+ *   - `credentialRejected` — "the server refused this credential": expired,
+ *     revoked, reuse-detected, invalidated by a password change or a remote
+ *     sign-out-all. Only this one means the account needs a re-auth; treating a
+ *     flaky network as a dead account would tell users to sign in again every
+ *     time they lost signal.
+ *   - `accountNotFound` — "there is no such account on this device". A caller
+ *     bug or a stale id (a switcher rendered from a snapshot the map has since
+ *     moved past), not a credential problem: nothing was attempted, nothing was
+ *     marked, and re-authenticating would not help. Reported as a typed error
+ *     rather than a bare `Error` so a caller can tell it apart without matching
+ *     on message text it does not own.
+ *   - both `false` — the exchange never got an answer, or the rotated successor
+ *     could not be persisted. Worth a retry.
+ *
+ * They are never both `true`: an account that is not in the map has no
+ * credential to have refused.
  */
 export class AccountTransitionError extends Error {
   readonly credentialRejected: boolean;
+  /**
+   * `true` when the operation named an account that is not in the stored
+   * account map. Additive — every pre-existing construction site leaves it
+   * `false`.
+   */
+  readonly accountNotFound: boolean;
 
   constructor(
     message: string = ACCOUNT_TRANSITION_FAILED_MESSAGE,
-    credentialRejected: boolean = false
+    credentialRejected: boolean = false,
+    accountNotFound: boolean = false
   ) {
     super(message);
     this.name = "AccountTransitionError";
     this.credentialRejected = credentialRejected;
+    this.accountNotFound = accountNotFound;
   }
 }
 
