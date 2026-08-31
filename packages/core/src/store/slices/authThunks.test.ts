@@ -1,6 +1,19 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach, vi, type Mock } from "vitest";
+import { act, waitFor } from "@testing-library/react";
 
-import { makeSublayStore, mockAxiosPublic, resetAxiosMocks } from "../../test-utils";
+import {
+  makeSublayStore,
+  mockAxiosPublic,
+  okAxiosResponse,
+  renderHookWithAxios,
+  resetAxiosMocks,
+  type AxiosMockHandle,
+  type SublayStore,
+} from "../../test-utils";
+import useAccountSync from "../../hooks/auth/useAccountSync";
+import { resetAccountStorage } from "../../config/accountStorage";
+import type { AccountStorage } from "../../interfaces/AccountStorage";
+import type { AccountMap } from "./accountsSlice";
 import {
   signUpWithEmailAndPasswordThunk,
   signInWithEmailAndPasswordThunk,
@@ -32,6 +45,9 @@ import type { PushDeviceIdentifier } from "../../interfaces/PushTokenAdapter";
 afterEach(() => {
   // Also resets the auth gate — the module-level latches are shared across a run.
   resetAxiosMocks();
+  // The storage slot and its per-project mutex are module-level too, and the
+  // hydration-race test below mounts `useAccountSync`, which registers into it.
+  resetAccountStorage();
 });
 
 /** Minimal unsigned JWT — only `exp`/`sub` are read. Negative = already expired. */
@@ -1452,7 +1468,8 @@ describe("account cap — Gate 2 (post-authentication, all four entry points)", 
     expect(state.sublay.auth.refreshToken).toBeNull();
     expect(state.sublay.auth.user).toBeNull();
     expect(selectUserSliceUser(state)).toBeNull();
-    // Selection restored; the map still holds the active id.
+    // Selection untouched — the unwind never writes `activeAccountId`, so the
+    // id the map already held is still the one selected.
     expect(state.sublay.accounts.activeAccountId).toBe("user-1");
     expect(state.sublay.accounts.accounts["user-1"]).toBeDefined();
     expect(state.sublay.accounts.accounts["user-6"]).toBeUndefined();
@@ -1506,6 +1523,247 @@ describe("account cap — Gate 2 (post-authentication, all four entry points)", 
     expect(store.getState().sublay.auth.accessToken).toBe("fresh");
     expect(store.getState().sublay.accounts.accountLimitReached).toBe(false);
   });
+});
+
+describe("account cap — the OAuth refusal must not write `activeAccountId`", () => {
+  it("leaves Phase A's hydrated selection alone when the map hydrates mid-refusal (web OAuth race)", async () => {
+    // WEB OAUTH COMPLETION IS A FULL PAGE RELOAD. `handleOAuthRedirect` fires
+    // this thunk from the same mount flush that starts `useAccountSync`'s
+    // Phase A hydration, and Phase A only lands `setAccountMap` after an
+    // AWAITED storage read. So anything the thunk reads out of `accounts`
+    // before its first `await` is necessarily pre-hydration — `activeAccountId`
+    // is deterministically `null` — while the refusal itself only runs after a
+    // network round trip, by which time the CORRECT id is in the store.
+    //
+    // Writing the captured value back there overwrote the correct selection
+    // with `null` (and without `signedOut`), which Phase A then reads on the
+    // next launch as "never picked" and resolves via its first-account
+    // fallback — stranding the user on `accountIds[0]`, their OLDEST
+    // remembered account. The fix is to not write the selection at all.
+    const persisted: AccountMap = {
+      ...makeFullAccountMap({ activeAccountId: "user-3" }),
+      signedOut: false,
+    };
+
+    let releaseStorage!: () => void;
+    const storageRead = new Promise<void>((resolve) => {
+      releaseStorage = resolve;
+    });
+    const storage: AccountStorage = {
+      getAccountMap: vi.fn(async () => {
+        await storageRead;
+        return JSON.parse(JSON.stringify(persisted)) as AccountMap;
+      }),
+      setAccountMap: vi.fn(async () => {}),
+      deleteAccountMap: vi.fn(async () => {}),
+    };
+
+    let releaseRefresh!: () => void;
+    const refreshInFlight = new Promise<void>((resolve) => {
+      releaseRefresh = resolve;
+    });
+
+    const { store, axiosPublic } = renderHookWithAxios(
+      () => useAccountSync(storage, "project-1"),
+      {
+        projectId: "project-1",
+        // What `handleOAuthRedirect` wrote synchronously off the redirect.
+        accessToken: "oauth-access",
+        refreshToken: "oauth-refresh",
+        beforeRender: ({ axiosPublic: pub }) => {
+          const post = pub.instance.post as unknown as Mock;
+          // Held open on purpose: it pins the ordering the bug needs —
+          // hydration lands BEFORE the cap is evaluated.
+          post.mockImplementationOnce(async () => {
+            await refreshInFlight;
+            return okAxiosResponse(
+              {
+                accessToken: "fresh",
+                refreshToken: "rotated-refresh",
+                user: { id: "user-6" } as AuthUser,
+              },
+              200,
+            );
+          });
+          post.mockResolvedValueOnce(okAxiosResponse({}, 200)); // cleanup sign-out
+        },
+      },
+    );
+
+    // Storage has not resolved (it has not even been entered — Phase A goes
+    // through an async per-project mutex first), so this is the pre-hydration
+    // store the thunk starts against: exactly the moment the old code took its
+    // snapshot of `activeAccountId`.
+    expect(store.getState().sublay.accounts.isReady).toBe(false);
+    expect(store.getState().sublay.accounts.activeAccountId).toBeNull();
+    const pending = store.dispatch(
+      completeOAuthSignInThunk({ projectId: "project-1" }),
+    );
+
+    // Phase A now lands the real selection while the refresh is still in flight.
+    await act(async () => {
+      releaseStorage();
+    });
+    await waitFor(() =>
+      expect(store.getState().sublay.accounts.activeAccountId).toBe("user-3"),
+    );
+    expect(storage.getAccountMap).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      releaseRefresh();
+      await pending;
+    });
+
+    const state = store.getState();
+    expect(state.sublay.accounts.accountLimitReached).toBe(true);
+    // THE ASSERTION THIS TEST EXISTS FOR: the hydrated selection survives the
+    // refusal, so the next launch resumes user-3 rather than falling back to
+    // the oldest account.
+    expect(state.sublay.accounts.activeAccountId).toBe("user-3");
+    expect(state.sublay.accounts.signedOut).toBe(false);
+    // The refused identity was never admitted, and the session it created is
+    // torn down locally and signed out server-side.
+    expect(state.sublay.accounts.accounts["user-6"]).toBeUndefined();
+    expect(Object.keys(state.sublay.accounts.accounts)).toHaveLength(5);
+    expect(state.sublay.auth.accessToken).toBeNull();
+    expect(state.sublay.auth.refreshToken).toBeNull();
+    expect(axiosPublic.calls("post").map((c) => c.url)).toEqual([
+      "/project-1/auth/request-new-access-token",
+      "/project-1/auth/sign-out",
+    ]);
+    expect(axiosPublic.calls("post")[1].body).toEqual({
+      refreshToken: "rotated-refresh",
+    });
+  });
+});
+
+describe("account cap — refusal never orphans the selection (regression guard)", () => {
+  // THE CORRUPT SHAPE THIS GUARD EXISTS FOR:
+  // `{ activeAccountId: null, signedOut: false }` while the map still holds
+  // accounts. Phase A reads that on the next launch as "the user never picked
+  // one" (as opposed to "the user signed out") and resolves it with its
+  // first-account fallback — `accountIds[0]`, insertion order, i.e. the OLDEST
+  // remembered account. Every cap refusal is therefore held to one rule: it may
+  // never move a non-null `activeAccountId` to `null`.
+  //
+  // Deliberately table-driven over EVERY entry point that can refuse at the
+  // cap, and asserted on every intermediate state rather than just the final
+  // one, so a new entry point (or a new unwind step inside `refuseAtAccountLimit`)
+  // reintroducing this bug class is caught here. A fifth entry point should be
+  // added to this table.
+  function watchSelection(store: SublayStore) {
+    const orphaned: (string | null)[] = [];
+    const unsubscribe = store.subscribe(() => {
+      const { accounts, activeAccountId, signedOut } =
+        store.getState().sublay.accounts;
+      if (
+        activeAccountId === null &&
+        signedOut === false &&
+        Object.keys(accounts).length > 0
+      ) {
+        orphaned.push(activeAccountId);
+      }
+    });
+    return { orphaned, unsubscribe };
+  }
+
+  const entryPoints: {
+    name: string;
+    seed: (store: SublayStore) => void;
+    mock: (axios: AxiosMockHandle) => void;
+    run: (store: SublayStore) => Promise<unknown>;
+  }[] = [
+    {
+      name: "signUpWithEmailAndPasswordThunk",
+      seed: () => {},
+      mock: () => {}, // Gate 1 refuses pre-flight; no request is made.
+      run: (store) =>
+        store.dispatch(
+          signUpWithEmailAndPasswordThunk({
+            projectId: "project-1",
+            email: "sixth@example.com",
+            password: "secret",
+          }),
+        ),
+    },
+    {
+      name: "signInWithEmailAndPasswordThunk",
+      seed: () => {},
+      mock: (axios) => {
+        axios.mockResponse("post", {
+          accessToken: "access-6",
+          refreshToken: "minted-refresh-6",
+          user: { id: "user-6" } as AuthUser,
+        });
+        axios.mockResponse("post", {});
+      },
+      run: (store) =>
+        store.dispatch(
+          signInWithEmailAndPasswordThunk({
+            projectId: "project-1",
+            email: "sixth@example.com",
+            password: "secret",
+          }),
+        ),
+    },
+    {
+      name: "verifyExternalUserThunk",
+      seed: () => {},
+      mock: (axios) => {
+        axios.mockResponse("post", {
+          accessToken: "access-6",
+          refreshToken: "minted-refresh-6",
+          user: { id: "user-6" } as AuthUser,
+        });
+        axios.mockResponse("post", {});
+      },
+      run: (store) =>
+        store.dispatch(
+          verifyExternalUserThunk({ projectId: "project-1", userJwt: "jwt" }),
+        ),
+    },
+    {
+      name: "completeOAuthSignInThunk",
+      // The one entry point that writes tokens before the identity is known,
+      // and therefore the one that unwinds afterwards.
+      seed: (store) =>
+        store.dispatch(
+          setTokens({ accessToken: "oauth-access", refreshToken: "oauth-refresh" }),
+        ),
+      mock: (axios) => {
+        axios.mockResponse("post", {
+          accessToken: "fresh",
+          refreshToken: "rotated-refresh",
+          user: { id: "user-6" } as AuthUser,
+        });
+        axios.mockResponse("post", {});
+      },
+      run: (store) =>
+        store.dispatch(completeOAuthSignInThunk({ projectId: "project-1" })),
+    },
+  ];
+
+  it.each(entryPoints)(
+    "$name never leaves the map with no selection and no sign-out",
+    async ({ seed, mock, run }) => {
+      const store = makeSublayStore();
+      store.dispatch(setAccountMap(makeFullAccountMap({ activeAccountId: "user-3" })));
+      seed(store);
+      mock(mockAxiosPublic());
+
+      const { orphaned, unsubscribe } = watchSelection(store);
+      await run(store);
+      unsubscribe();
+
+      expect(orphaned).toEqual([]);
+      const { accounts, activeAccountId, signedOut, accountLimitReached } =
+        store.getState().sublay.accounts;
+      expect(accountLimitReached).toBe(true);
+      expect(activeAccountId).toBe("user-3");
+      expect(accounts[activeAccountId as string]).toBeDefined();
+      expect(signedOut).toBe(false);
+    },
+  );
 });
 
 describe("account cap — the launch-path collision (Task 7.2)", () => {

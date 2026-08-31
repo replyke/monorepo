@@ -142,9 +142,14 @@ export interface HandleOAuthRedirectResult {
  *
  * **The cap cannot surface as a rejection here.** This function is synchronous
  * and shared by both platform hooks, so an over-limit OAuth sign-in is caught
- * after the fact: the session it created is signed out server-side, the
- * previous selection is restored, and `accountLimitReached` is raised for the
- * UI to read. Sign-up, email sign-in and external verification reject their
+ * after the fact: the session it created is signed out server-side, the local
+ * session state this function wrote is unwound, and `accountLimitReached` is
+ * raised for the UI to read. The unwind deliberately does NOT write
+ * `activeAccountId` — the refused account was never activated, so whichever
+ * account the map already selects stays selected. (It used to claim it
+ * "restored the previous selection"; on web, where the redirect is a full page
+ * reload, the value it restored was a pre-hydration `null` that clobbered the
+ * correct one.) Sign-up, email sign-in and external verification reject their
  * callers instead — a deliberate asymmetry, documented on the OAuth pages.
  *
  * Pure of any I/O beyond dispatching: it does not read globals, navigate, or
@@ -192,7 +197,8 @@ export function handleOAuthRedirect({
     // the just-set refresh token from Redux, calls the server, dispatches
     // setUser + setUserInUserSlice on success, and — if the map is already full
     // and this is a NEW account — signs that just-minted session back out,
-    // restores the previous selection and raises `accountLimitReached`.
+    // unwinds the local session state written above (leaving `activeAccountId`
+    // exactly as the map has it) and raises `accountLimitReached`.
     //
     // Dispatched unawaited, as before: this function is synchronous and shared
     // by both platform hooks, so the cap CANNOT surface as a rejected call on
