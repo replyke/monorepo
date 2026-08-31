@@ -11,6 +11,7 @@ import { clearUser } from "../../store/slices/userSlice";
 import { baseApi } from "../../store/api/baseApi";
 import { resetAccountScopedState } from "../../store/actions";
 import useProject from "../projects/useProject";
+import { AccountTransitionError } from "./accountTransition";
 import axios from "../../config/axios";
 import { handleError } from "../../utils/handleError";
 import {
@@ -39,7 +40,16 @@ export default function useRemoveAccount(): UseRemoveAccountReturn {
     async ({ userId }: { userId: string }) => {
       if (!projectId) throw new Error("No projectId available");
       const targetAccount = accounts[userId];
-      if (!targetAccount) throw new Error(`Account ${userId} not found`);
+      // Typed for the same reason `useSwitchAccount` types it: "no such account
+      // on this device" is a caller/stale-id problem, not a credential one, and
+      // `accountNotFound` says so without the caller matching on message text.
+      if (!targetAccount) {
+        throw new AccountTransitionError(
+          `Account ${userId} not found`,
+          false,
+          true
+        );
+      }
 
       setIsRemoving(true);
       setError(null);

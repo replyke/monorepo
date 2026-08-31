@@ -91,10 +91,14 @@ The hook returns a `removeAccount` function that accepts:
 ## Returns
 
 <ResponseField name="removeAccount" type="function">
-  Async function that removes the specified account. Throws synchronously if
-  `userId` is not found in the accounts map or if no `projectId` is available.
-  Runtime errors during removal set `error` **and reject** the returned promise.
-  Removing a non-active account leaves the current session untouched.
+  Async function that removes the specified account. It **rejects** without
+  doing anything when `userId` is not in the accounts map — with an
+  [`AccountTransitionError`](/sdk/authentication/multi-account#telling-a-dead-account-from-a-dead-network)
+  carrying `accountNotFound: true`, so a stale id is distinguishable from a
+  credential failure without matching on message text — or when no `projectId`
+  is available. Runtime errors during removal set `error` **and reject** the
+  returned promise. Removing a non-active account leaves the current session
+  untouched.
 </ResponseField>
 
 <ResponseField name="isRemoving" type="boolean">

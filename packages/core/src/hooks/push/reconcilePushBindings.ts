@@ -171,15 +171,22 @@ async function resolveAccessToken(
  * Goes out over the bare public axios instance with an explicit Authorization
  * header. `baseApi`/`axiosPrivate` would inject the ACTIVE account's token,
  * which is the wrong identity for every non-active account.
+ *
+ * **Resolves `true` only when a bind/unbind actually went out**, and `false` on
+ * the no-op above. Callers that record something as repaired have to be able to
+ * tell the two apart: "the request succeeded" and "there was no request" both
+ * resolve, and treating the second as the first clears a `needsPushRebind`
+ * marker that nothing has repaired — reporting an account as bound while
+ * nothing is.
  */
 export async function applyAccountPushBinding(
   ctx: PushReconcileContext,
   userId: string,
   enabled: boolean
-): Promise<void> {
+): Promise<boolean> {
   const { sublay } = ctx.getState();
   const identifier = sublay.accounts.deviceIdentifier;
-  if (!identifier) return;
+  if (!identifier) return false;
 
   const accessToken = await resolveAccessToken(ctx, userId);
   const url = `/${ctx.projectId}/push-notifications/devices`;
@@ -192,6 +199,8 @@ export async function applyAccountPushBinding(
     // account that was never bound is a clean 200 rather than an error.
     await axios.delete(url, { ...config, data: identifier });
   }
+
+  return true;
 }
 
 /**
@@ -229,10 +238,12 @@ async function persistAccounts(ctx: PushReconcileContext): Promise<void> {
  * left behind. It is also the rule `markPushBindingsForRebind` applies, so the
  * two cannot disagree about which accounts are in play.
  *
- * The marker is cleared only after `applyAccountPushBinding` RESOLVES: a
- * throw leaves it standing, so the next activation tries again. It is cleared
- * on the silenced path too — an account whose binding has been removed to
- * match its intent has nothing left to repair.
+ * The marker is cleared only after `applyAccountPushBinding` RESOLVES WITH A
+ * REQUEST HAVING GONE OUT: a throw leaves it standing, so the next activation
+ * tries again, and so does the no-request no-op — a resolved promise is not by
+ * itself evidence of a repair. It is cleared on the silenced path too — an
+ * account whose binding has been removed to match its intent has nothing left
+ * to repair.
  */
 export async function reconcileAccountPushBinding(
   ctx: PushReconcileContext,
@@ -244,7 +255,22 @@ export async function reconcileAccountPushBinding(
 
   if (entry.pushEnabled === undefined) return;
 
-  await applyAccountPushBinding(ctx, userId, accountOptedIntoPush(entry));
+  const bindingApplied = await applyAccountPushBinding(
+    ctx,
+    userId,
+    accountOptedIntoPush(entry)
+  );
+
+  // NOTHING WENT OUT → NOTHING WAS REPAIRED. With no device identifier stored
+  // `applyAccountPushBinding` resolves without a request, and clearing the
+  // marker off that would report a re-bind that never happened — on the one
+  // marker whose whole job is to say the binding is stale. It also drops the
+  // account's only route back: this path and the toggle are what clear it, and
+  // both are no-ops until an identifier exists. (`markPushBindingsForRebind`
+  // reaches the same conclusion one step earlier, with a function-level
+  // identifier guard; here the account lookups above run either way, so the
+  // return value is the cheaper seam.)
+  if (!bindingApplied) return;
 
   // Re-read: `applyAccountPushBinding` awaits a round trip, and the account can
   // be removed under it.

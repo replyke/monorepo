@@ -8,7 +8,24 @@ icon: "cube"
 
 Explicit, developer-triggered hook for registering and unregistering the current user's device for push notifications. Unlike auth-token restoration, requesting OS or browser push permission is a deliberate action and should happen in response to a user gesture (for example, when they opt in to notifications in your settings screen) — not silently on mount.
 
-Calling it once per device is enough. Mounting the hook (which apps do on any screen holding a notification setting) also installs the SDK's [device-token rotation](#automatic-token-rotation) handling, so bindings stay correct without the app re-registering on every launch.
+Calling `register()` once per device is enough. **Mounting the hook is a separate concern from calling it**, because mounting is also what installs the SDK's [device-token rotation](#automatic-token-rotation) handling — the thing that keeps bindings correct without the app re-registering on every launch.
+
+<Warning>
+  **Mount it once at your app root, not on the settings screen.** The rotation
+  handling lives for exactly as long as the hook is mounted, so a hook mounted
+  only on a notification-settings screen covers only the seconds that screen is
+  open. A token that rotates while the user is anywhere else in the app is
+  missed, and that account's notifications go quiet until something else
+  happens to re-bind it.
+
+  Mounting at the root is what makes the guarantee hold: *any app that has ever
+  registered gets rotation coverage on every launch*. Mounting costs nothing and
+  asks the user for nothing — it installs a passive listener and never prompts.
+  Call `register()` from wherever your opt-in UI lives; that part is still a
+  deliberate user gesture, and the two do not have to happen in the same
+  component: mount the hook at the root and pass its `register` / `unregister`
+  down through your own context to the settings screen that triggers them.
+</Warning>
 
 The hook accepts a **platform adapter** that abstracts the platform-specific permission and token-retrieval steps. Three adapters are available out of the box:
 
@@ -19,6 +36,38 @@ The hook accepts a **platform adapter** that abstracts the platform-specific per
 | `webPushTokenAdapter` | `@sublay/react-js` | Browser (Web Push) |
 
 ## Usage Example
+
+The mount belongs at the root; only the `register()` call belongs on the settings screen. The
+smallest shape that satisfies both is one root-level hook whose handlers are shared downward:
+
+```tsx
+// App root — mounted for the whole session, so rotation handling is always installed.
+import { createContext, useContext } from "react";
+import { usePushRegistration } from "@sublay/core";
+import { expoPushTokenAdapter } from "@sublay/expo";
+
+const PushContext = createContext(null);
+export const usePush = () => useContext(PushContext);
+
+export function App({ children }) {
+  const push = usePushRegistration(expoPushTokenAdapter);
+  return <PushContext.Provider value={push}>{children}</PushContext.Provider>;
+}
+
+// Settings screen — triggers the deliberate user action, mounts nothing.
+function NotificationOptIn() {
+  const { register, registering } = usePush();
+
+  return (
+    <Button onPress={register} disabled={registering}>
+      {registering ? "Enabling…" : "Enable push notifications"}
+    </Button>
+  );
+}
+```
+
+The two snippets below call the hook inline for brevity. That is fine for a screen that is always
+mounted, and loses rotation coverage otherwise — see the warning above.
 
 ```tsx
 import { usePushRegistration } from "@sublay/core";
@@ -189,6 +238,8 @@ const myAdapter: PushTokenAdapter = {
 Device push tokens rotate on reinstall, on an OS-initiated refresh, and after a backup restore, and every binding on the old token dies with it. The hook covers this itself: whenever it is mounted with an adapter that implements `subscribeToIdentifierChanges`, it subscribes to that signal. On a change it unbinds the old identifier for the active account, records the new one, re-binds the **active** account, and **marks** every other push-enabled account as needing a re-bind — repaired on each account's next activation rather than by spending its stored credential in the background. Silenced accounts are left silenced, and an account that never expressed a preference is neither marked nor bound.
 
 The subscription is gated on the adapter alone, so an app whose adapter omits it subscribes to nothing. Nothing on this path prompts the user — receiving a refreshed token asks for no permission — and nothing on it exchanges a stored credential.
+
+**Coverage is only as wide as the mount.** The subscription is installed when the hook mounts and torn down when it unmounts, so it catches rotations only while the component holding it is on screen. Mount the hook once at your app root — see the warning at the top of this page — or a token that rotates while the user is anywhere else in the app is missed entirely.
 
 ### Reading the current identifier on mount (native)
 

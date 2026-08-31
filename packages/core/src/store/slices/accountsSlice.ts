@@ -251,6 +251,15 @@ export interface AccountsState {
    *
    * Cleared on any successful admission and on any removal, so an app does not
    * keep rendering the cap error after the user frees a slot and retries.
+   *
+   * ⚠ THE CLEAR IS ASYNCHRONOUS, and reading the flag eagerly is the one way to
+   * get a wrong answer out of it. The clear rides `upsertAccount`, which for a
+   * re-auth is dispatched by `useAccountSync`'s Phase B — a `useEffect`. So it
+   * lands ONE RENDER AFTER the sign-in call resolves, not synchronously inside
+   * it. Code that awaits a successful re-auth and then reads
+   * `useAccounts().accountLimitReached` from the same tick reads the value from
+   * before the effect flushed, which is whatever an earlier, unrelated refusal
+   * left behind. Render off it instead — the next render has the right value.
    */
   accountLimitReached: boolean;
   isReady: boolean;

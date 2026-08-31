@@ -81,7 +81,15 @@ function ActiveAccountLabel() {
   `true` when an account was actually refused admission because the map was
   already at the 5-account limit. Clears on the next successful admission and
   on any removal. See [`useAddAccount`](/hooks/auth/use-add-account) for how it
-  differs from `canAddAccount`.
+  differs from `canAddAccount` and from
+  [`wouldExceedAccountLimit`](/sdk/authentication/multi-account#three-signals-for-the-account-cap).
+
+  **Render off it — do not read it eagerly.** The clear is dispatched from an
+  effect, so it lands one render *after* a successful admission rather than
+  synchronously inside the call that caused it. Reading it immediately after
+  `await`ing a sign-in returns the value from before that effect flushed, which
+  may be a `true` left over from an earlier, unrelated refusal. See
+  [When `accountLimitReached` clears](/sdk/authentication/multi-account#when-accountlimitreached-clears).
 </ResponseField>
 
 ## StoredAccount Type

@@ -76,7 +76,8 @@ function AddAccountButton() {
 
 <ResponseField name="accountLimitReached" type="boolean">
   `true` when an account was actually **refused** admission because the map was
-  already full. Clears on the next successful admission and on any removal.
+  already full. Clears on the next successful admission and on any removal — one
+  render *after*, not synchronously; see the warning below.
 </ResponseField>
 
 ### `canAddAccount` vs `accountLimitReached`
@@ -88,6 +89,28 @@ They answer different questions and are both needed:
 | Kind | Predicate — "is there room right now?" | Event — "did an admission just get refused?" |
 | Derived from | The map size, on every render | A refusal, latched in the store |
 | Typical use | Enable/disable the "Add account" button *before* the user commits | Render the error *after* a sign-in was rejected at the cap |
+
+A third signal, [`wouldExceedAccountLimit`](/sdk/authentication/multi-account#three-signals-for-the-account-cap),
+answers the same question as `canAddAccount` but *for a specific user id* — which
+matters because signing back into an account this device already stores is never
+an admission and works at the cap. Use it when you already know whose account is
+coming back.
+
+<Warning>
+  **`accountLimitReached` clears asynchronously.** The clear rides the same
+  effect that records a successful admission, so it lands **one render after**
+  the sign-in call resolves — not synchronously inside it. This is fine for
+  rendering, and wrong for reading:
+
+  ```tsx
+  await signInWithEmailAndPassword({ email, password });
+  if (accountLimitReached) showCapError();   // ⛔ reads the PRE-effect value
+  ```
+
+  That read can return a `true` left over from an earlier, unrelated refusal.
+  Render the flag instead of sampling it, and the next render has the settled
+  value.
+</Warning>
 
 `accountLimitReached` matters because not every refusal has a call to reject. It is set by **every** entry point that refuses an account:
 

@@ -83,6 +83,13 @@ export interface UseAccountsReturn {
    * `true` when an account was refused admission because the map was already
    * full. Clears on the next successful admission and on any removal. See
    * `useAddAccount` for how it differs from `canAddAccount`.
+   *
+   * ⚠ **Render off it; do not read it eagerly.** The clear is dispatched from
+   * `useAccountSync`'s Phase B effect, so it lands one render AFTER a successful
+   * admission rather than synchronously inside the call that caused it. Reading
+   * this straight after `await`ing a sign-in returns the pre-effect value —
+   * potentially a `true` left over from an earlier, unrelated refusal. A
+   * component that simply renders the flag always sees the settled value.
    */
   accountLimitReached: boolean;
 }
