@@ -47,6 +47,50 @@ describe("useRemoveAccount", () => {
     expect(call.body).toEqual({ refreshToken: "refresh-2" });
   });
 
+  it("does NOT tear down the current session when the active account changed AFTER the last render, from a callback that closed over the old selection", async () => {
+    // THE SNAPSHOT GAP (same class as useSwitchAccount's). Both the existence
+    // check and the "is this the active account" check used to read off the
+    // render snapshot this callback closes over. If the active account
+    // changed between the render and the tap — a cross-tab broadcast, a
+    // switch that landed in another component — a captured callback would
+    // judge "is this the account I'm removing the SAME as the one that's
+    // live right now" using a stale answer, and could tear down whichever
+    // account is actually active instead of leaving it alone. Reading the
+    // live store closes that gap.
+    const { result, store, axiosPublic } = renderHookWithAxios(() => useRemoveAccount(), {
+      accessToken: "access-1",
+      refreshToken: "refresh-1",
+    });
+    act(() => {
+      store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }));
+    });
+
+    // Capture the callback from the CURRENT render — user-1 is active in the
+    // map it closed over — then switch the active account to user-2 without
+    // letting the hook re-render before the call.
+    const removeAccount = result.current.removeAccount;
+    act(() => {
+      store.dispatch(setAccountMap({ activeAccountId: "user-2", accounts: makeAccounts() }));
+    });
+
+    axiosPublic.mockResponse("post", {});
+
+    await act(async () => {
+      await removeAccount({ userId: "user-1" });
+    });
+
+    const state = store.getState();
+    // user-1 is gone, user-2 is untouched and still active.
+    expect(state.sublay.accounts.accounts["user-1"]).toBeUndefined();
+    expect(state.sublay.accounts.accounts["user-2"]).toBeDefined();
+    expect(state.sublay.accounts.activeAccountId).toBe("user-2");
+    // The bug this guards against: with the stale snapshot, `isActiveAccount`
+    // would have read `true` (user-1 WAS active when the closure was made),
+    // wrongly tearing down the session that actually belongs to user-2 now.
+    expect(state.sublay.auth.accessToken).toBe("access-1");
+    expect(state.sublay.auth.refreshToken).toBe("refresh-1");
+  });
+
   // INVERTED (multi-account hardening): this used to assert that removing the
   // active account signed the user into the oldest remaining one. Removal now
   // ends the session and leaves nothing active.

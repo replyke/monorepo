@@ -66,11 +66,15 @@ smallest shape that satisfies both is one root-level hook whose handlers are sha
 ```tsx
 // App root — mounted for the whole session, so rotation handling is always installed.
 import { createContext, useContext } from "react";
-import { usePushRegistration } from "@sublay/core";
+import { usePushRegistration, type UsePushRegistrationValues } from "@sublay/core";
 import { expoPushTokenAdapter } from "@sublay/expo";
 
-const PushContext = createContext(null);
-export const usePush = () => useContext(PushContext);
+const PushContext = createContext<UsePushRegistrationValues | null>(null);
+export const usePush = () => {
+  const push = useContext(PushContext);
+  if (!push) throw new Error("usePush() must be called under the App root that mounts usePushRegistration.");
+  return push;
+};
 
 export function App({ children }) {
   const push = usePushRegistration(expoPushTokenAdapter);

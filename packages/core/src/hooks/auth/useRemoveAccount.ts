@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
+import { useStore } from "react-redux";
 import { useSublayDispatch, useSublaySelector } from "../../store/hooks";
+import type { SublayState } from "../../store/sublayReducers";
 import {
-  selectAccounts,
-  selectActiveAccountId,
   selectDeviceIdentifier,
   removeAccount as removeAccountAction,
 } from "../../store/slices/accountsSlice";
@@ -28,8 +28,7 @@ export interface UseRemoveAccountReturn {
 export default function useRemoveAccount(): UseRemoveAccountReturn {
   const dispatch = useSublayDispatch();
   const { projectId } = useProject();
-  const accounts = useSublaySelector(selectAccounts);
-  const activeAccountId = useSublaySelector(selectActiveAccountId);
+  const store = useStore<{ sublay: SublayState }>();
   // Read from the slice, not from storage: this hook holds no `AccountStorage`
   // handle, which is why the identifier has a Redux home at all.
   const deviceIdentifier = useSublaySelector(selectDeviceIdentifier);
@@ -39,7 +38,17 @@ export default function useRemoveAccount(): UseRemoveAccountReturn {
   const removeAccount = useCallback(
     async ({ userId }: { userId: string }) => {
       if (!projectId) throw new Error("No projectId available");
-      const targetAccount = accounts[userId];
+
+      // FROM THE LIVE STORE, not from the render snapshot this callback closes
+      // over — same reasoning as `useSwitchAccount`. A retained callback
+      // invoked after the map or the active selection changed underneath it
+      // (a cross-tab broadcast, a switch that landed between the render and
+      // the tap) must judge both the target's existence and whether it is
+      // the CURRENTLY active account against what is true right now, not what
+      // was true when this closure was created — otherwise it can tear down
+      // the session of whichever account is actually active, instead of the
+      // one being removed.
+      const targetAccount = store.getState().sublay.accounts.accounts[userId];
       // Typed for the same reason `useSwitchAccount` types it: "no such account
       // on this device" is a caller/stale-id problem, not a credential one, and
       // `accountNotFound` says so without the caller matching on message text.
@@ -54,7 +63,8 @@ export default function useRemoveAccount(): UseRemoveAccountReturn {
       setIsRemoving(true);
       setError(null);
 
-      const isActiveAccount = userId === activeAccountId;
+      const isActiveAccount =
+        userId === store.getState().sublay.accounts.activeAccountId;
 
       try {
         // The device identifier rides along so the server deletes that
@@ -132,7 +142,7 @@ export default function useRemoveAccount(): UseRemoveAccountReturn {
         setIsRemoving(false);
       }
     },
-    [dispatch, projectId, accounts, activeAccountId, deviceIdentifier]
+    [dispatch, projectId, store, deviceIdentifier]
   );
 
   return { removeAccount, isRemoving, error };
