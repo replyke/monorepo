@@ -91,6 +91,55 @@ describe("useRemoveAccount", () => {
     expect(state.sublay.auth.refreshToken).toBe("refresh-1");
   });
 
+  it("does NOT tear down the current session when the active account changes WHILE the sign-out request is pending", async () => {
+    // A DEEPER instance of the same class, caught after the fix above shipped:
+    // reading `isActiveAccount` once, before the awaited sign-out request, is
+    // still a snapshot — just taken later. The active account can change
+    // while that request is in flight (the user switches while removal of a
+    // DIFFERENT, now-inactive account is still pending), and a value read
+    // before the await would tear down whichever account became active
+    // during the request. It has to be read again after the await, right
+    // before it's acted on.
+    const { result, store, axiosPublic } = renderHookWithAxios(() => useRemoveAccount(), {
+      accessToken: "access-2",
+      refreshToken: "refresh-2",
+    });
+    act(() => {
+      store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }));
+    });
+
+    let resolvePost!: (value: unknown) => void;
+    const pending = new Promise((resolve) => {
+      resolvePost = resolve;
+    });
+    vi.spyOn(axiosPublic.instance, "post").mockReturnValueOnce(pending as never);
+
+    let removed!: Promise<void>;
+    act(() => {
+      removed = result.current.removeAccount({ userId: "user-1" });
+    });
+
+    // While the request for user-1 is still pending, the app switches the
+    // active account to user-2.
+    act(() => {
+      store.dispatch(setAccountMap({ activeAccountId: "user-2", accounts: makeAccounts() }));
+    });
+
+    await act(async () => {
+      resolvePost({ data: {}, status: 200, statusText: "OK", headers: {}, config: {} });
+      await removed;
+    });
+
+    const state = store.getState();
+    expect(state.sublay.accounts.accounts["user-1"]).toBeUndefined();
+    expect(state.sublay.accounts.activeAccountId).toBe("user-2");
+    // The bug this guards against: `isActiveAccount` read before the await
+    // would have been `true` (user-1 was active when removal started),
+    // wrongly tearing down user-2's session once the request resolved.
+    expect(state.sublay.auth.accessToken).toBe("access-2");
+    expect(state.sublay.auth.refreshToken).toBe("refresh-2");
+  });
+
   // INVERTED (multi-account hardening): this used to assert that removing the
   // active account signed the user into the oldest remaining one. Removal now
   // ends the session and leaves nothing active.

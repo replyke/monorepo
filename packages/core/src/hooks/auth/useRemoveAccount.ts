@@ -63,9 +63,6 @@ export default function useRemoveAccount(): UseRemoveAccountReturn {
       setIsRemoving(true);
       setError(null);
 
-      const isActiveAccount =
-        userId === store.getState().sublay.accounts.activeAccountId;
-
       try {
         // The device identifier rides along so the server deletes that
         // account's push binding in the same transaction as the token-family
@@ -116,6 +113,19 @@ export default function useRemoveAccount(): UseRemoveAccountReturn {
             "Server sign-out failed during account removal",
           );
         }
+
+        // Read live, right before acting on it — not before the sign-out
+        // await above. The active account can change while that request is
+        // in flight (the user switches while removal of a DIFFERENT account
+        // is still pending), and a value read before the await would act on
+        // whichever account was active when removal STARTED rather than
+        // whichever one actually needs tearing down now. It must also be
+        // read BEFORE `removeAccountAction` below, not after: when the
+        // removed account IS the active one, that reducer itself clears
+        // `activeAccountId` as part of the removal, so a read taken after
+        // the dispatch would always see it already gone and never match.
+        const isActiveAccount =
+          userId === store.getState().sublay.accounts.activeAccountId;
 
         // Remove from accounts map. When the removed account was the active
         // one the reducer leaves NOTHING active — no successor is selected and
