@@ -247,12 +247,18 @@ describe("useAccountPushToggle", () => {
     });
     axiosPublic.mockResponse("delete", {});
 
+    let applied!: boolean;
     await act(async () => {
-      await result.current.setAccountPushEnabled({
+      applied = await result.current.setAccountPushEnabled({
         userId: "user-2",
         enabled: false,
       });
     });
+
+    // Surfaced to the caller, not just used internally to decide the marker:
+    // this is the exact value that lets an app tell "repaired" from "there
+    // was nothing to repair" without diffing `needsPushRebind` itself.
+    expect(applied).toBe(true);
 
     const entry = store.getState().sublay.accounts.accounts["user-2"];
     expect(entry.pushEnabled).toBe(false);
@@ -290,12 +296,18 @@ describe("useAccountPushToggle", () => {
       );
     });
 
+    let applied!: boolean;
     await act(async () => {
-      await result.current.setAccountPushEnabled({
+      applied = await result.current.setAccountPushEnabled({
         userId: "user-2",
         enabled: false,
       });
     });
+
+    // The other half: a caller checking the resolved value directly gets the
+    // right answer without inferring it from the marker, which is exactly
+    // the workaround this return value exists to remove.
+    expect(applied).toBe(false);
 
     // Nothing went out — not even the mint a non-active account would need.
     expect(axiosPublic.calls("delete")).toHaveLength(0);

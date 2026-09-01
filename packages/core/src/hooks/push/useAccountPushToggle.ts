@@ -22,9 +22,17 @@ export interface SetAccountPushEnabledParams {
 }
 
 export interface UseAccountPushToggleValues {
+  /**
+   * Resolves `true` when this call actually bound or unbound the account
+   * against the server, `false` when it was a no-op (no device identifier
+   * stored yet — nothing to bind). Both are successful outcomes; only a
+   * thrown error means the call failed. Use this to tell "repaired" from
+   * "there was nothing to repair" without having to infer it from
+   * `useAccounts()`'s `needsPushRebind` marker before and after the call.
+   */
   setAccountPushEnabled: (
     params: SetAccountPushEnabledParams
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   /** Whether a given stored account currently wants push on this device. */
   isAccountPushEnabled: (userId: string) => boolean;
   isUpdating: boolean;
@@ -117,6 +125,8 @@ export default function useAccountPushToggle(): UseAccountPushToggleValues {
           projectId,
           selectAccountMapSnapshot(getState()),
         );
+
+        return bindingApplied;
       } catch (err) {
         // WHICH STEP FAILED DECIDES WHAT SURVIVED, and this branch covers all
         // of them:

@@ -54,10 +54,12 @@ function PerAccountNotificationSettings() {
 
 ## Returns
 
-<ResponseField name="setAccountPushEnabled" type="({ userId, enabled }) => Promise<void>">
+<ResponseField name="setAccountPushEnabled" type="({ userId, enabled }) => Promise<boolean>">
   Applies the binding change server-side first, then writes the flag and persists it.
 
   `userId` may be **any** account in the stored map, active or not. Silencing a background account unbinds it server-side without switching to it, and without touching the current session.
+
+  Resolves `true` when a binding change actually went out to the server, `false` when it was a no-op — this device has no stored identifier yet, so there was nothing to bind or unbind. Both are successful outcomes; the flag is written as the requested intent either way. Use this to tell "repaired" from "there was nothing to repair" directly, instead of diffing `useAccounts()`'s `needsPushRebind` marker before and after the call.
 
   Rejects when the binding change fails. It also rejects when `userId` names no stored account — with an [`AccountTransitionError`](/sdk/authentication/multi-account#telling-a-dead-account-from-a-dead-network) carrying `accountNotFound: true` and `credentialRejected: false`, the same typed shape `switchAccount` and `removeAccount` use for a stale id. Nothing was attempted and nothing was marked; refresh your account list rather than prompting a sign-in.
 </ResponseField>
