@@ -174,6 +174,10 @@ export interface ActivateStoredAccountArgs {
  *
  * The target's entry always survives a failure — it is the affordance an app
  * needs to prompt a re-auth for that account.
+ *
+ * **Naming an account the map does not hold rejects too, with
+ * `accountNotFound`** — and that one marks nothing at all, not even
+ * `signedOut`. There is no entry to mark and no credential to have refused.
  */
 export async function activateStoredAccount({
   dispatch,
@@ -184,12 +188,31 @@ export async function activateStoredAccount({
 }: ActivateStoredAccountArgs): Promise<string> {
   const stored = getState().sublay.accounts.accounts[userId];
 
-  // A map that carries no usable credential for this account is the
+  // NO ENTRY AT ALL is a different failure from a broken entry, and collapsing
+  // them onto `credentialRejected` told callers to prompt a re-auth for an
+  // account that is not on this device — a sign-in that cannot help, for an id
+  // nothing here has ever seen. It is a stale id or a caller bug: a switcher
+  // rendered off a snapshot the map has since moved past.
+  //
+  // Deliberately WITHOUT `failTransition`. Its two marks are both wrong here:
+  // `needsReauth` has no entry to land on, and `setSignedOut(true)` would
+  // record a deliberate sign-out because of a call that named an account this
+  // device does not store — turning a caller's typo into a state change that
+  // survives to the next launch. Nothing was attempted, so nothing changes.
+  if (!stored) {
+    throw new AccountTransitionError(
+      `Account ${userId} not found`,
+      false,
+      true
+    );
+  }
+
+  // A map that carries an entry but no usable credential for it is the
   // `fulfilled`-with-`undefined` case the old unwrap guard missed: it never
   // reaches the network, so there is nothing to "fail". Fail it here, before
   // anything is torn down, and mark the account — an entry with no credential
   // is exactly an entry that needs a re-auth.
-  if (!refreshToken || !stored?.refreshToken) {
+  if (!refreshToken || !stored.refreshToken) {
     failTransition({ dispatch, getState, userId, credentialRejected: true });
     throw new AccountTransitionError(
       `No usable stored credential for account ${userId}.`,

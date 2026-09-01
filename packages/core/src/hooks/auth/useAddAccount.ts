@@ -71,10 +71,12 @@ export default function useAddAccount(): UseAddAccountReturn {
     //
     // "Selected, with no live session" is already this codebase's canonical
     // shape for *stepped out without signing out* — `refuseAtAccountLimit`
-    // restores exactly this state after a refused admission, and a launch that
-    // cannot reach the server leaves it deliberately. `useSwitchAccount` has an
-    // explicit `hasLiveSession` check for it, so re-tapping the account the
-    // user came from signs them back into it instead of no-opping.
+    // lands on exactly this state after a refused admission (by the same route:
+    // it unwinds the session and leaves the selection untouched, rather than
+    // writing one back), and a launch that cannot reach the server leaves it
+    // deliberately. `useSwitchAccount` has an explicit `hasLiveSession` check
+    // for it, so re-tapping the account the user came from signs them back into
+    // it instead of no-opping.
     dispatch(resetAuth());
     dispatch(clearUser());
     dispatch(baseApi.util.resetApiState());
