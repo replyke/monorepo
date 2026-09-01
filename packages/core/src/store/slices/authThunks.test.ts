@@ -1646,11 +1646,24 @@ describe("account cap — refusal never orphans the selection (regression guard)
   // remembered account. Every cap refusal is therefore held to one rule: it may
   // never move a non-null `activeAccountId` to `null`.
   //
-  // Deliberately table-driven over EVERY entry point that can refuse at the
-  // cap, and asserted on every intermediate state rather than just the final
-  // one, so a new entry point (or a new unwind step inside `refuseAtAccountLimit`)
-  // reintroducing this bug class is caught here. A fifth entry point should be
-  // added to this table.
+  // Deliberately table-driven, and asserted on every intermediate state rather
+  // than just the final one, so a new unwind step inside `refuseAtAccountLimit`
+  // reintroducing this bug class is caught here.
+  //
+  // WHAT THE TABLE COVERS, precisely: every entry point that refuses through
+  // `refuseAtAccountLimit`. It is NOT every entry point that can refuse at the
+  // cap. `initializeAuthThunk` refuses on its own — its `catch` hand-rolls the
+  // same invariant, skipping `setActiveAccount(null)` / `setSignedOut(true)`
+  // behind `isAccountLimitRefusal(error)` rather than calling the shared
+  // helper — so adding it as a row here would exercise a different code path
+  // under the same name. It is covered instead by "surfaces a cap rejection at
+  // launch instead of swallowing it and restoring a stored account" in
+  // `account cap — the launch-path collision (Task 7.2)`, which asserts the
+  // same two facts (`activeAccountId` unchanged, `signedOut` still false).
+  //
+  // So: a new entry point routed through `refuseAtAccountLimit` belongs in this
+  // table; one that hand-rolls the invariant needs its own test, and a note
+  // here pointing at it.
   function watchSelection(store: SublayStore) {
     const orphaned: (string | null)[] = [];
     const unsubscribe = store.subscribe(() => {

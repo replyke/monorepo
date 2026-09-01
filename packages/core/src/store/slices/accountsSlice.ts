@@ -534,10 +534,18 @@ const accountsSlice = createSlice({
         //
         // Since validate-before-commit, no failure path selects anything: the
         // transition core selects only after the credential has been proven,
-        // so every dispatch carrying an id is an activation that worked. The
-        // one near-exception is `refuseAtAccountLimit` restoring the PREVIOUS
-        // selection, and that account cannot be carrying a marker — it was the
-        // live session a moment earlier.
+        // so every dispatch carrying an id is an activation that worked.
+        // `refuseAtAccountLimit` used to be a near-exception — it re-selected
+        // the PREVIOUS account after a refusal — but it no longer writes the
+        // selection at all: a refusal never reaches the activation step, so the
+        // standing selection is already the right one and is left untouched.
+        //
+        // That exception was never as safe as it read, either: it argued the
+        // re-selected account "cannot be carrying a marker" because it had just
+        // been the live session, which the cross-tab failure path in
+        // `useAccountSync` Phase D disproves — it can mark a currently selected
+        // account `needsReauth`. Nothing depends on that argument now; it is
+        // recorded here so it is not reinstated.
         //
         // `needsPushRebind` is deliberately NOT cleared here. Selecting an
         // account proves its credential; it does not re-create its push

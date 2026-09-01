@@ -2,10 +2,7 @@ import { useCallback, useState } from "react";
 import { useStore } from "react-redux";
 import { useSublayDispatch, useSublaySelector } from "../../store/hooks";
 import type { SublayState } from "../../store/sublayReducers";
-import {
-  selectAccounts,
-  selectActiveAccountId,
-} from "../../store/slices/accountsSlice";
+import { selectActiveAccountId } from "../../store/slices/accountsSlice";
 import useProject from "../projects/useProject";
 import {
   activateStoredAccount,
@@ -25,7 +22,6 @@ export default function useSwitchAccount(): UseSwitchAccountReturn {
   // rotated successor back — neither reachable through `dispatch` alone.
   const store = useStore<{ sublay: SublayState }>();
   const { projectId } = useProject();
-  const accounts = useSublaySelector(selectAccounts);
   const activeAccountId = useSublaySelector(selectActiveAccountId);
   const [isSwitching, setIsSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +29,25 @@ export default function useSwitchAccount(): UseSwitchAccountReturn {
   const switchAccount = useCallback(
     async ({ userId }: { userId: string }) => {
       if (!projectId) throw new Error("No projectId available");
-      // Typed, like every other failure this hook can produce: a stale id from
-      // a switcher rendered off an older snapshot is a different problem from a
-      // dead credential, and a caller should not have to string-match to tell
-      // them apart. `accountNotFound` is the discriminant.
-      if (!accounts[userId]) {
+
+      // FROM THE LIVE STORE, not from the render snapshot this callback closes
+      // over. The snapshot is exactly what goes stale — an account added after
+      // the last render (a cross-tab map broadcast, a just-completed
+      // `addAccount()`) would fail this guard against the old snapshot even
+      // though the account is now switchable. Reading live means the guard's
+      // answer is never older than the map itself.
+      //
+      // A REMOVAL doesn't need this: the transition core below re-reads the
+      // live map on its own and rejects with `accountNotFound` regardless of
+      // what this guard saw, so a stale-but-since-removed id is caught either
+      // way. This guard's live read only changes the outcome for the
+      // stale-but-since-added case.
+      //
+      // Typed, like every other failure this hook can produce: a stale id is a
+      // different problem from a dead credential, and a caller should not have
+      // to string-match to tell them apart.
+      const stored = store.getState().sublay.accounts.accounts[userId];
+      if (!stored) {
         throw new AccountTransitionError(
           `Account ${userId} not found`,
           false,
@@ -49,12 +59,12 @@ export default function useSwitchAccount(): UseSwitchAccountReturn {
       //
       // The selection alone is not proof of one. Two paths leave
       // `activeAccountId` naming an account whose session was torn down: a
-      // sign-in refused at the account cap, which restores the previous
-      // selection without restoring its session, and a launch that could not
-      // reach the server, which leaves the stored account selected on purpose.
-      // In both, this early return made re-tapping that account a no-op, so the
-      // only way back into a session was to restart the app. Requiring a live
-      // access token turns the re-tap into the recovery it looks like.
+      // sign-in refused at the account cap, which leaves the previous selection
+      // standing without its session, and a launch that could not reach the
+      // server, which leaves the stored account selected on purpose. In both,
+      // this early return made re-tapping that account a no-op, so the only way
+      // back into a session was to restart the app. Requiring a live access
+      // token turns the re-tap into the recovery it looks like.
       const hasLiveSession = Boolean(
         store.getState().sublay.auth.accessToken
       );
@@ -74,7 +84,7 @@ export default function useSwitchAccount(): UseSwitchAccountReturn {
           getState: () => store.getState(),
           projectId,
           userId,
-          refreshToken: accounts[userId].refreshToken,
+          refreshToken: stored.refreshToken,
           previousActiveAccountId: activeAccountId,
         });
       } catch (err) {
@@ -86,7 +96,7 @@ export default function useSwitchAccount(): UseSwitchAccountReturn {
         setIsSwitching(false);
       }
     },
-    [dispatch, store, projectId, accounts, activeAccountId]
+    [dispatch, store, projectId, activeAccountId]
   );
 
   return { switchAccount, isSwitching, error };

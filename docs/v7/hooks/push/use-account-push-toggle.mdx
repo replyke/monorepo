@@ -59,7 +59,7 @@ function PerAccountNotificationSettings() {
 
   `userId` may be **any** account in the stored map, active or not. Silencing a background account unbinds it server-side without switching to it, and without touching the current session.
 
-  Rejects when the binding change fails.
+  Rejects when the binding change fails. It also rejects when `userId` names no stored account — with an [`AccountTransitionError`](/sdk/authentication/multi-account#telling-a-dead-account-from-a-dead-network) carrying `accountNotFound: true` and `credentialRejected: false`, the same typed shape `switchAccount` and `removeAccount` use for a stale id. Nothing was attempted and nothing was marked; refresh your account list rather than prompting a sign-in.
 </ResponseField>
 
 <ResponseField name="isAccountPushEnabled" type="(userId: string) => boolean">

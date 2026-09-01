@@ -13,6 +13,7 @@ import { persistAccountMapFor } from "../../config/accountStorage";
 import { handleError } from "../../utils/handleError";
 import type { SublayState } from "../../store/sublayReducers";
 import { applyAccountPushBinding } from "./reconcilePushBindings";
+import { AccountTransitionError } from "../auth/accountTransition";
 
 export interface SetAccountPushEnabledParams {
   /** Any account in the stored account map — it does not have to be active. */
@@ -63,8 +64,18 @@ export default function useAccountPushToggle(): UseAccountPushToggleValues {
       if (!projectId) throw new Error("No projectId available");
 
       const getState = () => store.getState();
+      // Typed with the same discriminant `useSwitchAccount` and
+      // `useRemoveAccount` throw: all three can be handed a stale id off a
+      // switcher rendered before the map moved, and a caller that branches on
+      // `accountNotFound` should not have to special-case this one hook by
+      // matching on message text it does not own. Nothing was attempted and
+      // nothing was marked — `credentialRejected` stays `false`.
       if (!getState().sublay.accounts.accounts[userId]) {
-        throw new Error(`Account ${userId} not found`);
+        throw new AccountTransitionError(
+          `Account ${userId} not found`,
+          false,
+          true
+        );
       }
 
       setIsUpdating(true);

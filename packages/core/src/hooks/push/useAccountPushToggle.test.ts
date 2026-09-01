@@ -13,6 +13,7 @@ import {
 } from "../../config/accountStorage";
 import { resetAccountTokenMints } from "./mintAccountAccessToken";
 import useAccountPushToggle from "./useAccountPushToggle";
+import { AccountTransitionError } from "../auth/accountTransition";
 
 const DEVICE = { platform: "ios" as const, token: "device-token-1" };
 
@@ -316,5 +317,23 @@ describe("useAccountPushToggle", () => {
         enabled: false,
       }),
     ).rejects.toThrow("Account user-missing not found");
+  });
+
+  it("types the unknown-account failure as AccountTransitionError with accountNotFound", async () => {
+    // The third hook that can be handed a stale id, and it used to be the one
+    // that threw a bare `Error` — so a caller branching on
+    // `err.accountNotFound` fell through to its generic branch here alone.
+    const { result } = render();
+
+    const error = await result.current
+      .setAccountPushEnabled({ userId: "user-missing", enabled: false })
+      .then(
+        () => null,
+        (err: unknown) => err,
+      );
+
+    expect(error).toBeInstanceOf(AccountTransitionError);
+    expect((error as AccountTransitionError).accountNotFound).toBe(true);
+    expect((error as AccountTransitionError).credentialRejected).toBe(false);
   });
 });

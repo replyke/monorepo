@@ -133,7 +133,10 @@ describe("useSwitchAccount", () => {
     // to fall through to its generic branch for the one failure it can actually
     // fix — a stale id. `accountNotFound` separates it from a dead credential:
     // nothing was attempted, nothing was marked, and a re-auth would not help.
-    const { result, store } = renderHookWithAxios(() => useSwitchAccount());
+    const { result, store, axiosPublic, axiosPrivate } = renderHookWithAxios(
+      () => useSwitchAccount(),
+      { accessToken: "access-1", refreshToken: "refresh-1" },
+    );
     act(() => {
       store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }));
     });
@@ -148,6 +151,68 @@ describe("useSwitchAccount", () => {
     expect(error).toBeInstanceOf(AccountTransitionError);
     expect((error as AccountTransitionError).accountNotFound).toBe(true);
     expect((error as AccountTransitionError).credentialRejected).toBe(false);
+
+    // WHAT THE DOCS PROMISE FOR THIS PATH, asserted rather than assumed:
+    // nothing was attempted and nothing was marked. The discriminant is only
+    // worth branching on if it describes a real no-op.
+    expect(axiosPublic.calls("post")).toHaveLength(0);
+    expect(axiosPrivate.calls("post")).toHaveLength(0);
+
+    const state = store.getState();
+    expect(state.sublay.accounts.signedOut).toBe(false);
+    expect(state.sublay.accounts.activeAccountId).toBe("user-1");
+    expect(state.sublay.auth.accessToken).toBe("access-1");
+    expect(state.sublay.accounts.accounts["user-1"].needsReauth).toBeUndefined();
+    expect(state.sublay.accounts.accounts["user-2"].needsReauth).toBeUndefined();
+  });
+
+  it("switches into an account added AFTER the last render, from a callback that closed over the old map", async () => {
+    // THE SNAPSHOT GAP. The guard used to read the accounts map off the render
+    // snapshot this callback closes over. An account added between the render
+    // and the tap — a cross-tab broadcast, a just-completed `addAccount()` in
+    // a sibling component — was invisible to that snapshot, so the guard
+    // rejected `accountNotFound` for an account that, by the time the call
+    // actually ran, existed and was perfectly switchable. Reading the live
+    // store closes that gap: the guard's answer is never older than the map.
+    //
+    // A REMOVAL doesn't need this same proof — the transition core re-reads
+    // the live map on its own regardless of what this guard saw, so a
+    // stale-but-since-removed id is caught either way. This test exercises
+    // the direction only the live-store read actually changes.
+    const solo: Record<string, AccountEntry> = {
+      "user-1": makeAccounts()["user-1"],
+    };
+    const { result, store, axiosPublic } = renderHookWithAxios(
+      () => useSwitchAccount(),
+      { accessToken: "access-1", refreshToken: "refresh-1" },
+    );
+    act(() => {
+      store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: solo }));
+    });
+
+    // Capture the callback from the CURRENT render — user-2 does not exist in
+    // the map it closed over — then add user-2 without letting the hook
+    // re-render before the call.
+    const switchAccount = result.current.switchAccount;
+    act(() => {
+      store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }));
+    });
+
+    const newUser = makeAuthUser({ id: "user-2", name: "Bob" });
+    axiosPublic.mockResponse("post", {
+      accessToken: "access-2",
+      refreshToken: "refresh-2-rotated",
+      user: newUser,
+    });
+
+    let error: unknown = null;
+    await act(async () => {
+      error = await switchAccount({ userId: "user-2" }).then(() => null, (err) => err);
+    });
+
+    expect(error).toBeNull();
+    expect(store.getState().sublay.accounts.activeAccountId).toBe("user-2");
+    expect(store.getState().sublay.auth.accessToken).toBe("access-2");
   });
 
   // INVERTED TWICE. It began as "does not throw when requesting the new access

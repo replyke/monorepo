@@ -409,6 +409,91 @@ describe("activateStoredAccount (callable outside React)", () => {
     expect(state.sublay.accounts.accounts["user-2"].needsReauth).toBe(true);
   });
 
+  it("rejects with accountNotFound — marking NOTHING — when the id is not in the map", async () => {
+    // THE TWO CASES THE `!stored?.refreshToken` GUARD USED TO COLLAPSE. An
+    // entry with a broken credential is a dead account; an id the map has never
+    // heard of is a stale id, and reporting it as `credentialRejected` told the
+    // app to prompt a sign-in that cannot help. It also ran `failTransition`,
+    // which dispatches `setSignedOut(true)` whenever nothing is selected —
+    // recording a deliberate sign-out because a caller passed a typo.
+    const store = makeSublayStore();
+    store.dispatch(
+      setAccountMap({ activeAccountId: null, accounts: makeAccounts() })
+    );
+    const axios = mockAxiosPublic();
+
+    const before = store.getState().sublay.accounts;
+    expect(before.signedOut).toBe(false);
+
+    const error = await activateStoredAccount({
+      dispatch: store.dispatch,
+      getState: () => store.getState(),
+      projectId: "project-1",
+      userId: "user-missing",
+      refreshToken: "refresh-missing",
+    }).then(
+      () => null,
+      (err: unknown) => err
+    );
+
+    expect(error).toBeInstanceOf(AccountTransitionError);
+    expect((error as AccountTransitionError).accountNotFound).toBe(true);
+    expect((error as AccountTransitionError).credentialRejected).toBe(false);
+
+    const after = store.getState().sublay.accounts;
+    expect(axios.calls("post")).toHaveLength(0);
+    // No `failTransition` side effects: this store has a null selection, which
+    // is precisely the shape that used to trip the `setSignedOut(true)` branch.
+    expect(after.signedOut).toBe(false);
+    expect(after.activeAccountId).toBeNull();
+    // Nothing invented, and nothing marked on the accounts that DO exist.
+    expect(after.accounts["user-missing"]).toBeUndefined();
+    expect(after.accounts["user-1"].needsReauth).toBeUndefined();
+    expect(after.accounts["user-2"].needsReauth).toBeUndefined();
+  });
+
+  it("still reports a stored-but-credential-less entry as credentialRejected", async () => {
+    // The other half of the split: the entry EXISTS, so there is something to
+    // mark and something a re-auth can fix. This behaviour is unchanged.
+    const store = makeSublayStore();
+    store.dispatch(
+      setAccountMap({
+        activeAccountId: null,
+        accounts: {
+          ...makeAccounts(),
+          "user-3": {
+            refreshToken: "",
+            tokenExpiresAt: 0,
+            user: { id: "user-3", name: "Cara", email: null, avatar: null },
+          },
+        },
+      })
+    );
+    const axios = mockAxiosPublic();
+
+    const error = await activateStoredAccount({
+      dispatch: store.dispatch,
+      getState: () => store.getState(),
+      projectId: "project-1",
+      userId: "user-3",
+      refreshToken: "",
+    }).then(
+      () => null,
+      (err: unknown) => err
+    );
+
+    expect(error).toBeInstanceOf(AccountTransitionError);
+    expect((error as AccountTransitionError).credentialRejected).toBe(true);
+    expect((error as AccountTransitionError).accountNotFound).toBe(false);
+
+    const after = store.getState().sublay.accounts;
+    expect(axios.calls("post")).toHaveLength(0);
+    expect(after.accounts["user-3"].needsReauth).toBe(true);
+    // `failTransition` DOES run here, and with no selection standing that means
+    // the signed-out flag — the contrast with the test above.
+    expect(after.signedOut).toBe(true);
+  });
+
   it("marks the state signed-out when a failed transition had no previous selection", async () => {
     const store = makeSublayStore();
     store.dispatch(

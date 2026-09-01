@@ -365,7 +365,10 @@ describe("useRemoveAccount", () => {
     // Same discriminant `useSwitchAccount` throws, for the same reason: a stale
     // id is a caller problem, not a credential one, and a caller should be able
     // to tell them apart without matching on message text it does not own.
-    const { result, store } = renderHookWithAxios(() => useRemoveAccount());
+    const { result, store, axiosPrivate, axiosPublic } = renderHookWithAxios(
+      () => useRemoveAccount(),
+      { accessToken: "access-1", refreshToken: "refresh-1" },
+    );
     act(() => {
       store.dispatch(setAccountMap({ activeAccountId: "user-1", accounts: makeAccounts() }));
     });
@@ -380,6 +383,22 @@ describe("useRemoveAccount", () => {
     expect(error).toBeInstanceOf(AccountTransitionError);
     expect((error as AccountTransitionError).accountNotFound).toBe(true);
     expect((error as AccountTransitionError).credentialRejected).toBe(false);
+
+    // Nothing attempted, nothing marked — the same promise the docs make for
+    // this discriminant. In particular no sign-out request went out, so no
+    // other account's token family was touched.
+    expect(axiosPrivate.calls("post")).toHaveLength(0);
+    expect(axiosPublic.calls("post")).toHaveLength(0);
+
+    const state = store.getState();
+    expect(state.sublay.accounts.signedOut).toBe(false);
+    expect(state.sublay.accounts.activeAccountId).toBe("user-1");
+    expect(state.sublay.auth.accessToken).toBe("access-1");
+    expect(Object.keys(state.sublay.accounts.accounts).sort()).toEqual([
+      "user-1",
+      "user-2",
+    ]);
+    expect(state.sublay.accounts.accounts["user-1"].needsReauth).toBeUndefined();
   });
 
   it("throws before doing anything when there is no project", async () => {

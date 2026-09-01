@@ -244,7 +244,9 @@ try {
 ### Telling a dead account from a dead network
 
 `AccountTransitionError` is the typed error an account-transition failure rejects with — from
-`switchAccount`, `removeAccount` and `activateStoredAccount` alike. It extends `Error`, so
+`switchAccount`, `removeAccount` and `activateStoredAccount` alike, and from
+[`setAccountPushEnabled`](/hooks/push/use-account-push-toggle) for the one failure it shares
+(`accountNotFound`). It extends `Error`, so
 `message` and `instanceof Error` work as usual, and it carries **two independent boolean
 discriminants**, because the three failures it covers call for three different responses.
 
@@ -268,8 +270,9 @@ the account's push notifications — that is the atomic-removal refusal describe
   typically from a switcher rendered off a snapshot the map has since moved past.
 
   Nothing was attempted and nothing was marked: no network call went out, no session was touched,
-  and re-authenticating would not help, because there is no entry to authenticate. Refresh your
-  account list from `useAccounts()` rather than prompting a sign-in.
+  `signedOut` is left exactly as it was, and re-authenticating would not help, because there is no
+  entry to authenticate. Refresh your account list from `useAccounts()` rather than prompting a
+  sign-in.
 
   The two flags are never both `true` — an account that is not stored has no credential to have
   been refused — and both are `false` for a transport failure.
@@ -439,7 +442,7 @@ No session, ever: a refused sign-in really did create one on the server, and the
 What changes locally depends on the path:
 
 - **Sign-up, email sign-in and external verification** are refused *before* the SDK touches your session, so whatever account was active stays signed in.
-- **OAuth** cannot be: the redirect hands over tokens before identity is known, so the previous session is already gone by the time the limit is discovered. The previous account is re-*selected*, but its session is **not** re-established — the app renders signed-out with that account selected, and the user signs in again from the picker. This holds whether or not the flow was started from `addAccount()`: that call leaves the selection alone, so there is always a previous account to restore unless there genuinely was none.
+- **OAuth** cannot be: the redirect hands over tokens before identity is known, so the previous session is already gone by the time the limit is discovered. The **selection is left exactly as it was** — nothing writes `activeAccountId` on this path — while the session behind it is **not** re-established. So whichever account the map already named stays named, the app renders signed-out with that account selected, and the user signs in again from the picker. This holds whether or not the flow was started from `addAccount()`, because that call leaves the selection alone too. If nothing was selected before the flow, nothing is selected after it; the refusal neither creates a selection nor clears one.
 
 ### Three signals for the account cap
 
@@ -494,7 +497,9 @@ if (accountLimitReached) showCapError();
 if (accountLimitReached) return <CapError />;
 ```
 
-Signing back into an account the device already stores never trips the cap check at all, so nothing sets the flag on that path — but a stale `true` from an earlier refusal survives until that re-auth's admission lands, one render later. Reading the flag eagerly right after a successful re-auth is the single reliable way to observe a wrong value.
+The rule is general: **never read this flag synchronously right after triggering an action — read it through the hook's normal render cycle.** It is not only the clear that settles late. The flag is *set* at three different moments depending on the entry point: synchronously at the pre-flight gate, after the network round trip at the post-authentication gate, and — on the OAuth path — after a round trip the SDK does not await, because `handleOAuthRedirect` dispatches its completion thunk without one and returns before the cap has been evaluated. So an eager read can observe a stale value from either side.
+
+Re-authenticating into an account the device already stores is one example worth naming, because it looks exempt: that path never trips the cap check, so nothing sets the flag on it — yet a stale `true` from an earlier refusal survives until that re-auth's admission lands, one render later. Rendering from the flag gets the settled value in every one of these cases; sampling it gets whichever moment you happened to land in.
 
 ## Controlling SDK Error Logging
 

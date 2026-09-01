@@ -11,16 +11,39 @@ Explicit, developer-triggered hook for registering and unregistering the current
 Calling `register()` once per device is enough. **Mounting the hook is a separate concern from calling it**, because mounting is also what installs the SDK's [device-token rotation](#automatic-token-rotation) handling — the thing that keeps bindings correct without the app re-registering on every launch.
 
 <Warning>
-  **Mount it once at your app root, not on the settings screen.** The rotation
-  handling lives for exactly as long as the hook is mounted, so a hook mounted
-  only on a notification-settings screen covers only the seconds that screen is
-  open. A token that rotates while the user is anywhere else in the app is
-  missed, and that account's notifications go quiet until something else
-  happens to re-bind it.
+  **Mount it once at your app root, not on the settings screen** — and what
+  that buys you differs by platform.
 
-  Mounting at the root is what makes the guarantee hold: *any app that has ever
-  registered gets rotation coverage on every launch*. Mounting costs nothing and
-  asks the user for nothing — it installs a passive listener and never prompts.
+  On **Expo and React Native** the adapter installs a real OS rotation
+  listener, and it lives for exactly as long as the hook is mounted. A hook
+  mounted only on a notification-settings screen therefore covers only the
+  seconds that screen is open; a token that rotates while the user is anywhere
+  else in the app is missed, and that account's notifications go quiet until
+  something else happens to re-bind it. Root-mounting is what makes the
+  guarantee hold on native: *any app that has ever registered gets rotation
+  coverage for the whole session*.
+
+  On **web there is no ongoing listener at all.** The browser's
+  `pushsubscriptionchange` event fires inside the service worker your app
+  registers, which the SDK cannot subscribe to from page context. The web
+  adapter instead does a **single comparison at mount**: it reads the
+  subscription the browser already holds and re-binds if it differs from the
+  stored one. So on the web, a rotation that happens mid-session is not caught
+  no matter where the hook is mounted — it is picked up on the next mount
+  (in practice, the next page load). Mounting at the root still matters there,
+  just for a different reason: it makes that one check happen on every launch
+  rather than only when the settings screen is opened.
+
+  **Mounting never prompts the user** — on every platform, nothing on this
+  path can raise a permission dialog. It is not, however, free of side effects:
+  on the two native platforms mounting also performs one non-prompting read of
+  the current device identifier per launch (gated on the device already holding
+  notification permission, with a documented once-per-device exception — see
+  [Reading the current identifier on mount](#reading-the-current-identifier-on-mount-native)),
+  and if that identifier has changed the hook re-binds the active account and
+  marks the others for re-binding. Web does none of this; it declares nothing
+  here and is covered by the mount-time comparison above.
+
   Call `register()` from wherever your opt-in UI lives; that part is still a
   deliberate user gesture, and the two do not have to happen in the same
   component: mount the hook at the root and pass its `register` / `unregister`
@@ -239,7 +262,14 @@ Device push tokens rotate on reinstall, on an OS-initiated refresh, and after a 
 
 The subscription is gated on the adapter alone, so an app whose adapter omits it subscribes to nothing. Nothing on this path prompts the user — receiving a refreshed token asks for no permission — and nothing on it exchanges a stored credential.
 
-**Coverage is only as wide as the mount.** The subscription is installed when the hook mounts and torn down when it unmounts, so it catches rotations only while the component holding it is on screen. Mount the hook once at your app root — see the warning at the top of this page — or a token that rotates while the user is anywhere else in the app is missed entirely.
+**What "subscribing" means is not the same on every platform**, and the difference decides how much a root mount buys you:
+
+| Platform | What the subscription is | What a root mount buys |
+|---|---|---|
+| Expo, React Native | A real OS rotation event (`addPushTokenListener`, Firebase `onTokenRefresh`), installed on mount and torn down on unmount | **Live coverage for the whole session.** Mounted only on a settings screen, it catches rotations only while that screen is open; a token that rotates anywhere else in the app is missed entirely. |
+| Web | **No listener.** `pushsubscriptionchange` fires inside the service worker the integrator registers, which the SDK cannot subscribe to from page context — so the web adapter emits **once, at mount**, from the subscription the browser already holds, and core compares it against the stored identifier | **One check per mount, not live coverage.** A rotation mid-session is not caught on the web wherever the hook sits; it is picked up on the next mount — in practice the next page load. Root-mounting makes that check happen on every launch instead of only when some screen is opened. |
+
+So the guarantee to state honestly is: **native gets rotation coverage for as long as the hook is mounted; web gets a single reconciliation each time it mounts.** Root-mounting is the right advice on both, for the two different reasons above.
 
 ### Reading the current identifier on mount (native)
 
